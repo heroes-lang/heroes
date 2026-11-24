@@ -26,8 +26,9 @@ use web/proxy/internal/gateway
 constant PIECE_BYTES: i64
     65_536
 
-# How long a tunnel's wait on a socket lasts before a TLS upstream, which
-# `poll` cannot wait on, is read again without waiting.
+# How long a tunnel's wait on its sockets lasts before a TLS end, the
+# upstream's or the client's, which `poll` cannot wait on, is read again
+# without waiting.
 constant TLS_TURN_MS: i64
     5
 
@@ -67,8 +68,6 @@ record Plan
     keep_host: bool
     # The proxies in front of this one, whose forwarding fields are kept.
     trusted: [net.Network]
-    # How clients reach the proxy, `http` or `https`.
-    scheme: str
     # This proxy in `Via`, a pseudonym and a port; "" writes none.
     received_by: str
     # The PEM of the authorities an `https://` upstream's certificate may be
@@ -192,23 +191,49 @@ function sum(a: Tally, b: Tally) -> Tally
         switched: a.switched + b.switched
     )
 
-# Moves the deadline of `s` to `ms` from now, by `tls`'s clock where it is a
+# One end of what the relay moves bytes between, the client's connection or
+# an upstream's, with the kind of stream it is, so its deadline is moved and
+# a wait on it made by its kind's own means.
+record End
+    # The stream; whoever opened it closes it.
+    stream: io.Stream
+    # Whether it is a stream of `tls`: `tls` moves its deadline, and `poll`
+    # cannot wait on it, its layer holding bytes no socket shows.
+    secure: bool
+
+# The client's end of `stream`, the stream itself telling whether the client
+# came over TLS: `tls` answers a version for an open stream of its own
+# alone (`tls.accept`, `tls.server_over`), so the program has nothing to say
+# and nothing to say wrong.
+function client_end(stream: io.Stream) -> End
+    return End(stream: stream, secure: !tls.version_of(stream).is_err())
+
+# The scheme `client` reached the proxy with, as `Forwarded`'s `proto` and
+# `X-Forwarded-Proto` write it: `https` over TLS, else `http`.
+function scheme_of(client: End) -> str
+    if client.secure
+        return "https"
+    return "http"
+
+# Moves the deadline of `e` to `ms` from now, by `tls`'s clock where it is a
 # TLS stream. A stream that cannot take it is found at its next read.
-function within(s: io.Stream, secure: bool, ms: i64)
-    if secure
-        _ = tls.set_deadline(s, deadline: time.milliseconds(ms).default(time.max_duration())).is_err()
+function within(e: End, ms: i64)
+    if e.secure
+        _ = tls.set_deadline(e.stream, deadline: time.milliseconds(ms).default(time.max_duration())).is_err()
     else
-        _ = net.set_deadline(s, deadline_ms: ms).is_err()
+        _ = net.set_deadline(e.stream, deadline_ms: ms).is_err()
 
 # Serves the client on `stream`, from `remote`, until its connection ends:
 # each request passed on and its answer passed back, the connection kept
-# while both sides keep it. The stream is the caller's to close.
+# while both sides keep it. The stream is the caller's to close; whether it
+# is a stream of `tls` is asked of the stream itself.
 function serve_client(@c: Chooser, plan: Plan, stream: io.Stream, remote: str) -> Tally
+    client = client_end(stream)
     reader @= io.reader(stream)
     tally @= Tally(requests: 0, relayed: 0, refused: 0, switched: 0)
 
     while true
-        within(stream, secure: false, ms: plan.idle_ms)
+        within(client, ms: plan.idle_ms)
 
         h = match http.read_request_head(@reader, limits: plan.limits)
             .ok got => got
@@ -223,7 +248,7 @@ function serve_client(@c: Chooser, plan: Plan, stream: io.Stream, remote: str) -
 
         tally.requests @ tally.requests + 1
 
-        if !request(@c, plan: plan, stream: stream, reader: @reader, h: h, remote: remote, tally: @tally)
+        if !request(@c, plan: plan, client: client, reader: @reader, h: h, remote: remote, tally: @tally)
             break
 
     return tally
@@ -258,24 +283,24 @@ function has_body(framing: http.Framing) -> bool
 
 # Passes the request `h` heads on and its answer back. Answers whether the
 # connection is kept for another request.
-function request(@c: Chooser, plan: Plan, stream: io.Stream, @reader: io.Reader, h: http.RequestHead, remote: str, @tally: Tally) -> bool
+function request(@c: Chooser, plan: Plan, client: End, @reader: io.Reader, h: http.RequestHead, remote: str, @tally: Tally) -> bool
     r = h.request
 
     match http.refusal_of(h)
         .ok status =>
-            refuse(stream, r: r, status: status, why: "the proxy does not pass this request on", retry_s: 0)
+            refuse(client.stream, r: r, status: status, why: "the proxy does not pass this request on", retry_s: 0)
             tally.refused @ tally.refused + 1
             return false
         .err _ => _ = 0
 
     if plan.received_by != "" && gateway.looped(r.headers, received_by: plan.received_by)
-        refuse(stream, r: r, status: 508, why: "the request came round to this proxy again", retry_s: 0)
+        refuse(client.stream, r: r, status: 508, why: "the request came round to this proxy again", retry_s: 0)
         tally.refused @ tally.refused + 1
         return false
     headers @= gateway.hop_by_hop_removed(r.headers)
 
     if r.method == "OPTIONS" && r.url.path == "*"
-        final(stream, r: r)
+        final(client.stream, r: r)
         tally.refused @ tally.refused + 1
         return false
 
@@ -283,13 +308,13 @@ function request(@c: Chooser, plan: Plan, stream: io.Stream, @reader: io.Reader,
         match gateway.max_forwards_of(r.headers)
             .ok n =>
                 if n == 0
-                    final(stream, r: r)
+                    final(client.stream, r: r)
                     tally.refused @ tally.refused + 1
                     return false
                 headers @ gateway.max_forwards_set(headers, n: n - 1)
             .err e =>
                 if e.code != "not_found"
-                    refuse(stream, r: r, status: 400, why: e.msg, retry_s: 0)
+                    refuse(client.stream, r: r, status: 400, why: e.msg, retry_s: 0)
                     tally.refused @ tally.refused + 1
                     return false
 
@@ -297,7 +322,7 @@ function request(@c: Chooser, plan: Plan, stream: io.Stream, @reader: io.Reader,
         .ok b => b
         .err e =>
             status = http.failure_status(code: e.code, in_head: false).default(400)
-            refuse(stream, r: r, status: status, why: e.msg, retry_s: 0)
+            refuse(client.stream, r: r, status: status, why: e.msg, retry_s: 0)
             tally.refused @ tally.refused + 1
             return false
 
@@ -306,7 +331,13 @@ function request(@c: Chooser, plan: Plan, stream: io.Stream, @reader: io.Reader,
     match framing
         .length l =>
             if l.bytes > plan.limits.body_bytes
-                refuse(stream, r: r, status: 413, why: f"the body is past {plan.limits.body_bytes} bytes", retry_s: 0)
+                refuse(
+                    client.stream,
+                    r: r,
+                    status: 413,
+                    why: f"the body is past {plan.limits.body_bytes} bytes",
+                    retry_s: 0
+                )
                 tally.refused @ tally.refused + 1
                 return false
         .none | .chunked | .to_end => _ = 0
@@ -315,20 +346,20 @@ function request(@c: Chooser, plan: Plan, stream: io.Stream, @reader: io.Reader,
         .ok p => p
         .err e =>
             if e.code != "not_found"
-                refuse(stream, r: r, status: 400, why: e.msg, retry_s: 0)
+                refuse(client.stream, r: r, status: 400, why: e.msg, retry_s: 0)
                 tally.refused @ tally.refused + 1
                 return false
             ""
 
-    client = proxies.address_part(remote)
+    address = proxies.address_part(remote)
     asked_host = http.value_of(r.headers, name: "Host").default(r.url.host)
     headers @ http.without_header(http.without_header(headers, name: "Host"), name: "Expect")
     headers @ gateway.forwarded(
         headers,
-        client: client,
+        client: address,
         host: asked_host,
-        scheme: plan.scheme,
-        trusted: proxies.is_trusted(client, trusted: plan.trusted)
+        scheme: scheme_of(client),
+        trusted: proxies.is_trusted(address, trusted: plan.trusted)
     )
 
     if plan.received_by != ""
@@ -347,7 +378,7 @@ function request(@c: Chooser, plan: Plan, stream: io.Stream, @reader: io.Reader,
         upgrade: upgrade,
         continuing: continuing
     )
-    return tried(@c, plan: plan, stream: stream, reader: @reader, body: @body, trip: trip, tally: @tally)
+    return tried(@c, plan: plan, client: client, reader: @reader, body: @body, trip: trip, tally: @tally)
 
 # Answers `r` as the final recipient: `Max-Forwards` was 0 (RFC 9110 §
 # 7.6.2), or it is `OPTIONS *`, which asks the server the client reached and
@@ -382,7 +413,7 @@ record Trip
 # `plan.tries`: the next upstream is tried where the connection could not be
 # made, and, for an idempotent request with no body, where the answer's head
 # did not come. Answers whether the client's connection is kept.
-function tried(@c: Chooser, plan: Plan, stream: io.Stream, @reader: io.Reader, @body: http.BodyReader, trip: Trip, @tally: Tally) -> bool
+function tried(@c: Chooser, plan: Plan, client: End, @reader: io.Reader, @body: http.BodyReader, trip: Trip, @tally: Tally) -> bool
     avoid: [i64] @= []
     last: str @= ""
     again = is_idempotent(trip.r.method) && !has_body(trip.framing)
@@ -393,14 +424,14 @@ function tried(@c: Chooser, plan: Plan, stream: io.Stream, @reader: io.Reader, @
             .none n =>
                 if last == ""
                     refuse(
-                        stream,
+                        client.stream,
                         r: trip.r,
                         status: 503,
                         why: "no upstream is available",
                         retry_s: (n.back_in_ms + 999) / 1_000
                     )
                 else
-                    refuse(stream, r: trip.r, status: gateway.status_of(last), why: words_of(last), retry_s: 0)
+                    refuse(client.stream, r: trip.r, status: gateway.status_of(last), why: words_of(last), retry_s: 0)
                 tally.refused @ tally.refused + 1
                 return false
 
@@ -414,7 +445,9 @@ function tried(@c: Chooser, plan: Plan, stream: io.Stream, @reader: io.Reader, @
                 last @ e.code
                 continue
 
-        match sent(upstream: conn.stream, plan: plan, up: up, reader: @reader, body: @body, trip: trip, client: stream)
+        upstream = End(stream: conn.stream, secure: up.secure)
+
+        match sent(upstream: upstream, plan: plan, up: up, reader: @reader, body: @body, trip: trip, client: client)
             .ok whole =>
                 if !whole
                     shut(@conn)
@@ -430,7 +463,7 @@ function tried(@c: Chooser, plan: Plan, stream: io.Stream, @reader: io.Reader, @
                 break
 
         up_reader @= io.reader(conn.stream)
-        within(conn.stream, secure: up.secure, ms: plan.read_ms)
+        within(upstream, ms: plan.read_ms)
 
         head_read = if trip.upgrade != ""
             http.read_switch_head(@up_reader, method: trip.r.method, limits: plan.limits)
@@ -451,11 +484,10 @@ function tried(@c: Chooser, plan: Plan, stream: io.Stream, @reader: io.Reader, @
         if head.status == 101
             kept = switched(
                 plan: plan,
-                stream: stream,
+                client: client,
                 reader: @reader,
-                conn: conn,
+                upstream: upstream,
                 up_reader: @up_reader,
-                secure: up.secure,
                 trip: trip,
                 head: head
             )
@@ -470,10 +502,9 @@ function tried(@c: Chooser, plan: Plan, stream: io.Stream, @reader: io.Reader, @
             return false
         outcome = passed_back(
             plan: plan,
-            stream: stream,
-            conn: conn,
+            client: client,
+            upstream: upstream,
             up_reader: @up_reader,
-            secure: up.secure,
             trip: trip,
             head: head
         )
@@ -486,7 +517,7 @@ function tried(@c: Chooser, plan: Plan, stream: io.Stream, @reader: io.Reader, @
             tally.relayed @ tally.relayed + 1
         return outcome.kept
 
-    refuse(stream, r: trip.r, status: gateway.status_of(last), why: words_of(last), retry_s: 0)
+    refuse(client.stream, r: trip.r, status: gateway.status_of(last), why: words_of(last), retry_s: 0)
     tally.refused @ tally.refused + 1
     return false
 
@@ -520,7 +551,7 @@ function connect(up: Upstream, plan: Plan) -> net.Conn?
 # passed its bound, its answer then written where one is owed, so the
 # upstream is not blamed for it. Fails with the code of the upstream's
 # failure.
-function sent(upstream: io.Stream, plan: Plan, up: Upstream, @reader: io.Reader, @body: http.BodyReader, trip: Trip, client: io.Stream) -> bool?
+function sent(upstream: End, plan: Plan, up: Upstream, @reader: io.Reader, @body: http.BodyReader, trip: Trip, client: End) -> bool?
     host = if plan.keep_host && trip.asked_host != ""
         trip.asked_host
     else
@@ -535,21 +566,21 @@ function sent(upstream: io.Stream, plan: Plan, up: Upstream, @reader: io.Reader,
         closing: trip.upgrade == "",
         remote: ""
     )
-    within(upstream, secure: up.secure, ms: plan.send_ms)
-    writer @= http.write_request_head(upstream, r: out, framing: trip.framing)?
+    within(upstream, ms: plan.send_ms)
+    writer @= http.write_request_head(upstream.stream, r: out, framing: trip.framing)?
 
     if !has_body(trip.framing)
         return ok(true)
 
     if trip.continuing
-        within(client, secure: false, ms: plan.client_ms)
+        within(client, ms: plan.client_ms)
 
-        if http.write_continue(client).is_err()
+        if http.write_continue(client.stream).is_err()
             return ok(false)
     total: i64 @= 0
 
     while true
-        within(client, secure: false, ms: plan.client_ms)
+        within(client, ms: plan.client_ms)
 
         piece = match http.read_piece(@reader, @body, most: PIECE_BYTES)
             .ok got => got
@@ -559,7 +590,7 @@ function sent(upstream: io.Stream, plan: Plan, up: Upstream, @reader: io.Reader,
                         408
                     else
                         http.failure_status(code: e.code, in_head: false).default(400)
-                    refuse(client, r: trip.r, status: status, why: e.msg, retry_s: 0)
+                    refuse(client.stream, r: trip.r, status: status, why: e.msg, retry_s: 0)
                 return ok(false)
 
         if piece.len() == 0
@@ -567,12 +598,18 @@ function sent(upstream: io.Stream, plan: Plan, up: Upstream, @reader: io.Reader,
         total @ total + piece.len()
 
         if total > plan.limits.body_bytes
-            refuse(client, r: trip.r, status: 413, why: f"the body is past {plan.limits.body_bytes} bytes", retry_s: 0)
+            refuse(
+                client.stream,
+                r: trip.r,
+                status: 413,
+                why: f"the body is past {plan.limits.body_bytes} bytes",
+                retry_s: 0
+            )
             return ok(false)
-        within(upstream, secure: up.secure, ms: plan.send_ms)
-        http.write_piece(upstream, @writer, data: piece)?
+        within(upstream, ms: plan.send_ms)
+        http.write_piece(upstream.stream, @writer, data: piece)?
 
-    http.end_pieces(upstream, @writer)?
+    http.end_pieces(upstream.stream, @writer)?
     return ok(true)
 
 # The `Host` an upstream is asked by its own name: its host, and its port
@@ -602,29 +639,29 @@ record Passed
 # Passes the answer `head` begins back to the client, its body as it comes:
 # with its length where it has one, as chunks to an HTTP/1.1 client
 # otherwise, and to the connection's end to an HTTP/1.0 one.
-function passed_back(plan: Plan, stream: io.Stream, conn: net.Conn, @up_reader: io.Reader, secure: bool, trip: Trip, head: http.Response) -> Passed
+function passed_back(plan: Plan, client: End, upstream: End, @up_reader: io.Reader, trip: Trip, head: http.Response) -> Passed
     up_body @= match http.body_reader(head, method: trip.r.method, limits: plan.limits)
         .ok b => b
         .err e =>
-            refuse(stream, r: trip.r, status: 502, why: words_of(e.code), retry_s: 0)
+            refuse(client.stream, r: trip.r, status: 502, why: words_of(e.code), retry_s: 0)
             return Passed(outcome: .failed, kept: false, whole: false, refused: true)
 
     framing = to_client(http.framing_of(up_body), minor: trip.minor)
     closing = trip.r.closing || ends_by_closing(framing)
     fields = gateway.hop_by_hop_removed(head.headers)
     answer = http.Response(status: head.status, reason: head.reason, headers: fields, body: [], closing: closing)
-    within(stream, secure: false, ms: plan.client_ms)
+    within(client, ms: plan.client_ms)
 
     shown = if trip.r.method == "HEAD"
         head_length(head)
     else
         framing
 
-    writer @= match http.write_response_head_framed(stream, response: answer, framing: shown)
+    writer @= match http.write_response_head_framed(client.stream, response: answer, framing: shown)
         .ok w => w
         .err e =>
             if e.code == "invalid"
-                refuse(stream, r: trip.r, status: 502, why: words_of(e.code), retry_s: 0)
+                refuse(client.stream, r: trip.r, status: 502, why: words_of(e.code), retry_s: 0)
                 return Passed(outcome: .failed, kept: false, whole: false, refused: true)
             return Passed(outcome: .neither, kept: false, whole: false, refused: false)
 
@@ -632,7 +669,7 @@ function passed_back(plan: Plan, stream: io.Stream, conn: net.Conn, @up_reader: 
         return Passed(outcome: .answered, kept: !closing, whole: true, refused: false)
 
     while true
-        within(conn.stream, secure: secure, ms: plan.read_ms)
+        within(upstream, ms: plan.read_ms)
 
         piece = match http.read_piece(@up_reader, @up_body, most: PIECE_BYTES)
             .ok got => got
@@ -640,12 +677,12 @@ function passed_back(plan: Plan, stream: io.Stream, conn: net.Conn, @up_reader: 
 
         if piece.len() == 0
             break
-        within(stream, secure: false, ms: plan.client_ms)
+        within(client, ms: plan.client_ms)
 
-        if http.write_piece(stream, @writer, data: piece).is_err()
+        if http.write_piece(client.stream, @writer, data: piece).is_err()
             return Passed(outcome: .neither, kept: false, whole: false, refused: false)
 
-    if http.end_pieces(stream, @writer).is_err()
+    if http.end_pieces(client.stream, @writer).is_err()
         return Passed(outcome: .failed, kept: false, whole: false, refused: false)
     return Passed(outcome: .answered, kept: !closing, whole: true, refused: false)
 
@@ -686,12 +723,12 @@ function head_length(head: http.Response) -> http.Framing
 # switched to both ways, until either end closes or both stay silent past
 # `plan.read_ms`. Answers whether the switch was the one asked for; where
 # not, the client is answered 502.
-function switched(plan: Plan, stream: io.Stream, @reader: io.Reader, conn: net.Conn, @up_reader: io.Reader, secure: bool, trip: Trip, head: http.Response) -> bool
+function switched(plan: Plan, client: End, @reader: io.Reader, upstream: End, @up_reader: io.Reader, trip: Trip, head: http.Response) -> bool
     given = gateway.upgrade_asked(head.headers).default("")
 
     if trip.upgrade == "" || strings.to_lower(given) != strings.to_lower(trip.upgrade)
         refuse(
-            stream,
+            client.stream,
             r: trip.r,
             status: 502,
             why: "the upstream switched to a protocol the client did not ask for",
@@ -702,54 +739,58 @@ function switched(plan: Plan, stream: io.Stream, @reader: io.Reader, conn: net.C
     fields @ fields.push(http.Header(name: "Connection", value: "Upgrade"))
     fields @ fields.push(http.Header(name: "Upgrade", value: given))
     answer = http.Response(status: 101, reason: head.reason, headers: fields, body: [], closing: false)
-    within(stream, secure: false, ms: plan.client_ms)
+    within(client, ms: plan.client_ms)
 
-    match http.write_response_head_framed(stream, response: answer, framing: .none)
+    match http.write_response_head_framed(client.stream, response: answer, framing: .none)
         .ok _  => _ = 0
         .err _ => return true
 
-    tunnel(plan: plan, client: stream, reader: @reader, upstream: conn.stream, up_reader: @up_reader, secure: secure)
+    tunnel(plan: plan, client: client, reader: @reader, upstream: upstream, up_reader: @up_reader)
     return true
 
 # Passes what each reader holds already to the other side, then every byte
 # either side sends to the other, until either side ends or fails, or both
 # stay silent past `plan.read_ms`.
-function tunnel(plan: Plan, client: io.Stream, @reader: io.Reader, upstream: io.Stream, @up_reader: io.Reader, secure: bool)
+function tunnel(plan: Plan, client: End, @reader: io.Reader, upstream: End, @up_reader: io.Reader)
     held = io.buffered(reader)
     _ = io.skip(@reader, n: held.len()).is_err()
 
-    if held.len() > 0 && !relayed_to(upstream, secure: secure, ms: plan.send_ms, data: held)
+    if held.len() > 0 && !relayed_to(upstream, ms: plan.send_ms, data: held)
         return
     up_held = io.buffered(up_reader)
     _ = io.skip(@up_reader, n: up_held.len()).is_err()
 
-    if up_held.len() > 0 && !relayed_to(client, secure: false, ms: plan.client_ms, data: up_held)
+    if up_held.len() > 0 && !relayed_to(client, ms: plan.client_ms, data: up_held)
         return
 
     set @= match poll.make(most: 2)
         .ok s  => s
         .err _ => return
 
-    turns(plan: plan, set: set, client: client, upstream: upstream, secure: secure)
+    turns(plan: plan, set: set, client: client, upstream: upstream)
     _ = poll.close(@set).is_err()
 
-# Writes `data` to `s` within `ms`. Answers whether it was written.
-function relayed_to(s: io.Stream, secure: bool, ms: i64, data: [u8]) -> bool
-    within(s, secure: secure, ms: ms)
-    return !io.write(s, data: data).is_err()
+# Writes `data` to `e` within `ms`. Answers whether it was written.
+function relayed_to(e: End, ms: i64, data: [u8]) -> bool
+    within(e, ms: ms)
+    return !io.write(e.stream, data: data).is_err()
 
-# The tunnel's loop on `set`: both sockets waited on together, or, where the
-# upstream is TLS, which `poll` cannot wait on, the client's socket waited on
-# for `TLS_TURN_MS` and the upstream then read without waiting.
-function turns(plan: Plan, set: poll.Set, client: io.Stream, upstream: io.Stream, secure: bool)
-    client_key = match poll.add_stream(set, s: client, interest: .read)
-        .ok k  => k
-        .err _ => return
-
+# The tunnel's loop on `set`: each end that is a socket waited on there, and
+# each end that is a TLS stream, which `poll` cannot wait on, read without
+# waiting at every turn, the turns then at most `TLS_TURN_MS` apart. What
+# goes to the upstream is written within `plan.send_ms`, what goes to the
+# client within `plan.client_ms`.
+function turns(plan: Plan, set: poll.Set, client: End, upstream: End)
+    client_key: i64 @= -1
     up_key: i64 @= -1
 
-    if !secure
-        match poll.add_stream(set, s: upstream, interest: .read)
+    if !client.secure
+        match poll.add_stream(set, s: client.stream, interest: .read)
+            .ok k  => client_key @ k
+            .err _ => return
+
+    if !upstream.secure
+        match poll.add_stream(set, s: upstream.stream, interest: .read)
             .ok k  => up_key @ k
             .err _ => return
 
@@ -759,12 +800,12 @@ function turns(plan: Plan, set: poll.Set, client: io.Stream, upstream: io.Stream
 
     last @= quiet
 
-    while true
-        limit = if secure
-            TLS_TURN_MS
-        else
-            plan.read_ms
+    limit = if client.secure || upstream.secure
+        TLS_TURN_MS
+    else
+        plan.read_ms
 
+    while true
         events = match poll.wait(set, limit: time.milliseconds(limit).default(time.max_duration()))
             .ok got => got
             .err _  => return
@@ -773,45 +814,70 @@ function turns(plan: Plan, set: poll.Set, client: io.Stream, upstream: io.Stream
 
         for ev in events
             if ev.key == client_key
-                if !moved_on(from: client, to: upstream, from_tls: false, to_tls: secure, plan: plan)
+                if !moved_on(from: client, to: upstream, write_ms: plan.send_ms, plan: plan)
                     return
                 moved @ true
             else if ev.key == up_key
-                if !moved_on(from: upstream, to: client, from_tls: false, to_tls: false, plan: plan)
+                if !moved_on(from: upstream, to: client, write_ms: plan.client_ms, plan: plan)
                     return
                 moved @ true
 
-        if secure
-            within(upstream, secure: true, ms: 0)
+        if client.secure
+            match drained(from: client, to: upstream, write_ms: plan.send_ms)
+                .moved => moved @ true
+                .quiet => _ = 0
+                .ended => return
 
-            match io.read(upstream, n: PIECE_BYTES)
-                .ok got =>
-                    if got.len() == 0
-                        return
-
-                    if !relayed_to(client, secure: false, ms: plan.client_ms, data: got)
-                        return
-                    moved @ true
-                .err e =>
-                    if e.code != "timeout"
-                        return
+        if upstream.secure
+            match drained(from: upstream, to: client, write_ms: plan.client_ms)
+                .moved => moved @ true
+                .quiet => _ = 0
+                .ended => return
 
         if moved
             last @ time.mark().default(last)
         else if since_ms(last) >= plan.read_ms
             return
 
-# Reads what `from` holds now and writes it to `to`. Answers false where
-# `from` has ended or either side failed.
-function moved_on(from: io.Stream, to: io.Stream, from_tls: bool, to_tls: bool, plan: Plan) -> bool
-    within(from, secure: from_tls, ms: plan.read_ms)
+# Reads what `from` holds now, `poll` having found it ready, and writes it to
+# `to` within `write_ms`. Answers false where `from` has ended or either side
+# failed.
+function moved_on(from: End, to: End, write_ms: i64, plan: Plan) -> bool
+    within(from, ms: plan.read_ms)
 
-    match io.read(from, n: PIECE_BYTES)
+    match io.read(from.stream, n: PIECE_BYTES)
         .ok got =>
             if got.len() == 0
                 return false
-            return relayed_to(to, secure: to_tls, ms: plan.send_ms, data: got)
+            return relayed_to(to, ms: write_ms, data: got)
         .err _ => return false
+
+# What one read of a TLS end, made without waiting, came to.
+variant Drained
+    # Bytes came and were written to the other end.
+    moved
+    # None were there yet.
+    quiet
+    # The end closed, or either side failed: the tunnel ends.
+    ended
+
+# Reads what the TLS end `from` holds without waiting, and writes it to `to`
+# within `write_ms`.
+function drained(from: End, to: End, write_ms: i64) -> Drained
+    within(from, ms: 0)
+
+    match io.read(from.stream, n: PIECE_BYTES)
+        .ok got =>
+            if got.len() == 0
+                return .ended
+
+            if !relayed_to(to, ms: write_ms, data: got)
+                return .ended
+            return .moved
+        .err e =>
+            if e.code != "timeout"
+                return .ended
+            return .quiet
 
 ## Many connections: workers and the thread that owns the counts
 
@@ -993,7 +1059,7 @@ function upstream_once(s: Script) -> i64
         .ok r  => _ = s.seen.send(r).is_err()
         .err _ => _ = 0
 
-    within(conn.stream, secure: false, ms: 3_000)
+    within(End(stream: conn.stream, secure: false), ms: 3_000)
 
     if s.answer != ""
         _ = io.write(conn.stream, data: bytes.from_text(s.answer)).is_err()
@@ -1061,7 +1127,6 @@ function plan_for(ports: [i64], read_ms: i64) -> Plan
         tries: 3,
         keep_host: false,
         trusted: [],
-        scheme: "http",
         received_by: "edge:1",
         roots: "",
         counts: balance.state_of(weights, least: false, max_fails: 1, fail_ms: 10_000)
@@ -1079,7 +1144,7 @@ function dead_port() -> i64
 function exchanged(port: i64, asked: str, until: str) -> str
     conn @= net.connect(host: "127.0.0.1", port: port, deadline_ms: 5_000).must()
     _ = io.write(conn.stream, data: bytes.from_text(asked)).is_err()
-    within(conn.stream, secure: false, ms: 5_000)
+    within(End(stream: conn.stream, secure: false), ms: 5_000)
     got: [u8] @= []
 
     while true

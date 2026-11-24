@@ -6,9 +6,10 @@
 # weighted round-robin or by the fewest requests in flight; an upstream that
 # fails is kept out for a while, and a request that could not reach one is
 # tried on the next. Each request goes out with the hop-by-hop fields
-# removed, the client told in `Forwarded` and `X-Forwarded-*`, this proxy
-# named in `Via` and `Max-Forwards` counted down; a switch of protocols, a
-# WebSocket, is relayed byte for byte both ways. Every wait is bounded by a
+# removed, the client told in `Forwarded` and `X-Forwarded-*` with the scheme
+# its connection's stream says it came by, this proxy named in `Via` and
+# `Max-Forwards` counted down; a switch of protocols, a WebSocket, is relayed
+# byte for byte both ways. Every wait is bounded by a
 # span the program sets. `serve` serves a listener's connections on worker
 # threads; `serve_stream` serves one connection on the calling thread, for a
 # program's own loop.
@@ -29,7 +30,9 @@ use http
 use io
 use net
 use os
+use strings
 use time
+use tls
 use url
 use web/proxy/internal/balance
 use web/proxy/internal/fixture
@@ -275,7 +278,6 @@ function new_state(proxy: ReverseProxy) -> State?
         tries: proxy.tries,
         keep_host: proxy.keep_host,
         trusted: proxy.trusted,
-        scheme: "http",
         received_by: proxy.via,
         roots: proxy.roots,
         counts: counts
@@ -295,7 +297,9 @@ function new_state(proxy: ReverseProxy) -> State?
 # removed, those its `Connection` lists among them, so a client can never
 # make a field the proxy adds vanish; `Forwarded`, `X-Forwarded-For`,
 # `-Host` and `-Proto` telling the client, those the client wrote kept only
-# from a proxy `proxy.trusted` holds; `Via` naming this proxy, a request that
+# from a proxy `proxy.trusted` holds and replaced from any other, the
+# scheme they tell (`Forwarded`'s `proto`, `X-Forwarded-Proto`) `http`, the
+# scheme of every connection a `net.Listener` accepts; `Via` naming this proxy, a request that
 # names it already refused 508; `Max-Forwards` counted down, a `TRACE` or
 # `OPTIONS` at 0 answered here, and `OPTIONS *` too; `Host` as
 # `proxy.keep_host` says; and `Connection: close`, one upstream connection a
@@ -349,11 +353,16 @@ function serve(l: net.Listener, proxy: ReverseProxy) -> Served?
 #
 # - `state`: the proxy and its balancer's counts, as `new_state` made
 #   them; the counts move.
-# - `stream`: the client's connection; its owner closes it.
+# - `stream`: the client's connection; its owner closes it. The stream
+#   itself says the scheme the upstream is told in `Forwarded`'s `proto`
+#   and in `X-Forwarded-Proto`, never the program: `https` for a stream of
+#   `tls` (`tls.accept`, `tls.server_over`), whose deadlines `tls` then
+#   moves and whose switched connection is read without `poll`, and `http`
+#   for any other.
 # - `remote`: the client's address and port, as `net.format_address` writes
 #   them.
 #
-# What it served. See also `serve`.
+# What it served. See also `serve`, `tls.accept`.
 function serve_stream(@state: State, stream: io.Stream, remote: str) -> Served
     t = relay.serve_client(@state.chooser, plan: state.plan, stream: stream, remote: remote)
     return Served(
@@ -418,3 +427,116 @@ test "serve_stream: one request passed to its upstream"
     assert up.wait() == 1
     io.close(@two.second.stream).must()
     io.close(@reader.stream).must()
+
+test "serve_stream: a client over TLS told to the upstream as https, the fields it wrote itself replaced"
+    if !tls.is_available()
+        skip_test(reason: "this platform offers no TLS library to tls")
+    ports: (mailbox i64) = mailbox()
+    up = spawn(fixture.upstream_told, ports).must()
+    port = ports.receive(within_ms: 5_000).must()
+    l @= tls.listen(
+        host: "127.0.0.1",
+        port: 0,
+        server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: [])
+    ).must()
+    asked = "GET / HTTP/1.1\r\nHost: shop.example\r\nX-Forwarded-Proto: http\r\nX-Forwarded-For: 6.6.6.6\r\nForwarded: for=6.6.6.6;proto=http\r\nConnection: close\r\n\r\n"
+    client = spawn(fixture.tls_client, fixture.Asking(port: l.port, asked: asked, until: "", hold_ms: 5_000)).must()
+    conn @= tls.accept(l, deadline: time.seconds(5).must()).must()
+    state @= new_state(reverse_proxy([upstream(f"http://127.0.0.1:{port}", weight: 1).must()])).must()
+    served = serve_stream(@state, stream: conn.stream, remote: "192.0.2.1:5000")
+    io.close(@conn.stream).must()
+    tls.close_listener(@l).must()
+    told = "X-Forwarded-Proto: https\nX-Forwarded-For: 192.0.2.1\nX-Forwarded-Host: shop.example\nForwarded: for=192.0.2.1;host=shop.example;proto=https"
+    assert served.relayed == 1 && up.wait() == told
+    assert strings.has_suffix(s: client.wait(), suffix: told)
+
+test "serve_stream: a plain client told to the upstream as http, the https it wrote itself replaced"
+    ports: (mailbox i64) = mailbox()
+    up = spawn(fixture.upstream_told, ports).must()
+    port = ports.receive(within_ms: 5_000).must()
+    state @= new_state(reverse_proxy([upstream(f"http://127.0.0.1:{port}", weight: 1).must()])).must()
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "GET / HTTP/1.1\r\nHost: shop.example\r\nX-Forwarded-Proto: https\r\nForwarded: for=6.6.6.6;proto=https\r\nConnection: close\r\n\r\n"
+    ).must()
+    served = serve_stream(@state, stream: two.second.stream, remote: "192.0.2.1:5000")
+    io.close(@two.second.stream).must()
+    reader @= io.reader(two.first.stream)
+    answer = http.read_response(@reader, method: "GET", limits: http.default_limits()).must()
+    told = "X-Forwarded-Proto: http\nX-Forwarded-For: 192.0.2.1\nX-Forwarded-Host: shop.example\nForwarded: for=192.0.2.1;host=shop.example;proto=http"
+    assert served.relayed == 1 && up.wait() == told && http.text_of(answer).must() == told
+    io.close(@reader.stream).must()
+
+test "serve_stream: a client over TLS silent past the idle span let go within it"
+    if !tls.is_available()
+        skip_test(reason: "this platform offers no TLS library to tls")
+    l @= tls.listen(
+        host: "127.0.0.1",
+        port: 0,
+        server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: [])
+    ).must()
+    client = spawn(fixture.tls_client, fixture.Asking(port: l.port, asked: "", until: "", hold_ms: 10_000)).must()
+    conn @= tls.accept(l, deadline: time.seconds(5).must()).must()
+    p @= reverse_proxy([upstream("http://127.0.0.1:8080", weight: 1).must()])
+    p.idle_timeout @ time.milliseconds(200).must()
+    state @= new_state(p).must()
+    start = time.mark().must()
+    served = serve_stream(@state, stream: conn.stream, remote: "192.0.2.1:5000")
+    waited = time.elapsed(start).must()
+    io.close(@conn.stream).must()
+    tls.close_listener(@l).must()
+    assert served.requests == 0 && waited.nanoseconds < 5_000_000_000
+    assert !strings.has_suffix(s: client.wait(), suffix: "<timeout>")
+
+test "serve_stream: a WebSocket switched over a client over TLS, bytes relayed both ways"
+    if !tls.is_available()
+        skip_test(reason: "this platform offers no TLS library to tls")
+    ports: (mailbox i64) = mailbox()
+    up = spawn(fixture.upstream_echo, ports).must()
+    port = ports.receive(within_ms: 5_000).must()
+    l @= tls.listen(
+        host: "127.0.0.1",
+        port: 0,
+        server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: [])
+    ).must()
+    asked = "GET /ws HTTP/1.1\r\nHost: shop.example\r\nConnection: Upgrade\r\nUpgrade: websocket\r\n\r\nping"
+    client = spawn(
+        fixture.tls_client,
+        fixture.Asking(port: l.port, asked: asked, until: "\r\n\r\nping", hold_ms: 5_000)
+    ).must()
+    conn @= tls.accept(l, deadline: time.seconds(5).must()).must()
+    state @= new_state(reverse_proxy([upstream(f"http://127.0.0.1:{port}", weight: 1).must()])).must()
+    served = serve_stream(@state, stream: conn.stream, remote: "192.0.2.1:5000")
+    io.close(@conn.stream).must()
+    tls.close_listener(@l).must()
+    got = client.wait()
+    assert served.switched == 1 && up.wait() == 4
+    assert strings.has_prefix(s: got, prefix: "HTTP/1.1 101 Switching Protocols\r\n") && strings.has_suffix(s: got, suffix: "\r\n\r\nping")
+
+test "serve_stream: a WebSocket switched with both ends over TLS, bytes relayed both ways"
+    if !tls.is_available()
+        skip_test(reason: "this platform offers no TLS library to tls")
+    ports: (mailbox i64) = mailbox()
+    up = spawn(fixture.upstream_echo_tls, ports).must()
+    port = ports.receive(within_ms: 5_000).must()
+    l @= tls.listen(
+        host: "127.0.0.1",
+        port: 0,
+        server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: [])
+    ).must()
+    asked = "GET /ws HTTP/1.1\r\nHost: shop.example\r\nConnection: Upgrade\r\nUpgrade: websocket\r\n\r\nping"
+    client = spawn(
+        fixture.tls_client,
+        fixture.Asking(port: l.port, asked: asked, until: "\r\n\r\nping", hold_ms: 5_000)
+    ).must()
+    conn @= tls.accept(l, deadline: time.seconds(5).must()).must()
+    p @= reverse_proxy([upstream(f"https://localhost:{port}", weight: 1).must()])
+    p.roots @ tls.TEST_ROOT
+    state @= new_state(p).must()
+    served = serve_stream(@state, stream: conn.stream, remote: "192.0.2.1:5000")
+    io.close(@conn.stream).must()
+    tls.close_listener(@l).must()
+    got = client.wait()
+    assert served.switched == 1 && up.wait() == 4
+    assert strings.has_prefix(s: got, prefix: "HTTP/1.1 101 Switching Protocols\r\n") && strings.has_suffix(s: got, suffix: "\r\n\r\nping")
