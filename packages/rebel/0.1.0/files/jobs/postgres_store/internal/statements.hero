@@ -201,10 +201,17 @@ function give_back(clock: str) -> str
 
 # The instant a limit changed at the time `at` to a token every
 # `excluded.every_ns` and a burst of `excluded.burst` is empty: as many of
-# the tokens it held as the new burst allows, a debt kept whole, each at the
-# new rate, rounded to the nanosecond.
+# the tokens it held as the new burst allows, a debt kept whole. A change
+# keeps the tokens held, a debt and a fraction of a token included, as
+# exactly that many times the new `every`, rounded to the nearest
+# nanosecond, a tie away from nothing, as `jobs.with_rate` does: `div` is
+# exact on whole numbers, `(2|n| + d) div 2d` rounds `|n| / d` half up, and
+# the sign goes back on after. `numeric`'s `/` rounds to at least 16
+# significant digits first, so `round` of it sent a near tie to the far
+# nanosecond.
 function reshaped(at: str) -> str
-    return f"{at}::numeric - round(least(({at}::numeric - l.empty_at_ns) * excluded.every_ns / l.every_ns, least(l.burst, excluded.burst)::numeric * excluded.every_ns))"
+    held = f"({at}::numeric - l.empty_at_ns) * excluded.every_ns"
+    return f"{at}::numeric - least(sign({held}) * div(2 * abs({held}) + l.every_ns, 2 * l.every_ns::numeric), least(l.burst, excluded.burst)::numeric * excluded.every_ns)"
 
 # The later of a limit's latest time read and the time a change names.
 constant CHANGED_AT: str

@@ -551,8 +551,10 @@ function enqueue_due(@c: redis.Client, schedules: [jobs.Periodic]) -> [i64]?
 # - `burst`: the most tokens it holds, so the most attempts that go at once.
 #
 # The change is a script the server runs whole: no other client's command
-# falls between its reading of the limit and its writing. The tokens held
-# are rounded to the nanosecond at the new rate. Fails `invalid` as
+# falls between its reading of the limit and its writing. A change keeps the
+# tokens held, a debt and a fraction of a token included, as exactly that
+# many times the new `every`, rounded to the nearest nanosecond, a tie away
+# from nothing, as `jobs.with_rate` does. Fails `invalid` as
 # `jobs.bucket` does, where `name` is empty, too long or holds a zero byte,
 # and where its key holds something the store did not write as a limit;
 # `does_not_fit` where the debt kept at the new rate reaches past what an
