@@ -1,0 +1,117 @@
+# The generator of four of `i18n`'s tables of CLDR 49's core data: its
+# plural rules and ranges, `i18n/internal/plural_tables.hero`; what it says
+# of the languages it has data for, `i18n/internal/locale_tables.hero`; the
+# aliases of the Unicode locale keywords, `i18n/internal/keyword_tables.hero`;
+# and its likely subtags and aliases, `i18n/locales/internal/locale_data.hero`;
+# each written byte for byte, or checked against the table in the tree.
+#
+# Its input is CLDR 49's JSON release, fetched from `cldrkit.SOURCE_URL` into
+# any folder; `cldrkit` holds it to its SHA-256. Run from the repository's
+# root:
+#
+#     heroes run rebel/generators/i18n_core/main.hero -- write <zip>
+#     heroes run rebel/generators/i18n_core/main.hero -- check <zip>
+#
+# `write` writes the tables. `check` reads them and exits 0 where each is
+# exactly what `write` would write, and 1 where one is not, naming its first
+# line that differs. Either exits 2 where its words are not these, where the
+# zip's digest is not the pinned one, or where its data is not what the
+# generator reads.
+
+use <cldrkit>/cldrkit
+use <tablekit>/tablekit
+
+use aliases
+use keywords
+use locales
+use plurals
+
+# The folders of the tables, from the repository's root.
+constant TABLES: str
+    tablekit.SOURCE + "/i18n/internal/"
+
+constant LOCALES: str
+    tablekit.SOURCE + "/i18n/locales/internal/"
+
+# The header's lines that say which program wrote a table and from what.
+#
+# - `files`: the lines naming the files read, the first opening `# fetched
+#   ...), its files`.
+function generated_lines(files: [str]) -> [str]
+    out: [str] @= [
+        "# Generated, never edited by hand: the Heroes program `rebel/generators/i18n_core/`"
+        "# read CLDR 49's JSON, `cldr-49.0.0-json-full.zip` of"
+        "# https://github.com/unicode-org/cldr-json/releases/download/49.0.0/"
+        "# (SHA-256"
+        f"# {cldrkit.SOURCE_SHA256},"
+    ]
+
+    for line in files
+        out @ out.push(line)
+
+    return out
+
+# Does what `command` asks with the tables, reading the zip at `path`.
+#
+# Fails as opening the zip, reading its data and writing or reading a table
+# fail.
+function run(command: str, path: str) -> i64?
+    release = cldrkit.open(path)?
+    plural_files = [
+        "# fetched 2026-11-21), its files `cldr-core/supplemental/plurals.json`,"
+        "# `ordinals.json` and `pluralRanges.json`, and wrote this module whole; its"
+        "# `check` command says whether this module is still what it writes."
+    ]
+    locale_files = [
+        "# fetched 2026-11-21), its files `cldr-core/availableLocales.json` and"
+        "# `supplemental/likelySubtags.json`, `parentLocales.json` and"
+        "# `aliases.json`, and wrote this module whole; its `check` command says"
+        "# whether this module is still what it writes."
+    ]
+    alias_files = [
+        "# fetched 2026-11-21), its files `cldr-core/supplemental/likelySubtags.json`"
+        "# and `aliases.json`, and wrote this module whole; its `check` command says"
+        "# whether this module is still what it writes."
+    ]
+    keyword_files = [
+        "# fetched 2026-11-21), its files `cldr-bcp47/bcp47/calendar.json`,"
+        "# `collation.json`, `currency.json`, `measure.json`, `number.json`,"
+        "# `segmentation.json`, `timezone.json` and `variant.json`, and wrote this"
+        "# module whole; its `check` command says whether this module is still what"
+        "# it writes."
+    ]
+    alias_text = aliases.module_text(release, generated: generated_lines(alias_files))?
+    keyword_text = keywords.module_text(release, generated: generated_lines(keyword_files))?
+    plural_text = plurals.module_text(release, generated: generated_lines(plural_files))?
+    locale_text = locales.module_text(release, generated: generated_lines(locale_files))?
+    code @= tablekit.settle(command: command, path: TABLES + "plural_tables.hero", text: plural_text)?
+    code @ tablekit.worst(
+        a: code,
+        b: tablekit.settle(command: command, path: TABLES + "locale_tables.hero", text: locale_text)?
+    )
+    code @ tablekit.worst(
+        a: code,
+        b: tablekit.settle(command: command, path: LOCALES + "locale_data.hero", text: alias_text)?
+    )
+    code @ tablekit.worst(
+        a: code,
+        b: tablekit.settle(command: command, path: TABLES + "keyword_tables.hero", text: keyword_text)?
+    )
+    return ok(code)
+
+function main()
+    words = tablekit.command_words("i18n_core")
+
+    if words.len() != 2 || words[0] != "write" && words[0] != "check"
+        print(
+            "usage, from the repository's root: heroes run rebel/generators/i18n_core/main.hero -- write|check <zip of ",
+            cldrkit.SOURCE_URL,
+            ">"
+        )
+        exit(code: 2)
+
+    match run(command: words[0], path: words[1])
+        .ok code => exit(code: code)
+        .err e =>
+            print("error: ", e.code, ": ", e.msg)
+            exit(code: 2)

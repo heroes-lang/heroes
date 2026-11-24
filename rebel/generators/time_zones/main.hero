@@ -1,0 +1,261 @@
+# The generator of `time`'s table of the names of the time zones Rebel
+# carries, `time/internal/carried_names.hero`: every zone and link name of
+# the IANA time zone database, sorted by its bytes, and the number of the
+# data each reads in `carried_blobs`, written byte for byte, or checked
+# against the table in the tree.
+#
+# Its input is the database's release `tzdata<VERSION>.tar.gz`, which IANA
+# never changes once published, fetched from `SOURCE_URL` into any folder and
+# held to `SOURCE_SHA256`; the database is in the public domain. Run from the
+# repository's root:
+#
+#     heroes run rebel/generators/time_zones/main.hero -- write <tzdata.tar.gz>
+#     heroes run rebel/generators/time_zones/main.hero -- check <tzdata.tar.gz>
+#
+# `write` writes the table. `check` reads it and exits 0 where it is exactly
+# what `write` would write, and 1 where it is not, naming its first line that
+# differs. Either exits 2 where its words are not these, where the archive's
+# digest is not the pinned one, or where its data is not in the shape this
+# program reads.
+#
+# `carried_blobs`, the data itself, is not written here: it is the output of
+# zic, the database's compiler, and only zic 2022g run with `-b fat` over the
+# release's `rearguard.zi` writes it byte for byte (zic 2026f differs for
+# three names), so its making is said in its own header.
+
+use <rebel>/archive
+use <rebel>/bytes
+use <rebel>/strings
+use <tablekit>/tablekit
+
+# The release of the database the table is made from.
+constant VERSION: str
+    "2026f"
+
+# Where the release is served.
+constant SOURCE_URL: str
+    "https://data.iana.org/time-zones/releases/tzdata2026f.tar.gz"
+
+# The SHA-256 of the bytes `SOURCE_URL` served, in lowercase hexadecimal.
+constant SOURCE_SHA256: str
+    "01b4a91cec5167ed48c11e8ab78f2048cead78ce94b0cafcad0ae8c5a3044d3d"
+
+# The most bytes the archive holds once ungzipped.
+constant ARCHIVE_LIMIT: i64
+    16777216
+
+# The data files of the release whose zones and links zic compiles, the
+# Makefile's `TDATA`: the regions, `etcetera`, `factory` and `backward`.
+constant DATA_FILES: [str]
+    [
+        "africa"
+        "antarctica"
+        "asia"
+        "australasia"
+        "europe"
+        "northamerica"
+        "southamerica"
+        "etcetera"
+        "factory"
+        "backward"
+    ]
+
+# The table, from the repository's root.
+constant TABLE: str
+    tablekit.SOURCE + "/time/internal/carried_names.hero"
+
+# Every name of the database, sorted by its bytes, and the number of the
+# data of each.
+record Names
+    names: [str]
+    indices: [i64]
+
+# The zones and the links of the data files: each zone's name, and each
+# link's name with its target.
+record Lines
+    zones: [str]
+    links: {str: str}
+
+# Reads the `Zone` and `Link` lines of `text`, one data file, into `into`.
+#
+# Fails `invalid` where a `Zone` line names no zone, or a `Link` line is not
+# a target and a name.
+function read_file_lines(text: str, into: Lines) -> Lines?
+    out @= into
+
+    for line in strings.split(s: text, sep: "\n")
+        body = match strings.split_once(s: line, sep: "#")
+            .ok halves => halves.before
+            .err _     => line
+
+        words = strings.words(body)
+
+        if words.len() == 0
+            continue
+
+        if words[0] == "Zone"
+            if words.len() < 2
+                return fail(code: "invalid", msg: f"a Zone line names no zone: {line}")
+            out.zones @ out.zones.push(words[1])
+        else if words[0] == "Link"
+            if words.len() != 3
+                return fail(code: "invalid", msg: f"a Link line is not a target and a name: {line}")
+            out.links[words[2]] @ words[1]
+
+    return ok(out)
+
+# The zone `name` stands for: itself where it is a zone, or the zone its
+# link chain ends at.
+#
+# Fails `invalid` where a link's chain is longer than the links themselves,
+# so it loops, or ends at a name that is no zone.
+function zone_of(name: str, lines: Lines lent) -> str?
+    at @= name
+    steps @= 0
+
+    while steps <= lines.links.len()
+        match lines.links[at]
+            .ok target => at @ target
+            .err _ =>
+                for zone in lines.zones
+                    if zone == at
+                        return ok(at)
+
+                return fail(code: "invalid", msg: f"the link {name} ends at {at}, which is no zone")
+
+        steps @ steps + 1
+
+    return fail(code: "invalid", msg: f"the link {name} loops")
+
+# Every name of `lines`, sorted by its bytes, each with the number of its
+# zone's data: the zones numbered in the order their first name comes.
+#
+# Fails `invalid` where a name is a zone twice or both a zone and a link, and
+# as `zone_of` fails.
+function names_of(lines: Lines lent) -> Names?
+    seen: {str: i64} @= {}
+
+    for zone in lines.zones
+        if !seen[zone].is_err()
+            return fail(code: "invalid", msg: f"{zone} is a zone twice")
+        seen[zone] @ 0
+
+    for name in keys(lines.links)
+        if !seen[name].is_err()
+            return fail(code: "invalid", msg: f"{name} is both a zone and a link")
+        seen[name] @ 0
+
+    names = sort(keys(seen))
+    numbers: {str: i64} @= {}
+    indices: [i64] @= []
+
+    for name in names
+        zone = zone_of(name, lines: lines)?
+
+        if numbers[zone].is_err()
+            numbers[zone] @ numbers.len()
+        indices @ indices.push(numbers[zone].must())
+
+    return ok(Names(names: names, indices: indices))
+
+# The release's version and every zone and link of its data files.
+#
+# - `data`: the bytes of `tzdata<VERSION>.tar.gz`.
+#
+# Fails as reading the archive fails, and `invalid` where its `version` is
+# not `VERSION` or a data file is missing.
+function read_release(data: [u8]) -> Names?
+    files: {str: [u8]} @= {}
+
+    for member in archive.decode_tar(data, compression: .gzip, limit: ARCHIVE_LIMIT)?
+        files[member.entry.name] @ member.data
+
+    version = strings.trim(bytes.to_text(files["version"]?)?)
+
+    if version != VERSION
+        return fail(code: "invalid", msg: f"the archive is version {version}, and the table is made from {VERSION}")
+    lines @= Lines(zones: [], links: {})
+
+    for name in DATA_FILES
+        lines @ read_file_lines(bytes.to_text(files[name]?)?, into: lines)?
+
+    return names_of(lines)
+
+# The whole text of the table.
+#
+# - `names`: every name, sorted, with its data's number.
+#
+# Fails as writing a literal fails.
+function module_text(names: Names lent) -> str?
+    head = [
+        "# The names of the time zones Rebel carries, from the IANA time zone"
+        f"# database version {VERSION}, which is in the public domain. `time` reads it"
+        "# where the system has no zone files, as on Windows, or no file of the"
+        "# name asked."
+        "#"
+        "# Generated, never edited by hand: the Heroes program"
+        "# `rebel/generators/time_zones/` read every `Zone` and `Link` line of the data"
+        f"# files of `tzdata{VERSION}.tar.gz`, held to its SHA-256, and wrote this module"
+        "# whole; its `check` command says whether this module is still what it"
+        "# writes. The data of each name is in `carried_blobs`, which zic wrote."
+    ]
+    written: [str] @= []
+
+    for name in names.names
+        written @ written.push("        " + tablekit.literal(name)?)
+
+    numbers: [str] @= []
+
+    for index in names.indices
+        numbers @ numbers.push("        " + to_str(index))
+
+    count = names.names.len()
+    parts = [
+        head.join("\n")
+        tablekit.string_constant(comment: ["# The version of the IANA database the names and the data are."], name: "VERSION", value: VERSION)?
+        "# Every name the database holds, sorted by its bytes.\nfunction names() -> [str]\n    return [\n" + written.join("\n") + "\n    ]"
+        "# The index in `carried_blobs.blob` of the data of each name, in the order of\n# `names`; names that are aliases share one.\nfunction blob_indices() -> [i64]\n    return [\n" + numbers.join("\n") + "\n    ]"
+        [f"test \"names and blob_indices: {count} names, sorted, each with a blob\"", f"    assert names().len() == {count}", "    assert blob_indices().len() == names().len()", f"    assert names()[0] == {tablekit.literal(names.names[0])?}", f"    assert names()[{count - 1}] == {tablekit.literal(names.names[count - 1])?}"].join("\n")
+    ]
+    return ok(parts.join("\n\n") + "\n")
+
+# Does what `command` asks with the table, and answers the code it reached.
+#
+# Fails as reading the archive, reading its data and writing or reading the
+# table fail.
+function run(command: str, path: str) -> i64?
+    names = read_release(tablekit.pinned_bytes(path: path, sha256: SOURCE_SHA256)?)?
+    return tablekit.settle(command: command, path: TABLE, text: module_text(names)?)
+
+function main()
+    words = tablekit.command_words("time_zones")
+
+    if words.len() != 2 || words[0] != "write" && words[0] != "check"
+        print(
+            "usage, from the repository's root: heroes run rebel/generators/time_zones/main.hero -- write|check <tzdata.tar.gz of ",
+            SOURCE_URL,
+            ">"
+        )
+        exit(code: 2)
+
+    match run(command: words[0], path: words[1])
+        .ok code => exit(code: code)
+        .err e =>
+            print("error: ", e.code, ": ", e.msg)
+            exit(code: 2)
+
+## Tests
+
+test "read_file_lines and names_of: zones and links, a comment, a link to a link, numbered by the first name of each zone"
+    text = "# a comment\nZone\tEurope/Rome\t0:49:56 -\tLMT\t1866 Dec 12\n\t\t\t1:00\tEU\tCE%sT\nLink\tEurope/Rome\tEurope/Vatican # a link\nZone Africa/Abidjan -0:16:08 - LMT 1912\nLink Europe/Vatican Europe/San_Marino\n"
+    lines = read_file_lines(text, into: Lines(zones: [], links: {})).must()
+    assert lines.zones == ["Europe/Rome", "Africa/Abidjan"]
+    names = names_of(lines).must()
+    assert names.names == ["Africa/Abidjan", "Europe/Rome", "Europe/San_Marino", "Europe/Vatican"]
+    assert names.indices == [0, 1, 1, 1]
+
+test "names_of: a link to no zone, a link that loops, and a name both a zone and a link refused"
+    assert names_of(Lines(zones: ["A"], links: {"B": "C"})).is_err()
+    assert names_of(Lines(zones: ["A"], links: {"B": "C", "C": "B"})).is_err()
+    assert names_of(Lines(zones: ["A"], links: {"A": "A"})).is_err()
+    assert read_file_lines("Link A\n", into: Lines(zones: [], links: {})).is_err()

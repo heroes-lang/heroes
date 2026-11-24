@@ -1,0 +1,295 @@
+# CLDR 49 as the generators of Rebel's CLDR tables read it: its JSON release,
+# `cldr-49.0.0-json-full.zip`, and its core data, `cldr-common-49.zip`, each
+# zip held to the SHA-256 it is pinned to, then any member read as text, or as
+# JSON and walked by its keys. Nothing is taken from a zip whose digest is not
+# the pinned one.
+
+use <rebel>/archive
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/fs
+use <rebel>/json
+use <rebel>/strings
+
+# The release the tables are made from: CLDR 49's JSON, every package in its
+# full coverage, as the Unicode Consortium publishes it.
+constant SOURCE_URL: str
+    "https://github.com/unicode-org/cldr-json/releases/download/49.0.0/cldr-49.0.0-json-full.zip"
+
+# The SHA-256 of the bytes `SOURCE_URL` served when it was fetched on
+# 2026-11-21, in lowercase hexadecimal.
+constant SOURCE_SHA256: str
+    "3b1f5d684d29c541d3acf91fe834b3fe36ae0f34775e3ee50e93558bf14ca174"
+
+# CLDR 49's core data, the files the JSON release is made from and those it
+# leaves out, the root collation and the tailorings among them, as the
+# Unicode Consortium publishes it.
+constant COMMON_URL: str
+    "https://unicode.org/Public/cldr/49/cldr-common-49.zip"
+
+# The SHA-256 of the bytes `COMMON_URL` served when it was fetched on
+# 2026-11-22, in lowercase hexadecimal.
+constant COMMON_SHA256: str
+    "78403d8d6fb1fed6e208bf9001bf5be00bb5abfd9f8110dae062bf49309d6a89"
+
+# The most bytes one member of a zip may hold once inflated: the largest
+# file a generator reads, the core data's `common/uca/FractionalUCA.txt`,
+# holds about 5.5 MB.
+constant MEMBER_LIMIT: i64
+    16777216
+
+# The zip, open, with its members by name.
+record Release
+    zip: archive.ZipReader
+    members: {str: archive.ZipEntry}
+
+# The JSON release at `path`, read whole, held to `SOURCE_SHA256` and opened.
+#
+# - `path`: the zip as fetched from `SOURCE_URL`.
+#
+# Fails as `open_pinned` fails.
+function open(path: str) -> Release?
+    return open_pinned(path: path, url: SOURCE_URL, sha256: SOURCE_SHA256)
+
+# The core data at `path`, read whole, held to `COMMON_SHA256` and opened.
+#
+# - `path`: the zip as fetched from `COMMON_URL`.
+#
+# Fails as `open_pinned` fails.
+function open_common(path: str) -> Release?
+    return open_pinned(path: path, url: COMMON_URL, sha256: COMMON_SHA256)
+
+# The zip at `path`, read whole, held to `sha256` and opened.
+#
+# - `path`: the zip as fetched from `url`.
+# - `url`: where the pinned zip is published, which a refusal names.
+# - `sha256`: its SHA-256, in lowercase hexadecimal.
+#
+# Fails where it cannot be read, `invalid` where its digest is another (the
+# message naming both), and as `archive.decode_zip` fails.
+function open_pinned(path: str, url: str, sha256: str) -> Release?
+    data = fs.read_bytes(path)?
+    digest = bytes.format_hex(crypto.sha256(data))
+
+    if digest != sha256
+        return fail(
+            code: "invalid",
+            msg: f"the zip has SHA-256 {digest}, and the zip of {url} the tables are pinned to has {sha256}"
+        )
+    zip = archive.decode_zip(data)?
+    members: {str: archive.ZipEntry} @= {}
+
+    for entry in zip.entries
+        members[entry.name] @ entry
+
+    return ok(Release(zip: zip, members: members))
+
+# The member `name` of `release`, read as JSON.
+#
+# - `release`: the open zip.
+# - `name`: the member's path in the zip: `cldr-core/supplemental/plurals.json`.
+#
+# Fails as `text_member` and reading its JSON fail.
+function member(release: Release lent, name: str) -> json.Value?
+    return json.parse(text_member(release, name: name)?)
+
+# The member `name` of `release`, read as UTF-8 text.
+#
+# - `release`: the open zip.
+# - `name`: the member's path in the zip: `common/uca/allkeys_CLDR.txt`.
+#
+# Fails `not_found` where the zip holds no such member, and as reading it and
+# its text fail.
+function text_member(release: Release lent, name: str) -> str?
+    entry = match release.members[name]
+        .ok found => found
+        .err _    => return fail(code: "not_found", msg: f"the zip holds no {name}")
+
+    data = archive.read_zip_entry(release.zip, entry: entry, limit: MEMBER_LIMIT)?
+    return bytes.to_text(data)
+
+# The names of the members of `release` in the folder `folder` and not deeper
+# whose names end with `suffix`, in the order of their bytes.
+#
+# - `release`: the open zip.
+# - `folder`: the folder's path in the zip, ending with `/`:
+#   `common/collation/`.
+# - `suffix`: the end every name kept has: `.xml`.
+function names_in(release: Release lent, folder: str, suffix: str) -> [str]
+    out: [str] @= []
+
+    for name in sort(keys(release.members))
+        if strings.has_prefix(s: name, prefix: folder) && strings.has_suffix(s: name, suffix: suffix)
+            if !strings.contains(s: strings.trim_prefix(s: name, prefix: folder), substr: "/")
+                out @ out.push(name)
+
+    return out
+
+# The value at the keys `path` of `v`, each an object's member.
+#
+# - `v`: the value walked from.
+# - `path`: the keys, outermost first.
+#
+# Fails `not_found`, naming the key, where one is absent.
+function at_keys(v: json.Value, path: [str]) -> json.Value?
+    here @= v
+
+    for key in path
+        here @ json.member(here, key: key)?
+
+    return ok(here)
+
+# The member `name` of `release` at the keys `path`.
+#
+# - `release`: the open zip.
+# - `name`: the member's path in the zip.
+# - `path`: the keys, outermost first.
+#
+# Fails as `member` and `at_keys` fail.
+function member_at(release: Release lent, name: str, path: [str]) -> json.Value?
+    return at_keys(member(release, name: name)?, path: path)
+
+# The members of the object `v` in the order the file writes them, each its
+# key and its value.
+#
+# - `v`: an object.
+#
+# Fails `invalid` where `v` is not an object.
+function entries(v: json.Value) -> [Entry]?
+    members = json.members_of(v)?
+    out: [Entry] @= []
+
+    for key in keys(members)
+        out @ out.push(Entry(key: key, value: members[key].must()))
+
+    return ok(out)
+
+# A member of an object: its key and its value.
+record Entry
+    key: str
+    value: json.Value
+
+# The folders directly under `folder` that hold a member named `file`, in the
+# order of their bytes: the locales of a package of the JSON release.
+#
+# - `release`: the open zip.
+# - `folder`: the folder's path in the zip, ending with `/`:
+#   `cldr-localenames-full/main/`.
+# - `file`: the member's name inside each folder: `languages.json`.
+function folders_in(release: Release lent, folder: str, file: str) -> [str]
+    out: [str] @= []
+
+    for name in sort(keys(release.members))
+        match strings.after_prefix(s: name, prefix: folder)
+            .ok rest =>
+                match strings.before_suffix(s: rest, suffix: "/" + file)
+                    .ok middle =>
+                        if middle != "" && !strings.contains(s: middle, substr: "/")
+                            out @ out.push(middle)
+                    .err _ => _ = 0
+            .err _ => _ = 0
+
+    return out
+
+# The aliases of the Unicode locale keywords: the long names ICU's locale
+# identifiers and CLDR's display names write a key and a value with, each
+# with the short one BCP 47 writes, in lower case.
+record KeywordAliases
+    # The key each long name of a key names: `calendar` names `ca`.
+    keys: {str: str}
+    # The value each long name of a value names, the long name after its key
+    # and a space: `ca gregorian` names `gregory`.
+    values: {str: str}
+
+# The files of the `u` extension's keys, in `cldr-bcp47/bcp47/`; the others
+# are the `t` extension's.
+constant KEYWORD_FILES: [str]
+    ["calendar", "collation", "currency", "measure", "number", "segmentation", "timezone", "variant"]
+
+# The aliases an `_alias` member of `v` names, separated by spaces, in lower
+# case; none where `v` has no such member.
+#
+# Fails as reading the JSON fails.
+function aliases_of(v: json.Value) -> [str]?
+    match json.member(v, key: "_alias")
+        .ok named =>
+            out: [str] @= []
+
+            for one in strings.split(s: json.text_of(named)?, sep: " ")
+                if one != ""
+                    out @ out.push(strings.to_lower_ascii(one))
+
+            return ok(out)
+        .err _ => return ok([])
+
+# Whether `v`, a value's object, is marked `_deprecated`: its alias is then
+# the value that replaces it (`islamicc`'s alias `islamic-civil` is its
+# `_preferred`), and no name is read as it.
+function deprecated(v: json.Value) -> bool
+    match json.member(v, key: "_deprecated")
+        .ok marked => return json.bool_of(marked).default(false)
+        .err _     => return false
+
+# `found` with the aliases of the keys of `u`, the `u` extension's object of
+# one file, and of their values.
+#
+# Fails as reading the JSON fails.
+function read_keyword_aliases(found: KeywordAliases, u: json.Value) -> KeywordAliases?
+    out @= found
+
+    for key in entries(u)?
+        for alias in aliases_of(key.value)?
+            out.keys[alias] @ key.key
+
+        for value in entries(key.value)?
+            if !strings.has_prefix(s: value.key, prefix: "_") && !deprecated(value.value)
+                for alias in aliases_of(value.value)?
+                    out.values[key.key + " " + alias] @ value.key
+
+    return ok(out)
+
+# The aliases of every key of the `u` extension and of their values, read
+# from the `_alias` members of `cldr-bcp47/bcp47/*.json`.
+#
+# - `release`: the JSON release, open.
+#
+# Fails as reading the files fails.
+function keyword_aliases(release: Release lent) -> KeywordAliases?
+    found @= KeywordAliases(keys: {}, values: {})
+
+    for name in KEYWORD_FILES
+        u = member_at(release, name: f"cldr-bcp47/bcp47/{name}.json", path: ["keyword", "u"])?
+        found @ read_keyword_aliases(found: found, u: u)?
+
+    return ok(found)
+
+## Tests
+
+test "at_keys: a path found, a key absent, and none"
+    v = json.parse("{\"a\": {\"b\": 1}}").must()
+    assert json.int_of(at_keys(v, path: ["a", "b"]).must()).must() == 1
+    assert at_keys(v, path: ["a", "c"]).is_err()
+    assert at_keys(v, path: []).must() == v
+
+test "entries: the order the file writes, and a value that is no object"
+    v = json.parse("{\"z\": 1, \"a\": 2}").must()
+    got = entries(v).must()
+    assert got.len() == 2 && got[0].key == "z" && got[1].key == "a"
+    assert entries(json.parse("[1]").must()).is_err()
+
+test "open and open_common: a file that is not there, and bytes that are not the pinned zip"
+    assert open("rebel/generators/cldrkit/no such zip").is_err()
+    assert open_common("rebel/generators/cldrkit/no such zip").is_err()
+    assert open_pinned(path: "rebel/generators/cldrkit/heroes.toml", url: COMMON_URL, sha256: COMMON_SHA256).is_err()
+
+test "read_keyword_aliases: a key's alias, a value's aliases in lower case, a member of no alias passed over"
+    u = json.parse(
+        "{\"tz\": {\"_alias\": \"timezone\", \"_description\": \"d\", \"usnyc\": {\"_alias\": \"America/New_York US/Eastern\"}, \"utc\": {\"_description\": \"u\"}}}"
+    ).must()
+    found = read_keyword_aliases(found: KeywordAliases(keys: {}, values: {}), u: u).must()
+    assert found.keys == {"timezone": "tz"}
+    assert found.values == {"tz america/new_york": "usnyc", "tz us/eastern": "usnyc"}
+    old = json.parse(
+        "{\"ca\": {\"islamicc\": {\"_deprecated\": true, \"_alias\": \"islamic-civil\", \"_preferred\": \"islamic-civil\"}, \"islamic-civil\": {\"_description\": \"c\"}}}"
+    ).must()
+    assert read_keyword_aliases(found: KeywordAliases(keys: {}, values: {}), u: old).must().values.len() == 0

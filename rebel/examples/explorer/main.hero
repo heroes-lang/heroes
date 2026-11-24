@@ -1,0 +1,132 @@
+# explorer: a file manager in a window of the system's own widgets. Its
+# window shows the tree of folders and the bookmarks, the folder's entries
+# with their size, type and date in the person's locale, ordered by the
+# locale's collation, and a preview: a text's first lines in whatever
+# encoding it was saved in, an image decoded with its size, an archive's
+# members. It searches by name and by content, keeps bookmarks in a TOML
+# file, copies, moves, renames (one entry, or several by a pattern),
+# deletes to a trash it keeps and puts back, compresses to ZIP or tar.gz and
+# extracts, shows a file's checksums, undoes and redoes, shows a progress
+# window with Cancel for every long operation, and follows the folder when
+# another program changes it.
+#
+# Run for real, on macOS (the native side of `ui` on Windows and Linux is
+# still being written, and the explorer says so there):
+#
+#     heroes build rebel/examples/explorer/main.hero -o explorer
+#     ./explorer ~/Documents
+#     ./explorer --locale de-DE --settings my-explorer.toml .
+#
+# The settings file is `explorer.toml` under the system's configuration
+# folder, in `heroes-explorer/`; `store/settings.hero` documents its keys.
+# `--demo` plays a scripted session on the headless side, on a tree it
+# writes under `build/explorer/`, and prints the window after each step:
+# `main.args` and `main.expected`.
+#
+# The Rebel packages it uses, and for what:
+#
+# - `ui`: the window, its widgets, menus, timer and dialogs, natively or
+#   headless; `flags`: this command line.
+# - `fs`, `fs/watch`, `path`: entries listed, copied, moved, renamed and
+#   stamped, the folder shown watched for other programs' changes, paths
+#   joined, named and checked to stay inside a folder.
+# - `containers/ordered`: the listing kept in order as entries come and go,
+#   the row of an entry its rank and the entry after a deleted one its
+#   nearest key.
+# - `i18n`, `i18n/collate`, `i18n/dates`, `i18n/numbers`: the locale, names
+#   ordered as it orders them with numbers read as numbers, dates and ages
+#   in its words, sizes in its digits.
+# - `unicode/encodings`: texts previewed and searched in the encoding they
+#   were saved in.
+# - `image`, `image/png`, `image/jpeg`: pictures decoded, turned upright and
+#   scaled for the preview.
+# - `archive`, `compress`: ZIP and tar archives listed, written and
+#   extracted in steps, gzip files read.
+# - `hash`: CRC-32, CRC-64 and xxHash64 of a file, in steps.
+# - `regex`: search patterns, wildcards and the rename by pattern.
+# - `toml`: the settings, the bookmarks edited in place with their comments
+#   kept, and the trash's notes.
+# - `time`, `os`, `io`, `bytes`, `strings`, `numbers`, `maps`: the clock the
+#   explorer keeps, the system's folders and applications, streams read in
+#   pieces, and text throughout.
+
+use <rebel>/flags
+
+use app/session
+use demo/script
+
+# The command line's declaration.
+function declaration() -> flags.Command
+    c @= flags.command(
+        name: "explorer",
+        about: "A file manager in a window of the system's own widgets."
+    )
+    flags.add(
+        @c,
+        flags.with_arity(flags.positional(name: "folder", help: "the folder shown first; the working folder where none is named"), arity: .optional)
+    )
+    flags.add(
+        @c,
+        flags.option(long: "locale", short: "l", value_name: "TAG", help: "the locale of numbers, dates and order: de-DE, fr-CH, ja-JP, ...")
+    )
+    flags.add(
+        @c,
+        flags.option(long: "settings", short: "s", value_name: "FILE", help: "the settings file; explorer.toml in the configuration folder by default")
+    )
+    flags.add(@c, flags.flag(long: "demo", short: "", help: "play a scripted session headless and print it"))
+    return c
+
+# The program's arguments as texts; an argument that is not UTF-8 is
+# refused by its place, since no path or option of the explorer can be
+# written with it here.
+#
+# Fails `not_text`, naming the argument's place counted from 1.
+function arguments() -> [str]?
+    out: [str] @= []
+    at @= 0
+
+    for given in args_checked()
+        at @ at + 1
+
+        match given
+            .ok text => out @ out.push(text)
+            .err _ => return fail(
+                code: "not_text",
+                msg: f"argument {at} is not text (not UTF-8): name the folder with a path that is"
+            )
+
+    return ok(out)
+
+# Reads the command line, then plays the demo or opens the window.
+function main()
+    given = match arguments()
+        .ok a => a
+        .err x =>
+            print(f"explorer: {x.msg}")
+            exit(code: 2)
+            return
+
+    found = match flags.parse(declaration(), arguments: given)
+        .ok f => f
+        .err x =>
+            print(x.msg)
+            exit(code: 2)
+            return
+
+    if flags.is_help(found)
+        print(flags.help_text(found))
+        return
+
+    if flags.is_on(found, name: "demo")
+        exit(code: script.run())
+        return
+
+    start = flags.value_of(found, name: "folder").default(".")
+    settings_path = flags.value_of(found, name: "settings").default("")
+    locale = flags.value_of(found, name: "locale").default("")
+
+    match session.run(start: start, settings_path: settings_path, locale: locale)
+        .ok _ => _ = 0
+        .err x =>
+            print(f"explorer: {x.msg}")
+            exit(code: 1)

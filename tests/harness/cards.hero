@@ -602,7 +602,7 @@ constant HEADS: [str]
         "tests/golden/ golden"
         "tests/emission/ golden"
         "examples/ examples"
-        "packages/ packages"
+        "rebel/library/ packages"
         "spec/ spec"
         "docs/design.md design"
         "docs/ records"
@@ -862,9 +862,9 @@ test "a path is in the area its head names, and a directory of selfhost/ nobody 
     assert area_of_path("CLAUDE.md") == "process"
     assert area_of_path("README.md") == ""
 
-    # The index at the root and the program of `examples/` that drives it bear
-    # one name, and each is in its own area.
-    assert area_of_path("packages/rebel/versions") == "packages"
+    # Rebel's library is the area `packages`, and the compiler's examples,
+    # which use no library, are their own.
+    assert area_of_path("rebel/library/0.1.0/files/strings.hero") == "packages"
     assert area_of_path("examples/json/main.hero") == "examples"
 
 test "a chain row gives up its milestone, and the summary rows do not"

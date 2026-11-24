@@ -1,7 +1,7 @@
 # Rebel's tree as the coherence review reads it (M-rebel-library's item 31,
 # the half measured by tools): the source, the newest version folder of
-# `packages/rebel`, read module by module and ledger by ledger, and the table
-# of packages in layers that `examples-rebel/README.md` § A1 writes, from
+# `rebel/library`, read module by module and ledger by ledger, and the table
+# of packages in layers that `rebel/examples/README.md` § A1 writes, from
 # which each module's package and layer are asked. The instruments that judge
 # the library read the tree through here, and the `rebel` suite walks it
 # (`suite_rebel.hero`).
@@ -20,13 +20,9 @@ use package_rules
 use shell
 use strings
 
-# The index folder that holds Rebel, beside `core`'s, at the repository's root.
-constant INDEX: str
-    "packages/rebel"
-
 # The rules page whose README § A1 is the table of packages in layers.
 constant RULES: str
-    "examples-rebel/README.md"
+    "rebel/examples/README.md"
 
 # A module of the source: its path under the source's root without `.hero`,
 # `compress/brotli/internal/decoder`, and its text.
@@ -47,24 +43,11 @@ record Row
     layer: i64
     line: i64
 
-# The source: the `files/` of the newest version folder of `INDEX`, the one a
-# version in preparation is written in.
+# The source: the `files/` of the newest version folder of Rebel's library,
+# the one a version in preparation is written in, found where every
+# instrument finds it (`package_rules.LIBRARY`).
 function source_root(scratch: str) -> str?
-    if !shell.is_directory(INDEX)
-        return fail(code: "absent", msg: INDEX + " is not there, and Rebel's source is its newest version")
-    versions: [str] @= []
-
-    for dir in shell.list_directories(scratch: scratch, dir: INDEX)?
-        name = strings.base_name(path: dir)
-
-        if package_rules.version_shape(name)
-            versions @ versions.push(name)
-
-    last = package_rules.newest(versions)
-
-    if last.len() == 0
-        return fail(code: "absent", msg: INDEX + " holds no version folder, and Rebel's source is its newest")
-    return ok(INDEX + "/" + last + "/files")
+    return package_rules.source_root(scratch)
 
 # Every `.hero` file under `root`, read, in the order of their paths.
 function modules(scratch: str, root: str) -> [Module]?

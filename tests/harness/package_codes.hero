@@ -1,7 +1,7 @@
 # The codes a package writes, and what its face says of each, for its
 # card's `## Codes` (task 2294): each literal a `fail` of the package's modules
 # writes outside their tests, and each code written through a `str` constant of
-# the face (`examples-rebel/README.md` § A4), with what it means, read from the face and
+# the face (`rebel/examples/README.md` § A4), with what it means, read from the face and
 # never written by hand: the constant's own doc where it has one, else the
 # clause the face's functions' docs give the code where they fail with it,
 # `fails `not_found` where `s` holds no `sep``. A code no doc explains has no
@@ -12,7 +12,7 @@ use module_text
 use package_face
 use strings
 
-# **Rebel's closed vocabulary of codes** (`examples-rebel/README.md` § A4,
+# **Rebel's closed vocabulary of codes** (`rebel/examples/README.md` § A4,
 # the coherence review's sixth instrument, M-rebel-library's item 31): the
 # codes the table there lists, and the language's own a Rebel package may hand
 # on, which README § A4 says keep their meanings, each from the place spec § 6 and

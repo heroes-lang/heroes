@@ -1,0 +1,279 @@
+# The generator of `unicode/encodings`' tables of the WHATWG Encoding
+# Standard: the names and labels of every encoding (`names_table`), the 28
+# single-byte encodings (`single_byte_table`), and the indexes Big5, EUC-KR,
+# gb18030, jis0208 and jis0212 (`big5_table`, `euc_kr_table`,
+# `gb18030_table`, `jis0208_table`, `jis0212_table`), each written byte for
+# byte, or checked against the table in the tree.
+#
+# Its input is the standard's resources, `encodings.json` and the
+# `index-*.txt` files, kept unchanged in `whatwg/` beside this file as
+# encoding.spec.whatwg.org served them on `layout.FETCHED`: the standard
+# serves only its latest version, under the same names, so a copy kept here
+# is what lets the tables be made again. The folder is held to that fetch
+# before anything is read from it: it holds the files `layout.FETCHED_SHA256`
+# names and no other, each with the SHA-256 the row gives (`read_sources`),
+# so the copy is never edited, here or by a tool that rewrites text. Each
+# index names its own version on its lines `# Identifier: ` and `# Date: `,
+# which the tables' headers repeat.
+# The Encoding Standard is © WHATWG (Apple, Google, Mozilla, Microsoft), under
+# the Creative Commons Attribution 4.0 International License
+# (https://creativecommons.org/licenses/by/4.0/), which lets these files be
+# copied with that notice.
+#
+# Run from the repository's root:
+#
+#     heroes run rebel/generators/unicode_encodings/main.hero -- write
+#     heroes run rebel/generators/unicode_encodings/main.hero -- check
+#
+# `write` writes the tables. `check` reads them and exits 0 where each is
+# exactly what `write` would write, and 1 where one is not, naming its first
+# line that differs. Either exits 2, before it reads a table or writes one,
+# where its words are not these, where `whatwg/` holds a file the fetch did
+# not bring or lacks one it did, or where a file's bytes are not the bytes
+# fetched, naming each such file; and 2 where a file of `whatwg/` cannot be
+# read or is not what the standard says it is.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/strings
+use <tablekit>/tablekit
+
+use cjk
+use indexes
+use layout
+use names
+use single
+
+# The folder of the standard's files, from the repository's root.
+constant SOURCES: str
+    "rebel/generators/unicode_encodings/whatwg/"
+
+# The folder of the tables, from the repository's root.
+constant TABLES: str
+    tablekit.SOURCE + "/unicode/encodings/internal/"
+
+# One file of `SOURCES`, read and held to its bytes as fetched.
+record Source
+    # Its name in the folder.
+    name: str
+    # Its text.
+    text: str
+
+# The name a row of `layout.FETCHED_SHA256` pins: the row's text before its
+# space, the whole row where it has none.
+#
+# - `row`: the row.
+function pinned_name(row: str) -> str
+    return row.slice(from: 0, to: strings.index_of(s: row, substr: " ").default(row.len()))
+
+# What is wrong with the files a folder holds against the rows that pin
+# them: each file no row names, then each row whose file is not there, a
+# sentence apiece naming the file. None where the folder holds exactly the
+# files the rows name.
+#
+# - `present`: the names of the folder's files.
+# - `rows`: the rows, each a name, one space and a SHA-256.
+function listing_offences(present: [str], rows: [str]) -> [str]
+    out: [str] @= []
+    pinned: [str] @= []
+
+    for row in rows
+        pinned @ pinned.push(pinned_name(row))
+
+    for name in present
+        if !holds(xs: pinned, x: name)
+            out @ out.push(
+                f"{SOURCES}{name} is no file of the fetch of {layout.FETCHED}: no row of `layout.FETCHED_SHA256` names it"
+            )
+
+    for name in pinned
+        if !holds(xs: present, x: name)
+            out @ out.push(f"{SOURCES}{name} is not there, and `layout.FETCHED_SHA256` pins it")
+
+    return out
+
+# What is wrong with the bytes of the file `name` against the row that pins
+# it: a sentence naming the file and both digests, empty where they are the
+# bytes the row gives.
+#
+# - `name`: the file's name in the folder.
+# - `data`: its bytes.
+# - `rows`: the rows, each a name, one space and a SHA-256.
+function bytes_offence(name: str, data: [u8] lent, rows: [str]) -> str
+    digest = tablekit.sha256_hex(data)
+
+    for row in rows
+        if strings.has_prefix(s: row, prefix: name + " ")
+            wanted = row.slice(from: name.len() + 1, to: row.len())
+
+            if digest == wanted
+                return ""
+            return f"{SOURCES}{name} has SHA-256 {digest}, not the {wanted} of its bytes as encoding.spec.whatwg.org served them on {layout.FETCHED}: the copy was edited, or is another version of the file; fetch the standard's files again and pin them, or restore it"
+
+    return f"{SOURCES}{name} is no file of the fetch of {layout.FETCHED}: no row of `layout.FETCHED_SHA256` names it"
+
+function holds(xs: [str] lent, x: str) -> bool
+    for one in xs
+        if one == x
+            return true
+
+    return false
+
+# Every file of `SOURCES`, each held to its bytes as fetched: the folder is
+# read whole and judged whole before any file's text is handed on.
+#
+# Fails `invalid` where the folder holds an entry that is no file, where
+# `listing_offences` or `bytes_offence` finds anything, every finding named,
+# and as listing the folder, reading a file and reading it as UTF-8 fail.
+function read_sources() -> [Source]?
+    present: [str] @= []
+
+    for entry in fs.read_dir(SOURCES)?
+        if entry.kind != .file
+            return fail(
+                code: "invalid",
+                msg: f"{SOURCES}{entry.name} is not a file, and the folder holds only the standard's files"
+            )
+        present @ present.push(entry.name)
+
+    found = listing_offences(present: present, rows: layout.FETCHED_SHA256)
+
+    if found.len() > 0
+        return fail(code: "invalid", msg: found.join("\n"))
+    moved: [str] @= []
+    held: [Source] @= []
+
+    for name in present
+        data = fs.read_bytes(SOURCES + name)?
+        offence = bytes_offence(name: name, data: data, rows: layout.FETCHED_SHA256)
+
+        if offence != ""
+            moved @ moved.push(offence)
+        else
+            held @ held.push(Source(name: name, text: bytes.to_text(data)?))
+
+    if moved.len() > 0
+        return fail(code: "invalid", msg: moved.join("\n"))
+    return ok(held)
+
+# The text of the file `file` among `sources`.
+#
+# Fails `invalid` where none is so named.
+function text_of(sources: [Source] lent, file: str) -> str?
+    for one in sources
+        if one.name == file
+            return ok(one.text)
+
+    return fail(code: "invalid", msg: f"{SOURCES}{file} is not among the standard's files")
+
+# The index `file` among `sources`, read.
+#
+# Fails as `text_of` and `indexes.read_index` fail.
+function index_of(sources: [Source] lent, file: str) -> indexes.Index?
+    return indexes.read_index(file: file, text: text_of(sources, file: file)?)
+
+# Does what `command` asks with every table, and answers the worst code it
+# reached.
+#
+# - `command`: `write` or `check`.
+#
+# Fails as holding the standard's files to the fetch, reading them, packing
+# them and writing or reading a table fail.
+function run(command: str) -> i64?
+    sources = read_sources()?
+    listed = text_of(sources, file: "encodings.json")?
+    encodings = names.read_encodings(listed)?
+    singles: [single.Single] @= []
+
+    for name in names.single_byte_names(encodings)
+        singles @ singles.push(single.Single(name: name, index: index_of(sources, file: single.file_of(name))?))
+
+    big5 = cjk.big5_text(index_of(sources, file: "index-big5.txt")?)?
+    euc_kr = cjk.euc_kr_text(index_of(sources, file: "index-euc-kr.txt")?)?
+    gb18030 = cjk.gb18030_text(index: index_of(sources, file: "index-gb18030.txt")?, ranges: index_of(sources, file: "index-gb18030-ranges.txt")?)?
+    jis0208 = cjk.jis0208_text(index: index_of(sources, file: "index-jis0208.txt")?, katakana: index_of(sources, file: "index-iso-2022-jp-katakana.txt")?)?
+    jis0212 = cjk.jis0212_text(index_of(sources, file: "index-jis0212.txt")?)?
+    digest = tablekit.sha256_hex(bytes.from_text(listed))
+    code @= tablekit.settle(command: command, path: TABLES + "names_table.hero", text: names.module_text(encodings, digest: digest)?)?
+    code @ tablekit.worst(
+        a: code,
+        b: tablekit.settle(command: command, path: TABLES + "single_byte_table.hero", text: single.module_text(singles)?)?
+    )
+    code @ tablekit.worst(a: code, b: tablekit.settle(command: command, path: TABLES + "big5_table.hero", text: big5)?)
+    code @ tablekit.worst(
+        a: code,
+        b: tablekit.settle(command: command, path: TABLES + "euc_kr_table.hero", text: euc_kr)?
+    )
+    code @ tablekit.worst(
+        a: code,
+        b: tablekit.settle(command: command, path: TABLES + "gb18030_table.hero", text: gb18030)?
+    )
+    code @ tablekit.worst(
+        a: code,
+        b: tablekit.settle(command: command, path: TABLES + "jis0208_table.hero", text: jis0208)?
+    )
+    code @ tablekit.worst(
+        a: code,
+        b: tablekit.settle(command: command, path: TABLES + "jis0212_table.hero", text: jis0212)?
+    )
+    return ok(code)
+
+function main()
+    words = tablekit.command_words("unicode_encodings")
+
+    if words.len() != 1 || words[0] != "write" && words[0] != "check"
+        print(
+            "usage, from the repository's root: heroes run rebel/generators/unicode_encodings/main.hero -- write|check"
+        )
+        exit(code: 2)
+
+    match run(words[0])
+        .ok code => exit(code: code)
+        .err e =>
+            print("error: ", e.code, ": ", e.msg)
+            exit(code: 2)
+
+## Tests
+
+test "FETCHED_SHA256: 35 rows, each a name of its own, one space and 64 lowercase hexadecimal digits"
+    assert layout.FETCHED_SHA256.len() == 35
+    seen: [str] @= []
+
+    for row in layout.FETCHED_SHA256
+        name = pinned_name(row)
+        assert name != "" && !holds(xs: seen, x: name)
+        seen @ seen.push(name)
+        digest = row.slice(from: name.len() + 1, to: row.len())
+        assert digest.len() == 64
+
+        for k in range(from: 0, to: 64)
+            assert !strings.index_of(s: "0123456789abcdef", substr: digest.slice(from: k, to: k + 1)).is_err()
+
+    assert holds(xs: seen, x: "encodings.json")
+    assert holds(xs: seen, x: "index-windows-1252.txt")
+
+test "listing_offences: the folder as pinned, a file added, a file gone, and no folder at all"
+    rows = ["a.txt 00", "b.txt 11"]
+    assert listing_offences(present: ["a.txt", "b.txt"], rows: rows).len() == 0
+    assert listing_offences(present: ["a.txt", "b.txt", "c.txt"], rows: rows) == [f"{SOURCES}c.txt is no file of the fetch of {layout.FETCHED}: no row of `layout.FETCHED_SHA256` names it"]
+    assert listing_offences(present: ["b.txt"], rows: rows) == [f"{SOURCES}a.txt is not there, and `layout.FETCHED_SHA256` pins it"]
+    assert listing_offences(present: [], rows: rows).len() == 2
+
+test "bytes_offence: the bytes as fetched, one byte moved, a byte added, and a name no row pins, each naming its file"
+    fetched = bytes.from_text("# Identifier: x\n0\t0x0080\t\n")
+    rows = ["index-x.txt " + tablekit.sha256_hex(fetched), "index-y.txt " + tablekit.sha256_hex(bytes.from_text(""))]
+    assert bytes_offence(name: "index-x.txt", data: fetched, rows: rows) == ""
+    assert bytes_offence(name: "index-y.txt", data: bytes.from_text(""), rows: rows) == ""
+    moved = bytes.from_text("# Identifier: y\n0\t0x0080\t\n")
+    said = bytes_offence(name: "index-x.txt", data: moved, rows: rows)
+    assert strings.has_prefix(
+        s: said,
+        prefix: f"{SOURCES}index-x.txt has SHA-256 {tablekit.sha256_hex(moved)}, not the {tablekit.sha256_hex(fetched)} of its bytes"
+    )
+    assert bytes_offence(name: "index-y.txt", data: bytes.from_text("\n"), rows: rows) != ""
+    assert bytes_offence(name: "index-x", data: fetched, rows: rows) == f"{SOURCES}index-x is no file of the fetch of {layout.FETCHED}: no row of `layout.FETCHED_SHA256` names it"
+
+test "text_of: a file among the sources, and one that is not"
+    sources = [Source(name: "a.txt", text: "one\n")]
+    assert text_of(sources, file: "a.txt").must() == "one\n"
+    assert text_of(sources, file: "b.txt").is_err()

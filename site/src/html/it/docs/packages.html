@@ -14,7 +14,7 @@
   <p>
     Rebel pubblica tutti i suoi pacchetti insieme sotto un nome solo, <code>rebel</code>, e un programma nomina ognuno di quelli che usa. Questo piccolo programma legge una tabella scritta in CSV, valori separati da virgole, il testo semplice che salva un foglio di calcolo, con il <code>csv</code> di Rebel:
   </p>
-<figure class="example" data-src="examples-rebel/reach/reach_csv.hero" data-lines="5-16">
+<figure class="example" data-src="rebel/examples/reach/reach_csv.hero" data-lines="5-16">
 <pre><code>use &lt;rebel&gt;/csv
 
 function main()
@@ -27,7 +27,7 @@ function main()
                 rows @ rows.push([r["album"].default("?")])
 
             print(csv.format(rows))</code></pre>
-    <figcaption>examples-rebel/reach/reach_csv.hero, righe 5&ndash;16</figcaption>
+    <figcaption>rebel/examples/reach/reach_csv.hero, righe 5&ndash;16</figcaption>
   </figure>
   <p>
     Controllalo prima che abbia scaricato qualcosa, e la riga che nomina il pacchetto dice che cosa manca:
@@ -35,7 +35,7 @@ function main()
 <pre class="diag"><code>$ heroes check --brief reach_csv.hero
 <span class="msg">reach_csv.hero:5:5: error[unknown_entry]: `&lt;rebel&gt;` names no entry: there is no catalogue `heroes.toml` beside `reach_csv.hero`, the file you compile, and a package's module is read only through its entry there — `heroes add rebel` writes one</span></code></pre>
   <p>
-    Il comando che scarica è <code>heroes add</code>, e si lancia nella cartella del programma. Un pacchetto si legge da un <b>indice</b>, un posto che elenca tutte le versioni di tutti i pacchetti che contiene. L&rsquo;indice di Heroes sul web non è ancora costruito, quindi qui un piccolo indice fatto apposta, una cartella accanto al programma, pubblica la versione 0.1.0 di Rebel, e il comando lo nomina. Il primo comando prende la voce; il secondo nomina l&rsquo;unico pacchetto della voce che questo programma usa:
+    Il comando che scarica è <code>heroes add</code>, e si lancia nella cartella del programma. Un pacchetto si legge da un <b>indice</b>, un posto che elenca tutte le versioni di tutti i pacchetti che contiene. L&rsquo;indice di Heroes sul web non è ancora costruito, e oggi nessun indice pubblica Rebel: un tuo programma lo prende da un clone di questo repository, dal percorso della sua cartella, la terza fonte <a href="#path">più sotto</a>. Quello che segue è come si prende un pacchetto quando un indice lo pubblica: qui un piccolo indice fatto apposta, una cartella accanto al programma, pubblica la versione 0.1.0 di Rebel, e il comando lo nomina. Il primo comando prende la voce; il secondo nomina l&rsquo;unico pacchetto della voce che questo programma usa:
   </p>
 <pre><code>$ heroes add rebel --index file://../index
 added rebel 0.1.0
@@ -266,27 +266,27 @@ sum = "sha256-09cac94c6a5803de196d94dc80c9da89329c20ce2ee673a876de3a4d5ac381d3"<
   <p>
     In rete un indirizzo è <code>https://</code>: un semplice <code>http://</code> viene rifiutato, perché viaggia in chiaro e chiunque stia nel mezzo potrebbe cambiare quello che arriva. E <code>file://</code> è accettato solo per una cartella dentro il repository del programma, ed è così che le trascrizioni di questa pagina leggono i loro piccoli indici.
   </p>
-  <p>
-    La terza fonte è una cartella tua, <code>heroes add --path</code>, per un pacchetto che stai ancora scrivendo, o per un pacchetto che hai come cartella, come questo repository tiene Rebel. Si legge dove sta e non si copia mai, e nessuna impronta la tiene ferma, quindi ogni build lo dice. Una riga <code>packages</code> la lega come lega ogni voce:
+  <p id="path">
+    La terza fonte è una cartella tua, <code>heroes add --path</code>, per un pacchetto che stai ancora scrivendo, o per un pacchetto che hai come cartella, come un clone di questo repository tiene Rebel (qui il clone, <code>heroes</code>, sta accanto alla cartella del programma). Si legge dove sta e non si copia mai, e nessuna impronta la tiene ferma, quindi ogni build lo dice. Una riga <code>packages</code> la lega come lega ogni voce:
   </p>
-<pre><code>$ heroes add --path ../../../packages/rebel/0.1.0/files --as rebel
-added rebel ../../../packages/rebel/0.1.0/files
+<pre><code>$ heroes add --path ../heroes/rebel/library/0.1.0/files --as rebel
+added rebel ../heroes/rebel/library/0.1.0/files
 wrote heroes.toml
 $ heroes add rebel/csv
 added rebel/csv
 wrote heroes.toml
 $ heroes check reach_csv.hero
-note: the package `rebel` is read from the folder `../../../packages/rebel/0.1.0/files/`, a `path` entry of the catalogue: unverified, no fingerprint holds it</code></pre>
+note: the package `rebel` is read from the folder `../heroes/rebel/library/0.1.0/files/`, a `path` entry of the catalogue: unverified, no fingerprint holds it</code></pre>
   <p>
     È l&rsquo;unica eccezione alla promessa che un errore nel catalogo non cambia mai quale modulo viene compilato: un <code>path</code> che punta alla cartella sbagliata compila altro codice. L&rsquo;autore aveva messo una cartella locale tra le fonti, quindi la seduta l&rsquo;ha tenuta, e l&rsquo;ha resa rumorosa invece che silenziosa.
   </p>
 
   <h3>Che cosa c&rsquo;è oggi</h3>
   <p>
-    Un pacchetto di questo progetto, <a href="/it/rebel/">Rebel</a>, nella cartella <code>packages/rebel/</code> del repository, la cartella che contiene tutti i suoi file e la loro storia, con più di cento pacchetti che un programma può nominare, tutti scritti in Heroes. Quello che a Rebel serve del sistema operativo lo raggiunge attraverso il C: quello del runtime, il C che questo progetto scrive e distribuisce accanto al runtime, che un programma si porta dietro solo dove lo chiama, e per pochi pacchetti una libreria del sistema, come <code>sql/sqlite</code> si appoggia a quella di SQLite. I programmi che lo usano, compreso il programma di prova di ogni pacchetto, sono la cartella <code>examples-rebel/</code>, e leggono Rebel con una voce <code>path</code>.
+    Un pacchetto di questo progetto, <a href="/it/rebel/">Rebel</a>, nella cartella <code>rebel/library/</code> del repository, la cartella che contiene tutti i suoi file e la loro storia, con più di cento pacchetti che un programma può nominare, tutti scritti in Heroes. Quello che a Rebel serve del sistema operativo lo raggiunge attraverso il C: quello del runtime, il C che questo progetto scrive e distribuisce accanto al runtime, che un programma si porta dietro solo dove lo chiama, e per pochi pacchetti una libreria del sistema, come <code>sql/sqlite</code> si appoggia a quella di SQLite. I programmi che lo usano, compreso il programma di prova di ogni pacchetto, sono la cartella <code>rebel/examples/</code>, e leggono Rebel con una voce <code>path</code>.
   </p>
   <p>
-    Un catalogo senza la riga <code>index</code> legge l&rsquo;indice di Heroes, un sito che non è ancora stato costruito: costruirlo, pubblicarci un pacchetto e decidere chi può prendersi un nome sono <a href="https://github.com/heroes-lang/heroes/blob/main/docs/roadmap/milestones/M-package-index.md">una milestone a sé</a>, M-package-index, nella roadmap. Finché non esiste, un pacchetto che arriva da fuori di questo repository viene da git, o da una cartella tua. Le regole che segue ogni pacchetto di Rebel, per chi scriverà il prossimo, sono <a href="https://github.com/heroes-lang/heroes/blob/main/examples-rebel/README.md">la guida di Rebel per chi lo scrive</a>.
+    Un catalogo senza la riga <code>index</code> legge l&rsquo;indice di Heroes, un sito che non è ancora stato costruito: costruirlo, pubblicarci un pacchetto e decidere chi può prendersi un nome sono <a href="https://github.com/heroes-lang/heroes/blob/main/docs/roadmap/milestones/M-package-index.md">una milestone a sé</a>, M-package-index, nella roadmap. Finché non esiste, un pacchetto che arriva da fuori di questo repository viene da git, o da una cartella tua. Le regole che segue ogni pacchetto di Rebel, per chi scriverà il prossimo, sono <a href="https://github.com/heroes-lang/heroes/blob/main/rebel/examples/README.md">la guida di Rebel per chi lo scrive</a>.
   </p>
 
   <p class="next">
@@ -303,10 +303,10 @@ note: the package `rebel` is read from the folder `../../../packages/rebel/0.1.0
 
   <footer>
     <p>Il programma è un file del repository,
-    <code>examples-rebel/reach/reach_csv.hero</code>, il programma di prova del
+    <code>rebel/examples/reach/reach_csv.hero</code>, il programma di prova del
     <code>csv</code> di Rebel. Le trascrizioni sono state eseguite su una sua
     copia, in una cartella accanto a un piccolo indice che pubblica
-    <code>packages/rebel/0.1.0/files/</code> del repository come Rebel 0.1.0,
+    <code>rebel/library/0.1.0/files/</code> del repository come Rebel 0.1.0,
     fatto apposta come lo pubblicherà l&rsquo;indice di Heroes. Le diagnostiche
     sono quella copia con una modifica ciascuna: il catalogo non ancora
     scritto, un <code>use</code> di <code>json</code> aggiunto, un indirizzo
@@ -324,5 +324,5 @@ note: the package `rebel` is read from the folder `../../../packages/rebel/0.1.0
     programma con Rebel preso dalla cartella stessa del repository. Le ragioni
     vengono dai verbali delle sedute che le hanno decise, 235, 238, 240, 242 e
     253, e dalla guida di Rebel per chi lo scrive,
-    <code>examples-rebel/README.md</code>.</p>
+    <code>rebel/examples/README.md</code>.</p>
   </footer>

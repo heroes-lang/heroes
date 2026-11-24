@@ -14,7 +14,7 @@
   <p>
     Rebel publishes all its packages together under one name, <code>rebel</code>, and a program names each one it uses. This small program reads a table written as CSV, comma-separated values, the plain text a spreadsheet saves, with Rebel&rsquo;s <code>csv</code>:
   </p>
-  <figure class="example" data-src="examples-rebel/reach/reach_csv.hero" data-lines="5-16">
+  <figure class="example" data-src="rebel/examples/reach/reach_csv.hero" data-lines="5-16">
 <pre><code>use &lt;rebel&gt;/csv
 
 function main()
@@ -27,7 +27,7 @@ function main()
                 rows @ rows.push([r["album"].default("?")])
 
             print(csv.format(rows))</code></pre>
-    <figcaption>examples-rebel/reach/reach_csv.hero, lines 5&ndash;16</figcaption>
+    <figcaption>rebel/examples/reach/reach_csv.hero, lines 5&ndash;16</figcaption>
   </figure>
   <p>
     Check it before it has fetched anything, and the line that names the package says what is missing:
@@ -35,7 +35,7 @@ function main()
   <pre class="diag"><code>$ heroes check --brief reach_csv.hero
 <span class="msg">reach_csv.hero:5:5: error[unknown_entry]: `&lt;rebel&gt;` names no entry: there is no catalogue `heroes.toml` beside `reach_csv.hero`, the file you compile, and a package's module is read only through its entry there — `heroes add rebel` writes one</span></code></pre>
   <p>
-    The command that fetches is <code>heroes add</code>, run in the program&rsquo;s folder. A package is read from an <b>index</b>, a place that lists every version of every package it holds. The Heroes index on the web is not built yet, so here a small index made for the purpose, a folder beside the program, publishes Rebel&rsquo;s version 0.1.0, and the command names it. The first command takes the entry; the second names the one package of it this program uses:
+    The command that fetches is <code>heroes add</code>, run in the program&rsquo;s folder. A package is read from an <b>index</b>, a place that lists every version of every package it holds. The Heroes index on the web is not built yet, and no index publishes Rebel today: a program of yours takes it from a clone of this repository, by the path of its folder, the third source <a href="#path">further down</a>. What follows is how a package is taken once an index publishes it: here a small index made for the purpose, a folder beside the program, publishes Rebel&rsquo;s version 0.1.0, and the command names it. The first command takes the entry; the second names the one package of it this program uses:
   </p>
   <pre><code>$ heroes add rebel --index file://../index
 added rebel 0.1.0
@@ -266,27 +266,27 @@ sum = "sha256-09cac94c6a5803de196d94dc80c9da89329c20ce2ee673a876de3a4d5ac381d3"<
   <p>
     On the network an address is <code>https://</code>: a plain <code>http://</code> is refused, being &ldquo;read in clear, so anything between could change what is fetched&rdquo;. And <code>file://</code> is accepted only for a folder inside the program&rsquo;s own repository, which is how the transcripts on this page read their small indexes.
   </p>
-  <p>
-    The third source is a folder of your own, <code>heroes add --path</code>, for a package you are still writing, or for a package you have as a folder, as this repository holds Rebel. It is read where it stands and never copied, and nothing holds it to a fingerprint, so every build says so. A <code>packages</code> line binds it as it binds any entry:
+  <p id="path">
+    The third source is a folder of your own, <code>heroes add --path</code>, for a package you are still writing, or for a package you have as a folder, as a clone of this repository holds Rebel (here the clone, <code>heroes</code>, stands beside the program&rsquo;s folder). It is read where it stands and never copied, and nothing holds it to a fingerprint, so every build says so. A <code>packages</code> line binds it as it binds any entry:
   </p>
-  <pre><code>$ heroes add --path ../../../packages/rebel/0.1.0/files --as rebel
-added rebel ../../../packages/rebel/0.1.0/files
+  <pre><code>$ heroes add --path ../heroes/rebel/library/0.1.0/files --as rebel
+added rebel ../heroes/rebel/library/0.1.0/files
 wrote heroes.toml
 $ heroes add rebel/csv
 added rebel/csv
 wrote heroes.toml
 $ heroes check reach_csv.hero
-note: the package `rebel` is read from the folder `../../../packages/rebel/0.1.0/files/`, a `path` entry of the catalogue: unverified, no fingerprint holds it</code></pre>
+note: the package `rebel` is read from the folder `../heroes/rebel/library/0.1.0/files/`, a `path` entry of the catalogue: unverified, no fingerprint holds it</code></pre>
   <p>
     It is the one exception to the promise that a catalogue&rsquo;s mistake never changes which module compiles: a <code>path</code> pointing at the wrong folder compiles other code. The author listed a local folder among the sources, so the sitting kept it, and made it loud rather than silent.
   </p>
 
   <h3>What exists today</h3>
   <p>
-    One package of this project&rsquo;s own, <a href="/rebel/">Rebel</a>, in the folder <code>packages/rebel/</code> of the repository, the folder that holds all its files and their history, with more than a hundred packages a program can name, every one written in Heroes. What Rebel needs of the operating system it reaches through C: the runtime&rsquo;s own, the C this project writes and ships beside the runtime, which a program carries only where it calls it, and for a few packages a library of the system, as <code>sql/sqlite</code> stands on SQLite&rsquo;s. The programs that use it, each package&rsquo;s own test program among them, are the folder <code>examples-rebel/</code>, and they read Rebel through a <code>path</code> entry.
+    One package of this project&rsquo;s own, <a href="/rebel/">Rebel</a>, in the folder <code>rebel/library/</code> of the repository, the folder that holds all its files and their history, with more than a hundred packages a program can name, every one written in Heroes. What Rebel needs of the operating system it reaches through C: the runtime&rsquo;s own, the C this project writes and ships beside the runtime, which a program carries only where it calls it, and for a few packages a library of the system, as <code>sql/sqlite</code> stands on SQLite&rsquo;s. The programs that use it, each package&rsquo;s own test program among them, are the folder <code>rebel/examples/</code>, and they read Rebel through a <code>path</code> entry.
   </p>
   <p>
-    A catalogue with no <code>index</code> line reads the Heroes index, a site that is not built yet: building it, publishing a package to it and deciding who may take a name make <a href="https://github.com/heroes-lang/heroes/blob/main/docs/roadmap/milestones/M-package-index.md">a milestone of its own</a>, M-package-index, on the roadmap. Until it exists, a package from outside this repository comes from git, or from a folder of your own. The rules every package of Rebel follows, for whoever writes the next one, are <a href="https://github.com/heroes-lang/heroes/blob/main/examples-rebel/README.md">Rebel&rsquo;s guide for its writers</a>.
+    A catalogue with no <code>index</code> line reads the Heroes index, a site that is not built yet: building it, publishing a package to it and deciding who may take a name make <a href="https://github.com/heroes-lang/heroes/blob/main/docs/roadmap/milestones/M-package-index.md">a milestone of its own</a>, M-package-index, on the roadmap. Until it exists, a package from outside this repository comes from git, or from a folder of your own. The rules every package of Rebel follows, for whoever writes the next one, are <a href="https://github.com/heroes-lang/heroes/blob/main/rebel/examples/README.md">Rebel&rsquo;s guide for its writers</a>.
   </p>
 
   <p class="next">
@@ -303,10 +303,10 @@ note: the package `rebel` is read from the folder `../../../packages/rebel/0.1.0
 
   <footer>
     <p>The program is a file of the repository,
-    <code>examples-rebel/reach/reach_csv.hero</code>, the test program of Rebel&rsquo;s
+    <code>rebel/examples/reach/reach_csv.hero</code>, the test program of Rebel&rsquo;s
     <code>csv</code>. The transcripts ran on a copy of it, in a folder beside
     a small index that publishes the repository&rsquo;s
-    <code>packages/rebel/0.1.0/files/</code> as Rebel 0.1.0, made for the
+    <code>rebel/library/0.1.0/files/</code> as Rebel 0.1.0, made for the
     purpose as the Heroes index will publish it. The diagnostics are that copy
     with one edit each: its catalogue not yet written, a <code>use</code> of
     <code>json</code> added, an address written in its <code>use</code>, the
@@ -322,5 +322,5 @@ note: the package `rebel` is read from the folder `../../../packages/rebel/0.1.0
     Rebel taken from the repository&rsquo;s own folder. The reasons are the
     records of the sittings that decided them, 235, 238, 240, 242 and 253,
     with Rebel&rsquo;s guide for its writers,
-    <code>examples-rebel/README.md</code>.</p>
+    <code>rebel/examples/README.md</code>.</p>
   </footer>

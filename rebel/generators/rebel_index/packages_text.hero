@@ -1,0 +1,254 @@
+# `rebel/examples/PACKAGES.md`, Rebel's packages indexed for a model that
+# writes a program with them: how to take Rebel and how to read the index,
+# the faces by layer each with its purpose, then each face's declarations on
+# one line each, every word read from what `heroes doc` prints, so a name the
+# index gives is one the face declares and a call it shows is one the checker
+# accepts.
+
+use faces
+use prose
+use reference
+
+# The site whose reference pages are `heroes doc`'s output, one per face
+# (`site/src/lib/reference.ts`, `referenceUrl`).
+constant SITE: str
+    "https://heroes-lang.org"
+
+# The address of the reference page of `face`.
+#
+# - `face`: the face's path, `unicode/segment`.
+function page_of(face: str) -> str
+    return SITE + "/rebel/" + face + "/"
+
+# How many declarations of each kind the references hold.
+record Counted
+    # Functions.
+    functions: i64
+    # Records.
+    records: i64
+    # Variants.
+    variants: i64
+    # Constants.
+    constants: i64
+
+# The whole of `PACKAGES.md`.
+#
+# - `version`: Rebel's version, the folder the faces were read from.
+# - `rows`: README § A1's rows, each with its faces.
+# - `references`: each face's reference, by its path.
+# - `vocabulary`: README § A4's codes, in the table's order.
+#
+# Fails `not_found` where a face of `rows` has no reference.
+function packages_page(version: str, rows: [faces.Row], references: {str: reference.Reference}, vocabulary: {str: bool}) -> str?
+    counted @= Counted(functions: 0, records: 0, variants: 0, constants: 0)
+    listed: [str] @= []
+    sections: [str] @= []
+    face_count @= 0
+    layers = layers_of(rows)
+
+    for layer in layers
+        listed @ listed.push(f"### Layer {layer}\n")
+
+        for row in rows
+            if row.layer != layer
+                continue
+
+            for face in row.faces
+                r = references[face]?
+                face_count @ face_count + 1
+                listed @ listed.push(f"- [`{face}`]({page_of(face)}): " + prose.lead(r.doc))
+                sections @ sections.push(face_section(face: face, layer: layer, r: r, vocabulary: vocabulary))
+
+                for d in r.declarations
+                    counted @ tally(counted: counted, kind: d.kind)
+
+        listed @ listed.push("")
+
+    codes: [str] @= []
+
+    for code in keys(vocabulary)
+        codes @ codes.push(prose.code(code))
+
+    head = [
+        f"# Rebel {version}: every package, for a program that uses it"
+        ""
+        f"Rebel is the library a Heroes program takes or leaves, never the language's own. This index names every face of its version {version}, the modules a program names with `use <rebel>/<face>`: {prose.counted(count: face_count, one: "face", many: "faces")} in {prose.counted(count: layers.len(), one: "layer", many: "layers")}, with every one of their {prose.counted(count: counted.functions, one: "function", many: "functions")}, {prose.counted(count: counted.records, one: "record", many: "records")}, {prose.counted(count: counted.variants, one: "variant", many: "variants")} and {prose.counted(count: counted.constants, one: "constant", many: "constants")}. Every word of it is read from what `heroes doc` prints of each face, so a name it gives is one the face declares, and a call it shows is one the checker accepts: write no name it does not give."
+        ""
+        "## How to take Rebel"
+        ""
+        "A program names a package of Rebel through its catalogue, `heroes.toml`, which stands beside the file it compiles and which `heroes add` writes, run in the program's folder: nobody types a catalogue. A program takes Rebel today from a clone of its repository, read where it stands:"
+        ""
+        f"    heroes add --path <clone>/rebel/library/{version}/files --as rebel"
+        "    heroes add rebel/csv"
+        ""
+        "No index publishes Rebel yet, so `heroes add rebel` by its name, which asks an index, waits for one that does; a `path` entry is read where it stands, and nothing verifies it."
+        ""
+        "`heroes add rebel/<face>` adds a face to the entry's `packages` line, which names every face the program uses: a `use` of a face the line does not name is refused, and an entry fetched from an index places the faces it names and the modules they use, nothing else. A module then writes `use <rebel>/csv` and calls the face by the last part of its path: `csv.parse(text)`."
+        ""
+        "## How to read this index"
+        ""
+        "- The faces stand by layer, from 0: a package uses only packages of a lower layer (`rebel/examples/README.md` § A1). The list below names each with its purpose, the first sentence of its module comment; then each face has a section of its own, headed `### <face>`, in the same order."
+        "- A section opens with the face's layer, the `use` line that names it, and its reference page, which shows every declaration whole: each parameter, its edges and its examples. `heroes doc <rebel>/<face>`, run in a program's folder, prints the same text."
+        "- Then each declaration of the face, in the order the face writes it, on one line:"
+        "  - a function: its signature as `heroes doc` prints it, the call a program writes (each argument its parameter's name, with a label exactly where the call needs one, `@` where the function changes the caller's place), the first sentence of its comment, and the codes its comment names from its `Fails` on, or, where it names none, its `Fails` sentence whole, a failure handed on from what it calls;"
+        "  - a record: its fields in their declared order, written as the call that builds one, `record Name(field: type, ...)`; where a field's type is a private module's (`stream.State`), only the face's functions build it, as its comment says;"
+        "  - a variant: its cases as a program writes them, `variant Name = .case | .case(field: type)`;"
+        "  - a constant: its declaration, then its value where it is written on one line; a failure code is one of them."
+        "- A type another face declares is written qualified, `io.Stream`, as the face writes it."
+        "- A failure's code is one word of a closed vocabulary, the same in every package (`rebel/examples/README.md` § A4): " + codes.join(", ") + "."
+        ""
+        "## The faces by layer"
+        ""
+    ]
+    tail = [
+        "---"
+        ""
+        f"This index is written by `rebel/generators/rebel_index/`, never by hand, from `heroes doc`'s reference of every face of `rebel/library/{version}/files/` and from `rebel/examples/README.md` § A1 and § A4. Change those, then run `heroes run rebel/generators/rebel_index/main.hero -- write ./heroes` from the repository's root; `check` in place of `write` says whether this index is still what they make."
+    ]
+    return ok(
+        head.join("\n") + "\n" + listed.join("\n") + "## Each face\n\n" + sections.join("\n") + tail.join("\n") + "\n"
+    )
+
+# The layers of `rows`, each once, from the lowest.
+#
+# - `rows`: README § A1's rows.
+function layers_of(rows: [faces.Row]) -> [i64]
+    seen: {i64: bool} @= {}
+
+    for row in rows
+        seen[row.layer] @ true
+
+    return sort(keys(seen))
+
+# `counted` with one more declaration of the kind `kind`.
+#
+# - `counted`: the counts so far.
+# - `kind`: `function`, `record`, `variant` or `constant`.
+function tally(counted: Counted, kind: str) -> Counted
+    return Counted(
+        functions: counted.functions + one_if(kind == "function"),
+        records: counted.records + one_if(kind == "record"),
+        variants: counted.variants + one_if(kind == "variant"),
+        constants: counted.constants + one_if(kind == "constant")
+    )
+
+# 1 where `yes`, else 0.
+#
+# - `yes`: the condition.
+function one_if(yes: bool) -> i64
+    if yes
+        return 1
+    return 0
+
+# The section of `face`: its head, then each declaration on its line.
+#
+# - `face`: the face's path.
+# - `layer`: its row's layer.
+# - `r`: its reference.
+# - `vocabulary`: README § A4's codes.
+function face_section(face: str, layer: i64, r: reference.Reference, vocabulary: {str: bool}) -> str
+    lines: [str] @= [
+        "### " + face
+        ""
+        f"Layer {layer}, named `use <rebel>/{face}`, [its reference]({page_of(face)})."
+        ""
+        prose.lead(r.doc)
+        ""
+    ]
+
+    for d in r.declarations
+        lines @ lines.push(declaration_line(d: d, vocabulary: vocabulary))
+
+    return lines.join("\n") + "\n\n"
+
+# One declaration on one line: its signature, a function's call, its first
+# sentence, the codes a function's `Fails` paragraphs name, and what each
+# call of a generic function must give its type parameters, as the reference
+# words it.
+#
+# - `d`: the declaration.
+# - `vocabulary`: README § A4's codes.
+function declaration_line(d: reference.Declaration, vocabulary: {str: bool}) -> str
+    out @= "- " + prose.code(reference.signature(d))
+    shown = reference.value(d)
+
+    if d.kind == "function"
+        out @ out + ", called " + prose.code(d.call)
+    else if shown.len() > 0
+        out @ out + ", value " + prose.code(shown)
+    sentence = prose.lead(d.doc)
+
+    if sentence.len() > 0
+        out @ out + ": " + sentence
+    codes: [str] @= []
+
+    if d.kind == "function"
+        for code in reference.codes_named(doc: d.doc, vocabulary: vocabulary)
+            codes @ codes.push(prose.code(code))
+
+    if codes.len() > 0
+        out @ out + " Fails " + codes.join(", ") + "."
+    else if d.kind == "function"
+        handed = reference.fails_sentence(d.doc)
+
+        if handed.len() > 0
+            out @ out + " " + handed
+
+    if d.asks.len() > 0
+        out @ out + " What each call must give its type parameters: " + d.asks.join("; ") + "."
+    return out
+
+## Tests
+
+test "page_of: a face's reference page, a nested one too"
+    assert page_of("csv") == "https://heroes-lang.org/rebel/csv/"
+    assert page_of("unicode/segment") == "https://heroes-lang.org/rebel/unicode/segment/"
+
+test "declaration_line: a function with its call and codes, a constant with its value, a record, a generic function with what its calls give"
+    vocabulary = {"invalid": true}
+    f = reference.Declaration(
+        kind: "function",
+        name: "parse",
+        block: ["function parse(text: str) -> [[str]]?"],
+        doc: ["Every row of `text`.", "", "Fails `invalid` where it is not CSV."],
+        call: "csv.parse(text)",
+        asks: []
+    )
+    assert declaration_line(d: f, vocabulary: vocabulary) == "- `function parse(text: str) -> [[str]]?`, called `csv.parse(text)`: Every row of `text`. Fails `invalid`."
+    c = reference.Declaration(
+        kind: "constant",
+        name: "INVALID",
+        block: ["constant INVALID: str", "    \"invalid\""],
+        doc: ["The code."],
+        call: "",
+        asks: []
+    )
+    assert declaration_line(d: c, vocabulary: vocabulary) == "- `constant INVALID: str`, value `\"invalid\"`: The code."
+    r = reference.Declaration(
+        kind: "record",
+        name: "P",
+        block: ["record P", "    # X.", "    x: i64"],
+        doc: [],
+        call: "",
+        asks: []
+    )
+    assert declaration_line(d: r, vocabulary: vocabulary) == "- `record P(x: i64)`"
+    g = reference.Declaration(
+        kind: "function",
+        name: "add_mailbox",
+        block: ["function add_mailbox<T>(set: Set, m: (mailbox T)) -> i64?"],
+        doc: ["Adds a mailbox to the set."],
+        call: "poll.add_mailbox(set, m)",
+        asks: ["`T` reaches no `ptr` and no `cstr`: `(mailbox T)` makes it cross between threads, line 319", "`T` is not `()`: `(mailbox T)` is a mailbox of it, line 319"]
+    )
+    said = "- `function add_mailbox<T>(set: Set, m: (mailbox T)) -> i64?`, called `poll.add_mailbox(set, m)`: Adds a mailbox to the set."
+    asked = " What each call must give its type parameters: `T` reaches no `ptr` and no `cstr`: `(mailbox T)` makes it cross between threads, line 319; `T` is not `()`: `(mailbox T)` is a mailbox of it, line 319."
+    assert declaration_line(d: g, vocabulary: vocabulary) == said + asked
+
+test "layers_of: each layer once, from the lowest"
+    rows = [
+        faces.Row(layer: 2, package: "b", faces: ["b"])
+        faces.Row(layer: 0, package: "a", faces: ["a"])
+        faces.Row(layer: 2, package: "c", faces: ["c"])
+    ]
+    assert layers_of(rows) == [0, 2]

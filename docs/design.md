@@ -555,7 +555,7 @@ can observe.
 **That is the whole of what the language provides.** Everything below is *not* provided by it: a
 program binds a C library for it through the FFI, writes it in Heroes, or takes a package that does.
 The third column names Rebel's package for the need where Rebel has one. Where each of Rebel's
-packages stands on C is its rules page's to say (`examples-rebel/README.md` § A1, its column *C
+packages stands on C is its rules page's to say (`rebel/examples/README.md` § A1, its column *C
 under it*): over the system's own library, as `tls` stands over the platform's TLS; over a C library
 the page names, as `sql/sqlite` stands over SQLite's; and elsewhere in Heroes, what reads data from
 outside among it (M-rebel-library's decision 24, which admits a vendored C library for cryptographic

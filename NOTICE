@@ -3,7 +3,7 @@ Copyright 2026 Giuseppe Arici
 
 This product is licensed under the Apache License, Version 2.0 (see LICENSE).
 
-The Heroes C runtime (`runtime/`) and Rebel (`packages/rebel/`) carry the
+The Heroes C runtime (`runtime/`) and Rebel (`rebel/library/`) carry the
 Heroes runtime exception: see LICENSE-RUNTIME-EXCEPTION. A program compiled with
 Heroes contains part of that runtime, and of Rebel where it takes Rebel, and
 owes nothing for either — no copy of the License, no reproduction of this
@@ -49,16 +49,16 @@ Third-party material the runtime carries, its licence with its files:
 
 Third-party material Rebel carries, each file with its notice at its head:
 
-  packages/rebel/0.1.0/files/http/suffixes/internal/rules.hero
+  rebel/library/0.1.0/files/http/suffixes/internal/rules.hero
       The rules of the Public Suffix List, as publicsuffix.org served it on
       2026-11-18, version 2026-11-17_06-40-19_UTC, made a module of Rebel's
       `http/suffixes`. Mozilla Public License, Version 2.0
       (https://mozilla.org/MPL/2.0/); the list's own notice travels at the
       head of the file.
 
-  packages/rebel/0.1.0/files/tokenizer/tables/internal/cl100k_base.hero
-  packages/rebel/0.1.0/files/tokenizer/tables/internal/o200k_base.hero
-  packages/rebel/0.1.0/files/tokenizer/tables/internal/o200k_harmony.hero
+  rebel/library/0.1.0/files/tokenizer/tables/internal/cl100k_base.hero
+  rebel/library/0.1.0/files/tokenizer/tables/internal/o200k_base.hero
+  rebel/library/0.1.0/files/tokenizer/tables/internal/o200k_harmony.hero
       The `cl100k_base`, `o200k_base` and `o200k_harmony` tables of OpenAI's
       `tiktoken` 0.14.0, made modules of Rebel's `tokenizer/tables`.
       MIT License, Copyright (c) 2022 OpenAI, Shantanu Jain; its text travels

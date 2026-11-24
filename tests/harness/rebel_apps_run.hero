@@ -1,6 +1,6 @@
-# One program of `examples-rebel/` found, built, run and judged, for the
+# One program of `rebel/examples/` found, built, run and judged, for the
 # check of Rebel's programs (`rebel_apps.hero`;
-# `examples-rebel/README.md` § A10):
+# `rebel/examples/README.md` § A10):
 #
 # - **an application**, a folder holding `main.expected`: built, run with its
 #   own `main.args` and `main.stdin`, and its transcript held to its own
@@ -33,7 +33,7 @@ extern "hero_time.h"
 
 # The group of programs this check judges.
 constant REBEL: str
-    "examples-rebel"
+    "rebel/examples"
 
 # The folder of `REBEL` holding the drivers, `reach_<package>.hero`, and
 # their one catalogue (README § A2, § A10): a group of programs that are no
@@ -76,7 +76,7 @@ record Program
     name: str
     # `application`, `twin`, or `unknown` for a folder that is neither.
     kind: str
-    # The folder, `examples-rebel/notes`.
+    # The folder, `rebel/examples/notes`.
     folder: str
     # The `main.expected` it is held to, its own or its original's.
     expected: str
@@ -393,11 +393,11 @@ function line_of(v: Verdict) -> str
 test "program_named: an application by its main.expected, a twin by its original, anything else unknown"
     notes = program_named("notes")
     assert notes.kind == "application"
-    assert notes.expected == "examples-rebel/notes/main.expected"
+    assert notes.expected == "rebel/examples/notes/main.expected"
     assert notes.passed == ["demo"]
     assert notes.stdin == ""
     gateway = program_named("gateway")
-    assert gateway.stdin == "examples-rebel/gateway/main.stdin"
+    assert gateway.stdin == "rebel/examples/gateway/main.stdin"
     json = program_named("json")
     assert json.kind == "twin"
     assert json.expected == "examples/json/main.expected"
@@ -409,7 +409,7 @@ test "program_named: an application by its main.expected, a twin by its original
     # application shares one, since the site pairs the two groups' programs
     # by name: `ingest` is read as the application it is.
     assert program_named("ingest").kind == "application"
-    assert program_named("ingest").expected == "examples-rebel/ingest/main.expected"
+    assert program_named("ingest").expected == "rebel/examples/ingest/main.expected"
     assert program_named("no-such-program").kind == "unknown"
 
     # The drivers' folder holds neither, so the walk passes it by

@@ -1,0 +1,119 @@
+# The twin of `examples/spreadsheet/`: a file of cells, evaluated, written
+# with Rebel. It prints byte for byte what `examples/spreadsheet/` prints from
+# the same arguments, and ends with the same status, so that program's
+# `main.expected` is this one's test too.
+#
+#     heroes run rebel/examples/spreadsheet/main.hero -- examples/spreadsheet/sample.cells
+#
+#     main.hero      the program: arguments, the file, the report
+#     formula.hero   the expression language, and the cycle check
+#     sheet.hero     cell names, ranges, and the file's shape
+#
+# It ends **1** when any cell failed, which is what makes the exit code carry
+# information: a shell can ask whether the sheet is sound without reading it.
+#
+# What Rebel does here that `examples/spreadsheet/` writes for itself:
+#
+# - `numbers.parse_int` reads a cell's row and `numbers.parse_float` a
+#   formula's literal, rounded once, in place of that program's `numbers.hero`
+#   (`atoi`, `parse_float`, `decimal`, `digits_from`, `quoted`, the cut-off
+#   constants, and the `strtod` it binds from C);
+# - `strings.lines`, `trim`, `split_once` and `has_prefix` read the file, in
+#   place of its `strings.hero` (`split_lines`, `trim_space`, `space_ending`,
+#   `space_at`, `split_once`, `first_at`, `holds_at`);
+# - `strings.pad_end` pads a name to its column, in place of its loop in
+#   `padded`;
+# - `unicode.from_code_point` writes a column's letter, in place of its table
+#   of letters sliced by hand;
+# - `math.max_i64` keeps the highest row, in place of its `larger`.
+#
+# What stays this program's own is the formula language, its parser and the
+# chain of cells under evaluation that refuses a cycle. Rebel's
+# `numbers.parse_float` reads a literal past the largest `f64` as an infinity,
+# as Python's `float` does; this program refuses one, `does_not_fit`, so the
+# refusal is asked of the value in `formula.hero`.
+
+use <rebel>/strings
+
+use formula
+use sheet
+
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program ends as its
+# other usage errors do, where `args()` would abort.
+function text_arguments() -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                print(f"spreadsheet: argument {given.len() + 1} is not UTF-8")
+                exit(code: 2)
+
+    return given
+
+function main()
+    given = text_arguments()
+
+    if given.len() == 0
+        print("usage: spreadsheet <file.cells>")
+        exit(code: 2)
+
+    match read_file(given[0])
+        .err e   => stop("cannot read " + given[0] + ": " + e.code)
+        .ok text => evaluate(text)
+
+# Every unhappy ending in one place, so the exit code is decided once.
+#
+# - `message`: what is printed before the program ends with 1.
+function stop(message: str)
+    print(message)
+    exit(code: 1)
+
+# The sheet `text` holds, read and reported.
+#
+# - `text`: the file's text.
+function evaluate(text: str)
+    match sheet.read(text)
+        .err e => stop(e.code + ": " + e.msg)
+        .ok s  => report(s)
+
+# Every cell's value, or the code it failed with, in reading order; the
+# program ends with 1 where any failed.
+#
+# - `s`: the sheet.
+function report(s: sheet.Sheet)
+    broken: i64 @= 0
+
+    for name in sheet.names(s)
+        match formula.value_of(s, name, [])
+            .ok v =>
+                print(padded(name), " = ", v.to_str())
+            .err e =>
+                broken @ broken + 1
+                print(padded(name), " ! ", e.code)
+
+    print(sheet.names(s).len().to_str(), " cells, ", broken.to_str(), " broken")
+
+    if broken > 0
+        exit(code: 1)
+
+# The name in a fixed width, so the `=` signs line up. Four is enough for one
+# letter and three digits, and a longer name simply pushes its own column out,
+# which is a report being honest rather than a report being wrong.
+#
+# - `name`: a cell's name, ASCII.
+function padded(name: str) -> str
+    return strings.pad_end(s: name, width: 4, pad: " ")
+
+test "the sample is read, and its one broken cell is the one that is broken"
+    s = sheet.read(read_file("examples/spreadsheet/sample.cells").must()).must()
+    assert formula.value_of(s, "A1", []).must() == 2.0
+    assert formula.value_of(s, "C3", []).must() == 24.0
+    assert formula.value_of(s, "D1", []).is_err()
+
+test "a name is padded to four and never truncated"
+    assert padded("A1") == "A1  "
+    assert padded("Z100") == "Z100"
+    assert padded("Z1000") == "Z1000"

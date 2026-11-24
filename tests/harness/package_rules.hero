@@ -2,7 +2,7 @@
 # test can ask it of a literal: how a path and a declared name are spelled,
 # what a code looks like, what a package may not do, what every function owes,
 # what a driver reaches, and how a local static index is written. The
-# conventions are Rebel's rules page's, `examples-rebel/README.md`, each cited
+# conventions are Rebel's rules page's, `rebel/examples/README.md`, each cited
 # at its rule below (the page they were first written from, `core`'s, left
 # the tree on 2026-11-20).
 #
@@ -20,13 +20,16 @@ use module_text
 use shell
 use strings
 
-# The local static index at the repository's root (panel 235's R15 and R9's
-# C4; panel 238's R10 moved it there from inside `examples/`).
-constant INDEX: str
-    "packages"
+# Rebel's library, from the repository's root: a folder per version, each
+# holding its `files/`. Every instrument of the net that reads the library
+# reads it through this one name, so the day Rebel leaves for a repository of
+# its own this line alone changes (the author's 1a of 2026-11-23, which took
+# it out of `packages/rebel/` on 2026-11-24, the local static index of panel
+# 235's R15 and panel 238's R10, which no longer holds it).
+constant LIBRARY: str
+    "rebel/library"
 
-# The one package the index holds, the catalogue entry a program names it by:
-# `use <rebel>/strings`.
+# The catalogue entry a program names Rebel by: `use <rebel>/strings`.
 constant PACKAGE: str
     "rebel"
 
@@ -47,13 +50,13 @@ constant LOUD: [str]
         "os"
     ]
 
-## The index
+## The library
 
-# The package's source: the `files/` of the newest version folder of `PACKAGE`
-# in the index, published or in preparation, which is where a change is
-# written and where `package_cards.hero -- write` writes its cards.
+# The package's source: the `files/` of the newest version folder of
+# `LIBRARY`, published or in preparation, which is where a change is written
+# and where `package_cards.hero -- write` writes its cards.
 function source_root(scratch: str) -> str?
-    package = INDEX + "/" + PACKAGE
+    package = LIBRARY
 
     if !shell.is_directory(package)
         return fail(code: "absent", msg: package + " is not there, and the package's source is its newest version")
@@ -396,7 +399,7 @@ function folded(text: str) -> str
     return bytes.validated_bytes().must()
 
 # The records and variants not named in PascalCase, `[A-Z][A-Za-z0-9]*`, and the
-# constants not in SCREAMING_CASE, `[A-Z][A-Z0-9_]*` (`examples-rebel/README.md` § A3):
+# constants not in SCREAMING_CASE, `[A-Z][A-Z0-9_]*` (`rebel/examples/README.md` § A3):
 # a declaration in column 0, or a member of an `extern` group indented under
 # one, since no statement opens with these words.
 function misnamed(text: str) -> [str]
@@ -439,7 +442,7 @@ function screaming(name: str) -> bool
     return true
 
 # The codes a module's `fail` calls write that are not snake_case,
-# `[a-z][a-z0-9_]*` (spec § 6, `examples-rebel/README.md` § A4), tests included: each
+# `[a-z][a-z0-9_]*` (spec § 6, `rebel/examples/README.md` § A4), tests included: each
 # literal, and each `str` constant of the module a code is written through (the
 # conventions' § 3.3), read for its value.
 function crooked_codes(text: str) -> [str]
@@ -627,7 +630,7 @@ test "every part of a path under a package's root is lower case"
     assert crooked_parts("a.b.hero") == ["a.b.hero"]
     assert crooked_parts("x/1st.hero") == ["1st.hero"]
     assert crooked_parts("x/a.Hero") == ["a.Hero"]
-    assert module_path(root: "packages/rebel/0.1.0/files", path: "packages/rebel/0.1.0/files/strings/internal/scan.hero") == "strings/internal/scan"
+    assert module_path(root: "rebel/library/0.1.0/files", path: "rebel/library/0.1.0/files/strings/internal/scan.hero") == "strings/internal/scan"
 
 test "two paths that differ only in case are named together"
     assert case_twins(["a/Strings.hero", "a/strings.hero", "b/x.hero"]) == ["`a/Strings.hero` and `a/strings.hero`"]
@@ -665,8 +668,8 @@ test "every top-level function has a doc and a test of its own module that calls
     assert untested(text) == ["`g`", "`h`"]
 
 test "the `#line` paths of an emission are read once each, in order"
-    c = "#line 65 \"main.c\"\n#line 9 \"examples-rebel/packages/main.hero\"\n#line 13\n#line 17 \"examples-rebel/packages/heroes.packages/rebel@0.1.0-0123456789abcdef/strings.hero\"\n#line 20 \"examples-rebel/packages/heroes.packages/rebel@0.1.0-0123456789abcdef/strings.hero\"\n"
-    assert line_paths(c) == ["main.c", "examples-rebel/packages/main.hero", "examples-rebel/packages/heroes.packages/rebel@0.1.0-0123456789abcdef/strings.hero"]
+    c = "#line 65 \"main.c\"\n#line 9 \"rebel/examples/packages/main.hero\"\n#line 13\n#line 17 \"rebel/examples/packages/heroes.packages/rebel@0.1.0-0123456789abcdef/strings.hero\"\n#line 20 \"rebel/examples/packages/heroes.packages/rebel@0.1.0-0123456789abcdef/strings.hero\"\n"
+    assert line_paths(c) == ["main.c", "rebel/examples/packages/main.hero", "rebel/examples/packages/heroes.packages/rebel@0.1.0-0123456789abcdef/strings.hero"]
 
 test "a test's title is read as `heroes test` prints it, and only a passed one is passed"
     assert test_titles("test \"a b\"\n    assert true\n\n# test \"not one\"\n    test \"nor this\"\n") == ["a b"]

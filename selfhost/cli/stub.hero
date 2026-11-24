@@ -15,7 +15,7 @@
 # the file, so any name a folder can have will do.
 #
 # **A package is its face and one private module**
-# (`examples-rebel/README.md` § A2): `<name>.hero`, which declares only what
+# (`rebel/examples/README.md` § A2): `<name>.hero`, which declares only what
 # a program calls, with its tests; and `<name>/internal/words.hero`, which only
 # the package's own modules name (panel 235's R16). No catalogue, since it
 # needs no other package; and no card, since a card is written from its face

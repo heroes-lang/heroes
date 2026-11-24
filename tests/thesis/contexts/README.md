@@ -100,7 +100,11 @@ no version of Rebel, no `packages/rebel/versions` on 2026-11-20, and the
 instrument takes only entries a `sum` pins, so a run publishes Rebel's version
 there first. The tree's digest leaves out the catalogue's `index` line and the
 key ending a placed folder's name, so one version placed from any spelling of
-the index is one tree (`tests/harness/thesis_packages.hero`).
+the index is one tree (`tests/harness/thesis_packages.hero`). And since
+2026-11-24 no index stands in the tree at all: Rebel's library left `packages/`
+for `rebel/library/` that day (the author's 1a of 2026-11-23), so a run
+publishes a version of Rebel in an index of its own and names that index in
+place of `file://../../packages`.
 
 **No such file stands today.** The one written on 2026-11-15 held the cards
 of the packages the index held then, and was removed on 2026-11-20 with them

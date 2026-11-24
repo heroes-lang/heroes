@@ -35,7 +35,7 @@
 # to their fingerprint and never edited here, so a character in one is read
 # where the package's source is written, the index its programs read, which
 # this walk reads. **And an upstream's resources a generator keeps byte for
-# byte**, `generators/unicode_encodings/whatwg/`: the WHATWG Encoding
+# byte**, `rebel/generators/unicode_encodings/whatwg/`: the WHATWG Encoding
 # Standard's indexes, whose third column is the character a byte maps to
 # written as itself, C1 controls, soft hyphens, marks and fillers among them,
 # kept unchanged because the standard serves only its latest version. The
@@ -63,9 +63,9 @@ constant EXEMPT: [str]
         "seed/"
         # An upstream's resources kept byte for byte, the Encoding Standard's
         # indexes, which write each character as itself: held to a SHA-256 per
-        # file by `generators/unicode_encodings/`, which refuses to run on a
+        # file by `rebel/generators/unicode_encodings/`, which refuses to run on a
         # file that moved, as a placed package tree is held to its fingerprint.
-        "generators/unicode_encodings/whatwg/"
+        "rebel/generators/unicode_encodings/whatwg/"
     ]
 
 # How many documents the walk read, the count on the day it was written, so
@@ -144,16 +144,16 @@ function known() -> [Found]
 # holds a code it names, is red, as `known`'s are.
 constant DATA: [str]
     [
-        "packages/rebel/0.1.0/files/i18n/dates/internal/date_tables.hero 8203"
-        "packages/rebel/0.1.0/files/i18n/dates/internal/unit_tables.hero 8203"
+        "rebel/library/0.1.0/files/i18n/dates/internal/date_tables.hero 8203"
+        "rebel/library/0.1.0/files/i18n/dates/internal/unit_tables.hero 8203"
         # CLDR 49's display names, its Lao names of languages and scripts
         # among them. **A row added 2026-11-24** (defect d-gap-net2-1): the
         # table was born at M-rebel-library's step 137e, and `unseen` reported
         # its 223 U+200B at that merge; `\u{200b}` is refused there as in its
         # three neighbours (measured that day, `escape_not_needed`).
-        "packages/rebel/0.1.0/files/i18n/names/internal/name_tables.hero 8203"
-        "packages/rebel/0.1.0/files/i18n/numbers/internal/number_tables.hero 8203"
-        "packages/rebel/0.1.0/files/tokenizer/tables/internal/cases.hero 8203"
+        "rebel/library/0.1.0/files/i18n/names/internal/name_tables.hero 8203"
+        "rebel/library/0.1.0/files/i18n/numbers/internal/number_tables.hero 8203"
+        "rebel/library/0.1.0/files/tokenizer/tables/internal/cases.hero 8203"
     ]
 
 # The zero-width kin of the header, which a string writes only as itself:
@@ -517,20 +517,20 @@ test "a case's tree is exempt and a document is not"
     assert !exempt("tests/harness/suite_unseen.hero")
 
 test "an upstream's resources a generator holds to their bytes are exempt, and the generator beside them is not"
-    assert exempt("generators/unicode_encodings/whatwg/index-windows-1252.txt")
-    assert exempt("generators/unicode_encodings/whatwg/encodings.json")
-    assert !exempt("generators/unicode_encodings/main.hero")
-    assert !exempt("generators/unicode_encodings/layout.hero")
-    assert !exempt("generators/unicode_encodings/whatwgx/index-windows-1252.txt")
-    assert !exempt("generators/html_entities/whatwg/entities.json")
-    assert !exempt("packages/rebel/0.1.0/files/unicode/encodings/internal/single_byte_table.hero")
+    assert exempt("rebel/generators/unicode_encodings/whatwg/index-windows-1252.txt")
+    assert exempt("rebel/generators/unicode_encodings/whatwg/encodings.json")
+    assert !exempt("rebel/generators/unicode_encodings/main.hero")
+    assert !exempt("rebel/generators/unicode_encodings/layout.hero")
+    assert !exempt("rebel/generators/unicode_encodings/whatwgx/index-windows-1252.txt")
+    assert !exempt("rebel/generators/html_entities/whatwg/entities.json")
+    assert !exempt("rebel/library/0.1.0/files/unicode/encodings/internal/single_byte_table.hero")
 
 # Panel 235's R7: the folder is left out by its name, at any depth, and
 # nothing beside it is, the package's own source least of all.
 test "a placed tree is exempt by its folder's name, and the package's source beside it is not"
     assert exempt("examples/ini/heroes.packages/rebel@0.1.0-0123456789abcdef/strings.md")
     assert exempt("heroes.packages/rebel@0.1.0-0123456789abcdef/strings.hero")
-    assert !exempt("packages/rebel/0.1.0/files/strings.md")
+    assert !exempt("rebel/library/0.1.0/files/strings.md")
     assert !exempt("examples/ini/heroes.packagesx/strings.md")
     assert !exempt("examples/ini/my.heroes.packages/strings.md")
     assert !exempt("examples/ini/main.hero")
@@ -546,10 +546,10 @@ test "the zero-width kin a data file may carry are refused characters with no es
         assert code < 8232 || code > 8238
         assert code < 8294 || code > 8297
 
-    tables = "packages/rebel/0.1.0/files/i18n/dates/internal/date_tables.hero"
+    tables = "rebel/library/0.1.0/files/i18n/dates/internal/date_tables.hero"
     assert data_codes(tables) == [8203]
     assert data_codes(tables + ".md").len() == 0
-    assert data_codes("packages/rebel/0.1.0/files/i18n/dates/internal").len() == 0
+    assert data_codes("rebel/library/0.1.0/files/i18n/dates/internal").len() == 0
     assert data_codes("docs/panel/192-reports/historian.md").len() == 0
 
 # Built from `DATA` itself, so a row added is held as the others are: the

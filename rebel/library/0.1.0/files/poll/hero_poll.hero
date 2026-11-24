@@ -1,0 +1,579 @@
+# The platform layer's readiness sets, `hero_poll.h`, bound thin: one function
+# per C function, each answering what C answers, in C's order. Where a call
+# fails its set is `nullptr` or its count or key -1, and `last_error` then the
+# kind. Rebel's floor of `poll` (`rebel/examples/README.md` § A2): no policy
+# stands here, and the face above it turns every kind into a code.
+#
+# The layer is C of the language's own beside the runtime, so this group names
+# its header and no `link`: no platform type reaches it, and the same lines
+# bind it on every platform. A set is begun by `hero_poll_make` and ended by
+# `hero_poll_close`; the streams and sockets a set holds stay the program's,
+# which closes them with their own floors.
+
+use io/hero_stream
+use net/hero_net
+use net/hero_stream_net
+use os/hero_sys
+use threads/hero_os as threads_floor
+use time/hero_time
+
+extern "hero_poll.h"
+    # A set the layer holds open. It is a handle the layer issues and checks:
+    # one closed already, `nullptr`, or one it never issued is
+    # `HERO_POLL_NOT_OPEN`, never a read of freed memory.
+    record Set tag hero_poll_set
+    # The kinds of failure `last_error` answers, the same numbers on every
+    # platform.
+    constant HERO_POLL_OK: i64
+    constant HERO_POLL_INVALID: i64
+    constant HERO_POLL_NOT_OPEN: i64
+    constant HERO_POLL_NOT_FOUND: i64
+    constant HERO_POLL_LIMIT: i64
+    constant HERO_POLL_UNSUPPORTED: i64
+    constant HERO_POLL_STOPPED: i64
+    constant HERO_POLL_OTHER: i64
+    # The bits of what an entry waits for and of what a wait answers.
+    constant HERO_POLL_READ: i64
+    constant HERO_POLL_WRITE: i64
+    constant HERO_POLL_HANGUP: i64
+    constant HERO_POLL_ERROR: i64
+    constant HERO_POLL_DUE: i64
+    # The most entries one set holds, and the numbers one event takes.
+    constant HERO_POLL_MOST: i64
+    constant HERO_POLL_EVENT_NUMBERS: i64
+    function hero_poll_make(most: i64) -> Set acquires hero_poll_close
+    function hero_poll_add_socket(set: Set, s: hero_net.Socket, interest: i64) -> i64
+    function hero_poll_add_stream(set: Set, s: hero_stream.Stream, interest: i64) -> i64
+    function hero_poll_add_timer(set: Set, first_ns: i64, every_ns: i64) -> i64
+    function hero_poll_add_signals(set: Set) -> i64
+    function hero_poll_add_mailbox(set: Set, number: i64) -> i64
+    function hero_poll_set_timer(set: Set, key: i64, first_ns: i64, every_ns: i64) -> i64
+    function hero_poll_change(set: Set, key: i64, interest: i64) -> i64
+    function hero_poll_remove(set: Set, key: i64) -> i64
+    function hero_poll_count(set: Set) -> i64
+    function hero_poll_wait(set: Set, limit_ns: i64, @events: [i64] counted_by n lent, n: u64) -> i64
+    function hero_poll_close(set: Set consumes) -> i64
+    function hero_poll_last_error() -> i64
+    function hero_poll_last_os_error() -> i64
+
+# A new set holding at most `most` entries, or `nullptr`: 1 to
+# `HERO_POLL_MOST`, else `HERO_POLL_INVALID`; `HERO_POLL_LIMIT` where the
+# process has no room for so many.
+#
+# - `most`: the most entries the set holds, 1 to `HERO_POLL_MOST`; the process
+#   holds 65,536 entries among all its sets and 1,024 sets.
+function make(most: i64) -> Set
+    return hero_poll_make(most)
+
+# The key of a new entry waiting on the socket `s` for `interest`, or -1.
+#
+# - `set`: the set added to; it stays open. One not open is
+#   `HERO_POLL_NOT_OPEN`.
+# - `s`: a connection, a listener or a datagram socket; it stays the
+#   program's, which closes it with `hero_net.close`. One socket may stand in
+#   a set twice, each entry its own.
+# - `interest`: `HERO_POLL_READ`, `HERO_POLL_WRITE`, or both or-ed; any other
+#   value is `HERO_POLL_INVALID`.
+function add_socket(set: Set, s: hero_net.Socket, interest: i64) -> i64
+    return hero_poll_add_socket(set, s: s, interest: interest)
+
+# The key of a new entry waiting on the stream `s` for `interest`, or -1.
+#
+# - `set`: the set added to; it stays open. One not open is
+#   `HERO_POLL_NOT_OPEN`.
+# - `s`: the stream waited on, which stays the program's: a stream over a
+#   connection is waited on as its socket, a regular file is ready at every
+#   wait, a pipe or a terminal on Darwin and Linux as its descriptor; what the
+#   system cannot wait on is `HERO_POLL_UNSUPPORTED`, a pipe or a console on
+#   Windows among them.
+# - `interest`: `HERO_POLL_READ`, `HERO_POLL_WRITE`, or both or-ed; any other
+#   value is `HERO_POLL_INVALID`.
+function add_stream(set: Set, s: hero_stream.Stream, interest: i64) -> i64
+    return hero_poll_add_stream(set, s: s, interest: interest)
+
+# The key of a new timer due `first_ns` nanoseconds from now, then every
+# `every_ns`, 0 for once; or -1.
+#
+# - `set`: the set added to; it stays open.
+# - `first_ns`: nanoseconds from now to the first time it is due, 0 or more;
+#   below 0 is `HERO_POLL_INVALID`.
+# - `every_ns`: nanoseconds between later times, 0 for once; below 0 is
+#   `HERO_POLL_INVALID`. Times that fell due while nobody waited are told
+#   once, with their count.
+function add_timer(set: Set, first_ns: i64, every_ns: i64) -> i64
+    return hero_poll_add_timer(set, first_ns: first_ns, every_ns: every_ns)
+
+# The entry's key once the signals the program counts are added, or -1: told
+# readable while a signal the runtime's door counts is not taken, whichever
+# signal and whenever it was counted; `HERO_POLL_UNSUPPORTED` on Windows.
+#
+# - `set`: the set added to; it stays open.
+function add_signals(set: Set) -> i64
+    return hero_poll_add_signals(set)
+
+# The entry's key once the mailbox `number` names is added, or -1: told
+# readable while a receive on it would not wait (it holds a value, is closed
+# or answers `stopped`), and hangup beside it once its last copy is gone;
+# rung by the send itself. `HERO_POLL_NOT_OPEN` for a number that names no
+# mailbox.
+#
+# - `set`: the set added to; it stays open.
+# - `number`: the mailbox's, as `m.number()` gives it; the set holds no copy.
+function add_mailbox(set: Set, number: i64) -> i64
+    return hero_poll_add_mailbox(set, number: number)
+
+# 0 once the timer `key` is set again from now, or -1.
+#
+# - `set`: the set holding the timer; it stays open.
+# - `key`: the timer's key, as `add_timer` answered it; one of no entry is
+#   `HERO_POLL_NOT_FOUND`, one of an entry that is no timer
+#   `HERO_POLL_INVALID`.
+# - `first_ns`: nanoseconds from now to its next time, 0 or more.
+# - `every_ns`: nanoseconds between later times, 0 for once.
+function set_timer(set: Set, key: i64, first_ns: i64, every_ns: i64) -> i64
+    return hero_poll_set_timer(set, key: key, first_ns: first_ns, every_ns: every_ns)
+
+# 0 once the entry `key` waits for `interest`, or -1.
+#
+# - `set`: the set holding the entry; it stays open.
+# - `key`: the entry's key; one of no entry is `HERO_POLL_NOT_FOUND`, a
+#   timer's `HERO_POLL_INVALID`.
+# - `interest`: `HERO_POLL_READ`, `HERO_POLL_WRITE`, or both or-ed, from now.
+function change(set: Set, key: i64, interest: i64) -> i64
+    return hero_poll_change(set, key: key, interest: interest)
+
+# 0 once the entry `key` is out of the set, or -1.
+#
+# - `set`: the set holding the entry; it stays open.
+# - `key`: the entry's key; its stream or socket is let go, never closed. One
+#   of no entry is `HERO_POLL_NOT_FOUND`.
+function remove(set: Set, key: i64) -> i64
+    return hero_poll_remove(set, key: key)
+
+# How many entries the set holds, or -1.
+#
+# - `set`: the set asked about; it stays open.
+function count(set: Set) -> i64
+    return hero_poll_count(set)
+
+# How many events the wait wrote into the first `n` numbers of `events`,
+# three numbers each, 0 where `limit_ns` passed with none; or -1. It leaves
+# `events` `n` numbers long.
+#
+# - `set`: the set waited on; it stays open. A set another thread waits on is
+#   `HERO_POLL_INVALID`.
+# - `limit_ns`: nanoseconds to wait; 0 asks without waiting, -1 waits with no
+#   limit, below -1 is `HERO_POLL_INVALID`. The stop asked ends it with
+#   `HERO_POLL_STOPPED`.
+# - `events`: filled with `HERO_POLL_EVENT_NUMBERS` numbers per event, its
+#   key, its bits, and for a timer how many times it fell due, 0 for any other
+#   entry; the timers first, then the files, then the system's order. Left `n`
+#   long.
+# - `n`: the numbers `events` holds, 3 or more, else `HERO_POLL_INVALID`; the
+#   events that do not fit are told at the next wait.
+function wait(set: Set, limit_ns: i64, @events: [i64], n: u64) -> i64
+    return hero_poll_wait(set, limit_ns: limit_ns, @events, n: n)
+
+# 0, or -1 where the set was not open; `set` is given back either way.
+#
+# - `set`: the set ended and given back; every stream and socket in it is let
+#   go and none closed.
+function close(@set: Set) -> i64
+    return hero_poll_close(set)
+
+# The kind of the last call's failure on this thread.
+function last_error() -> i64
+    return hero_poll_last_error()
+
+# The platform's own number for that failure, 0 where the layer refused.
+function last_os_error() -> i64
+    return hero_poll_last_os_error()
+
+## The tests: the edges first
+
+test "make: no entry and one past the most are refused, one and the most are made, a close twice refused"
+    assert make(0) == nullptr
+    assert last_error() == HERO_POLL_INVALID
+    assert make(HERO_POLL_MOST + 1) == nullptr
+    assert last_error() == HERO_POLL_INVALID
+    assert make(-1) == nullptr
+    assert last_error() == HERO_POLL_INVALID
+    one @= make(1)
+    assert one != nullptr
+    assert count(one) == 0
+    assert close(@one) == 0
+    most @= make(HERO_POLL_MOST)
+    assert most != nullptr
+    assert last_error() == HERO_POLL_OK
+    assert close(@most) == 0
+
+test "make: the process's 65,536 entries are shared, so two sets of the most do not both fit, and a closed one's room comes back"
+    first @= make(HERO_POLL_MOST)
+    assert first != nullptr
+    second = make(HERO_POLL_MOST)
+    assert second == nullptr
+    assert last_error() == HERO_POLL_LIMIT
+    assert close(@first) == 0
+    third @= make(HERO_POLL_MOST)
+    assert third != nullptr
+    assert close(@third) == 0
+
+test "a set and a socket of the same slot and life are two handles: each is closed alone, and the other still answers"
+    set @= make(4)
+    listener @= hero_net.listen(address: "127.0.0.1", port: 0)
+    assert set != nullptr
+    assert listener != nullptr
+    assert close(@set) == 0
+    assert hero_net.port_of(listener) > 0
+    again @= make(4)
+    assert count(again) == 0
+    assert hero_net.close(@listener) == 0
+    assert count(again) == 0
+    assert close(@again) == 0
+
+test "add_socket: an interest that is none of the three, no socket, and a set past its most are refused"
+    set @= make(1)
+    listener @= hero_net.listen(address: "127.0.0.1", port: 0)
+    assert add_socket(set, s: listener, interest: 0) == -1
+    assert last_error() == HERO_POLL_INVALID
+    assert add_socket(set, s: listener, interest: 4) == -1
+    assert last_error() == HERO_POLL_INVALID
+    assert add_socket(set, s: listener, interest: -1) == -1
+    assert last_error() == HERO_POLL_INVALID
+    key = add_socket(set, s: listener, interest: HERO_POLL_READ)
+    assert key > 0
+    assert count(set) == 1
+    assert add_socket(set, s: listener, interest: HERO_POLL_READ) == -1
+    assert last_error() == HERO_POLL_LIMIT
+    assert add_socket(set, s: nullptr, interest: HERO_POLL_READ) == -1
+    assert last_error() == HERO_POLL_NOT_OPEN
+    assert close(@set) == 0
+    assert hero_net.close(@listener) == 0
+
+test "remove: a key twice, a key of another set and 0 are not found, and a closed set is not open"
+    set @= make(4)
+    other @= make(4)
+    key = add_timer(set, first_ns: 1000000000, every_ns: 0)
+    assert key > 0
+    assert remove(other, key: key) == -1
+    assert last_error() == HERO_POLL_NOT_FOUND
+    assert remove(set, key: 0) == -1
+    assert last_error() == HERO_POLL_NOT_FOUND
+    assert remove(set, key: key) == 0
+    assert remove(set, key: key) == -1
+    assert last_error() == HERO_POLL_NOT_FOUND
+    again = add_timer(set, first_ns: 1000000000, every_ns: 0)
+    assert again > 0
+    assert again != key
+    assert remove(set, key: key) == -1
+    assert last_error() == HERO_POLL_NOT_FOUND
+    assert close(@other) == 0
+    assert close(@set) == 0
+
+test "wait: a limit below -1 and room for no event are refused, and an empty set's wait of 0 answers none at once"
+    set @= make(2)
+    events: [i64] @= [0, 0, 0, 0, 0, 0]
+    assert wait(set, limit_ns: -2, @events, n: 6) == -1
+    assert last_error() == HERO_POLL_INVALID
+    assert wait(set, limit_ns: 0, @events, n: 2) == -1
+    assert last_error() == HERO_POLL_INVALID
+    assert wait(set, limit_ns: 0, @events, n: 6) == 0
+    assert wait(set, limit_ns: 20000000, @events, n: 6) == 0
+    assert close(@set) == 0
+
+# Whether `set`, holding `listener` for READ, is told nothing at once, once
+# every connection another program left waiting on the listener is accepted,
+# closed and passed over, ten at most: the test's own client is accepted
+# before it asks, so any connection waiting then is not the test's. Beside
+# two loops of tests that steer their connect to the port the system gives
+# next, one reached the listener in 3 runs of 3,210 (2026-11-21).
+#
+# - `set`: the set holding `listener` for READ.
+# - `listener`: the test's listener; it stays open.
+function test_quiet(set: Set, listener: hero_net.Socket) -> bool
+    events: [i64] @= [0, 0, 0, 0, 0, 0]
+    tries @= 0
+
+    while tries < 10
+        tries @ tries + 1
+
+        if wait(set, limit_ns: 0, @events, n: 6) == 0
+            return true
+        stranger @= hero_net.accept(listener)
+
+        if stranger != nullptr
+            assert hero_net.close(@stranger) == 0
+
+    return false
+
+test "a listener is told READ once a connection waits, and not before; the event is its key, the bit and 0"
+    set @= make(8)
+    listener @= hero_net.listen(address: "127.0.0.1", port: 0)
+    key = add_socket(set, s: listener, interest: HERO_POLL_READ)
+    events: [i64] @= [0, 0, 0, 0, 0, 0]
+    assert test_quiet(set, listener: listener)
+    client @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))
+    assert client != nullptr
+    assert wait(set, limit_ns: 5000000000, @events, n: 6) == 1
+    assert events[0] == key
+    assert events[1] == HERO_POLL_READ
+    assert events[2] == 0
+    accepted @= hero_net.test_accept_from(listener, port: hero_net.port_of(client))
+    assert accepted != nullptr
+    assert test_quiet(set, listener: listener)
+    assert close(@set) == 0
+    assert hero_net.close(@accepted) == 0
+    assert hero_net.close(@client) == 0
+    assert hero_net.close(@listener) == 0
+
+test "a connection is told WRITE at once, READ once bytes come, READ again while they stay, and READ at the peer's close with recv then 0"
+    set @= make(8)
+    listener @= hero_net.listen(address: "127.0.0.1", port: 0)
+    client @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))
+    accepted @= hero_net.test_accept_from(listener, port: hero_net.port_of(client))
+    writes = add_socket(set, s: client, interest: HERO_POLL_WRITE)
+    reads = add_socket(set, s: accepted, interest: HERO_POLL_READ)
+    events: [i64] @= [0, 0, 0, 0, 0, 0]
+    assert wait(set, limit_ns: 5000000000, @events, n: 6) == 1
+    assert events[0] == writes
+    assert events[1] == HERO_POLL_WRITE
+    assert remove(set, key: writes) == 0
+    hi: [u8] @= [104, 105]
+    assert hero_net.send(client, @hi, n: 2) == 2
+    assert wait(set, limit_ns: 5000000000, @events, n: 6) == 1
+    assert events[0] == reads
+    assert events[1] & HERO_POLL_READ != 0
+    assert wait(set, limit_ns: 0, @events, n: 6) == 1
+    got: [u8] @= [0, 0, 0, 0]
+    assert hero_net.recv(accepted, @got, n: 4) == 2
+    assert wait(set, limit_ns: 0, @events, n: 6) == 0
+    assert hero_net.close(@client) == 0
+    assert wait(set, limit_ns: 5000000000, @events, n: 6) == 1
+    assert events[0] == reads
+    assert events[1] & HERO_POLL_READ != 0
+    assert hero_net.recv(accepted, @got, n: 4) == 0
+    assert close(@set) == 0
+    assert hero_net.close(@accepted) == 0
+    assert hero_net.close(@listener) == 0
+
+test "change: READ to WRITE moves what the entry is told, and a timer's interest is refused"
+    set @= make(4)
+    listener @= hero_net.listen(address: "127.0.0.1", port: 0)
+    client @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))
+    accepted @= hero_net.test_accept_from(listener, port: hero_net.port_of(client))
+    key = add_socket(set, s: client, interest: HERO_POLL_READ)
+    events: [i64] @= [0, 0, 0]
+    assert wait(set, limit_ns: 0, @events, n: 3) == 0
+    assert change(set, key: key, interest: HERO_POLL_WRITE) == 0
+    assert wait(set, limit_ns: 5000000000, @events, n: 3) == 1
+    assert events[1] == HERO_POLL_WRITE
+    assert change(set, key: key, interest: HERO_POLL_READ | HERO_POLL_WRITE) == 0
+    assert change(set, key: key, interest: 0) == -1
+    assert last_error() == HERO_POLL_INVALID
+    timer = add_timer(set, first_ns: 1000000000, every_ns: 0)
+    assert change(set, key: timer, interest: HERO_POLL_READ) == -1
+    assert last_error() == HERO_POLL_INVALID
+    assert close(@set) == 0
+    assert hero_net.close(@accepted) == 0
+    assert hero_net.close(@client) == 0
+    assert hero_net.close(@listener) == 0
+
+test "more ready than the numbers hold: the rest are told at the next wait, each once a round"
+    set @= make(8)
+    listener @= hero_net.listen(address: "127.0.0.1", port: 0)
+    one @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))
+    two @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))
+    a @= hero_net.test_accept_from(listener, port: hero_net.port_of(one))
+    b @= hero_net.test_accept_from(listener, port: hero_net.port_of(two))
+    first = add_socket(set, s: one, interest: HERO_POLL_READ | HERO_POLL_WRITE)
+    second = add_socket(set, s: two, interest: HERO_POLL_WRITE)
+    events: [i64] @= [0, 0, 0, 0, 0, 0, 0]
+    assert wait(set, limit_ns: 5000000000, @events, n: 3) == 1
+    told = events[0]
+    assert told == first || told == second
+    assert wait(set, limit_ns: 5000000000, @events, n: 7) == 2
+    assert events[0] != events[3]
+    assert events[1] == HERO_POLL_WRITE
+    assert events[4] == HERO_POLL_WRITE
+    assert close(@set) == 0
+    assert hero_net.close(@a) == 0
+    assert hero_net.close(@b) == 0
+    assert hero_net.close(@one) == 0
+    assert hero_net.close(@two) == 0
+    assert hero_net.close(@listener) == 0
+
+test "add_timer: a time below 0 is refused; one due now is told DUE once with 1, and not again"
+    set @= make(4)
+    assert add_timer(set, first_ns: -1, every_ns: 0) == -1
+    assert last_error() == HERO_POLL_INVALID
+    assert add_timer(set, first_ns: 0, every_ns: -1) == -1
+    assert last_error() == HERO_POLL_INVALID
+    key = add_timer(set, first_ns: 0, every_ns: 0)
+    events: [i64] @= [0, 0, 0]
+    assert wait(set, limit_ns: 0, @events, n: 3) == 1
+    assert events[0] == key
+    assert events[1] == HERO_POLL_DUE
+    assert events[2] == 1
+    assert wait(set, limit_ns: 20000000, @events, n: 3) == 0
+    assert count(set) == 1
+    assert close(@set) == 0
+
+test "a timer ends a wait with no limit at its time, and set_timer sets it again; a socket's key is no timer"
+    set @= make(4)
+    key = add_timer(set, first_ns: 30000000, every_ns: 0)
+    events: [i64] @= [0, 0, 0]
+    assert wait(set, limit_ns: -1, @events, n: 3) == 1
+    assert events[0] == key
+    assert wait(set, limit_ns: 0, @events, n: 3) == 0
+    assert set_timer(set, key: key, first_ns: 0, every_ns: 0) == 0
+    assert wait(set, limit_ns: 0, @events, n: 3) == 1
+    assert set_timer(set, key: key, first_ns: -5, every_ns: 0) == -1
+    assert last_error() == HERO_POLL_INVALID
+    listener @= hero_net.listen(address: "127.0.0.1", port: 0)
+    socket = add_socket(set, s: listener, interest: HERO_POLL_READ)
+    assert set_timer(set, key: socket, first_ns: 0, every_ns: 0) == -1
+    assert last_error() == HERO_POLL_INVALID
+    assert set_timer(set, key: 12345, first_ns: 0, every_ns: 0) == -1
+    assert last_error() == HERO_POLL_NOT_FOUND
+    assert close(@set) == 0
+    assert hero_net.close(@listener) == 0
+
+test "an interval waited past is told once with every time it fell due, then due again at its next time"
+    # The layer's own clock, `hero_time.monotonic_ns`, is read either side of
+    # each call, so what is asserted holds however late a loaded machine runs
+    # it: a timer added between `added_from` and `added_by`, due first 1 ms on
+    # and then every 10 ms, has fallen due by a moment `t` as many times as
+    # 1 ms and whole 10 ms fit between its adding and `t`, and a wait that
+    # tells it again before its next time is a fault whatever the load.
+    set @= make(4)
+    added_from = hero_time.monotonic_ns()
+    key = add_timer(set, first_ns: 1000000, every_ns: 10000000)
+    added_by = hero_time.monotonic_ns()
+    assert hero_time.sleep_ns(35000000) == 0
+    waited_from = hero_time.monotonic_ns()
+    events: [i64] @= [0, 0, 0]
+    assert wait(set, limit_ns: 0, @events, n: 3) == 1
+    waited_by = hero_time.monotonic_ns()
+    assert events[0] == key
+    assert events[1] == HERO_POLL_DUE
+    told = events[2]
+    assert told >= 4
+    assert told >= (waited_from - added_by - 1000000) / 10000000 + 1
+    assert told <= (waited_by - added_from - 1000000) / 10000000 + 1
+    next_from = added_from + 1000000 + told * 10000000
+    again = wait(set, limit_ns: 0, @events, n: 3)
+    again_by = hero_time.monotonic_ns()
+    assert again == 0 || again_by >= next_from
+    assert wait(set, limit_ns: 1000000000, @events, n: 3) == 1
+    assert hero_time.monotonic_ns() >= next_from
+    assert events[0] == key
+    assert events[2] >= 1
+    assert close(@set) == 0
+
+test "a pipe's reading end is told READ once a byte is written, and its writing end WRITE; on Windows a pipe is unsupported"
+    set @= make(4)
+    reader: hero_stream.Stream @= nullptr
+    writer: hero_stream.Stream @= nullptr
+    assert hero_stream.pipe(reader: @reader, writer: @writer) == 0
+    reads = add_stream(set, s: reader, interest: HERO_POLL_READ)
+
+    if hero_sys.system() == hero_sys.HERO_SYS_SYSTEM_WINDOWS
+        assert reads == -1
+        assert last_error() == HERO_POLL_UNSUPPORTED
+    else
+        assert reads > 0
+        events: [i64] @= [0, 0, 0, 0, 0, 0]
+        assert wait(set, limit_ns: 0, @events, n: 6) == 0
+        writes = add_stream(set, s: writer, interest: HERO_POLL_WRITE)
+        assert wait(set, limit_ns: 5000000000, @events, n: 6) == 1
+        assert events[0] == writes
+        assert remove(set, key: writes) == 0
+        one: [u8] @= [7]
+        assert hero_stream.write(writer, @one, n: 1) == 1
+        assert wait(set, limit_ns: 5000000000, @events, n: 6) == 1
+        assert events[0] == reads
+        assert events[1] == HERO_POLL_READ
+    assert close(@set) == 0
+    assert hero_stream.close(@reader) == 0
+    assert hero_stream.close(@writer) == 0
+
+test "a regular file is ready at every wait, for what it was added with, and no stream is not open"
+    folder = hero_stream.scratch("poll-file")
+    file @= hero_stream.open(path: folder + "/f", access: hero_stream.HERO_STREAM_ACCESS_CREATE, perm: 420)
+    assert file != nullptr
+    set @= make(4)
+    key = add_stream(set, s: file, interest: HERO_POLL_READ | HERO_POLL_WRITE)
+    assert key > 0
+    events: [i64] @= [0, 0, 0]
+    assert wait(set, limit_ns: 0, @events, n: 3) == 1
+    assert events[0] == key
+    assert events[1] == HERO_POLL_READ | HERO_POLL_WRITE
+    assert wait(set, limit_ns: -1, @events, n: 3) == 1
+    assert hero_stream.close(@file) == 0
+    assert add_stream(set, s: nullptr, interest: HERO_POLL_READ) == -1
+    assert last_error() == HERO_POLL_NOT_OPEN
+    assert close(@set) == 0
+    assert hero_stream.cleared(folder)
+
+test "a connection's stream is waited on as its socket, and a stream closed in the set is told READ and HANGUP-or-READ, its descriptor kept"
+    set @= make(4)
+    listener @= hero_net.listen(address: "127.0.0.1", port: 0)
+    client @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))
+    accepted @= hero_net.test_accept_from(listener, port: hero_net.port_of(client))
+    stream @= hero_stream_net.of(@accepted)
+    assert stream != nullptr
+    key = add_stream(set, s: stream, interest: HERO_POLL_READ)
+    assert key > 0
+    events: [i64] @= [0, 0, 0]
+    assert wait(set, limit_ns: 0, @events, n: 3) == 0
+    hi: [u8] @= [104]
+    assert hero_net.send(client, @hi, n: 1) == 1
+    assert wait(set, limit_ns: 5000000000, @events, n: 3) == 1
+    assert events[0] == key
+    assert hero_stream.close(@stream) == 0
+    assert wait(set, limit_ns: 5000000000, @events, n: 3) == 1
+    assert events[1] & HERO_POLL_READ != 0
+    assert remove(set, key: key) == 0
+    assert close(@set) == 0
+    assert hero_net.close(@client) == 0
+    assert hero_net.close(@listener) == 0
+
+test "the stop asked before a wait ends it stopped, even with an entry ready"
+    set @= make(2)
+    _ = add_timer(set, first_ns: 0, every_ns: 0)
+    hero_net.ask_stop()
+    events: [i64] @= [0, 0, 0]
+    assert wait(set, limit_ns: -1, @events, n: 3) == -1
+    assert last_error() == HERO_POLL_STOPPED
+    assert close(@set) == 0
+
+# The thread the stop test starts: it sleeps `ms` milliseconds, then asks the
+# stop, which ends the wait the test's own thread is in.
+#
+# - `ms`: milliseconds the thread sleeps before it asks the stop.
+function stop_later(ms: i64) -> i64
+    _ = hero_time.sleep_ns(ms * 1000000)
+    hero_net.ask_stop()
+    return 0
+
+# The wait is on a connection the test made, which no other program can
+# reach: on a listener, one another program's connect reached it in 4 runs
+# of 3,210 beside two loops of tests that steer their connect to the port
+# the system gives next (2026-11-21), and ended the wait READ.
+test "the stop asked by another thread ends a wait with no limit at once"
+    set @= make(2)
+    listener @= hero_net.listen(address: "127.0.0.1", port: 0)
+    client @= hero_net.connect(address: "127.0.0.1", port: hero_net.port_of(listener))
+    accepted @= hero_net.test_accept_from(listener, port: hero_net.port_of(client))
+    _ = add_socket(set, s: accepted, interest: HERO_POLL_READ)
+    why: i64 @= 0
+    thread = threads_floor.start(stop_later, arg: 50, bytes: 0, why: @why)
+    assert thread >= 0
+    events: [i64] @= [0, 0, 0]
+    assert wait(set, limit_ns: -1, @events, n: 3) == -1
+    assert last_error() == HERO_POLL_STOPPED
+    assert threads_floor.finish(thread) == 0
+    assert close(@set) == 0
+    assert hero_net.close(@accepted) == 0
+    assert hero_net.close(@client) == 0
+    assert hero_net.close(@listener) == 0

@@ -1,0 +1,148 @@
+# editor: a terminal text editor in the manner of nano and micro. It opens,
+# edits and saves files in any encoding of the WHATWG standard (UTF-8,
+# UTF-16 with or without its mark, windows-1252 and the ISO-8859 family,
+# Shift_JIS, EUC-JP, GB18030, Big5, EUC-KR and the rest), the encoding found
+# by a byte order mark, guessed from the bytes or named, and saved back in
+# it with the file's own line breaks. The cursor moves by grapheme cluster,
+# word and line, and wide characters and combining marks are drawn as a
+# terminal draws them. Undo and redo take back a word, a run of deletions,
+# a paste or a whole "replace all" at once; search and replace by regular
+# expression with `$1` and `${name}`; a diff view shows the buffer against
+# its file on disk; a file another program changes is offered for reload,
+# the reload itself one undo away; several buffers stand as tabs in the
+# order of their paths; keys and colours come from a settings file.
+#
+# Run for real, on a terminal:
+#
+#     heroes build rebel/examples/editor/main.hero -o editor
+#     ./editor notes.txt todo.md
+#     ./editor --encoding latin1 old-invoice.txt
+#     ./editor --config my-editor.toml --tab-width 8 src/*.txt
+#
+# The settings file is `editor.toml` (or `.yaml`, `.json`, `.ini`) in
+# `<config dir>/heroes-editor/`, else the one `--config` names;
+# `settings/settings.hero` documents its tables. F1 lists the keys. `--demo`
+# plays a scripted session headless, on files it writes under
+# `build/editor-demo/`, and prints it: `main.args` and `main.expected`.
+#
+# The Rebel packages it uses, and for what:
+#
+# - `tui` and `term`: the full screen, its frames written cell by cell, the
+#   tabs, the prompt's line, the help's table; keys and styles.
+# - `unicode/segment`: graphemes, word boundaries and the columns a text
+#   takes; `unicode`: code points, controls and letters.
+# - `unicode/encodings`: every file read and written in its encoding,
+#   detected or named; `bytes`: byte order marks, a key's bytes, the bytes a
+#   character is written with.
+# - `diff`: the diff view and its count of lines; `regex`: search and
+#   replace with captures.
+# - `fs` and `fs/watch`: files read whole, saved atomically, and watched;
+#   `path`: a tab's name; `time`: the waits.
+# - `containers/deque`: the bounded history of undo and redo;
+#   `containers/ordered`: the buffers in the order of their paths.
+# - `config`, `json` and `flags`: the settings in layers and this command
+#   line; `os`: the settings' folder and the environment.
+# - `strings` and `numbers`: text and numbers throughout.
+
+use <rebel>/config
+use <rebel>/flags
+use <rebel>/os
+use <rebel>/path
+
+use demo/script
+use editor/state
+use settings/settings
+use terminal/session
+
+# The command line's declaration.
+function declaration() -> flags.Command
+    c @= flags.command(
+        name: "editor",
+        about: "A terminal text editor: files in any encoding, undo, regex search and replace, a diff against the disk."
+    )
+    flags.add(
+        @c,
+        flags.with_arity(flags.positional(name: "files", help: "the files to open; one not on disk is a new file"), arity: .many)
+    )
+    flags.add(
+        @c,
+        flags.option(long: "encoding", short: "e", value_name: "LABEL", help: "read the files in this encoding: latin1, sjis, utf-16le, ...")
+    )
+    flags.add(
+        @c,
+        flags.option(long: "config", short: "c", value_name: "FILE", help: "the settings file; editor.toml in the settings folder by default")
+    )
+    flags.add(
+        @c,
+        flags.with_kind(flags.option(long: "tab-width", short: "t", value_name: "N", help: "the columns between tab stops"), kind: .integer)
+    )
+    flags.add(@c, flags.flag(long: "demo", short: "", help: "play a scripted session headless and print it"))
+    return c
+
+# Reads the command line, then plays the demo or edits the files named.
+function main()
+    found = match flags.parse_args(declaration())
+        .ok f => f
+        .err x =>
+            print(x.msg)
+            exit(code: 2)
+            return
+
+    if flags.is_help(found)
+        print(flags.help_text(found))
+        return
+
+    if flags.is_on(found, name: "demo")
+        exit(code: script.run())
+        return
+
+    match edit(found)
+        .ok _ => _ = 0
+        .err x =>
+            print(f"editor: {x.msg}")
+            exit(code: 1)
+
+# Opens the files the command line names, with the settings, and edits them
+# on the terminal until the person leaves.
+#
+# - `found`: what the parse found.
+#
+# Fails where the settings are refused, no file is named, a file cannot be
+# opened, or the program has no terminal.
+function edit(found: flags.Found) -> ()?
+    named = flags.values_of(found, name: "files")
+
+    if named.len() == 0
+        return fail(code: "invalid", msg: "name the files to edit: editor <file>...")
+
+    command_line = config.from_flags(name: "command line", found: found, bindings: [config.FlagBinding(path: "text.tab_width", name: "tab-width", kind: .integer)])?
+    s = settings.read_setup(file: settings_file(found), env: os.env_all()?, extra: [command_line])?
+
+    # The terminal's own size replaces this one when the session starts.
+    e @= state.new_editor(s, width: 80, height: 24)
+    encoding = flags.value_of(found, name: "encoding").default("")
+
+    for p in named
+        match state.open_path(@e, path: path.clean(p), named: encoding)
+            .ok _ => _ = 0
+            .err x =>
+                _ = state.stop(@e).is_err()
+                return fail(code: x.code, msg: f"{p}: {x.msg}")
+
+    e.current @ path.clean(named[0])
+    return session.run(@e)
+
+# The settings file: the one `--config` names, else `editor` with any
+# settings extension in the settings folder, else none.
+#
+# - `found`: what the parse found.
+function settings_file(found: flags.Found) -> str
+    match flags.value_of(found, name: "config")
+        .ok given => return given
+        .err _    => _ = 0
+
+    folder = match os.config_dir()
+        .ok d  => path.join_all([d, "heroes-editor"])
+        .err _ => return ""
+
+    return config.find_file(base: "editor", dirs: [folder]).default("")

@@ -1,0 +1,310 @@
+# certs: a certificate manager in the manner of certbot. It keeps an ACME
+# account (RFC 8555) with a key in the system's keyring, obtains a
+# certificate for each set of domains its configuration names, proving each
+# name by HTTP-01 (a file served from a webroot, by a web server or by its
+# own responder) or DNS-01 (a TXT record written by RFC 2136 updates signed
+# with TSIG), the request built and signed here; keeps every version in
+# certbot's `live/` and `archive/` layout, with a renewal record a person
+# may annotate; renews each certificate when the CA's renewal window (RFC
+# 9773) opens or when few days are left; revokes one; and serves HTTPS with
+# one.
+#
+# Run for real, from a timer twice a day for `renew`:
+#
+#     heroes build rebel/examples/certs/main.hero -o certs
+#     ./certs check certs.toml             # read the configuration, say what it holds
+#     ./certs issue certs.toml site        # obtain the certificate "site" now
+#     ./certs renew certs.toml             # renew every certificate that is due
+#     ./certs show certs.toml              # what is kept, and the days each has left
+#     ./certs revoke certs.toml site       # revoke "site" for its key's compromise
+#     ./certs respond certs.toml           # serve the webroot for HTTP-01, until Ctrl-C
+#     ./certs serve certs.toml             # serve HTTPS with [serve]'s certificate, until Ctrl-C
+#     ./certs secret certs.toml tsig < key # keep the TSIG secret, base 64, in the key store
+#
+# `config/settings` documents the file; `main.stdin` is a whole one. The
+# demo, `./certs demo < main.stdin`, runs two months of a site's
+# certificates in seconds against stand-ins it starts on 127.0.0.1 (a DNS
+# authority, its own HTTP-01 responder, an ACME CA), and prints the
+# transcript `main.expected` holds.
+#
+# Rebel's packages, and what for:
+#
+# - `acme`: the client side of RFC 8555 and RFC 9773: accounts, orders,
+#   challenges' answers, finalize, download, revocation, renewal windows;
+# - `jose`: the account key as a JWK and its thumbprint, and the stand-in
+#   CA's check of every request's JWS;
+# - `x509`: requests and certificates read back, chains verified, a
+#   request's signature checked by the stand-in CA;
+# - `asn1`, `pem`, `crypto/keypairs`, `crypto`, `big`: certificate requests
+#   and the stand-in CA's certificates written in DER and signed, keys made,
+#   TSIG's HMAC;
+# - `dns`: RFC 2136 updates sent, the stand-in authority's messages, the
+#   stand-in CA's lookups of addresses, TXT and CAA records;
+# - `http`, `tls`, `net`, `io`: the CA's API over HTTPS, the HTTP-01
+#   responder, the HTTPS server and its client, the stand-ins' sockets;
+# - `keyring`: the private keys and the TSIG secret, files where no keyring
+#   answers; `toml`: the configuration, the renewal records, the demo's file
+#   edited in place;
+# - `time`: the injected clock, validities, renewal windows; `random`: the
+#   stand-in CA's seeded tokens, nonces and serials; `os`: the stop of the
+#   demo's services, which run on threads of the language's own (`spawn`,
+#   mailboxes); `fs`, `path`, `strings`, `bytes`,
+#   `json`, `numbers`: throughout.
+
+use <rebel>/acme
+use <rebel>/io
+use <rebel>/net
+use <rebel>/os
+use <rebel>/path
+
+use challenges/responder
+use challenges/solve
+use config/loader
+use config/settings
+use demo/script
+use issue/account
+use renew/runner
+use serve/https
+use store/lineage as history
+use store/vault
+
+## The command line
+
+# The usage, printed with a usage error.
+constant USAGE: str
+    "usage: certs demo < certs.toml | certs <check|issue|renew|show|revoke|respond|serve|secret> certs.toml [name]"
+
+function main()
+    words = match checked_args()
+        .ok w => w
+        .err e =>
+            print("certs: " + e.msg)
+            print(USAGE)
+            exit(code: 2)
+
+    if words.len() == 1 && words[0] == "demo"
+        exit(code: script.run())
+    else if words.len() >= 2
+        exit(code: command(words))
+    print(USAGE)
+    exit(code: 2)
+
+# The program's arguments, each text: one that is not UTF-8 is a usage
+# error naming its place, rather than the abort `args()` would end on.
+#
+# Fails `invalid` naming the first argument that is not text.
+function checked_args() -> [str]?
+    out: [str] @= []
+    at @= 0
+
+    for given in args_checked()
+        at @ at + 1
+
+        match given
+            .ok word => out @ out.push(word)
+            .err _   => return fail(code: "invalid", msg: f"argument {at} is not text (UTF-8)")
+
+    return ok(out)
+
+# A command run against a configuration file: its exit code.
+#
+# - `words`: the command line, its verb and the file first.
+function command(words: [str]) -> i64
+    verb = words[0]
+
+    named = if words.len() >= 3
+        words[2]
+    else
+        ""
+
+    text = match read_file(words[1])
+        .ok t => t
+        .err e =>
+            print(f"certs: {words[1]}: {e.msg}")
+            return 1
+
+    s = match loader.parse(text)
+        .ok got => got
+        .err e =>
+            print(f"certs: {words[1]}: {e.msg}")
+            return 1
+
+    store = vault.choose(service: s.store.keyring_service, folder: path.join_all([s.store.folder, "keys"]))
+
+    return match verb
+        "check"   => checked(s, store: store)
+        "issue"   => issued(s, store: store, name: named)
+        "renew"   => renewed(s, store: store)
+        "show"    => reported(runner.show(s, store: store, c: .system))
+        "revoke"  => revoked(s, store: store, name: named)
+        "respond" => responding(s)
+        "serve"   => serving(s, store: store)
+        "secret"  => secret_kept(s, store: store, name: named)
+        _ =>
+            print(f"certs: no command {verb}")
+            print(USAGE)
+            2
+
+## Commands
+
+# `check`: what the configuration holds, and where the keys are kept.
+#
+# - `s`: the settings.
+# - `store`: the key store.
+function checked(s: settings.Settings, store: vault.Store) -> i64
+    print(f"directory: {s.acme.directory}")
+    print(f"account: {settings.contacts_of(s).join(", ")}, terms agreed: {s.account.agree_terms}")
+    print("keys: kept in " + vault.describe(store))
+
+    for l in s.certificates
+        print(f"certificate {l.name}: {l.domains.join(", ")}, proved by {l.challenge}")
+
+    print(
+        f"renewal: once {s.renewal.days_before_expiry} days or fewer are left, or once the CA's window opens: {s.renewal.renewal_info}"
+    )
+    return 0
+
+# `issue`: the certificate `name` obtained now.
+#
+# - `s`: the settings.
+# - `store`: the key store.
+# - `name`: the certificate's name.
+function issued(s: settings.Settings, store: vault.Store, name: str) -> i64
+    match settings.lineage_named(s, name: name)
+        .err e =>
+            print("certs: " + e.msg)
+            return 2
+        .ok l =>
+            match account.open(s, store: store)
+                .err e =>
+                    print("certs: the account: " + e.msg)
+                    return 1
+                .ok opened =>
+                    sess @= opened
+                    return reported(runner.issue_now(@sess, s: s, store: store, l: l, c: .system))
+
+# `renew`: every certificate that is due renewed.
+#
+# - `s`: the settings.
+# - `store`: the key store.
+function renewed(s: settings.Settings, store: vault.Store) -> i64
+    match account.open(s, store: store)
+        .err e =>
+            print("certs: the account: " + e.msg)
+            return 1
+        .ok opened =>
+            sess @= opened
+            return reported(runner.renew_all(@sess, s: s, store: store, c: .system))
+
+# `revoke`: the certificate `name` revoked for its key's compromise, the
+# key forgotten so the next renewal makes another.
+#
+# - `s`: the settings.
+# - `store`: the key store.
+# - `name`: the certificate's name.
+function revoked(s: settings.Settings, store: vault.Store, name: str) -> i64
+    match account.open(s, store: store)
+        .err e =>
+            print("certs: the account: " + e.msg)
+            return 1
+        .ok opened =>
+            sess @= opened
+
+            match history.current(folder: s.store.folder, name: name)
+                .err e =>
+                    print(f"certs: {name}: {e.msg}")
+                    return 1
+                .ok kept =>
+                    match acme.revoke(@sess.client, certificate: kept.chain[0].der, reason: 1)
+                        .err e =>
+                            print(f"certs: {name}: not revoked: {e.msg}")
+                            return 1
+                        .ok _ =>
+                            print(f"{name}: revoked for its key's compromise; `certs renew` replaces it")
+                            return 0
+
+# `respond`: the webroot served for HTTP-01 on `[http01] listen` until
+# Ctrl-C.
+#
+# - `s`: the settings.
+function responding(s: settings.Settings) -> i64
+    match os.catch_stop()
+        .err e =>
+            print("certs: " + e.msg)
+            return 1
+        .ok _ => _ = 0
+
+    # A person started the responder, so nobody waits on the mailbox it says
+    # it listens on; what it says there goes with the mailbox.
+    match responder.serve(folder: s.http01.webroot, host: "", port: s.http01.listen, told: mailbox())
+        .ok done =>
+            print(f"responder: requests answered {done.answered}")
+            return 0
+        .err e =>
+            print("certs: " + e.msg)
+            return 1
+
+# `serve`: HTTPS with `[serve]`'s certificate until Ctrl-C.
+#
+# - `s`: the settings.
+# - `store`: the key store.
+function serving(s: settings.Settings, store: vault.Store) -> i64
+    name = if s.serve.certificate != ""
+        s.serve.certificate
+    else if s.certificates.len() > 0
+        s.certificates[0].name
+    else
+        ""
+
+    match https.listen_of(s)
+        .err e =>
+            print("certs: serve.listen: " + e.msg)
+            return 2
+        .ok where =>
+            match os.catch_stop()
+                .err e =>
+                    print("certs: " + e.msg)
+                    return 1
+                .ok _ => _ = 0
+
+            # A person started the server, so nobody waits on the mailbox it
+            # says it listens on; what it says there goes with the mailbox.
+            match https.serve(s, store: store, name: name, host: net.format_host(where.host), port: where.port, told: mailbox())
+                .ok _ => return 0
+                .err e =>
+                    print("certs: " + e.msg)
+                    return 1
+
+# `secret`: the TSIG secret read from the standard input, base 64, kept.
+#
+# - `s`: the settings.
+# - `store`: the key store.
+# - `name`: "tsig", the one secret this command keeps.
+function secret_kept(s: settings.Settings, store: vault.Store, name: str) -> i64
+    if name != "tsig" || s.dns01.tsig_key == ""
+        print("certs: `secret` keeps the TSIG key [dns01] names: certs secret certs.toml tsig < key")
+        return 2
+
+    match io.read_all_text(io.stdin())
+        .err e =>
+            print("certs: " + e.msg)
+            return 1
+        .ok text =>
+            match vault.put(store, name: solve.tsig_name(s.dns01.tsig_key), secret: text)
+                .ok _ =>
+                    print(f"the secret of {s.dns01.tsig_key} kept in " + vault.describe(store))
+                    return 0
+                .err e =>
+                    print("certs: " + e.msg)
+                    return 1
+
+# A report's lines printed: its exit code, 1 where one certificate failed.
+#
+# - `r`: the report.
+function reported(r: runner.Report) -> i64
+    for line in r.lines
+        print(line)
+
+    if r.failures > 0
+        return 1
+    return 0
