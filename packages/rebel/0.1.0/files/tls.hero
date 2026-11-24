@@ -657,12 +657,14 @@ test "close_listener: then accept fails closed"
 # system gives a socket of its own choosing (`loopback.quiet_port`): one the
 # system chose for the listener, let go, was another program's at once in 5
 # rounds of 40,000, beside seven programs taking ports as fast as they could.
+# The rounds stop early where refusals are slow (`loopback.another_round`).
 test "close_listener: the port listens no more once it returns"
     if is_available()
         port = loopback.quiet_port()
+        began = time.mark().must()
         rounds @= 0
 
-        while rounds < 200
+        while loopback.another_round(done: rounds, most: 200, began: began)
             rounds @ rounds + 1
             l @= listen(
                 host: "127.0.0.1",
