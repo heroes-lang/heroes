@@ -1,0 +1,501 @@
+# The data codewords of a Data Matrix ECC 200, by ISO/IEC 16022's six
+# encodations: ASCII (two digits in one codeword, a byte past 127 behind
+# Upper Shift), C40 and Text (three values in two codewords), X12, EDIFACT
+# (four values of six bits in three codewords) and Base 256. A search over
+# every place and encodation finds the plan of fewest codewords; the writer
+# then lays the plan into a symbol of a known capacity, where the end of
+# the data allows an unlatch to be left out, and pads it.
+#
+# A piece of data is a byte, 0 to 255, or `code128.FNC1`, the one marker
+# of FNC1 every module of the package shares.
+
+use barcode/internal/code128
+
+# The encodations a plan stays in.
+constant ASCII: i64
+    0
+
+constant C40: i64
+    1
+
+constant TEXT: i64
+    2
+
+constant X12: i64
+    3
+
+constant EDIFACT: i64
+    4
+
+# A cost no plan reaches.
+constant NEVER: i64
+    1000000000
+
+# What a step of a plan does.
+constant UNIT: i64
+    0
+
+constant LATCH: i64
+    1
+
+constant VALUES: i64
+    2
+
+constant UNLATCH: i64
+    3
+
+constant BASE256: i64
+    4
+
+# One step of a plan.
+record Step
+    # `UNIT`, `LATCH`, `VALUES`, `UNLATCH` or `BASE256`.
+    kind: i64
+    # The encodation it latches to, writes in or leaves.
+    mode: i64
+    # The first piece it writes.
+    first: i64
+    # The piece after the last it writes.
+    end: i64
+
+# The C40 values of `piece`, or empty where C40 has none.
+function c40_values(piece: i64) -> [i64]
+    return triple_values(piece: piece, text: false)
+
+# The values of `piece` in C40, or in Text where `text` holds: the basic
+# set, or a shift and a value; a byte past 127 behind Upper Shift.
+function triple_values(piece: i64, text: bool) -> [i64]
+    if piece == code128.FNC1
+        return [1, 27]
+
+    if piece >= 128
+        out: [i64] @= [1, 30]
+
+        for v in triple_values(piece: piece - 128, text: text)
+            out @ out.push(v)
+
+        return out
+
+    if piece < 32
+        return [0, piece]
+
+    if piece == 32
+        return [3]
+
+    if piece >= 48 && piece <= 57
+        return [piece - 44]
+
+    if piece >= 65 && piece <= 90
+        if text
+            return [2, piece - 64]
+        return [piece - 51]
+
+    if piece >= 97 && piece <= 122
+        if text
+            return [piece - 83]
+        return [2, piece - 96]
+
+    if piece >= 33 && piece <= 47
+        return [1, piece - 33]
+
+    if piece >= 58 && piece <= 64
+        return [1, piece - 43]
+
+    if piece >= 91 && piece <= 95
+        return [1, piece - 69]
+
+    return [2, piece - 96]
+
+# The X12 value of `piece`, or empty where X12 has none.
+function x12_values(piece: i64) -> [i64]
+    if piece == 13
+        return [0]
+
+    if piece == 42
+        return [1]
+
+    if piece == 62
+        return [2]
+
+    if piece == 32
+        return [3]
+
+    if piece >= 48 && piece <= 57
+        return [piece - 44]
+
+    if piece >= 65 && piece <= 90
+        return [piece - 51]
+    return []
+
+# The values of `piece` in the triple encodation `mode`.
+function values_in(piece: i64, mode: i64) -> [i64]
+    if mode == C40
+        return triple_values(piece: piece, text: false)
+
+    if mode == TEXT
+        return triple_values(piece: piece, text: true)
+    return x12_values(piece)
+
+# Whether `piece` is a byte EDIFACT writes, 32 to 94.
+function is_edifact(piece: i64) -> bool
+    return piece >= 32 && piece <= 94
+
+# Whether `pieces[i]` and the piece after it are both ASCII digits.
+function is_pair(pieces: [i64] lent, i: i64) -> bool
+    return i + 1 < pieces.len() && pieces[i] >= 48 && pieces[i] <= 57 && pieces[i + 1] >= 48 && pieces[i + 1] <= 57
+
+# The index of a state: ASCII 0; a triple encodation's states by the values
+# waiting for their triple, 0 to 2; EDIFACT's by the values waiting for their
+# group of four, 0 to 3.
+function state_of(mode: i64, waiting: i64) -> i64
+    if mode == ASCII
+        return 0
+
+    if mode == EDIFACT
+        return 10 + waiting
+    return 1 + (mode - 1) * 3 + waiting
+
+# How many states each place has.
+constant STATES: i64
+    14
+
+# The codewords an EDIFACT unlatch costs after `waiting` values: the
+# unlatch value joins them and the last codeword is filled with zeros.
+function edifact_unlatch(waiting: i64) -> i64
+    return (6 * (waiting + 1) + 7) / 8
+
+# The codewords Base 256 spends on `count` bytes: its latch, its length of
+# one or two codewords, and the bytes.
+function base256_cost(count: i64) -> i64
+    if count <= 249
+        return 2 + count
+    return 3 + count
+
+# The fewest codewords that write `pieces` from each place on, in each
+# state: `best[i * STATES + state]`.
+function costs(pieces: [i64] lent) -> [i64]
+    n = pieces.len()
+    best: [i64] @= []
+
+    for _ in range(from: 0, to: (n + 1) * STATES)
+        best @ best.push(NEVER)
+
+    best[n * STATES] @ 0
+
+    for mode in [C40, TEXT, X12]
+        best[n * STATES + state_of(mode: mode, waiting: 0)] @ 1
+
+    for waiting in range(from: 0, to: 4)
+        best[n * STATES + state_of(mode: EDIFACT, waiting: waiting)] @ edifact_unlatch(waiting)
+
+    i: i64 @= n - 1
+
+    while i >= 0
+        consumed: [i64] @= []
+
+        for state in range(from: 0, to: STATES)
+            consumed @ consumed.push(consume_cost(pieces: pieces, best: best, i: i, state: state))
+
+        ascii: i64 @= consumed[0]
+
+        for mode in [C40, TEXT, X12, EDIFACT]
+            ascii @ code128.min_of(a: ascii, b: 1 + consumed[state_of(mode: mode, waiting: 0)])
+
+        j: i64 @= i + 1
+
+        while j <= n && pieces[j - 1] != code128.FNC1
+            ascii @ code128.min_of(a: ascii, b: base256_cost(j - i) + best[j * STATES])
+            j @ j + 1
+
+        best[i * STATES] @ ascii
+
+        for state in range(from: 1, to: STATES)
+            here: i64 @= consumed[state]
+
+            if state == 1 || state == 4 || state == 7
+                here @ code128.min_of(a: here, b: 1 + ascii)
+
+            if state >= 10
+                here @ code128.min_of(a: here, b: edifact_unlatch(state - 10) + ascii)
+            best[i * STATES + state] @ here
+
+        i @ i - 1
+
+    return best
+
+# The codewords of writing the piece at `i` in `state` and going on from
+# the state it leaves, or `NEVER`.
+function consume_cost(pieces: [i64] lent, best: [i64] lent, i: i64, state: i64) -> i64
+    piece = pieces[i]
+
+    if state == 0
+        if is_pair(pieces, i: i)
+            return 1 + best[(i + 2) * STATES]
+
+        if piece >= 128
+            return 2 + best[(i + 1) * STATES]
+        return 1 + best[(i + 1) * STATES]
+
+    if state >= 10
+        if !is_edifact(piece)
+            return NEVER
+        waiting = state - 10
+
+        if waiting == 3
+            return 3 + best[(i + 1) * STATES + 10]
+        return best[(i + 1) * STATES + state + 1]
+
+    mode = (state - 1) / 3 + 1
+    waiting = (state - 1) % 3
+    values = values_in(piece: piece, mode: mode)
+
+    if values.len() == 0
+        return NEVER
+    total = waiting + values.len()
+    return 2 * (total / 3) + best[(i + 1) * STATES + state_of(mode: mode, waiting: total % 3)]
+
+# The plan of fewest codewords that writes `pieces` from ASCII, as its
+# steps. A tie prefers, in ASCII, a unit, then C40, Text, X12, EDIFACT and
+# Base 256; in another encodation, staying.
+function plan_of(pieces: [i64] lent) -> [Step]
+    best = costs(pieces)
+    n = pieces.len()
+    steps: [Step] @= []
+    i: i64 @= 0
+    state: i64 @= 0
+
+    while i < n || state != 0
+        target = best[i * STATES + state]
+
+        if i == n
+            mode = mode_of(state)
+            steps @ steps.push(Step(kind: UNLATCH, mode: mode, first: i, end: i))
+            state @ 0
+        else if state == 0
+            width = unit_width(pieces, i: i)
+
+            if consume_cost(pieces: pieces, best: best, i: i, state: 0) == target
+                steps @ steps.push(Step(kind: UNIT, mode: ASCII, first: i, end: i + width))
+                i @ i + width
+            else
+                chosen: i64 @= -1
+
+                for mode in [C40, TEXT, X12, EDIFACT]
+                    s = state_of(mode: mode, waiting: 0)
+
+                    if chosen < 0 && 1 + consume_cost(pieces: pieces, best: best, i: i, state: s) == target
+                        chosen @ mode
+
+                if chosen >= 0
+                    steps @ steps.push(Step(kind: LATCH, mode: chosen, first: i, end: i))
+                    state @ state_of(mode: chosen, waiting: 0)
+                else
+                    j: i64 @= i + 1
+
+                    while base256_cost(j - i) + best[j * STATES] != target
+                        j @ j + 1
+
+                    steps @ steps.push(Step(kind: BASE256, mode: ASCII, first: i, end: j))
+                    i @ j
+        else
+            mode = mode_of(state)
+
+            if consume_cost(pieces: pieces, best: best, i: i, state: state) == target
+                steps @ steps.push(Step(kind: VALUES, mode: mode, first: i, end: i + 1))
+                state @ next_state(pieces, i: i, state: state)
+                i @ i + 1
+            else
+                steps @ steps.push(Step(kind: UNLATCH, mode: mode, first: i, end: i))
+                state @ 0
+
+    return steps
+
+# The pieces an ASCII unit at `i` writes: two digits, or one piece.
+function unit_width(pieces: [i64] lent, i: i64) -> i64
+    if is_pair(pieces, i: i)
+        return 2
+    return 1
+
+# The encodation of `state`.
+function mode_of(state: i64) -> i64
+    if state == 0
+        return ASCII
+
+    if state >= 10
+        return EDIFACT
+    return (state - 1) / 3 + 1
+
+# The state after the piece at `i` is written in `state`.
+function next_state(pieces: [i64] lent, i: i64, state: i64) -> i64
+    if state >= 10
+        return 10 + (state - 10 + 1) % 4
+    mode = mode_of(state)
+    waiting = (state - 1) % 3
+    return state_of(mode: mode, waiting: (waiting + values_in(piece: pieces[i], mode: mode).len()) % 3)
+
+# The data codewords of `plan` over `pieces`, behind `prefix`, laid into a
+# symbol of `capacity` data codewords and padded; empty where the plan does
+# not fit it. An unlatch the end of the symbol makes needless is left out:
+# from C40, Text or X12 where the symbol is full; from EDIFACT at a group's
+# start where two codewords or fewer remain, which a reader takes as ASCII.
+function written(pieces: [i64] lent, plan: [Step] lent, prefix: [i64] lent, capacity: i64) -> [i64]
+    out: [i64] @= prefix
+    waiting: [i64] @= []
+
+    for step in plan
+        if step.kind == UNIT
+            piece = pieces[step.first]
+
+            if step.end - step.first == 2
+                out @ out.push(130 + (piece - 48) * 10 + pieces[step.first + 1] - 48)
+            else if piece == code128.FNC1
+                out @ out.push(232)
+            else if piece >= 128
+                out @ out.push(235)
+                out @ out.push(piece - 127)
+            else
+                out @ out.push(piece + 1)
+        else if step.kind == LATCH
+            out @ out.push(latch_word(step.mode))
+        else if step.kind == VALUES
+            if step.mode == EDIFACT
+                if waiting.len() == 0 && capacity - out.len() <= 2
+                    return []
+                waiting @ waiting.push(pieces[step.first] & 63)
+
+                if waiting.len() == 4
+                    pack_edifact(out: @out, values: waiting)
+                    waiting @ []
+            else
+                for v in values_in(piece: pieces[step.first], mode: step.mode)
+                    waiting @ waiting.push(v)
+
+                while waiting.len() >= 3
+                    value = 1600 * waiting[0] + 40 * waiting[1] + waiting[2] + 1
+                    out @ out.push(value / 256)
+                    out @ out.push(value % 256)
+                    waiting @ waiting.slice(from: 3, to: waiting.len())
+        else if step.kind == UNLATCH
+            if step.mode == EDIFACT
+                if waiting.len() > 0 || capacity - out.len() > 2
+                    waiting @ waiting.push(31)
+                    pack_edifact(out: @out, values: waiting)
+                waiting @ []
+            else
+                assert waiting.len() == 0
+
+                if !(step.first == pieces.len() && out.len() == capacity)
+                    out @ out.push(254)
+        else
+            out @ out.push(231)
+            count = step.end - step.first
+            field: [i64] @= [count]
+
+            if count > 249
+                field @ [count / 250 + 249, count % 250]
+
+            for i in range(from: step.first, to: step.end)
+                field @ field.push(pieces[i])
+
+            for v in field
+                position = out.len() + 1
+                out @ out.push((v + 149 * position % 255 + 1) % 256)
+
+    if out.len() > capacity
+        return []
+
+    if out.len() < capacity
+        out @ out.push(129)
+
+    while out.len() < capacity
+        position = out.len() + 1
+        pad: i64 @= 129 + 149 * position % 253 + 1
+
+        if pad > 254
+            pad @ pad - 254
+        out @ out.push(pad)
+
+    return out
+
+# The codeword that latches from ASCII to `mode`.
+function latch_word(mode: i64) -> i64
+    if mode == C40
+        return 230
+
+    if mode == TEXT
+        return 239
+
+    if mode == X12
+        return 238
+    return 240
+
+# `values`, one to four of six bits, packed into codewords, the last filled
+# with zeros.
+function pack_edifact(@out: [i64], values: [i64] lent)
+    bits: i64 @= 0
+
+    for v in values
+        bits @ bits << 6 | v
+
+    count = values.len() * 6
+    words = (count + 7) / 8
+    bits @ bits << words * 8 - count
+    k: i64 @= words - 1
+
+    while k >= 0
+        out @ out.push(bits >> 8 * k & 255)
+        k @ k - 1
+
+## Tests
+
+test "triple_values: C40's and Text's basic sets, the three shifts, and Upper Shift"
+    assert c40_values(32) == [3]
+    assert c40_values(48) == [4]
+    assert c40_values(65) == [14]
+    assert c40_values(97) == [2, 1]
+    assert triple_values(piece: 97, text: true) == [14]
+    assert triple_values(piece: 65, text: true) == [2, 1]
+    assert c40_values(0) == [0, 0]
+    assert c40_values(33) == [1, 0]
+    assert c40_values(64) == [1, 21]
+    assert c40_values(95) == [1, 26]
+    assert c40_values(code128.FNC1) == [1, 27]
+    assert c40_values(127) == [2, 31]
+    assert c40_values(128 + 65) == [1, 30, 14]
+    assert triple_values(piece: 96, text: true) == [2, 0]
+    assert triple_values(piece: 123, text: true) == [2, 27]
+
+test "x12_values: the four specials, digits, capitals, and a small letter refused"
+    assert x12_values(13) == [0]
+    assert x12_values(62) == [2]
+    assert x12_values(57) == [13]
+    assert x12_values(90) == [39]
+    assert x12_values(97) == []
+
+test "plan_of: digits in pairs, an odd digit alone"
+    p = plan_of([49, 50, 51, 52, 53, 54])
+    assert p.len() == 3 && p[0].kind == UNIT && p[0].end == 2
+    assert written(pieces: [49, 50, 51, 52, 53, 54], plan: p, prefix: [], capacity: 3) == [142, 164, 186]
+    q = plan_of([49, 50, 51])
+    assert written(pieces: [49, 50, 51], plan: q, prefix: [], capacity: 3) == [142, 52, 129]
+
+test "plan_of: a long run of capitals in C40 costs two codewords a three"
+    pieces: [i64] @= []
+
+    for _ in range(from: 0, to: 30)
+        pieces @ pieces.push(65)
+
+    p = plan_of(pieces)
+    assert p[0].kind == LATCH && p[0].mode == C40
+    assert written(pieces: pieces, plan: p, prefix: [], capacity: 22).len() == 22
+    assert written(pieces: pieces, plan: p, prefix: [], capacity: 20).len() == 0
+
+test "written: pads after the first are scrambled by their place"
+    assert written(pieces: [65], plan: plan_of([65]), prefix: [], capacity: 5) == [66, 129, 70, 220, 115]
+
+test "pack_edifact: four values in three codewords, an unlatch filled with zeros"
+    out: [i64] @= []
+    pack_edifact(out: @out, values: [1, 2, 3, 4])
+    assert out == [4, 32, 196]
+    pack_edifact(out: @out, values: [31])
+    assert out == [4, 32, 196, 124]

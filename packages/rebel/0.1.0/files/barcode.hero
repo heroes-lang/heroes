@@ -1,0 +1,915 @@
+# Barcodes made: EAN-13, EAN-8, UPC-A and UPC-E with their two- and
+# five-digit add-ons (ISO/IEC 15420 and the GS1 General Specifications),
+# Code 128 and GS1-128 (ISO/IEC 15417), Data Matrix ECC 200 and GS1 Data
+# Matrix (ISO/IEC 16022), and PDF417 and compact PDF417 (ISO/IEC 15438),
+# each with its check characters or error
+# correction and its quiet zones, and written as SVG text or drawn into an
+# `image`, the digits a person reads set under a linear symbol's bars.
+#
+# It makes symbols and does not read them: finding a barcode in a photograph
+# is a task of vision this package leaves alone. QR codes are `qr`'s. It
+# reads no font file: the digits drawn into an image are set in the
+# `font.Font` a caller gives, which `font.parse` makes, and an SVG names a
+# font family and leaves the drawing to its reader. A GS1 element string is
+# checked for its characters, for the length of the identifiers GS1 fixes and
+# for the check digit of an SSCC, a GTIN and a GLN, not against GS1's whole
+# dictionary of identifiers.
+#
+# It fails with `invalid`, where the data holds what the symbology cannot
+# write, a check digit given is wrong, or a scale or a colour is out of its
+# range; `unsupported`, where the data is longer than the symbology holds;
+# and `limit`, where an image would pass 16,384 pixels a side.
+#
+# Not written yet, each a `pending` block of its ledger: a PDF417 of a text or bytes, at a level of error correction and a
+# count of columns; Code 39, Code 93, Code 11, Codabar, Interleaved and
+# Standard 2 of 5, ITF-14, EAN-14.
+
+use barcode/internal/code128 as c128
+use barcode/internal/codes
+use barcode/internal/dm_symbol
+use barcode/internal/gs1
+use barcode/internal/pdf_encode
+use barcode/internal/pdf_symbol
+use barcode/internal/render
+use barcode/internal/samples
+use barcode/internal/upc
+use font
+use image
+
+## Codes
+
+# The code of an input the function does not read: a byte the symbology
+# cannot write, a wrong check digit, a count of digits the symbology does
+# not take, a scale below 1, a colour SVG cannot hold. Every maker and
+# `to_svg` and `to_image` answer it.
+constant INVALID: str
+    codes.INVALID
+
+# The code of data longer than the symbology holds: `gs1_128` past 48
+# characters; `data_matrix`, `data_matrix_bytes` and `gs1_data_matrix`
+# past the size asked or the largest; `pdf417` and `pdf417_bytes` past 928
+# codewords or 90 rows.
+constant UNSUPPORTED: str
+    codes.UNSUPPORTED
+
+# The code of an image that would pass 16,384 pixels a side, which
+# `to_image` and `to_image_with_text` answer.
+constant LIMIT: str
+    "limit"
+
+## Symbols
+
+# Which symbology a symbol is written in.
+variant Symbology
+    # EAN-13, the thirteen digits of a GTIN-13; an ISBN is one.
+    ean13
+    # EAN-8, the eight digits of a GTIN-8.
+    ean8
+    # UPC-A, the twelve digits of a GTIN-12: an EAN-13 whose first digit is
+    # 0, written with its first and last digits beside the bars.
+    upca
+    # UPC-E, a GTIN-12 with its zeros left out, in six digits.
+    upce
+    # Code 128, any bytes.
+    code128
+    # GS1-128, Code 128 holding GS1 element strings, FNC1 first.
+    gs1_128
+    # Data Matrix ECC 200, any bytes, a text of more than ASCII marked as
+    # UTF-8.
+    data_matrix
+    # GS1 Data Matrix, Data Matrix holding GS1 element strings, FNC1 first.
+    gs1_data_matrix
+    # PDF417, any bytes, a text of more than ASCII marked as UTF-8; compact
+    # where its rows end in one bar.
+    pdf417
+
+# Text written with a symbol: the digits a person reads.
+record Caption
+    # The text.
+    text: str
+    # The column its middle stands on, in modules from the symbol's first
+    # module, the quiet zone not counted: a digit written in the quiet zone
+    # stands at a negative column.
+    center: f64
+    # Whether it stands above the bars, as an add-on's digits do; else below.
+    above: bool
+    # Whether it is set smaller, as a UPC's digits beside its bars are.
+    small: bool
+
+# The light margin a reader needs around a symbol, in modules.
+record Quiet
+    # Left of the first module.
+    left: i64
+    # Right of the last module.
+    right: i64
+    # Above the first row.
+    top: i64
+    # Below the last row.
+    bottom: i64
+
+# A barcode made. Made by the makers of this package; one built directly is
+# drawn as its fields say, and the functions that draw it trust them.
+record Symbol
+    # The symbology.
+    symbology: Symbology
+    # The modules, rows of one width, top to bottom, each left to right,
+    # `true` dark; a linear symbol has one row.
+    rows: [[bool]]
+    # How many modules tall a row is drawn; for a linear symbol, its bars'
+    # height, the standard's nominal one.
+    row_height: i64
+    # For a linear symbol, whether each module of its row belongs to a guard
+    # (or to a UPC's first or last digit), whose bar reaches down through the
+    # digits written under the symbol; empty for a matrix.
+    guards: [bool]
+    # The modules of an EAN's or a UPC's add-on, drawn 9 modules after its
+    # row, or empty.
+    add_on: [bool]
+    # The quiet zone the standard asks.
+    quiet: Quiet
+    # The text written with it.
+    captions: [Caption]
+    # What a reader gives back: the digits of an EAN or a UPC, check digit
+    # included, an add-on's after a space; a Code 128's data as text; a
+    # GS1 symbol's element strings as `format_elements` writes them.
+    text: str
+
+# How many modules tall the bars of an EAN-13, a UPC-A and a UPC-E are:
+# 22.85 mm at a module of 0.33 mm, GS1's nominal size.
+constant EAN13_HEIGHT: i64
+    69
+
+# How many modules tall the bars of an EAN-8 are: 18.23 mm at 0.33 mm.
+constant EAN8_HEIGHT: i64
+    55
+
+## EAN and UPC
+
+# The GS1 check digit of `digits`: from the right, every other digit
+# counted three times beginning with the last, and the distance from the sum
+# up to a multiple of ten.
+#
+# - `digits`: the digits before the check digit, ASCII; empty answers 0.
+#
+# Fails `invalid` where `digits` holds a byte that is not an ASCII digit.
+# See also `ean13`.
+function check_digit(digits: str) -> i64?
+    return ok(upc.check_digit(upc.digits_of(text: digits, what: "the number")?))
+
+# The EAN-13 of `digits`: a GTIN-13, an ISBN or an ISSN's EAN form.
+#
+# - `digits`: twelve ASCII digits, whose check digit is added, or thirteen,
+#   whose last is checked.
+#
+# The symbol is 95 modules wide with a quiet zone of 11 on its left and 7
+# on its right; its first digit is written in the left quiet zone, as the
+# standard places it. Fails `invalid` where `digits` holds a byte that is not
+# a digit, is neither 12 nor 13 long, or ends in a wrong check digit. See
+# also `upca`, `with_add_on`.
+function ean13(digits: str) -> Symbol?
+    d = upc.with_check(text: digits, count: 13, name: "EAN-13")?
+    captions: [Caption] @= [Caption(text: to_str(d[0]), center: -5.5, above: false, small: false)]
+
+    for i in range(from: 0, to: 6)
+        captions @ captions.push(
+            Caption(text: to_str(d[i + 1]), center: 6.5 + to_f64(7 * i), above: false, small: false)
+        )
+        captions @ captions.push(
+            Caption(text: to_str(d[i + 7]), center: 53.5 + to_f64(7 * i), above: false, small: false)
+        )
+
+    return ok(
+        Symbol(symbology: .ean13, rows: [upc.ean13(d)], row_height: EAN13_HEIGHT, guards: upc.ean13_guards(), add_on: [], quiet: Quiet(left: 11, right: 7, top: 0, bottom: 0), captions: captions, text: upc.digits_text(d))
+    )
+
+# The EAN-8 of `digits`, a GTIN-8.
+#
+# - `digits`: seven ASCII digits, whose check digit is added, or eight.
+#
+# The symbol is 67 modules wide with a quiet zone of 7 on each side. Fails
+# `invalid` as `ean13` does. See also `ean13`.
+function ean8(digits: str) -> Symbol?
+    d = upc.with_check(text: digits, count: 8, name: "EAN-8")?
+    captions: [Caption] @= []
+
+    for i in range(from: 0, to: 4)
+        captions @ captions.push(Caption(text: to_str(d[i]), center: 6.5 + to_f64(7 * i), above: false, small: false))
+        captions @ captions.push(
+            Caption(text: to_str(d[i + 4]), center: 39.5 + to_f64(7 * i), above: false, small: false)
+        )
+
+    return ok(
+        Symbol(symbology: .ean8, rows: [upc.ean8(d)], row_height: EAN8_HEIGHT, guards: upc.ean8_guards(), add_on: [], quiet: Quiet(left: 7, right: 7, top: 0, bottom: 0), captions: captions, text: upc.digits_text(d))
+    )
+
+# The UPC-A of `digits`, a GTIN-12.
+#
+# - `digits`: eleven ASCII digits, whose check digit is added, or twelve.
+#
+# Its bars are an EAN-13's whose first digit is 0; its first and last digits
+# are written small beside the bars, and their bars reach down as the
+# guards' do. The quiet zone is 9 modules on each side. Fails `invalid` as
+# `ean13` does. See also `upce`.
+function upca(digits: str) -> Symbol?
+    d = upc.with_check(text: digits, count: 12, name: "UPC-A")?
+    full: [i64] @= [0]
+
+    for x in d
+        full @ full.push(x)
+
+    captions: [Caption] @= [Caption(text: to_str(d[0]), center: -4.5, above: false, small: true)]
+
+    for i in range(from: 1, to: 6)
+        captions @ captions.push(Caption(text: to_str(d[i]), center: 6.5 + to_f64(7 * i), above: false, small: false))
+        captions @ captions.push(
+            Caption(text: to_str(d[i + 5]), center: 46.5 + to_f64(7 * i), above: false, small: false)
+        )
+
+    captions @ captions.push(Caption(text: to_str(d[11]), center: 99.5, above: false, small: true))
+    return ok(
+        Symbol(symbology: .upca, rows: [upc.ean13(full)], row_height: EAN13_HEIGHT, guards: upc.upca_guards(), add_on: [], quiet: Quiet(left: 9, right: 9, top: 0, bottom: 0), captions: captions, text: upc.digits_text(d))
+    )
+
+# The UPC-E of `digits`: a GTIN-12 whose zeros its six digits leave out.
+#
+# - `digits`: seven ASCII digits, the number system (0 or 1) and the six,
+#   whose check digit is added, or eight with it. The check digit is the
+#   UPC-A's the six stand for, and only the digits' parities write it.
+#
+# The symbol is 51 modules wide, its quiet zone 9 on the left and 7 on the
+# right; `text` is the eight digits. Fails `invalid` where `digits` holds a
+# byte that is not a digit, is neither 7 nor 8 long, names a number system
+# other than 0 and 1, or ends in a wrong check digit. See also `upca`.
+function upce(digits: str) -> Symbol?
+    d = upc.digits_of(text: digits, what: "a UPC-E")?
+
+    if d.len() != 7 && d.len() != 8
+        return fail(code: codes.INVALID, msg: f"a UPC-E is 7 digits, or 8 with its check digit, not {d.len()}")
+
+    if d[0] > 1
+        return fail(code: codes.INVALID, msg: f"a UPC-E's number system is 0 or 1, not {d[0]}")
+    six = d.slice(from: 1, to: 7)
+    check = upc.check_digit(upc.upce_expanded(system: d[0], six: six))
+
+    if d.len() == 8 && d[7] != check
+        return fail(code: codes.INVALID, msg: f"the check digit of {digits} is {check}, not {d[7]}")
+    captions: [Caption] @= [Caption(text: to_str(d[0]), center: -4.5, above: false, small: true)]
+
+    for i in range(from: 0, to: 6)
+        captions @ captions.push(Caption(text: to_str(six[i]), center: 6.5 + to_f64(7 * i), above: false, small: false))
+
+    captions @ captions.push(Caption(text: to_str(check), center: 54.5, above: false, small: true))
+    every: [i64] @= d.slice(from: 0, to: 7)
+    every @ every.push(check)
+    return ok(
+        Symbol(symbology: .upce, rows: [upc.upce(system: d[0], six: six, check: check)], row_height: EAN13_HEIGHT, guards: upc.upce_guards(), add_on: [], quiet: Quiet(left: 9, right: 7, top: 0, bottom: 0), captions: captions, text: upc.digits_text(every))
+    )
+
+# `symbol` with a two- or five-digit add-on after it: a periodical's issue,
+# a book's price.
+#
+# - `symbol`: an EAN-13, a UPC-A or a UPC-E made by this package.
+# - `digits`: two or five ASCII digits.
+#
+# The add-on stands 9 modules after the symbol, its digits written above
+# its bars, and the right quiet zone after it is 5 modules; `text` gains a
+# space and the add-on's digits. Fails `invalid` where `symbol` is of another
+# symbology or already has an add-on, or `digits` is not two or five
+# digits. See also `ean13`.
+function with_add_on(symbol: Symbol, digits: str) -> Symbol?
+    match symbol.symbology
+        .ean13 | .upca | .upce => _ = 0
+        .ean8 | .code128 | .gs1_128 | .data_matrix | .gs1_data_matrix | .pdf417 => return fail(
+            code: codes.INVALID,
+            msg: "an add-on follows an EAN-13, a UPC-A or a UPC-E alone"
+        )
+
+    if symbol.add_on.len() > 0
+        return fail(code: codes.INVALID, msg: "the symbol has an add-on already")
+    d = upc.digits_of(text: digits, what: "an add-on")?
+
+    if d.len() != 2 && d.len() != 5
+        return fail(code: codes.INVALID, msg: f"an add-on is 2 or 5 digits, not {d.len()}")
+    start = symbol.rows[0].len() + render.ADD_ON_GAP
+    captions: [Caption] @= symbol.captions
+
+    for i in range(from: 0, to: d.len())
+        captions @ captions.push(
+            Caption(text: to_str(d[i]), center: to_f64(start + 4 + 9 * i) + 3.5, above: true, small: false)
+        )
+
+    return ok(
+        Symbol(symbology: symbol.symbology, rows: symbol.rows, row_height: symbol.row_height, guards: symbol.guards, add_on: upc.addon(d), quiet: Quiet(left: symbol.quiet.left, right: 5, top: 0, bottom: 0), captions: captions, text: f"{symbol.text} {digits}")
+    )
+
+## Code 128 and GS1-128
+
+# The Code 128 of `text`, its code sets changed where that makes the symbol
+# shortest.
+#
+# - `text`: one or more characters of ISO/IEC 8859-1, U+0000 to U+00FF, the
+#   set Code 128 writes; one from U+0080 up costs a second character, FNC4.
+#
+# The quiet zone is 10 modules on each side; the bars are 15 % of the
+# symbol's length tall, and 20 modules at least. Fails `invalid` where
+# `text` is empty or holds a character past U+00FF. See also
+# `code128_bytes`, `gs1_128`.
+function code128(text: str) -> Symbol?
+    return code128_bytes(c128.latin1_of(text)?)
+
+# The Code 128 of `data`, read back as its bytes.
+#
+# - `data`: one or more bytes, any of 0 to 255.
+#
+# `text` and the caption are the bytes read as ISO/IEC 8859-1, each
+# control character written as a space in the caption. Fails `invalid` where
+# `data` is empty. See also `code128`.
+function code128_bytes(data: [u8]) -> Symbol?
+    if data.len() == 0
+        return fail(code: codes.INVALID, msg: "a Code 128 holds one byte or more, and the data is empty")
+    pieces: [i64] @= []
+
+    for b in data
+        pieces @ pieces.push(to_i64(b).must())
+
+    modules = c128.modules_of(c128.values_of(pieces))
+    shown = c128.latin1_text(data)
+    caption = c128.caption_of(data)
+    guards: [bool] @= []
+
+    for _ in modules
+        guards @ guards.push(false)
+
+    return ok(
+        Symbol(symbology: .code128, rows: [modules], row_height: c128.height_of(modules.len()), guards: guards, add_on: [], quiet: Quiet(left: 10, right: 10, top: 0, bottom: 0), captions: [Caption(text: caption, center: to_f64(modules.len()) / 2.0, above: false, small: false)], text: shown)
+    )
+
+# A GS1 element string: an application identifier and its data.
+record Element
+    # The identifier, two to four ASCII digits: `01` a GTIN, `10` a batch.
+    ai: str
+    # Its data, one to ninety of GS1's 82 characters.
+    data: str
+
+# The GS1-128 of `elements`: FNC1 first, then each identifier and its data,
+# FNC1 after each element whose length GS1 does not fix, but the last.
+#
+# - `elements`: one or more element strings.
+#
+# `text` and the caption are the elements as `format_elements` writes them.
+# Fails `invalid` where an element is not one GS1 writes (see
+# `parse_elements`), or `elements` is empty; `unsupported` where they need
+# more than 48 data characters, GS1-128's most. See also `parse_elements`.
+function gs1_128(elements: [Element]) -> Symbol?
+    if elements.len() == 0
+        return fail(code: codes.INVALID, msg: "a GS1 symbol holds one element or more, and none is given")
+    ais: [str] @= []
+    values: [str] @= []
+
+    for e in elements
+        gs1.check(ai: e.ai, value: e.data)?
+        ais @ ais.push(e.ai)
+        values @ values.push(e.data)
+
+    characters = c128.values_of(gs1.pieces(ais: ais, values: values))
+
+    if characters.len() - 1 > 48
+        return fail(
+            code: codes.UNSUPPORTED,
+            msg: f"a GS1-128 holds 48 data characters, and these elements need {characters.len() - 1}"
+        )
+    modules = c128.modules_of(characters)
+    shown = gs1.caption(ais: ais, values: values)
+    guards: [bool] @= []
+
+    for _ in modules
+        guards @ guards.push(false)
+
+    return ok(
+        Symbol(symbology: .gs1_128, rows: [modules], row_height: c128.height_of(modules.len()), guards: guards, add_on: [], quiet: Quiet(left: 10, right: 10, top: 0, bottom: 0), captions: [Caption(text: shown, center: to_f64(modules.len()) / 2.0, above: false, small: false)], text: shown)
+    )
+
+# The element strings of `text`, written as a person reads them under a
+# symbol: `(01)09501101530003(10)AB-123`.
+#
+# - `text`: each identifier in brackets, then its data.
+#
+# Fails `invalid` where `text` is empty or does not open with `(`, an
+# identifier is not closed, an identifier is not two to four digits, data
+# is empty, longer than 90 or holds a character outside GS1's 82, the data
+# of an identifier whose length GS1 fixes has another, or an SSCC's, a
+# GTIN's or a GLN's check digit is wrong. See also `format_elements`.
+function parse_elements(text: str) -> [Element]?
+    p = gs1.parse(text)?
+    out: [Element] @= []
+
+    for i in range(from: 0, to: p.ais.len())
+        out @ out.push(Element(ai: p.ais[i], data: p.values[i]))
+
+    return ok(out)
+
+# `elements` as a person reads them: each identifier in brackets, then its
+# data.
+#
+# - `elements`: the element strings, unchecked; empty answers "".
+#
+# See also `parse_elements`.
+function format_elements(elements: [Element]) -> str
+    out: [str] @= []
+
+    for e in elements
+        out @ out.push(f"({e.ai}){e.data}")
+
+    return out.join("")
+
+## Data Matrix
+
+# The shapes a Data Matrix may take.
+variant Shape
+    # Square, 10 by 10 to 144 by 144 modules.
+    square
+    # Rectangular, 8 by 18 to 16 by 48 modules.
+    rectangle
+    # Either, whichever holds the data in fewer modules of data.
+    either
+
+# How big a Data Matrix is made.
+variant Size
+    # The smallest symbol of a shape that holds the data.
+    smallest
+        # The shape it takes.
+        shape: Shape
+    # A symbol of one of the 30 sizes ECC 200 defines.
+    fixed
+        # Its rows of modules.
+        rows: i64
+        # Its columns of modules.
+        columns: i64
+
+# The Data Matrix of `text`, its encodations chosen so that its codewords
+# are fewest.
+#
+# - `text`: the text; one holding only ASCII is written as it is, any other
+#   behind the ECI that marks it UTF-8 (ECI 000026), so a reader gives it
+#   back as written; one byte at least.
+# - `size`: the smallest of a shape, or one size.
+#
+# The quiet zone is one module on each side, the least the standard asks.
+# Fails `invalid` where `text` is empty or `size` names no size of ECC 200;
+# `unsupported` where
+# the data does not fit it, or past the largest, 144 by 144, which holds
+# 1558 codewords. See also `data_matrix_bytes`, `gs1_data_matrix`.
+function data_matrix(text: str, size: Size) -> Symbol?
+    if text.len() == 0
+        return fail(code: codes.INVALID, msg: "a Data Matrix holds one byte or more, and the data is empty")
+
+    order = match size
+        .smallest s =>
+            shape = match s.shape
+                .square    => 0
+                .rectangle => 1
+                .either    => 2
+
+            dm_symbol.order_of(shape)
+        .fixed f => dm_symbol.fixed_order(rows: f.rows, columns: f.columns)?
+
+    pieces: [i64] @= []
+    prefix: [i64] @= []
+
+    for i in range(from: 0, to: text.len())
+        pieces @ pieces.push(to_i64(text[i]).must())
+
+        if text[i] >= 128
+            prefix @ [241, 27]
+
+    return ok(
+        Symbol(symbology: .data_matrix, rows: dm_symbol.make(pieces: pieces, prefix: prefix, order: order)?, row_height: 1, guards: [], add_on: [], quiet: Quiet(left: 1, right: 1, top: 1, bottom: 1), captions: [], text: text)
+    )
+
+# The Data Matrix of `data`, read back as its bytes.
+#
+# - `data`: any bytes, which a reader takes as ISO/IEC 8859-1 unless the
+#   program that reads them knows better; one at least.
+# - `size`: the smallest of a shape, or one size.
+#
+# `text` is the bytes read as ISO/IEC 8859-1. Fails as `data_matrix` fails.
+# See also `data_matrix`.
+function data_matrix_bytes(data: [u8], size: Size) -> Symbol?
+    if data.len() == 0
+        return fail(code: codes.INVALID, msg: "a Data Matrix holds one byte or more, and the data is empty")
+
+    order = match size
+        .smallest s =>
+            shape = match s.shape
+                .square    => 0
+                .rectangle => 1
+                .either    => 2
+
+            dm_symbol.order_of(shape)
+        .fixed f => dm_symbol.fixed_order(rows: f.rows, columns: f.columns)?
+
+    pieces: [i64] @= []
+
+    for b in data
+        pieces @ pieces.push(to_i64(b).must())
+
+    return ok(
+        Symbol(symbology: .data_matrix, rows: dm_symbol.make(pieces: pieces, prefix: [], order: order)?, row_height: 1, guards: [], add_on: [], quiet: Quiet(left: 1, right: 1, top: 1, bottom: 1), captions: [], text: c128.latin1_text(data))
+    )
+
+# The GS1 Data Matrix of `elements`: FNC1 first, then each identifier and
+# its data, FNC1 after each element whose length GS1 does not fix, but the
+# last.
+#
+# - `elements`: one or more element strings.
+# - `size`: the smallest of a shape, or one size.
+#
+# `text` is the elements as `format_elements` writes them. Fails `invalid`
+# where an element is not one GS1 writes (see `parse_elements`) or none is
+# given, and as `data_matrix` fails. See also `gs1_128`.
+function gs1_data_matrix(elements: [Element], size: Size) -> Symbol?
+    order = match size
+        .smallest s =>
+            shape = match s.shape
+                .square    => 0
+                .rectangle => 1
+                .either    => 2
+
+            dm_symbol.order_of(shape)
+        .fixed f => dm_symbol.fixed_order(rows: f.rows, columns: f.columns)?
+
+    if elements.len() == 0
+        return fail(code: codes.INVALID, msg: "a GS1 symbol holds one element or more, and none is given")
+    ais: [str] @= []
+    values: [str] @= []
+
+    for e in elements
+        gs1.check(ai: e.ai, value: e.data)?
+        ais @ ais.push(e.ai)
+        values @ values.push(e.data)
+
+    return ok(
+        Symbol(symbology: .gs1_data_matrix, rows: dm_symbol.make(pieces: gs1.pieces(ais: ais, values: values), prefix: [], order: order)?, row_height: 1, guards: [], add_on: [], quiet: Quiet(left: 1, right: 1, top: 1, bottom: 1), captions: [], text: gs1.caption(ais: ais, values: values))
+    )
+
+## PDF417
+
+# A count the program gives, or one the package chooses.
+variant Count
+    # Chosen: PDF417's columns for a symbol about three times as wide as it
+    # is tall, its level of error correction the one the standard
+    # recommends for the data.
+    automatic
+    # Given.
+    exactly
+        # The count.
+        value: i64
+
+# How `pdf417` makes a symbol. Built directly, or by
+# `default_pdf417_options`.
+record Pdf417Options
+    # The data columns, 1 to 30.
+    columns: Count
+    # The level of error correction, 0 to 8: 2 to the level plus one
+    # codewords of it, a symbol at level 8 restoring 255 lost.
+    level: Count
+    # How many modules tall a row is drawn, 1 or more; the standard
+    # recommends 3 at least.
+    row_height: i64
+    # Whether each row ends with one bar instead of its right row indicator
+    # and stop pattern: compact PDF417, narrower, for a clean print.
+    compact: bool
+
+# The options of an ordinary PDF417: the columns and the level chosen, rows
+# three modules tall, not compact. See also `pdf417`.
+function default_pdf417_options() -> Pdf417Options
+    return Pdf417Options(columns: .automatic, level: .automatic, row_height: 3, compact: false)
+
+# The PDF417 of `text`: runs of thirteen digits or more in numeric
+# compaction, runs of text in text compaction, and the rest in byte.
+#
+# - `text`: the text; one holding only ASCII is written as it is, any other
+#   behind the ECI that marks it UTF-8 (ECI 000026), so a reader gives it
+#   back as written; one byte at least.
+# - `options`: the columns, the level, the rows' height, compact or not.
+#
+# The quiet zone is two modules on each side, the least the standard asks.
+# Fails `invalid` where `text` is empty or a count or the rows' height is
+# out of its range;
+# `unsupported` where the data and its error correction pass 928
+# codewords or need more than 90 rows. See also `pdf417_bytes`.
+function pdf417(text: str, options: Pdf417Options) -> Symbol?
+    if text.len() == 0
+        return fail(code: codes.INVALID, msg: "a PDF417 holds one byte or more, and the data is empty")
+    data: [i64] @= []
+    eci: bool @= false
+
+    for i in range(from: 0, to: text.len())
+        data @ data.push(to_i64(text[i]).must())
+
+        if text[i] >= 128
+            eci @ true
+
+    words: [i64] @= []
+
+    if eci
+        words @ [pdf_encode.ECI, 26]
+
+    for w in pdf_encode.words_of(data)
+        words @ words.push(w)
+
+    if options.row_height < 1
+        return fail(code: codes.INVALID, msg: f"a PDF417's rows are 1 module tall or more, not {options.row_height}")
+
+    level = match options.level
+        .automatic => 0
+        .exactly c => c.value
+
+    choose_level = match options.level
+        .automatic => true
+        .exactly _ => false
+
+    columns = match options.columns
+        .automatic => 0
+        .exactly c => c.value
+
+    choose_columns = match options.columns
+        .automatic => true
+        .exactly _ => false
+
+    rows = pdf_symbol.rows_of(words: words, level: level, choose_level: choose_level, columns: columns, choose_columns: choose_columns, row_height: options.row_height, compact: options.compact)?
+    return ok(
+        Symbol(symbology: .pdf417, rows: rows, row_height: options.row_height, guards: [], add_on: [], quiet: Quiet(left: 2, right: 2, top: 2, bottom: 2), captions: [], text: text)
+    )
+
+# The PDF417 of `data`, read back as its bytes.
+#
+# - `data`: any bytes, which a reader takes as ISO/IEC 8859-1 unless the
+#   program that reads them knows better; runs of digits and of text are
+#   compacted as `pdf417` compacts them; one byte at least.
+# - `options`: the columns, the level, the rows' height, compact or not.
+#
+# `text` is the bytes read as ISO/IEC 8859-1. Fails as `pdf417` fails. See
+# also `pdf417`.
+function pdf417_bytes(data: [u8], options: Pdf417Options) -> Symbol?
+    if data.len() == 0
+        return fail(code: codes.INVALID, msg: "a PDF417 holds one byte or more, and the data is empty")
+    pieces: [i64] @= []
+
+    for b in data
+        pieces @ pieces.push(to_i64(b).must())
+
+    if options.row_height < 1
+        return fail(code: codes.INVALID, msg: f"a PDF417's rows are 1 module tall or more, not {options.row_height}")
+
+    level = match options.level
+        .automatic => 0
+        .exactly c => c.value
+
+    choose_level = match options.level
+        .automatic => true
+        .exactly _ => false
+
+    columns = match options.columns
+        .automatic => 0
+        .exactly c => c.value
+
+    choose_columns = match options.columns
+        .automatic => true
+        .exactly _ => false
+
+    rows = pdf_symbol.rows_of(words: pdf_encode.words_of(pieces), level: level, choose_level: choose_level, columns: columns, choose_columns: choose_columns, row_height: options.row_height, compact: options.compact)?
+    return ok(
+        Symbol(symbology: .pdf417, rows: rows, row_height: options.row_height, guards: [], add_on: [], quiet: Quiet(left: 2, right: 2, top: 2, bottom: 2), captions: [], text: c128.latin1_text(data))
+    )
+
+## Written out
+
+# How `to_svg` writes a symbol. Built directly, or by `default_svg_options`.
+record SvgOptions
+    # The user units of a module, 1 or more; the document's width and height
+    # are its viewBox's times this.
+    scale: i64
+    # The colour of the bars and the text, as CSS writes one: `#000`,
+    # `black`, `rgb(0, 0, 0)`.
+    dark: str
+    # The colour of the ground, as CSS writes one, or `none` for no ground.
+    light: str
+    # Whether the captions are written.
+    captions: bool
+    # The font family the captions name, as CSS writes a list of them.
+    font_family: str
+
+# The SVG options of an ordinary symbol: one unit a module, black on
+# white, the captions in a monospaced font, OCR-B where the reader has it.
+# See also `to_svg`.
+function default_svg_options() -> SvgOptions
+    return SvgOptions(scale: 1, dark: "#000", light: "#fff", captions: true, font_family: "OCR-B, monospace")
+
+# `symbol` as an SVG document: the ground, one path of its bars or modules
+# crisp at every scale, and its captions as text centred on their columns.
+#
+# - `symbol`: the symbol.
+# - `options`: the scale, the colours, the captions and their font.
+#
+# The document is one line ending with "\n", with no XML declaration; its
+# viewBox counts modules, the quiet zone included. Fails `invalid` where
+# the scale is below 1 or a colour holds a character outside letters,
+# digits, space and `#(),.%-`. See also `to_image`.
+function to_svg(symbol: Symbol, options: SvgOptions) -> str?
+    captions: [render.Caption] @= []
+
+    for c in symbol.captions
+        captions @ captions.push(render.Caption(text: c.text, center: c.center, above: c.above, small: c.small))
+
+    s = render.scene(
+        rows: symbol.rows,
+        row_height: symbol.row_height,
+        guards: symbol.guards,
+        add_on: symbol.add_on,
+        captions: captions,
+        quiet: [symbol.quiet.left, symbol.quiet.right, symbol.quiet.top, symbol.quiet.bottom],
+        with_text: options.captions
+    )
+    return render.svg(s: s, scale: options.scale, dark: options.dark, light: options.light, family: options.font_family)
+
+# How `to_image` draws a symbol. Built directly, or by
+# `default_image_options`.
+record ImageOptions
+    # The pixels a module a side, 1 or more.
+    scale: i64
+    # The colour of the bars and the text.
+    dark: image.Color
+    # The colour of the ground and the quiet zone.
+    light: image.Color
+
+# The image options of an ordinary symbol: three pixels a module, opaque
+# black on opaque white. See also `to_image`.
+function default_image_options() -> ImageOptions
+    return ImageOptions(
+        scale: 3,
+        dark: image.Color(r: 0, g: 0, b: 0, a: 255),
+        light: image.Color(r: 255, g: 255, b: 255, a: 255)
+    )
+
+# `symbol` drawn into an RGBA image without its captions, every module
+# `options.scale` pixels a side, its quiet zone in the light colour.
+#
+# - `symbol`: the symbol.
+# - `options`: the scale and the colours.
+#
+# The image is the symbol's modules and quiet zone times the scale on each
+# side. Fails `invalid` where the scale is below 1; `limit` where a side
+# would pass 16,384 pixels. See also `to_image_with_text`, `to_svg`.
+function to_image(symbol: Symbol, options: ImageOptions) -> image.Image?
+    captions: [render.Caption] @= []
+
+    for c in symbol.captions
+        captions @ captions.push(render.Caption(text: c.text, center: c.center, above: c.above, small: c.small))
+
+    s = render.scene(
+        rows: symbol.rows,
+        row_height: symbol.row_height,
+        guards: symbol.guards,
+        add_on: symbol.add_on,
+        captions: captions,
+        quiet: [symbol.quiet.left, symbol.quiet.right, symbol.quiet.top, symbol.quiet.bottom],
+        with_text: false
+    )
+    return render.draw(s: s, scale: options.scale, dark: options.dark, light: options.light)
+
+# `symbol` drawn into an RGBA image with its captions set in `f`, as a
+# label is printed.
+#
+# - `symbol`: the symbol.
+# - `options`: the scale and the colours.
+# - `f`: the font the captions are set in; it must hold their characters.
+#
+# Fails as `to_image` fails, and `not_found` where `f` has no glyph for a
+# character of a caption. See also `to_image`.
+function to_image_with_text(symbol: Symbol, options: ImageOptions, f: font.Font) -> image.Image?
+    captions: [render.Caption] @= []
+
+    for c in symbol.captions
+        captions @ captions.push(render.Caption(text: c.text, center: c.center, above: c.above, small: c.small))
+
+    s = render.scene(
+        rows: symbol.rows,
+        row_height: symbol.row_height,
+        guards: symbol.guards,
+        add_on: symbol.add_on,
+        captions: captions,
+        quiet: [symbol.quiet.left, symbol.quiet.right, symbol.quiet.top, symbol.quiet.bottom],
+        with_text: true
+    )
+    img: image.Image @= render.draw(s: s, scale: options.scale, dark: options.dark, light: options.light)?
+    render.write_labels(@img, s: s, scale: options.scale, dark: options.dark, f: f)?
+    return ok(img)
+
+## Examples
+
+# The check digit GS1 adds to a GTIN.
+test "check_digit: a GTIN-13's"
+    assert check_digit("590123412345").must() == 7
+
+# An EAN-13 made from its twelve digits: the check digit is added.
+test "ean13: a GTIN-13"
+    s = ean13("590123412345").must()
+    assert s.text == "5901234123457"
+    assert s.rows[0].len() == 95
+
+# An EAN-8 of seven digits.
+test "ean8: a GTIN-8"
+    assert ean8("9638507").must().text == "96385074"
+
+# A UPC-A is an EAN-13 whose first digit is 0.
+test "upca: a GTIN-12"
+    assert upca("03600029145").must().rows == ean13("0036000291452").must().rows
+
+# A UPC-E of number system 0.
+test "upce: six digits and the number system"
+    assert upce("0123456").must().text == "01234565"
+
+# A book's price as a five-digit add-on after its ISBN.
+test "with_add_on: a price after an ISBN"
+    s = with_add_on(symbol: ean13("978020137962").must(), digits: "52495").must()
+    assert s.text == "9780201379624 52495"
+
+# A Code 128 of a text.
+test "code128: a part number"
+    assert code128("PART-12345678").must().text == "PART-12345678"
+
+# A Code 128 of bytes.
+test "code128_bytes: bytes with a control character"
+    assert code128_bytes([65, 9, 66]).must().text == "A\tB"
+
+# A GS1-128 of a GTIN and a batch.
+test "gs1_128: a GTIN and a batch"
+    s = gs1_128([Element(ai: "01", data: "09501101530003"), Element(ai: "10", data: "AB-123")]).must()
+    assert s.text == "(01)09501101530003(10)AB-123"
+
+# Element strings read from their printed form.
+test "parse_elements: a GTIN and a date"
+    e = parse_elements("(01)09501101530003(17)250630").must()
+    assert e == [Element(ai: "01", data: "09501101530003"), Element(ai: "17", data: "250630")]
+
+# Element strings written in their printed form.
+test "format_elements: a batch"
+    assert format_elements([Element(ai: "10", data: "X1")]) == "(10)X1"
+
+# The default SVG options.
+test "default_svg_options: one unit a module, captions on"
+    assert default_svg_options().captions
+
+# An EAN-13 as SVG.
+test "to_svg: an EAN-13"
+    svg = to_svg(symbol: ean13("590123412345").must(), options: default_svg_options()).must()
+    assert svg.slice(from: 0, to: 4) == "<svg"
+
+# The default image options.
+test "default_image_options: three pixels a module"
+    assert default_image_options().scale == 3
+
+# An EAN-13 as an image, quiet zone included.
+test "to_image: an EAN-13 at three pixels a module"
+    img = to_image(symbol: ean13("590123412345").must(), options: default_image_options()).must()
+    assert img.width == (11 + 95 + 7) * 3
+
+# An EAN-13 drawn as a label, its digits set in a font under the bars.
+test "to_image_with_text: an EAN-13 with its digits"
+    f = font.parse(samples.truetype(), 0).must()
+    img = to_image_with_text(symbol: ean13("590123412345").must(), options: default_image_options(), f: f).must()
+    assert img.height == (69 + 11) * 3
+
+# A Data Matrix of a short text in the smallest square.
+test "data_matrix: six digits in 10 by 10"
+    s = data_matrix(text: "123456", size: .smallest(shape: .square)).must()
+    assert s.rows.len() == 10
+
+# A Data Matrix of bytes in a rectangle.
+test "data_matrix_bytes: bytes in the smallest rectangle"
+    s = data_matrix_bytes(data: [0, 255, 128], size: .smallest(shape: .rectangle)).must()
+    assert s.rows.len() == 8
+
+# A GS1 Data Matrix of a GTIN and an expiry date.
+test "gs1_data_matrix: a GTIN and an expiry date"
+    s = gs1_data_matrix(
+        elements: [Element(ai: "01", data: "09501101530003"), Element(ai: "17", data: "250630")],
+        size: .smallest(shape: .square)
+    ).must()
+    assert s.text == "(01)09501101530003(17)250630"
+
+# The default PDF417 options.
+test "default_pdf417_options: chosen columns and level, rows of three"
+    assert default_pdf417_options().row_height == 3
+
+# A PDF417 of a shipping label's text.
+test "pdf417: a shipping label"
+    s = pdf417(text: "SHIP TO: ACME, 1 MAIN ST, 12345", options: default_pdf417_options()).must()
+    assert s.rows.len() >= 3
+
+# A PDF417 of bytes, compact.
+test "pdf417_bytes: bytes in a compact symbol"
+    options = Pdf417Options(columns: .exactly(value: 4), level: .exactly(value: 2), row_height: 3, compact: true)
+    s = pdf417_bytes(data: [0, 1, 2, 250], options: options).must()
+    assert s.rows[0].len() == 17 * 4 + 35

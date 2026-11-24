@@ -1,0 +1,103 @@
+# The boolean decoder of VP8 (RFC 6386, section 7): one partition's bytes read
+# as a sequence of bits, each at the probability the caller names. It keeps
+# the range less one and loads a byte when its window runs dry, as libwebp's
+# reader does, so a partition that ends early is seen at the same read: the
+# first byte needed past the end is read as zero and marks the reader `over`,
+# and the caller refuses the picture at its next check.
+
+# A partition being read.
+record Reader
+    # The partition's bytes.
+    data: [u8]
+    # The next byte to load.
+    pos: i64
+    # The bits not yet read, the newest in the low end.
+    value: i64
+    # The range, less one: 127 to 254 between reads.
+    range: i64
+    # How many bits of `value` lie below the eight being read; below 0, a
+    # byte is loaded first.
+    bits: i64
+    # Whether a byte past the end has been needed.
+    over: bool
+
+# A reader of `data` from `from` to `to`, its first byte loaded. A part that
+# lies outside `data` is read as empty.
+function open(data: [u8] lent, from: i64, to: i64) -> Reader
+    a = max(a: 0, b: from)
+    b = min(a: data.len(), b: to)
+    part: [u8] @= []
+
+    if a < b
+        part @ data.slice(from: a, to: b)
+    r @= Reader(data: part, pos: 0, value: 0, range: 254, bits: -8, over: false)
+    load(@r)
+    return r
+
+# Loads the next byte into `r`, or a zero once the bytes are spent.
+function load(@r: Reader)
+    if r.pos < r.data.len()
+        r.value @ r.value << 8 | to_i64(r.data[r.pos]).must()
+        r.pos @ r.pos + 1
+        r.bits @ r.bits + 8
+    else if !r.over
+        r.value @ r.value << 8
+        r.bits @ r.bits + 8
+        r.over @ true
+    else
+        r.bits @ 0
+
+# One bit read at the probability `prob` out of 256 that it is 0.
+function bit(@r: Reader, prob: i64) -> i64
+    if r.bits < 0
+        load(@r)
+    split = r.range * prob >> 8
+    answer @= 0
+    span @= split + 1
+
+    if r.value >> r.bits > split
+        span @ r.range - split
+        r.value @ r.value - (split + 1 << r.bits)
+        answer @ 1
+
+    while span < 128
+        span @ span << 1
+        r.bits @ r.bits - 1
+
+    r.range @ span - 1
+    return answer
+
+# An unsigned number of `n` bits, the most significant first, each at even odds.
+function literal(@r: Reader, n: i64) -> i64
+    v @= 0
+
+    for _ in range(from: 0, to: n)
+        v @ v << 1 | bit(r: @r, prob: 128)
+
+    return v
+
+# A number of `n` bits followed by its sign, a set bit making it negative.
+function signed(@r: Reader, n: i64) -> i64
+    v = literal(r: @r, n: n)
+
+    if bit(r: @r, prob: 128) == 1
+        return -v
+    return v
+
+# A flag, then a signed number of `n` bits where the flag is set, else 0.
+function optional_signed(@r: Reader, n: i64) -> i64
+    if bit(r: @r, prob: 128) == 1
+        return signed(r: @r, n: n)
+    return 0
+
+# The larger of `a` and `b`.
+function max(a: i64, b: i64) -> i64
+    if a > b
+        return a
+    return b
+
+# The smaller of `a` and `b`.
+function min(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b

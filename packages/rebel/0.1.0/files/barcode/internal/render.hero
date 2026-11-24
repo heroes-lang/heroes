@@ -1,0 +1,367 @@
+# A symbol laid out and written: its dark modules as boxes and its
+# captions as labels, in modules, x to the right and y downward from the
+# top left corner of the quiet zone; then that scene written as SVG or
+# filled into an image.
+#
+# A linear symbol is its one row of modules, with beside each module
+# whether its bar is a guard's, which reaches half a text's size below the
+# others, through the digits; an add-on stands `ADD_ON_GAP` modules after
+# it, its bars beginning below the digits written above them.
+
+use barcode/internal/codes
+use font
+use image
+use image/text as typeset
+
+# The modules left light between a symbol and its add-on.
+constant ADD_ON_GAP: i64
+    9
+
+# The size of a caption's text, its em square, in modules.
+constant TEXT_SIZE: f64
+    11.0
+
+# The size of the digits UPC-A and UPC-E write beside their bars.
+constant SMALL_SIZE: f64
+    8.0
+
+# The most pixels a side the image a scene is drawn into may reach.
+constant MOST_PIXELS: i64
+    16384
+
+# A caption as the face hands it over.
+record Caption
+    # The text.
+    text: str
+    # The column its middle stands on, in modules from the first module.
+    center: f64
+    # Whether it is written above the bars (an add-on's digits).
+    above: bool
+    # Whether it is written smaller, beside the bars.
+    small: bool
+
+# A dark rectangle, in modules.
+record Box
+    # Its left edge.
+    x: f64
+    # Its top edge.
+    y: f64
+    # Its width.
+    width: f64
+    # Its height.
+    height: f64
+
+# A line of text, in modules.
+record Label
+    # The text.
+    text: str
+    # The column of its middle.
+    center: f64
+    # The row of its baseline.
+    baseline: f64
+    # Its em square.
+    size: f64
+
+# A symbol laid out.
+record Scene
+    # The whole width, quiet zones counted.
+    width: f64
+    # The whole height, quiet zones counted.
+    height: f64
+    # The dark boxes.
+    boxes: [Box]
+    # The captions.
+    labels: [Label]
+
+# The scene of a symbol.
+#
+# - `rows`: its modules, `true` dark.
+# - `row_height`: how many modules tall a row is, or a linear symbol's bars.
+# - `guards`: for a linear symbol, whether each module's bar is a guard's;
+#   empty for a matrix.
+# - `add_on`: an add-on's modules, or empty.
+# - `captions`: the text written with it.
+# - `quiet`: the quiet zone's modules, left, right, top and bottom.
+# - `with_text`: whether the captions are laid out.
+function scene(rows: [[bool]] lent, row_height: i64, guards: [bool] lent, add_on: [bool] lent, captions: [Caption] lent, quiet: [i64], with_text: bool) -> Scene
+    columns: i64 @= 0
+
+    if rows.len() > 0
+        columns @ rows[0].len()
+
+    left = to_f64(quiet[0])
+    top = to_f64(quiet[2])
+    bars = to_f64(row_height)
+    boxes: [Box] @= []
+    labels: [Label] @= []
+    content: f64 @= to_f64(rows.len() * row_height)
+    text_below = with_text && has_below(captions)
+    width: i64 @= columns
+
+    if guards.len() > 0
+        content @ bars
+
+        if text_below
+            content @ bars + TEXT_SIZE
+        guard_bottom: f64 @= bars
+
+        if text_below
+            guard_bottom @ bars + TEXT_SIZE / 2.0
+        x: i64 @= 0
+
+        while x < columns
+            if rows[0][x]
+                start = x
+                kind = guards[x]
+
+                while x < columns && rows[0][x] && guards[x] == kind
+                    x @ x + 1
+
+                height: f64 @= bars
+
+                if kind
+                    height @ guard_bottom
+                boxes @ boxes.push(Box(x: left + to_f64(start), y: top, width: to_f64(x - start), height: height))
+            else
+                x @ x + 1
+
+        if add_on.len() > 0
+            origin = columns + ADD_ON_GAP
+            width @ origin + add_on.len()
+            add_on_top: f64 @= 0.0
+
+            if with_text
+                add_on_top @ TEXT_SIZE + 1.0
+            add_on_bottom: f64 @= bars
+
+            if with_text
+                add_on_bottom @ guard_bottom
+            x @ 0
+
+            while x < add_on.len()
+                if add_on[x]
+                    start = x
+
+                    while x < add_on.len() && add_on[x]
+                        x @ x + 1
+
+                    boxes @ boxes.push(
+                        Box(x: left + to_f64(origin + start), y: top + add_on_top, width: to_f64(x - start), height: add_on_bottom - add_on_top)
+                    )
+                else
+                    x @ x + 1
+    else
+        for r in range(from: 0, to: rows.len())
+            x: i64 @= 0
+
+            while x < columns
+                if rows[r][x]
+                    start = x
+
+                    while x < columns && rows[r][x]
+                        x @ x + 1
+
+                    boxes @ boxes.push(
+                        Box(x: left + to_f64(start), y: top + to_f64(r * row_height), width: to_f64(x - start), height: bars)
+                    )
+                else
+                    x @ x + 1
+
+    if with_text
+        for c in captions
+            size: f64 @= TEXT_SIZE
+
+            if c.small
+                size @ SMALL_SIZE
+            baseline: f64 @= top + bars + TEXT_SIZE * 0.85
+
+            if c.above
+                baseline @ top + TEXT_SIZE * 0.85
+            labels @ labels.push(Label(text: c.text, center: left + c.center, baseline: baseline, size: size))
+
+    return Scene(
+        width: left + to_f64(width + quiet[1]),
+        height: top + content + to_f64(quiet[3]),
+        boxes: boxes,
+        labels: labels
+    )
+
+# Whether any caption stands below the bars.
+function has_below(captions: [Caption] lent) -> bool
+    for c in captions
+        if !c.above
+            return true
+
+    return false
+
+# Nothing where `colour` holds only letters, digits, space and `#(),.%-`,
+# so nothing it holds can close the attribute it is written in; else
+# `invalid`.
+function check_colour(colour: str, name: str) -> ()?
+    if colour.len() == 0
+        return fail(code: codes.INVALID, msg: f"the {name} colour is empty")
+
+    for i in range(from: 0, to: colour.len())
+        b = colour[i]
+        letter = b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
+
+        if !letter && b != ' ' && b != '#' && b != '(' && b != ')' && b != ',' && b != '.' && b != '%' && b != '-'
+            return fail(code: codes.INVALID, msg: f"the {name} colour holds byte {b} at {i}, which a colour does not")
+
+    return ok()
+
+# `text` with the five characters XML gives a meaning escaped, and each
+# control character, which XML 1.0 cannot hold, as a space.
+function escaped(text: str) -> str
+    out: [str] @= []
+
+    for c in text.chars()
+        if c == "&"
+            out @ out.push("&amp;")
+        else if c == "<"
+            out @ out.push("&lt;")
+        else if c == ">"
+            out @ out.push("&gt;")
+        else if c == "\""
+            out @ out.push("&quot;")
+        else if c == "'"
+            out @ out.push("&apos;")
+        else if c.len() == 1 && (c[0] < 32 || c[0] == 127)
+            out @ out.push(" ")
+        else
+            out @ out.push(c)
+
+    return out.join("")
+
+# The SVG document of `s`.
+#
+# - `s`: the scene.
+# - `scale`: the user units of a module, 1 or more.
+# - `dark`: the bars' and the text's colour, as CSS writes one.
+# - `light`: the ground's colour, or `none`.
+# - `family`: the font family the captions name.
+function svg(s: Scene lent, scale: i64, dark: str, light: str, family: str) -> str?
+    if scale < 1
+        return fail(code: codes.INVALID, msg: f"the scale is 1 or more units a module, not {scale}")
+    check_colour(colour: dark, name: "dark")?
+    check_colour(colour: light, name: "light")?
+    width = s.width * to_f64(scale)
+    height = s.height * to_f64(scale)
+    out: [str] @= [
+        f"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{width}\" height=\"{height}\" viewBox=\"0 0 {s.width} {s.height}\">"
+    ]
+
+    if light != "none"
+        out @ out.push(f"<rect width=\"{s.width}\" height=\"{s.height}\" fill=\"{light}\"/>")
+    out @ out.push(f"<path fill=\"{dark}\" shape-rendering=\"crispEdges\" d=\"")
+
+    for b in s.boxes
+        out @ out.push(f"M{b.x},{b.y}h{b.width}v{b.height}h{0.0 - b.width}z")
+
+    out @ out.push("\"/>")
+
+    for l in s.labels
+        out @ out.push(
+            f"<text x=\"{l.center}\" y=\"{l.baseline}\" font-family=\"{escaped(family)}\" font-size=\"{l.size}\" text-anchor=\"middle\" fill=\"{dark}\">{escaped(l.text)}</text>"
+        )
+
+    out @ out.push("</svg>\n")
+    return ok(out.join(""))
+
+# An image of `s` at `scale` pixels a module: the ground in `light` and the
+# boxes in `dark`; its labels are `write_labels`'.
+#
+# Fails `invalid` where `scale` is below 1, and `limit` where a side would
+# pass 16,384 pixels.
+function draw(s: Scene lent, scale: i64, dark: image.Color, light: image.Color) -> image.Image?
+    if scale < 1
+        return fail(code: codes.INVALID, msg: f"the scale is 1 or more pixels a module, not {scale}")
+    width = to_i64(s.width).must() * scale
+    height = to_i64(s.height + 0.999).must() * scale
+
+    if width > MOST_PIXELS || height > MOST_PIXELS
+        return fail(code: "limit", msg: f"the image would be {width} by {height} pixels, past {MOST_PIXELS} a side")
+    img: image.Image @= image.blank(width: width, height: height, format: .rgba)?
+    image.fill_rect(@img, x: 0, y: 0, width: width, height: height, color: light)
+    unit = to_f64(scale)
+
+    for b in s.boxes
+        x0 = to_i64(b.x * unit + 0.5).must()
+        y0 = to_i64(b.y * unit + 0.5).must()
+        x1 = to_i64((b.x + b.width) * unit + 0.5).must()
+        y1 = to_i64((b.y + b.height) * unit + 0.5).must()
+        image.fill_rect(@img, x: x0, y: y0, width: x1 - x0, height: y1 - y0, color: dark)
+
+    return ok(img)
+
+# Fills the labels of `s` into `img` in `f`, each centred on its column.
+#
+# Fails as `image/text` fails on a label, before it draws that label.
+function write_labels(@img: image.Image, s: Scene lent, scale: i64, dark: image.Color, f: font.Font lent) -> ()?
+    unit = to_f64(scale)
+
+    for l in s.labels
+        how = typeset.style(size: l.size * unit, color: dark)
+        m = typeset.measure(f, text: l.text, how: how)?
+        _ = typeset.draw(@img, f, text: l.text, x: l.center * unit - m.width / 2.0, y: l.baseline * unit, how: how)?
+
+    return ok()
+
+## Tests
+
+test "scene: a matrix's boxes are its runs of dark modules, quiet zone added"
+    s = scene(
+        rows: [[true, true, false], [false, true, true]],
+        row_height: 3,
+        guards: [],
+        add_on: [],
+        captions: [],
+        quiet: [2, 2, 2, 2],
+        with_text: false
+    )
+    assert s.width == 7.0 && s.height == 10.0
+    assert s.boxes.len() == 2
+    assert s.boxes[0] == Box(x: 2.0, y: 2.0, width: 2.0, height: 3.0)
+    assert s.boxes[1] == Box(x: 3.0, y: 5.0, width: 2.0, height: 3.0)
+
+test "scene: a guard reaches half a text below the bars, an add-on starts below its digits"
+    s = scene(
+        rows: [[true, true, true, false]],
+        row_height: 50,
+        guards: [true, false, false, false],
+        add_on: [true],
+        captions: [Caption(text: "1", center: 1.5, above: false, small: false), Caption(text: "2", center: 13.5, above: true, small: false)],
+        quiet: [3, 1, 0, 0],
+        with_text: true
+    )
+    assert s.width == 3.0 + 4.0 + 9.0 + 1.0 + 1.0 && s.height == 61.0
+    assert s.boxes.len() == 3
+    assert s.boxes[0].height == 55.5
+    assert s.boxes[1].height == 50.0 && s.boxes[1].x == 4.0 && s.boxes[1].width == 2.0
+    assert s.boxes[2].x == 16.0 && s.boxes[2].y == 12.0 && s.boxes[2].height == 43.5
+    assert s.labels[0].center == 4.5 && s.labels[0].baseline == 50.0 + 11.0 * 0.85
+    assert s.labels[1].baseline == 11.0 * 0.85
+
+test "scene: without text every bar is the bars' height"
+    s = scene(
+        rows: [[true, false, true]],
+        row_height: 20,
+        guards: [true, false, false],
+        add_on: [true],
+        captions: [],
+        quiet: [1, 1, 0, 0],
+        with_text: false
+    )
+    assert s.height == 20.0
+    assert s.boxes[0].height == 20.0 && s.boxes[2].y == 0.0 && s.boxes[2].height == 20.0
+
+test "check_colour: names, hex, functions, and a quote refused"
+    assert !check_colour(colour: "#0a0b0c", name: "dark").is_err()
+    assert !check_colour(colour: "rgb(1, 2, 3)", name: "dark").is_err()
+    assert check_colour(colour: "red\"", name: "dark").is_err()
+    assert check_colour(colour: "", name: "light").is_err()
+
+test "escaped: the five characters, a control character, and text of more than one byte"
+    assert escaped("<a & 'b'>\"") == "&lt;a &amp; &apos;b&apos;&gt;&quot;"
+    assert escaped("a\tb") == "a b"
+    assert escaped("é") == "é"

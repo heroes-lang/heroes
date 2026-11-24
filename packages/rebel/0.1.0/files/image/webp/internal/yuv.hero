@@ -1,0 +1,161 @@
+# The colour conversions of the lossy coding, as libwebp 1.6.0 makes them:
+# Y, U and V planes to RGB through its "fancy" upsampler, each chroma sample
+# spread over the four pixels nearest it with weights 9, 3, 3 and 1, and its
+# 14-bit fixed-point BT.601 conversion; and RGB to Y, U and V, chroma as the
+# average of each 2x2 block, by its 16-bit conversion.
+
+use image/webp/internal/loopfilter
+
+# `(v * coeff) >> 8`, libwebp's `MultHi`.
+function mul_hi(v: i64, coeff: i64) -> i64
+    return v * coeff >> 8
+
+# A sample at 6 fractional bits held to 0 to 255 (libwebp's `VP8Clip8`).
+function clip8(v: i64) -> i64
+    if v & ~16383 == 0
+        return v >> 6
+
+    if v < 0
+        return 0
+    return 255
+
+# The red of luma `y` and red difference `v`.
+function red(y: i64, v: i64) -> i64
+    return clip8(mul_hi(v: y, coeff: 19077) + mul_hi(v: v, coeff: 26149) - 14234)
+
+# The green of `y`, `u` and `v`.
+function green(y: i64, u: i64, v: i64) -> i64
+    return clip8(mul_hi(v: y, coeff: 19077) - mul_hi(v: u, coeff: 6419) - mul_hi(v: v, coeff: 13320) + 8708)
+
+# The blue of `y` and blue difference `u`.
+function blue(y: i64, u: i64) -> i64
+    return clip8(mul_hi(v: y, coeff: 19077) + mul_hi(v: u, coeff: 33050) - 17685)
+
+# The chroma of one output row, `width` wide, from the chroma row nearer it,
+# starting at `c[near]`, and the farther, at `c[far]` (both `(width + 1) / 2`
+# wide): weights 3 and 1 between the rows and between the columns, as
+# libwebp's upsampler computes them, whose top and bottom rows are this one
+# formula with the nearer row first.
+function spread(c: [i64] lent, near: i64, far: i64, width: i64) -> [i64]
+    out: [i64] @= []
+    pn @= c[near]
+    pf @= c[far]
+    out @ out.push(3 * pn + pf + 2 >> 2)
+    pairs = width - 1 >> 1
+    x @= 1
+
+    while x <= pairs
+        n = c[near + x]
+        f = c[far + x]
+        avg = pn + n + pf + f + 8
+        a = avg + 2 * (n + pf) >> 3
+        b = avg + 2 * (pn + f) >> 3
+        out @ out.push(a + pn >> 1)
+        out @ out.push(b + n >> 1)
+        pn @ n
+        pf @ f
+        x @ x + 1
+
+    if width & 1 == 0
+        out @ out.push(3 * pn + pf + 2 >> 2)
+    return out
+
+# The pixels of `y`, `u` and `v` (`width` by `height`, chroma at half size
+# rounded up), as RGB, or RGBA with `alpha` where `alpha` holds `width *
+# height` samples. Output row 0 takes chroma row 0 alone; an odd row `j` is
+# nearer chroma row `(j - 1) / 2` and farther from the next, the last row of
+# an even height taking its own alone; an even row `j` is nearer row `j / 2`
+# and farther from the one before (libwebp's `EmitFancyRGB`).
+function to_rgb(y: [i64] lent, u: [i64] lent, v: [i64] lent, alpha: [u8] lent, width: i64, height: i64) -> [u8]
+    cw = (width + 1) / 2
+    out: [u8] @= []
+    j @= 0
+
+    while j < height
+        near = if j & 1 == 1
+            (j - 1) / 2
+        else
+            j / 2
+
+        far = if j == 0
+            0
+        else if j & 1 == 0
+            j / 2 - 1
+        else if j + 1 < height
+            near + 1
+        else
+            near
+        ur = spread(u, near: near * cw, far: far * cw, width: width)
+        vr = spread(v, near: near * cw, far: far * cw, width: width)
+        i @= 0
+
+        while i < width
+            ly = y[j * width + i]
+            out @ out.push(to_u8(red(y: ly, v: vr[i])).must())
+            out @ out.push(to_u8(green(y: ly, u: ur[i], v: vr[i])).must())
+            out @ out.push(to_u8(blue(y: ly, u: ur[i])).must())
+
+            if alpha.len() > 0
+                out @ out.push(alpha[j * width + i])
+            i @ i + 1
+
+        j @ j + 1
+
+    return out
+
+# The Y, U and V planes of the pixels `px` (`channels` bytes each, RGB first),
+# `width` by `height`: luma at full size, each chroma sample the average of a
+# 2x2 block, its last column or row repeated where the size is odd. Answers
+# the three planes laid end to end.
+function from_rgb(px: [u8] lent, channels: i64, width: i64, height: i64) -> [[i64]]
+    ys: [i64] @= []
+    us: [i64] @= []
+    vs: [i64] @= []
+    j @= 0
+
+    while j < height
+        i @= 0
+
+        while i < width
+            k = (j * width + i) * channels
+            r = to_i64(px[k]).must()
+            g = to_i64(px[k + 1]).must()
+            b = to_i64(px[k + 2]).must()
+            ys @ ys.push(16839 * r + 33059 * g + 6420 * b + 32768 + (16 << 16) >> 16)
+            i @ i + 1
+
+        j @ j + 1
+
+    cw = (width + 1) / 2
+    ch = (height + 1) / 2
+    cj @= 0
+
+    while cj < ch
+        ci @= 0
+
+        while ci < cw
+            sr @= 0
+            sg @= 0
+            sb @= 0
+
+            for dy in [0, 1]
+                for dx in [0, 1]
+                    x = loopfilter.clamp(v: 2 * ci + dx, lo: 0, hi: width - 1)
+                    yy = loopfilter.clamp(v: 2 * cj + dy, lo: 0, hi: height - 1)
+                    k = (yy * width + x) * channels
+                    sr @ sr + to_i64(px[k]).must()
+                    sg @ sg + to_i64(px[k + 1]).must()
+                    sb @ sb + to_i64(px[k + 2]).must()
+
+            us @ us.push(clip_uv(-9719 * sr - 19081 * sg + 28800 * sb))
+            vs @ vs.push(clip_uv(28800 * sr - 24116 * sg - 4684 * sb))
+            ci @ ci + 1
+
+        cj @ cj + 1
+
+    return [ys, us, vs]
+
+# A chroma sum of four pixels brought to 0 to 255 (libwebp's `VP8ClipUV` with
+# the rounding of four).
+function clip_uv(uv: i64) -> i64
+    return loopfilter.pixel(uv + (32768 << 2) + (128 << 18) >> 18)

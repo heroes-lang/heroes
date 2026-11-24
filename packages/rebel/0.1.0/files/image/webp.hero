@@ -1,24 +1,25 @@
-# WebP read and written: still pictures and animations, lossless, with the
-# ICC profile, EXIF and XMP chunks of the extended format. A lossless frame
-# is read in full (every transform, the colour cache and the groups of
-# codes) and written with a colour index or a green-subtracted, predicted
-# picture and Huffman codes of its own.
+# WebP read and written: still pictures and animations, lossless and lossy,
+# with the ICC profile, EXIF and XMP chunks of the extended format. A
+# lossless frame is read in full (every transform, the colour cache and the
+# groups of codes) and written with a colour index or a green-subtracted,
+# predicted picture and Huffman codes of its own. A lossy frame (VP8, RFC
+# 6386), with its alpha from an ALPH chunk, is read as libwebp reads it: the
+# same pixels, to the byte, as libwebp's `dwebp` gives.
 #
-# It does not convert or scale: that is `image`'s. It does not decode the
-# lossy coding (VP8, with or without an ALPH chunk) and fails `unsupported`
-# for it, the message saying which frame.
+# It does not convert or scale: that is `image`'s.
 #
 # **A file is not trusted.** `decode` checks every chunk against the file's
 # length, the canvas and every frame against the caller's `image.Limits` (the
 # pixels of all the frames together against `max_pixels`) before it allocates,
 # every prefix code for completeness, and every copy of earlier pixels against
 # the pixels written, so a broken or hostile file fails `invalid` or `limit`
-# and never reads past its end.
+# and never reads past its end; a lossy frame's partitions are held to their
+# lengths, and one that ends before its last macroblock is refused.
 #
-# It fails with `invalid`, `limit` and `unsupported`.
+# It fails with `invalid` and `limit`.
 #
-# Not written yet, each a `pending` block of its ledger: a lossy (VP8) picture
-# read; a picture written lossily at a quality.
+# Not written yet, a `pending` block of its ledger: a picture written lossily
+# at a quality.
 
 use bytes
 use hash
@@ -28,6 +29,7 @@ use image/webp/internal/expect
 use image/webp/internal/fixtures
 use image/webp/internal/read
 use image/webp/internal/riff
+use image/webp/internal/samples
 use image/webp/internal/stream
 
 ## Codes
@@ -92,7 +94,7 @@ constant MAX_SIDE: i64
 # `invalid` where `data` is no WebP, the message naming what: a chunk past
 # the end, a header that does not fit, a prefix code that is not complete, a
 # copy before the first pixel, a frame outside the canvas. Fails
-# `unsupported` for a lossy frame. See also `info_of` and `encode`.
+# See also `info_of` and `encode`.
 function decode(data: [u8], limits: image.Limits) -> Webp?
     p = read.parse(data, limits)?
     frames: [Frame] @= []
@@ -129,7 +131,7 @@ record Info
     width: i64
     # The rows of the canvas.
     height: i64
-    # Whether the first picture is lossless: a lossy file fails `decode`.
+    # Whether the first picture is lossless, rather than lossy.
     lossless: bool
     # Whether the file says any frame uses alpha.
     alpha: bool
@@ -347,13 +349,27 @@ test "info_of: the size and kind of every file, lossy ones described"
     n = info_of(bytes.parse_hex(fixtures.animation()).must()).must()
     assert n.animated && n.frames == 3 && n.width == 41 && n.height == 27
 
-test "decode: a lossy file is refused as unsupported, with or without alpha"
-    for file in fixtures.lossy()
-        match decode(bytes.parse_hex(file).must(), image.default_limits())
-            .ok _ => assert false
-            .err e =>
-                assert e.code == image.UNSUPPORTED
-                assert e.msg.len() > 10
+test "decode: the two lossy files, RGB without alpha and RGBA with it, as dwebp reads them"
+    lossy = fixtures.lossy()
+    a = decode(bytes.parse_hex(lossy[0]).must(), image.default_limits()).must().frames[0].image
+    assert a.format == .rgb && a.width == 64 && a.height == 48
+    assert to_i64(hash.crc32(image.convert(a, to: .rgba).pixels)).must() == 383071764
+    b = decode(bytes.parse_hex(lossy[1]).must(), image.default_limits()).must().frames[0].image
+    assert b.format == .rgba && b.width == 30 && b.height == 21
+    assert to_i64(hash.crc32(b.pixels)).must() == 1005695004
+
+test "decode: every lossy sample, pixel for pixel as dwebp reads it"
+    for s in samples.lossy()
+        w = decode(bytes.parse_hex(s.file).must(), image.default_limits()).must()
+        assert w.width == s.width && w.height == s.height && w.frames.len() == 1
+        i = w.frames[0].image
+
+        if s.alpha
+            assert i.format == .rgba
+        else
+            assert i.format == .rgb
+        assert to_i64(hash.crc32(image.convert(i, to: .rgba).pixels)).must() == s.rgba_crc
+        assert !info_of(bytes.parse_hex(s.file).must()).must().lossless
 
 test "decode: the animation's frames, places, times, loop and background"
     w = decode(bytes.parse_hex(fixtures.animation()).must(), image.default_limits()).must()

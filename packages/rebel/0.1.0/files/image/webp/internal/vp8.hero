@@ -1,0 +1,318 @@
+# A VP8 key frame decoded to its Y, U and V planes (RFC 6386), as libwebp
+# 1.6.0 decodes it: each row's modes read from the first partition, each
+# macroblock's coefficients from its row's token partition, predicted from
+# the unfiltered pixels above and to the left, the residue added, and the
+# loop filter run over the whole picture once every macroblock is in place.
+# The planes answered are cropped to the picture: U and V at half its size,
+# rounded up.
+
+use bytes
+use hash
+use image
+use image/webp/internal/header
+use image/webp/internal/idct
+use image/webp/internal/loopfilter
+use image/webp/internal/modes
+use image/webp/internal/predict
+use image/webp/internal/residual
+use image/webp/internal/riff
+use image/webp/internal/samples
+
+# A decoded frame's planes, each a row after another with no padding.
+record Planes
+    # The luma plane's columns.
+    width: i64
+    # Its rows.
+    height: i64
+    # The luma samples, `width` by `height`.
+    y: [i64]
+    # The blue-difference samples, `(width + 1) / 2` by `(height + 1) / 2`.
+    u: [i64]
+    # The red-difference samples, the same size.
+    v: [i64]
+
+# Where the 16x16 block begins in the luma work area: a row above it for the
+# pixels above, four columns before it for the one to its left.
+constant Y0: i64
+    36
+
+# Where an 8x8 block begins in a chroma work area.
+constant C0: i64
+    36
+
+# The planes of the key frame `data`, a VP8 chunk's payload, within
+# `limits`. Fails `invalid` where the frame is damaged or ends early, `limit`
+# where its size passes `limits`.
+function decode(data: [u8] lent, limits: image.Limits) -> Planes?
+    h = header.parse(data, limits: limits)?
+    across = h.across
+    down = h.down
+    ys = across * 16
+    cs = across * 8
+    y @= zeros(ys * down * 16)
+    u @= zeros(cs * down * 8)
+    v @= zeros(cs * down * 8)
+    first @= h.modes
+    parts @= h.parts
+    above @= zeros(across * 4)
+    top_nz @= zeros(across * 9)
+    coeffs @= zeros(384)
+    wy @= zeros(predict.BPS * 17)
+    wu @= zeros(predict.BPS * 9)
+    wv @= zeros(predict.BPS * 9)
+    strengths: [header.Strength] @= []
+    inner: [bool] @= []
+    my @= 0
+
+    while my < down
+        row = modes.read_row(
+            r: @first,
+            above: @above,
+            across: across,
+            segment_map: h.segment_map,
+            segment_probs: h.segment_probs,
+            skip_prob: h.skip_prob
+        )
+
+        if first.over
+            return fail(
+                code: image.INVALID,
+                msg: f"a VP8 frame whose first partition ends inside row {my} of its modes"
+            )
+        left_nz @= zeros(9)
+        p = my % parts.len()
+        mx @= 0
+
+        while mx < across
+            m = row[mx]
+            split = m.luma == modes.B_PRED
+            empty @= true
+
+            if h.skip_prob >= 0 && m.skip
+                residual.skipped(top: @top_nz, x: mx, left: @left_nz, split: split)
+
+                for i in range(from: 0, to: 384)
+                    coeffs[i] @ 0
+            else
+                empty @ residual.read(
+                    r: @parts[p],
+                    coeff: h.coeff,
+                    m: h.matrices[m.segment],
+                    split: split,
+                    top: @top_nz,
+                    x: mx,
+                    left: @left_nz,
+                    out: @coeffs
+                )
+
+            if parts[p].over
+                return fail(
+                    code: image.INVALID,
+                    msg: f"a VP8 frame whose token partition {p} ends inside macroblock {mx}, {my}"
+                )
+            edges(wy: @wy, wu: @wu, wv: @wv, y: y, u: u, v: v, mx: mx, my: my, across: across)
+            build(wy: @wy, wu: @wu, wv: @wv, m: m, coeffs: coeffs, mx: mx, my: my)
+            store(work: wy, plane: @y, stride: ys, at: my * 16 * ys + mx * 16, size: 16)
+            store(work: wu, plane: @u, stride: cs, at: my * 8 * cs + mx * 8, size: 8)
+            store(work: wv, plane: @v, stride: cs, at: my * 8 * cs + mx * 8, size: 8)
+
+            k = if split
+                1
+            else
+                0
+            strengths @ strengths.push(h.strengths[m.segment * 2 + k])
+            inner @ inner.push(split || !empty)
+            mx @ mx + 1
+
+        my @ my + 1
+
+    if h.filter > 0
+        loopfilter.frame(
+            y: @y,
+            u: @u,
+            v: @v,
+            across: across,
+            down: down,
+            kind: h.filter,
+            strengths: strengths,
+            inner: inner
+        )
+    cw = (h.width + 1) / 2
+    ch = (h.height + 1) / 2
+    return ok(
+        Planes(width: h.width, height: h.height, y: crop(y, stride: ys, width: h.width, height: h.height), u: crop(u, stride: cs, width: cw, height: ch), v: crop(v, stride: cs, width: cw, height: ch))
+    )
+
+# `n` zeros.
+function zeros(n: i64) -> [i64]
+    out: [i64] @= []
+    i @= 0
+
+    while i < n
+        out @ out.push(0)
+        i @ i + 1
+
+    return out
+
+# The top-left `width` by `height` of `plane`, `stride` wide.
+function crop(plane: [i64] lent, stride: i64, width: i64, height: i64) -> [i64]
+    out: [i64] @= []
+    j @= 0
+
+    while j < height
+        i @= 0
+
+        while i < width
+            out @ out.push(plane[j * stride + i])
+            i @ i + 1
+
+        j @ j + 1
+
+    return out
+
+# The work areas' edges for macroblock `mx`, `my`: the unfiltered row above
+# and column to the left from the planes, 127 above the picture's first row
+# and 129 left of its first column, as libwebp fills them; the four pixels
+# above and to the right of the luma block also stand right of its rows 3, 7
+# and 11, where the 4x4 blocks of its last column read them.
+function edges(@wy: [i64], @wu: [i64], @wv: [i64], y: [i64] lent, u: [i64] lent, v: [i64] lent, mx: i64, my: i64, across: i64)
+    side(work: @wy, plane: y, stride: across * 16, size: 16, mx: mx, my: my)
+    side(work: @wu, plane: u, stride: across * 8, size: 8, mx: mx, my: my)
+    side(work: @wv, plane: v, stride: across * 8, size: 8, mx: mx, my: my)
+    b = predict.BPS
+    above = Y0 - b + 16
+    k @= 0
+
+    while k < 4
+        wy[above + k] @ if my == 0
+            127
+        else if mx == across - 1
+            y[(my * 16 - 1) * across * 16 + mx * 16 + 15]
+        else
+            y[(my * 16 - 1) * across * 16 + mx * 16 + 16 + k]
+        wy[above + 4 * b + k] @ wy[above + k]
+        wy[above + 8 * b + k] @ wy[above + k]
+        wy[above + 12 * b + k] @ wy[above + k]
+        k @ k + 1
+
+# The row above, the corner and the column to the left of one work area of
+# `size` from its plane.
+function side(@work: [i64], plane: [i64] lent, stride: i64, size: i64, mx: i64, my: i64)
+    b = predict.BPS
+    o = Y0
+
+    work[o - b - 1] @ if my == 0
+        127
+    else if mx == 0
+        129
+    else
+        plane[(my * size - 1) * stride + mx * size - 1]
+    i @= 0
+
+    while i < size
+        work[o - b + i] @ if my == 0
+            127
+        else
+            plane[(my * size - 1) * stride + mx * size + i]
+
+        work[o + i * b - 1] @ if mx == 0
+            129
+        else
+            plane[(my * size + i) * stride + mx * size - 1]
+        i @ i + 1
+
+# The macroblock predicted and its residue added in the work areas.
+function build(@wy: [i64], @wu: [i64], @wv: [i64], m: modes.Modes, coeffs: [i64] lent, mx: i64, my: i64)
+    b = predict.BPS
+    n @= 0
+
+    if m.luma == modes.B_PRED
+        while n < 16
+            pos = Y0 + n / 4 * 4 * b + n % 4 * 4
+            predict.sub(px: @wy, pos: pos, mode: m.blocks[n])
+            add(coeffs: coeffs, at: n * 16, px: @wy, pos: pos)
+            n @ n + 1
+    else
+        predict.luma(px: @wy, pos: Y0, mode: m.luma, x: mx, y: my)
+
+        while n < 16
+            add(coeffs: coeffs, at: n * 16, px: @wy, pos: Y0 + n / 4 * 4 * b + n % 4 * 4)
+            n @ n + 1
+
+    predict.chroma(px: @wu, pos: C0, mode: m.chroma, x: mx, y: my)
+    predict.chroma(px: @wv, pos: C0, mode: m.chroma, x: mx, y: my)
+    k @= 0
+
+    while k < 4
+        pos = C0 + k / 2 * 4 * b + k % 2 * 4
+        add(coeffs: coeffs, at: 256 + k * 16, px: @wu, pos: pos)
+        add(coeffs: coeffs, at: 320 + k * 16, px: @wv, pos: pos)
+        k @ k + 1
+
+# The residue of the block at `at` of `coeffs` added at `pos`, where it holds
+# any.
+function add(coeffs: [i64] lent, at: i64, @px: [i64], pos: i64)
+    if !idct.all_zero(coeffs, at: at)
+        idct.add_inverse(c: coeffs, at: at, px: @px, pos: pos, stride: predict.BPS)
+
+# The `size` by `size` block of a work area copied into its plane at `at`.
+function store(work: [i64] lent, @plane: [i64], stride: i64, at: i64, size: i64)
+    j @= 0
+
+    while j < size
+        i @= 0
+
+        while i < size
+            plane[at + j * stride + i] @ work[Y0 + j * predict.BPS + i]
+            i @ i + 1
+
+        j @ j + 1
+
+## Tests
+
+# The VP8 chunk of the WebP file `file`.
+function chunk_of(file: [u8] lent) -> [u8]
+    for c in riff.chunks_of(file).must()
+        if c.tag == "VP8 "
+            return c.data
+
+    return []
+
+test "decode: every sample's Y, U and V planes as dwebp writes them"
+    for s in samples.lossy()
+        p = decode(chunk_of(bytes.parse_hex(s.file).must()), limits: image.default_limits()).must()
+        assert p.width == s.width && p.height == s.height
+        assert p.y.len() == s.width * s.height
+        assert p.u.len() == (s.width + 1) / 2 * ((s.height + 1) / 2) && p.v.len() == p.u.len()
+        planes: [u8] @= []
+
+        for plane in [p.y, p.u, p.v]
+            for v in plane
+                planes @ planes.push(to_u8(v).must())
+
+        assert to_i64(hash.crc32(planes)).must() == s.yuv_crc
+
+test "decode: a frame cut at every length or with any byte changed is refused or read"
+    for s in samples.lossy()
+        if s.name == "cwebp-17x13-o3" || s.name == "cwebp-17x13-o8" || s.name == "cwebp-alpha-19x23-a4"
+            frame = chunk_of(bytes.parse_hex(s.file).must())
+
+            for n in range(from: 0, to: frame.len())
+                match decode(frame.slice(from: 0, to: n), limits: image.default_limits())
+                    .ok p  => assert p.width == s.width
+                    .err e => assert e.code == image.INVALID
+
+            for i in range(from: 0, to: frame.len())
+                changed @= frame
+                changed[i] @ to_u8(255 - to_i64(frame[i]).must()).must()
+
+                match decode(changed, limits: image.default_limits())
+                    .ok p  => assert p.y.len() == p.width * p.height
+                    .err e => assert e.code == image.INVALID || e.code == image.LIMIT
+
+test "decode: a frame past the caller's limits is refused before it is read"
+    frame = chunk_of(bytes.parse_hex(samples.lossy()[0].file).must())
+
+    match decode(frame, limits: image.Limits(max_width: 16, max_height: 16, max_pixels: 1000))
+        .ok _  => assert false
+        .err e => assert e.code == image.LIMIT

@@ -1,0 +1,75 @@
+# The ledger of `x509/pkcs12`: what PKCS #12 (RFC 7292, with RFC 9579's
+# PBMAC1 and RFC 8018's PBES1 and PBES2) lets a program do with a `.pfx` or
+# `.p12` file, one block per capability, and what Rebel answers. Go 1.27.4's,
+# Rust 1.90's and Python 3.15.2's standard libraries hold no PKCS #12 (`go
+# list std`, the std index of every Rust toolchain of this machine,
+# `sys.stdlib_module_names`, 2026-11-24): Go's is `golang.org/x/crypto/pkcs12`
+# outside it, Python's is the `cryptography` package's, so their lines are `-`
+# and the notes name the libraries outside. The yardsticks are the
+# specifications and the second implementations the tests rest on, run this
+# session: OpenSSL 4.1.0's `openssl pkcs12`, Python's `cryptography` 50.0.2
+# and OpenJDK 27.0.1's `keytool` made the files read here and read the files
+# made here.
+
+capability pkcs12/read  a file's keys, certificates, revocation lists and secrets read under its password
+  heroes  pkcs12.decode, pkcs12.Contents, pkcs12.Key, pkcs12.Entry, pkcs12.Secret
+  go      -
+  rust    -
+  python  -
+  note    Go's x/crypto `pkcs12.Decode` answers one key and one certificate and refuses more; Python's `load_pkcs12` answers them all, as here. A file is read as BER, which Windows writes; a key is answered as its PKCS #8 bytes, so a kind this system's `crypto/keypairs` does not open (DSA, Ed25519 on Windows) is still read
+
+capability pkcs12/integrity  the MAC checked before anything is deciphered, a file with no MAC read only when asked
+  heroes  pkcs12.decode, pkcs12.decode_without_integrity, pkcs12.Integrity
+  go      -
+  rust    -
+  python  -
+  note    RFC 7292's HMAC over MD5, SHA-1 and SHA-2 and RFC 9579's PBMAC1; a wrong password is `permission`. Go's x/crypto refuses a file with no MAC and Python's reads it in silence; here `decode` refuses it and `decode_without_integrity` reads it, so a program says which it meant. The empty password is tried as two zero bytes, then as none, as OpenSSL does
+
+capability pkcs12/schemes  every encryption the writers use read
+  heroes  pkcs12.decode
+  go      -
+  rust    -
+  python  -
+  note    PBES2 with PBKDF2 (HMAC over SHA-1 or SHA-2) or scrypt and AES-128, -192 or -256, triple DES, DES or RC2 in CBC; PKCS #12's six (triple DES of two or three keys, RC2 of 40 or 128 bits, RC4 of 40 or 128 bits); PKCS #5's PBES1 (DES or RC2 under MD5 or SHA-1; MD2's two refused, `unsupported`). The ciphers are this package's own, every secret index a walk of the whole table. More than 10,000,000 iterations is `unsupported`: the count is the writer's and the time the reader's
+
+capability pkcs12/attributes  a bag's name, key identifier, Java's trust and the others
+  heroes  pkcs12.Key, pkcs12.Entry, pkcs12.Attribute, pkcs12.ANY_EXTENDED_KEY_USAGE
+  go      -
+  rust    -
+  python  -
+  note    Python's `PKCS12Certificate.friendly_name`; Oracle's trustedKeyUsage is Java's mark of a trusted certificate. An attribute written twice in one bag is refused `invalid`. A name is answered as written: Windows writes a NUL after it (`WinHero\0` from `Export-PfxCertificate`), which Python's `friendly_name` keeps too
+
+capability pkcs12/identity  the key and the chain that belong together, as TLS takes them
+  heroes  pkcs12.identities_of, pkcs12.Identity, pkcs12.chain_pem, pkcs12.key_pem
+  go      -
+  rust    -
+  python  -
+  note    A key's certificate is the one of its public key, the one of its localKeyId first, and by the localKeyId alone where this system does not read the key's kind; the chain is ordered by `x509.chain_of`. Go's x/crypto `pkcs12.ToPEM` answers PEM blocks with no order
+
+capability pkcs12/write  a key and its chain written, as OpenSSL lays them out
+  heroes  pkcs12.encode, pkcs12.Options, pkcs12.Protection, pkcs12.default_options
+  go      -
+  rust    -
+  python  -
+  note    Python's `serialize_key_and_certificates`. `aes256` is OpenSSL 3's and Java's default; `triple_des` is for the readers that know nothing newer (Windows Server 2016, older Java). The key must be its certificate's; the file is read back before it is answered. Read by OpenSSL 4.1.0, Python's cryptography 50.0.2, OpenJDK 27.0.1's keytool and Windows (NT 10.0.26100, `X509Certificate2Collection.Import`: the key, its name and the chain), whose own `Export-PfxCertificate` files, AES-256 and triple DES, are read here; Java opens a `triple_des` file only under an ASCII password, its keys of that scheme taking ASCII alone (it refused Python's own such file under `pässwörd`) Python writes a file with no password under `NoEncryption`, the key in clear; here a password, the empty one included, always enciphers the key
+
+capability pkcs12/trust-store  a trust store of certificates alone written, as Java's
+  heroes  pkcs12.encode_trust_store
+  go      -
+  rust    -
+  python  -
+  note    Python's `serialize_java_truststore`; each certificate trusted for anyExtendedKeyUsage, as `keytool -importcert` writes it
+
+capability pkcs12/public-key-modes  a file signed or enveloped to a certificate (public-key integrity and privacy)
+  heroes  refused: no writer this package is measured against makes one (OpenSSL 4.1.0, Python's cryptography 50.0.2, OpenJDK 27.0.1, Windows), and reading one asks for CMS signatures and key transport this library does not hold; a file in either mode fails `unsupported` naming it
+  go      -
+  rust    -
+  python  -
+  note    RFC 7292 § 3.1's public-key modes, signedData and envelopedData
+
+capability pkcs12/weak-schemes-written  a file written under RC2, RC4, single DES or PBES1
+  heroes  refused: each is broken, and every reader that takes them takes triple DES too, which `triple_des` writes
+  go      -
+  rust    -
+  python  -
+  note    OpenSSL's `-legacy` writes 40-bit RC2; Python writes no such scheme either

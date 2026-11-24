@@ -1,0 +1,186 @@
+# GS1 element strings, as the GS1 General Specifications write them: an
+# application identifier of two to four digits and its data, checked for the
+# characters GS1 allows, for the length of the identifiers whose length is
+# fixed, and for the check digit of an SSCC, a GTIN and a GLN; written as the
+# data of a symbol with FNC1 first and after each element of no fixed length
+# but the last, and as the text printed under it.
+
+use barcode/internal/code128
+use barcode/internal/codes
+use barcode/internal/upc
+
+# Element strings read from the text a person reads under a symbol.
+record Parsed
+    # The application identifiers, in order.
+    ais: [str]
+    # Each identifier's data, in the same order.
+    values: [str]
+
+# The characters an element's data may hold: GS1's set of 82, ISO/IEC 646's
+# invariant characters.
+constant ALLOWED: str
+    "!\"%&'()*+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz"
+
+# The length of the data of an identifier that begins with `ai`'s first two
+# digits, where GS1 fixes it, else 0: such an element needs no FNC1 after it.
+function fixed_length(ai: str) -> i64
+    head = ai.slice(from: 0, to: 2)
+
+    return match head
+        "00"                                                         => 18
+        "01" | "02" | "03"                                           => 14
+        "04"                                                         => 16
+        "11" | "12" | "13" | "14" | "15" | "16" | "17" | "18" | "19" => 6
+        "20"                                                         => 2
+        "31" | "32" | "33" | "34" | "35" | "36"                      => 6
+        "41"                                                         => 13
+        _                                                            => 0
+
+# Whether `ai`'s data ends in a GS1 check digit: an SSCC, a GTIN, a GLN.
+function has_check_digit(ai: str) -> bool
+    return ai == "00" || ai == "01" || ai == "02" || ai.len() == 3 && ai.slice(from: 0, to: 2) == "41" && ai[2] <= '7'
+
+# Nothing where the element of identifier `ai` and data `value` is one GS1
+# writes; else `invalid`, saying what is wrong.
+function check(ai: str, value: str) -> ()?
+    if ai.len() < 2 || ai.len() > 4
+        return fail(code: codes.INVALID, msg: f"an application identifier is two to four digits, not {ai.len()} bytes")
+    _ = upc.digits_of(text: ai, what: "an application identifier")?
+
+    if value.len() == 0 || value.len() > 90
+        return fail(code: codes.INVALID, msg: f"the data of ({ai}) is 1 to 90 characters, not {value.len()} bytes")
+
+    for i in range(from: 0, to: value.len())
+        if !is_allowed(value[i])
+            return fail(
+                code: codes.INVALID,
+                msg: f"the data of ({ai}) holds byte {value[i]} at {i}, which GS1's character set lacks"
+            )
+
+    fixed = fixed_length(ai)
+
+    if (ai.len() == 2 || ai.slice(from: 0, to: 2) == "41" || is_measure(ai)) && fixed > 0 && value.len() != fixed
+        return fail(code: codes.INVALID, msg: f"the data of ({ai}) is {fixed} characters, not {value.len()}")
+
+    if has_check_digit(ai)
+        digits = upc.digits_of(text: value, what: f"the data of ({ai})")?
+        body = digits.slice(from: 0, to: digits.len() - 1)
+        expected = upc.check_digit(body)
+
+        if digits[digits.len() - 1] != expected
+            return fail(
+                code: codes.INVALID,
+                msg: f"the check digit of ({ai}) {value} is {expected}, not {digits[digits.len() - 1]}"
+            )
+
+    return ok()
+
+# Whether `ai` is a measure's identifier, four digits from 3100 to 3699.
+function is_measure(ai: str) -> bool
+    return ai.len() == 4 && ai[0] == '3' && ai[1] >= '1' && ai[1] <= '6'
+
+# Whether byte `b` is one of GS1's 82 characters.
+function is_allowed(b: u8) -> bool
+    for i in range(from: 0, to: ALLOWED.len())
+        if ALLOWED[i] == b
+            return true
+
+    return false
+
+# The data pieces of the elements `ais` and `values`: FNC1, then each
+# identifier and its data, FNC1 after each of no fixed length but the last.
+function pieces(ais: [str] lent, values: [str] lent) -> [i64]
+    out: [i64] @= [code128.FNC1]
+
+    for i in range(from: 0, to: ais.len())
+        for text in [ais[i], values[i]]
+            for j in range(from: 0, to: text.len())
+                out @ out.push(to_i64(text[j]).must())
+
+        if i + 1 < ais.len() && fixed_length(ais[i]) == 0
+            out @ out.push(code128.FNC1)
+
+    return out
+
+# The text printed under a symbol of the elements: each identifier in
+# brackets before its data.
+function caption(ais: [str] lent, values: [str] lent) -> str
+    out: [str] @= []
+
+    for i in range(from: 0, to: ais.len())
+        out @ out.push(f"({ais[i]}){values[i]}")
+
+    return out.join("")
+
+# The elements of `text`, written as `caption` writes them: `(01)0950...`.
+#
+# Fails `invalid` where `text` does not open with `(`, an identifier is not
+# closed, or an element is not one `check` accepts.
+function parse(text: str) -> Parsed?
+    ais: [str] @= []
+    values: [str] @= []
+    i: i64 @= 0
+
+    if text.len() == 0
+        return fail(code: codes.INVALID, msg: "an element string holds at least one element, and the text is empty")
+
+    while i < text.len()
+        if text[i] != '('
+            return fail(code: codes.INVALID, msg: f"an element opens with \"(\", and byte {i} is {text[i]}")
+        close: i64 @= i + 1
+
+        while close < text.len() && text[close] != ')'
+            close @ close + 1
+
+        if close >= text.len()
+            return fail(code: codes.INVALID, msg: f"the identifier opened at byte {i} is not closed by \")\"")
+        ai = text.slice(from: i + 1, to: close)
+        end: i64 @= close + 1
+
+        while end < text.len() && text[end] != '('
+            end @ end + 1
+
+        value = text.slice(from: close + 1, to: end)
+        check(ai: ai, value: value)?
+        ais @ ais.push(ai)
+        values @ values.push(value)
+        i @ end
+
+    return ok(Parsed(ais: ais, values: values))
+
+## Tests
+
+test "fixed_length: the predefined identifiers and one of none"
+    assert fixed_length("00") == 18
+    assert fixed_length("01") == 14
+    assert fixed_length("17") == 6
+    assert fixed_length("3103") == 6
+    assert fixed_length("410") == 13
+    assert fixed_length("10") == 0
+    assert fixed_length("21") == 0
+
+test "check: a GTIN, its check digit wrong, a short date, a byte outside the set"
+    assert !check(ai: "01", value: "09501101530003").is_err()
+    assert check(ai: "01", value: "09501101530004").is_err()
+    assert check(ai: "17", value: "1407").is_err()
+    assert check(ai: "10", value: "AB-123").is_err() == false
+    assert check(ai: "10", value: "AB 123").is_err()
+    assert check(ai: "10", value: "").is_err()
+    assert check(ai: "1", value: "x").is_err()
+    assert check(ai: "x1", value: "x").is_err()
+    assert !check(ai: "414", value: "9501101020917").is_err()
+
+test "pieces: FNC1 first, none after a fixed element, one between two variable ones"
+    p = pieces(ais: ["01", "10", "21"], values: ["09501101530003", "AB", "7"])
+    assert p[0] == code128.FNC1
+    assert p.len() == 1 + 16 + 4 + 1 + 3
+    assert p[17] == 49 && p[18] == 48 && p[21] == code128.FNC1
+
+test "parse: the caption read back, and its three mistakes"
+    p = parse("(01)09501101530003(10)AB-123").must()
+    assert p.ais == ["01", "10"] && p.values == ["09501101530003", "AB-123"]
+    assert caption(ais: p.ais, values: p.values) == "(01)09501101530003(10)AB-123"
+    assert parse("").is_err()
+    assert parse("01)x").is_err()
+    assert parse("(01").is_err()
+    assert parse("(01)09501101530004").is_err()

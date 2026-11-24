@@ -1,0 +1,377 @@
+# The PKCS #12 files OpenSSL 4.1.0's `openssl pkcs12 -export` made on
+# 2026-11-24 of one leaf, `CN=leaf.example`, on P-256, and the CA that
+# signed it, `CN=Hero Test CA` (the script is in the lane's scratch folder,
+# `p12/gen.sh`). Each is a function only the tests call.
+
+use bytes
+
+# OpenSSL 4.1.0's default: PBES2 with PBKDF2 over HMAC-SHA-256 and AES-256 for the key and the certificates, an HMAC-SHA-256 MAC, 2048 iterations; the password `hero`, the name `Hero`.
+function modern() -> [u8]
+    lines = [
+        "MIIF3QIBAzCCBYsGCSqGSIb3DQEHAaCCBXwEggV4MIIFdDCCBAoGCSqGSIb3DQEHBqCCA/swggP3"
+        "AgEAMIID8AYJKoZIhvcNAQcBMF8GCSqGSIb3DQEFDTBSMDEGCSqGSIb3DQEFDDAkBBASC4aD0OlK"
+        "jzAlAGBrsGBWAgIIADAMBggqhkiG9w0CCQUAMB0GCWCGSAFlAwQBKgQQ0QipLQpUG/NwNpXPu6XI"
+        "m4CCA4CsZyopOun4ty22w4OpCORyQvAKdspSSJWvc4HARGRXxaXkmEOY5dOOxCk48IkQ4W5HLCE5"
+        "Vxx42kvBZPSY7f1hZtchDv11KLEu/Li6Av47ThGpb3XULwqeQot8KT4QdyjgIUS/NVwyV3TRfgxF"
+        "4iLj+mQ91nOVk++55xNNLVZuPhIVnH3MTv0ZA9dLe8rNMccE3icidIQxT7qfQnF6H8p2n9+ZBRr2"
+        "OpC8wzvtH5A5Ec/+IEoMux2F34aao4KvA/i1ibzIbtUp7cerAmkqY4fTsoIS+Q5N0UiYd7vYIOA0"
+        "8cLomoQE4Jo34RR0Dcq8egfJCYTwBm+KrivERDTjcB8n3DYnZvIOvHcBzQp6XGYhSncaH8bs0+wy"
+        "6/Q5qavNH36xrv01dxL+pyEROMkmboM7a4hykbiDd1HyuXFoZnh2p8dYaTyVnApG/xVkED3xsVw1"
+        "t+xrQ8d1sM4W+82KeacuzU4Hd1eVv1CyW4eJ3adsq300fW0ZQ2t6Ti40qaoWdWD2uqIeU0MQcjAF"
+        "Mh82hro7rlBS9njXLETjnqyWYPAOBXBArwgmDsOO4qHM81fiEzdnnPqOmaTe2n+LVNEW5GaxFxEl"
+        "83ItpmEbgEXcadBkoLr/eUdgDDg/gFLw8oz/06ktMWXfc9k4pMiKIoIlz4miObngc+dC6KUx45rF"
+        "8VUmsMi3TJJvyvc/iNvSXNPiPYPJoo2m3v55skS4+ekn5Pf/NKX1Zs8r5eLnIQLOb13tqmecjK3y"
+        "+bzaLo0pJgb/dhMj4w3VlMuluHTntxJ4eO/oLvpyLshiyHaZL8403EA2Oi0FdNLrSxwCz77rSmio"
+        "GU7qM2fUnmk0lBMBR69RzdkKaX0NZq9Z0onsFV3nTLHukOeFpFy9DK7qgSQ7/CvkIjPzP6shQInb"
+        "rIOYBsXMaCfLB72rEkOhPn000ZE9sh2CnQ7M+D66KVdUu9PQR3qQd2doHNvRF4ZMl7vvcqhVMtiB"
+        "qr6m3oWikVzs33U3H4BynW/ewelbT9zBE4oRJy3xb0TdQWwbXAp3VMvV6Nh0IzQCm720DQb/uckh"
+        "oOFv7ufx5t3iC8A7GJVtTDuCDd0063WbVnwj60Rxu2xwJWc66nl48W5Z6s0dQ6azC4VJLoETGWON"
+        "/CA3WnHtBSpDoctcQ4FcUB29THfXGnxuymz+Lp+LoTiU8jDwGLnTBJiPrd5O7TCCAWIGCSqGSIb3"
+        "DQEHAaCCAVMEggFPMIIBSzCCAUcGCyqGSIb3DQEMCgECoIH3MIH0MF8GCSqGSIb3DQEFDTBSMDEG"
+        "CSqGSIb3DQEFDDAkBBC95kSkAVR3gnhNOoHJt8PkAgIIADAMBggqhkiG9w0CCQUAMB0GCWCGSAFl"
+        "AwQBKgQQLXUjZE3mi2RL/jRl6UmCUQSBkFGGl+CyecD7ugJcF4Y0N3DiLOvZkkZR99DymZSQLxEO"
+        "qFEnfYdJflA0AiTSO/QXvBROxmtGf/+32g/EsvML7EeFmKAdbGQ+djJmSxcGcRfrsCSonCeQ7ATP"
+        "ZQhKrCq8nSPFMHDqUB5OA36dutm7vhAK6cJ2tG3JXTeQY8x+BR7fslHD2gOF8+3B4qAVm8K0yDE+"
+        "MBcGCSqGSIb3DQEJFDEKHggASABlAHIAbzAjBgkqhkiG9w0BCRUxFgQU1Y95P8wR2EIWDcE9FG0m"
+        "HNn/e6QwSTAxMA0GCWCGSAFlAwQCAQUABCAhARJ9ByGXbZD67sqAIMZGWEENxn3x0iH8mMKkqipW"
+        "ggQQ8FqI7MFQOSR9Y3H81IQAlQICCAA="
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# OpenSSL's `-legacy`: the certificates under 40-bit RC2, the key under triple DES of three keys, an HMAC-SHA-1 MAC; the password `hero`.
+function legacy() -> [u8]
+    lines = [
+        "MIIFPwIBAzCCBP0GCSqGSIb3DQEHAaCCBO4EggTqMIIE5jCCA78GCSqGSIb3DQEHBqCCA7AwggOs"
+        "AgEAMIIDpQYJKoZIhvcNAQcBMBwGCiqGSIb3DQEMAQYwDgQIu2UDmMMbzhcCAggAgIIDeNFHssXf"
+        "1ixmcUpRkcKY2kuMy9F8OqrFxqJ7DX+RG8gwO8uJhBLmgbgvcabbP3LetUAXq5hCea3cZgfz0XXE"
+        "jllKeV78H6Br4jF72I0lSypsd/WaG79lQSdcA+k0CqB5WzjUKrKe4TSz65lAhd0ngT3+MOKqNCze"
+        "8UPO5xEzSvElVj475ZqOx/GUx4gjj9bYBjku7p8UMgWVryis68Zw//d3WuOfzPUJUtlYcKtvAQAc"
+        "5lQkt/P8P4gJMptLIbzZM8d+ovmN8QqzikmPT0L334DFclqkW9Le1P2O2inPchrVVp1VzYFGlWyS"
+        "MyZk3DvYBwD8962NNAILolPhb26vpWfszfmH9kj4QZUqri+kCPkuhZwUO2kQJvxZ8HPwO2MGwQPA"
+        "emR2VoE5Avb9kDZCRMjEmuKIZ8Bpez8UCebJaJ8VZEO3dGMA0Wn4tPf3z5RJs5L3afwSPm3T4ac5"
+        "atocQJEOApk+Z8SYrCUPpW7TgvDYmNVlq4XObxylF77kPoyEk4jVDGkdLqfgl9AWW2YAn8p1R6ad"
+        "kiUe6cFel2O/YlsI1XQdnHsCXmMlFFWjT0PzDe7s/0shlpiWMufaEtQdvczEmgXJ3oOiPuDbRsWK"
+        "5w7HOQj4n6ylsPK7/8AI3dfvagRAPXTxlb2lLLge0YpmAZiwOX/mM2QcL8y+dsIrJzoNrVXV+GCQ"
+        "4B+yERkMs+U+NWJF1TpIqRz3chOTIWzCILZHo7LtWdp7lCpBJ3CUAIdMIYJbonixh7fzK7Z8ZnVf"
+        "RKWOgTIiI2sZwoYEbQCTRE5aBN4gUEGpay1ahV9dMnnXWHcOGXULx+FgsEtHEIRgRnD+qD4B9gBv"
+        "fuWQIaTxOTHwjY0tQj/qK0ex6Oj16kMaqm+dWafoyfKLLpYiKNWwEEyhFlhMBkgjAzdcjS9l89r+"
+        "nhNtiE0pq/qa8fa6ErUwVncIiqfNo0Oxbejhj4rV0l6+/OdZIQxkqFaaGvyaGrjfX9Xfb3bilPbL"
+        "We8hpiZduS090KxhWHVpkRmdv7B0BeWAz7Zs5mLmEWHIkhlLrnZymz7n0x7bPX883NOQblzW6F+t"
+        "ydS8gkr6znzsLLQYzgYMNyGvKNSlen91dq9GSlf8VvuMZ63H9lC72rQYC+tRAKxT88KsXCXXR4ip"
+        "AokeMF18BC34iEC85iKTIsLt+rN3YYJWKPFuejCCAR8GCSqGSIb3DQEHAaCCARAEggEMMIIBCDCC"
+        "AQQGCyqGSIb3DQEMCgECoIG0MIGxMBwGCiqGSIb3DQEMAQMwDgQIZh1yYd31Lg8CAggABIGQ6FWN"
+        "TIKbM6c/kzRhh1WgJFNDOee70cdWqcHndkyOep7KBcPdGD6gUJt1iZJ7C8UXUdH7i4rB5v4JaVwo"
+        "l8bTMtVWUy228ie4DBBIj4cZqtxS2YqgDmxb8yPkDWNZ+fpni8Z0G03ffq4n4X7QJ6WDwjnzEZmN"
+        "x7+BVrTKeZSu2uOk1VcUYdmkLy9s/8m5r3AtMT4wFwYJKoZIhvcNAQkUMQoeCABIAGUAcgBvMCMG"
+        "CSqGSIb3DQEJFTEWBBTVj3k/zBHYQhYNwT0UbSYc2f97pDA5MCEwCQYFKw4DAhoFAAQUAHornaSc"
+        "jVWDnrGSXlZQnQlYJLkEEC+e7k42huG7hew9k3Hezg4CAggA"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# OpenSSL with `-keypbe PBE-SHA1-3DES -certpbe PBE-SHA1-3DES -macalg sha1`; the password `hero`.
+function triple_des() -> [u8]
+    lines = [
+        "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"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# OpenSSL with `-pbmac1_pbkdf2`: RFC 9579's PBMAC1 over PBKDF2 and HMAC-SHA-256; the password `hero`.
+function pbmac1() -> [u8]
+    lines = [
+        "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"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# OpenSSL with `-legacy -keypbe PBE-SHA1-2DES -certpbe PBE-SHA1-RC4-128`; the password `hero`.
+function rc4() -> [u8]
+    lines = [
+        "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"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# OpenSSL with `-legacy -keypbe PBE-SHA1-RC2-128 -certpbe PBE-SHA1-RC4-40`; the password `hero`.
+function rc2() -> [u8]
+    lines = [
+        "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"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# OpenSSL with `-keypbe aes-128-cbc -certpbe des-ede3-cbc -macalg sha512`; the password `hero`.
+function mixed() -> [u8]
+    lines = [
+        "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"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# OpenSSL with `-keypbe aes-192-cbc -certpbe NONE -macalg sha384 -iter 1`: the certificates in clear, one iteration; the password `hero`.
+function clear_certificates() -> [u8]
+    lines = [
+        "MIIFZAIBAzCCBQYGCSqGSIb3DQEHAaCCBPcEggTzMIIE7zCCA4YGCSqGSIb3DQEHAaCCA3cEggNz"
+        "MIIDbzCCAdsGCyqGSIb3DQEMCgEDoIIBijCCAYYGCiqGSIb3DQEJFgGgggF2BIIBcjCCAW4wggEV"
+        "oAMCAQICAQIwCgYIKoZIzj0EAwIwFzEVMBMGA1UEAwwMSGVybyBUZXN0IENBMB4XDTI2MTEyNDAw"
+        "MTYxMVoXDTM2MTEyMTAwMTYxMVowFzEVMBMGA1UEAwwMbGVhZi5leGFtcGxlMFkwEwYHKoZIzj0C"
+        "AQYIKoZIzj0DAQcDQgAEb8wTt/vqXaTmYEzl91izIJrIchVqeKbgggk7E25sCMdOok33Lft7GvoV"
+        "NMIE6t7ykB+5l9J5z4shQ925F/h36aNSMFAwCQYDVR0TBAIwADAOBgNVHQ8BAf8EBAMCB4AwMwYI"
+        "KwYBBQUHAQEEJzAlMCMGCCsGAQUFBzABhhdodHRwOi8vMTI3LjAuMC4xOjE4ODg4LzAKBggqhkjO"
+        "PQQDAgNHADBEAiAaDaZ867FnG1F3UWtST5tEum1k0q/zCFM26Z8XJ104OAIgASk96dRXgTy2x422"
+        "D77SsIxTQDCZy/PkJiF4WMdi+NwxPjAXBgkqhkiG9w0BCRQxCh4IAEgAZQByAG8wIwYJKoZIhvcN"
+        "AQkVMRYEFNWPeT/MEdhCFg3BPRRtJhzZ/3ukMIIBjAYLKoZIhvcNAQwKAQOgggF7MIIBdwYKKoZI"
+        "hvcNAQkWAaCCAWcEggFjMIIBXzCCAQWgAwIBAgIBATAKBggqhkjOPQQDAjAXMRUwEwYDVQQDDAxI"
+        "ZXJvIFRlc3QgQ0EwHhcNMjYxMTI0MDAxNjExWhcNMzYxMTIxMDAxNjExWjAXMRUwEwYDVQQDDAxI"
+        "ZXJvIFRlc3QgQ0EwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATN70qywepwHaG9pNvvKkaf0anr"
+        "I+8yHdP9V9zt7sccezJIfl6y87UhoaocPQysgoAyH2y8JGkUoDj7h+C03/qco0IwQDAdBgNVHQ4E"
+        "FgQUEJTCRL0wmi0rPADatBu9NjTv+BcwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMCAQYw"
+        "CgYIKoZIzj0EAwIDSAAwRQIgO6a/0lhqaQmJZgMFVHjxel9grrj43FMmZHCcSsVA+DICIQC6adqh"
+        "ekL71cg6gP/mMn/lqBYRJtVvNYkjY1dVJjBgGjCCAWEGCSqGSIb3DQEHAaCCAVIEggFOMIIBSjCC"
+        "AUYGCyqGSIb3DQEMCgECoIH2MIHzMF4GCSqGSIb3DQEFDTBRMDAGCSqGSIb3DQEFDDAjBBAGx5Rn"
+        "L/8oAbdM/j0Htg7FAgEBMAwGCCqGSIb3DQIJBQAwHQYJYIZIAWUDBAEWBBByuSH43NPSm0Z+wYoW"
+        "WFIPBIGQWPEQMOEn/Hx/BA8rBxwyPHOf7J0nuczwfW0L1dsUEu0u+nWmnpHfBWB/9RUFH/LsWHCC"
+        "VAHgOvI5te2q8PQhZvxFdng7DtJ5+f/fxshZh87flR81AriiG6YskpA353yhVXAV0rvd6QdJ73sy"
+        "BemLQcZysyEyhQ/0RaWLFGQbRe2szqVmCrmWsiJl7KdT4F/pMT4wFwYJKoZIhvcNAQkUMQoeCABI"
+        "AGUAcgBvMCMGCSqGSIb3DQEJFTEWBBTVj3k/zBHYQhYNwT0UbSYc2f97pDBVMEEwDQYJYIZIAWUD"
+        "BAICBQAEMIugjBKAwHgcYTX+XUBr3+QelBhFTcDHB72RhkmBHu0tUEw2pMW8PpXPoQmeRnnfggQQ"
+        "GRb1/2M8dfwSNyDl0JuxoQ=="
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# OpenSSL's default with the empty password, `-passout pass:`.
+function empty() -> [u8]
+    lines = [
+        "MIIF3QIBAzCCBYsGCSqGSIb3DQEHAaCCBXwEggV4MIIFdDCCBAoGCSqGSIb3DQEHBqCCA/swggP3"
+        "AgEAMIID8AYJKoZIhvcNAQcBMF8GCSqGSIb3DQEFDTBSMDEGCSqGSIb3DQEFDDAkBBC5SBNI+2Nn"
+        "y8jdz2ZoMQKYAgIIADAMBggqhkiG9w0CCQUAMB0GCWCGSAFlAwQBKgQQs+dgkP7tZZESpKEFyCOO"
+        "VICCA4CddUkIeJdFk/Y4gQXDZl/5x/8Na3L+byLITDb9F9XZTSr0WZaxsYsaGsmwnoGlIqDuu2P/"
+        "B7IUsYLTrKTozCLUxgUTDAkex83WOpjxCIK1b60rZT0r6KI2JywrO+pzJlrc55zlvTzlhpWn0DFz"
+        "Ho3EAUVjCdJLK90rCmr4eV5Sca6WEoqRY52a5zPlEHDqOyIaVOuFjmxj2s7HS6DDWYID7i9fV4EC"
+        "I3qeNfQMgeK0pDOkeOUy8BqUtbmYR1vJvXeyc43TWPNlwMiPrxuDpl6PQOWxlyjxV6K2tAIjcIqx"
+        "VXK6tOJ8n5ucfPjamq6FAmgtv3AKoWbPRdVvYY4wbXEoiscEx5vq9wapRT3Hnz775kI8EOBU/jh5"
+        "8Wo58JNbFTv8RazVRj8oCaH7AUqn01u+Cp+DWntOB5XW/PBJFWCgMIx5mnt0qRknEsmIyhbzDpCv"
+        "XLnPU6+5LsUwa9CUqh/GU0vMTxSQAORzoP/U3TpyP6IXVaJ6ZMrElHyCREqVbk1q06cJAzeaAJ9Z"
+        "StxJgvyMqhylIaoFdW10w3JM740SRZF0R4x3o08zjDwFWmKSvuUjClUI1GSZTaq0rkZi7FHbXONl"
+        "16TpBA51xE7LF3BDE9HnOiMHqkQ56s+U50vYN1pwCrR4kURcMgs37Zvz3fvAROMaHSyPFofRYgdo"
+        "TuYAHFYwsQecR98OAW15GgcI23uBjqvcDGARKwS3jWQbWd3u7pi1xqo+a0JpC9OUaeNOdKZrATv7"
+        "NwanVw1uQOXem8iihuXRfYSZeLjvsDquEyFhaZToBuc/4fr7BTaiOWW0xXGZAJ6PSBPKPz+A8jCN"
+        "IZrdTY/cQqTTwcEiJRFYVMWUNSq+GDCdJ5PPxqaa6Rrzn1h+Gf7lp0dBp8wcGKlaFzLC0TekrLv5"
+        "oCV+gTW1LPjDjj/XEl4ASe1bZTQKkMN8PhcCdR8M7HQclt08Wc721K6CBryNAMvh8ixUodBKHUPD"
+        "++NFupYZLQ38yRZ22sGQhRv3eatHjVzks2WwsYHSjklePu7pjnOmcfhZsIj1t53xh4CUw/B+Z+so"
+        "0C2IRnma2ShtstHfwhAWApXu9u540A1RocbbqOFs25UI5U5nR6fXkuAD1lmjSIpz1kczd0qvzBvO"
+        "pPNuzQvAZbwNmJXPggjXZ59VdcQEB2JxOojHjZGE3f4LDCyq9Yjm8zWjL0o38DCCAWIGCSqGSIb3"
+        "DQEHAaCCAVMEggFPMIIBSzCCAUcGCyqGSIb3DQEMCgECoIH3MIH0MF8GCSqGSIb3DQEFDTBSMDEG"
+        "CSqGSIb3DQEFDDAkBBA6HUYqYwn5yrLcsIeKdEkXAgIIADAMBggqhkiG9w0CCQUAMB0GCWCGSAFl"
+        "AwQBKgQQOarxV41MY71lubUuhYXrNASBkInJ8RMtExE9Tox/3O9acUuIri4ZRvkCXyqGayTDYqBj"
+        "WPE5m8TlE5Cm4+lE3+Uc2r0DmanX2I1t4gzfIPtbtrY24wSPo0aSgV0V15meDDi27ozKj/SmvyMV"
+        "cfZ1nKq3Kmiql+4V8FvcozJ2wZrkVzZ2UlYwYRzi8BlxGfXUAs62DKGUXSeibVV2Hdmfxz/n7zE+"
+        "MBcGCSqGSIb3DQEJFDEKHggASABlAHIAbzAjBgkqhkiG9w0BCRUxFgQU1Y95P8wR2EIWDcE9FG0m"
+        "HNn/e6QwSTAxMA0GCWCGSAFlAwQCAQUABCD/qbdf5hM2LDkxCQXgSRfNs9IkVRVG/HzoKXsn3Uns"
+        "yAQQLJk/ZdaISbd/5kaM/GNTtQICCAA="
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# OpenSSL's default with the password `pässwörd€😀`, a character above U+FFFF among its own.
+function unicode() -> [u8]
+    lines = [
+        "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"
+        "vgQQXNgbR4eimi1hN9bOlh8d6gICCAA="
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# OpenSSL with `-nokeys`: the two certificates and no key; the password `hero`.
+function certificates_only() -> [u8]
+    lines = [
+        "MIIENwIBAzCCA+UGCSqGSIb3DQEHAaCCA9YEggPSMIIDzjCCA8oGCSqGSIb3DQEHBqCCA7swggO3"
+        "AgEAMIIDsAYJKoZIhvcNAQcBMF8GCSqGSIb3DQEFDTBSMDEGCSqGSIb3DQEFDDAkBBDfwwooqaQe"
+        "yjR+78RG++KkAgIIADAMBggqhkiG9w0CCQUAMB0GCWCGSAFlAwQBKgQQ0pWhn0h1cAlqOu5gc8TA"
+        "2oCCA0BRgDrybSl1Iqj5gK1TWHFhR2YeHxHVv3buFg54vb6iZKD2nZ1JExpLUfsZeaYnq96GPhI1"
+        "uVwzfMpajTidfOGvM1ot8tZN+H4Ao4gaysGVkU+fpIk9258PUzVRyfBzEHzC81u2LobBAUkVmdRc"
+        "LuiNyYDb88d73jWqV2JWfPU1z996MjY3bA+B1HWfii66MDhBhqGCrvt4SkQiIpX2ju7CtycEzcam"
+        "VbdvzxiA0DZjkuzialvlID9qp/rpnwJIOiuDw7mTasaismym9KoLjNhEOe+nSJKgSb1l8xIgHdjm"
+        "yUPTgiSO5tKDDeJNQ92r2tdqAAiZe0RuXRP6rUFUDC7NM85aZ6iUxr8qvzjHY49Hl2bvuGtBZKKu"
+        "ILD6f4NQbdM7qVdlaFVEZpK8nzuDGo+Vc6x7Pq77Gbr/9Cy5Sjfig5EicbY7WALzQNB+2Ls78fl+"
+        "QmBITcNihU4DPVPXdP5Bxu0qgJKgEIpSAHOcWSua6fOhI3KwluAQL5k3cyls3OHXntopW0bpNcOA"
+        "2mQlAChwcVUdh6JFyjspE6gEKjXoQYfF3O1I95Wp0vzq+SZGj5W+Cy7wTtSvlAwkxwpugs1cLgeQ"
+        "zcgCmvjmCyclAx+kwjdAC7OTu61TFt8GK90KlcL++HE5EgATkA0uwMGnyNuABYJZ5wuiXAv1zOHp"
+        "zl5hoH8aXE4egMMYzZbFcNx6HaC059Sh8TuknyihJTQbjD9DTrEoaBlqxvYUd6UjwaaQgcT3g07N"
+        "eeUpInojk0R4V0B37NMRLkUmzSJvnwjoU/56KRFH7Vc5Tael3q1+fB3XyUyRhOpuoUxkAcANflIT"
+        "vhS7PlKtokvStfxiXhS65Bq24Kf0C2k2QsB4p56NY+fAC/8C9SowSbE2EIviGbCVdI4UlDhmVAWr"
+        "+plkFAk1bjCWmGkUa2UxGEsATvpsQtSsvSZBzOX8jgpFPB3GCwAHPj9Lht9qvc1BGdz7qK/z5kHx"
+        "D0SGydSjQb66ysSuxuF9KczUkJt8jTiHKjMpgFx16AFOggxZFstCp1dGxg4Q8tBQvN8UfRIK18x7"
+        "U2Hy6OzVUToBF69sTJlADjKMWuhl85mUPREKC75yl+fCbDnvZ+eQMEkwMTANBglghkgBZQMEAgEF"
+        "AAQgzV3oIktWcDyuKO708DTJoA3hu/6UpTDl6kga2C9o1VUEEC9AG1pZZJOI/BU3TZu4gLACAggA"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# OpenSSL with `-nomac`: no MacData; the password `hero`.
+function no_mac() -> [u8]
+    lines = [
+        "MIIFDgIBAzCCBQcGCSqGSIb3DQEHAaCCBPgEggT0MIIE8DCCA4YGCSqGSIb3DQEHAaCCA3cEggNz"
+        "MIIDbzCCAdsGCyqGSIb3DQEMCgEDoIIBijCCAYYGCiqGSIb3DQEJFgGgggF2BIIBcjCCAW4wggEV"
+        "oAMCAQICAQIwCgYIKoZIzj0EAwIwFzEVMBMGA1UEAwwMSGVybyBUZXN0IENBMB4XDTI2MTEyNDAw"
+        "MTYxMVoXDTM2MTEyMTAwMTYxMVowFzEVMBMGA1UEAwwMbGVhZi5leGFtcGxlMFkwEwYHKoZIzj0C"
+        "AQYIKoZIzj0DAQcDQgAEb8wTt/vqXaTmYEzl91izIJrIchVqeKbgggk7E25sCMdOok33Lft7GvoV"
+        "NMIE6t7ykB+5l9J5z4shQ925F/h36aNSMFAwCQYDVR0TBAIwADAOBgNVHQ8BAf8EBAMCB4AwMwYI"
+        "KwYBBQUHAQEEJzAlMCMGCCsGAQUFBzABhhdodHRwOi8vMTI3LjAuMC4xOjE4ODg4LzAKBggqhkjO"
+        "PQQDAgNHADBEAiAaDaZ867FnG1F3UWtST5tEum1k0q/zCFM26Z8XJ104OAIgASk96dRXgTy2x422"
+        "D77SsIxTQDCZy/PkJiF4WMdi+NwxPjAXBgkqhkiG9w0BCRQxCh4IAEgAZQByAG8wIwYJKoZIhvcN"
+        "AQkVMRYEFNWPeT/MEdhCFg3BPRRtJhzZ/3ukMIIBjAYLKoZIhvcNAQwKAQOgggF7MIIBdwYKKoZI"
+        "hvcNAQkWAaCCAWcEggFjMIIBXzCCAQWgAwIBAgIBATAKBggqhkjOPQQDAjAXMRUwEwYDVQQDDAxI"
+        "ZXJvIFRlc3QgQ0EwHhcNMjYxMTI0MDAxNjExWhcNMzYxMTIxMDAxNjExWjAXMRUwEwYDVQQDDAxI"
+        "ZXJvIFRlc3QgQ0EwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATN70qywepwHaG9pNvvKkaf0anr"
+        "I+8yHdP9V9zt7sccezJIfl6y87UhoaocPQysgoAyH2y8JGkUoDj7h+C03/qco0IwQDAdBgNVHQ4E"
+        "FgQUEJTCRL0wmi0rPADatBu9NjTv+BcwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMCAQYw"
+        "CgYIKoZIzj0EAwIDSAAwRQIgO6a/0lhqaQmJZgMFVHjxel9grrj43FMmZHCcSsVA+DICIQC6adqh"
+        "ekL71cg6gP/mMn/lqBYRJtVvNYkjY1dVJjBgGjCCAWIGCSqGSIb3DQEHAaCCAVMEggFPMIIBSzCC"
+        "AUcGCyqGSIb3DQEMCgECoIH3MIH0MF8GCSqGSIb3DQEFDTBSMDEGCSqGSIb3DQEFDDAkBBDtZ1M+"
+        "PU+z9E+JF3Y+5IxHAgIIADAMBggqhkiG9w0CCQUAMB0GCWCGSAFlAwQBKgQQ2KoeGZd8KADqWrUs"
+        "EtJMowSBkK67T+ook6yOBG8NiItuWoDjJBFwodql8ciW3zPRFUCulV0twpNIzmVuWxB6qhjRRCRo"
+        "CZbTxqs2gdt/Hd+yh34TzBd6VfCqbVUe6XxTf/uqfi4S30ABEv9K55ZREzS5ykNaRCG/1aIwK27z"
+        "fszgvIPJfWgF27m86crkj9iynDenIFFa3VN144Pnyj/HnHQGWzE+MBcGCSqGSIb3DQEJFDEKHggA"
+        "SABlAHIAbzAjBgkqhkiG9w0BCRUxFgQU1Y95P8wR2EIWDcE9FG0mHNn/e6Q="
+    ]
+    return bytes.parse_base64(lines.join("")).must()

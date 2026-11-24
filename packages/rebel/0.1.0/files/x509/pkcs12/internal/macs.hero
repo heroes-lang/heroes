@@ -1,0 +1,165 @@
+# A PKCS #12 file's MacData checked and made: RFC 7292 § 5.1's HMAC, its
+# key from appendix B.2's derivation with the purpose 3, and RFC 9579's
+# PBMAC1, its key from PBKDF2. The MAC is checked before anything inside is
+# deciphered, so a wrong password and a damaged file are told before a
+# cipher could answer either; the two compare in constant time.
+
+use asn1
+use bytes
+use crypto
+use os
+use x509/pkcs12/internal/derive
+use x509/pkcs12/internal/schemes
+
+# PBMAC1's identifier.
+constant PBMAC1: str
+    "1.2.840.113549.1.5.14"
+
+# What a MAC that held says, and the password's forms it held for.
+record Checked
+    # The HMAC's digest.
+    digest: crypto.Algorithm
+    # The iterations of the key's derivation.
+    iterations: i64
+    # Whether it is RFC 9579's PBMAC1, its key from PBKDF2.
+    pbmac1: bool
+    # The password in the forms that held.
+    password: schemes.Password
+
+# The words a MAC that does not hold is refused with.
+constant DOES_NOT_HOLD: str
+    "the password does not open it: its MAC does not hold, for a wrong password or bytes changed since it was made"
+
+# The BMP forms an empty password is tried in: RFC 7292's two zero bytes,
+# then the nothing some writers take; a password of characters has one.
+function bmp_forms(password: str) -> [[u8]]
+    if password == ""
+        return [[0, 0], []]
+    return [derive.bmp(password)]
+
+# The MacData `v` checked for `password` over `content`, the content of the
+# file's authSafe.
+function check(v: asn1.Value, password: str, content: [u8]) -> Checked?
+    fields = schemes.items(v: v, least: 2, most: 3, what: "the MacData")?
+    info = schemes.items(v: fields[0], least: 2, most: 2, what: "the MAC's DigestInfo")?
+    algorithm = schemes.algorithm_of(v: info[0], what: "the MAC's algorithm")?
+    expected = schemes.octets_of(v: info[1], what: "the MAC")?
+    utf8 = bytes.from_text(password)
+
+    if algorithm.oid.dotted == PBMAC1
+        return pbmac1(
+            parameters: schemes.parameters_of(algorithm: algorithm, what: "PBMAC1")?,
+            password: password,
+            expected: expected,
+            content: content
+        )
+    digest = derive.digest_of(algorithm.oid.dotted)?
+    salt = schemes.octets_of(v: fields[1], what: "the MAC's salt")?
+    iterations: i64 @= 1
+
+    if fields.len() == 3
+        iterations @ schemes.iterations_of(fields[2])?
+
+    if expected.len() != crypto.digest_size(digest)
+        return fail(
+            code: "invalid",
+            msg: f"a MAC of {expected.len()} bytes, where its digest makes {crypto.digest_size(digest)}"
+        )
+
+    for form in bmp_forms(password)
+        key = derive.pkcs12_key(
+            digest: digest,
+            password: form,
+            salt: salt,
+            id: 3,
+            iterations: iterations,
+            length: crypto.digest_size(digest)
+        )
+
+        if crypto.equals_constant_time(a: crypto.hmac(algorithm: digest, key: key, data: content), b: expected)
+            return ok(
+                Checked(digest: digest, iterations: iterations, pbmac1: false, password: schemes.Password(bmp: form, utf8: utf8))
+            )
+
+    return fail(code: "permission", msg: DOES_NOT_HOLD)
+
+# RFC 9579's PBMAC1 of `parameters` checked for `password`: its UTF-8
+# bytes, as OpenSSL writes it, then the BMPString RFC 9579 § 6 names.
+function pbmac1(parameters: asn1.Value, password: str, expected: [u8], content: [u8]) -> Checked?
+    fields = schemes.items(v: parameters, least: 2, most: 2, what: "PBMAC1's parameters")?
+    kdf = schemes.algorithm_of(v: fields[0], what: "PBMAC1's key derivation")?
+    scheme = schemes.algorithm_of(v: fields[1], what: "PBMAC1's MAC")?
+
+    if kdf.oid.dotted != schemes.PBKDF2
+        return fail(
+            code: "unsupported",
+            msg: f"PBMAC1's key derivation {kdf.oid.dotted}, where this package reads PBKDF2"
+        )
+    digest = derive.prf_of(scheme.oid.dotted)?
+    kdf_fields = schemes.items(v: schemes.parameters_of(algorithm: kdf, what: "PBKDF2")?, least: 3, most: 4, what: "PBKDF2's parameters")?
+    salt = schemes.octets_of(v: kdf_fields[0], what: "PBKDF2's salt")?
+    iterations = schemes.iterations_of(kdf_fields[1])?
+
+    if asn1.tag_of(kdf_fields[2]).number != asn1.INTEGER
+        return fail(code: "invalid", msg: "PBMAC1's PBKDF2 writes no key length, which RFC 9579 § 5 asks")
+    length = schemes.count_of(v: kdf_fields[2], least: 1, most: 128, what: "PBKDF2's key length")?
+    prf: crypto.Algorithm @= .sha1
+
+    if kdf_fields.len() == 4
+        prf @ derive.prf_of(schemes.algorithm_of(v: kdf_fields[3], what: "PBKDF2's function")?.oid.dotted)?
+
+    if expected.len() != crypto.digest_size(digest)
+        return fail(
+            code: "invalid",
+            msg: f"a MAC of {expected.len()} bytes, where its HMAC makes {crypto.digest_size(digest)}"
+        )
+    utf8 = bytes.from_text(password)
+    forms: [[u8]] @= [utf8]
+
+    for form in bmp_forms(password)
+        forms @ forms.push(form)
+
+    for form in forms
+        key = crypto.pbkdf2(algorithm: prf, password: form, salt: salt, iterations: iterations, length: length)?
+
+        if crypto.equals_constant_time(a: crypto.hmac(algorithm: digest, key: key, data: content), b: expected)
+            return ok(
+                Checked(digest: digest, iterations: iterations, pbmac1: true, password: schemes.Password(bmp: derive.bmp(password), utf8: utf8))
+            )
+
+    return fail(code: "permission", msg: DOES_NOT_HOLD)
+
+# The MacData of RFC 7292 over `content` for `password`, by `digest`, with
+# a salt of `salt_length` drawn bytes and `iterations`.
+function make(password: schemes.Password, digest: crypto.Algorithm, iterations: i64, salt_length: i64, content: [u8]) -> asn1.Value?
+    salt = os.random_bytes(salt_length)?
+    key = derive.pkcs12_key(
+        digest: digest,
+        password: password.bmp,
+        salt: salt,
+        id: 3,
+        iterations: iterations,
+        length: crypto.digest_size(digest)
+    )
+    info: asn1.Value = .sequence(
+        items: [schemes.identifier(dotted: derive.digest_oid(digest), parameters: .null_value), .octet_string(v: crypto.hmac(algorithm: digest, key: key, data: content))]
+    )
+    return ok(.sequence(items: [info, .octet_string(v: salt), .integer(v: iterations)]))
+
+test "check: a MAC made here holds for its password, and not for another or for changed bytes"
+    password = schemes.Password(bmp: derive.bmp("hero"), utf8: bytes.from_text("hero"))
+    made = make(password: password, digest: .sha256, iterations: 2048, salt_length: 16, content: [1, 2, 3]).must()
+    checked = check(v: made, password: "hero", content: [1, 2, 3]).must()
+    assert checked.digest == .sha256
+    assert checked.iterations == 2048
+    assert !checked.pbmac1
+    assert check(v: made, password: "Hero", content: [1, 2, 3]).is_err()
+    assert check(v: made, password: "hero", content: [1, 2, 4]).is_err()
+
+test "check: an empty password in either of its two forms, and the first form told"
+    forms: [[u8]] = [[0, 0], []]
+
+    for form in forms
+        password = schemes.Password(bmp: form, utf8: [])
+        made = make(password: password, digest: .sha1, iterations: 1, salt_length: 8, content: []).must()
+        assert check(v: made, password: "", content: []).must().password.bmp == form

@@ -44,13 +44,13 @@ Its catalogue, `heroes.toml`, reads Rebel from `../../packages/rebel/0.1.0/files
 
 ## Its folders
 
-9 folders, 37 files and 3,472 lines, this page aside; of them 29 modules, `.hero` files, of 2,680 lines.
+9 folders, 37 files and 3,480 lines, this page aside; of them 29 modules, `.hero` files, of 2,688 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
 | `./` | 4 | 173 | 1 | 57 |
 | `api/` | 5 | 554 | 5 | 554 |
-| `app/` | 6 | 405 | 6 | 405 |
+| `app/` | 6 | 413 | 6 | 413 |
 | `demo/` | 2 | 271 | 2 | 271 |
 | `store/` | 11 | 1,134 | 11 | 1,134 |
 | `support/` | 2 | 126 | 2 | 126 |

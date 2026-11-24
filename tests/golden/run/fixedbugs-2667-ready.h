@@ -20,7 +20,12 @@
 #include <stdio.h>
 #include <string.h>
 
-#if !defined(_WIN32)
+/* The process's number names the channel's file: `_getpid` from the C
+ * library's `<process.h>` on Windows, never `<windows.h>`, whose `near` and
+ * `far` macros would erase two names below. */
+#if defined(_WIN32)
+#include <process.h>
+#else
 #include <unistd.h>
 #endif
 
@@ -95,7 +100,7 @@ static int64_t channel_ends_join_a_set(void) {
     int64_t answer = 1;
 
 #if defined(_WIN32)
-    (void)snprintf(path, sizeof path, "build/ready-2667-%lu.sock", (unsigned long)GetCurrentProcessId());
+    (void)snprintf(path, sizeof path, "build/ready-2667-%ld.sock", (long)_getpid());
 #else
     (void)snprintf(path, sizeof path, "build/ready-2667-%ld.sock", (long)getpid());
 #endif

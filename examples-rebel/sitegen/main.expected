@@ -1,5 +1,5 @@
 sitegen demo: Harbour Notes, in English, German and Swedish
-build: 17 pages, 5 images, 3 files; 47 of 47 jobs run; 92 written, 0 unchanged, 0 removed
+build: 17 pages, 8 images, 3 files; 50 of 50 jobs run; 98 written, 0 unchanged, 0 removed
 public/
      1556  44a12eac37be  a-z/index.html
       639  cbfef7776959  a-z/index.html.br
@@ -34,14 +34,20 @@ public/
      1879  c1d20feb6f8a  feed.xml
       597  f4699fa197d9  feed.xml.br
        66  f2e79f40303d  files/tide-table.txt
+       94  9ecfe30f96d1  images/buoy.thumb.webp
+       94  9ecfe30f96d1  images/buoy.webp
       297  7830ad7bb973  images/chart.png
       506  17b49bf0676f  images/chart.thumb.png
+      161  60a475ffeb3b  images/flag.png
+      161  60a475ffeb3b  images/flag.thumb.png
      1770  19fb2037d70e  images/harbour.jpg
      1029  be9ef62bce15  images/harbour.thumb.jpg
       188  47e2fdf833fc  images/lighthouse.png
       380  73dd48c4b4aa  images/lighthouse.thumb.png
      1336  9c556f10fbad  images/scan.jpg
      1060  b5c678f9f67e  images/scan.thumb.jpg
+      181  5e0de0a4a538  images/survey.png
+      491  515f49b785c6  images/survey.thumb.png
       445  31f7eefb757c  images/waves.gif
      2195  2bd89511be7b  images/waves.thumb.gif
      2311  673a18589c70  index.html
@@ -105,7 +111,7 @@ rendered:
   en toc    #the-harbour-master #where-to-moor
   sitemap   35 URLs, the first https://xn--hafenbcher-feb.example/
 watch: content/posts/zebra.sv.md edited
-  rebuilt: 17 pages, 5 images, 3 files; 12 of 47 jobs run; 6 written, 18 unchanged, 0 removed
+  rebuilt: 17 pages, 8 images, 3 files; 12 of 50 jobs run; 6 written, 18 unchanged, 0 removed
   changed  content/posts/zebra.sv.md
   written  sv/a-z/index.html
   written  sv/a-z/index.html.br
@@ -114,7 +120,7 @@ watch: content/posts/zebra.sv.md edited
   written  sv/posts/zebra-vid-kajen/index.html
   written  sv/posts/zebra-vid-kajen/index.html.br
 watch: content/images/lighthouse.bmp replaced
-  rebuilt: 17 pages, 5 images, 3 files; 4 of 47 jobs run; 8 written, 0 unchanged, 0 removed
+  rebuilt: 17 pages, 8 images, 3 files; 4 of 50 jobs run; 8 written, 0 unchanged, 0 removed
   changed  content/images/lighthouse.bmp
   written  de/posts/zebrastreifen/index.html
   written  de/posts/zebrastreifen/index.html.br
@@ -125,7 +131,7 @@ watch: content/images/lighthouse.bmp replaced
   written  sv/posts/zebra-vid-kajen/index.html
   written  sv/posts/zebra-vid-kajen/index.html.br
 watch: content/about.de.md removed
-  rebuilt: 16 pages, 5 images, 3 files; 10 of 46 jobs run; 10 written, 10 unchanged, 2 removed
+  rebuilt: 16 pages, 8 images, 3 files; 10 of 49 jobs run; 10 written, 10 unchanged, 2 removed
   changed  content/about.de.md
   written  about/index.html
   written  about/index.html.br
@@ -139,5 +145,5 @@ watch: content/about.de.md removed
   written  sitemap.xml.br
   removed  de/uber-uns/index.html
   removed  de/uber-uns/index.html.br
-after the edits: 46 jobs, 90 files in public/
-whole build, to check the watch's rebuilds: 16 pages, 5 images, 3 files; 46 of 46 jobs run; 0 written, 90 unchanged, 0 removed
+after the edits: 49 jobs, 96 files in public/
+whole build, to check the watch's rebuilds: 16 pages, 8 images, 3 files; 49 of 49 jobs run; 0 written, 96 unchanged, 0 removed

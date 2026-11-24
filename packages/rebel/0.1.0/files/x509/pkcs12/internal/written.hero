@@ -1,0 +1,221 @@
+# The PKCS #12 files OpenJDK 27.0.1's `keytool` and Python's `cryptography`
+# 50.0.2 made on 2026-11-24 of the same leaf and CA as `samples`, and the
+# leaf's key as PKCS #8 under the schemes `openssl pkcs8` writes and
+# `openssl pkcs12` does not. Each is a function only the tests call.
+
+use bytes
+
+# OpenJDK 27.0.1's `keytool -genkeypair -storetype PKCS12`: a P-256 key and its self-signed certificate `CN=java.example`, alias `hero`, 10000 iterations; the password `herohero`.
+function java() -> [u8]
+    lines = [
+        "MIID7AIBAzCCA5YGCSqGSIb3DQEHAaCCA4cEggODMIIDfzCCASYGCSqGSIb3DQEHAaCCARcEggET"
+        "MIIBDzCCAQsGCyqGSIb3DQEMCgECoIG9MIG6MGYGCSqGSIb3DQEFDTBZMDgGCSqGSIb3DQEFDDAr"
+        "BBTkyj5VHhuyUenoDOza0bBRpUXmHAICJxACASAwDAYIKoZIhvcNAgkFADAdBglghkgBZQMEASoE"
+        "EPUOLfwWHQ8ksyNta48uCw4EUOyaq6a0MTAzvfupEQdNLU10PLbDATJidOFzXG0GBPBml9O1duL+"
+        "vwzSiC1iTZuffsUB33n0/SLTuPI57oEzNwHeT7YaKh0MqBloqoC4EL0UMTwwFwYJKoZIhvcNAQkU"
+        "MQoeCABoAGUAcgBvMCEGCSqGSIb3DQEJFTEUBBJUaW1lIDE3OTU0NzkzODI5OTcwggJRBgkqhkiG"
+        "9w0BBwagggJCMIICPgIBADCCAjcGCSqGSIb3DQEHATBmBgkqhkiG9w0BBQ0wWTA4BgkqhkiG9w0B"
+        "BQwwKwQU7B0Id0ym5PCW781abPqySGsRY18CAicQAgEgMAwGCCqGSIb3DQIJBQAwHQYJYIZIAWUD"
+        "BAEqBBCR+LufuC8OKGvhKU27gOS1gIIBwAroE1HpfJ1qmHYzFVCiyAa18qpoHxQVEdRARYdgFlU5"
+        "n9P33MA4htoMgzonH3jhNNwbTt23rExX+/ia1Hxw4eDRCFPbGIxfcf38fREblq3TAEdBWnnJPWB8"
+        "JO3rJMEApu79bSlOPIkVAP7BGYUlo/xewjdu/AfUZ2k4rd8sGmEPby6HUlQp7HEy7FuQRGOac8af"
+        "FqRyGAdLhs4tQLW7CfSYO1gIDs/LSdMKbUUzOMS94beoFceY0TDDKclg05s6vWyQWLVuGCD5YDLK"
+        "EjpemdK9SuKhMau52R3tfLFcdUaa0DFX+2wn/iDUtMMS4I7tLNbdXycGn1HtfHIal/TnRcr35gJF"
+        "DAErAXzgwAE2RUhshzjMojeZ1/wCNy8uh+iHXFhFpU4nJcgQnqlo1YNWQCNX3SDP82SwYp8cOmOE"
+        "lvGYlK8yRyoZjizEmUJx+P9nSUC0+7YQi9QzWB4Z8EkfDCh27oMs2iYfZnnzNnyDCJj1ByY71dp7"
+        "XgqGjsDQIQHZkj3sgbrdkzCsCvcCmeSjhhebE++/xyZlk5ifTWE6N9a2odQvfrW4YYnVIDfLPk8t"
+        "XNzZyGswGWjXuBpyPkg+PnUwTTAxMA0GCWCGSAFlAwQCAQUABCAo+pXD5KOGsMDqoqS7KIlnqnoe"
+        "gefo1GFIpogqX+sJkwQU1SMTHCRbpu8hRLyFQ+yVJxtMv/8CAicQ"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# OpenJDK 27.0.1's `keytool -importcert`: the CA alone, trusted, alias `heroca`; the password `herohero`.
+function java_trust() -> [u8]
+    lines = [
+        "MIIC0gIBAzCCAnwGCSqGSIb3DQEHAaCCAm0EggJpMIICZTCCAmEGCSqGSIb3DQEHBqCCAlIwggJO"
+        "AgEAMIICRwYJKoZIhvcNAQcBMGYGCSqGSIb3DQEFDTBZMDgGCSqGSIb3DQEFDDArBBTPKhkNFWFZ"
+        "Ep58h9wKo14CWGPoLQICJxACASAwDAYIKoZIhvcNAgkFADAdBglghkgBZQMEASoEEEFDBP+L2SGM"
+        "ZyLe+K+MrWeAggHQ0wKcZUfa8i6vsv3mPqv/QvGLYiUMEPDkgTOzhf/IDjB8OC7q1xSyEEjdOGlz"
+        "RdyRtt/TjW7BrCdBRhZLgzAyB7mmOzlp5kE3Qz6IejOxgnH/ry3B4fFR+1AVoe64cFrbV2ij5j1n"
+        "8DkXmOrTk/YbS98LFLw2LaQsGH2YvlF3S2m4hl9MV1t/ibBAxmJX/PEeib7jStsAFRUv2Ekbm4wE"
+        "VF2Y+sK2KLAlVCHYm57NQSA7ENohhNOZcDIlZnIGGtH/m8MF95/1ZnkZeLidfafaIjBR3/vRShQY"
+        "QUnU11M8if6ovRw1iwQ523SzSCwue+8imHjKG/3yRpUvYPT5iOBvXi/1kdx+snaPKDVLz2KQxR7R"
+        "RwAOM15rpPtHPCML8rvFMZi5V8CzJASZmO3qvI7ymgIblI5TOA473r7P54AZ1eS3rBP7DqdxMUCM"
+        "dfdsh3+0EOLozvIcLlrSQbtTipucDLHwkQTJa/oT5mxgo7EgbkwCFzAP2ajSYOIENkoN/wQWTs6m"
+        "9JKKUDqAUIXMODPUptEbZvcn3O5H+8WLjeUlXKDnl26xlRGFT+DgBr3y1QIsnPHalFsE3HdlBtPS"
+        "GgKKTXSAtE2BwtC6UBa3RmLv6n8wTTAxMA0GCWCGSAFlAwQCAQUABCDy1DNYYq8QDulYA58CX2Ys"
+        "fXTxPFHRak4sxChA4qCuZQQUA2laTuV+53bNHDi1ZsKxiaqY7v0CAicQ"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# Python's `cryptography` 50.0.2, `serialize_key_and_certificates` with `BestAvailableEncryption`; the password `hero`.
+function python_best() -> [u8]
+    lines = [
+        "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"
+        "HAQIb0F088MZZdMCAggA"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# Python's `cryptography` 50.0.2 with `PBESv1SHA1And3KeyTripleDESCBC` and an HMAC-SHA-1 MAC; the password `hero`.
+function python_triple_des() -> [u8]
+    lines = [
+        "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"
+        "AH/QqwDuveIAkOXDlksECOcABXfBThn/AgIIAA=="
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# Python's `cryptography` 50.0.2 with `NoEncryption`: the key in clear and a MAC under the empty password.
+function python_clear() -> [u8]
+    lines = [
+        "MIIEyAIBAzCCBH4GCSqGSIb3DQEHAaCCBG8EggRrMIIEZzCCBGMGCSqGSIb3DQEHAaCCBFQEggRQ"
+        "MIIETDCCAdsGCyqGSIb3DQEMCgEDoIIBijCCAYYGCiqGSIb3DQEJFgGgggF2BIIBcjCCAW4wggEV"
+        "oAMCAQICAQIwCgYIKoZIzj0EAwIwFzEVMBMGA1UEAwwMSGVybyBUZXN0IENBMB4XDTI2MTEyNDAw"
+        "MTYxMVoXDTM2MTEyMTAwMTYxMVowFzEVMBMGA1UEAwwMbGVhZi5leGFtcGxlMFkwEwYHKoZIzj0C"
+        "AQYIKoZIzj0DAQcDQgAEb8wTt/vqXaTmYEzl91izIJrIchVqeKbgggk7E25sCMdOok33Lft7GvoV"
+        "NMIE6t7ykB+5l9J5z4shQ925F/h36aNSMFAwCQYDVR0TBAIwADAOBgNVHQ8BAf8EBAMCB4AwMwYI"
+        "KwYBBQUHAQEEJzAlMCMGCCsGAQUFBzABhhdodHRwOi8vMTI3LjAuMC4xOjE4ODg4LzAKBggqhkjO"
+        "PQQDAgNHADBEAiAaDaZ867FnG1F3UWtST5tEum1k0q/zCFM26Z8XJ104OAIgASk96dRXgTy2x422"
+        "D77SsIxTQDCZy/PkJiF4WMdi+NwxPjAXBgkqhkiG9w0BCRQxCh4IAEgAZQByAG8wIwYJKoZIhvcN"
+        "AQkVMRYEFNWPeT/MEdhCFg3BPRRtJhzZ/3ukMIIBjAYLKoZIhvcNAQwKAQOgggF7MIIBdwYKKoZI"
+        "hvcNAQkWAaCCAWcEggFjMIIBXzCCAQWgAwIBAgIBATAKBggqhkjOPQQDAjAXMRUwEwYDVQQDDAxI"
+        "ZXJvIFRlc3QgQ0EwHhcNMjYxMTI0MDAxNjExWhcNMzYxMTIxMDAxNjExWjAXMRUwEwYDVQQDDAxI"
+        "ZXJvIFRlc3QgQ0EwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATN70qywepwHaG9pNvvKkaf0anr"
+        "I+8yHdP9V9zt7sccezJIfl6y87UhoaocPQysgoAyH2y8JGkUoDj7h+C03/qco0IwQDAdBgNVHQ4E"
+        "FgQUEJTCRL0wmi0rPADatBu9NjTv+BcwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMCAQYw"
+        "CgYIKoZIzj0EAwIDSAAwRQIgO6a/0lhqaQmJZgMFVHjxel9grrj43FMmZHCcSsVA+DICIQC6adqh"
+        "ekL71cg6gP/mMn/lqBYRJtVvNYkjY1dVJjBgGjCB2gYLKoZIhvcNAQwKAQGggYowgYcCAQAwEwYH"
+        "KoZIzj0CAQYIKoZIzj0DAQcEbTBrAgEBBCA49l95SVib6T6kTw3U7Tk08jyQJPLhHf3DcYxIEoXN"
+        "NqFEA0IABG/ME7f76l2k5mBM5fdYsyCayHIVanim4IIJOxNubAjHTqJN9y37exr6FTTCBOre8pAf"
+        "uZfSec+LIUPduRf4d+kxPjAXBgkqhkiG9w0BCRQxCh4IAEgAZQByAG8wIwYJKoZIhvcNAQkVMRYE"
+        "FNWPeT/MEdhCFg3BPRRtJhzZ/3ukMEEwMTANBglghkgBZQMEAgEFAAQg8AZsHN+/WucDtm3WmSOz"
+        "C+7cZkz0ma/jTCwpquBquH0ECCgtakJgoHaTAgIIAA=="
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# Python's `cryptography` 50.0.2, `serialize_java_truststore` of the CA as `heroca`; the password `hero`.
+function python_trust() -> [u8]
+    lines = [
+        "MIICvwIBAzCCAnUGCSqGSIb3DQEHAaCCAmYEggJiMIICXjCCAloGCSqGSIb3DQEHBqCCAkswggJH"
+        "AgEAMIICQAYJKoZIhvcNAQcBMF8GCSqGSIb3DQEFDTBSMDEGCSqGSIb3DQEFDDAkBBDqKW6jPuLv"
+        "cXLKSUC3jgSPAgJOIDAMBggqhkiG9w0CCQUAMB0GCWCGSAFlAwQBKgQQsjWGyGPTxUT5aA8a3zNJ"
+        "jYCCAdAtEtbr2WCfYET0Yt1l+bhq5F/LUIUyUKVdp6Y35mnuJ6GwHN0JOiN8vwU6mZCejqeDu5ec"
+        "DeDBEdROuU6MA9XnTpsfLeBn48ixGExIqTdbFwx5yCegHRqPWtxI5V2IZDkRvdA5d2Tftzvjc8rm"
+        "AZ5+A5ZqB1+5tNf3OL0ml5KgjbHyf3dJ+2M9WB9L7nklm06KFrdgD6O4tuSZCK81mv50zImtb7QZ"
+        "E6j4sCxf3IllUDgfVn+AJQ7HPTb4iHxrx2/CkMJpyDfbUkvzVrLEywlEtCxnEJvpPGzYmULCZ08j"
+        "+tApeeEesp+jd3bDOgSg1YzIYRb27pWyydSFHfcxdO2UwOqBA+ulzsXlGfaO5YZuhEICsyPCM5Fa"
+        "CVFsH70hc5BSgvEhTb5G5BiqKVm7XdZs0/+xXnGCkJTu2HRkjDe2WpgJ1SHoG+T6EjaFbj6WqatC"
+        "CNxjlv+YaEYmlPrmbMnQk5VuVvdAKvUBRY/US6OIX8YTtR3O8MOtJkkNFsyDHsMq667+ihS02dsm"
+        "S6XNoUu5kIZ6X1zwkVfdiXP6LTya54xKuIbWr3Uz+230WBiU5PdUrg2cS6derAAlSJLEokts9/G1"
+        "6D3S8RAfASKY+afnkDBBMDEwDQYJYIZIAWUDBAIBBQAEIK6Y4HljmER8ijGsTmr/SQtefqcpDBIS"
+        "jYwd4lR98yNRBAg/G/MbO3LvmQICCAA="
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The leaf's key as PKCS #8 in clear, `openssl pkcs8 -topk8 -nocrypt`: what every file of the leaf's key holds deciphered.
+function key_plain() -> [u8]
+    lines = [
+        "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgOPZfeUlYm+k+pE8N1O05NPI8kCTy"
+        "4R39w3GMSBKFzTahRANCAARvzBO3++pdpOZgTOX3WLMgmshyFWp4puCCCTsTbmwIx06iTfct+3sa"
+        "+hU0wgTq3vKQH7mX0nnPiyFD3bkX+Hfp"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The leaf's key under PKCS #5's `pbeWithMD5AndDES-CBC`, `openssl pkcs8 -v1 PBE-MD5-DES`; the password `hero`.
+function key_md5_des() -> [u8]
+    lines = [
+        "MIGwMBsGCSqGSIb3DQEFAzAOBAj8zPsTOLKo5wICCAAEgZB+ga810rsZYTpke+eV3557Klm2aCjs"
+        "U4Y13feI1gIo4eEA0KkDhoSwWHpDObUYs6FJRr/1diRZ0lGQHWwTs7ASihnxFYWwcPU7w0x2jNrP"
+        "IpgT/gUUO7UbW0WAND14IZJH2CzSCvpaHUIvb0GU4BMbEYhA904AMDsB2Jy+873/X6VLF6VzYFvr"
+        "2khsO2/W+A0="
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The leaf's key under PKCS #5's `pbeWithSHA1AndRC2-CBC`, `-v1 PBE-SHA1-RC2-64`; the password `hero`.
+function key_sha1_rc2() -> [u8]
+    lines = [
+        "MIGwMBsGCSqGSIb3DQEFCzAOBAj0bm3I0yqWtQICCAAEgZCif3Ly6SliWocJEONXgHjn6rCpjtUS"
+        "2Z6/JhUQW5WrGtQ+4fJiTlJ40aW1KCTUvf/ZxFG2K3Cp0QiaOIvvXiVuMlvfTUIu03QSv0y0NjWY"
+        "fbp4K94/qousYYHOjPXnTuobsf4yuVrWnc+yTPuKKrHnKySX7coceenEM8c9zkTb7SqrGpUIM1hY"
+        "rjPr3lYv3PQ="
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The leaf's key under PBES2 with scrypt (N 16384, r 8, p 1) and AES-256, `-v2 aes-256-cbc -scrypt`; the password `hero`.
+function key_scrypt() -> [u8]
+    lines = [
+        "MIHsMFcGCSqGSIb3DQEFDTBKMCkGCSsGAQQB2kcECzAcBBCm350DTZ2UBGQBp9XoZr95AgJAAAIB"
+        "CAIBATAdBglghkgBZQMEASoEELJGOjw8owfCNQl+6is1aeEEgZDqH+H9MKhGJvT0OLzm6NoPjE/H"
+        "JGi5ljlTWaxX3UJNnH1rubgkYR41SsU1IM/oNFUxaa4ERvi53+BWhxoUNbIK3I9IrtHTWMBYON1e"
+        "kFKaww/ev6ZhiWOSZspNzl0J+4LkmTy3Np6wykc2pcxTN1dqK9aGFjLuAMfTRJW9pwLID8SZhckP"
+        "E6rVcve19WIHWbo="
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The leaf's key under PBES2 with PBKDF2 over HMAC-SHA-512 and triple DES, `-v2 des-ede3-cbc -v2prf hmacWithSHA512`; the password `hero`.
+function key_des3_sha512() -> [u8]
+    lines = [
+        "MIHrMFYGCSqGSIb3DQEFDTBJMDEGCSqGSIb3DQEFDDAkBBBczUtjIqYmXfJdm3ceaa5dAgIIADAM"
+        "BggqhkiG9w0CCwUAMBQGCCqGSIb3DQMHBAiS8Nk+bMXI4QSBkGTYg8vu1nnA736FlkS4+sbDVj4g"
+        "N4Y35pycWaPjSTD1OsaC+zP5CV8E+3qx/BW6bXP2hw8HeOfuCFWSaB5AOM3+LixViA3QXlW6vac4"
+        "1BYJoHHYtLF3z5ja+amBRAA1UI4Z8t47fZHTtIZVOJAuULrdB92TS2TgSQsiJctsAY8k2bvEQ39e"
+        "2KH3LnlACdEGVg=="
+    ]
+    return bytes.parse_base64(lines.join("")).must()
+
+# The leaf's key under PBES2 with RC2 of 128 bits, `-v2 rc2-cbc`; the password `hero`.
+function key_rc2() -> [u8]
+    lines = [
+        "MIHzMF4GCSqGSIb3DQEFDTBRMDQGCSqGSIb3DQEFDDAnBBC2fLW2ZkCQ+ML7cOSQGfSgAgIIAAIB"
+        "EDAMBggqhkiG9w0CCQUAMBkGCCqGSIb3DQMCMA0CAToECAtUTENRACrdBIGQrAJf0qsydorDJKnO"
+        "BnqsizjCrwLkMgiqPS0locbT9waeqlmnSXF/dCJLCWXkd3WaRC/fdViVqDXvgZm8ITKyjIIo0Upu"
+        "u5dXF0B5SAHRt2LP9NLNmCgaCloK1HYsTUDlG+OXDipm6oGKatgZbu11N5qiWn+8P+9gopIWBE1D"
+        "x0M3pLq3d1rXsoSgqJv/rFJU"
+    ]
+    return bytes.parse_base64(lines.join("")).must()
