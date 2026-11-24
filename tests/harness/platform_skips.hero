@@ -463,8 +463,16 @@ test "every program Windows cannot build is a file that exists, skipped there al
     # clang refuses at `struct sigaction`, and defect 2511's case over POSIX's
     # signal sets, which its `signal.h` does not declare, and the nine cases
     # of defect 2679 over POSIX's jump shapes (`POSIX_JUMP_SHAPES_ON_WINDOWS`),
-    # added with the list's reason at step 116a.
-    assert unbuildable_on_windows().len() == 11
+    # added with the list's reason at step 116a; eleven until here. Then the
+    # seventy over POSIX's contexts and handlers' jumps, which steps 118b and
+    # 120a to 120e listed without moving this count: the 62 of defect 2702,
+    # 2705's one and 2706's two, 2707's four, and 2704's one, `sigaction`'s
+    # (`SIGACTION_ON_WINDOWS`). Each was compiled for `x86_64-windows-gnu`
+    # by `zig cc` 0.15.2 on 2026-11-24, its headers included as its `extern`
+    # lines name them, and every one was refused: `ucontext.h`, `sys/mman.h`
+    # or `dlfcn.h` not found, or `sigjmp_buf` unknown (the box was off, so the
+    # Windows target's own clang is unrun on them).
+    assert unbuildable_on_windows().len() == 81
 
     for one in unbuildable_on_windows()
         assert strings.has_prefix(s: one.name, prefix: "tests/golden/run/")
