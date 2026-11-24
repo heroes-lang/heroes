@@ -450,7 +450,11 @@ test "set_parts: on the native side the parts read back from the system's own ac
     offered.must()
     assert ui.parts_of(@app, widget: chart).must() == every_role()
 
-    # Each act through the system's own action on the part's object.
+    # Each act through the system's own action on the part's object. A system
+    # whose screen reader cannot reach a part by one kind of act (GTK 4 gives
+    # a reader's press to widgets alone, and its focus to no object) refuses
+    # it `unsupported` by name: every other act is still told, and the case
+    # skips by those words once everything else is judged.
     acts: [ui.Input] = [
         .act_on_part(widget: chart, part: 3, act: .press)
         .act_on_part(widget: chart, part: 5, act: .focus)
@@ -458,15 +462,40 @@ test "set_parts: on the native side the parts read back from the system's own ac
         .act_on_part(widget: chart, part: 8, act: .increase)
         .act_on_part(widget: chart, part: 8, act: .decrease)
     ]
+    acted: [ui.Event] = [
+        .part_acted(widget: chart, part: 3, act: .press)
+        .part_acted(widget: chart, part: 5, act: .focus)
+        .part_acted(widget: chart, part: 6, act: .press)
+        .part_acted(widget: chart, part: 8, act: .increase)
+        .part_acted(widget: chart, part: 8, act: .decrease)
+    ]
+    refusals: [str] @= []
 
-    for input in acts
-        ui.inject(@app, input: input).must()
+    # A native act is made on the system's own thread, so its refusal may come
+    # back from the wait that follows it rather than from the inject.
+    for i in range(from: 0, to: acts.len())
+        injected = ui.inject(@app, input: acts[i])
+        words @= fixture.unsupported_words(injected)
 
-    assert ui.wait(@app, within: time.seconds(2).must()).must() == .part_acted(widget: chart, part: 3, act: .press)
-    assert ui.wait(@app, within: time.seconds(2).must()).must() == .part_acted(widget: chart, part: 5, act: .focus)
-    assert ui.wait(@app, within: time.seconds(2).must()).must() == .part_acted(widget: chart, part: 6, act: .press)
-    assert ui.wait(@app, within: time.seconds(2).must()).must() == .part_acted(widget: chart, part: 8, act: .increase)
-    assert ui.wait(@app, within: time.seconds(2).must()).must() == .part_acted(widget: chart, part: 8, act: .decrease)
+        if words == ""
+            injected.must()
+            answered = ui.wait(@app, within: time.seconds(2).must())
+
+            words @ fixture.unsupported_words(answered)
+
+            if words == ""
+                assert answered.must() == acted[i]
+
+        if words != ""
+            said @= false
+
+            for each in refusals
+                if each == words
+                    said @ true
+
+            if !said
+                refusals @ refusals.push(words)
+
     assert fixture.code_of(ui.inject(@app, input: .act_on_part(widget: chart, part: 2, act: .press))) == ui.INVALID
     assert ui.parts_of(@app, widget: chart).must() == every_role()
 
@@ -476,3 +505,11 @@ test "set_parts: on the native side the parts read back from the system's own ac
     ui.set_parts(@app, widget: chart, parts: every_role().slice(from: 6, to: 9)).must()
     assert ui.parts_of(@app, widget: chart).must() == every_role().slice(from: 6, to: 9)
     ui.close(@app).must()
+
+    if refusals.len() > 0
+        reason @= refusals[0]
+
+        for each in refusals.slice(from: 1, to: refusals.len())
+            reason @ f"{reason}; {each}"
+
+        skip_test(reason: reason)
