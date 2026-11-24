@@ -1,8 +1,10 @@
 # Numbers drawn at random from a seeded generator the caller holds: whole
 # numbers below a bound or in a range without bias, floats in [0, 1), bytes,
-# a list shuffled, an element chosen, a sample drawn without replacement, and
-# a choice by weights; and from the system's generator for keys, a number
-# below a bound, an element chosen, and a token written as text.
+# a list shuffled, an element chosen, a sample drawn without replacement, a
+# choice by weights, and numbers drawn from a distribution: uniform, normal,
+# lognormal, exponential, gamma, beta, von Mises, Pareto, Weibull,
+# triangular, binomial and Zipf's; and from the system's generator for keys,
+# a number below a bound, an element chosen, and a token written as text.
 #
 # Two generators are offered. `Generator` is PCG with 128 bits of state and
 # the DXSM output (O'Neill, 2014 and 2019), the one Go's `math/rand/v2.PCG`
@@ -21,15 +23,18 @@
 # package `stats`'s.
 #
 # It fails with `invalid` where a list, weights or a seed cannot be drawn
-# from, and the functions that read the system's generator with the codes of
+# from or a distribution's parameters lie outside the ones it is defined for,
+# with `does_not_fit` where a number drawn lies beyond the largest float,
+# and the functions that read the system's generator with the codes of
 # `os.random_bytes`.
-#
-# Not written yet, each a `pending` block of its ledger: numbers drawn by a
-# distribution other than the uniform one.
 
+use math
 use os
 use random/internal/chacha
 use random/internal/codes
+use random/internal/law_pick
+use random/internal/law_strong
+use random/internal/laws
 use random/internal/pcg
 use random/internal/pick
 use random/internal/strong
@@ -44,6 +49,11 @@ use random/internal/wide
 # where the list is empty.
 constant INVALID: str
     codes.INVALID
+
+# The code `draw` and `draw_chacha8` fail with where the number drawn lies
+# beyond the largest float.
+constant DOES_NOT_FIT: str
+    codes.DOES_NOT_FIT
 
 ## The generator
 
@@ -415,6 +425,221 @@ function secure_token_base64_url(count: i64) -> str?
     drawn = os.random_bytes(count)?
     return ok(token.url_safe_of(drawn))
 
+## Distributions
+
+# A distribution of real numbers to draw from, built by `uniform`, `normal`,
+# `lognormal`, `exponential`, `gamma`, `beta`, `von_mises`, `pareto`,
+# `weibull` or `triangular`, which check its parameters once and compute
+# what its draws need; drawn by `draw` and `draw_chacha8`. Two built from the
+# same parameters are equal.
+record Distribution
+    # The distribution and what its draws need. Only this package reads it.
+    law: laws.Law
+
+# A distribution of whole numbers to draw from, built by `binomial` or `zipf`;
+# drawn by `draw_discrete` and `draw_discrete_chacha8`.
+record Discrete
+    # The distribution and what its draws need. Only this package reads it.
+    law: laws.Count
+
+# Every number from `from` to `to` as likely, `to` left out as `int_in`
+# leaves it: Python's `uniform`, drawn as `from + (to - from) * u` from a
+# fraction `u` of `next_f64`, again in the rare case rounding reaches `to`.
+#
+# - `from`: the smallest number drawn, finite.
+# - `to`: the end, finite and above `from`; a width beyond the largest float
+#   is drawn in halves.
+#
+# Fails `invalid` where either is not finite or `to` is not above `from`. See
+# also `next_f64` and `int_in`.
+function uniform(from: f64, to: f64) -> Distribution?
+    return ok(Distribution(law: laws.uniform(from: from, to: to)?))
+
+# The normal distribution, the bell curve of a mean and a standard deviation:
+# Python's `gauss` and `normalvariate`, and Go's `NormFloat64` and Java's
+# `nextGaussian` scaled. It is drawn by the ziggurat (Marsaglia and Tsang,
+# 2000), from one number nearly every time, its layers chosen and crossed by
+# separate bits of it.
+#
+# - `mean`: the centre, finite.
+# - `deviation`: the standard deviation, finite and 0 or more; 0 draws the
+#   mean every time.
+#
+# Fails `invalid` where either is not finite or `deviation` is below 0. See
+# also `lognormal`, and the package `stats`, whose `Normal` answers the
+# density, the cumulative probability and the quantiles.
+function normal(mean: f64, deviation: f64) -> Distribution?
+    return ok(Distribution(law: laws.normal(mean: mean, deviation: deviation)?))
+
+# The lognormal distribution, of a number whose natural logarithm is normal:
+# Python's `lognormvariate`, drawn as exp of a normal number.
+#
+# - `log_mean`: the mean of the logarithm, finite.
+# - `log_deviation`: the standard deviation of the logarithm, finite and 0 or
+#   more.
+#
+# Fails `invalid` where either is not finite or `log_deviation` is below 0.
+# See also `normal`.
+function lognormal(log_mean: f64, log_deviation: f64) -> Distribution?
+    return ok(Distribution(law: laws.lognormal(mean: log_mean, deviation: log_deviation)?))
+
+# The exponential distribution: the wait for an event that comes `rate` times
+# a unit of time on average, whose mean is 1 / `rate`. Python's
+# `expovariate`, and Go's `ExpFloat64` and Java's `nextExponential` divided by
+# the rate. It is drawn by the ziggurat, as `normal` is.
+#
+# - `rate`: how many events a unit holds on average, finite and above 0.
+#
+# Fails `invalid` where `rate` is not finite or not above 0. See also `gamma`,
+# whose shape 1 is this.
+function exponential(rate: f64) -> Distribution?
+    return ok(Distribution(law: laws.exponential(rate)?))
+
+# The gamma distribution of a shape and a scale, whose mean is their product:
+# Python's `gammavariate`, its `alpha` the shape and its `beta` the scale.
+# It is drawn by Marsaglia and Tsang's method (2000), a shape below 1 as the
+# shape plus 1 lowered by a fraction's power, its test written so that a
+# shape of any size keeps its digits.
+#
+# - `shape`: finite and above 0.
+# - `scale`: finite and above 0.
+#
+# Fails `invalid` where either is not finite or not above 0. See also `beta`.
+function gamma(shape: f64, scale: f64) -> Distribution?
+    return ok(Distribution(law: laws.gamma(shape: shape, scale: scale)?))
+
+# The beta distribution of numbers from 0 to 1 whose mean is `a` / (`a` +
+# `b`): Python's `betavariate`, its `alpha` and `beta` here `a` and `b`. It is
+# drawn as the share of the first of two gamma numbers in their sum, through
+# their logarithms, so that small shapes answer numbers near 0 and 1 and
+# never 0 / 0.
+#
+# - `a`: the first shape, finite and above 0.
+# - `b`: the second shape, finite and above 0.
+#
+# Fails `invalid` where either is not finite or not above 0. See also
+# `gamma`.
+function beta(a: f64, b: f64) -> Distribution?
+    return ok(Distribution(law: laws.beta(a: a, b: b)?))
+
+# The von Mises distribution, the normal of angles: Python's
+# `vonmisesvariate`. Angles in radians from 0 to 2 pi, 2 pi left out,
+# gathered around `mean` the more the higher `concentration`. It is drawn by
+# Best and Fisher's method (1979).
+#
+# - `mean`: the mean angle in radians, finite; it is turned into [0, 2 pi).
+# - `concentration`: kappa, finite and 0 or more; 0 makes every angle as
+#   likely, and a large one is close to a normal of deviation
+#   1 / sqrt(`concentration`).
+#
+# Fails `invalid` where either is not finite or `concentration` is below 0.
+function von_mises(mean: f64, concentration: f64) -> Distribution?
+    return ok(Distribution(law: laws.von_mises(mean: mean, concentration: concentration)?))
+
+# Pareto's distribution: numbers from `scale` up, the chance of one above x
+# being (`scale` / x)^`shape`. Python's `paretovariate`, whose scale is 1,
+# drawn as `scale` times exp of an exponential number over `shape`.
+#
+# - `shape`: the steepness of the tail, finite and above 0; at 1 or below the
+#   mean is infinite, and a draw past the largest float fails.
+# - `scale`: the smallest number drawn, finite and above 0.
+#
+# Fails `invalid` where either is not finite or not above 0.
+function pareto(shape: f64, scale: f64) -> Distribution?
+    return ok(Distribution(law: laws.pareto(shape: shape, scale: scale)?))
+
+# Weibull's distribution: Python's `weibullvariate`, its `alpha` the scale and
+# its `beta` the shape, drawn as `scale` times an exponential number to the
+# power 1 / `shape`.
+#
+# - `scale`: finite and above 0.
+# - `shape`: finite and above 0; 1 is the exponential of rate 1 / `scale`.
+#
+# Fails `invalid` where either is not finite or not above 0.
+function weibull(scale: f64, shape: f64) -> Distribution?
+    return ok(Distribution(law: laws.weibull(scale: scale, shape: shape)?))
+
+# The triangular distribution, rising from `low` to `mode` and falling to
+# `high`: Python's `triangular`, whose mode is the middle when not given,
+# where here it is always given. Drawn by its inverse from one fraction.
+#
+# - `low`: the smallest number drawn, finite.
+# - `high`: the largest, finite and above `low`.
+# - `mode`: the peak, from `low` to `high`.
+#
+# Fails `invalid` where any is not finite, `high` is not above `low`, or
+# `mode` lies outside them.
+function triangular(low: f64, high: f64, mode: f64) -> Distribution?
+    return ok(Distribution(law: laws.triangular(low: low, high: high, mode: mode)?))
+
+# The binomial distribution, of the successes among `trials` trials that each
+# succeed with `probability`: Python's `binomialvariate`. Where fewer than 10
+# are expected it counts geometric waits; else Hormann's BTRS (1993), its
+# test through Stirling's corrections.
+#
+# - `trials`: from 0 to 2^53 - 1, the counts a float holds exactly.
+# - `probability`: from 0 to 1.
+#
+# Fails `invalid` where `trials` or `probability` lies outside its range. See
+# also `zipf`.
+function binomial(trials: i64, probability: f64) -> Discrete?
+    return ok(Discrete(law: laws.binomial(trials, probability)?))
+
+# Zipf's distribution, of a rank `k` from 0 to `largest` as likely as
+# (`offset` + `k`)^-`exponent`: Go's `NewZipf(r, s, v, imax)`, whose `s`
+# must be above 1 where here any exponent above 0 is drawn, Zipf's own 1
+# among them. It is drawn by Hormann and Derflinger's rejection-inversion
+# (1996).
+#
+# - `exponent`: finite and above 0.
+# - `offset`: finite and 1 or more; 1 makes `k` + 1 the rank of the law.
+# - `largest`: the largest value drawn, from 0 to 2^53 - 1.
+#
+# Fails `invalid` where any lies outside its range. See also `binomial`.
+function zipf(exponent: f64, offset: f64, largest: i64) -> Discrete?
+    return ok(Discrete(law: laws.zipf(exponent: exponent, offset: offset, largest: largest)?))
+
+# A number drawn from `distribution`.
+#
+# - `generator`: the generator drawn from, which the caller holds; its state
+#   advances by one number nearly every time for `normal` and `exponential`,
+#   and by a few for the others.
+# - `distribution`: what is drawn from.
+#
+# Fails `does_not_fit` where the number drawn lies beyond the largest float,
+# as a draw of a heavy tail can: `pareto`, `lognormal` or `weibull` of a small
+# shape, or a scale near the largest float. See also `draw_discrete`.
+function draw(@generator: Generator, distribution: Distribution) -> f64?
+    return law_pick.draw(high: @generator.high, low: @generator.low, distribution.law)
+
+# A number drawn from `distribution` by a ChaCha8 generator, by the method
+# `draw` takes.
+#
+# - `generator`: the generator drawn from, which the caller holds.
+# - `distribution`: what is drawn from.
+#
+# Fails `does_not_fit` as `draw` does.
+function draw_chacha8(@generator: ChaCha8, distribution: Distribution) -> f64?
+    return law_strong.draw(@generator.state, distribution.law)
+
+# A whole number drawn from `distribution`, from 0 to its trials or its
+# largest value.
+#
+# - `generator`: the generator drawn from, which the caller holds.
+# - `distribution`: what is drawn from.
+#
+# See also `draw`.
+function draw_discrete(@generator: Generator, distribution: Discrete) -> i64
+    return law_pick.draw_count(high: @generator.high, low: @generator.low, distribution.law)
+
+# A whole number drawn from `distribution` by a ChaCha8 generator, by the
+# method `draw_discrete` takes.
+#
+# - `generator`: the generator drawn from, which the caller holds.
+# - `distribution`: what is drawn from.
+function draw_discrete_chacha8(@generator: ChaCha8, distribution: Discrete) -> i64
+    return law_strong.draw_count(@generator.state, distribution.law)
+
 ## Tests
 
 test "the code is the vocabulary's word"
@@ -542,6 +767,92 @@ test "secure_token_hex and secure_token_base64_url: no bytes, one, two, 32, thei
         .err e => assert e.code == INVALID
 
     assert secure_token_base64_url(-1).is_err()
+
+test "the codes are the vocabulary's words"
+    assert DOES_NOT_FIT == "does_not_fit"
+
+test "uniform, normal, lognormal and exponential: the edges refused, and the messages"
+    match uniform(from: 1.0, to: 1.0)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "a uniform range from 1.0 to 1.0, where the end must be finite and above the start"
+
+    assert uniform(from: math.NAN, to: 1.0).is_err() && uniform(from: 0.0, to: math.INF).is_err()
+    assert !uniform(from: -math.MAX_F64, to: math.MAX_F64).is_err() && !uniform(from: 0.0, to: math.SMALLEST_F64).is_err()
+
+    match normal(mean: 0.0, deviation: -1.0)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "a normal distribution of mean 0.0 and deviation -1.0, where both must be finite and the deviation 0 or more"
+
+    assert normal(mean: math.INF, deviation: 1.0).is_err() && normal(mean: 0.0, deviation: math.NAN).is_err()
+    assert !normal(mean: 0.0, deviation: 0.0).is_err()
+    assert lognormal(log_mean: 0.0, log_deviation: -0.5).is_err() && lognormal(log_mean: math.NAN, log_deviation: 1.0).is_err()
+
+    match exponential(0.0)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "an exponential distribution of rate 0.0, where the rate must be finite and above 0"
+
+    assert exponential(math.INF).is_err() && exponential(-1.0).is_err() && !exponential(math.SMALLEST_F64).is_err()
+
+test "gamma, beta, von_mises, pareto, weibull and triangular: the edges refused"
+    assert gamma(shape: 0.0, scale: 1.0).is_err() && gamma(shape: 1.0, scale: 0.0).is_err()
+    assert gamma(shape: math.INF, scale: 1.0).is_err() && !gamma(shape: math.SMALLEST_F64, scale: math.MAX_F64).is_err()
+    assert beta(a: 0.0, b: 1.0).is_err() && beta(a: 1.0, b: math.NAN).is_err() && !beta(a: math.SMALLEST_F64, b: 1.0).is_err()
+    assert von_mises(mean: math.INF, concentration: 1.0).is_err() && von_mises(mean: 0.0, concentration: -0.1).is_err()
+    assert !von_mises(mean: -1000.0, concentration: 0.0).is_err() && !von_mises(mean: 0.0, concentration: math.MAX_F64).is_err()
+    assert pareto(shape: 0.0, scale: 1.0).is_err() && pareto(shape: 1.0, scale: -1.0).is_err()
+    assert weibull(scale: 1.0, shape: 0.0).is_err() && weibull(scale: math.INF, shape: 1.0).is_err()
+
+    match triangular(low: 0.0, high: 1.0, mode: 2.0)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "a triangular distribution from 0.0 to 1.0 peaking at 2.0, where all must be finite, the high end above the low and the mode between them"
+
+    assert triangular(low: 1.0, high: 1.0, mode: 1.0).is_err()
+    assert !triangular(low: 0.0, high: 1.0, mode: 0.0).is_err() && !triangular(low: 0.0, high: 1.0, mode: 1.0).is_err()
+
+test "binomial and zipf: the edges refused, 2^53 - 1 allowed and 2^53 not"
+    match binomial(trials: 9007199254740992, probability: 0.5)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "a binomial distribution of 9007199254740992 trials, where they must be from 0 to 9007199254740991"
+
+    assert binomial(trials: -1, probability: 0.5).is_err() && !binomial(trials: 9007199254740991, probability: 0.5).is_err()
+    assert binomial(trials: 1, probability: 1.5).is_err() && binomial(trials: 1, probability: math.NAN).is_err()
+    assert !binomial(trials: 0, probability: 0.0).is_err() && !binomial(trials: 1, probability: 1.0).is_err()
+    assert zipf(exponent: 0.0, offset: 1.0, largest: 10).is_err() && zipf(exponent: 1.0, offset: 0.5, largest: 10).is_err()
+    assert zipf(exponent: 1.0, offset: 1.0, largest: -1).is_err() && zipf(exponent: 1.0, offset: 1.0, largest: 9007199254740992).is_err()
+    assert !zipf(exponent: 1.0, offset: 1.0, largest: 0).is_err() && !zipf(exponent: 0.0000001, offset: 1.0, largest: 9007199254740991).is_err()
+
+test "draw: a deviation of 0 draws the mean, and a tail past the largest float fails does_not_fit"
+    g @= Generator(high: 1, low: 2)
+    point = normal(mean: 3.5, deviation: 0.0).must()
+
+    for _ in range(from: 0, to: 100)
+        assert draw(@g, point).must() == 3.5
+
+    steep = pareto(shape: 0.001, scale: 1.0).must()
+    failed @= 0
+
+    for _ in range(from: 0, to: 100)
+        match draw(@g, steep)
+            .ok x => assert x >= 1.0 && math.is_finite(x)
+            .err e =>
+                assert e.code == DOES_NOT_FIT && e.msg == "a number drawn beyond the largest float (inf)"
+                failed @ failed + 1
+
+    assert failed > 20 && failed < 80
+    huge = normal(mean: math.MAX_F64, deviation: math.MAX_F64).must()
+    assert draw(@g, huge).is_err() || draw(@g, huge).is_err() || draw(@g, huge).is_err() || draw(@g, huge).is_err()
+
+test "draw and draw_chacha8: a copied generator draws what the original draws"
+    g @= Generator(high: 5, low: 6)
+    h @= g
+    law = gamma(shape: 2.5, scale: 1.0).must()
+    assert draw(@g, law).must() == draw(@h, law).must()
+    c @= from_seed_chacha8(os.random_bytes(32).must()).must()
+    d @= c
+    assert draw_chacha8(@c, law).must() == draw_chacha8(@d, law).must()
+    counts = zipf(exponent: 1.2, offset: 1.0, largest: 1000).must()
+    assert draw_discrete(@g, counts) == draw_discrete(@h, counts)
+    assert draw_discrete_chacha8(@c, counts) == draw_discrete_chacha8(@d, counts)
 
 ## Examples
 
@@ -727,3 +1038,80 @@ test "secure_token_hex: a token of sixteen bytes"
 # A token of 32 bytes for a URL, 43 characters with no padding.
 test "secure_token_base64_url: a token for a URL"
     assert secure_token_base64_url(32).must().len() == 43
+
+# Heights of a group, in centimetres: a mean of 170 and a deviation of 8.
+test "normal: a height drawn"
+    g @= Generator(high: 1, low: 2)
+    heights = normal(mean: 170.0, deviation: 8.0).must()
+    assert draw(@g, heights).must() > 0.0
+
+# A float from -1 to 1, 1 left out.
+test "uniform: a float in a range"
+    g @= Generator(high: 1, low: 2)
+    x = draw(@g, uniform(from: -1.0, to: 1.0).must()).must()
+    assert x >= -1.0 && x < 1.0
+
+# Incomes, whose logarithm is normal.
+test "lognormal: an income drawn"
+    g @= Generator(high: 1, low: 2)
+    assert draw(@g, lognormal(log_mean: 10.0, log_deviation: 0.5).must()).must() > 0.0
+
+# The wait before the next request, which come 4 a second on average.
+test "exponential: the wait for the next request"
+    g @= Generator(high: 1, low: 2)
+    assert draw(@g, exponential(4.0).must()).must() >= 0.0
+
+# The time a task takes, of shape 2 and scale 1.5 seconds.
+test "gamma: the time a task takes"
+    g @= Generator(high: 1, low: 2)
+    assert draw(@g, gamma(shape: 2.0, scale: 1.5).must()).must() > 0.0
+
+# A rate of success after 3 successes and 7 failures.
+test "beta: a rate of success"
+    g @= Generator(high: 1, low: 2)
+    x = draw(@g, beta(a: 4.0, b: 8.0).must()).must()
+    assert x >= 0.0 && x <= 1.0
+
+# A wind's direction around north-east.
+test "von_mises: a direction"
+    g @= Generator(high: 1, low: 2)
+    x = draw(@g, von_mises(mean: math.PI / 4.0, concentration: 3.0).must()).must()
+    assert x >= 0.0 && x < math.TAU
+
+# A file's size from 1 kB up, its tail of shape 1.2.
+test "pareto: a file's size"
+    g @= Generator(high: 1, low: 2)
+    assert draw(@g, pareto(shape: 1.2, scale: 1024.0).must()).must() >= 1024.0
+
+# The life of a part, of scale 1000 hours and shape 1.5.
+test "weibull: the life of a part"
+    g @= Generator(high: 1, low: 2)
+    assert draw(@g, weibull(scale: 1000.0, shape: 1.5).must()).must() >= 0.0
+
+# An estimate of 2 to 8 days, most likely 3.
+test "triangular: an estimate"
+    g @= Generator(high: 1, low: 2)
+    x = draw(@g, triangular(low: 2.0, high: 8.0, mode: 3.0).must()).must()
+    assert x >= 2.0 && x <= 8.0
+
+# Heads among 10 throws of a coin.
+test "binomial: heads among ten throws"
+    g @= Generator(high: 1, low: 2)
+    heads = draw_discrete(@g, binomial(trials: 10, probability: 0.5).must())
+    assert heads >= 0 && heads <= 10
+
+# The rank of a word among 50,000, by Zipf's law.
+test "zipf: the rank of a word"
+    g @= Generator(high: 1, low: 2)
+    rank = draw_discrete(@g, zipf(exponent: 1.0, offset: 1.0, largest: 49999).must()) + 1
+    assert rank >= 1 && rank <= 50000
+
+# A delay spread by chance, from a generator nobody can foresee.
+test "draw_chacha8: a jitter"
+    g @= from_system_chacha8().must()
+    assert !draw_chacha8(@g, normal(mean: 0.0, deviation: 0.1).must()).is_err()
+
+# A count from a generator nobody can foresee.
+test "draw_discrete_chacha8: a count"
+    g @= from_system_chacha8().must()
+    assert draw_discrete_chacha8(@g, binomial(trials: 3, probability: 0.5).must()) <= 3
