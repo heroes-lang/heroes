@@ -1,0 +1,28 @@
+[dependencies.rebel]
+path = "../../library/0.1.0/files"
+packages = [
+    "acme",
+    "asn1",
+    "big",
+    "bytes",
+    "crypto",
+    "crypto/keypairs",
+    "dns",
+    "fs",
+    "http",
+    "io",
+    "jose",
+    "json",
+    "keyring",
+    "net",
+    "numbers",
+    "os",
+    "path",
+    "pem",
+    "random",
+    "strings",
+    "time",
+    "tls",
+    "toml",
+    "x509",
+]

@@ -1,0 +1,265 @@
+# The ledger of `mcp`: what the Model Context Protocol's SDKs let a program
+# do, one block per capability, and what Rebel answers. The protocol is the
+# revision 2026-07-28, read on 2026-11-17 from the specification's own
+# repository (its pages and `schema.ts`, fetched into the scratch folder),
+# the newest beside `draft`. None of the three standard libraries speaks
+# MCP, so the yardstick is the census the author chose on 2026-11-17,
+# measured on this machine that day: Go's official
+# `github.com/modelcontextprotocol/go-sdk/mcp` v1.8.0 and
+# `github.com/mark3labs/mcp-go` v1.5.0 (`mcp`, `server`, `client`; `go doc`,
+# fetched into the scratch folder's module cache), both of which name
+# 2026-07-28; Python's `mcp` 2.3.0 (`dir()`, installed into the scratch
+# folder), which speaks it; and the TypeScript SDK's npm package
+# `@modelcontextprotocol/sdk` 1.32.2, of which only the exports map was read
+# (`client`, `server`, `validation`, `experimental/tasks`), so its entries are
+# not listed name by name. No Rust SDK is on this machine: the `rust` lines
+# read `-`.
+#
+# Measured against Python's `mcp` 2.3.0 client on 2026-11-18: the example
+# server `rebel/examples/reach/reach_mcp.hero`, built, answered every call of that
+# client over standard streams and over Streamable HTTP (discovery, the four
+# tools with a structured result, the program's own state, an elicitation by
+# multi round-trip, `x-mcp-header` with text of more than one byte through
+# the Base64 sentinel, a schema refusal as a tool error, resources, a
+# template, a prompt, a completion, "Resource not found").
+
+capability protocol/version  the revision named and every request held to it: no handshake, the version in each request's `_meta`, -32022 with the versions spoken
+  heroes  mcp.PROTOCOL_VERSION, mcp.UNSUPPORTED_PROTOCOL_VERSION, mcp.handle
+  go      go-sdk mcp.SupportedProtocolVersions, mcp.MetaKeyProtocolVersion, mcp-go mcp.ProtocolVersion20260728, server.FilterSupportedVersions, server.RequestProtocolVersion, server.IsModernRequest, client.WithProtocolVersion
+  rust    -
+  python  mcp.client.Client.protocol_version, mcp.shared.version
+  note    An `initialize` is answered -32022 naming the version spoken, as the revision asks of a server that speaks it alone
+
+capability protocol/meta  a request's `_meta` read and checked: version, client, capabilities, progress token, log level, the trace context kept
+  heroes  mcp.meta_of, mcp.RequestMeta
+  go      go-sdk mcp.Meta, mcp.Params.GetMeta, mcp-go server.WithRequestProtocolInfo, client.WithMetaPropagator, client.WithPropagator
+  rust    -
+  python  mcp.types, mcp.server.context
+  note    A request missing a required field is answered -32602, and on HTTP 400, as the revision asks
+
+capability protocol/discover  `server/discover` answered from the server's description, and asked by a client
+  heroes  mcp.handle, mcp.discover, mcp.Discovered
+  go      go-sdk mcp.DiscoverParams, mcp.DiscoverRequest, mcp.DiscoverResult, mcp-go server.OnAfterDiscoverFunc, client.WithDiscoverTimeout
+  rust    -
+  python  mcp.client.Client.server_info, server_capabilities, instructions, prior_discover
+
+capability protocol/identity  a server's and a client's name, version, title, site and icons
+  heroes  mcp.Implementation, mcp.implementation, mcp.Icon, mcp.implementation_json, mcp.implementation_of, mcp.icons_json, mcp.icons_of
+  go      go-sdk mcp.Implementation, mcp.Icon, mcp.IconTheme, mcp-go mcp.Implementation
+  rust    -
+  python  mcp.Implementation, mcp.client.Client.client_info
+
+capability protocol/capabilities  a client's and a server's capabilities, extensions among them, written and read
+  heroes  mcp.ClientCapabilities, mcp.ServerCapabilities, mcp.form_capabilities, mcp.no_capabilities, mcp.capabilities_of, mcp.client_capabilities_json, mcp.client_capabilities_of, mcp.server_capabilities_json, mcp.server_capabilities_of
+  go      go-sdk mcp.ClientCapabilities, mcp.ServerCapabilities, mcp.ElicitationCapabilities, mcp.FormElicitationCapabilities, mcp.CompletionCapabilities, mcp-go client.WithClientCapabilities
+  rust    -
+  python  mcp.ClientCapabilities, mcp.ServerCapabilities, mcp.ToolsCapability, mcp.ResourcesCapability, mcp.PromptsCapability, mcp.client.ClientExtension, mcp.client.advertise
+
+capability protocol/errors  the protocol's error codes and their HTTP statuses
+  heroes  mcp.HEADER_MISMATCH, mcp.MISSING_REQUIRED_CLIENT_CAPABILITY, mcp.UNSUPPORTED_PROTOCOL_VERSION, mcp.respond_http
+  go      go-sdk mcp.CodeHeaderMismatch, mcp.CodeResourceNotFound, mcp.ResourceNotFoundError, mcp-go server.NewHandlerError, server.JSONRPCErrorProvider
+  rust    -
+  python  mcp.MCPError, mcp.types.ErrorData
+  note    A resource not there is -32602, the revision's code; -32002 of the revision before is read by a client as the failure it is
+
+capability server/description  a server described as data: its tools, resources, templates, prompts, what it tells, its pages and freshness
+  heroes  mcp.Server, mcp.new_server
+  go      go-sdk mcp.Server, mcp.NewServer, mcp.ServerOptions, mcp.AddTool, mcp.Server.AddPrompt, mcp.Server.AddResource, mcp.Server.AddResourceTemplate, mcp-go server.MCPServer, server.NewMCPServer, server.ServerOption
+  rust    -
+  python  mcp.server.MCPServer, mcp.server.Server, mcp.server.mcpserver
+  note    The language has no closure, so the program describes, `handle` finds, and the program calls its own function with its own state, as `web` routes
+
+capability server/dispatch  each request found and checked, the package answering what it can from the description, the rest handed to the program
+  heroes  mcp.handle, mcp.Request, mcp.tool_named
+  go      go-sdk mcp.Server.Run, mcp.ServerSession, mcp-go server.MCPServer.HandleMessage, server.Hooks and their OnAfter functions
+  rust    -
+  python  mcp.server.lowlevel, mcp.server.session, mcp.server.runner
+
+capability tools/list  tools listed with the JSON Schema of their inputs, their output schema, hints and icons, in a fixed order, page by page
+  heroes  mcp.Tool, mcp.new_tool, mcp.Hints, mcp.default_hints, mcp.tool_json, mcp.tool_of, mcp.list_tools
+  go      go-sdk mcp.Tool, mcp.ToolAnnotations, mcp.ListToolsParams, mcp.ListToolsResult, mcp-go mcp.NewTool, mcp.WithDescription, mcp.WithString, mcp.WithNumber, mcp.ToolAnnotation
+  rust    -
+  python  mcp.Tool, mcp.ListToolsResult, mcp.client.Client.list_tools
+
+capability tools/call  a tool called, its arguments held to its input schema, its result: content, structured content checked against the output schema, an execution error the model reads
+  heroes  mcp.ToolCall, mcp.ToolResult, mcp.answer_tool, mcp.text_result, mcp.error_result, mcp.structured_result, mcp.tool_result_json, mcp.tool_result_of, mcp.call_tool, mcp.ToolOutcome
+  go      go-sdk mcp.CallToolParams, mcp.CallToolParamsRaw, mcp.CallToolRequest, mcp.CallToolResult, mcp.ToolHandler, mcp-go mcp.CallToolResult, mcp.NewToolResultText, mcp.NewToolResultError, mcp.NewToolResultStructured
+  rust    -
+  python  mcp.CallToolRequest, mcp.client.Client.call_tool, mcp.server.validation
+  note    Arguments the input schema refuses are a tool execution error (`isError`), so the model can correct them, as Python answers; a result that does not conform to the output schema is the program's mistake and is answered -32603
+
+capability content  content blocks of text, image, audio, a resource link and an embedded resource, with their hints
+  heroes  mcp.Content, mcp.Annotations, mcp.no_annotations, mcp.text_content, mcp.content_json, mcp.content_of, mcp.annotations_json, mcp.annotations_of
+  go      go-sdk mcp.Content, mcp.TextContent, mcp.ImageContent, mcp.AudioContent, mcp.ResourceLink, mcp.EmbeddedResource, mcp.Annotations, mcp-go mcp.TextContent, mcp.ImageContent, mcp.AudioContent, mcp.EmbeddedResource
+  rust    -
+  python  mcp.types
+  note    A block's own `_meta` is not written or read
+
+capability resources/list-read  resources listed and read as text or bytes, cacheable as the server says
+  heroes  mcp.Resource, mcp.new_resource, mcp.Contents, mcp.ResourceRead, mcp.answer_resource, mcp.resource_json, mcp.resource_of, mcp.contents_json, mcp.contents_of, mcp.list_resources, mcp.read_resource, mcp.ReadOutcome
+  go      go-sdk mcp.Resource, mcp.ResourceContents, mcp.ReadResourceParams, mcp.ReadResourceResult, mcp.ListResourcesResult, mcp.ResourceHandler, mcp-go mcp.NewResource, mcp.TextResourceContents, mcp.BlobResourceContents
+  rust    -
+  python  mcp.Resource, mcp.ReadResourceRequest, mcp.ReadResourceResult, mcp.client.Client.list_resources, read_resource
+
+capability resources/templates  resource templates listed, a URI matched to one and its variables read, RFC 6570 expanded
+  heroes  mcp.ResourceTemplate, mcp.new_template, mcp.template_json, mcp.template_of, mcp.list_templates, mcp.expand_template, mcp.match_template
+  go      go-sdk mcp.ResourceTemplate, mcp.ListResourceTemplatesResult, mcp-go mcp.NewResourceTemplate
+  rust    -
+  python  mcp.UriTemplate, mcp.InvalidUriTemplate, mcp.client.Client.list_resource_templates
+  note    RFC 6570 has no matching; each expression takes what its operator writes up to the next literal, so a template whose expressions touch is matched as far as that reads. It belongs in `url` in the end, which holds no URI template today
+
+capability prompts  prompts listed with their arguments and asked for, a missing argument refused
+  heroes  mcp.Prompt, mcp.PromptArgument, mcp.PromptMessage, mcp.PromptResult, mcp.PromptGet, mcp.new_prompt, mcp.prompt_json, mcp.prompt_of, mcp.answer_prompt, mcp.list_prompts, mcp.get_prompt, mcp.PromptOutcome
+  go      go-sdk mcp.Prompt, mcp.PromptArgument, mcp.PromptMessage, mcp.GetPromptParams, mcp.GetPromptResult, mcp-go mcp.NewPrompt, mcp.NewPromptMessage
+  rust    -
+  python  mcp.GetPromptRequest, mcp.GetPromptResult, mcp.client.Client.list_prompts, get_prompt
+
+capability completion  an argument of a prompt or a template completed, 100 values at most
+  heroes  mcp.Completion, mcp.answer_completion, mcp.complete, mcp.Completed
+  go      go-sdk mcp.CompleteParams, mcp.CompleteResult, mcp.CompleteReference, mcp.CompleteContext, mcp-go server.DefaultPromptCompletionProvider, server.DefaultResourceCompletionProvider
+  rust    -
+  python  mcp.CompleteRequest, mcp.client.Client.complete
+
+capability pagination  lists answered page by page with opaque cursors, and every page read by a client, the empty cursor one
+  heroes  mcp.Server
+  go      go-sdk mcp.DefaultPageSize, mcp-go client's ErrRepeatedListCursor
+  rust    -
+  python  -
+
+capability caching  `ttlMs` and `cacheScope` on discovery, the lists and a read; none on a retry's result
+  heroes  mcp.Server, mcp.answer_resource
+  go      go-sdk mcp.Cacheable, mcp.CacheableResult
+  rust    -
+  python  mcp.server.CacheHint, mcp.server.caching, mcp.client.CacheConfig, CacheEntry, CacheKey, CacheMode, InMemoryResponseCacheStore, ResponseCacheStore, caching
+  note    The server writes the hints; a client cache is the program's, the hints read from the results
+
+capability mrtr/elicitation  a server that needs the user answers `input_required` with an elicitation, form or URL; a client answers and retries; the capability checked first (-32021)
+  heroes  mcp.InputRequest, mcp.InputRequired, mcp.Inputs, mcp.Elicited, mcp.no_inputs, mcp.inputs_of, mcp.elicited_of, mcp.elicitation_response, mcp.answer_input_required, mcp.input_request_json, mcp.input_request_of, mcp.input_required_json, mcp.input_required_of
+  go      go-sdk mcp.ElicitParams, mcp.ElicitResult, mcp.InputRequest, mcp.InputRequestMap, mcp.InputResponse, mcp.InputResponseMap, mcp-go server.ElicitationResponse, server.InputResponse, server.InputRequestBuilder, client.ElicitationHandler, client.WithElicitationHandler, client.WithMaxInputRoundTrips, client.WithManualInputRoundTrips
+  rust    -
+  python  mcp.InputRequiredRoundsExceededError, mcp.UrlElicitationRequiredError, mcp.server.elicitation, mcp.client.Client.elicitation_callback, input_required_max_rounds
+  note    A client retries by hand, as mcp-go's manual mode: the language has no callback that could hold the user's answer
+
+capability mrtr/state  a server's `requestState` signed and bound to its request and its end, refused when changed
+  heroes  mcp.sign_state, mcp.verify_state
+  go      -
+  rust    -
+  python  mcp.server.request_state
+  note    It is `web.sign_value`'s HMAC-SHA256, bound to what the program names: the method, the tool and the user, as the revision advises
+
+capability progress  a request's progress told against its token, only where it asked
+  heroes  mcp.progress_notification
+  go      go-sdk mcp.ProgressNotificationParams, mcp-go mcp.ProgressNotification
+  rust    -
+  python  mcp.ProgressNotification, mcp.client.Client.send_progress_notification
+
+capability cancellation  `notifications/cancelled` read by a server on standard streams and sent by a client; over HTTP a stream closed
+  heroes  mcp.Request, mcp.cancel
+  go      go-sdk mcp.CancelledParams, mcp-go mcp.CancelledNotification
+  rust    -
+  python  -
+  note    A server is single-threaded unless the program makes it otherwise, so a cancellation of the request it is answering arrives after its answer, a race the revision allows
+
+capability subscriptions  `subscriptions/listen` acknowledged with what the server agrees to, list changes and resource updates told only where asked, the subscription ended gracefully; a client that opens one and reads its notifications
+  heroes  mcp.Listen, mcp.Filter, mcp.honored_filter, mcp.acknowledge, mcp.changed_notification, mcp.updated_notification, mcp.end_listen, mcp.filter_of, mcp.filter_json, mcp.subscribe, mcp.next_notification, mcp.Notification
+  go      go-sdk mcp.Server.ResourceUpdated, mcp-go server.SubscriptionIDFromContext, server.WithSubscriptionID, server.OnAfterSubscriptionsListenFunc
+  rust    -
+  python  mcp.server.subscriptions, mcp.client.subscriptions, mcp.client.Client.listen, NotificationBinding
+  note    A client opens a subscription over standard streams; over Streamable HTTP it is the next block
+
+capability subscriptions/http-client  a client's subscription over Streamable HTTP: a POST whose event stream stays open
+  heroes  pending
+  go      -
+  rust    -
+  python  mcp.client.Client.listen over HTTP
+  note    It needs a response read as it comes on a connection the client holds while it goes on with other requests; the server side is done
+
+capability transport/stdio  standard streams one message a line, a server that exits at the end of its input, a client over a child's pipes
+  heroes  mcp.read_request, mcp.stream_client, jsonrpc.write_message
+  go      go-sdk mcp.StdioTransport, mcp.CommandTransport, mcp.IOTransport, mcp-go server.ServeStdio, client.NewStdioMCPClient, client.GetStderr
+  rust    -
+  python  mcp.stdio_server, mcp.stdio_client, mcp.StdioServerParameters
+
+capability transport/streamable-http  one POST a message, JSON or an event stream answered, 202 for a notification, 405 for GET and DELETE, the Origin checked, the mirrored fields checked against the body (-32020), sessions and resumption passed over
+  heroes  mcp.read_http, mcp.respond_http, mcp.start_stream, mcp.write_event, mcp.http_client, mcp.send_request
+  go      go-sdk mcp.StreamableHTTPHandler, mcp.StreamableClientTransport, mcp.StreamableServerTransport, mcp.DefaultMaxRequestBodyBytes, mcp-go server.NewStreamableHTTPServer, client.NewStreamableHttpClient, server.CORSConfig and its options
+  rust    -
+  python  mcp.server.streamable_http, mcp.server.streamable_http_manager, mcp.server.transport_security, mcp.client.streamable_http
+  note    An `Origin` not listed is refused 403 and one absent taken, so a page cannot reach a server on the user's machine; a body typed otherwise than JSON is refused, `jsonrpc`'s rule
+
+capability transport/x-mcp-header  a tool's `x-mcp-header` annotations checked, its arguments mirrored into `Mcp-Param-` fields by a client and held to the body by a server, values in the Base64 sentinel where a field cannot hold them
+  heroes  mcp.list_tools
+  go      go-sdk the standard headers of `streamable_headers`, mcp-go client.WithInvalidToolHandler
+  rust    -
+  python  mcp.client.streamable_http
+  note    A tool whose annotation is not of its form is left out of a client's list over HTTP, as the revision requires
+
+capability auth/server  a protected resource's metadata served (RFC 9728), the 401 and 403 challenges written, the token read
+  heroes  mcp.resource_metadata_response, mcp.unauthorized, mcp.insufficient_scope, http.bearer_token_of
+  go      go-sdk auth.RequireBearerToken, auth.ProtectedResourceMetadataHandler, mcp-go server.NewProtectedResourceMetadataHandler, server.ProtectedResourceMetadataPath, server.WellKnownProtectedResourcePath
+  rust    -
+  python  mcp.server.auth
+  note    The token is checked by the program, a JWT with `jose` or an opaque one with `oauth2.introspect`, its audience the server's canonical URL; the metadata and the challenge are `oauth2`'s, not written again
+
+capability auth/client  a 401 read, the protected resource's and the authorization server's metadata fetched, the canonical resource and the scopes chosen, an `oauth2` client made with its resource set; the flow, PKCE, RFC 9207's `iss` and client ID metadata documents are `oauth2`'s
+  heroes  mcp.Authorization, mcp.canonical_resource, mcp.discover_authorization, mcp.config_for, mcp.with_token, mcp.Client
+  go      mcp-go client.NewOAuthStreamableHttpClient, client.OAuthConfig, client.AuthorizationRequiredError, client.IsAuthorizationRequiredError, client.GetResourceMetadataURL, client.GetOAuthHandler, client.ErrAuthorizationServerChanged, client.TokenStore, client.MemoryTokenStore, client.Token, client.GenerateCodeVerifier, client.GenerateCodeChallenge, client.GenerateState, go-sdk oauthex
+  rust    -
+  python  mcp.client.auth
+  note    No token is kept between calls, as `oauth2` keeps none; a client's credentials keyed by issuer are the program's
+
+capability client/requests  a client of one server: every request of the revision, its `_meta` written, a result's type checked, the notifications that come before an answer kept
+  heroes  mcp.Client, mcp.Link, mcp.send_request, mcp.discover, mcp.list_tools, mcp.call_tool, mcp.list_resources, mcp.list_templates, mcp.read_resource, mcp.list_prompts, mcp.get_prompt, mcp.complete, mcp.next_notification
+  go      go-sdk mcp.Client, mcp.NewClient, mcp.ClientSession, mcp.ClientOptions, mcp-go client.Client, client.NewClient, client.MCPClient
+  rust    -
+  python  mcp.Client, mcp.ClientSession, mcp.ClientSessionGroup
+  note    A `resultType` the revision does not name is refused, as it asks; one absent is `complete`, for servers of before
+
+capability legacy/initialize  the handshake of 2025-11-25 and before, spoken beside this revision by a dual-era server or client
+  heroes  pending
+  go      go-sdk mcp.InitializeParams, mcp.InitializeRequest, mcp.InitializeResult, mcp.InitializedParams, mcp-go client.WithLegacyProtocolOnly, server.OnAfterInitializeFunc
+  rust    -
+  python  mcp.InitializeRequest, mcp.InitializeResult, mcp.InitializedNotification, mcp.server.InitializationOptions
+  note    The revision allows it and does not ask it; done well it needs a session per connection on HTTP, which this revision removed, so it waits
+
+capability legacy/ping-setlevel  `ping`, `logging/setLevel`, `resources/subscribe` and `notifications/roots/list_changed`
+  heroes  refused: removed by revision 2026-07-28; a server answers them -32601
+  go      mcp-go server.OnAfterPingFunc, server.OnAfterSetLevelFunc, server.OnAfterSubscribeFunc, server.OnAfterUnsubscribeFunc
+  rust    -
+  python  mcp.PingRequest, mcp.SetLevelRequest, mcp.SubscribeRequest, mcp.UnsubscribeRequest, mcp.client.Client.send_ping, set_logging_level, subscribe_resource, unsubscribe_resource, send_roots_list_changed
+
+capability deprecated/sampling-roots-logging  sampling, roots and log lines sent to a client
+  heroes  refused: deprecated by revision 2026-07-28 (SEP-2577), which asks new implementations not to add them; a server logs to its standard error, and a client of this package declares neither capability, so no server asks them of it
+  go      go-sdk mcp.CreateMessageParams, mcp.CreateMessageResult, mcp.CreateMessageWithToolsParams, mcp.ListRootsParams, mcp.ListRootsResult, mcp.LoggingHandler, mcp.LoggingLevel, mcp.LoggingMessageParams, mcp.LoggingTransport, mcp-go client.SamplingHandler, client.WithSamplingHandler, client.RootsHandler, client.WithRootsHandler, server.SamplingResponse, server.RootsResponse
+  rust    -
+  python  mcp.CreateMessageRequest, mcp.CreateMessageResult, mcp.CreateMessageResultWithTools, mcp.SamplingCapability, mcp.SamplingContent, mcp.SamplingContextCapability, mcp.SamplingMessage, mcp.SamplingMessageContentBlock, mcp.SamplingRole, mcp.SamplingToolsCapability, mcp.ToolChoice, mcp.ToolUseContent, mcp.ToolResultContent, mcp.IncludeContext, mcp.StopReason, mcp.RootsCapability, mcp.LoggingLevel, mcp.LoggingMessageNotification, mcp.client.Client.sampling_callback, list_roots_callback, logging_callback, log_level
+
+capability deprecated/http-sse  the HTTP+SSE transport of 2024-11-05
+  heroes  refused: deprecated since 2025-03-26, and the revision asks new implementations not to adopt it
+  go      go-sdk mcp.SSEHandler, mcp.SSEClientTransport, mcp.SSEServerTransport, mcp-go client.NewSSEMCPClient, client.NewOAuthSSEClient
+  rust    -
+  python  mcp.server.sse, mcp.client.sse
+
+capability extension/tasks  the tasks extension, `io.modelcontextprotocol/tasks`
+  heroes  pending
+  go      mcp-go server.OnAfterGetTaskFunc, server.OnAfterCancelTaskFunc, server.OnAfterListTasksFunc, server.OnAfterTaskResultFunc, client.ErrRepeatedTaskListCursor, client.ErrInvalidFallbackPollInterval
+  rust    -
+  python  mcp.shared.extension
+  note    An official extension outside the core; a server declares extensions in `Server.extensions` and a client sends any method with `send_request`, but the extension's own messages are not written here
+
+capability extension/apps  the MCP Apps extension, a user interface a server ships
+  heroes  refused: an extension outside the core whose interface a client renders; a server that ships one declares it in `Server.extensions` and serves its resources as any other
+  go      -
+  rust    -
+  python  -
+
+dropped  sessions, event stores, resumption and in-process transports, which revision 2026-07-28 removed or which are each language's plumbing
+  go      go-sdk mcp.EventStore, mcp.MemoryEventStore, mcp.NewMemoryEventStore, mcp.MemoryEventStoreOptions, mcp.Event, mcp.ErrEventsPurged, mcp.ErrSessionMissing, mcp.ErrConnectionClosed, mcp.NewInMemoryTransports, mcp.InMemoryTransport, mcp.Connection, mcp.ClientSessionOptions, mcp.CloseSSEStreamArgs, mcp.DefaultMaxEventSize, mcp.DefaultMaxLineLength, mcp-go server.HeaderKeySessionID, server.ErrNoActiveSession, server.ErrNoClientSession, server.ErrUnknownEventID, server.EventStore, server.InMemoryEventStore, server.InProcessSession, server.GenerateInProcessSessionID, server.ClientSession, server.ClientSessionFromContext, server.DefaultSessionIdManagerResolver, server.InsecureStatefulSessionIdManager, client.NewInProcessClient, client.WithSession
+  rust    -
+  python  mcp.server.session, mcp.server.connection, mcp.client.session, mcp.client.session_group, mcp.client.Transport, mcp.client.IncomingMessage, mcp.client.ClaimContext, mcp.client.ResultClaim, mcp.client.UnexpectedClaimedResult
+
+dropped  hooks, contexts, handler registration by closure, custom methods and the reflection that makes a schema from a type
+  go      go-sdk mcp.AddReceivingCustomMethod, mcp.AddSendingCustomMethod, mcp.CallCustomMethod, mcp-go server.Hooks, server.BeforeAnyHookFunc, server.HTTPContextFunc, server.DynamicBasePathFunc, server.ServerFromContext, server.NotificationHandlerFunc, server.ErrLoadShedding, client.WithTracer, mcp-go mcp.WithString and the schema builders
+  rust    -
+  python  mcp.server.context, mcp.server.models, mcp.server.lowlevel, mcp.server.NotificationOptions, mcp.server.ServerRequestContext, mcp.client.ClientRequestContext, mcp.client.context, mcp.MCPDeprecationWarning
+  note    A schema is written as the JSON it is; a custom method is `send_request` on a client and `handle`'s -32601 refused on a server unless the program reads the message itself

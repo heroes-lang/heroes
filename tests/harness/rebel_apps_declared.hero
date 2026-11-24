@@ -1,6 +1,6 @@
-# What an application of `examples-rebel/` declares beside its
+# What an application of `rebel/examples/` declares beside its
 # `main.expected` about the machines its demo runs on
-# (`examples-rebel/README.md` § A10), read by the check of Rebel's programs
+# (`rebel/examples/README.md` § A10), read by the check of Rebel's programs
 # (`rebel_apps.hero`), and the one comparison that reads it:
 #
 #   main.varies   a line of the transcript a machine prints in another form,

@@ -433,7 +433,7 @@ test "each rule of the docs check fires on its witness, and the shape beside it 
     assert told(findings(given)[8]) == "x/broken: refused: `heroes doc <rebel>/x/broken` exits 1: error[doc_missing_parameter]: no line"
 
 test "a catalogue's path climbs from its folder to the source by `../`, forward slashes alone"
-    assert climbed(folder: "build/harness-12/rebel-doc", root: "packages/rebel/0.1.0/files") == "../../../packages/rebel/0.1.0/files"
+    assert climbed(folder: "build/harness-12/rebel-doc", root: "rebel/library/0.1.0/files") == "../../../rebel/library/0.1.0/files"
     assert climbed(folder: "./x//y", root: "r") == "../../r"
 
 test "a list ends at its first other word, and a signature's answer is read past a function type"

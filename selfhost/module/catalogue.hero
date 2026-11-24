@@ -363,14 +363,14 @@ function sum_of(digit: str) -> str
     return "sha256-" + digit.repeat(64.to_u64().must())
 
 test "a catalogue of the three sources reads, and none is none"
-    text = "# the program's packages\nindex = \"https://index.example.org/heroes\"\n\n[dependencies.json]\nversion = \"1.4.2\"  # pinned\nsum = \"" + sum_of("a") + "\"\n\n[dependencies.yaml]\ngit = \"https://git.example.org/ana/yaml\"\ntag = \"v0.3.1\"\ncommit = \"" + "b".repeat(40.to_u64().must()) + "\"\nsum = \"" + sum_of("c") + "\"\n\n[dependencies.rebel]\npath = \"../packages/rebel\"\n"
+    text = "# the program's packages\nindex = \"https://index.example.org/heroes\"\n\n[dependencies.json]\nversion = \"1.4.2\"  # pinned\nsum = \"" + sum_of("a") + "\"\n\n[dependencies.yaml]\ngit = \"https://git.example.org/ana/yaml\"\ntag = \"v0.3.1\"\ncommit = \"" + "b".repeat(40.to_u64().must()) + "\"\nsum = \"" + sum_of("c") + "\"\n\n[dependencies.rebel]\npath = \"../rebel/library/0.1.0/files\"\n"
     c = parsed(file: "heroes.toml", text: text)
     assert c.problem == ""
     assert c.index == "https://index.example.org/heroes"
     assert c.entries.len() == 3
     assert entry(c, name: "json").must().version == "1.4.2"
     assert entry(c, name: "yaml").must().tag == "v0.3.1"
-    assert entry(c, name: "rebel").must().path == "../packages/rebel"
+    assert entry(c, name: "rebel").must().path == "../rebel/library/0.1.0/files"
     assert entry(c, name: "toml").is_err()
     absent = read(opened: "build/selftest-no-catalogue-here/", named: "build/selftest-no-catalogue-here/")
     assert absent.file == "" && absent.problem == "" && absent.entries.len() == 0

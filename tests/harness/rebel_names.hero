@@ -1,5 +1,5 @@
 # The coherence review's instrument of names (M-rebel-library's item 31): **a
-# name the grammar of names does not allow**, `examples-rebel/README.md` § A3,
+# name the grammar of names does not allow**, `rebel/examples/README.md` § A3,
 # each rule a machine can ask of a declaration:
 #
 #   case        a function's and a parameter's name in `snake_case`,

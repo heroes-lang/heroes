@@ -1,5 +1,5 @@
 # The coherence review's first instrument (M-rebel-library's item 31): **the
-# same capability marked done in two ledgers.** A ledger (`examples-rebel/
+# same capability marked done in two ledgers.** A ledger (`rebel/examples/
 # README.md` § A8) writes one block per capability, `capability <id>  <what>`,
 # and its `heroes` line names what does it: a function or a type, `built-in`,
 # `refused:` or `pending`. A block is **done** where its `heroes` line names

@@ -2,7 +2,7 @@ Heroes runtime exception, version 1.1
 
 This exception accompanies the Apache License, Version 2.0 (see LICENSE). It
 applies to the files in `runtime/` — the Heroes C runtime — and to the files in
-`packages/rebel/` — Rebel, the library a Heroes program may take or leave —
+`rebel/library/` — Rebel, the library a Heroes program may take or leave —
 and to the C source and binaries that the Heroes compiler produces from them.
 
 Why it exists. Compiling a Heroes program emits C that `#include`s
@@ -29,7 +29,7 @@ the runtime and the library travelling inside them change nothing about that.
 
 What the exception does not cover. The Apache License applies in full to the
 Heroes runtime *itself* and to Rebel *itself* — to distributing `runtime/` or
-`packages/rebel/` as source, apart from the placed copy above, as part of a
+`rebel/library/` as source, apart from the placed copy above, as part of a
 distribution of the Heroes compiler or of Rebel, or as part of a work derived
 from either. Attribution is owed by whoever redistributes Heroes or Rebel;
 never by somebody who merely uses them. Material by others that Rebel carries,

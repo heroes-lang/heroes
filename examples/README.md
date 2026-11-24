@@ -120,7 +120,7 @@ that did took a package from a local static index at the repository's root,
 `packages/`, each through a catalogue `heroes.toml` and the tree `heroes add`
 placed beside it; the milestone removed that package.
 `packages/` now holds Rebel, the optional library, and the programs that use
-it stand in `examples-rebel/`, beside this folder, with one catalogue among
+it stand in `rebel/examples/`, beside this folder, with one catalogue among
 them.
 
 ## `gallery/`

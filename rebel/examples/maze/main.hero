@@ -1,0 +1,132 @@
+# The twin of `examples/maze/`: the shortest way from `S` to `E`, drawn,
+# written with Rebel. It prints byte for byte what `examples/maze/` prints
+# from the same arguments, so that program's `main.expected` is this one's
+# test too.
+#
+#     heroes run rebel/examples/maze/main.hero -- examples/maze/sample.maze
+#
+#     main.hero    the program: arguments, the file, the drawing
+#     solve.hero   breadth-first search, and the path it found
+#     grid.hero    the rectangle, and a position as one number
+#
+# What Rebel does here that `examples/maze/` writes for itself:
+#
+# - `strings.lines` reads the file's rows, in place of that program's
+#   `strings.hero` (`split_lines`);
+# - `sets.from_list` and `sets.contains` hold the squares of the way and the
+#   squares one step away, in place of its map built by hand and its
+#   `contains`;
+# - `lists.reverse` turns the way round, in place of its `reversed`;
+# - `unicode.from_code_point` writes a mark as text, in place of its
+#   `one_char`, which knows only the three marks it spells out.
+#
+# What stays this program's own is the maze and its search: a rectangle with
+# one start and one goal, a position as one number, the four steps from a
+# square, the breadth-first search (`solve.hero` says why Rebel's
+# `graphs.shortest_path` is not asked instead), and the drawing, where `S` and
+# `E` keep their own letters.
+
+use <rebel>/sets
+
+use grid
+use solve
+
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program ends as its
+# other usage errors do, where `args()` would abort.
+function text_arguments() -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                print(f"maze: argument {given.len() + 1} is not UTF-8")
+                exit(code: 2)
+
+    return given
+
+function main()
+    given = text_arguments()
+
+    if given.len() == 0
+        print("usage: maze <file.maze>")
+        exit(code: 2)
+
+    match read_file(given[0])
+        .err e   => stop("cannot read " + given[0] + ": " + e.code)
+        .ok text => lay_out(text)
+
+# Every unhappy ending in one place, so the exit code is decided once.
+#
+# - `message`: what is printed before the program ends with 1.
+function stop(message: str)
+    print(message)
+    exit(code: 1)
+
+# The maze `text` holds, solved, or why it could not be read.
+#
+# - `text`: the file's text.
+function lay_out(text: str)
+    match grid.read(text)
+        .err e => stop(e.code + ": " + e.msg)
+        .ok g  => walk(g)
+
+# The shortest way through `g` drawn, or why there is none.
+#
+# - `g`: the maze.
+function walk(g: grid.Grid)
+    match solve.solve(g)
+        .err e   => stop(e.code + ": " + e.msg)
+        .ok path => show(g, path)
+
+# The drawing and the count of its steps, printed.
+#
+# - `g`: the maze.
+# - `path`: the way, start first.
+function show(g: grid.Grid, path: [i64])
+    for line in drawn(g, path)
+        print(line)
+
+    print("steps: ", solve.steps(path))
+
+# The maze with the path marked. `S` and `E` keep their own letters: a drawing
+# that overwrote them would be a drawing you cannot check against the file.
+#
+# - `g`: the maze.
+# - `path`: the squares of the way, any order.
+function drawn(g: grid.Grid, path: [i64]) -> [str]
+    on = sets.from_list(path)
+    out: [str] @= []
+
+    for row in range(from: 0, to: g.height)
+        pieces: [str] @= []
+
+        for column in range(from: 0, to: g.width)
+            index = grid.index_of(g, row: row, column: column)
+            here = grid.at(g, index)
+
+            if here == grid.WALL || here == grid.START || here == grid.GOAL
+                pieces @ pieces.push(grid.mark_text(here))
+            else if sets.contains(on, element: index)
+                pieces @ pieces.push("*")
+            else
+                pieces @ pieces.push(".")
+
+        out @ out.push(join(pieces, ""))
+
+    return out
+
+test "the sample's shortest way is drawn as the file's own maze"
+    g = grid.read(read_file("examples/maze/sample.maze").must()).must()
+    path = solve.solve(g).must()
+    assert solve.steps(path) == 25
+    assert solve.is_walkable(g, path)
+    picture = drawn(g, path)
+    assert picture.len() == g.height
+    assert picture[0] == "S.#*******"
+
+test "the drawing marks exactly the path, and never the two letters"
+    g = grid.read("S..\n.#.\n..E\n").must()
+    path = solve.solve(g).must()
+    assert drawn(g, path) == ["S..", "*#.", "**E"]

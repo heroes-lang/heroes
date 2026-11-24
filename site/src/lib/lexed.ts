@@ -11,7 +11,7 @@
  * editor's plugin*. So this asks the lexer itself, three ways.
  *
  * - **Every program the site colours**, the `.hero` files under `examples/`
- *   and those of `examples-rebel/` that are no package's driver,
+ *   and those of `rebel/examples/` that are no package's driver,
  *   token for token: each token the lexer prints with text is one token here,
  *   of a class its kind may take, and nothing here is a token the lexer does
  *   not have but whitespace. The lexer says `ident` where the parser decides,
@@ -358,9 +358,9 @@ export function assertColouringLexed(): string {
   const programs = walk('examples').filter((path) => path.endsWith('.hero'));
   if (programs.length < PROGRAMS_FLOOR) throw new Error(`examples/: ${programs.length} programs, and the floor is ${PROGRAMS_FLOOR}.`);
   // And the programs written with Rebel the site shows: every `.hero` of
-  // `examples-rebel/` but a package's driver, which no page colours
+  // `rebel/examples/` but a package's driver, which no page colours
   // (`examples-model.ts`).
-  programs.push(...walk('examples-rebel').filter((path) => path.endsWith('.hero') && !/\/reach_[a-z0-9_]+\.hero$/.test(path)));
+  programs.push(...walk('rebel/examples').filter((path) => path.endsWith('.hero') && !/\/reach_[a-z0-9_]+\.hero$/.test(path)));
   let tokens = 0;
   for (const path of programs) {
     const asked = ask(heroes, ['lex', path, '--dump-tokens', '--json']);

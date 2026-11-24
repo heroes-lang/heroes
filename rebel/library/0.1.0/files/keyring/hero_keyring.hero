@@ -1,0 +1,353 @@
+# The platform layer's keyring, `hero_keyring.h`, bound thin: one function per
+# C function, each answering what C answers, in C's order. Where a call fails
+# it answers -1, and `last_error` then names the kind, `last_message` the
+# system's own words. Rebel's floor of `keyring` (`rebel/examples/README.md`
+# § A2): no policy stands here, and the face above it turns every kind into a
+# code and every buffer into a value.
+#
+# The layer is C of the language's own beside the runtime, so this group names
+# its header and no `link`: on macOS the member links the Security framework
+# itself, on Windows the Credential Manager's library, and on Linux it opens
+# libsecret at its first call, so the same lines bind it everywhere. No call
+# hands out a handle: the store is the system's, and each call is whole.
+#
+# A service and an account cross as `cstr`, so a name holding a zero byte
+# aborts at `.cstr()` before C runs: the face refuses one first, `invalid`.
+
+use bytes
+use os
+
+extern "hero_keyring.h"
+    # The kinds of failure `last_error` answers, the same numbers on every
+    # platform.
+    constant HERO_KEYRING_OK: i64
+    constant HERO_KEYRING_INVALID: i64
+    constant HERO_KEYRING_NOT_FOUND: i64
+    constant HERO_KEYRING_DENIED: i64
+    constant HERO_KEYRING_LIMIT: i64
+    constant HERO_KEYRING_UNSUPPORTED: i64
+    constant HERO_KEYRING_OTHER: i64
+    # The most bytes a service or an account holds, and a secret.
+    constant HERO_KEYRING_NAME_MOST: i64
+    constant HERO_KEYRING_SECRET_MOST: i64
+    function hero_keyring_system(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_keyring_store(service: cstr lent, account: cstr lent, @secret: [u8] counted_by n lent, n: u64) -> i64
+    function hero_keyring_read(service: cstr lent, account: cstr lent, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_keyring_remove(service: cstr lent, account: cstr lent) -> i64
+    function hero_keyring_remove_all(service: cstr lent) -> i64
+    function hero_keyring_accounts(service: cstr lent, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_keyring_last_error() -> i64
+    function hero_keyring_last_os_error() -> i64
+    function hero_keyring_last_message(@buffer: [u8] counted_by n lent, n: u64) -> i64
+
+# The length of the name of the store this machine offers, its UTF-8 written
+# into `buffer`, `n` long, where it fits; or -1, `HERO_KEYRING_UNSUPPORTED`
+# where the machine has none. It leaves `buffer` `n` bytes long, the name's
+# first.
+#
+# - `buffer`: where the name is written, from its first byte, where it fits;
+#   left `n` long.
+# - `n`: the bytes `buffer` holds; 0 asks the length alone, and a shorter room
+#   than the name gets nothing written and the length all the same.
+function system(@buffer: [u8], n: u64) -> i64
+    return hero_keyring_system(@buffer, n: n)
+
+# 0 once the first `n` bytes of `secret` stand under `service` and `account`,
+# replacing what stood there; or -1. Aborts where `service` or `account` holds
+# a zero byte.
+#
+# - `service`: the service's name, UTF-8, 1 to `HERO_KEYRING_NAME_MOST` bytes,
+#   else `HERO_KEYRING_INVALID`; it aborts where it holds a zero byte.
+# - `account`: the account's name, UTF-8, at most `HERO_KEYRING_NAME_MOST`
+#   bytes and possibly empty; it aborts where it holds a zero byte.
+# - `secret`: the bytes stored, any bytes; left as it was handed.
+# - `n`: how many of `secret`'s first bytes to store, at most
+#   `HERO_KEYRING_SECRET_MOST`, else `HERO_KEYRING_INVALID`.
+function store(service: str, account: str, @secret: [u8], n: u64) -> i64
+    return hero_keyring_store(service: service.cstr(), account: account.cstr(), @secret, n: n)
+
+# The length of the secret under `service` and `account`, its bytes written
+# into `buffer`, `n` long, where they fit and nothing written where they do
+# not; or -1, `HERO_KEYRING_NOT_FOUND` where none stands. It leaves `buffer`
+# `n` bytes long. Aborts where a name holds a zero byte.
+#
+# - `service`: the service's name, UTF-8, 1 to `HERO_KEYRING_NAME_MOST` bytes;
+#   it aborts where it holds a zero byte.
+# - `account`: the account's name, possibly empty; it aborts where it holds a
+#   zero byte.
+# - `buffer`: where the secret is written, from its first byte, where it fits;
+#   left `n` long.
+# - `n`: the bytes `buffer` holds; a shorter room than the secret gets nothing
+#   written and the length all the same, so the caller asks again with room.
+function read(service: str, account: str, @buffer: [u8], n: u64) -> i64
+    return hero_keyring_read(service: service.cstr(), account: account.cstr(), @buffer, n: n)
+
+# 0 once the secret under `service` and `account` is gone; or -1,
+# `HERO_KEYRING_NOT_FOUND` where none stood. Aborts where a name holds a zero
+# byte.
+#
+# - `service`: the service's name, UTF-8, 1 to `HERO_KEYRING_NAME_MOST` bytes;
+#   it aborts where it holds a zero byte.
+# - `account`: the account's name, possibly empty; it aborts where it holds a
+#   zero byte.
+function remove(service: str, account: str) -> i64
+    return hero_keyring_remove(service: service.cstr(), account: account.cstr())
+
+# 0 once no secret stands under `service`, also where none stood; or -1.
+# Aborts where `service` holds a zero byte.
+#
+# - `service`: the service whose every secret is removed, whatever its
+#   account; it aborts where it holds a zero byte.
+function remove_all(service: str) -> i64
+    return hero_keyring_remove_all(service.cstr())
+
+# The bytes the accounts holding a secret under `service` take, each one's
+# UTF-8 then a zero byte, written into `buffer`, `n` long, where they fit and
+# nothing written where they do not; 0 where none holds one; or -1. It leaves
+# `buffer` `n` bytes long. Aborts where `service` holds a zero byte.
+#
+# - `service`: the service's name, UTF-8, 1 to `HERO_KEYRING_NAME_MOST` bytes;
+#   it aborts where it holds a zero byte.
+# - `buffer`: where the accounts are written, in the order the store gives
+#   them, where they fit; left `n` long. An account that is no UTF-8 or holds
+#   a zero byte is left out.
+# - `n`: the bytes `buffer` holds; a shorter room than the accounts take gets
+#   nothing written and the bytes all the same.
+function accounts(service: str, @buffer: [u8], n: u64) -> i64
+    return hero_keyring_accounts(service.cstr(), @buffer, n: n)
+
+# The kind of the last call's failure on this thread.
+function last_error() -> i64
+    return hero_keyring_last_error()
+
+# The platform's own number for that failure, 0 where the layer refused.
+function last_os_error() -> i64
+    return hero_keyring_last_os_error()
+
+# How many bytes of that failure's words, never a secret, are written into
+# `buffer`, `n` long; or -1 where `n` is 0. It leaves `buffer` `n` bytes long.
+#
+# - `buffer`: where the words are written as UTF-8, cut where a character ends
+#   to fit; left `n` long.
+# - `n`: the bytes `buffer` holds, 1 or more; 0 is `HERO_KEYRING_INVALID`.
+function last_message(@buffer: [u8], n: u64) -> i64
+    return hero_keyring_last_message(@buffer, n: n)
+
+# A service no other program and no other run names, for a test that stores
+# secrets: `heroes-keyring-test-`, `what`, and sixteen hexadecimal digits the
+# system drew. Aborts where the system draws no random bytes.
+#
+# - `what`: the test's own word, which stands in the middle of the name.
+function test_service(what: str) -> str
+    return f"heroes-keyring-test-{what}-{bytes.format_hex(os.random_bytes(8).must())}"
+
+## The tests: the edges first. Each test that stores asks whether this machine
+## has a keyring; where it has none, the test holds that its calls are refused
+## and then ends skipped, naming the refusal, so a machine with no keyring
+## never reads as one whose keyring was tested. A test removes what it stored
+## before it asserts anything, so a failing assert leaves nothing in the
+## keyring.
+
+# Whether the store answers here: its kind where it does not, 0 where it does.
+function refusal() -> i64
+    room: [u8] @= []
+
+    if system(@room, n: 0) >= 0
+        return 0
+    return last_error()
+
+# `n` bytes, each `byte`.
+#
+# - `n`: how many bytes, 0 or more.
+# - `byte`: the value of each.
+function filled(n: i64, byte: u8) -> [u8]
+    out: [u8] @= []
+
+    for _ in range(from: 0, to: n)
+        out @ out.push(byte)
+
+    return out
+
+# `n` bytes of the text "a", as a name.
+#
+# - `n`: how many bytes the name is, 0 or more.
+function long_name(n: i64) -> str
+    return repeat("a", to_u64(n).must())
+
+test "system: no room answers the length alone, a buffer gets one of the three names, or no store here"
+    none: [u8] @= []
+    length = system(@none, n: 0)
+    room: [u8] @= []
+
+    if length >= 0
+        assert length > 0
+        got = system(@room, n: 64)
+        assert got == length
+        name = bytes.to_text(room.slice(from: 0, to: got)).must()
+        assert name == "macOS Keychain" || name == "Windows Credential Manager" || name == "Secret Service"
+        assert last_error() == HERO_KEYRING_OK
+    else
+        kind = last_error()
+        assert kind == HERO_KEYRING_UNSUPPORTED || kind == HERO_KEYRING_DENIED
+        skip_test(reason: f"no keyring this program may use: `system` was refused, kind {kind}")
+
+test "store, read, remove, accounts: an empty service, a name past HERO_KEYRING_NAME_MOST and a secret past HERO_KEYRING_SECRET_MOST are refused before the store is asked"
+    secret: [u8] @= [1]
+    room: [u8] @= []
+    assert store(service: "", account: "a", @secret, n: 1) == -1
+    assert last_error() == HERO_KEYRING_INVALID
+    assert read(service: "", account: "a", @room, n: 8) == -1
+    assert last_error() == HERO_KEYRING_INVALID
+    assert remove(service: "", account: "a") == -1
+    assert last_error() == HERO_KEYRING_INVALID
+    assert remove_all("") == -1
+    assert last_error() == HERO_KEYRING_INVALID
+    assert accounts("", @room, n: 8) == -1
+    assert last_error() == HERO_KEYRING_INVALID
+    long = long_name(HERO_KEYRING_NAME_MOST + 1)
+    assert store(service: long, account: "a", @secret, n: 1) == -1
+    assert last_error() == HERO_KEYRING_INVALID
+    assert read(service: "s", account: long, @room, n: 8) == -1
+    assert last_error() == HERO_KEYRING_INVALID
+    big @= filled(n: HERO_KEYRING_SECRET_MOST + 1, byte: 7)
+    assert store(service: "heroes-keyring-test-never", account: "a", @big, n: to_u64(big.len()).must()) == -1
+    assert last_error() == HERO_KEYRING_INVALID
+    assert last_os_error() == 0
+
+test "last_message: no room is refused; after a refusal it names what was refused and holds no secret"
+    none: [u8] @= []
+    assert last_message(@none, n: 0) == -1
+    assert last_error() == HERO_KEYRING_INVALID
+    secret: [u8] @= [115, 101, 99, 114, 101, 116]
+    assert store(service: "", account: "a", @secret, n: 6) == -1
+    words: [u8] @= []
+    got = last_message(@words, n: 200)
+    assert got > 0
+    text = bytes.to_text(words.slice(from: 0, to: got)).must()
+    assert text == "the service is empty"
+    short: [u8] @= []
+    assert last_message(@short, n: 4) == 4
+    assert bytes.to_text(short).must() == "the "
+
+test "store, read, remove: a secret of every byte value, read whole, read short, replaced, removed, then absent twice"
+    refused = refusal()
+    service = test_service("floor-cycle")
+    first @= range(from: 0, to: 256).map(to_u8_wrapped)
+    second: [u8] @= [0, 255, 0]
+    stored = store(service: service, account: "alice", @first, n: 256)
+    whole: [u8] @= []
+    read_whole = read(service: service, account: "alice", @whole, n: 300)
+    short: [u8] @= []
+    read_short = read(service: service, account: "alice", @short, n: 10)
+    replaced = store(service: service, account: "alice", @second, n: 3)
+    again: [u8] @= []
+    read_again = read(service: service, account: "alice", @again, n: 300)
+    removed = remove(service: service, account: "alice")
+    gone: [u8] @= []
+    read_gone = read(service: service, account: "alice", @gone, n: 300)
+    gone_kind = last_error()
+    removed_again = remove(service: service, account: "alice")
+    removed_kind = last_error()
+    assert remove_all(service) == 0 || refused != 0
+
+    if refused == 0
+        assert stored == 0
+        assert read_whole == 256
+        assert whole.slice(from: 0, to: 256) == range(from: 0, to: 256).map(to_u8_wrapped)
+        assert read_short == 256
+        assert short == filled(n: 10, byte: 0)
+        assert replaced == 0
+        assert read_again == 3
+        assert again.slice(from: 0, to: 3) == [0, 255, 0]
+        assert removed == 0
+        assert read_gone == -1
+        assert gone_kind == HERO_KEYRING_NOT_FOUND
+        assert removed_again == -1
+        assert removed_kind == HERO_KEYRING_NOT_FOUND
+    else
+        assert stored == -1
+        assert read_whole == -1
+        skip_test(reason: f"no keyring this program may use: every call was refused as `system` was, kind {refused}")
+
+# The byte `n` holds, for a list of every byte value.
+#
+# - `n`: 0 or more, kept modulo 256.
+function to_u8_wrapped(n: i64) -> u8
+    return to_u8(n % 256).must()
+
+test "store, read: an empty secret, an empty account, names of more than one byte, and names of HERO_KEYRING_NAME_MOST bytes"
+    refused = refusal()
+    service = test_service("floor-edges") + "-héros-✓"
+    account = "ünïcode 🔑"
+    empty: [u8] @= []
+    stored_empty = store(service: service, account: "", @empty, n: 0)
+    room: [u8] @= []
+    read_empty = read(service: service, account: "", @room, n: 16)
+    one: [u8] @= [42]
+    stored_text = store(service: service, account: account, @one, n: 1)
+    back: [u8] @= []
+    read_text = read(service: service, account: account, @back, n: 16)
+    longest = long_name(HERO_KEYRING_NAME_MOST)
+    stored_long = store(service: service, account: longest, @one, n: 1)
+    long_back: [u8] @= []
+    read_long = read(service: service, account: longest, @long_back, n: 16)
+    full @= filled(n: HERO_KEYRING_SECRET_MOST, byte: 9)
+    stored_full = store(service: service, account: "full", @full, n: to_u64(full.len()).must())
+    full_back: [u8] @= []
+    read_full = read(service: service, account: "full", @full_back, n: to_u64(HERO_KEYRING_SECRET_MOST).must())
+    cleared = remove_all(service)
+
+    if refused == 0
+        assert cleared == 0
+        assert stored_empty == 0
+        assert read_empty == 0
+        assert stored_text == 0
+        assert read_text == 1
+        assert back[0] == 42
+        assert stored_long == 0
+        assert read_long == 1
+        assert stored_full == 0
+        assert read_full == HERO_KEYRING_SECRET_MOST
+        assert full_back == filled(n: HERO_KEYRING_SECRET_MOST, byte: 9)
+    else
+        assert stored_empty == -1
+        assert cleared == -1
+        skip_test(reason: f"no keyring this program may use: every call was refused as `system` was, kind {refused}")
+
+test "accounts, remove_all: none is 0, two accounts listed each with its zero, a short buffer gets nothing, then all removed and none again"
+    refused = refusal()
+    service = test_service("floor-accounts")
+    room: [u8] @= []
+    before = accounts(service, @room, n: 64)
+    secret: [u8] @= [1, 2]
+    stored_a = store(service: service, account: "ann", @secret, n: 2)
+    stored_b = store(service: service, account: "bob", @secret, n: 2)
+    listed: [u8] @= []
+    both = accounts(service, @listed, n: 64)
+    short: [u8] @= []
+    both_short = accounts(service, @short, n: 3)
+    cleared = remove_all(service)
+    after: [u8] @= []
+    none_after = accounts(service, @after, n: 64)
+    cleared_again = remove_all(service)
+
+    if refused == 0
+        assert before == 0
+        assert stored_a == 0
+        assert stored_b == 0
+        assert both == 8
+        words = bytes.split(s: listed.slice(from: 0, to: 8), sep: [0])
+        assert words.len() == 3
+        ann: [u8] = [97, 110, 110]
+        bob: [u8] = [98, 111, 98]
+        assert words[0] == ann && words[1] == bob || words[0] == bob && words[1] == ann
+        assert words[2].len() == 0
+        assert both_short == 8
+        assert short == [0, 0, 0]
+        assert cleared == 0
+        assert none_after == 0
+        assert cleared_again == 0
+    else
+        assert before == -1
+        skip_test(reason: f"no keyring this program may use: every call was refused as `system` was, kind {refused}")
+        assert last_error() == refused

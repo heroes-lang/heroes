@@ -45,3 +45,7 @@ tests/golden/fetch/add-keeps-a-catalogues-line-ends.case/expected -text
 # they are, on every leg.
 packages/** -text
 **/heroes.packages/** -text
+# Rebel's library, which stood under `packages/` and kept that rule's bytes
+# until it moved to `rebel/library/` (the author's 1a of 2026-11-23, moved
+# 2026-11-24): a version of it is what an index publishes, file for file.
+rebel/library/** -text

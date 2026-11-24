@@ -1,5 +1,5 @@
 /**
- * Every program under `examples/` and `examples-rebel/`, as the pages need it.
+ * Every program under `examples/` and `rebel/examples/`, as the pages need it.
  *
  * The site shows the corpus itself rather than a copy of it, so this module is
  * the whole reading: it discovers the programs the way the net does, by looking,
@@ -14,19 +14,19 @@
  * reference pages read it (`reference.ts`).
  *
  * **The examples are two groups** (`.claude/rules/rebel.md`, decision 7 of
- * M-rebel-library): `examples/` uses no library, and `examples-rebel/` holds
+ * M-rebel-library): `examples/` uses no library, and `rebel/examples/` holds
  * the programs written with Rebel. The second group's programs are its
  * folders, each a project holding a `main.hero` and its own catalogue, told
  * apart as the check of Rebel's programs tells them
- * (`examples-rebel/README.md` § A10, `tests/harness/rebel_apps_run.hero`):
+ * (`rebel/examples/README.md` § A10, `tests/harness/rebel_apps_run.hero`):
  * **an application** holds its own `main.expected`, its demo's transcript;
  * **a twin** holds none and bears the name of a program of `examples/`, its
  * original, and is run with the original's arguments and input and held to
  * the original's output, which is what its page shows. One folder is no
- * program: `examples-rebel/reach/` holds the packages' drivers,
+ * program: `rebel/examples/reach/` holds the packages' drivers,
  * `reach_<package>.hero` (§ A2), each package read on its reference page and
  * not here, and their one catalogue (§ A10). A file at the top of
- * `examples-rebel/` is the README or one of the two indexes; anything else
+ * `rebel/examples/` is the README or one of the two indexes; anything else
  * there or in the drivers' folder, a folder that is neither, an application
  * bearing an original's name, or a twin declaring what the check reads of an
  * application alone, is a build error. Their slugs open
@@ -58,7 +58,7 @@
  * reads a file.
  */
 
-import { readText, walk, directoriesIn, isFile, countLines, byBytes, basename } from './repo.ts';
+import { readText, walk, directoriesIn, isDirectory, isFile, countLines, byBytes, basename } from './repo.ts';
 import { highlight, words, assertRoundTrip } from './highlight.ts';
 import { fingerprintOf, reproduceCommand, type Fingerprint } from './fingerprint.ts';
 import { splitExpectation, outputLines, type Expectation } from './expectation.ts';
@@ -66,14 +66,19 @@ import { splitExpectation, outputLines, type Expectation } from './expectation.t
 const EXAMPLES = 'examples';
 const GALLERY = 'examples/gallery';
 
-/** The local static index (panel 235's R15), at the root (panel 238's R10). */
+/**
+ * The local static index (panel 235's R15), at the root (panel 238's R10). It
+ * held Rebel's source until Rebel's library left it for `rebel/library` (the
+ * author's 1a of 2026-11-23), and no index stands in the tree until one a client
+ * can read returns; the day it does, `checkIndex` holds its shape.
+ */
 const INDEX = 'packages';
 
 /** The programs written with Rebel, the second group. */
-const REBEL = 'examples-rebel';
+const REBEL = 'rebel/examples';
 
 /**
- * The drivers' folder of `examples-rebel/`, holding every package's driver and
+ * The drivers' folder of `rebel/examples/`, holding every package's driver and
  * their one catalogue (README § A10), as `tests/harness/rebel_apps_run.hero`'s
  * `DRIVERS` names it: no program, so it has no page.
  */
@@ -86,8 +91,8 @@ const DRIVER = /^reach_[a-z0-9_]+\.hero$/;
 const CATALOGUE = 'heroes.toml';
 
 /**
- * The two indexes at the top of `examples-rebel/`, written by
- * `generators/rebel_index/` and held to the tree by its `check`: the programs'
+ * The two indexes at the top of `rebel/examples/`, written by
+ * `rebel/generators/rebel_index/` and held to the tree by its `check`: the programs'
  * short list and Rebel's packages. Pages for a reader, which no program opens,
  * so they are shown under no heading, as a program's own `README.md` is.
  */
@@ -98,9 +103,9 @@ const PLACED = 'heroes.packages';
 
 /**
  * Files that are the harness's inputs rather than the program's own data:
- * the corpus's three, and the two an application of `examples-rebel/`
+ * the corpus's three, and the two an application of `rebel/examples/`
  * declares about the machines its demo runs on, which the check of Rebel's
- * programs reads (`examples-rebel/README.md` § A10).
+ * programs reads (`rebel/examples/README.md` § A10).
  */
 const HARNESS_FILES = new Set(['main.args', 'main.expected', 'main.stdin', 'main.varies', 'main.skips']);
 
@@ -118,7 +123,7 @@ function isDocument(path: string, dir: string): boolean {
 const PROGRAM_FLOOR = 44;
 const GALLERY_FLOOR = 10;
 
-/** The drivers `examples-rebel/` held when it was first read: 160 (194 when they moved into `reach/`, 2026-11-23). */
+/** The drivers `rebel/examples/` held when it was first read: 160 (194 when they moved into `reach/`, 2026-11-23). */
 const DRIVER_FLOOR = 150;
 
 export interface SourceFile {
@@ -322,9 +327,13 @@ function fetchedOf(dir: string, paths: string[], catalogue: string | null): Fetc
  * `<name>/<version>/list` and `<name>/<version>/files/<path>`, the layout the
  * fetch verb reads (`selfhost/fetch/index_source.hero`). It is shown on no page,
  * since every program shows the tree it placed from it, and a file of another
- * kind in it is a build error, never a skip.
+ * kind in it is a build error, never a skip. Where no index stands, its absence
+ * is the one thing read.
  */
 function checkIndex(): void {
+  // Asked whether it stands, and recorded all the same (`isDirectory`): the
+  // day an index returns, the push that brings it deploys and this reads it.
+  if (!isDirectory(INDEX)) return;
   const version = '[0-9]+\\.[0-9]+\\.[0-9]+';
   const shapes = [
     new RegExp('^[a-z][a-z0-9_]*/versions$'),
@@ -546,7 +555,7 @@ export function examples(): Example[] {
   const rebel = rebelPrograms(programs);
 
   // A twin is the same program in the two groups: `examples/<name>/` and the
-  // folder of `examples-rebel/` named `<name>` that holds no transcript of its
+  // folder of `rebel/examples/` named `<name>` that holds no transcript of its
   // own, run with the original's words. Each page links the other.
   for (const one of rebel) {
     if (one.harnessDir === one.dir) continue;
@@ -563,13 +572,13 @@ export function examples(): Example[] {
 }
 
 /**
- * The programs written with Rebel, each a folder of `examples-rebel/` holding
+ * The programs written with Rebel, each a folder of `rebel/examples/` holding
  * a `main.hero`, told apart as the check of Rebel's programs tells them
  * (`tests/harness/rebel_apps_run.hero`, `program_named`): an application by
  * its own `main.expected`, read first, and a twin by its original, the
  * program of `examples/` bearing its name, whose words it is run with.
  * `originals` are `examples/`'s programs. The top of the folder holds the
- * README and the two indexes `generators/rebel_index/` writes
+ * README and the two indexes `rebel/generators/rebel_index/` writes
  * (`REBEL_INDEXES`), and the drivers' folder (`DRIVERS`) holds the drivers
  * and their catalogue (README § A2, § A10); any other file in either, a
  * folder inside the drivers', a folder holding no `main.hero`, a folder that
@@ -586,9 +595,9 @@ function rebelPrograms(originals: Example[]): Example[] {
     if (rest === 'README.md' || REBEL_INDEXES.has(rest)) continue;
     throw new Error(
       `${path} is at the top of ${REBEL}/ and is none of what stands there: the README or the two\n` +
-        `  indexes generators/rebel_index/ writes, INDEX.md and PACKAGES.md. A package's driver,\n` +
+        `  indexes rebel/generators/rebel_index/ writes, INDEX.md and PACKAGES.md. A package's driver,\n` +
         `  \`reach_<package>.hero\`, stands in ${DRIVERS}/ beside its catalogue, and a program written\n` +
-        `  with Rebel is a folder of its own, a project with its own catalogue (examples-rebel/README.md § A10).`
+        `  with Rebel is a folder of its own, a project with its own catalogue (rebel/examples/README.md § A10).`
     );
   }
   for (const path of walk(DRIVERS)) {
@@ -600,7 +609,7 @@ function rebelPrograms(originals: Example[]): Example[] {
     }
     throw new Error(
       `${path} is in ${DRIVERS}/ and is none of what stands there: a package's driver,\n` +
-        `  \`reach_<package>.hero\`, or the drivers' catalogue, ${CATALOGUE} (examples-rebel/README.md § A2, § A10).`
+        `  \`reach_<package>.hero\`, or the drivers' catalogue, ${CATALOGUE} (rebel/examples/README.md § A2, § A10).`
     );
   }
   for (const dir of directoriesIn(REBEL)) {
@@ -616,14 +625,14 @@ function rebelPrograms(originals: Example[]): Example[] {
         `${dir} is an application, holding its own main.expected, and bears the name of\n` +
           `  ${original.dir}/, a program of examples/. The site pairs the two groups' programs by name,\n` +
           `  so its page would link a program it is not the twin of: name the application otherwise\n` +
-          `  (examples-rebel/README.md § A10; M-rebel-library, the author's answer 4a, \`pipeline\` named \`ingest\`).`
+          `  (rebel/examples/README.md § A10; M-rebel-library, the author's answer 4a, \`pipeline\` named \`ingest\`).`
       );
     }
     if (!application && original === null) {
       throw new Error(
         `${dir} holds no main.expected, and ${EXAMPLES}/${name}/ holds no main.hero: it is neither an\n` +
           `  application, which carries its demo's transcript, nor a twin, which is held to its\n` +
-          `  original's (examples-rebel/README.md § A10), so its page would show nothing true about it.`
+          `  original's (rebel/examples/README.md § A10), so its page would show nothing true about it.`
       );
     }
     if (!application) {
@@ -631,7 +640,7 @@ function rebelPrograms(originals: Example[]): Example[] {
         if (isFile(`${dir}/${file}`)) {
           throw new Error(
             `${dir}/${file} stands in a twin's folder. A twin is run with its original's arguments and\n` +
-              `  input and held to its original's output on every platform (examples-rebel/README.md § A10),\n` +
+              `  input and held to its original's output on every platform (rebel/examples/README.md § A10),\n` +
               `  so this file is one the check of Rebel's programs never reads: remove it.`
           );
         }

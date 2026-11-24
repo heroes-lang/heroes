@@ -131,7 +131,7 @@ constant EXAMPLES: str
 # to fit it** (M-rebel-library step 55b): the author's decision of
 # 2026-11-15 splits the examples in two groups, the compiler's using no
 # library and Rebel's beside them, and `packages`, the one program here that
-# held a package's own tests, moved to `examples-rebel/packages/` (2026-11-19,
+# held a package's own tests, moved to `rebel/examples/packages/` (2026-11-19,
 # removed 2026-11-20 with the package it tested); the walk
 # read 55 directories with a `main.hero` that day, every other program kept.
 constant LEAST: i64

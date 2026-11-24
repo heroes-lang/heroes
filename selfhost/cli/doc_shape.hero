@@ -23,7 +23,7 @@
 #                           own word for it
 #
 # A TYPE PARAMETER (`<A>`) may have a line, before every parameter's, as
-# `examples-rebel/README.md` § A7 lets one that carries a condition the
+# `rebel/examples/README.md` § A7 lets one that carries a condition the
 # compiler cannot state; it is never owed one, since the spec calls `A` a type
 # parameter and the sentence owes a line to each parameter.
 #

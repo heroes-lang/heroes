@@ -1,6 +1,0 @@
-[dependencies.rebel]
-path = "../../packages/rebel/0.1.0/files"
-packages = ["archive", "bytes", "strings"]
-
-[dependencies.tablekit]
-path = "../tablekit"

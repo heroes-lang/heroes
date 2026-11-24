@@ -1,0 +1,177 @@
+# The generator of `compress/brotli`'s two tables of RFC 7932: its static
+# dictionary, Appendix A (`words`), and its transforms and context tables,
+# Appendix B and section 7.1 (`tables`), each written byte for byte, or
+# checked against the table in the tree.
+#
+# Its input is the RFC's text, which an RFC never changes once published,
+# fetched from `SOURCE_URL` into any folder and held to `SOURCE_SHA256`. Run
+# from the repository's root:
+#
+#     heroes run rebel/generators/brotli/main.hero -- write <rfc7932.txt>
+#     heroes run rebel/generators/brotli/main.hero -- check <rfc7932.txt>
+#
+# `write` writes the tables. `check` reads them and exits 0 where each is
+# exactly what `write` would write, and 1 where one is not, naming its first
+# line that differs. Either exits 2 where its words are not these, where the
+# text's digest is not the pinned one, or where a table it holds is not the
+# length or the CRC-32 the RFC gives for it.
+
+use <rebel>/bytes
+use <tablekit>/tablekit
+
+use rfc
+
+# Where the RFC's text is served.
+constant SOURCE_URL: str
+    "https://www.rfc-editor.org/rfc/rfc7932.txt"
+
+# The SHA-256 of the bytes `SOURCE_URL` served on `FETCHED`, in lowercase
+# hexadecimal.
+constant SOURCE_SHA256: str
+    "394abd1879e016f4eac89512c2acaf92f7b2d67feb8ab58b6b118c213be07146"
+
+# The day `SOURCE_URL` was read for `SOURCE_SHA256`.
+constant FETCHED: str
+    "2026-11-22"
+
+# The folder of the tables, from the repository's root.
+constant TABLES: str
+    tablekit.SOURCE + "/compress/brotli/internal/"
+
+# How many hexadecimal characters a piece of the dictionary holds.
+constant PIECE: i64
+    4000
+
+# The sentence every table's header says of where it comes from, up to
+# what it held to the RFC.
+function generated_lines() -> [str]
+    return [
+        "# Generated, never edited by hand: the Heroes program `rebel/generators/brotli/`"
+        "# read the RFC's text (https://www.rfc-editor.org/rfc/rfc7932.txt, SHA-256"
+        f"# {SOURCE_SHA256},"
+        f"# fetched {FETCHED}), held"
+    ]
+
+# The text of `tables`.
+#
+# - `text`: the RFC's whole text.
+#
+# Fails as `rfc.transforms` and `rfc.lut` fail.
+function tables_text(text: str) -> str?
+    head: [str] @= [
+        "# The 121 transforms of Brotli, RFC 7932 Appendix B, and the context"
+        "# tables of section 7.1, written as the appendix's own serialization (each"
+        "# transform its prefix, a zero, its kind, its suffix, a zero) and as bytes,"
+        "# all in hexadecimal."
+        "#"
+    ]
+
+    for line in generated_lines()
+        head @ head.push(line)
+
+    head @ head.push("# the tables to the lengths and CRC-32s the RFC gives (0x3d965f81;")
+    head @ head.push("# 0x8e91efb7, 0xd01a32f4, 0x0dd7a0d6), and wrote this module whole; its")
+    head @ head.push("# `check` command says whether this module is still what it writes.")
+    parts = [
+        head.join("\n")
+        tablekit.string_constant(comment: ["# The 121 transforms, serialized as the appendix says: 648 bytes."], name: "TRANSFORMS", value: bytes.format_hex(rfc.transforms(text)?))?
+        tablekit.string_constant(comment: ["# Lut0 of section 7.1, by the byte before: what UTF8 context takes of it."], name: "LUT0", value: bytes.format_hex(rfc.lut(text: text, name: "Lut0", crc: rfc.LUT0_CRC)?))?
+        tablekit.string_constant(comment: ["# Lut1 of section 7.1, by the byte before that: what UTF8 context takes of it."], name: "LUT1", value: bytes.format_hex(rfc.lut(text: text, name: "Lut1", crc: rfc.LUT1_CRC)?))?
+        tablekit.string_constant(comment: ["# Lut2 of section 7.1: the class of a byte in signed context."], name: "LUT2", value: bytes.format_hex(rfc.lut(text: text, name: "Lut2", crc: rfc.LUT2_CRC)?))?
+    ]
+    return ok(parts.join("\n\n") + "\n")
+
+# The text of `words`: the header, the dictionary in pieces of `PIECE`
+# hexadecimal characters, its size, and the function that reads it back
+# with its test.
+#
+# - `text`: the RFC's whole text.
+#
+# Fails as `rfc.dictionary` fails.
+function words_text(text: str) -> str?
+    digits = bytes.format_hex(rfc.dictionary(text)?)
+    pieces: [str] @= []
+    at @= 0
+
+    while at < digits.len()
+        end = if at + PIECE < digits.len()
+            at + PIECE
+        else
+            digits.len()
+        pieces @ pieces.push(digits.slice(from: at, to: end))
+        at @ end
+
+    head: [str] @= [
+        "# The static dictionary of Brotli, RFC 7932 Appendix A: 122,784 bytes of"
+        "# words, as hexadecimal text in pieces of 4,000 characters."
+        "#"
+    ]
+
+    for line in generated_lines()
+        head @ head.push(line)
+
+    head @ head.push("# the bytes to the length and CRC-32 (0x5136cb04) the appendix gives, and")
+    head @ head.push("# wrote this module whole; its `check` command says whether this module is")
+    head @ head.push("# still what it writes.")
+    parts = [
+        head.join("\n")
+        "use bytes"
+        tablekit.strings_constant(comment: ["# The dictionary's bytes, as hexadecimal text in pieces."], name: "HEX", items: pieces)?
+        tablekit.number_constant(comment: ["# How many bytes the dictionary holds."], name: "SIZE", value: rfc.DICTIONARY_LENGTH)
+        reader_lines().join("\n")
+    ]
+    return ok(parts.join("\n\n") + "\n")
+
+# The function `words` reads its pieces back with, and its test, which are
+# code and not data: written here as they stand in the module.
+function reader_lines() -> [str]
+    return [
+        "# The dictionary's bytes."
+        "function bytes_of() -> [u8]"
+        "    out: [u8] @= []"
+        ""
+        "    for piece in HEX"
+        "        bytes.push_all(to: @out, from: bytes.parse_hex(piece).must())"
+        ""
+        "    return out"
+        ""
+        "test \"bytes_of: every byte of the dictionary, its first word and its last\""
+        "    d = bytes_of()"
+        "    assert d.len() == SIZE"
+        ""
+        "    # \"time\", the first word of four letters."
+        "    assert d[0] == 0x74 && d[1] == 0x69 && d[2] == 0x6d && d[3] == 0x65"
+        "    assert d[SIZE - 1] == 190"
+    ]
+
+# Does what `command` asks with both tables, reading the RFC at `path`, and
+# answers the worse code it reached.
+#
+# - `command`: `write` or `check`.
+# - `path`: the RFC's text, as fetched from `SOURCE_URL`.
+#
+# Fails as reading the text, reading its tables and writing or reading a
+# table fail.
+function run(command: str, path: str) -> i64?
+    text = tablekit.pinned_text(path: path, sha256: SOURCE_SHA256)?
+    tables = tables_text(text)?
+    words = words_text(text)?
+    code = tablekit.settle(command: command, path: TABLES + "tables.hero", text: tables)?
+    return ok(tablekit.worst(a: code, b: tablekit.settle(command: command, path: TABLES + "words.hero", text: words)?))
+
+function main()
+    words = tablekit.command_words("brotli")
+
+    if words.len() != 2 || words[0] != "write" && words[0] != "check"
+        print(
+            "usage, from the repository's root: heroes run rebel/generators/brotli/main.hero -- write|check <rfc7932.txt of ",
+            SOURCE_URL,
+            ">"
+        )
+        exit(code: 2)
+
+    match run(command: words[0], path: words[1])
+        .ok code => exit(code: code)
+        .err e =>
+            print("error: ", e.code, ": ", e.msg)
+            exit(code: 2)

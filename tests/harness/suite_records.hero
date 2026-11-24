@@ -18,6 +18,7 @@ use issue_pace
 use issue_wire
 use item_shape
 use md_links
+use package_rules
 use placed_trees
 use portable
 use records_github
@@ -189,69 +190,69 @@ constant FOREIGN_DATA: [str]
     [
         # CLDR 49's collation elements, six characters each of an alphabet
         # holding `+` and `/`.
-        "packages/rebel/0.1.0/files/i18n/collate/internal/collate_tables.hero numbered"
+        "rebel/library/0.1.0/files/i18n/collate/internal/collate_tables.hero numbered"
         # CLDR 49's calendars: `M11` a month's number, `M-d` a skeleton, and
         # every locale's words, Italian's among them.
-        "packages/rebel/0.1.0/files/i18n/dates/internal/date_tables.hero numbered names english"
+        "rebel/library/0.1.0/files/i18n/dates/internal/date_tables.hero numbered names english"
         # ICU 79.1's answers, `31 M12 1999` among them.
-        "packages/rebel/0.1.0/files/i18n/dates/internal/icu_cases.hero numbered"
+        "rebel/library/0.1.0/files/i18n/dates/internal/icu_cases.hero numbered"
         # CLDR 49's display names, each locale's row of entries five
         # characters each of an alphabet holding letters and digits, `M900`
         # and `M737` among them. **A row added after the list's day,
         # 2026-11-24** (defect d-gap-net2-1): the table was born at
         # M-rebel-library's step 137e, and `records/numbered` reported it at
         # that merge (`M900`, `M6`, `M8`, `M737`).
-        "packages/rebel/0.1.0/files/i18n/names/internal/name_tables.hero numbered"
+        "rebel/library/0.1.0/files/i18n/names/internal/name_tables.hero numbered"
         # CLDR 49's number patterns.
-        "packages/rebel/0.1.0/files/i18n/numbers/internal/number_tables.hero numbered"
+        "rebel/library/0.1.0/files/i18n/numbers/internal/number_tables.hero numbered"
         # SVG path data, `M0 0`. **A row added after the list's day,
         # 2026-11-23**: `image/vector.hero` was born at M-rebel-library's step
         # 1111, so the base the paragraph above names could not have reported
         # it; it is read apart by its exact path, as `qr/internal/render.hero`
         # below is, and `records/numbered` reported it at that gate.
-        "packages/rebel/0.1.0/files/image/vector.hero numbered"
+        "rebel/library/0.1.0/files/image/vector.hero numbered"
         # The LDAP fake's script, whose `expect: "*"` reads as a quotation's
         # opening `*"`.
-        "packages/rebel/0.1.0/files/ldap/internal/fake.hero english"
+        "rebel/library/0.1.0/files/ldap/internal/fake.hero english"
         # A TrueType font in base64, `M0Nx...`. **A row added after the list's
         # day, 2026-11-23**, for the same reason as `image/vector.hero`'s: the
         # file was born at M-rebel-library's step 1092 and `records/numbered`
         # reported it at that gate.
-        "packages/rebel/0.1.0/files/pdf/internal/font_samples.hero numbered"
+        "rebel/library/0.1.0/files/pdf/internal/font_samples.hero numbered"
         # ISO/IEC 18004's Micro QR versions, M1 to M4.
-        "packages/rebel/0.1.0/files/qr.ledger numbered"
+        "rebel/library/0.1.0/files/qr.ledger numbered"
         # SVG path data, `M1,1h2v1h-2z`.
-        "packages/rebel/0.1.0/files/qr/internal/render.hero numbered"
+        "rebel/library/0.1.0/files/qr/internal/render.hero numbered"
         # A checksum in base64, `M3eFcAZSQlc=`.
-        "packages/rebel/0.1.0/files/s3.hero numbered"
-        "packages/rebel/0.1.0/files/s3/internal/checksums.hero numbered"
+        "rebel/library/0.1.0/files/s3.hero numbered"
+        "rebel/library/0.1.0/files/s3/internal/checksums.hero numbered"
         # POSIX TZ rules, `M3.5.0` the last Sunday of March.
-        "packages/rebel/0.1.0/files/time.hero numbered"
-        "packages/rebel/0.1.0/files/time/internal/tzif.hero numbered"
-        "packages/rebel/0.1.0/files/time/internal/zone_files.hero numbered"
-        "packages/rebel/0.1.0/files/time/internal/zone_rule.hero numbered"
-        "packages/rebel/0.1.0/files/time/internal/zone_table.hero numbered"
+        "rebel/library/0.1.0/files/time.hero numbered"
+        "rebel/library/0.1.0/files/time/internal/tzif.hero numbered"
+        "rebel/library/0.1.0/files/time/internal/zone_files.hero numbered"
+        "rebel/library/0.1.0/files/time/internal/zone_rule.hero numbered"
+        "rebel/library/0.1.0/files/time/internal/zone_table.hero numbered"
         # Zone files in base64.
-        "packages/rebel/0.1.0/files/time/internal/carried_blobs.hero numbered"
+        "rebel/library/0.1.0/files/time/internal/carried_blobs.hero numbered"
         # A certificate and a key in base64.
-        "packages/rebel/0.1.0/files/tls/internal/fixture.hero numbered"
-        "packages/rebel/0.1.0/files/x509/internal/samples.hero numbered"
+        "rebel/library/0.1.0/files/tls/internal/fixture.hero numbered"
+        "rebel/library/0.1.0/files/x509/internal/samples.hero numbered"
         # A key `openssl` wrote, in base64, `M1uTCEcv...`. **A row added after
         # the list's day, 2026-11-23**: the file was born at M-rebel-library's
         # step 110.1, so the base the paragraph above names could not have
         # reported it; it is read apart as `samples.hero` beside it is, by its
         # exact path, and `records/numbered` reported this file at that gate (`M1uT`).
-        "packages/rebel/0.1.0/files/x509/internal/openssl.hero numbered"
+        "rebel/library/0.1.0/files/x509/internal/openssl.hero numbered"
         # PKCS #12 files OpenSSL, Python and Java wrote, in base64, `M6tF...`
         # and `M3yf...`. **Rows added after the list's day, 2026-11-24**: the
         # files were born at M-rebel-library's step 133d, and
         # `records/numbered` reported them at that step (`M6tF`, `M3yf`).
-        "packages/rebel/0.1.0/files/x509/pkcs12/internal/samples.hero numbered"
-        "packages/rebel/0.1.0/files/x509/pkcs12/internal/written.hero numbered"
+        "rebel/library/0.1.0/files/x509/pkcs12/internal/samples.hero numbered"
+        "rebel/library/0.1.0/files/x509/pkcs12/internal/written.hero numbered"
         # tiktoken's `o200k_base` ranks, their tokens in base64.
-        "packages/rebel/0.1.0/files/tokenizer/tables/internal/o200k_base.hero numbered"
+        "rebel/library/0.1.0/files/tokenizer/tables/internal/o200k_base.hero numbered"
         # Unicode 17.0.0's names, `MENDE KIKAKUI SYLLABLE M172 MBO` among them.
-        "packages/rebel/0.1.0/files/unicode/names/internal/name_table.hero numbered"
+        "rebel/library/0.1.0/files/unicode/names/internal/name_table.hero numbered"
     ]
 
 # The rules a `FOREIGN_DATA` row may read a file apart from.
@@ -300,14 +301,14 @@ function foreign_offences(row: str, present: [str]) -> [str]
     return out
 
 test "a file of another standard's data is read apart from the rules its row names, by its exact path, and from no other"
-    tzif = "packages/rebel/0.1.0/files/time/internal/tzif.hero"
+    tzif = "rebel/library/0.1.0/files/time/internal/tzif.hero"
     assert reads_apart(path: tzif, rule: "numbered")
     assert !reads_apart(path: tzif, rule: "english")
     assert !reads_apart(path: tzif, rule: "names")
-    assert !reads_apart(path: "packages/rebel/0.1.0/files/time/internal/tzif.hero.md", rule: "numbered")
-    assert !reads_apart(path: "packages/rebel/0.1.0/files/time/internal", rule: "numbered")
-    assert !reads_apart(path: "packages/rebel/0.1.0/files/time.ledger", rule: "numbered")
-    tables = "packages/rebel/0.1.0/files/i18n/dates/internal/date_tables.hero"
+    assert !reads_apart(path: "rebel/library/0.1.0/files/time/internal/tzif.hero.md", rule: "numbered")
+    assert !reads_apart(path: "rebel/library/0.1.0/files/time/internal", rule: "numbered")
+    assert !reads_apart(path: "rebel/library/0.1.0/files/time.ledger", rule: "numbered")
+    tables = "rebel/library/0.1.0/files/i18n/dates/internal/date_tables.hero"
 
     for rule in FOREIGN_RULES
         assert reads_apart(path: tables, rule: rule)
@@ -2052,13 +2053,13 @@ function project_walk(listed: [str]) -> [str]
 
 test "the walk leaves a placed tree out by its folder's name, and keeps the package's source and every file beside it"
     listed = [
-        "packages/rebel/0.1.0/files/strings.md"
+        "rebel/library/0.1.0/files/strings.md"
         "examples/ini/heroes.packages/rebel@0.1.0-0123456789abcdef/strings.md"
         "examples/ini/heroes.packagesx/notes.md"
         "examples/ini/main.hero"
         "heroes.packages/k/x.md"
     ]
-    assert project_walk(listed) == ["packages/rebel/0.1.0/files/strings.md", "examples/ini/heroes.packagesx/notes.md", "examples/ini/main.hero"]
+    assert project_walk(listed) == ["rebel/library/0.1.0/files/strings.md", "examples/ini/heroes.packagesx/notes.md", "examples/ini/main.hero"]
 
 # Whether this path is one of the dated records — the pruning `find` used to do
 # with `-not -path`, done here now that the listing comes from git. Same rule as
@@ -3118,6 +3119,9 @@ constant MOVED: [str]
         "harness/prompts -> docs/metrics"
         "harness/tasks -> docs/metrics"
         "harness/tasks/README.md -> docs/metrics/tasks.md"
+        "packages/rebel -> rebel/library"
+        "examples-rebel -> rebel/examples"
+        "generators -> rebel/generators"
     ]
 
 # The floor. A table that has emptied out is a table nobody is maintaining, and
@@ -3138,6 +3142,9 @@ constant RETIRED_ROOTS: [str]
         "docs/ref"
         "docs/design"
         "harness"
+        "packages"
+        "examples-rebel"
+        "generators"
     ]
 
 # Where this repository's prose puts a module when it writes the SHORT name.
@@ -3526,7 +3533,18 @@ function is_claim(token: str, roots: {str: bool}) -> bool
     head = token.slice(from: 0, to: at.must())
 
     if !roots[head].is_err()
-        return true
+        if head != package_rules.PACKAGE
+            return true
+
+        # **The one root that is also the name of a catalogue entry**: Rebel's
+        # folder `rebel/` (the author's 1a of 2026-11-23) and the entry `rebel`
+        # a program names Rebel by, whose packages prose writes as `heroes add`
+        # takes them, `rebel/csv` (spec § 1). A token under it is a path where
+        # its second part names something the folder holds, `rebel/library/...`,
+        # and a package's name otherwise, which no line could carry a date for.
+        # So a dead citation whose SECOND part is wrong reads as a name: the
+        # price of the shared word, paid at this one root.
+        return !roots[head + "/" + first_part(strings.without_prefix(text: token, prefix: head + "/"))].is_err()
 
     for retired in RETIRED_ROOTS
         if head == retired || strings.has_prefix(s: token, prefix: retired + "/")
@@ -3551,6 +3569,15 @@ function is_claim(token: str, roots: {str: bool}) -> bool
     # such a pointer is followed to its archive (`lands_in_bootstrap`), and the
     # premise is asked of the tree where it would die (`citations`).
     return strings.has_suffix(s: token, suffix: ".rs")
+
+# The part of a path before its first `/`, the whole path where it holds none.
+function first_part(path: str) -> str
+    at = strings.index_of(text: path, needle: "/")
+
+    if at.is_err()
+        return path
+
+    return path.slice(from: 0, to: at.must())
 
 # Every path claim on one line of prose.
 function claims_on(row: str, roots: {str: bool}) -> [str]
@@ -3882,7 +3909,13 @@ function citations(@r: report.Report, scratch: str, present: [str], closed: {str
         at = strings.index_of(text: path, needle: "/")
 
         if !at.is_err()
-            roots[path.slice(from: 0, to: at.must())] @ true
+            head = path.slice(from: 0, to: at.must())
+            roots[head] @ true
+
+            # The second part under the root that shares the entry's name
+            # (`is_claim`), so `rebel/library` is a root of its own there.
+            if head == package_rules.PACKAGE
+                roots[head + "/" + first_part(strings.without_prefix(text: path, prefix: head + "/"))] @ true
 
         # every directory above it, so that naming a directory is a LOOKUP and
         # not a scan over every path the repository has
@@ -5604,6 +5637,18 @@ test "a dead citation is caught, and the anchored rule ignores what it must"
     assert is_claim(token: "docs/ROADMAP.md", roots: roots)
     assert is_claim(token: "selfhost/main.hero", roots: roots)
     assert is_claim(token: "crates/heroes/src/emit/gate.rs", roots: roots)
+
+    # Under the root that shares the name of Rebel's entry, a path where its
+    # second part is a folder the root holds, and a package's name otherwise.
+    shared: {str: bool} @= {}
+    shared["rebel"] @ true
+    shared["rebel/library"] @ true
+    assert is_claim(token: "rebel/library/0.1.0/files/gone.hero", roots: shared)
+    assert is_claim(token: "rebel/library", roots: shared)
+    assert !is_claim(token: "rebel/csv", roots: shared)
+    assert !is_claim(token: "rebel/internal/scan", roots: shared)
+    assert first_part("library/0.1.0") == "library"
+    assert first_part("csv") == "csv"
 
     # **The tokens no longer come out of the backticks alone**, and that is the
     # repair: the compiler's own citations carry none, which is how 164 files
