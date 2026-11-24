@@ -46,12 +46,14 @@
 # A rate is a value: `bucket` holds a time to earn a token and a burst,
 # and `allow`, `reserve` and `cancel` take the tokens of an attempt at the
 # time the caller names, so a worker holds one for each kind of job it
-# limits and asks it before it runs one. A limit shared by workers needs a
-# bucket kept in the store and is not written.
+# limits and asks it before it runs one. A limit every worker shares is
+# kept in the store: `jobs/postgres_store` keeps such a bucket under a name,
+# takes its tokens in one statement that locks it, on the server's clock,
+# and answers these same values (`postgres_store.allow`); a worker refused
+# `snooze`s the job for the wait. `jobs/redis_store` keeps none yet.
 #
 # Not written yet, each a `pending` block of its ledger: a worker woken at once
-# when a job comes, rather than at its next poll; no more than so many attempts
-# of a kind in a time, across workers; jobs that wait for others: chains,
+# when a job comes, rather than at its next poll; jobs that wait for others: chains,
 # groups, chords, dependencies, a job inserted not yet runnable; a long job that
 # keeps its place between attempts and resumes from it; a job dropped where no
 # worker started it by a time; the jobs processed and failed counted over time,
