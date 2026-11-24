@@ -16,9 +16,9 @@ use strings
 use time
 use tls
 use url
-use web/internal/balance
-use web/internal/gateway
 use web/internal/proxies
+use web/proxy/internal/balance
+use web/proxy/internal/gateway
 
 ## The plan
 

@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and eighty-four packages, in layers. **A package may use any package of a layer below
+A hundred and eighty-five packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -194,7 +194,7 @@ package moves its row in the same change. There is no cycle.
 | 6 | `xmldsig` | XML Signature checked against a trusted key and made, enveloped or detached, over Canonical XML; SHA-1 refused | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `strings`, `x509`, `xml` |  |
 | 6 | `x509/pkcs12` | PKCS #12 (`.pfx`, `.p12`) read and written: keys, certificates, lists and secrets under a password, the MAC checked first, every scheme the writers use; a key and its chain, and Java's trust stores, written | `asn1`, `bytes`, `crypto`, `crypto/keypairs`, `os`, `pem`, `unicode`, `x509` |  |
 | 6 | `sftp` | an SFTP version 3 client over an `ssh` channel, as OpenSSH's server speaks it: files opened, read and written by requests kept in flight, attributes read and set, folders listed, made and removed, renames, links, paths resolved, and OpenSSH's extensions (POSIX rename, hard links, fsync, a link's own attributes, volumes, limits, `~`, copies by the server, names by number) | `bytes`, `fs`, `numbers`, `os`, `ssh`, `strings`, `time` |  |
-| 7 | `web` | a router in the manner of Echo: routes with methods and parameters, groups, middleware as functions over a request and a response, the right 404 and 405, responses for JSON, text, redirects and static files; the program calls its own handler with its own state; a reverse proxy streaming bodies both ways over balanced upstreams | `bytes`, `compress`, `crypto`, `crypto/seal`, `fs`, `html`, `http`, `io`, `json`, `log`, `mail`, `net`, `numbers`, `os`, `path`, `poll`, `strings`, `template`, `time`, `tls`, `url`, `uuid` |  |
+| 7 | `web` | a router in the manner of Echo: routes with methods and parameters, groups, middleware as functions over a request and a response, the right 404 and 405, responses for JSON, text, redirects and static files; the program calls its own handler with its own state | `bytes`, `compress`, `crypto`, `crypto/seal`, `fs`, `html`, `http`, `io`, `json`, `log`, `mail`, `net`, `numbers`, `os`, `path`, `strings`, `template`, `time`, `tls`, `url`, `uuid` |  |
 | 7 | `websocket` | WebSocket (RFC 6455) client and server, compressed or not, many connections on one thread | `bytes`, `compress`, `crypto`, `http`, `io`, `json`, `net`, `os`, `poll`, `strings`, `threads`, `time`, `tls`, `unicode`, `url` |  |
 | 7 | `oauth2` | an OAuth 2.0 client (authorization code with PKCE, client credentials, device flow, refresh) and OpenID Connect | `bytes`, `crypto`, `http`, `io`, `jose`, `json`, `net`, `random`, `strings`, `threads`, `time`, `url` |  |
 | 7 | `saml` | SAML 2.0's service provider: an identity provider's metadata read and its own written, a request sent by redirect or by a form, signed or not, a response's signature, conditions and audience checked and the login answered once, single logout both ways | `bytes`, `compress`, `crypto/keypairs`, `html`, `random`, `strings`, `time`, `url`, `x509`, `xml`, `xmldsig` |  |
@@ -213,6 +213,7 @@ package moves its row in the same change. There is no cycle.
 | 8 | `sse` | server-sent events read and served: a reader that connects again as an `EventSource` does (the last id sent, the stream's `retry` kept, a silent connection given up), through the client's proxy, and a hub that keeps a stream's clients, tells them what happens, replays what a client missed and keeps a silent connection from being closed | `http`, `io`, `net`, `os`, `strings`, `threads`, `time`, `tls`, `url`, `web` |  |
 | 8 | `mcp` | the Model Context Protocol, server and client, over standard streams and HTTP | `bytes`, `containers/deque`, `http`, `io`, `json`, `json/schema`, `jsonrpc`, `net`, `numbers`, `oauth2`, `strings`, `threads`, `time`, `url`, `web` |  |
 | 8 | `openapi` | an OpenAPI 3.1 document built as data, written, served, and requests validated against it | `bytes`, `http`, `json`, `json/schema`, `numbers`, `strings`, `url`, `web`, `yaml` |  |
+| 8 | `web/proxy` | a reverse proxy in the manner of nginx's `proxy_pass` and Go's `httputil.ReverseProxy`: requests passed to balanced upstreams (weighted round-robin, fewest in flight) and the answers passed back, bodies streamed both ways and never held whole, failing upstreams kept out and the next tried, the hop-by-hop fields removed and the client told, a WebSocket relayed; apart from `web`, so only the programs that proxy carry it | `bytes`, `http`, `io`, `net`, `os`, `poll`, `strings`, `time`, `tls`, `url`, `web` |  |
 
 **The types other packages name** are each owned by one package and named
 qualified everywhere else, never redefined; among them:
