@@ -1247,8 +1247,8 @@ record Statsd
 #   first IPv4 address taken where it has one.
 # - `port`: the server's port, 8125 by custom.
 #
-# Fails `invalid` where `port` is not 1 to 65535, and as `net.lookup` and
-# `net.open_udp` fail. See also `close_statsd`.
+# Fails `invalid` where `port` is not 1 to 65535, and as `net.lookup`,
+# `random.from_system` and `net.open_udp` fail. See also `close_statsd`.
 function open_statsd(host: str, port: i64) -> Statsd?
     if port < 1 || port > 65_535
         return fail(code: INVALID, msg: f"the port {port} is not 1 to 65535")
@@ -1266,10 +1266,13 @@ function open_statsd(host: str, port: i64) -> Statsd?
         "0.0.0.0"
     else
         "::"
+
+    # Everything that may fail is asked before the socket opens, so a failure
+    # leaves no socket open: the caller holds no `Statsd` to close.
+    to = net.with_port(chosen, port: port)?
+    generator = random.from_system()?
     socket = net.open_udp(local, port: 0)?
-    return ok(
-        Statsd(socket: socket, to: net.with_port(chosen, port: port)?, prefix: "", tags: [], generator: random.from_system()?)
-    )
+    return ok(Statsd(socket: socket, to: to, prefix: "", tags: [], generator: generator))
 
 # Closes `client`'s socket.
 #
