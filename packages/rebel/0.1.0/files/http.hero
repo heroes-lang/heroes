@@ -1966,8 +1966,11 @@ function write_response_head_framed(s: io.Stream, response: Response, framing: F
     io.write(s, data: data)?
     return ok(BodyWriter(state: relaying.owed_of(inner)))
 
-# The framing `framing` says, as the internal writers read it. Fails
-# `invalid` for a length below zero.
+# The framing `framing` says, as the internal writers read it.
+#
+# - `framing`: the framing asked for.
+#
+# Fails `invalid` for a length below zero.
 function inner_framing(framing: Framing) -> framings.Framing?
     match framing
         .none    => return ok(.none)

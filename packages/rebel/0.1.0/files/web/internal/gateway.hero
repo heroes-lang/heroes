@@ -1,0 +1,388 @@
+# What a reverse proxy changes of a request it passes on and of the answer it
+# passes back, RFC 9110 § 7.6: the hop-by-hop fields removed, those the
+# `Connection` field lists among them, so a client can never make a field
+# the proxy adds vanish; the client told in RFC 7239's `Forwarded` and in
+# `X-Forwarded-For`, `-Host` and `-Proto`, a client's own fields kept only
+# from a proxy the program trusts; `Via` written; `Max-Forwards` counted
+# down; and the upstream's base joined with the target asked.
+
+use http
+use net
+use strings
+use url
+
+## Hop by hop
+
+# The fields RFC 9110 § 7.6.1 names as meant for one connection, with the
+# two Go's `httputil.ReverseProxy` also removes, `Proxy-Authenticate` and
+# `Proxy-Authorization`, and `Trailer`, whose trailer is not passed on.
+function hop_by_hop() -> [str]
+    return [
+        "connection"
+        "proxy-connection"
+        "keep-alive"
+        "proxy-authenticate"
+        "proxy-authorization"
+        "te"
+        "trailer"
+        "transfer-encoding"
+        "upgrade"
+    ]
+
+# The options the `Connection` fields of `headers` list, lower case: the
+# fields of those names are the connection's alone.
+function connection_options(headers: [http.Header]) -> [str]
+    out: [str] @= []
+
+    for value in http.values_of(headers, name: "Connection")
+        for part in strings.split(s: value, sep: ",")
+            option = strings.to_lower(strings.trim(part))
+
+            if option != ""
+                out @ out.push(option)
+
+    return out
+
+# `headers` without the hop-by-hop fields and without every field the
+# `Connection` fields name, in their order.
+function hop_by_hop_removed(headers: [http.Header]) -> [http.Header]
+    gone: [str] @= hop_by_hop()
+
+    for option in connection_options(headers)
+        gone @ gone.push(option)
+
+    out: [http.Header] @= []
+
+    for h in headers
+        name = strings.to_lower(h.name)
+        removed = holds(gone, s: name)
+
+        if !removed
+            out @ out.push(h)
+
+    return out
+
+# The protocol `headers` ask to switch to: the `Upgrade` field where the
+# `Connection` fields list `upgrade`, as Go's `httputil` reads it. Fails
+# `not_found` where none is asked, and `invalid` where the protocol is empty
+# or holds a byte outside visible ASCII and the space.
+function upgrade_asked(headers: [http.Header]) -> str?
+    if !holds(connection_options(headers), s: "upgrade")
+        return fail(code: "not_found", msg: "the request asks to switch to no protocol")
+    asked = strings.trim(http.values_of(headers, name: "Upgrade").join(", "))
+
+    if asked == "" || !is_printable(asked)
+        return fail(code: "invalid", msg: "the request's `Upgrade` names no protocol in visible ASCII")
+    return ok(asked)
+
+# Whether `list` holds `s`.
+function holds(list: [str], s: str) -> bool
+    for one in list
+        if one == s
+            return true
+
+    return false
+
+# Whether every byte of `s` is visible ASCII or the space.
+function is_printable(s: str) -> bool
+    at: i64 @= 0
+
+    while at < s.len()
+        if s[at] < 32 || s[at] > 126
+            return false
+        at @ at + 1
+
+    return true
+
+## The client, told to the upstream
+
+# The fields that tell the upstream of the client, made of `headers`, the
+# fields as they came: where `trusted` (the peer is a proxy the program
+# trusts) the fields of the proxies before it are kept, `X-Forwarded-For`
+# and `Forwarded` added to as nginx's `$proxy_add_x_forwarded_for` adds;
+# where not, every `Forwarded` and `X-Forwarded-*` field the client wrote is
+# removed first, as Go's `Rewrite` removes them, and written anew.
+#
+# `client` is the peer's address without its port, `host` the host the
+# client asked for, `scheme` how it reached the proxy.
+function forwarded(headers: [http.Header], client: str, host: str, scheme: str, trusted: bool) -> [http.Header]
+    names = ["forwarded", "x-forwarded-for", "x-forwarded-host", "x-forwarded-proto"]
+    out: [http.Header] @= []
+
+    for h in headers
+        if !holds(names, s: strings.to_lower(h.name))
+            out @ out.push(h)
+
+    chain: [str] @= []
+    elements: [str] @= []
+    said_host: str @= host
+    said_scheme: str @= scheme
+
+    if trusted
+        for v in http.values_of(headers, name: "X-Forwarded-For")
+            if strings.trim(v) != ""
+                chain @ chain.push(strings.trim(v))
+
+        for v in http.values_of(headers, name: "Forwarded")
+            if strings.trim(v) != ""
+                elements @ elements.push(strings.trim(v))
+
+        given_host = http.values_of(headers, name: "X-Forwarded-Host")
+
+        if given_host.len() > 0
+            said_host @ strings.trim(given_host[0])
+        given_scheme = http.values_of(headers, name: "X-Forwarded-Proto")
+
+        if given_scheme.len() > 0
+            said_scheme @ strings.trim(given_scheme[0])
+
+    chain @ chain.push(client)
+    element: str @= "for=" + node_of(client)
+
+    if host != ""
+        element @ element + ";host=" + quoted_if_needed(host)
+    element @ element + ";proto=" + scheme
+    elements @ elements.push(element)
+    out @ out.push(http.Header(name: "Forwarded", value: elements.join(", ")))
+    out @ out.push(http.Header(name: "X-Forwarded-For", value: chain.join(", ")))
+
+    if said_host != ""
+        out @ out.push(http.Header(name: "X-Forwarded-Host", value: said_host))
+    out @ out.push(http.Header(name: "X-Forwarded-Proto", value: said_scheme))
+    return out
+
+# A client's address as RFC 7239 § 6 writes a node: an IPv4 address as it
+# is, an IPv6 address in brackets and quotes, anything else `unknown`.
+function node_of(address: str) -> str
+    match net.parse_host(address)
+        .err _ => return "unknown"
+        .ok _ =>
+            if strings.contains(s: address, substr: ":")
+                return "\"[" + address + "]\""
+            return address
+
+# `value` as RFC 7239 writes a value: as it is where it is a token, else in
+# quotes with its quotes and backslashes escaped.
+function quoted_if_needed(value: str) -> str
+    if is_token(value)
+        return value
+    escaped = strings.replace_all(s: strings.replace_all(s: value, old: "\\", new: "\\\\"), old: "\"", new: "\\\"")
+    return "\"" + escaped + "\""
+
+# Whether `s` is a token, RFC 9110 § 5.6.2: one or more of the letters, the
+# digits and `!#$%&'*+-.^_`|~`.
+function is_token(s: str) -> bool
+    if s.len() == 0
+        return false
+    marks = "!#$%&'*+-.^_`|~"
+
+    for c in s.chars()
+        b = c[0]
+        letter = b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
+
+        if !letter && !strings.contains(s: marks, substr: c)
+            return false
+
+    return true
+
+## Via and Max-Forwards
+
+# `headers` with this proxy added to `Via`, RFC 9110 § 7.6.3: the version
+# the request came in, `1.0` or `1.1`, and `received_by`, its pseudonym and
+# port.
+function via_added(headers: [http.Header], minor: i64, received_by: str) -> [http.Header]
+    members: [str] @= []
+    out: [http.Header] @= []
+
+    for h in headers
+        if strings.to_lower(h.name) == "via"
+            if strings.trim(h.value) != ""
+                members @ members.push(strings.trim(h.value))
+        else
+            out @ out.push(h)
+
+    members @ members.push(f"1.{minor} {received_by}")
+    out @ out.push(http.Header(name: "Via", value: members.join(", ")))
+    return out
+
+# Whether a member of the `Via` fields of `headers` names `received_by`:
+# the request came round to this proxy again.
+function looped(headers: [http.Header], received_by: str) -> bool
+    for value in http.values_of(headers, name: "Via")
+        for member in strings.split(s: value, sep: ",")
+            parts = strings.split(s: strings.trim(member), sep: " ")
+
+            if parts.len() >= 2 && strings.to_lower(parts[1]) == strings.to_lower(received_by)
+                return true
+
+    return false
+
+# The count `Max-Forwards` holds, RFC 9110 § 7.6.2. Fails `not_found` where
+# there is none, and `invalid` where it is not decimal digits alone or there
+# are two.
+function max_forwards_of(headers: [http.Header]) -> i64?
+    values = http.values_of(headers, name: "Max-Forwards")
+
+    if values.len() == 0
+        return fail(code: "not_found", msg: "the request has no `Max-Forwards`")
+
+    if values.len() > 1
+        return fail(code: "invalid", msg: "the request has two `Max-Forwards` fields")
+
+    return match digits_of(values[0])
+        .ok n  => ok(n)
+        .err _ => fail(code: "invalid", msg: f"`Max-Forwards: {values[0]}` is no count")
+
+# The count `text` writes in decimal digits alone, spaces around it aside, as
+# `Max-Forwards` and `Content-Length` write one. Fails `invalid` where it is
+# empty, holds any other byte, or is past 18 digits.
+function digits_of(text: str) -> i64?
+    digits = strings.trim(text)
+
+    if digits == "" || digits.len() > 18
+        return fail(code: "invalid", msg: f"{text} is no count")
+    n: i64 @= 0
+
+    for c in digits.chars()
+        if c[0] < '0' || c[0] > '9'
+            return fail(code: "invalid", msg: f"{text} is no count")
+        n @ n * 10 + (c[0] - '0').to_i64().must()
+
+    return ok(n)
+
+# `headers` with `Max-Forwards` set to `n`.
+function max_forwards_set(headers: [http.Header], n: i64) -> [http.Header]
+    return http.with_header(headers, name: "Max-Forwards", value: f"{n}")
+
+## The target
+
+# The URL a request for `asked` is sent to on the upstream `base`: the
+# base's scheme and authority, the two paths joined by one slash, as Go's
+# `ProxyRequest.SetURL` joins them, and the queries joined by `&`.
+function target_joined(base: url.Url, asked: url.Url) -> url.Url
+    out @= base
+    a = base.path
+    b = asked.path
+    ends = strings.has_prefix(s: b, prefix: "/")
+    slash = a.len() > 0 && a[a.len() - 1] == '/'
+
+    if slash && ends
+        out.path @ a + b.slice(from: 1, to: b.len())
+    else if !slash && !ends && b != ""
+        out.path @ a + "/" + b
+    else
+        out.path @ a + b
+
+    if out.path == ""
+        out.path @ "/"
+
+    if base.query == ""
+        out.query @ asked.query
+    else if asked.query != ""
+        out.query @ base.query + "&" + asked.query
+    out.fragment @ ""
+    return out
+
+## Failures told as statuses
+
+# The status an upstream's failure is answered with, its code being one of
+# Rebel's (README § A4): 504 for `timeout`, the upstream not answering in
+# time (RFC 9110 § 15.6.5), and 502 for every other, its answer missing or
+# no HTTP (§ 15.6.3).
+function status_of(code: str) -> i64
+    if code == "timeout"
+        return 504
+    return 502
+
+## Tests
+
+# The headers of `pairs`, a name then its value.
+function fields(pairs: [str]) -> [http.Header]
+    out: [http.Header] @= []
+    at: i64 @= 0
+
+    while at + 1 < pairs.len()
+        out @ out.push(http.Header(name: pairs[at], value: pairs[at + 1]))
+        at @ at + 2
+
+    return out
+
+# The names of `headers`, in order.
+function names_of(headers: [http.Header]) -> [str]
+    out: [str] @= []
+
+    for h in headers
+        out @ out.push(h.name)
+
+    return out
+
+test "hop_by_hop_removed: the nine fields Go removes and those Connection names, any case"
+    h = fields(
+        ["Connection", "keep-alive, X-Secret , close", "Keep-Alive", "timeout=5", "x-secret", "1", "TE", "trailers", "Trailer", "Expires", "Transfer-Encoding", "chunked", "Upgrade", "websocket", "Proxy-Connection", "keep-alive", "Proxy-Authorization", "Basic eDp5", "Proxy-Authenticate", "Basic", "Accept", "*/*", "Close", "kept? no"]
+    )
+    assert names_of(hop_by_hop_removed(h)) == ["Accept"]
+    assert names_of(hop_by_hop_removed(fields(["Accept", "a", "Cookie", "c=1"]))) == ["Accept", "Cookie"]
+
+test "upgrade_asked: Connection must list upgrade, and the protocol must be visible ASCII"
+    assert upgrade_asked(fields(["Connection", "keep-alive, Upgrade", "Upgrade", "websocket"])).must() == "websocket"
+    assert upgrade_asked(fields(["Upgrade", "websocket"])).is_err()
+    assert upgrade_asked(fields(["Connection", "upgrade"])).is_err()
+    assert upgrade_asked(fields(["Connection", "upgrade", "Upgrade", "web\tsocket"])).is_err()
+
+test "forwarded: an untrusted client's own fields replaced, as Go's Rewrite and SetXForwarded write them"
+    h = fields(
+        ["Accept", "*/*", "X-Forwarded-For", "6.6.6.6", "x-forwarded-host", "evil", "Forwarded", "for=6.6.6.6", "X-Forwarded-Proto", "https"]
+    )
+    got = forwarded(h, client: "192.0.2.7", host: "example.com:8080", scheme: "http", trusted: false)
+    assert http.value_of(got, name: "X-Forwarded-For").must() == "192.0.2.7"
+    assert http.value_of(got, name: "X-Forwarded-Host").must() == "example.com:8080"
+    assert http.value_of(got, name: "X-Forwarded-Proto").must() == "http"
+    assert http.value_of(got, name: "Forwarded").must() == "for=192.0.2.7;host=\"example.com:8080\";proto=http"
+    assert http.values_of(got, name: "X-Forwarded-For").len() == 1
+
+test "forwarded: a trusted proxy's chain added to, its host and scheme kept, as nginx adds"
+    h = fields(
+        ["X-Forwarded-For", "203.0.113.1, 10.0.0.2", "X-Forwarded-Proto", "https", "X-Forwarded-Host", "shop.example", "Forwarded", "for=203.0.113.1;proto=https"]
+    )
+    got = forwarded(h, client: "10.0.0.3", host: "inner", scheme: "http", trusted: true)
+    assert http.value_of(got, name: "X-Forwarded-For").must() == "203.0.113.1, 10.0.0.2, 10.0.0.3"
+    assert http.value_of(got, name: "X-Forwarded-Proto").must() == "https"
+    assert http.value_of(got, name: "X-Forwarded-Host").must() == "shop.example"
+    assert http.value_of(got, name: "Forwarded").must() == "for=203.0.113.1;proto=https, for=10.0.0.3;host=inner;proto=http"
+
+test "node_of: RFC 7239's own examples, an IPv6 node quoted in brackets"
+    assert node_of("192.0.2.43") == "192.0.2.43"
+    assert node_of("2001:db8:cafe::17") == "\"[2001:db8:cafe::17]\""
+    assert node_of("") == "unknown"
+    assert quoted_if_needed("a\"b\\c") == "\"a\\\"b\\\\c\""
+
+test "via_added and looped: the version in, the pseudonym and its port, members joined"
+    h = via_added(fields(["Via", "1.0 fred, 1.1 p.example.net"]), minor: 1, received_by: "edge:8080")
+    assert http.value_of(h, name: "Via").must() == "1.0 fred, 1.1 p.example.net, 1.1 edge:8080"
+    assert looped(h, received_by: "EDGE:8080")
+    assert !looped(h, received_by: "edge:8081")
+    assert http.value_of(via_added([], minor: 0, received_by: "edge"), name: "Via").must() == "1.0 edge"
+
+test "max_forwards_of: digits alone, one field, and none"
+    assert max_forwards_of(fields(["Max-Forwards", " 3 "])).must() == 3
+    assert max_forwards_of(fields(["Max-Forwards", "0"])).must() == 0
+    assert max_forwards_of([]).is_err()
+    assert max_forwards_of(fields(["Max-Forwards", "-1"])).is_err()
+    assert max_forwards_of(fields(["Max-Forwards", "1", "Max-Forwards", "2"])).is_err()
+    assert max_forwards_of(fields(["Max-Forwards", "99999999999999999999"])).is_err()
+    assert http.value_of(max_forwards_set(fields(["Max-Forwards", "3"]), n: 2), name: "Max-Forwards").must() == "2"
+
+test "target_joined: Go's SetURL joins the paths by one slash and the queries by &"
+    base = url.parse("http://up:8080/base").must()
+    assert url.request_target(target_joined(base: base, asked: url.parse("/dir?a=1").must())) == "/base/dir?a=1"
+    slash = url.parse("http://up/base/?k=v").must()
+    assert url.request_target(target_joined(base: slash, asked: url.parse("/dir?a=1").must())) == "/base/dir?k=v&a=1"
+    root = url.parse("http://up").must()
+    assert url.request_target(target_joined(base: root, asked: url.parse("/a%2Fb").must())) == "/a%2Fb"
+    assert target_joined(base: root, asked: url.parse("/").must()).host == "up"
+
+test "status_of: a timeout is 504, every other code 502"
+    assert status_of("timeout") == 504
+    assert status_of("closed") == 502
+    assert status_of("invalid") == 502
+    assert status_of("failed") == 502

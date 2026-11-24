@@ -1,0 +1,1190 @@
+# A reverse proxy's connections: each client's requests read one at a time,
+# each passed to an upstream the balancer chooses and its answer passed back
+# as it comes, the bodies both ways in pieces of at most `PIECE_BYTES` and
+# never held whole; a switch of protocols (`Upgrade`, a WebSocket) relayed
+# byte for byte until either end closes or both stay silent. Every wait is
+# bounded: the client's head and its silences by the plan's spans, the
+# upstream's connecting, writing and reading each by its own, so a client or
+# an upstream that stops answering holds a worker no longer than its span.
+
+use bytes
+use http
+use io
+use net
+use poll
+use strings
+use time
+use tls
+use url
+use web/internal/balance
+use web/internal/gateway
+use web/internal/proxies
+
+## The plan
+
+# The most bytes a piece of a body, or of a switched connection, is read in.
+constant PIECE_BYTES: i64
+    65_536
+
+# How long a tunnel's wait on a socket lasts before a TLS upstream, which
+# `poll` cannot wait on, is read again without waiting.
+constant TLS_TURN_MS: i64
+    5
+
+# An upstream as the relay reaches it.
+record Upstream
+    # Its URL: the scheme, the authority, and the path and query every
+    # target is joined to.
+    base: url.Url
+    # The port it is reached on.
+    port: i64
+    # Whether it is reached over TLS, `https://`.
+    secure: bool
+
+# What the relay does, made by the face from the program's proxy.
+record Plan
+    # The upstreams, in the balancer's order.
+    upstreams: [Upstream]
+    # What a request's head may hold, its body past `body_bytes` refused
+    # 413, and what an upstream's head may hold.
+    limits: http.Limits
+    # How long the making of an upstream's connection may take, its TLS
+    # handshake included.
+    connect_ms: i64
+    # How long an upstream may stay silent: before its head, and between two
+    # pieces of its body or of a switched connection.
+    read_ms: i64
+    # How long one write to an upstream may wait.
+    send_ms: i64
+    # How long a client may stay silent inside a request, or take one write.
+    client_ms: i64
+    # How long a kept connection may wait for its next request, its whole
+    # head included.
+    idle_ms: i64
+    # The most upstreams one request is tried on, 1 or more.
+    tries: i64
+    # Whether the client's `Host` is sent on, else the upstream's own.
+    keep_host: bool
+    # The proxies in front of this one, whose forwarding fields are kept.
+    trusted: [net.Network]
+    # How clients reach the proxy, `http` or `https`.
+    scheme: str
+    # This proxy in `Via`, a pseudonym and a port; "" writes none.
+    received_by: str
+    # The PEM of the authorities an `https://` upstream's certificate may be
+    # signed by; "" trusts the system's store.
+    roots: str
+
+## Choosing an upstream, here or by asking the thread that owns the counts
+
+# What the coordinator is asked by a worker.
+variant Ask
+    # Which upstream the next try goes to, those in `avoid` left out; the
+    # answer goes to `replies`.
+    choose
+        # The upstreams tried already for this request.
+        avoid: [i64]
+        # The worker's own mailbox of answers.
+        replies: (mailbox Choice)
+    # What became of a try.
+    done
+        # The upstream tried.
+        upstream: i64
+        # What became of it.
+        outcome: balance.Outcome
+    # A worker's connection has ended, so the worker takes another.
+    free
+
+# The answer to `choose`.
+variant Choice
+    # The upstream chosen, its try counted in flight.
+    chosen
+        # Its index in the plan.
+        upstream: i64
+    # None may take the request now.
+    none
+        # The milliseconds until the first one kept out comes back; 0 where
+        # each was tried already.
+        back_in_ms: i64
+
+# Where the counts are: in this thread's own balancer, or in the thread that
+# owns them, asked through mailboxes.
+variant Chooser
+    # The counts held here.
+    here
+        # The balancer.
+        state: balance.State
+        # When the clock the balancer reads began.
+        start: time.Mark
+    # The counts held by the coordinator.
+    there
+        # The coordinator's mailbox.
+        asks: (mailbox Ask)
+        # This worker's mailbox of answers.
+        replies: (mailbox Choice)
+
+# The milliseconds since `start`, 0 where the clock cannot be read.
+function since_ms(start: time.Mark) -> i64
+    return match time.elapsed(start)
+        .ok d  => d.nanoseconds / 1_000_000
+        .err _ => 0
+
+# The next upstream for a request that has tried `avoid` already.
+function choose(@c: Chooser, avoid: [i64]) -> Choice
+    match c
+        .here h =>
+            now = since_ms(h.start)
+            state @= h.state
+            picked = balance.choose(@state, now_ms: now, avoid: avoid)
+            back = balance.back_in_ms(state, now_ms: now)
+            c @ .here(state: state, start: h.start)
+
+            match picked
+                .ok i  => return .chosen(upstream: i)
+                .err _ => return .none(back_in_ms: back)
+        .there t =>
+            if t.asks.send(.choose(avoid: avoid, replies: t.replies)).is_err()
+                return .none(back_in_ms: 0)
+
+            match t.replies.receive(within_ms: -1)
+                .ok answer => return answer
+                .err _     => return .none(back_in_ms: 0)
+
+# Tells the balancer what became of a try on `upstream`.
+function told(@c: Chooser, upstream: i64, outcome: balance.Outcome)
+    match c
+        .here h =>
+            state @= h.state
+            balance.done(@state, i: upstream, outcome: outcome, now_ms: since_ms(h.start))
+            c @ .here(state: state, start: h.start)
+        .there t => _ = t.asks.send(.done(upstream: upstream, outcome: outcome)).is_err()
+
+## One client's connection
+
+# What one connection, or a whole serving, did.
+record Tally
+    # The requests read.
+    requests: i64
+    # The answers an upstream gave, passed back whole.
+    relayed: i64
+    # The requests the proxy answered itself: refused, or no upstream
+    # answering (502, 503, 504).
+    refused: i64
+    # The connections switched to another protocol and relayed.
+    switched: i64
+
+# The sum of two tallies.
+function sum(a: Tally, b: Tally) -> Tally
+    return Tally(
+        requests: a.requests + b.requests,
+        relayed: a.relayed + b.relayed,
+        refused: a.refused + b.refused,
+        switched: a.switched + b.switched
+    )
+
+# Moves the deadline of `s` to `ms` from now, by `tls`'s clock where it is a
+# TLS stream. A stream that cannot take it is found at its next read.
+function within(s: io.Stream, secure: bool, ms: i64)
+    if secure
+        _ = tls.set_deadline(s, deadline: time.milliseconds(ms).default(time.max_duration())).is_err()
+    else
+        _ = net.set_deadline(s, deadline_ms: ms).is_err()
+
+# Serves the client on `stream`, from `remote`, until its connection ends:
+# each request passed on and its answer passed back, the connection kept
+# while both sides keep it. The stream is the caller's to close.
+function serve_client(@c: Chooser, plan: Plan, stream: io.Stream, remote: str) -> Tally
+    reader @= io.reader(stream)
+    tally @= Tally(requests: 0, relayed: 0, refused: 0, switched: 0)
+
+    while true
+        within(stream, secure: false, ms: plan.idle_ms)
+
+        h = match http.read_request_head(@reader, limits: plan.limits)
+            .ok got => got
+            .err e =>
+                match http.failure_status(code: e.code, in_head: true)
+                    .ok status =>
+                        bare(stream, status: status, why: e.msg)
+                        tally.refused @ tally.refused + 1
+                    .err _ => _ = 0
+
+                break
+
+        tally.requests @ tally.requests + 1
+
+        if !request(@c, plan: plan, stream: stream, reader: @reader, h: h, remote: remote, tally: @tally)
+            break
+
+    return tally
+
+# Answers a request the proxy could not read with `status`, closing.
+function bare(s: io.Stream, status: i64, why: str)
+    asked = http.Request(method: "GET", url: url.parse("/").must(), headers: [], body: [], closing: true, remote: "")
+    refuse(s, r: asked, status: status, why: why, retry_s: 0)
+
+# Answers `r` with `status` and a short text, closing the connection, and
+# `Retry-After` where `retry_s` is above 0. The text says what failed, never
+# where: an upstream's address is not told to the public.
+function refuse(s: io.Stream, r: http.Request, status: i64, why: str, retry_s: i64)
+    answer @= http.respond_text(status, text: f"{status} {http.status_text(status).default("")}: {why}\n")
+    answer.closing @ true
+
+    if retry_s > 0
+        answer.headers @ http.with_header(answer.headers, name: "Retry-After", value: f"{retry_s}")
+    _ = http.write_answer(s, r: r, response: answer).is_err()
+
+# Whether `method` is idempotent, RFC 9110 § 9.2.2, and so may be tried on
+# another upstream after a try that may have reached one.
+function is_idempotent(method: str) -> bool
+    return method == "GET" || method == "HEAD" || method == "OPTIONS" || method == "TRACE" || method == "PUT" || method == "DELETE"
+
+# Whether `framing` carries a byte.
+function has_body(framing: http.Framing) -> bool
+    return match framing
+        .none              => false
+        .length l          => l.bytes > 0
+        .chunked | .to_end => true
+
+# Passes the request `h` heads on and its answer back. Answers whether the
+# connection is kept for another request.
+function request(@c: Chooser, plan: Plan, stream: io.Stream, @reader: io.Reader, h: http.RequestHead, remote: str, @tally: Tally) -> bool
+    r = h.request
+
+    match http.refusal_of(h)
+        .ok status =>
+            refuse(stream, r: r, status: status, why: "the proxy does not pass this request on", retry_s: 0)
+            tally.refused @ tally.refused + 1
+            return false
+        .err _ => _ = 0
+
+    if plan.received_by != "" && gateway.looped(r.headers, received_by: plan.received_by)
+        refuse(stream, r: r, status: 508, why: "the request came round to this proxy again", retry_s: 0)
+        tally.refused @ tally.refused + 1
+        return false
+    headers @= gateway.hop_by_hop_removed(r.headers)
+
+    if r.method == "TRACE" || r.method == "OPTIONS"
+        match gateway.max_forwards_of(r.headers)
+            .ok n =>
+                if n == 0
+                    final(stream, r: r)
+                    tally.refused @ tally.refused + 1
+                    return false
+                headers @ gateway.max_forwards_set(headers, n: n - 1)
+            .err e =>
+                if e.code != "not_found"
+                    refuse(stream, r: r, status: 400, why: e.msg, retry_s: 0)
+                    tally.refused @ tally.refused + 1
+                    return false
+
+    body @= match http.request_body_reader(h, limits: plan.limits)
+        .ok b => b
+        .err e =>
+            status = http.failure_status(code: e.code, in_head: false).default(400)
+            refuse(stream, r: r, status: status, why: e.msg, retry_s: 0)
+            tally.refused @ tally.refused + 1
+            return false
+
+    framing = http.framing_of(body)
+
+    match framing
+        .length l =>
+            if l.bytes > plan.limits.body_bytes
+                refuse(stream, r: r, status: 413, why: f"the body is past {plan.limits.body_bytes} bytes", retry_s: 0)
+                tally.refused @ tally.refused + 1
+                return false
+        .none | .chunked | .to_end => _ = 0
+
+    upgrade = match gateway.upgrade_asked(r.headers)
+        .ok p => p
+        .err e =>
+            if e.code != "not_found"
+                refuse(stream, r: r, status: 400, why: e.msg, retry_s: 0)
+                tally.refused @ tally.refused + 1
+                return false
+            ""
+
+    client = proxies.address_part(remote)
+    asked_host = http.value_of(r.headers, name: "Host").default(r.url.host)
+    headers @ http.without_header(http.without_header(headers, name: "Host"), name: "Expect")
+    headers @ gateway.forwarded(
+        headers,
+        client: client,
+        host: asked_host,
+        scheme: plan.scheme,
+        trusted: proxies.is_trusted(client, trusted: plan.trusted)
+    )
+
+    if plan.received_by != ""
+        headers @ gateway.via_added(headers, minor: h.minor, received_by: plan.received_by)
+
+    if upgrade != ""
+        headers @ headers.push(http.Header(name: "Connection", value: "Upgrade"))
+        headers @ headers.push(http.Header(name: "Upgrade", value: upgrade))
+    continuing = h.minor >= 1 && has_body(framing) && strings.to_lower(http.value_of(r.headers, name: "Expect").default("")) == "100-continue"
+    trip = Trip(
+        r: r,
+        minor: h.minor,
+        headers: headers,
+        asked_host: asked_host,
+        framing: framing,
+        upgrade: upgrade,
+        continuing: continuing
+    )
+    return tried(@c, plan: plan, stream: stream, reader: @reader, body: @body, trip: trip, tally: @tally)
+
+# Answers `r` as the final recipient, RFC 9110 § 7.6.2: `Max-Forwards` was
+# 0. `TRACE` is echoed as `http.respond_trace` echoes it, `OPTIONS` answered
+# 200 with no body.
+function final(s: io.Stream, r: http.Request)
+    answer @= http.respond_status(200)
+
+    if r.method == "TRACE"
+        answer @ http.respond_trace(r)
+    answer.closing @ true
+    _ = http.write_answer(s, r: r, response: answer).is_err()
+
+# What a request is passed on with, decided before its first try.
+record Trip
+    # The request as read, its body still on the connection.
+    r: http.Request
+    # The client's version's minor digit.
+    minor: i64
+    # The fields sent on: hop by hop removed, the client told, `Via`.
+    headers: [http.Header]
+    # The host the client asked for.
+    asked_host: str
+    # How its body ends.
+    framing: http.Framing
+    # The protocol it asks to switch to; "" for none.
+    upgrade: str
+    # Whether `100 Continue` is owed before its body.
+    continuing: bool
+
+# The tries of `trip` on the upstreams the balancer chooses, at most
+# `plan.tries`: the next upstream is tried where the connection could not be
+# made, and, for an idempotent request with no body, where the answer's head
+# did not come. Answers whether the client's connection is kept.
+function tried(@c: Chooser, plan: Plan, stream: io.Stream, @reader: io.Reader, @body: http.BodyReader, trip: Trip, @tally: Tally) -> bool
+    avoid: [i64] @= []
+    last: str @= ""
+    again = is_idempotent(trip.r.method) && !has_body(trip.framing)
+
+    for _ in range(from: 0, to: plan.tries)
+        i = match choose(@c, avoid: avoid)
+            .chosen one => one.upstream
+            .none n =>
+                if last == ""
+                    refuse(
+                        stream,
+                        r: trip.r,
+                        status: 503,
+                        why: "no upstream is available",
+                        retry_s: (n.back_in_ms + 999) / 1_000
+                    )
+                else
+                    refuse(stream, r: trip.r, status: gateway.status_of(last), why: words_of(last), retry_s: 0)
+                tally.refused @ tally.refused + 1
+                return false
+
+        avoid @ avoid.push(i)
+        up = plan.upstreams[i]
+
+        conn @= match connect(up, plan: plan)
+            .ok got => got
+            .err e =>
+                told(@c, upstream: i, outcome: .failed)
+                last @ e.code
+                continue
+
+        match sent(upstream: conn.stream, plan: plan, up: up, reader: @reader, body: @body, trip: trip, client: stream)
+            .ok _ => _ = 0
+            .err e =>
+                shut(@conn)
+
+                if e.code == "client"
+                    told(@c, upstream: i, outcome: .neither)
+                    return false
+                told(@c, upstream: i, outcome: .failed)
+                last @ e.code
+
+                if again
+                    continue
+                break
+
+        up_reader @= io.reader(conn.stream)
+        within(conn.stream, secure: up.secure, ms: plan.read_ms)
+
+        head_read = if trip.upgrade != ""
+            http.read_switch_head(@up_reader, method: trip.r.method, limits: plan.limits)
+        else
+            http.read_response_head(@up_reader, method: trip.r.method, limits: plan.limits)
+
+        head = match head_read
+            .ok got => got
+            .err e =>
+                shut(@conn)
+                told(@c, upstream: i, outcome: .failed)
+                last @ e.code
+
+                if again
+                    continue
+                break
+
+        if head.status == 101
+            kept = switched(
+                plan: plan,
+                stream: stream,
+                reader: @reader,
+                conn: conn,
+                up_reader: @up_reader,
+                secure: up.secure,
+                trip: trip,
+                head: head
+            )
+            shut(@conn)
+
+            if kept
+                told(@c, upstream: i, outcome: .answered)
+                tally.switched @ tally.switched + 1
+            else
+                told(@c, upstream: i, outcome: .failed)
+                tally.refused @ tally.refused + 1
+            return false
+        outcome = passed_back(
+            plan: plan,
+            stream: stream,
+            conn: conn,
+            up_reader: @up_reader,
+            secure: up.secure,
+            trip: trip,
+            head: head
+        )
+        shut(@conn)
+        told(@c, upstream: i, outcome: outcome.outcome)
+
+        if outcome.refused
+            tally.refused @ tally.refused + 1
+        else if outcome.whole
+            tally.relayed @ tally.relayed + 1
+        return outcome.kept
+
+    refuse(stream, r: trip.r, status: gateway.status_of(last), why: words_of(last), retry_s: 0)
+    tally.refused @ tally.refused + 1
+    return false
+
+# What an upstream's failure of `code` is told the client as: what failed,
+# never where.
+function words_of(code: str) -> str
+    if code == "timeout"
+        return "the upstream did not answer in time"
+    return "the upstream could not be reached, or its answer was no HTTP"
+
+# Closes `conn`, which ends its life; a failure to close changes nothing.
+function shut(@conn: net.Conn)
+    _ = io.close(@conn.stream).is_err()
+
+# A connection to `up`, over TLS for `https://`, bounded by
+# `plan.connect_ms`. Fails as `net.connect` and `tls.connect` fail.
+function connect(up: Upstream, plan: Plan) -> net.Conn?
+    if up.secure
+        span = time.milliseconds(plan.connect_ms).default(time.max_duration())
+        return tls.connect(
+            host: up.base.host,
+            port: up.port,
+            deadline: span,
+            client: tls.Client(roots: plan.roots, protocols: ["http/1.1"])
+        )
+    return net.connect(host: up.base.host, port: up.port, deadline_ms: plan.connect_ms)
+
+# Sends the head of `trip` on `upstream` and its body as it comes from the
+# client, `100 Continue` told the client first where it asked. Fails with
+# the code of the upstream's failure, or `client` where the client failed,
+# its answer then written where one is owed.
+function sent(upstream: io.Stream, plan: Plan, up: Upstream, @reader: io.Reader, @body: http.BodyReader, trip: Trip, client: io.Stream) -> ()?
+    host = if plan.keep_host && trip.asked_host != ""
+        trip.asked_host
+    else
+        host_field(up)
+    headers = http.with_header(trip.headers, name: "Host", value: host)
+    target = gateway.target_joined(base: up.base, asked: trip.r.url)
+    out = http.Request(
+        method: trip.r.method,
+        url: target,
+        headers: headers,
+        body: [],
+        closing: trip.upgrade == "",
+        remote: ""
+    )
+    within(upstream, secure: up.secure, ms: plan.send_ms)
+    writer @= http.write_request_head(upstream, r: out, framing: trip.framing)?
+
+    if !has_body(trip.framing)
+        return ok()
+
+    if trip.continuing
+        within(client, secure: false, ms: plan.client_ms)
+
+        if http.write_continue(client).is_err()
+            return fail(code: "client", msg: "the client went away before its body")
+    total: i64 @= 0
+
+    while true
+        within(client, secure: false, ms: plan.client_ms)
+
+        piece = match http.read_piece(@reader, @body, most: PIECE_BYTES)
+            .ok got => got
+            .err e =>
+                if e.code != "closed" && e.code != "stopped"
+                    status = if e.code == "timeout"
+                        408
+                    else
+                        http.failure_status(code: e.code, in_head: false).default(400)
+                    refuse(client, r: trip.r, status: status, why: e.msg, retry_s: 0)
+                return fail(code: "client", msg: f"reading the client's body: {e.msg}")
+
+        if piece.len() == 0
+            break
+        total @ total + piece.len()
+
+        if total > plan.limits.body_bytes
+            refuse(client, r: trip.r, status: 413, why: f"the body is past {plan.limits.body_bytes} bytes", retry_s: 0)
+            return fail(code: "client", msg: "the client's body passed its bound")
+        within(upstream, secure: up.secure, ms: plan.send_ms)
+        http.write_piece(upstream, @writer, data: piece)?
+
+    return http.end_pieces(upstream, @writer)
+
+# The `Host` an upstream is asked by its own name: its host, and its port
+# where the scheme's own is not it.
+function host_field(up: Upstream) -> str
+    shown = if strings.contains(s: up.base.host, substr: ":")
+        "[" + up.base.host + "]"
+    else
+        up.base.host
+
+    if up.base.port == "" || up.secure && up.port == 443 || !up.secure && up.port == 80
+        return shown
+    return f"{shown}:{up.port}"
+
+# What passing an answer back came to.
+record Passed
+    # What the balancer is told.
+    outcome: balance.Outcome
+    # Whether the client's connection is kept.
+    kept: bool
+    # Whether the answer's body reached the client whole.
+    whole: bool
+    # Whether the proxy answered in its place, the upstream's answer being
+    # no answer it could pass on.
+    refused: bool
+
+# Passes the answer `head` begins back to the client, its body as it comes:
+# with its length where it has one, as chunks to an HTTP/1.1 client
+# otherwise, and to the connection's end to an HTTP/1.0 one.
+function passed_back(plan: Plan, stream: io.Stream, conn: net.Conn, @up_reader: io.Reader, secure: bool, trip: Trip, head: http.Response) -> Passed
+    up_body @= match http.body_reader(head, method: trip.r.method, limits: plan.limits)
+        .ok b => b
+        .err e =>
+            refuse(stream, r: trip.r, status: 502, why: words_of(e.code), retry_s: 0)
+            return Passed(outcome: .failed, kept: false, whole: false, refused: true)
+
+    framing = to_client(http.framing_of(up_body), minor: trip.minor)
+    closing = trip.r.closing || ends_by_closing(framing)
+    fields = gateway.hop_by_hop_removed(head.headers)
+    answer = http.Response(status: head.status, reason: head.reason, headers: fields, body: [], closing: closing)
+    within(stream, secure: false, ms: plan.client_ms)
+
+    shown = if trip.r.method == "HEAD"
+        head_length(head)
+    else
+        framing
+
+    writer @= match http.write_response_head_framed(stream, response: answer, framing: shown)
+        .ok w => w
+        .err e =>
+            if e.code == "invalid"
+                refuse(stream, r: trip.r, status: 502, why: words_of(e.code), retry_s: 0)
+                return Passed(outcome: .failed, kept: false, whole: false, refused: true)
+            return Passed(outcome: .neither, kept: false, whole: false, refused: false)
+
+    if trip.r.method == "HEAD"
+        return Passed(outcome: .answered, kept: !closing, whole: true, refused: false)
+
+    while true
+        within(conn.stream, secure: secure, ms: plan.read_ms)
+
+        piece = match http.read_piece(@up_reader, @up_body, most: PIECE_BYTES)
+            .ok got => got
+            .err _  => return Passed(outcome: .failed, kept: false, whole: false, refused: false)
+
+        if piece.len() == 0
+            break
+        within(stream, secure: false, ms: plan.client_ms)
+
+        if http.write_piece(stream, @writer, data: piece).is_err()
+            return Passed(outcome: .neither, kept: false, whole: false, refused: false)
+
+    if http.end_pieces(stream, @writer).is_err()
+        return Passed(outcome: .failed, kept: false, whole: false, refused: false)
+    return Passed(outcome: .answered, kept: !closing, whole: true, refused: false)
+
+# The framing a body read in `framing` is written to a client of HTTP/1.`minor`
+# in: as it came where it has a length or none, else as chunks to HTTP/1.1
+# and to the connection's end to HTTP/1.0, which reads no chunks.
+function to_client(framing: http.Framing, minor: i64) -> http.Framing
+    return match framing
+        .none     => .none
+        .length l => .length(bytes: l.bytes)
+        .chunked | .to_end =>
+            if minor >= 1
+                .chunked
+            else
+                .to_end
+
+# Whether a body in `framing` is ended by closing the connection.
+function ends_by_closing(framing: http.Framing) -> bool
+    return match framing
+        .to_end                      => true
+        .none | .length _ | .chunked => false
+
+# The length the answer to `HEAD` says its body would have, passed on as its
+# `Content-Length`: none where it says none or no number.
+function head_length(head: http.Response) -> http.Framing
+    lengths = http.values_of(head.headers, name: "Content-Length")
+
+    if lengths.len() != 1
+        return .none
+
+    match gateway.digits_of(lengths[0])
+        .ok n  => return .length(bytes: n)
+        .err _ => return .none
+
+## A switched connection
+
+# Relays the 101 `head` to the client and then the bytes of the protocol
+# switched to both ways, until either end closes or both stay silent past
+# `plan.read_ms`. Answers whether the switch was the one asked for; where
+# not, the client is answered 502.
+function switched(plan: Plan, stream: io.Stream, @reader: io.Reader, conn: net.Conn, @up_reader: io.Reader, secure: bool, trip: Trip, head: http.Response) -> bool
+    given = gateway.upgrade_asked(head.headers).default("")
+
+    if trip.upgrade == "" || strings.to_lower(given) != strings.to_lower(trip.upgrade)
+        refuse(
+            stream,
+            r: trip.r,
+            status: 502,
+            why: "the upstream switched to a protocol the client did not ask for",
+            retry_s: 0
+        )
+        return false
+    fields @= gateway.hop_by_hop_removed(head.headers)
+    fields @ fields.push(http.Header(name: "Connection", value: "Upgrade"))
+    fields @ fields.push(http.Header(name: "Upgrade", value: given))
+    answer = http.Response(status: 101, reason: head.reason, headers: fields, body: [], closing: false)
+    within(stream, secure: false, ms: plan.client_ms)
+
+    match http.write_response_head_framed(stream, response: answer, framing: .none)
+        .ok _  => _ = 0
+        .err _ => return true
+
+    tunnel(plan: plan, client: stream, reader: @reader, upstream: conn.stream, up_reader: @up_reader, secure: secure)
+    return true
+
+# Passes what each reader holds already to the other side, then every byte
+# either side sends to the other, until either side ends or fails, or both
+# stay silent past `plan.read_ms`.
+function tunnel(plan: Plan, client: io.Stream, @reader: io.Reader, upstream: io.Stream, @up_reader: io.Reader, secure: bool)
+    held = io.buffered(reader)
+    _ = io.skip(@reader, n: held.len()).is_err()
+
+    if held.len() > 0 && !relayed_to(upstream, secure: secure, ms: plan.send_ms, data: held)
+        return
+    up_held = io.buffered(up_reader)
+    _ = io.skip(@up_reader, n: up_held.len()).is_err()
+
+    if up_held.len() > 0 && !relayed_to(client, secure: false, ms: plan.client_ms, data: up_held)
+        return
+
+    set @= match poll.make(most: 2)
+        .ok s  => s
+        .err _ => return
+
+    turns(plan: plan, set: set, client: client, upstream: upstream, secure: secure)
+    _ = poll.close(@set).is_err()
+
+# Writes `data` to `s` within `ms`. Answers whether it was written.
+function relayed_to(s: io.Stream, secure: bool, ms: i64, data: [u8]) -> bool
+    within(s, secure: secure, ms: ms)
+    return !io.write(s, data: data).is_err()
+
+# The tunnel's loop on `set`: both sockets waited on together, or, where the
+# upstream is TLS, which `poll` cannot wait on, the client's socket waited on
+# for `TLS_TURN_MS` and the upstream then read without waiting.
+function turns(plan: Plan, set: poll.Set, client: io.Stream, upstream: io.Stream, secure: bool)
+    client_key = match poll.add_stream(set, s: client, interest: .read)
+        .ok k  => k
+        .err _ => return
+
+    up_key: i64 @= -1
+
+    if !secure
+        match poll.add_stream(set, s: upstream, interest: .read)
+            .ok k  => up_key @ k
+            .err _ => return
+
+    quiet = match time.mark()
+        .ok m  => m
+        .err _ => return
+
+    last @= quiet
+
+    while true
+        limit = if secure
+            TLS_TURN_MS
+        else
+            plan.read_ms
+
+        events = match poll.wait(set, limit: time.milliseconds(limit).default(time.max_duration()))
+            .ok got => got
+            .err _  => return
+
+        moved: bool @= false
+
+        for ev in events
+            if ev.key == client_key
+                if !moved_on(from: client, to: upstream, from_tls: false, to_tls: secure, plan: plan)
+                    return
+                moved @ true
+            else if ev.key == up_key
+                if !moved_on(from: upstream, to: client, from_tls: false, to_tls: false, plan: plan)
+                    return
+                moved @ true
+
+        if secure
+            within(upstream, secure: true, ms: 0)
+
+            match io.read(upstream, n: PIECE_BYTES)
+                .ok got =>
+                    if got.len() == 0
+                        return
+
+                    if !relayed_to(client, secure: false, ms: plan.client_ms, data: got)
+                        return
+                    moved @ true
+                .err e =>
+                    if e.code != "timeout"
+                        return
+
+        if moved
+            last @ time.mark().default(last)
+        else if since_ms(last) >= plan.read_ms
+            return
+
+# Reads what `from` holds now and writes it to `to`. Answers false where
+# `from` has ended or either side failed.
+function moved_on(from: io.Stream, to: io.Stream, from_tls: bool, to_tls: bool, plan: Plan) -> bool
+    within(from, secure: from_tls, ms: plan.read_ms)
+
+    match io.read(from, n: PIECE_BYTES)
+        .ok got =>
+            if got.len() == 0
+                return false
+            return relayed_to(to, secure: to_tls, ms: plan.send_ms, data: got)
+        .err _ => return false
+
+## Many connections: workers and the thread that owns the counts
+
+# A connection accepted, handed to a worker whole.
+record Job
+    # The connection; the worker's from the hand-over.
+    conn: net.Conn
+
+# What a worker's thread is given.
+record Start
+    # The connections accepted, each taken by one worker.
+    jobs: (mailbox Job)
+    # The coordinator's mailbox.
+    asks: (mailbox Ask)
+    # What the relay does.
+    plan: Plan
+
+# A worker: connections taken and served until the mailbox is closed and
+# empty or the program's stop finds it empty, each closed once served.
+function work(start: Start) -> Tally
+    replies: (mailbox Choice) = mailbox()
+    c: Chooser @= .there(asks: start.asks, replies: replies)
+    tally @= Tally(requests: 0, relayed: 0, refused: 0, switched: 0)
+
+    while true
+        match start.jobs.receive(within_ms: -1)
+            .err _ => break
+            .ok taken =>
+                job @= taken
+                remote = net.format_address(job.conn.remote)
+                tally @ sum(a: tally, b: serve_client(@c, plan: start.plan, stream: job.conn.stream, remote: remote))
+                _ = io.close(@job.conn.stream).is_err()
+                _ = start.asks.send(.free).is_err()
+
+    return tally
+
+# What serving came to.
+record Served
+    # The connections accepted.
+    connections: i64
+    # What their requests came to.
+    tally: Tally
+
+# Serves every connection `l` accepts with `workers` threads, the balancer's
+# counts owned by this thread, until the program's stop. Fails `limit` where
+# no thread could be started, and as `poll` fails.
+function serve(l: net.Listener, plan: Plan, state: balance.State, workers: i64) -> Served?
+    jobs: (mailbox Job) = mailbox()
+    asks: (mailbox Ask) = mailbox()
+    started: [(thread Tally)] @= []
+
+    for _ in range(from: 0, to: workers)
+        match spawn(work, Start(jobs: jobs, asks: asks, plan: plan))
+            .ok t => started @ started.push(t)
+            .err e =>
+                jobs.close()
+
+                for t in started
+                    _ = t.wait()
+
+                return fail(code: "limit", msg: f"serving a proxy: a worker could not be started: {e.msg}")
+
+    accepted = coordinate(l, jobs: jobs, asks: asks, state: state, workers: workers)
+    jobs.close()
+    total @= Tally(requests: 0, relayed: 0, refused: 0, switched: 0)
+
+    for t in started
+        total @ sum(a: total, b: t.wait())
+
+    match accepted
+        .ok n  => return ok(Served(connections: n, tally: total))
+        .err e => return fail(code: e.code, msg: e.msg)
+
+# The coordinator's loop: connections accepted while a worker is free, each
+# handed to the workers, and the workers' asks answered from `state`, until
+# the stop. Answers the connections accepted.
+function coordinate(l: net.Listener, jobs: (mailbox Job), asks: (mailbox Ask), state: balance.State, workers: i64) -> i64?
+    set @= poll.make(most: 2)?
+    counts @= state
+    start = time.mark()?
+    accepted: i64 @= 0
+    busy: i64 @= 0
+    listening: bool @= true
+    listen_key: i64 @= poll.add_listener(set, l: l)?
+    ask_key = poll.add_mailbox(set, m: asks)?
+
+    while true
+        events = match poll.wait_forever(set)
+            .ok got => got
+            .err e =>
+                _ = poll.close(@set).is_err()
+
+                if e.code == "stopped"
+                    return ok(accepted)
+                return fail(code: e.code, msg: e.msg)
+
+        for ev in events
+            if ev.key == ask_key
+                while true
+                    match asks.receive(within_ms: 0)
+                        .err _ => break
+                        .ok a =>
+                            match a
+                                .choose q =>
+                                    now = since_ms(start)
+
+                                    answer: Choice = match balance.choose(@counts, now_ms: now, avoid: q.avoid)
+                                        .ok i  => .chosen(upstream: i)
+                                        .err _ => .none(back_in_ms: balance.back_in_ms(counts, now_ms: now))
+
+                                    _ = q.replies.send(answer).is_err()
+                                .done d => balance.done(
+                                    @counts,
+                                    i: d.upstream,
+                                    outcome: d.outcome,
+                                    now_ms: since_ms(start)
+                                )
+                                .free =>
+                                    busy @ busy - 1
+
+                                    if !listening
+                                        listen_key @ poll.add_listener(set, l: l)?
+                                        listening @ true
+            else if listening && ev.key == listen_key
+                match net.accept(l, deadline_ms: 0)
+                    .ok conn =>
+                        job @= Job(conn: conn)
+                        accepted @ accepted + 1
+                        busy @ busy + 1
+
+                        if jobs.send(@job).is_err()
+                            _ = io.close(@job.conn.stream).is_err()
+
+                        if busy >= workers
+                            _ = poll.remove(set, key: listen_key).is_err()
+                            listening @ false
+                    .err _ => _ = 0
+
+## Tests
+
+# What an upstream of the tests does with the one connection it takes.
+record Script
+    # Where it tells its port.
+    ports: (mailbox i64)
+    # Where it tells the request it read.
+    seen: (mailbox http.Request)
+    # What it writes once the request is read; "" writes nothing and waits
+    # for the connection's end.
+    answer: str
+    # Whether it then writes back what comes, as a switched protocol would.
+    echo: bool
+
+# An upstream that takes one connection, reads one request and answers as
+# `s` says.
+function upstream_once(s: Script) -> i64
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    _ = s.ports.send(l.address.port).is_err()
+    conn @= net.accept(l, deadline_ms: 5_000).must()
+    net.close_listener(@l).must()
+    reader @= io.reader(conn.stream)
+
+    match http.next_request(@reader, limits: http.default_limits())
+        .ok r  => _ = s.seen.send(r).is_err()
+        .err _ => _ = 0
+
+    within(conn.stream, secure: false, ms: 3_000)
+
+    if s.answer != ""
+        _ = io.write(conn.stream, data: bytes.from_text(s.answer)).is_err()
+    else
+        _ = io.read(conn.stream, n: 1).is_err()
+
+    while s.echo
+        match io.read(conn.stream, n: 1_024)
+            .ok got =>
+                if got.len() == 0 || io.write(conn.stream, data: got).is_err()
+                    break
+            .err _ => break
+
+    _ = io.close(@conn.stream).is_err()
+    return 0
+
+# What the proxy of the tests serves.
+record Front
+    # Where it tells its port.
+    ports: (mailbox i64)
+    # What it does.
+    plan: Plan
+    # The upstreams' weights.
+    weights: [i64]
+    # The client connections it serves, one after another.
+    connections: i64
+
+# A proxy that serves `f.connections` connections on one thread and answers
+# the requests it read.
+function proxy_once(f: Front) -> i64
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    _ = f.ports.send(l.address.port).is_err()
+    c: Chooser @= .here(
+        state: balance.state_of(f.weights, least: false, max_fails: 1, fail_ms: 10_000),
+        start: time.mark().must()
+    )
+    requests: i64 @= 0
+
+    for _ in range(from: 0, to: f.connections)
+        conn @= net.accept(l, deadline_ms: 5_000).must()
+        requests @ requests + serve_client(@c, plan: f.plan, stream: conn.stream, remote: net.format_address(conn.remote)).requests
+        _ = io.close(@conn.stream).is_err()
+
+    net.close_listener(@l).must()
+    return requests
+
+# The plan of the tests over upstreams on `ports` of the loopback address.
+function plan_for(ports: [i64], read_ms: i64) -> Plan
+    ups: [Upstream] @= []
+
+    for p in ports
+        ups @ ups.push(Upstream(base: url.parse(f"http://127.0.0.1:{p}").must(), port: p, secure: false))
+
+    return Plan(
+        upstreams: ups,
+        limits: http.default_limits(),
+        connect_ms: 2_000,
+        read_ms: read_ms,
+        send_ms: 2_000,
+        client_ms: 2_000,
+        idle_ms: 2_000,
+        tries: 3,
+        keep_host: false,
+        trusted: [],
+        scheme: "http",
+        received_by: "edge:1",
+        roots: ""
+    )
+
+# A port nothing listens on: one listened on and closed.
+function dead_port() -> i64
+    l @= net.listen(host: "127.0.0.1", port: 0).must()
+    port = l.address.port
+    net.close_listener(@l).must()
+    return port
+
+# What a client reads after writing `asked` to the proxy on `port`, until
+# the proxy closes or `until` stands in what came.
+function exchanged(port: i64, asked: str, until: str) -> str
+    conn @= net.connect(host: "127.0.0.1", port: port, deadline_ms: 5_000).must()
+    _ = io.write(conn.stream, data: bytes.from_text(asked)).is_err()
+    within(conn.stream, secure: false, ms: 5_000)
+    got: [u8] @= []
+
+    while true
+        match io.read(conn.stream, n: 4_096)
+            .ok more =>
+                if more.len() == 0
+                    break
+
+                for b in more
+                    got @ got.push(b)
+
+                if until != "" && strings.contains(s: text_of(got), substr: until)
+                    break
+            .err _ => break
+
+    _ = io.close(@conn.stream).is_err()
+    return text_of(got)
+
+# `b` as text, "" where it is not UTF-8.
+function text_of(b: [u8]) -> str
+    return bytes.to_text(b).default("")
+
+# Starts the proxy over `plan` for `connections` connections and answers its
+# thread and its port.
+function front(plan: Plan, weights: [i64], connections: i64) -> Started
+    ports: (mailbox i64) = mailbox()
+    t = spawn(proxy_once, Front(ports: ports, plan: plan, weights: weights, connections: connections)).must()
+    return Started(thread: t, port: ports.receive(within_ms: 5_000).must())
+
+# A thread of the tests and the port it listens on.
+record Started
+    # The thread.
+    thread: (thread i64)
+    # Its port.
+    port: i64
+
+# Starts an upstream that answers `answer` and answers its thread and port.
+function upstream_for(answer: str, echo: bool, seen: (mailbox http.Request)) -> Started
+    ports: (mailbox i64) = mailbox()
+    t = spawn(upstream_once, Script(ports: ports, seen: seen, answer: answer, echo: echo)).must()
+    return Started(thread: t, port: ports.receive(within_ms: 5_000).must())
+
+test "serve_client: a GET passed on with the hop-by-hop fields gone and the client told, its answer passed back"
+    seen: (mailbox http.Request) = mailbox()
+    up = upstream_for(
+        answer: "HTTP/1.1 200 OK\r\nContent-Length: 5\r\nConnection: keep-alive, X-Up\r\nX-Up: 1\r\nKeep-Alive: timeout=5\r\nX-Kept: yes\r\n\r\nhello",
+        echo: false,
+        seen: seen
+    )
+    px = front(plan_for([up.port], read_ms: 2_000), weights: [1], connections: 1)
+    got = exchanged(
+        px.port,
+        asked: "GET /a?b=1 HTTP/1.1\r\nHost: shop.example\r\nConnection: close, X-Secret\r\nX-Secret: s\r\nX-Forwarded-For: 6.6.6.6\r\nTE: trailers\r\nAccept: */*\r\n\r\n",
+        until: ""
+    )
+    r = seen.receive(within_ms: 5_000).must()
+    _ = up.thread.wait()
+    assert px.thread.wait() == 1
+    assert strings.has_prefix(s: got, prefix: "HTTP/1.1 200 OK\r\n") && strings.contains(s: got, substr: "\r\n\r\nhello")
+    assert strings.contains(s: got, substr: "X-Kept: yes") && !strings.contains(s: got, substr: "X-Up") && !strings.contains(s: got, substr: "Keep-Alive")
+    assert url.request_target(r.url) == "/a?b=1"
+    assert http.value_of(r.headers, name: "Host").must() == f"127.0.0.1:{up.port}"
+    assert http.value_of(r.headers, name: "X-Forwarded-For").must() == "127.0.0.1"
+    assert http.value_of(r.headers, name: "X-Forwarded-Host").must() == "shop.example"
+    assert http.value_of(r.headers, name: "Forwarded").must() == "for=127.0.0.1;host=shop.example;proto=http"
+    assert http.value_of(r.headers, name: "Via").must() == "1.1 edge:1"
+    assert !http.has_header(r.headers, name: "X-Secret") && !http.has_header(r.headers, name: "TE")
+    assert http.value_of(r.headers, name: "Accept").must() == "*/*"
+
+test "serve_client: a chunked body passed on as it comes, a chunked answer passed back in chunks"
+    seen: (mailbox http.Request) = mailbox()
+    up = upstream_for(
+        answer: "HTTP/1.1 201 Created\r\nTransfer-Encoding: chunked\r\n\r\n2\r\nok\r\n0\r\n\r\n",
+        echo: false,
+        seen: seen
+    )
+    px = front(plan_for([up.port], read_ms: 2_000), weights: [1], connections: 1)
+    got = exchanged(
+        px.port,
+        asked: "POST /up HTTP/1.1\r\nHost: h\r\nConnection: close\r\nTransfer-Encoding: chunked\r\n\r\n3\r\nabc\r\n2\r\nde\r\n0\r\n\r\n",
+        until: ""
+    )
+    r = seen.receive(within_ms: 5_000).must()
+    _ = up.thread.wait()
+    _ = px.thread.wait()
+    assert r.body == bytes.from_text("abcde")
+    assert http.value_of(r.headers, name: "Transfer-Encoding").must() == "chunked"
+    assert strings.has_prefix(s: got, prefix: "HTTP/1.1 201 Created\r\n")
+    assert strings.contains(s: got, substr: "Transfer-Encoding: chunked") && strings.contains(s: got, substr: "\r\n\r\n2\r\nok\r\n0\r\n\r\n")
+
+test "serve_client: no upstream reached is 502, then every one kept out is 503 with Retry-After"
+    px = front(plan_for([dead_port(), dead_port()], read_ms: 2_000), weights: [1, 1], connections: 2)
+    first = exchanged(px.port, asked: "GET / HTTP/1.1\r\nHost: h\r\nConnection: close\r\n\r\n", until: "")
+    second = exchanged(px.port, asked: "GET / HTTP/1.1\r\nHost: h\r\nConnection: close\r\n\r\n", until: "")
+    _ = px.thread.wait()
+    assert strings.has_prefix(s: first, prefix: "HTTP/1.1 502 Bad Gateway\r\n")
+    assert strings.has_prefix(s: second, prefix: "HTTP/1.1 503 Service Unavailable\r\n")
+    assert strings.contains(s: second, substr: "Retry-After: 10\r\n")
+
+test "serve_client: an upstream silent past the read span is 504"
+    seen: (mailbox http.Request) = mailbox()
+    up = upstream_for(answer: "", echo: false, seen: seen)
+    px = front(plan_for([up.port], read_ms: 300), weights: [1], connections: 1)
+    got = exchanged(px.port, asked: "GET / HTTP/1.1\r\nHost: h\r\nConnection: close\r\n\r\n", until: "")
+    _ = seen.receive(within_ms: 5_000).must()
+    _ = up.thread.wait()
+    _ = px.thread.wait()
+    assert strings.has_prefix(s: got, prefix: "HTTP/1.1 504 Gateway Timeout\r\n")
+
+test "serve_client: a WebSocket's upgrade passed on, the 101 relayed, then bytes both ways"
+    seen: (mailbox http.Request) = mailbox()
+    up = upstream_for(
+        answer: "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: x\r\n\r\n",
+        echo: true,
+        seen: seen
+    )
+    px = front(plan_for([up.port], read_ms: 2_000), weights: [1], connections: 1)
+    got = exchanged(
+        px.port,
+        asked: "GET /ws HTTP/1.1\r\nHost: h\r\nConnection: Upgrade\r\nUpgrade: websocket\r\n\r\nping",
+        until: "\r\n\r\nping"
+    )
+    r = seen.receive(within_ms: 5_000).must()
+    _ = up.thread.wait()
+    _ = px.thread.wait()
+    assert http.value_of(r.headers, name: "Upgrade").must() == "websocket"
+    assert http.value_of(r.headers, name: "Connection").must() == "Upgrade"
+    assert strings.has_prefix(s: got, prefix: "HTTP/1.1 101 Switching Protocols\r\n")
+    assert strings.contains(s: got, substr: "Sec-WebSocket-Accept: x") && strings.contains(s: got, substr: "\r\n\r\nping")
+
+test "serve_client: a loop, both framings, Max-Forwards 0 and a body past its bound answered by the proxy"
+    plan @= plan_for([dead_port()], read_ms: 2_000)
+    plan.limits.body_bytes @ 4
+    px = front(plan, weights: [1], connections: 4)
+    looped = exchanged(px.port, asked: "GET / HTTP/1.1\r\nHost: h\r\nVia: 1.1 edge:1\r\n\r\n", until: "")
+    both = exchanged(
+        px.port,
+        asked: "POST / HTTP/1.1\r\nHost: h\r\nContent-Length: 3\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\n",
+        until: ""
+    )
+    options = exchanged(px.port, asked: "OPTIONS * HTTP/1.1\r\nHost: h\r\nMax-Forwards: 0\r\n\r\n", until: "")
+    large = exchanged(px.port, asked: "PUT / HTTP/1.1\r\nHost: h\r\nContent-Length: 10\r\n\r\n0123456789", until: "")
+    _ = px.thread.wait()
+    assert strings.has_prefix(s: looped, prefix: "HTTP/1.1 508 Loop Detected\r\n")
+    assert strings.has_prefix(s: both, prefix: "HTTP/1.1 400 Bad Request\r\n")
+    assert strings.has_prefix(s: options, prefix: "HTTP/1.1 200 OK\r\n")
+    assert strings.has_prefix(s: large, prefix: "HTTP/1.1 413 Content Too Large\r\n")
