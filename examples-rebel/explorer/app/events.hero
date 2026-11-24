@@ -50,9 +50,16 @@ function handle(@c: controller.Controller, e: ui.Event)
             c.ex.status @ ""
             commands.menu(@c, item: m.item)
         .close_asked w => closing(@c, window: w.window)
-        .timer_fired _ => controller.tick(@c)
+        # The system asks the app to end, by the Dock's Quit or the
+        # session's end, and waits: the explorer ends as its Close item
+        # ends it, and closing the app answers the ask.
+        .quit_asked _      => c.done @ true
+        .timer_fired _     => controller.tick(@c)
         .dialog_answered d => commands.answered(@c, dialog: d.dialog, answer: d.answer)
-        .value_changed _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .files_chosen _ | .print_chosen _ | .ready _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ | .handed _ => _ = 0
+        # A drawing area's pointer, keys and parts: the explorer makes no
+        # drawing area, so none of them comes.
+        .pointer _ | .key _ | .part_acted _ => _ = 0
+        .value_changed _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .files_chosen _ | .print_chosen _ | .ready _ | .appearance_changed _ | .files_dropped _ | .handed _ => _ = 0
 
     controller.redraw(@c)
 

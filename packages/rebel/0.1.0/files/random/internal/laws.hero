@@ -1,0 +1,359 @@
+# The distributions `random` draws from, their parameters checked once when
+# built and what their draws need computed then. The methods, and the
+# arithmetic of a draw that does not depend on the generator, are `draws`'s;
+# `law_pick` and `law_strong` hold the loops that take numbers from their own
+# generator.
+
+use math
+use random/internal/codes
+
+# The largest count a float holds exactly with every count below it, 2^53 - 1:
+# the most trials of a binomial and the largest value of a Zipf.
+constant LARGEST_COUNT: i64
+    9007199254740991
+
+# A distribution of real numbers.
+variant Law
+    # Every number from `from` to `to` as likely, `to` left out.
+    uniform
+        span: Span
+    # The bell curve of a mean and a standard deviation.
+    normal
+        mean: f64
+        deviation: f64
+    # A number whose logarithm is normal with that mean and deviation.
+    lognormal
+        mean: f64
+        deviation: f64
+    # The wait for an event that comes `rate` times a unit on average.
+    exponential
+        rate: f64
+    # The gamma distribution of a shape and a scale.
+    gamma
+        base: Gamma
+        scale: f64
+    # The beta distribution: the share of the first of two gammas in their sum.
+    beta
+        first: Gamma
+        second: Gamma
+    # Angles around a mean angle, closer the higher the concentration.
+    von_mises
+        circle: Circle
+    # Pareto's: from `scale` up, `shape` the steepness of its tail.
+    pareto
+        shape: f64
+        scale: f64
+    # Weibull's: an exponential raised to the power 1 / shape, times the scale.
+    weibull
+        scale: f64
+        power: f64
+    # Rising from `low` to the mode and falling to `high`.
+    triangular
+        triangle: Triangle
+
+# A distribution of whole numbers.
+variant Count
+    # The successes among `trials` trials of one probability.
+    binomial
+        law: Binomial
+    # Zipf's: `k` from 0 to `largest` as likely as (offset + k)^-exponent.
+    zipf
+        law: Zipf
+
+# A uniform range, drawn as `from + width * u` times `factor`: a width beyond
+# the floats is drawn in halves, `factor` 2, so that nothing overflows.
+record Span
+    # The start, halved where `factor` is 2.
+    from: f64
+    # The width, halved where `factor` is 2.
+    width: f64
+    # 1, or 2 where the halves are drawn.
+    factor: f64
+    # The end left out, as given.
+    to: f64
+
+# A triangle, drawn by its inverse in halves where its width is beyond the
+# floats, as `Span` is.
+record Triangle
+    # The low end, halved where `factor` is 2.
+    low: f64
+    # The high end, halved where `factor` is 2.
+    high: f64
+    # `high - low`.
+    width: f64
+    # Where the mode stands across the width, from 0 to 1.
+    split: f64
+    # 1, or 2 where the halves are drawn.
+    factor: f64
+
+# What Marsaglia and Tsang's method needs for one gamma shape.
+record Gamma
+    # The shape asked for.
+    shape: f64
+    # Whether the shape is below 1, drawn as the shape plus 1 and lowered.
+    lowered: bool
+    # The shape drawn minus 1/3.
+    d: f64
+    # 1 / sqrt(9 d).
+    c: f64
+
+# What Best and Fisher's method needs for one von Mises distribution.
+record Circle
+    # The mean angle, from 0 to 2 pi.
+    mean: f64
+    # Whether the concentration is so small that every angle is as likely to
+    # the last digit of a float.
+    even: bool
+    # Best and Fisher's r, 1 / (2 kappa) + sqrt(1 + 1 / (4 kappa^2)).
+    r: f64
+    # r - 1, written apart so that a large concentration keeps its digits.
+    r_less_one: f64
+
+# What a binomial draw needs.
+record Binomial
+    # The number of trials.
+    trials: i64
+    # The probability of a success, or of a failure where `flipped`: never
+    # above 1/2.
+    p: f64
+    # Whether `p` is the failures' and the count drawn is subtracted from the
+    # trials.
+    flipped: bool
+    # Whether fewer than 10 successes are expected and geometric waits are
+    # counted.
+    waits: bool
+    # ln(1 - p), the scale of a geometric wait.
+    log_q: f64
+    # BTRS's constants (Hormann 1993): b, a, c, v_r and alpha.
+    b: f64
+    a: f64
+    c: f64
+    v_r: f64
+    alpha: f64
+    # The mode, floor((trials + 1) p).
+    mode: f64
+
+# What a Zipf draw needs.
+record Zipf
+    # The exponent q of (offset + k)^-q, above 0.
+    exponent: f64
+    # The offset, 1 or more.
+    offset: f64
+    # The largest value drawn.
+    largest: i64
+    # H(largest + 1/2), the top of the range a draw is inverted from.
+    top: f64
+    # H(1/2) - h(0), the bottom, below which the value 0 has its whole share.
+    bottom: f64
+
+# The uniform distribution from `from` to `to`, `to` left out.
+function uniform(from: f64, to: f64) -> Law?
+    if !math.is_finite(from) || !math.is_finite(to) || !(to > from)
+        return fail(
+            code: codes.INVALID,
+            msg: f"a uniform range from {from} to {to}, where the end must be finite and above the start"
+        )
+    width = to - from
+
+    if math.is_finite(width)
+        return ok(.uniform(span: Span(from: from, width: width, factor: 1.0, to: to)))
+    return ok(.uniform(span: Span(from: from / 2.0, width: to / 2.0 - from / 2.0, factor: 2.0, to: to)))
+
+# The normal distribution of `mean` and `deviation`.
+function normal(mean: f64, deviation: f64) -> Law?
+    if !math.is_finite(mean) || !math.is_finite(deviation) || !(deviation >= 0.0)
+        return fail(
+            code: codes.INVALID,
+            msg: f"a normal distribution of mean {mean} and deviation {deviation}, where both must be finite and the deviation 0 or more"
+        )
+    return ok(.normal(mean: mean, deviation: deviation))
+
+# The lognormal distribution whose logarithm has `mean` and `deviation`.
+function lognormal(mean: f64, deviation: f64) -> Law?
+    if !math.is_finite(mean) || !math.is_finite(deviation) || !(deviation >= 0.0)
+        return fail(
+            code: codes.INVALID,
+            msg: f"a lognormal distribution of log mean {mean} and log deviation {deviation}, where both must be finite and the deviation 0 or more"
+        )
+    return ok(.lognormal(mean: mean, deviation: deviation))
+
+# The exponential distribution of `rate`.
+function exponential(rate: f64) -> Law?
+    if !math.is_finite(rate) || !(rate > 0.0)
+        return fail(
+            code: codes.INVALID,
+            msg: f"an exponential distribution of rate {rate}, where the rate must be finite and above 0"
+        )
+    return ok(.exponential(rate: rate))
+
+# What Marsaglia and Tsang's method needs for `shape`, finite and above 0.
+function gamma_base(shape: f64) -> Gamma
+    lowered = shape < 1.0
+
+    drawn = if lowered
+        shape + 1.0
+    else
+        shape
+    d = drawn - 1.0 / 3.0
+    return Gamma(shape: shape, lowered: lowered, d: d, c: 1.0 / (3.0 * math.sqrt(d)))
+
+# The gamma distribution of `shape` and `scale`.
+function gamma(shape: f64, scale: f64) -> Law?
+    if !math.is_finite(shape) || !(shape > 0.0) || !math.is_finite(scale) || !(scale > 0.0)
+        return fail(
+            code: codes.INVALID,
+            msg: f"a gamma distribution of shape {shape} and scale {scale}, where both must be finite and above 0"
+        )
+    return ok(.gamma(base: gamma_base(shape), scale: scale))
+
+# The beta distribution of the shapes `a` and `b`.
+function beta(a: f64, b: f64) -> Law?
+    if !math.is_finite(a) || !(a > 0.0) || !math.is_finite(b) || !(b > 0.0)
+        return fail(
+            code: codes.INVALID,
+            msg: f"a beta distribution of shapes {a} and {b}, where both must be finite and above 0"
+        )
+    return ok(.beta(first: gamma_base(a), second: gamma_base(b)))
+
+# The von Mises distribution around `mean` of `concentration`.
+function von_mises(mean: f64, concentration: f64) -> Law?
+    if !math.is_finite(mean) || !math.is_finite(concentration) || !(concentration >= 0.0)
+        return fail(
+            code: codes.INVALID,
+            msg: f"a von Mises distribution around {mean} of concentration {concentration}, where both must be finite and the concentration 0 or more"
+        )
+    centre = around(mean)
+
+    # Below 2^-60 the density, proportional to exp(kappa cos(x - mean)), is
+    # even to within 2^-59, past the last digit of a float.
+    if concentration < 0.0000000000000000008673617379884035
+        return ok(.von_mises(circle: Circle(mean: centre, even: true, r: 0.0, r_less_one: 0.0)))
+    s = 0.5 / concentration
+    root = math.sqrt(1.0 + s * s)
+    return ok(.von_mises(circle: Circle(mean: centre, even: false, r: s + root, r_less_one: s + s * s / (1.0 + root))))
+
+# The Pareto distribution of `shape` from `scale` up.
+function pareto(shape: f64, scale: f64) -> Law?
+    if !math.is_finite(shape) || !(shape > 0.0) || !math.is_finite(scale) || !(scale > 0.0)
+        return fail(
+            code: codes.INVALID,
+            msg: f"a Pareto distribution of shape {shape} and scale {scale}, where both must be finite and above 0"
+        )
+    return ok(.pareto(shape: shape, scale: scale))
+
+# The Weibull distribution of `scale` and `shape`.
+function weibull(scale: f64, shape: f64) -> Law?
+    if !math.is_finite(scale) || !(scale > 0.0) || !math.is_finite(shape) || !(shape > 0.0)
+        return fail(
+            code: codes.INVALID,
+            msg: f"a Weibull distribution of scale {scale} and shape {shape}, where both must be finite and above 0"
+        )
+    return ok(.weibull(scale: scale, power: 1.0 / shape))
+
+# The triangular distribution from `low` to `high` peaking at `mode`.
+function triangular(low: f64, high: f64, mode: f64) -> Law?
+    if !math.is_finite(low) || !math.is_finite(high) || !math.is_finite(mode) || !(high > low) || !(mode >= low) || !(mode <= high)
+        return fail(
+            code: codes.INVALID,
+            msg: f"a triangular distribution from {low} to {high} peaking at {mode}, where all must be finite, the high end above the low and the mode between them"
+        )
+    width = high - low
+
+    if math.is_finite(width)
+        return ok(
+            .triangular(triangle: Triangle(low: low, high: high, width: width, split: (mode - low) / width, factor: 1.0))
+        )
+    half_low = low / 2.0
+    half_width = high / 2.0 - half_low
+    split = (mode / 2.0 - half_low) / half_width
+    return ok(
+        .triangular(triangle: Triangle(low: half_low, high: high / 2.0, width: half_width, split: split, factor: 2.0))
+    )
+
+# The binomial distribution of `trials` trials of probability `probability`.
+function binomial(trials: i64, probability: f64) -> Count?
+    if trials < 0 || trials > LARGEST_COUNT
+        return fail(
+            code: codes.INVALID,
+            msg: f"a binomial distribution of {trials} trials, where they must be from 0 to {LARGEST_COUNT}"
+        )
+
+    if math.is_nan(probability) || probability < 0.0 || probability > 1.0
+        return fail(
+            code: codes.INVALID,
+            msg: f"a binomial distribution of probability {probability}, where it must be from 0 to 1"
+        )
+    flipped = probability > 0.5
+
+    p = if flipped
+        1.0 - probability
+    else
+        probability
+    n = to_f64(trials)
+    q = 1.0 - p
+    waits = n * p < 10.0
+    law @= Binomial(
+        trials: trials,
+        p: p,
+        flipped: flipped,
+        waits: waits,
+        log_q: math.ln_1_plus(-p),
+        b: 0.0,
+        a: 0.0,
+        c: 0.0,
+        v_r: 0.0,
+        alpha: 0.0,
+        mode: 0.0
+    )
+
+    if !waits
+        spq = math.sqrt(n * p * q)
+        b = 1.15 + 2.53 * spq
+        law.b @ b
+        law.a @ -0.0873 + 0.0248 * b + 0.01 * p
+        law.c @ n * p + 0.5
+        law.v_r @ 0.92 - 4.2 / b
+        law.alpha @ (2.83 + 5.1 / b) * spq
+        law.mode @ math.floor((n + 1.0) * p)
+    return ok(.binomial(law: law))
+
+# H, the integral of (offset + x)^-exponent, written as ln(v + x) times
+# expm1(y) / y so that an exponent near 1 keeps its digits.
+function zipf_h(exponent: f64, offset: f64, x: f64) -> f64
+    l = math.ln(offset + x)
+    y = (1.0 - exponent) * l
+
+    if y == 0.0
+        return l
+    return l * math.exp_minus_1(y) / y
+
+# Zipf's distribution of `exponent` and `offset`, from 0 to `largest`.
+function zipf(exponent: f64, offset: f64, largest: i64) -> Count?
+    if !math.is_finite(exponent) || !(exponent > 0.0)
+        return fail(
+            code: codes.INVALID,
+            msg: f"a Zipf distribution of exponent {exponent}, where it must be finite and above 0"
+        )
+
+    if !math.is_finite(offset) || !(offset >= 1.0)
+        return fail(
+            code: codes.INVALID,
+            msg: f"a Zipf distribution of offset {offset}, where it must be finite and 1 or more"
+        )
+
+    if largest < 0 || largest > LARGEST_COUNT
+        return fail(
+            code: codes.INVALID,
+            msg: f"a Zipf distribution up to {largest}, where it must be from 0 to {LARGEST_COUNT}"
+        )
+    top = zipf_h(exponent: exponent, offset: offset, x: to_f64(largest) + 0.5)
+    bottom = zipf_h(exponent: exponent, offset: offset, x: 0.5) - math.exp(-exponent * math.ln(offset))
+    return ok(.zipf(law: Zipf(exponent: exponent, offset: offset, largest: largest, top: top, bottom: bottom)))
+
+# `x` turned into [0, 2 pi).
+function around(x: f64) -> f64
+    turned = math.rem_euclid(x: x, by: math.TAU)
+
+    if turned >= math.TAU
+        return 0.0
+    return turned

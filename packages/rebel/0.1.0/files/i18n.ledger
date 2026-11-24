@@ -118,11 +118,22 @@ capability locale/environment  the languages the environment asks messages in
   go      -
   rust    -
   python  locale.getdefaultlocale, locale.getlocale
+  java    -
+  dotnet  -
+  odin    -
+  icu     -
+  note    LANGUAGE, LC_ALL, LC_MESSAGES and LANG in gettext's order, as Python's `gettext.find` reads them
+
+capability locale/system  the languages and the locale of the formats the person chose in the system's settings
+  heroes  i18n.system_languages, i18n.system_locale, i18n.FAILED
+  go      -
+  rust    -
+  python  -
   java    Locale.getDefault
-  dotnet  CultureInfo.CurrentUICulture, CultureInfo.CurrentCulture, CultureInfo.InstalledUICulture
+  dotnet  CultureInfo.CurrentUICulture, CultureInfo.CurrentCulture
   odin    -
   icu     uloc_getDefault
-  note    LANGUAGE, LC_ALL, LC_MESSAGES and LANG in gettext's order, as Python's `gettext.find` reads them
+  note    through the platform layer's member `hero_locale` (`runtime/platform/hero_locale.c`): on macOS CoreFoundation's `CFLocaleCopyPreferredLanguages` and `CFLocaleCopyCurrent`, which read the user's preferences and not the environment, so a program started from the Finder speaks the person's language; on Windows `GetUserPreferredUILanguages` and `GetUserDefaultLocaleName` (Microsoft's reference, read 2026-11-23); elsewhere the environment, gettext's order for the languages and LC_ALL, LC_TIME, LC_NUMERIC, LC_MONETARY and LANG for the formats, and where it sets none systemd's `/etc/locale.conf` (locale.conf(5)). ICU's identifier is made BCP 47 by CLDR's keyword aliases (`cldr-bcp47`, the table `i18n/internal/keyword_tables`), `en_US@rg=itzzzz` being `en-US-u-rg-itzzzz`; a Windows sort becomes CLDR's collation where CLDR has one (Microsoft's "Sort Order Identifiers", read 2026-11-23, and the box's `EnumSystemLocalesEx` with `LOCALE_ALTERNATE_SORTS`, run 2026-11-23: fifteen sorts, of which `de` phone book, `es` traditional, `ja` and `zh` radical and stroke, `zh` stroke and `zh` Bopomofo have one). Java and ICU on POSIX read the environment and on Windows the same calls; .NET's CurrentUICulture is the first language of the display, CurrentCulture the regional format. Run on this Mac (macOS 27.2: `en-US`, `it-IT`, `it`, formats `en_US@rg=itzzzz`) and on the Windows box (`en-US`, formats `en-US`, from ssh and from the desktop session alike); the reading of `/etc/locale.conf` on a Linux machine is held by its cases alone, unrun on one
 
 capability locale/set-default  the process's own locale changed
   heroes  refused: a process-wide locale is mutable state every thread reads (C's setlocale is not thread-safe); every function here takes its locale as an argument
@@ -334,6 +345,15 @@ capability message/qt  Qt Linguist's .ts files read
   java    -
   dotnet  -
   odin    i18n.parse_qt_linguist_file, i18n.parse_qt_linguist_from_bytes
+  icu     -
+
+dropped installed  the language a system was installed in, which is not a choice of the person the program speaks to
+  go      -
+  rust    -
+  python  -
+  java    -
+  dotnet  CultureInfo.InstalledUICulture
+  odin    -
   icu     -
 
 dropped identity  what a value's identity or a runtime's plumbing would have needed

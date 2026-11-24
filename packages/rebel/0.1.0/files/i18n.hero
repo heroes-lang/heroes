@@ -1,5 +1,6 @@
 # A program spoken in its reader's language: the language a reader asked for
-# named and matched (BCP 47 tags), the plural rules of every language CLDR
+# named and matched (BCP 47 tags), the languages and the formats the person
+# chose in the system's settings, the plural rules of every language CLDR
 # knows, and the translations of a program's messages read from gettext's
 # `.po` and `.mo` files and looked up with their context and plural forms.
 # The plural rules and the locale data are CLDR's, release `CLDR_VERSION`,
@@ -14,9 +15,10 @@
 #
 # It fails `invalid` where a tag, a rule, a `.po` text or a `.mo` file is not
 # what the function reads, the message saying where; `not_found` where a
-# message, a header field or a parent is absent; `not_text` where a `.mo`
-# string is not UTF-8; and `unsupported` where a `.mo` file declares a
-# character set other than UTF-8.
+# message, a header field, a parent or the system's locale is absent;
+# `not_text` where a `.mo` string is not UTF-8; `unsupported` where a `.mo`
+# file declares a character set other than UTF-8; and `failed` where the
+# system keeps locale settings and will not say them.
 #
 # Not written yet, each a `pending` block of its ledger: a language, script or
 # region named in words in a language; every locale CLDR has data for, and every
@@ -30,6 +32,7 @@ use i18n/internal/mo_file
 use i18n/internal/plural_expr
 use i18n/internal/plural_rules as rule_engine
 use i18n/internal/po_file
+use i18n/internal/system_settings
 use os
 use strings
 
@@ -55,6 +58,12 @@ constant NOT_TEXT: str
 # other than UTF-8 and holds bytes outside ASCII.
 constant UNSUPPORTED: str
     "unsupported"
+
+# The code `system_languages` and `system_locale` fail with where the system
+# keeps locale settings and its call to read them fails, the system's words
+# in the message.
+constant FAILED: str
+    "failed"
 
 ## Versions
 
@@ -295,7 +304,8 @@ function filter_tags(ranges: [str], tags: [str]) -> [str]
 #
 # The names are as the environment writes them, POSIX's (`de_DE.UTF-8`); the
 # empty list where none is set or the first set is `C` or `POSIX`. See also
-# `parse_posix`, `catalog_paths`.
+# `parse_posix`, `catalog_paths`, `system_languages`, which reads the
+# system's settings first.
 function environment_languages() -> [str]
     for name in ["LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG"]
         match os.env(name)
@@ -314,6 +324,39 @@ function environment_languages() -> [str]
             .err _ => _ = 0
 
     return []
+
+# The languages the person chose in the system's settings, the most preferred
+# first, each once: on macOS the preferred languages of Language & Region, on
+# Windows the preferred languages of the display, so a program started from
+# the Finder or the Start menu, which has no `LANG`, speaks the person's
+# language; elsewhere the environment's, as `environment_languages` reads
+# them, and where it sets none the system's own locale in systemd's
+# `/etc/locale.conf`.
+#
+# A sort Windows names after `_` becomes the collation CLDR names it by,
+# `de-DE_phoneb` being `de-DE-u-co-phonebk`. The empty list where no language
+# is named or the first set is `C` or `POSIX`. Fails `failed` where the system
+# keeps settings and will not say them, its words in the message, and
+# `invalid` where a name is not a well-formed tag. See also `system_locale`,
+# `lookup_tag`, which chooses among a program's translations.
+function system_languages() -> [Locale]?
+    return system_settings.languages()
+
+# The locale the system writes the person's numbers, dates, times and
+# currencies in: on macOS the region and formats of Language & Region, read
+# from ICU's identifier, so English with Italy's formats is
+# `en-US-u-rg-itzzzz`; on Windows the regional format; elsewhere the first of
+# `LC_ALL`, `LC_TIME`, `LC_NUMERIC`, `LC_MONETARY` and `LANG` the environment
+# sets, and where it sets none systemd's `/etc/locale.conf`.
+#
+# ICU's keywords become BCP 47's by CLDR's aliases, `calendar=gregorian` being
+# `ca-gregory`; a keyword BCP 47 cannot write, a time zone CLDR has no id for,
+# is left out. `C` and `POSIX` read as the root, `und`. Fails `not_found`
+# where no locale is named, `failed` where the system keeps settings and will
+# not say them, and `invalid` where the name is not a well-formed tag. See also
+# `system_languages`, `parse_posix`.
+function system_locale() -> Locale?
+    return system_settings.formats()
 
 ## Plural rules
 
@@ -1209,3 +1252,20 @@ test "plural_index: French's two forms"
 test "catalog_paths: a language with a region"
     paths = catalog_paths(dir: "/usr/share/locale", domain: "app", languages: ["de_DE"])
     assert paths == ["/usr/share/locale/de_DE/LC_MESSAGES/app.mo", "/usr/share/locale/de/LC_MESSAGES/app.mo"]
+
+# The settings of the system the tests run on: a list of well-formed locales,
+# each once, and a locale for the formats or none set; never `failed` on the
+# three systems, macOS's and Windows' calls answering and the environment
+# read elsewhere.
+test "system_languages and system_locale: the system the tests run on"
+    chosen = system_languages().must()
+
+    for i in range(from: 0, to: chosen.len())
+        assert parse_locale(format_locale(chosen[i])).must() == chosen[i]
+
+        for j in range(from: i + 1, to: chosen.len())
+            assert chosen[i] != chosen[j]
+
+    match system_locale()
+        .ok shown => assert parse_locale(format_locale(shown)).must() == shown
+        .err e    => assert e.code == NOT_FOUND

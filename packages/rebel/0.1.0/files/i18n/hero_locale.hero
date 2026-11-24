@@ -1,0 +1,63 @@
+# The platform layer's locale settings, `hero_locale.h`, bound thin: one
+# Heroes function for the one C function, answering what C answers. Rebel's
+# floor of `i18n`'s `system_languages` and `system_locale`
+# (`examples-rebel/README.md` § A2): no policy stands here, and the private
+# module `i18n/internal/system_settings` above it turns the text into locales
+# and every kind into a code.
+#
+# The layer is C of the language's own beside the runtime, so this group names
+# its header and no `link`: on macOS the member links CoreFoundation itself, on
+# Windows it calls kernel32, which every program links, and everywhere else it
+# answers `HERO_LOCALE_UNSUPPORTED`, so the same line binds it on every
+# platform.
+
+extern "hero_locale.h"
+    # The kinds of result, the high 32 bits of what `settings` answers, the
+    # same numbers on every platform.
+    constant HERO_LOCALE_OK: i64
+    constant HERO_LOCALE_UNSUPPORTED: i64
+    constant HERO_LOCALE_FAILED: i64
+    constant HERO_LOCALE_LIMIT: i64
+    function hero_locale_settings(@buffer: [u8] counted_by n lent, n: u64) -> i64
+
+# The settings text and its kind, written into `buffer`, `n` long, as one
+# number: its high 32 bits are the kind (`HERO_LOCALE_OK` and the rest), its
+# low 32 bits the count of bytes written, the settings' text for
+# `HERO_LOCALE_OK` and the system's own words for a failure. The text is
+# lines of UTF-8 ended by a line feed, each a key, a tab and the system's own
+# name: `language` once for each preferred language, the most preferred
+# first, and `formats` once; `hero_locale.h` says each system's names.
+# `HERO_LOCALE_LIMIT` says the buffer was too small, the text cut at its last
+# whole line.
+#
+# - `buffer`: where the text is written, from its first byte, where it fits;
+#   left `n` long.
+# - `n`: the bytes `buffer` holds; 0 writes nothing and answers
+#   `HERO_LOCALE_LIMIT` where the system has settings.
+function settings(@buffer: [u8], n: u64) -> i64
+    return hero_locale_settings(@buffer, n: n)
+
+test "settings: no room, then room enough, answer a kind of the four and a count the buffer holds"
+    none: [u8] @= []
+    first = settings(@none, n: 0)
+    assert first >> 32 == HERO_LOCALE_LIMIT || first >> 32 == HERO_LOCALE_OK || first >> 32 == HERO_LOCALE_UNSUPPORTED
+    assert first & 4_294_967_295 == 0
+    room: [u8] @= []
+    got = settings(@room, n: 65_536)
+    kind = got >> 32
+    assert kind == HERO_LOCALE_OK || kind == HERO_LOCALE_UNSUPPORTED || kind == HERO_LOCALE_FAILED
+    assert got & 4_294_967_295 <= 65_536
+
+    if kind == HERO_LOCALE_OK
+        text = room.slice(from: 0, to: got & 4_294_967_295)
+        assert text.len() == 0 || text[text.len() - 1] == 10
+        lines: i64 @= 0
+        tabs: i64 @= 0
+
+        for b in text
+            if b == 10
+                lines @ lines + 1
+            else if b == 9
+                tabs @ tabs + 1
+
+        assert tabs == lines

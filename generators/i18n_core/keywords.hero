@@ -1,0 +1,50 @@
+# The text of `i18n`'s `keyword_tables` from CLDR's BCP 47 data: the long
+# names ICU's locale identifiers write a Unicode locale keyword and its value
+# with (`calendar=gregorian`), and the short ones BCP 47 writes them with
+# (`ca-gregory`), read from the `_alias` of every key and value of the `u`
+# extension in `cldr-bcp47/bcp47/*.json`, each in the order of its alias's
+# bytes, the aliases in lower case.
+
+use <cldrkit>/cldrkit
+use <tablekit>/tablekit
+
+# The keys of `pairs` in the order of their bytes, and the value of each.
+function sorted_pairs(pairs: {str: str} lent) -> [[str]]
+    names = sort(keys(pairs))
+    values: [str] @= []
+
+    for name in names
+        values @ values.push(pairs[name].must())
+
+    return [names, values]
+
+# The whole text of `keyword_tables`.
+#
+# - `release`: CLDR 49's zip, open.
+# - `generated`: the header's lines that say which program wrote it.
+#
+# Fails as reading the files and writing a literal fail.
+function module_text(release: cldrkit.Release lent, generated: [str]) -> str?
+    found = cldrkit.keyword_aliases(release)?
+
+    head: [str] @= [
+        "# The aliases of the Unicode locale keywords of CLDR release 49, which"
+        "# `i18n` reads a locale identifier of ICU's with: the long name of a key"
+        "# (`calendar`) and of a value (`gregorian`), each with the short one BCP 47"
+        "# writes (`ca`, `gregory`)."
+        "#"
+    ]
+
+    for line in generated
+        head @ head.push(line)
+
+    keys_sorted = sorted_pairs(found.keys)
+    values_sorted = sorted_pairs(found.values)
+    parts = [
+        head.join("\n")
+        tablekit.strings_constant(comment: ["# The long names of the keys, in lower case, in the order of their bytes."], name: "KEY_ALIASES", items: keys_sorted[0])?
+        tablekit.strings_constant(comment: ["# The key each names, in the order of `KEY_ALIASES`."], name: "KEY_NAMES", items: keys_sorted[1])?
+        tablekit.strings_constant(comment: ["# The long names of the values, each after its key and a space, in lower", "# case, in the order of their bytes."], name: "VALUE_ALIASES", items: values_sorted[0])?
+        tablekit.strings_constant(comment: ["# The value each names, in the order of `VALUE_ALIASES`."], name: "VALUE_NAMES", items: values_sorted[1])?
+    ]
+    return ok(parts.join("\n\n") + "\n")

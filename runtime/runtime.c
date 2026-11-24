@@ -430,6 +430,8 @@
 #include "platform/hero_ipc.c"
 #include "hero_keyring.h"
 #include "platform/hero_keyring.c"
+#include "hero_locale.h"
+#include "platform/hero_locale.c"
 #include "hero_net.h"
 #include "platform/hero_net.c"
 #include "hero_odbc.h"
