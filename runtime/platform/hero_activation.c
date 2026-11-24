@@ -19,11 +19,16 @@
  * THE SOCKETS HANDED OVER are systemd's `$LISTEN_PID` and `$LISTEN_FDS`
  * (descriptors 3 to 3 + `$LISTEN_FDS` - 1, the pid saying they were meant for
  * this process and not for a child that inherited the variables) and
- * launchd's `launch_activate_socket`. Each is adopted into `hero_net.h`'s
- * table through `hero_net_adopt`, which ASKS what the descriptor is; what is
- * no socket of that table (a FIFO, a local socket) is left open and told as
- * an entry of its own kind rather than refused whole, since a unit may hand a
- * program several kinds and the program decides which it serves.
+ * launchd's `launch_activate_socket`. Each is ASKED what it is and adopted
+ * into the table of the member that holds its kind: `hero_net.h`'s for a
+ * TCP or UDP socket (`hero_net_adopt`), `hero_ipc.h`'s for a local stream
+ * socket (`hero_ipc_adopt_listener`, `hero_ipc_adopt_stream`) and
+ * `hero_stream.h`'s for a FIFO, a device or a file (`hero_stream_adopt`); a
+ * local listener or a stream is kept here under a number the program takes
+ * it back by, once. What no member holds (a local datagram socket, a
+ * netlink one, a message queue) is left open and told as an entry of its own
+ * kind rather than refused whole, since a unit may hand a program several
+ * kinds and the program decides which it serves.
  *
  * ONCE: systemd's descriptors are adopted once in the life of a process
  * (`hero_activation_spent`), since the table owns a descriptor it adopts
@@ -33,6 +38,7 @@
 
 #include "hero_activation.h"
 
+#include "hero_handle_tag.h"
 #include "hero_layer_alloc.h"
 #include "hero_net.h"
 
@@ -55,6 +61,10 @@
 #include <unistd.h>
 #if defined(__APPLE__)
 #include <launch.h>
+#endif
+#if defined(__linux__)
+#include <sys/syscall.h>
+#include <sys/vfs.h>
 #endif
 #endif
 
@@ -87,6 +97,89 @@ int64_t hero_activation_last_message(void *buffer, uint64_t n) {
         memcpy(buffer, hero_activation_words, (size_t)length);
     }
     return (int64_t)length;
+}
+
+/* THE VALUES KEPT FOR THE PROGRAM: a local listener or a stream an adoption
+ * made is kept here under a number, which the entry carries across to the
+ * program, and handed over once by the takers, so a number can never give
+ * two owners one value, and a number this layer never wrote names nothing.
+ * Each place is spent once: a process is handed systemd's descriptors once
+ * and each launchd name's once, so twice `HERO_ACTIVATION_MOST` places hold
+ * every adoption a process can make but a launchd job naming thousands of
+ * local sockets, which is told `HERO_ACTIVATION_LIMIT`. */
+#define HERO_ACTIVATION_KEPT_MOST (2 * HERO_ACTIVATION_MOST)
+static _Atomic uint64_t hero_activation_kept[HERO_ACTIVATION_KEPT_MOST];
+
+/* The handle kept under `number` where it has the tag `tag`, taken out;
+ * 0 with the failure set where there is none or it has another tag. */
+static uint64_t hero_activation_take_kept(int64_t number, uint64_t tag) {
+    if (number < 1 || number > HERO_ACTIVATION_KEPT_MOST) {
+        (void)hero_activation_fail(HERO_ACTIVATION_NOT_FOUND, 0, "no value is kept under that number");
+        return 0;
+    }
+    _Atomic uint64_t *place = &hero_activation_kept[number - 1];
+    uint64_t value = atomic_load(place);
+
+    for (;;) {
+        if (value == 0) {
+            (void)hero_activation_fail(HERO_ACTIVATION_NOT_FOUND, 0, "the value kept under that number was taken already");
+            return 0;
+        }
+        if ((value & HERO_HANDLE_TAG_MASK) != HERO_HANDLE_TAG(tag)) {
+            (void)hero_activation_fail(HERO_ACTIVATION_INVALID, 0, "the value kept under that number is of another kind");
+            return 0;
+        }
+        if (atomic_compare_exchange_weak(place, &value, 0)) {
+            return value;
+        }
+    }
+}
+
+hero_ipc_listener *hero_activation_take_listener(int64_t number) {
+    return (hero_ipc_listener *)(uintptr_t)hero_activation_take_kept(number, HERO_HANDLE_TAG_IPC_LISTENER);
+}
+
+hero_stream *hero_activation_take_stream(int64_t number) {
+    return (hero_stream *)(uintptr_t)hero_activation_take_kept(number, HERO_HANDLE_TAG_STREAM);
+}
+
+/* The digits of `text` as a number of 64 bits, 1 to 20 of them and nothing
+ * else, as `sd_listen_fds(3)`'s reader takes `$LISTEN_PIDFDID`. */
+static bool hero_activation_digits64(const char *text, uint64_t *number) {
+    size_t length = strlen(text);
+    uint64_t value = 0;
+
+    if (length == 0 || length > 20) {
+        return false;
+    }
+    for (size_t at = 0; at < length; at += 1) {
+        if (text[at] < '0' || text[at] > '9') {
+            return false;
+        }
+        uint64_t digit = (uint64_t)(text[at] - '0');
+
+        if (value > (UINT64_MAX - digit) / 10) {
+            return false;
+        }
+        value = value * 10 + digit;
+    }
+    *number = value;
+    return true;
+}
+
+int64_t hero_activation_pidfd_check(const char *listed_text, int64_t own_known, uint64_t own) {
+    uint64_t listed = 0;
+
+    if (listed_text == NULL) {
+        return 1;
+    }
+    if (!hero_activation_digits64(listed_text, &listed)) {
+        return hero_activation_fail(HERO_ACTIVATION_INVALID, 0, "LISTEN_PIDFDID is no number");
+    }
+    if (own_known != 1) {
+        return 1;
+    }
+    return listed == own ? 1 : 0;
 }
 
 #if defined(_WIN32)
@@ -145,6 +238,12 @@ int64_t hero_activation_launchd(const char *name, hero_activation_entry *entries
 
 int64_t hero_activation_describe(int64_t descriptor, void *buffer, uint64_t n) {
     (void)descriptor;
+    (void)buffer;
+    (void)n;
+    return 0;
+}
+
+int64_t hero_activation_own_pidfd_id(void *buffer, uint64_t n) {
     (void)buffer;
     (void)n;
     return 0;
@@ -384,8 +483,64 @@ int64_t hero_activation_count_for(const char *pid_text, const char *count_text, 
     return count;
 }
 
+/* This process's pidfd inode number into `*id`; false where the system has
+ * no stable one. The pidfd file system's magic tells a number that names one
+ * process from the one inode every pidfd shared before it, and the number
+ * is `fstat`'s, which `sd_pidfd_get_inode_id(3)` names on 64 bits. */
+static bool hero_activation_own_pidfd(uint64_t *id) {
+#if defined(__linux__) && defined(SYS_pidfd_open)
+    struct statfs system;
+    struct stat info;
+    int fd = (int)syscall(SYS_pidfd_open, (pid_t)getpid(), 0);
+
+    if (fd < 0) {
+        return false;
+    }
+    bool stable = sizeof info.st_ino == 8 && fstatfs(fd, &system) == 0 && (uint64_t)system.f_type == UINT64_C(0x50494446) && fstat(fd, &info) == 0;
+
+    if (stable) {
+        *id = (uint64_t)info.st_ino;
+    }
+    (void)close(fd);
+    return stable;
+#else
+    (void)id;
+    return false;
+#endif
+}
+
+int64_t hero_activation_own_pidfd_id(void *buffer, uint64_t n) {
+    uint64_t id = 0;
+    char digits[24];
+
+    if (!hero_activation_own_pidfd(&id)) {
+        return 0;
+    }
+    int length = snprintf(digits, sizeof digits, "%llu", (unsigned long long)id);
+
+    if (length <= 0) {
+        return 0;
+    }
+    if (buffer != NULL && n >= (uint64_t)length) {
+        memcpy(buffer, digits, (size_t)length);
+    }
+    return (int64_t)length;
+}
+
 int64_t hero_activation_count(void) {
-    return hero_activation_count_for(getenv("LISTEN_PID"), getenv("LISTEN_FDS"), (int64_t)getpid());
+    int64_t count = hero_activation_count_for(getenv("LISTEN_PID"), getenv("LISTEN_FDS"), (int64_t)getpid());
+    uint64_t own = 0;
+
+    if (count <= 0) {
+        return count;
+    }
+    bool known = hero_activation_own_pidfd(&own);
+    int64_t mine = hero_activation_pidfd_check(getenv("LISTEN_PIDFDID"), known ? 1 : 0, own);
+
+    if (mine < 0) {
+        return -1;
+    }
+    return mine == 1 ? count : 0;
 }
 
 int64_t hero_activation_monotonic_usec(void) {
@@ -400,10 +555,31 @@ int64_t hero_activation_monotonic_usec(void) {
 /* Whether the systemd descriptors were adopted: the process's one flag. */
 static _Atomic int hero_activation_spent;
 
-/* The sockets already taken into `entries`, closed. */
+/* Whether an entry of `kind` is kept by this layer rather than numbered by
+ * `hero_net.h`. */
+static bool hero_activation_is_kept(int64_t kind) {
+    return kind == HERO_ACTIVATION_ENTRY_LOCAL_LISTENER || kind == HERO_ACTIVATION_ENTRY_LOCAL_CONNECTION || kind == HERO_ACTIVATION_ENTRY_FIFO ||
+           kind == HERO_ACTIVATION_ENTRY_SPECIAL;
+}
+
+/* The values already taken into `entries`, closed. */
 static void hero_activation_unwind(const hero_activation_entry *entries, int64_t filled) {
     for (int64_t at = 0; at < filled; at += 1) {
-        if (entries[at].number >= 0) {
+        int64_t kind = entries[at].kind;
+
+        if (kind == HERO_ACTIVATION_ENTRY_LOCAL_LISTENER) {
+            hero_ipc_listener *held = hero_activation_take_listener(entries[at].number);
+
+            if (held != NULL) {
+                (void)hero_ipc_listener_close(held);
+            }
+        } else if (hero_activation_is_kept(kind)) {
+            hero_stream *held = hero_activation_take_stream(entries[at].number);
+
+            if (held != NULL) {
+                (void)hero_stream_close(held);
+            }
+        } else if (kind != HERO_ACTIVATION_ENTRY_OTHER && entries[at].number >= 0) {
             hero_net_socket *held = hero_net_of(entries[at].number);
 
             if (held != NULL) {
@@ -411,6 +587,134 @@ static void hero_activation_unwind(const hero_activation_entry *entries, int64_t
             }
         }
     }
+}
+
+/* Whether `fd` is a POSIX message queue, which Linux's file system of them
+ * shows as a regular file whose bytes are its status, never its messages. */
+static bool hero_activation_is_queue(int fd) {
+#if defined(__linux__)
+    struct statfs system;
+
+    return fstatfs(fd, &system) == 0 && (uint64_t)system.f_type == UINT64_C(0x19800202);
+#else
+    (void)fd;
+    return false;
+#endif
+}
+
+/* The failure a member's kind `said` is, for the descriptor handed over:
+ * -1, or -2 where the member closed it (its table was full). */
+static int hero_activation_refused(int64_t said, int64_t os) {
+    if (said == HERO_ACTIVATION_LIMIT) {
+        (void)hero_activation_fail(HERO_ACTIVATION_LIMIT, os, "the table of local sockets or streams is full");
+        return -2;
+    }
+    if (said == HERO_ACTIVATION_NOT_FOUND) {
+        (void)hero_activation_fail(HERO_ACTIVATION_INVALID, os, "a descriptor handed over is not open");
+        return -1;
+    }
+    if (said == HERO_ACTIVATION_EXISTS) {
+        (void)hero_activation_fail(HERO_ACTIVATION_EXISTS, 0, "a descriptor handed over is held already");
+        return -1;
+    }
+    (void)hero_activation_fail(HERO_ACTIVATION_OTHER, os, NULL);
+    return -1;
+}
+
+/* The next place to keep a value in. */
+static _Atomic int64_t hero_activation_kept_next;
+
+/* The handle `value` kept, its number (1 or more); -1 where every place is
+ * spent, nothing kept. */
+static int64_t hero_activation_keep(uint64_t value) {
+    int64_t at = atomic_fetch_add(&hero_activation_kept_next, 1);
+
+    if (at < 0 || at >= HERO_ACTIVATION_KEPT_MOST) {
+        return -1;
+    }
+    atomic_store(&hero_activation_kept[at], value);
+    return at + 1;
+}
+
+/* Takes the descriptor `fd` that `hero_net.h` has no socket for into
+ * `entry` as a local listener, a local connection, a FIFO or a special
+ * file: 0 where it is one of them, 1 where it is none (an `OTHER` entry is
+ * the caller's to write), -1 or -2 as `hero_activation_take` answers. */
+static int hero_activation_take_local(int fd, hero_activation_entry *entry) {
+    struct stat info;
+    uint64_t made = 0;
+    int64_t kind = 0;
+
+    if (fstat(fd, &info) != 0) {
+        return 1;
+    }
+    if (S_ISSOCK(info.st_mode)) {
+        hero_ipc_listener *listener = hero_ipc_adopt_listener((int64_t)fd);
+
+        if (listener != NULL) {
+            made = (uint64_t)(uintptr_t)listener;
+            kind = HERO_ACTIVATION_ENTRY_LOCAL_LISTENER;
+        } else if (hero_ipc_last_error() == HERO_IPC_INVALID) {
+            hero_stream *connection = hero_ipc_adopt_stream((int64_t)fd);
+
+            if (connection == NULL) {
+                int64_t said = hero_ipc_last_error();
+
+                if (said == HERO_IPC_INVALID || said == HERO_IPC_UNSUPPORTED) {
+                    return 1;
+                }
+                return hero_activation_refused(said == HERO_IPC_LIMIT ? HERO_ACTIVATION_LIMIT : said == HERO_IPC_NOT_OPEN ? HERO_ACTIVATION_NOT_FOUND : HERO_ACTIVATION_OTHER,
+                                               hero_ipc_last_os_error());
+            }
+            made = (uint64_t)(uintptr_t)connection;
+            kind = HERO_ACTIVATION_ENTRY_LOCAL_CONNECTION;
+        } else {
+            int64_t said = hero_ipc_last_error();
+
+            if (said == HERO_IPC_UNSUPPORTED) {
+                return 1;
+            }
+            return hero_activation_refused(said == HERO_IPC_LIMIT       ? HERO_ACTIVATION_LIMIT
+                                           : said == HERO_IPC_NOT_OPEN  ? HERO_ACTIVATION_NOT_FOUND
+                                           : said == HERO_IPC_EXISTS    ? HERO_ACTIVATION_EXISTS
+                                                                        : HERO_ACTIVATION_OTHER,
+                                           hero_ipc_last_os_error());
+        }
+    } else if (S_ISFIFO(info.st_mode) || S_ISCHR(info.st_mode) || (S_ISREG(info.st_mode) && !hero_activation_is_queue(fd))) {
+        hero_stream *stream = hero_stream_adopt((int64_t)fd);
+
+        if (stream == NULL) {
+            int64_t said = hero_stream_last_error();
+
+            if (said == HERO_STREAM_INVALID) {
+                return 1;
+            }
+            return hero_activation_refused(said == HERO_STREAM_LIMIT       ? HERO_ACTIVATION_LIMIT
+                                           : said == HERO_STREAM_NOT_OPEN  ? HERO_ACTIVATION_NOT_FOUND
+                                           : said == HERO_STREAM_EXISTS    ? HERO_ACTIVATION_EXISTS
+                                                                           : HERO_ACTIVATION_OTHER,
+                                           hero_stream_last_os_error());
+        }
+        made = (uint64_t)(uintptr_t)stream;
+        kind = S_ISFIFO(info.st_mode) ? HERO_ACTIVATION_ENTRY_FIFO : HERO_ACTIVATION_ENTRY_SPECIAL;
+    } else {
+        return 1;
+    }
+    int64_t number = hero_activation_keep(made);
+
+    if (number < 0) {
+        if (kind == HERO_ACTIVATION_ENTRY_LOCAL_LISTENER) {
+            (void)hero_ipc_listener_close((hero_ipc_listener *)(uintptr_t)made);
+        } else {
+            (void)hero_stream_close((hero_stream *)(uintptr_t)made);
+        }
+        (void)hero_activation_fail(HERO_ACTIVATION_LIMIT, 0, "more local sockets and streams were handed over than the layer keeps");
+        return -2;
+    }
+    entry->kind = kind;
+    entry->number = number;
+    entry->descriptor = fd;
+    return 0;
 }
 
 /* Takes descriptor `fd` into `entry`: 0 where it is one, 1 where it is
@@ -439,6 +743,11 @@ static int hero_activation_take(int fd, hero_activation_entry *entry) {
     int64_t said = hero_net_last_error();
 
     if (said == HERO_NET_UNSUPPORTED || said == HERO_NET_INVALID) {
+        int local = hero_activation_take_local(fd, entry);
+
+        if (local != 1) {
+            return local;
+        }
         int flags = fcntl(fd, F_GETFD);
 
         if (flags >= 0) {

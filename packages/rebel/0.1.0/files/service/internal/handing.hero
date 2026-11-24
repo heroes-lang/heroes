@@ -2,11 +2,17 @@
 # descriptors a manager handed over into the socket table, and make each a
 # value of `net`, the program's own. Private to the package (README § A2).
 #
-# A socket the floor took is a number of the table's. This module takes it back
-# with a handle of its own and builds the face's record round it. A number that
-# names no socket is a thing the floor cannot give, so no failure stands after
-# the first socket is taken but the one `net.conn_of` may answer.
+# A socket the floor took is a number of the table's, and a local listener or
+# a stream a number the floor keeps it under. This module takes each back with
+# a handle of its own and builds the face's record round it. A number that
+# names nothing is a thing the floor cannot give, so no failure stands after
+# the first value is taken but the ones `net.conn_of` and the floor's takers
+# may answer.
 
+use bytes
+use io
+use ipc
+use ipc/hero_ipc
 use net
 use net/hero_net
 use os
@@ -75,10 +81,60 @@ function words_of(d: i64) -> str
         .ok text => return text
         .err _   => return "a descriptor of a kind this package has no value for"
 
+# The most bytes a local listener's name is read into: a socket address's
+# path, 104 bytes on macOS and 108 on Linux, fits.
+constant NAME_ROOM: i64
+    128
+
+# The local listener the floor kept under `number`, named as its socket is
+# bound: a path, or on Linux an abstract name.
+#
+# - `number`: the entry's number.
+function local_listener_of(number: i64) -> ipc.Listener?
+    h = hero_activation.take_listener(number)
+
+    if h == nullptr
+        return activation_failure.last(asked: "taking a local listener handed over")
+    room: [u8] @= hero_activation.room(NAME_ROOM)
+    space: i64 @= 0
+    n = hero_ipc.listener_name(h, @room, @space)
+    name: str @= ""
+
+    if n > 0 && n <= NAME_ROOM
+        name @ bytes.to_text_lossy(room.slice(from: 0, to: n))
+    where: ipc.Space @= .path
+
+    if space == hero_ipc.HERO_IPC_SPACE_ABSTRACT
+        where @ .abstract
+    return ok(ipc.Listener(handle: h, name: name, space: where))
+
+# The stream the floor kept under `number`, named for what it is.
+#
+# - `number`: the entry's number.
+# - `what`: what the stream is, in words that name it in a failure.
+function stream_of(number: i64, what: str) -> io.Stream?
+    s = hero_activation.take_stream(number)
+
+    if s == nullptr
+        return activation_failure.last(asked: "taking " + what + " handed over")
+    return ok(io.of_handle(s, name: what + " handed over"))
+
 # The value the floor's entry `e` is.
 function handed_of(e: hero_activation.Entry) -> service.Handed?
     if e.kind == hero_activation.HERO_ACTIVATION_ENTRY_OTHER
         return ok(.other(words: words_of(e.descriptor)))
+
+    if e.kind == hero_activation.HERO_ACTIVATION_ENTRY_LOCAL_LISTENER
+        return ok(.local_listener(socket: local_listener_of(e.number)?))
+
+    if e.kind == hero_activation.HERO_ACTIVATION_ENTRY_LOCAL_CONNECTION
+        return ok(.local_connection(stream: stream_of(e.number, what: "a local connection")?))
+
+    if e.kind == hero_activation.HERO_ACTIVATION_ENTRY_FIFO
+        return ok(.fifo(stream: stream_of(e.number, what: "a FIFO")?))
+
+    if e.kind == hero_activation.HERO_ACTIVATION_ENTRY_SPECIAL
+        return ok(.special(stream: stream_of(e.number, what: "a special file")?))
 
     if e.kind == hero_activation.HERO_ACTIVATION_ENTRY_CONNECTION
         c = net.conn_of(n: e.number, deadline_ms: net.FOREVER)?

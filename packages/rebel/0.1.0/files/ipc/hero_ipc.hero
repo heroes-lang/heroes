@@ -65,6 +65,7 @@ extern "hero_ipc.h"
     function hero_ipc_lock_close(l: Lock consumes) -> i64
     function hero_ipc_listen(name: cstr lent, space: i64, perm: i64) -> Listener acquires hero_ipc_listener_close
     function hero_ipc_accept(l: Listener, within_ms: i64) -> hero_stream.Stream acquires hero_stream_close
+    function hero_ipc_listener_name(l: Listener, @buffer: [u8] counted_by n lent, n: u64, @space: i64) -> i64
     function hero_ipc_connect(name: cstr lent, space: i64, within_ms: i64) -> hero_stream.Stream acquires hero_stream_close
     function hero_ipc_set_deadline(s: hero_stream.Stream, ms: i64) -> i64
     function hero_ipc_shutdown_write(s: hero_stream.Stream) -> i64
@@ -136,6 +137,15 @@ function listen(name: str, space: i64, perm: i64) -> Listener
 #   `HERO_IPC_STOPPED`.
 function accept(l: Listener, within_ms: i64) -> hero_stream.Stream
     return hero_ipc_accept(l, within_ms: within_ms)
+
+# The name `l` listens on, written into `buffer`, and its space into `space`:
+# the name's length, or -1 where `l` names no open listener.
+#
+# - `l`: the listener; it stays open.
+# - `buffer`: room for the name, as many bytes as the caller sized.
+# - `space`: where the `HERO_IPC_SPACE_*` the name lives in is written.
+function listener_name(l: Listener, @buffer: [u8], @space: i64) -> i64
+    return hero_ipc_listener_name(l, @buffer, n: buffer.len().to_u64().must(), @space)
 
 # A connection to the listener on `name` in `space` as a stream, waiting at
 # most `within_ms` while the listener has no room; or `nullptr`.

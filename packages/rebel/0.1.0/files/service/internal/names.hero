@@ -1,0 +1,194 @@
+# The names a notice carries that are not free text: a D-Bus error name, a
+# Varlink error name and the words of `NotifyAccess=`, each checked against
+# the grammar its own document gives, so a notice the manager would store as
+# a name is one. Private to the package (README § A2); `notice` writes and
+# reads through these.
+#
+# The grammars, read on 2026-11-24: the D-Bus specification's § Valid Names
+# (an error name has an interface name's rules: two or more elements joined
+# by `.`, each of `[A-Z][a-z][0-9]_` and not starting with a digit, at most
+# 255 bytes); the Varlink interface definition (an interface name is
+# `[A-Za-z]([-]*[A-Za-z0-9])*(\.[A-Za-z0-9]([-]*[A-Za-z0-9])*)+`, an error
+# name `[A-Z][A-Za-z0-9]*`, and an error is named by its interface's name, a
+# `.` and its own); `systemd.service(5)` for `none`, `main`, `exec` and `all`.
+
+use service
+use service/internal/failure
+use strings
+
+# The most bytes of a D-Bus name.
+constant BUS_NAME_MOST: i64
+    255
+
+# Whether `b` is an ASCII letter.
+function is_letter(b: u8) -> bool
+    return b >= 'A' && b <= 'Z' || b >= 'a' && b <= 'z'
+
+# Whether `b` is an ASCII digit.
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+# Whether `element` is one element of a D-Bus name: one byte or more of
+# letters, digits and `_`, the first no digit.
+function is_bus_element(element: str) -> bool
+    if element.len() == 0 || is_digit(element[0])
+        return false
+
+    for i in range(from: 0, to: element.len())
+        b = element[i]
+
+        if !is_letter(b) && !is_digit(b) && b != '_'
+            return false
+
+    return true
+
+# Whether `name` is a D-Bus error name.
+function is_bus_error(name: str) -> bool
+    if name.len() > BUS_NAME_MOST
+        return false
+    elements = strings.split(s: name, sep: ".")
+
+    if elements.len() < 2
+        return false
+
+    for element in elements
+        if !is_bus_element(element)
+            return false
+
+    return true
+
+# Whether `element` is one element of a Varlink interface name: letters,
+# digits and `-`, never first or last a `-`, and the first byte a letter
+# where `first` and a letter or a digit elsewhere.
+function is_interface_element(element: str, first: bool) -> bool
+    if element.len() == 0
+        return false
+    head = element[0]
+
+    if !is_letter(head) && (first || !is_digit(head))
+        return false
+
+    if element[element.len() - 1] == '-'
+        return false
+
+    for i in range(from: 0, to: element.len())
+        b = element[i]
+
+        if !is_letter(b) && !is_digit(b) && b != '-'
+            return false
+
+    return true
+
+# Whether `name` is a Varlink error name: an interface name of two elements or
+# more, a `.`, and an error name.
+function is_varlink_error(name: str) -> bool
+    elements = strings.split(s: name, sep: ".")
+
+    if elements.len() < 3
+        return false
+    error = elements[elements.len() - 1]
+
+    if error.len() == 0 || error[0] < 'A' || error[0] > 'Z'
+        return false
+
+    for i in range(from: 0, to: error.len())
+        if !is_letter(error[i]) && !is_digit(error[i])
+            return false
+
+    for i in range(from: 0, to: elements.len() - 1)
+        if !is_interface_element(elements[i], first: i == 0)
+            return false
+
+    return true
+
+# `name` where it is a D-Bus error name or "", else a failure saying why.
+function bus_error(name: str) -> str?
+    if name == "" || is_bus_error(name)
+        return ok(name)
+    return fail(
+        code: failure.INVALID,
+        msg: f"\"{name}\" is no D-Bus error name: two or more elements of letters, digits and _ joined by ., none starting with a digit, at most {BUS_NAME_MOST} bytes"
+    )
+
+# `name` where it is a Varlink error name or "", else a failure saying why.
+function varlink_error(name: str) -> str?
+    if name == "" || is_varlink_error(name)
+        return ok(name)
+    return fail(
+        code: failure.INVALID,
+        msg: f"\"{name}\" is no Varlink error name: an interface name of letters, digits and - in two or more elements, a ., and a name starting with an upper-case letter"
+    )
+
+# The word `NotifyAccess=` writes for `who`.
+function access_word(who: service.NotifyAccess) -> str
+    match who
+        .none => return "none"
+        .main => return "main"
+        .exec => return "exec"
+        .all  => return "all"
+
+# The access `word` names, else a failure.
+function access_of(word: str) -> service.NotifyAccess?
+    if word == "none"
+        return ok(.none)
+
+    if word == "main"
+        return ok(.main)
+
+    if word == "exec"
+        return ok(.exec)
+
+    if word == "all"
+        return ok(.all)
+    return fail(code: failure.INVALID, msg: f"NOTIFYACCESS is \"{word}\": it is none, main, exec or all")
+
+test "is_bus_error: two elements or more of letters, digits and _, none starting with a digit, at most 255 bytes"
+    assert is_bus_error("org.freedesktop.DBus.Error.TimedOut")
+    assert is_bus_error("a.b")
+    assert is_bus_error("_a._1")
+    assert !is_bus_error("")
+    assert !is_bus_error("TimedOut")
+    assert !is_bus_error("a..b")
+    assert !is_bus_error(".a.b")
+    assert !is_bus_error("a.b.")
+    assert !is_bus_error("a.1b")
+    assert !is_bus_error("a.b-c")
+    assert !is_bus_error("a.b c")
+    assert !is_bus_error("a.é")
+    longest = "a." + "b".repeat(253)
+    assert longest.len() == 255
+    assert is_bus_error(longest)
+    assert !is_bus_error(longest + "c")
+
+test "is_varlink_error: an interface of two elements or more, a dot and an upper-case error name"
+    assert is_varlink_error("org.varlink.service.InvalidParameter")
+    assert is_varlink_error("io.systemd.Unit.NoSuchUnit")
+    assert is_varlink_error("a.b.C")
+    assert is_varlink_error("a-b.c--d.E1")
+    assert is_varlink_error("a.1b.C")
+    assert !is_varlink_error("a.C")
+    assert !is_varlink_error("a.b.c")
+    assert !is_varlink_error("1a.b.C")
+    assert !is_varlink_error("-a.b.C")
+    assert !is_varlink_error("a-.b.C")
+    assert !is_varlink_error("a.b-.C")
+    assert !is_varlink_error("a.b.C_d")
+    assert !is_varlink_error("a..b.C")
+    assert !is_varlink_error("a.b.")
+    assert !is_varlink_error("")
+
+test "bus_error and varlink_error: an empty name takes the error back, a wrong one is invalid"
+    assert bus_error("").must() == ""
+    assert varlink_error("").must() == ""
+    assert bus_error("x").is_err()
+    assert varlink_error("x.y.z").is_err()
+
+test "access_word and access_of: the four words of NotifyAccess= and back, any other refused"
+    every: [service.NotifyAccess] = [.none, .main, .exec, .all]
+
+    for who in every
+        assert access_of(access_word(who)).must() == who
+
+    assert access_word(.exec) == "exec"
+    assert access_of("All").is_err()
+    assert access_of("").is_err()

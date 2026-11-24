@@ -1,18 +1,23 @@
 # Takes the sockets a service manager handed it, tells the manager it is ready,
 # prints what it was handed, and serves the first of each kind it can: a
-# listener accepts one connection and writes `hello` to it, a UDP socket
-# answers one datagram with `hello`. The program the real run of `service`'s
+# listener, a TCP one or a local one, accepts one connection and writes `hello`
+# to it, a UDP socket answers one datagram with `hello`, a connection is
+# written `hello`, a FIFO's first line is read and printed, and a special file's
+# first bytes are counted. The program the real run of `service`'s
 # systemd and launchd half drives: a launcher that makes the sockets, sets
 # `$LISTEN_PID`, `$LISTEN_FDS` and `$NOTIFY_SOCKET` and runs this built
 # (systemd's protocol, no argument), or `launchctl bootstrap` with a job whose
 # `Sockets` key names `heroes` and whose arguments are `launchd heroes`.
-# Run by hand it is handed nothing and says so: `heroes test` on this file runs
-# the package's tests (spec § 12).
+# With the one argument `notices` it tells the manager the notices of a failing
+# bus service instead. Run by hand it is handed nothing and says so: `heroes
+# test` on this file runs the package's tests (spec § 12).
 
 use <rebel>/bytes
 use <rebel>/io
+use <rebel>/ipc
 use <rebel>/net
 use <rebel>/service
+use <rebel>/time
 
 # One line saying what a manager handed over.
 function describe(h: service.Handed) -> str
@@ -20,7 +25,14 @@ function describe(h: service.Handed) -> str
         .listener l   => return f"listener {net.format_address(l.socket.address)}"
         .connection c => return f"connection from {net.format_address(c.conn.remote)}"
         .datagram d   => return f"datagram {net.format_address(d.socket.address)}"
-        .other o      => return f"other: {o.words}"
+        .local_listener l =>
+            if l.socket.space == .abstract
+                return f"local listener @{l.socket.name}"
+            return f"local listener {l.socket.name}"
+        .local_connection _ => return "local connection"
+        .fifo _             => return "fifo"
+        .special _          => return "special file"
+        .other o            => return f"other: {o.words}"
 
 # Serves one request on what was handed, where it is a socket of `net`, and
 # gives every socket back: a program that ends holding one is told by the
@@ -43,11 +55,53 @@ function serve(h: service.Handed)
             s @= c.conn.stream
             io.write(s, bytes.from_text("hello\n")).must()
             io.close(@s).must()
+        .local_listener l =>
+            listening @= l.socket
+            s @= ipc.accept(listening, within: time.seconds(5).must()).must()
+            io.write(s, bytes.from_text("hello\n")).must()
+            io.close(@s).must()
+            ipc.close_listener(@listening).must()
+        .local_connection c =>
+            s @= c.stream
+            io.write(s, bytes.from_text("hello\n")).must()
+            io.close(@s).must()
+        .fifo f =>
+            s @= f.stream
+            r @= io.reader(s)
+            line = io.read_line(@r).must()
+            print(f"fifo said: {line}")
+            io.close(@s).must()
+        .special f =>
+            s @= f.stream
+            got = io.read(s, n: 16).must()
+            print(f"special read: {got.len()} bytes")
+            io.close(@s).must()
         .other _ => print("left alone")
+
+# Tells the manager the notices of a failing bus service and its tuning, then
+# stays for twenty seconds, so `systemctl show` reads what the manager took.
+function tell_notices()
+    notices: [service.Notice] = [
+        .ready
+        .status(text: "noticed")
+        .errno(number: 110)
+        .bus_error(name: "org.freedesktop.DBus.Error.TimedOut")
+        .varlink_error(name: "org.varlink.service.InvalidParameter")
+        .exit_status(code: 3)
+        .notify_access(who: .all)
+        .restart_reset
+    ]
+    sent = service.notify(notices).must()
+    print(f"notices sent: {sent}")
+    time.sleep(time.seconds(20).must())
 
 function main()
     given = args()
     found: [service.Inherited] @= []
+
+    if given.len() == 1 && given[0] == "notices"
+        tell_notices()
+        return
 
     if given.len() == 2 && given[0] == "launchd"
         found @ service.inherit_launchd(given[1]).must()

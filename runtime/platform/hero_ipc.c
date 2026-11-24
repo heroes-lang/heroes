@@ -123,8 +123,13 @@
 #else
 #include <errno.h>
 #include <fcntl.h>
+#include <limits.h>
 #include <poll.h>
 #include <pthread.h>
+#if defined(__APPLE__)
+#include <libproc.h>
+#include <sys/proc_info.h>
+#endif
 #include <semaphore.h>
 #include <sys/file.h>
 #include <sys/mman.h>
@@ -249,6 +254,9 @@ typedef struct {
     /* A path listener's socket file, as `stat` read it after the bind. */
     dev_t device;
     ino_t inode;
+    /* A listener a manager handed over: its socket file is the manager's,
+     * never removed at the close. */
+    bool adopted;
     sem_t *semaphore;
 #endif
 } hero_ipc_slot;
@@ -1653,6 +1661,19 @@ hero_stream *hero_ipc_accept(hero_ipc_listener *l, int64_t within_ms) {
     }
 }
 
+/* No manager hands a Windows program a descriptor (`hero_activation.h`). */
+hero_ipc_listener *hero_ipc_adopt_listener(int64_t descriptor) {
+    (void)descriptor;
+    hero_ipc_fail(HERO_IPC_UNSUPPORTED, 0);
+    return NULL;
+}
+
+hero_stream *hero_ipc_adopt_stream(int64_t descriptor) {
+    (void)descriptor;
+    hero_ipc_fail(HERO_IPC_UNSUPPORTED, 0);
+    return NULL;
+}
+
 hero_stream *hero_ipc_connect(const char *name, int64_t space, int64_t within_ms) {
     int64_t until = 0;
 
@@ -1787,11 +1808,11 @@ static void hero_ipc_learn_peer(hero_ipc_channel *c) {
 
 /* -- channels on POSIX ------------------------------------------------------- */
 
-#if !defined(__linux__)
 /* The descriptor made close-on-exec, not blocking, and silent on a write to
  * a peer gone where the platform marks that per socket; false with the
- * failure named. Linux sets the first two in the call that makes it, and
- * stops SIGPIPE per call. */
+ * failure named. Linux sets the first two in the call that makes a socket,
+ * and stops SIGPIPE per call, so there only a descriptor handed over is
+ * prepared here. */
 static bool hero_ipc_prepared(int fd) {
     int flags = fcntl(fd, F_GETFD);
 
@@ -1814,7 +1835,6 @@ static bool hero_ipc_prepared(int fd) {
 #endif
     return true;
 }
-#endif
 
 /* A new AF_UNIX stream socket, prepared; -1 with the failure named. */
 static int hero_ipc_socket(void) {
@@ -2017,6 +2037,163 @@ hero_stream *hero_ipc_accept(hero_ipc_listener *l, int64_t within_ms) {
     }
 }
 
+/* What the descriptor a manager handed over is, asked of the system: 1 for
+ * a local stream socket that listens, 0 for one connected, -1 with the
+ * failure named and the descriptor untouched for anything else, a stream
+ * socket neither listening nor connected `HERO_IPC_INVALID`. The name it
+ * is bound to goes into `address`, `*length` long. */
+static int hero_ipc_adoptable(int64_t descriptor, struct sockaddr_un *address, socklen_t *length) {
+    struct stat info;
+    int type = 0;
+    int listening = 0;
+    socklen_t size = (socklen_t)sizeof type;
+
+    if (descriptor < 0 || descriptor > (int64_t)INT_MAX) {
+        hero_ipc_fail(HERO_IPC_INVALID, 0);
+        return -1;
+    }
+    if (fstat((int)descriptor, &info) != 0) {
+        hero_ipc_fail(errno == EBADF ? HERO_IPC_NOT_OPEN : HERO_IPC_OTHER, (int64_t)errno);
+        return -1;
+    }
+    if (!S_ISSOCK(info.st_mode)) {
+        hero_ipc_fail(HERO_IPC_INVALID, 0);
+        return -1;
+    }
+    memset(address, 0, sizeof *address);
+    *length = (socklen_t)sizeof *address;
+    if (getsockname((int)descriptor, (struct sockaddr *)address, length) != 0 || getsockopt((int)descriptor, SOL_SOCKET, SO_TYPE, &type, &size) != 0) {
+        hero_ipc_failed_system();
+        return -1;
+    }
+    if (address->sun_family != AF_UNIX || type != SOCK_STREAM) {
+        hero_ipc_fail(HERO_IPC_UNSUPPORTED, 0);
+        return -1;
+    }
+    size = (socklen_t)sizeof listening;
+    if (getsockopt((int)descriptor, SOL_SOCKET, SO_ACCEPTCONN, &listening, &size) != 0) {
+#if defined(__APPLE__)
+        /* Darwin has no SO_ACCEPTCONN to ask (error 42, protocol not
+         * available, measured for a local socket as `hero_net.c` measured it
+         * for TCP); the kernel's own record of the socket keeps the flag a
+         * `listen` sets, which `proc_pidfdinfo` reads. */
+        struct socket_fdinfo info_of;
+
+        memset(&info_of, 0, sizeof info_of);
+        if (proc_pidfdinfo(getpid(), (int)descriptor, PROC_PIDFDSOCKETINFO, &info_of, (int)sizeof info_of) != (int)sizeof info_of) {
+            hero_ipc_failed_system();
+            return -1;
+        }
+        listening = (info_of.psi.soi_options & SO_ACCEPTCONN) != 0 ? 1 : 0;
+#else
+        hero_ipc_failed_system();
+        return -1;
+#endif
+    }
+    if (listening != 0) {
+        return 1;
+    }
+    /* A stream socket neither listening nor connected is none a program can
+     * use: refused rather than adopted to fail at its first read. */
+    struct sockaddr_un peer;
+    socklen_t peer_size = (socklen_t)sizeof peer;
+
+    if (getpeername((int)descriptor, (struct sockaddr *)&peer, &peer_size) != 0) {
+        hero_ipc_fail(HERO_IPC_INVALID, (int64_t)errno);
+        return -1;
+    }
+    return 0;
+}
+
+hero_ipc_listener *hero_ipc_adopt_listener(int64_t descriptor) {
+    struct sockaddr_un address;
+    socklen_t length = 0;
+    int64_t space = HERO_IPC_SPACE_PATH;
+    char name[HERO_IPC_NAME_ROOM];
+    int shape = hero_ipc_adoptable(descriptor, &address, &length);
+
+    if (shape < 0) {
+        return NULL;
+    }
+    if (shape == 0) {
+        hero_ipc_fail(HERO_IPC_INVALID, 0);
+        return NULL;
+    }
+    /* The name is what the socket's own address says: a path ends at its
+     * zero, an abstract name (Linux's, a zero first) runs to the address's
+     * length. An unnamed socket has nothing a listener can be named by. */
+    size_t offset = offsetof(struct sockaddr_un, sun_path);
+    size_t count = (size_t)length > offset ? (size_t)length - offset : 0;
+
+    if (count > 0 && address.sun_path[0] == '\0') {
+        space = HERO_IPC_SPACE_ABSTRACT;
+        count -= 1;
+        if (count == 0 || count >= sizeof name || memchr(address.sun_path + 1, '\0', count) != NULL) {
+            hero_ipc_fail(HERO_IPC_UNSUPPORTED, 0);
+            return NULL;
+        }
+        memcpy(name, address.sun_path + 1, count);
+        name[count] = '\0';
+    } else {
+        count = strnlen(address.sun_path, count < sizeof address.sun_path ? count : sizeof address.sun_path);
+        if (count == 0 || count >= sizeof name) {
+            hero_ipc_fail(HERO_IPC_UNSUPPORTED, 0);
+            return NULL;
+        }
+        memcpy(name, address.sun_path, count);
+        name[count] = '\0';
+    }
+    hero_ipc_enter();
+    for (uint32_t at = 0; at < hero_ipc_table.fresh; at += 1) {
+        const hero_ipc_slot *held = &hero_ipc_table.slots[at];
+
+        if (held->type == HERO_IPC_TYPE_LISTENER && held->fd == (int)descriptor) {
+            hero_ipc_leave();
+            hero_ipc_fail(HERO_IPC_EXISTS, 0);
+            return NULL;
+        }
+    }
+    hero_ipc_leave();
+    if (!hero_ipc_prepared((int)descriptor)) {
+        return NULL;
+    }
+    hero_ipc_enter();
+    hero_ipc_slot *slot = hero_ipc_issue(HERO_IPC_TYPE_LISTENER);
+
+    if (slot == NULL) {
+        hero_ipc_leave();
+        (void)close((int)descriptor);
+        hero_ipc_fail(HERO_IPC_LIMIT, 0);
+        return NULL;
+    }
+    slot->space = space;
+    slot->fd = (int)descriptor;
+    slot->adopted = true;
+    memcpy(slot->name, name, strlen(name) + 1);
+    hero_ipc_listener *handle = (hero_ipc_listener *)hero_ipc_handle(slot);
+    hero_ipc_leave();
+    hero_ipc_clear();
+    return handle;
+}
+
+hero_stream *hero_ipc_adopt_stream(int64_t descriptor) {
+    struct sockaddr_un address;
+    socklen_t length = 0;
+    int shape = hero_ipc_adoptable(descriptor, &address, &length);
+
+    if (shape < 0) {
+        return NULL;
+    }
+    if (shape == 1) {
+        hero_ipc_fail(HERO_IPC_INVALID, 0);
+        return NULL;
+    }
+    if (!hero_ipc_prepared((int)descriptor)) {
+        return NULL;
+    }
+    return hero_ipc_stream_of_fd((int)descriptor);
+}
+
 /* A connect to `name` in `space` failed with `code`, the system's number,
  * named by what the path IS, asked of the disk once the connect has failed:
  * the number does not say it. Measured on 2026-11-20 by a C probe of each
@@ -2174,6 +2351,25 @@ int64_t hero_ipc_peer(hero_stream *s, int64_t *pid, int64_t *uid) {
     *uid = found_uid;
     hero_ipc_clear();
     return 0;
+}
+
+int64_t hero_ipc_listener_name(hero_ipc_listener *l, void *buffer, uint64_t n, int64_t *space) {
+    hero_ipc_slot *slot = hero_ipc_take(l, HERO_IPC_TYPE_LISTENER);
+
+    if (slot == NULL) {
+        return -1;
+    }
+    size_t length = strnlen(slot->name, sizeof slot->name);
+
+    if (buffer != NULL && n >= (uint64_t)length) {
+        memcpy(buffer, slot->name, length);
+    }
+    if (space != NULL) {
+        *space = slot->space;
+    }
+    hero_ipc_drop(slot);
+    hero_ipc_clear();
+    return (int64_t)length;
 }
 
 int64_t hero_ipc_listener_close(hero_ipc_listener *l) {
@@ -3261,7 +3457,7 @@ static int64_t hero_ipc_dispose(hero_ipc_slot *slot) {
             }
         }
 #else
-        if (slot->space == HERO_IPC_SPACE_PATH) {
+        if (slot->space == HERO_IPC_SPACE_PATH && !slot->adopted) {
             struct stat about;
 
             /* Only the file the listen made: one put there since by
