@@ -107,7 +107,7 @@ function scm_failed<T>(asked: str) -> T?
     return fail(code: FAILED, msg: f"{asked}: {said}")
 
 test "scm_failed: off Windows the floor's refusal is unsupported, with what was asked"
-    if hero_scm.on_windows()
+    if hero_scm.supported() == 1
         skip_test(reason: "Windows has the Service Control Manager; the face's tests ask it")
     assert hero_scm.start("heroes-no-such") == -1
     told: ()? = scm_failed("starting the service \"heroes-no-such\"")
