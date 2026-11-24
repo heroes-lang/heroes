@@ -154,11 +154,8 @@ function put_bool(@out: [u8], v: bool)
 # `n` added to `out` as a `uint32`. Aborts outside 0 to 2^32 - 1, a length
 # the program itself computed.
 function put_u32(@out: [u8], n: i64)
-    assert n >= 0 && n <= 4294967295
-    out @ out.push(to_u8(n >> 24 & 255).must())
-    out @ out.push(to_u8(n >> 16 & 255).must())
-    out @ out.push(to_u8(n >> 8 & 255).must())
-    out @ out.push(to_u8(n & 255).must())
+    for b in bytes.encode_u32_be(to_u32(n).must())
+        out @ out.push(b)
 
 # `n` added to `out` as a `uint64`. Aborts below 0.
 function put_u64(@out: [u8], n: i64)

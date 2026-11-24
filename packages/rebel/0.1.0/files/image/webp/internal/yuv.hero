@@ -5,6 +5,7 @@
 # average of each 2x2 block, by its 16-bit conversion.
 
 use image/webp/internal/loopfilter
+use math
 
 # `(v * coeff) >> 8`, libwebp's `MultHi`.
 function mul_hi(v: i64, coeff: i64) -> i64
@@ -140,8 +141,8 @@ function from_rgb(px: [u8] lent, channels: i64, width: i64, height: i64) -> [[i6
 
             for dy in [0, 1]
                 for dx in [0, 1]
-                    x = loopfilter.clamp(v: 2 * ci + dx, lo: 0, hi: width - 1)
-                    yy = loopfilter.clamp(v: 2 * cj + dy, lo: 0, hi: height - 1)
+                    x = math.clamp_i64(x: 2 * ci + dx, low: 0, high: width - 1)
+                    yy = math.clamp_i64(x: 2 * cj + dy, low: 0, high: height - 1)
                     k = (yy * width + x) * channels
                     sr @ sr + to_i64(px[k]).must()
                     sg @ sg + to_i64(px[k + 1]).must()

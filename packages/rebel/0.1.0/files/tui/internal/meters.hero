@@ -1,6 +1,7 @@
 # The small widgets drawn into a grid: tabs, the gauge, the line gauge, the
 # sparkline and the scrollbar.
 
+use math
 use term
 use tui/internal/grid
 use tui/internal/packed
@@ -239,10 +240,14 @@ function scrollbar(@g: grid.Grid, x: i64, y: i64, width: i64, height: i64, verti
         length
 
     thumb = if track > 0
-        between(n: round_up_half(to_f64(track) * to_f64(shown) / to_f64(content + shown - 1)), low: 1, high: track)
+        math.clamp_i64(
+            x: round_up_half(to_f64(track) * to_f64(shown) / to_f64(content + shown - 1)),
+            low: 1,
+            high: track
+        )
     else
         0
-    at = between(n: position, low: 0, high: content - 1)
+    at = math.clamp_i64(x: position, low: 0, high: content - 1)
 
     start = if content > 1 && track > thumb
         round_up_half(to_f64(at) / to_f64(content - 1) * to_f64(track - thumb))
@@ -283,15 +288,6 @@ function scrollbar(@g: grid.Grid, x: i64, y: i64, width: i64, height: i64, verti
 
         if grid.inside(g, x: cx, y: cy)
             grid.put(@g, x: cx, y: cy, symbol: symbol, width: 1, style: cell_style)
-
-# `n` kept between `low` and `high`, `high` at least `low`.
-function between(n: i64, low: i64, high: i64) -> i64
-    if n < low
-        return low
-
-    if n > high
-        return high
-    return n
 
 ## Tests
 
