@@ -98,6 +98,7 @@ private let eventSubmit: Int64 = 14
 private let eventDrop: Int64 = 20
 private let eventPointer: Int64 = 23
 private let eventKey: Int64 = 24
+private let eventPart: Int64 = 25
 
 // The keys held with a shortcut, `hero_ui.h`'s numbers.
 private let heldPrimary: Int64 = 1
@@ -613,9 +614,11 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             well.action = #selector(colorPicked(_:))
             well.tag = Int(widget.id)
             return well
-        case kindDatePicker, kindTimePicker, kindDateTimePicker:
+        case kindDatePicker, kindTimePicker, kindDateTimePicker, kindCalendar:
             let picker = NSDatePicker(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
-            picker.datePickerStyle = .textFieldAndStepper
+            // A month's calendar is the same control shown open, its month a
+            // grid of days.
+            picker.datePickerStyle = kind == kindCalendar ? .clockAndCalendar : .textFieldAndStepper
             picker.datePickerMode = .single
             // The fields are read as UTC, so a value is the same seconds in
             // every zone, and no zone shifts what the person picked.
@@ -624,7 +627,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             picker.calendar = calendar
             picker.timeZone = calendar.timeZone
             switch kind {
-            case kindDatePicker:
+            case kindDatePicker, kindCalendar:
                 picker.datePickerElements = .yearMonthDay
             case kindTimePicker:
                 picker.datePickerElements = .hourMinuteSecond
@@ -1274,7 +1277,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 return answerInvalid
             }
             well.color = colorOf(value)
-        case kindDatePicker, kindTimePicker, kindDateTimePicker:
+        case kindDatePicker, kindTimePicker, kindDateTimePicker, kindCalendar:
             guard let picker = widget.view as? NSDatePicker, pickerHolds(widget.kind, value),
                   Double(value) >= picker.minDate?.timeIntervalSince1970 ?? -Double.infinity,
                   Double(value) <= picker.maxDate?.timeIntervalSince1970 ?? Double.infinity else {
@@ -1595,7 +1598,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             }
             let digits = max(String(Int64(spin.stepper.minValue)).count, String(Int64(spin.stepper.maxValue)).count)
             return NSSize(width: CGFloat(digits) * 9 + spin.stepper.fittingSize.width + 14, height: spin.field.intrinsicContentSize.height)
-        case kindDatePicker, kindTimePicker, kindDateTimePicker:
+        case kindDatePicker, kindTimePicker, kindDateTimePicker, kindCalendar:
             return (widget.view as? NSDatePicker)?.fittingSize ?? NSSize(width: 0, height: 0)
         case kindColorWell:
             return NSSize(width: 44, height: 23)
@@ -1662,7 +1665,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return (widget.view as? SpinView)?.value ?? 0
         case kindColorWell:
             return colorValue((widget.view as? NSColorWell)?.color ?? NSColor.clear)
-        case kindDatePicker, kindTimePicker, kindDateTimePicker:
+        case kindDatePicker, kindTimePicker, kindDateTimePicker, kindCalendar:
             guard let picker = widget.view as? NSDatePicker else {
                 return 0
             }
@@ -3787,6 +3790,7 @@ private let kindDateTimePicker: Int64 = 40
 private let kindColorWell: Int64 = 41
 private let kindFontButton: Int64 = 42
 private let kindCanvas: Int64 = 43
+private let kindCalendar: Int64 = 44
 
 // A font as the layer's text holds it, `<size>|<style>|<family>` (`hero_ui.h`).
 private func fontDescriptor(_ font: NSFont) -> String {
@@ -3837,13 +3841,14 @@ private func colorOf(_ value: Int64) -> NSColor {
 }
 
 // The values a picker holds are its fields read as UTC (`hero_ui.h`): a date
-// picker's a whole day's seconds, a time picker's the seconds since midnight.
+// picker's and a month calendar's a whole day's seconds, a time picker's the
+// seconds since midnight.
 private let secondsInDay: Int64 = 86400
-private let pickerLeast: [Int64: Int64] = [kindDatePicker: -62135596800, kindTimePicker: 0, kindDateTimePicker: -62135596800]
-private let pickerMost: [Int64: Int64] = [kindDatePicker: 253402214400, kindTimePicker: 86399, kindDateTimePicker: 253402300799]
+private let pickerLeast: [Int64: Int64] = [kindDatePicker: -62135596800, kindTimePicker: 0, kindDateTimePicker: -62135596800, kindCalendar: -62135596800]
+private let pickerMost: [Int64: Int64] = [kindDatePicker: 253402214400, kindTimePicker: 86399, kindDateTimePicker: 253402300799, kindCalendar: 253402214400]
 
 private func isPicker(_ kind: Int64) -> Bool {
-    return kind == kindDatePicker || kind == kindTimePicker || kind == kindDateTimePicker
+    return kind == kindDatePicker || kind == kindTimePicker || kind == kindDateTimePicker || kind == kindCalendar
 }
 
 // The seconds a picker's date is, as its kind holds them: a date picker's
@@ -3852,7 +3857,7 @@ private func pickerSeconds(_ picker: NSDatePicker, _ kind: Int64) -> Int64 {
     let whole = Int64(picker.dateValue.timeIntervalSince1970.rounded(.down))
     let day = Int64((Double(whole) / Double(secondsInDay)).rounded(.down)) * secondsInDay
     switch kind {
-    case kindDatePicker:
+    case kindDatePicker, kindCalendar:
         return day
     case kindTimePicker:
         return whole - day
@@ -3864,7 +3869,7 @@ private func pickerSeconds(_ picker: NSDatePicker, _ kind: Int64) -> Int64 {
 // Whether `value` is one a picker of `kind` holds.
 private func pickerHolds(_ kind: Int64, _ value: Int64) -> Bool {
     switch kind {
-    case kindDatePicker:
+    case kindDatePicker, kindCalendar:
         return value % secondsInDay == 0 && value >= (pickerLeast[kind] ?? 0) && value <= (pickerMost[kind] ?? 0)
     case kindTimePicker:
         return value >= 0 && value < secondsInDay
@@ -4747,6 +4752,10 @@ private final class CanvasView: NSView {
     let areaId: Int64
     var marks: [Mark] = []
     var tracking: NSTrackingArea?
+    // The parts a screen reader reads it by, in the order given, and those
+    // within the area itself (`hero_ui.h`'s A DRAWING AREA'S PARTS).
+    var parts: [CanvasPart] = []
+    var roots: [CanvasPart] = []
 
     init(owner: Backend, id: Int64) {
         self.owner = owner
@@ -4766,6 +4775,21 @@ private final class CanvasView: NSView {
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
         return true
+    }
+
+    // With parts the area is a group holding them; with none, one image.
+    override func accessibilityChildren() -> [Any]? {
+        return roots.isEmpty ? super.accessibilityChildren() : roots
+    }
+
+    // The area taking the keys takes a reader's focus to the part the
+    // program's focus stands on.
+    override func becomeFirstResponder() -> Bool {
+        let took = super.becomeFirstResponder()
+        if took, let focused = parts.first(where: { $0.isAccessibilityFocused() }) {
+            NSAccessibility.post(element: focused, notification: .focusedUIElementChanged)
+        }
+        return took
     }
 
     override func draw(_ dirtyRect: NSRect) {
@@ -5054,5 +5078,373 @@ public func hero_ui_appkit_snapshot(_ id: Int64, _ rgba: UnsafeMutablePointer<UI
 public func hero_ui_appkit_pointer(_ id: Int64, _ x: Int64, _ y: Int64, _ phase: Int64, _ button: Int64, _ clicks: Int64, _ modifiers: Int64) -> Int64 {
     return MainActor.assumeIsolated { () -> Int64 in
         return backend()?.pointer(id, x, y, phase, button, clicks, modifiers) ?? answerNotFound
+    }
+}
+
+// -- A DRAWING AREA'S PARTS, READ BY A SCREEN READER --------------------------
+
+// `hero_ui.h`'s roles, states and acts of a part.
+private let partGroup: UInt8 = 1
+private let partText: UInt8 = 2
+private let partImage: UInt8 = 3
+private let partButton: UInt8 = 4
+private let partCheckBox: UInt8 = 5
+private let partRadio: UInt8 = 6
+private let partSlider: UInt8 = 7
+private let partProgress: UInt8 = 8
+private let partLink: UInt8 = 9
+private let partFocusable: UInt8 = 1
+private let partFocused: UInt8 = 2
+private let partChecked: UInt8 = 4
+private let partPress: Int64 = 1
+private let partFocus: Int64 = 2
+private let partIncrease: Int64 = 3
+private let partDecrease: Int64 = 4
+
+// The bytes of a part's record before its name and description.
+private let partFixed = 48
+
+// The system's role of each of the layer's, and back.
+private let partRoles: [UInt8: NSAccessibility.Role] = [
+    partGroup: .group, partText: .staticText, partImage: .image, partButton: .button, partCheckBox: .checkBox,
+    partRadio: .radioButton, partSlider: .slider, partProgress: .progressIndicator, partLink: .link,
+]
+
+// Whether a part of `role` is pressed by a reader: a control that acts.
+private func partPressed(_ role: UInt8) -> Bool {
+    return role == partButton || role == partCheckBox || role == partRadio || role == partLink
+}
+
+// A part of a drawing area as a screen reader reads it: an element of the
+// area's view, its box the area's points turned into the screen's as the
+// reader asks, its role, name, description, value and states as the program
+// gave them, and every act a reader takes on it told to the program as
+// `HERO_UI_EVENT_PART`, never applied here: the program gives the parts
+// again.
+private final class CanvasPart: NSAccessibilityElement {
+    weak var area: CanvasView?
+    let number: Int64
+    let role: UInt8
+    let states: UInt8
+    let box: NSRect
+    var children: [CanvasPart] = []
+
+    init(area: CanvasView, number: Int64, role: UInt8, states: UInt8, box: NSRect) {
+        self.area = area
+        self.number = number
+        self.role = role
+        self.states = states
+        self.box = box
+        super.init()
+    }
+
+    // The box on the screen, from the area's flipped points through its
+    // window, asked anew each time so a moved window moves it.
+    override func accessibilityFrame() -> NSRect {
+        guard let view = area, let window = view.window else {
+            return .zero
+        }
+        return window.convertToScreen(view.convert(box, to: nil))
+    }
+
+    override func accessibilityChildren() -> [Any]? {
+        return children
+    }
+
+    override func isAccessibilityElement() -> Bool {
+        return true
+    }
+
+    override func isAccessibilityFocused() -> Bool {
+        return states & partFocused != 0
+    }
+
+    // The acts a reader may take on it, as its role and states allow; the
+    // reader offers no other, and `part_act` refuses the rest.
+    override func isAccessibilitySelectorAllowed(_ selector: Selector) -> Bool {
+        if selector == #selector(NSAccessibilityElement.setAccessibilityFocused(_:)) {
+            return states & partFocusable != 0
+        }
+        if selector == #selector(NSAccessibilityElement.accessibilityPerformPress) {
+            return partPressed(role)
+        }
+        if selector == #selector(NSAccessibilityElement.accessibilityPerformIncrement) || selector == #selector(NSAccessibilityElement.accessibilityPerformDecrement) {
+            return role == partSlider
+        }
+        return super.isAccessibilitySelectorAllowed(selector)
+    }
+
+    override func setAccessibilityFocused(_ focused: Bool) {
+        if focused && states & partFocusable != 0 {
+            tell(partFocus)
+        }
+    }
+
+    override func accessibilityPerformPress() -> Bool {
+        guard partPressed(role) else {
+            return false
+        }
+        tell(partPress)
+        return true
+    }
+
+    override func accessibilityPerformIncrement() -> Bool {
+        guard role == partSlider else {
+            return false
+        }
+        tell(partIncrease)
+        return true
+    }
+
+    override func accessibilityPerformDecrement() -> Bool {
+        guard role == partSlider else {
+            return false
+        }
+        tell(partDecrease)
+        return true
+    }
+
+    // AppKit calls a reader's acts on the main thread, the backend's own.
+    private func tell(_ act: Int64) {
+        let number = self.number
+        let view = area
+        MainActor.assumeIsolated {
+            guard let view = view else {
+                return
+            }
+            view.owner?.queue(eventPart, view.areaId, number, act)
+        }
+    }
+}
+
+// The little-endian numbers of a part's record.
+private func partU16(_ bytes: [UInt8], _ at: Int) -> Int {
+    return Int(bytes[at]) | Int(bytes[at + 1]) << 8
+}
+
+private func partReal(_ bytes: [UInt8], _ at: Int) -> CGFloat {
+    let bits = UInt32(bytes[at]) | UInt32(bytes[at + 1]) << 8 | UInt32(bytes[at + 2]) << 16 | UInt32(bytes[at + 3]) << 24
+    return CGFloat(Float(bitPattern: bits))
+}
+
+private func partDouble(_ bytes: [UInt8], _ at: Int) -> Double {
+    var bits: UInt64 = 0
+    for shift in 0..<8 {
+        bits |= UInt64(bytes[at + shift]) << (8 * UInt64(shift))
+    }
+    return Double(bitPattern: bits)
+}
+
+// A part's record, written as `hero_ui.h` lays it out.
+private func partRecord(role: UInt8, states: UInt8, within: Int, box: NSRect, value: Double, least: Double, most: Double, name: String, help: String) -> [UInt8] {
+    var out: [UInt8] = [role, states, UInt8(within & 0xFF), UInt8(within >> 8 & 0xFF)]
+    for real in [box.minX, box.minY, box.width, box.height] {
+        let bits = Float(real).bitPattern
+        out += [UInt8(bits & 0xFF), UInt8(bits >> 8 & 0xFF), UInt8(bits >> 16 & 0xFF), UInt8(bits >> 24 & 0xFF)]
+    }
+    for number in [value, least, most] {
+        let bits = number.bitPattern
+        for shift in 0..<8 {
+            out.append(UInt8(bits >> (8 * UInt64(shift)) & 0xFF))
+        }
+    }
+    let named = Array(name.utf8)
+    let described = Array(help.utf8)
+    out += [UInt8(named.count & 0xFF), UInt8(named.count >> 8 & 0xFF), UInt8(described.count & 0xFF), UInt8(described.count >> 8 & 0xFF)]
+    return out + named + described
+}
+
+extension Backend {
+    // Gives canvas `id` the parts `list` holds (checked whole by
+    // `hero_ui.c`), each an element of its view, and tells a reader the
+    // area changed, and where the focused part moved while the area has the
+    // keys, that the focus moved with it.
+    func setParts(_ id: Int64, _ list: [UInt8]) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard let view = widget.view as? CanvasView, widget.kind == kindCanvas else {
+            return answerInvalid
+        }
+        var made: [CanvasPart] = []
+        var roots: [CanvasPart] = []
+        var at = 0
+        while at + partFixed <= list.count {
+            let named = partU16(list, at + 44)
+            let described = partU16(list, at + 46)
+            guard at + partFixed + named + described <= list.count else {
+                words = "the parts' bytes are no list of parts this arm reads"
+                return answerOther
+            }
+            let role = list[at]
+            let states = list[at + 1]
+            let within = partU16(list, at + 2)
+            let box = NSRect(x: partReal(list, at + 4), y: partReal(list, at + 8), width: partReal(list, at + 12), height: partReal(list, at + 16))
+            let part = CanvasPart(area: view, number: Int64(made.count + 1), role: role, states: states, box: box)
+            part.setAccessibilityRole(partRoles[role] ?? .unknown)
+            part.setAccessibilityLabel(String(decoding: list[(at + partFixed)..<(at + partFixed + named)], as: UTF8.self))
+            if described > 0 {
+                part.setAccessibilityHelp(String(decoding: list[(at + partFixed + named)..<(at + partFixed + named + described)], as: UTF8.self))
+            }
+            if role == partSlider || role == partProgress {
+                part.setAccessibilityValue(NSNumber(value: partDouble(list, at + 20)))
+                part.setAccessibilityMinValue(NSNumber(value: partDouble(list, at + 28)))
+                part.setAccessibilityMaxValue(NSNumber(value: partDouble(list, at + 36)))
+            } else if role == partCheckBox || role == partRadio {
+                part.setAccessibilityValue(NSNumber(value: states & partChecked != 0 ? 1 : 0))
+            }
+            if within == 0 {
+                part.setAccessibilityParent(view)
+                roots.append(part)
+            } else if within <= made.count {
+                part.setAccessibilityParent(made[within - 1])
+                made[within - 1].children.append(part)
+            } else {
+                words = "a part of the list is within no earlier part"
+                return answerOther
+            }
+            made.append(part)
+            at += partFixed + named + described
+        }
+        let before = view.parts.first { $0.states & partFocused != 0 }?.number
+        view.parts = made
+        view.roots = roots
+        view.setAccessibilityRole(made.isEmpty ? .image : .group)
+        NSAccessibility.post(element: view, notification: .layoutChanged)
+        if let focused = made.first(where: { $0.states & partFocused != 0 }), focused.number != before, view.window?.firstResponder === view {
+            NSAccessibility.post(element: focused, notification: .focusedUIElementChanged)
+        }
+        return answerOk
+    }
+
+    // The parts of canvas `id` read back from the elements its view offers a
+    // reader, walked from the view down, each in the record a program gives,
+    // in the order the parts were given.
+    func parts(_ id: Int64) -> (Int64, [UInt8]) {
+        guard let widget = widgets[id] else {
+            return (answerNotFound, [])
+        }
+        guard let view = widget.view as? CanvasView, widget.kind == kindCanvas else {
+            return (answerInvalid, [])
+        }
+        var found: [CanvasPart] = []
+        var walk = (view.accessibilityChildren() ?? []).compactMap { $0 as? CanvasPart }
+        while !walk.isEmpty {
+            let part = walk.removeFirst()
+            found.append(part)
+            walk += (part.accessibilityChildren() ?? []).compactMap { $0 as? CanvasPart }
+        }
+        found.sort { $0.number < $1.number }
+        var out: [UInt8] = []
+        for part in found {
+            let role = partRoles.first { $0.value == part.accessibilityRole() }?.key ?? 0
+            var states: UInt8 = 0
+            if part.isAccessibilitySelectorAllowed(#selector(NSAccessibilityElement.setAccessibilityFocused(_:))) {
+                states |= partFocusable
+            }
+            if part.isAccessibilityFocused() {
+                states |= partFocused
+            }
+            var value = 0.0
+            var least = 0.0
+            var most = 0.0
+            if role == partSlider || role == partProgress {
+                value = (part.accessibilityValue() as? NSNumber)?.doubleValue ?? 0
+                least = (part.accessibilityMinValue() as? NSNumber)?.doubleValue ?? 0
+                most = (part.accessibilityMaxValue() as? NSNumber)?.doubleValue ?? 0
+            } else if (role == partCheckBox || role == partRadio) && (part.accessibilityValue() as? NSNumber)?.intValue == 1 {
+                states |= partChecked
+            }
+            var within = 0
+            if let holder = part.accessibilityParent() as? CanvasPart {
+                within = Int(holder.number)
+            }
+            var box = NSRect.zero
+            if let window = view.window {
+                box = view.convert(window.convertFromScreen(part.accessibilityFrame()), from: nil)
+            }
+            out += partRecord(role: role, states: states, within: within, box: box, value: value, least: least, most: most, name: part.accessibilityLabel() ?? "", help: part.accessibilityHelp() ?? "")
+        }
+        return (answerOk, out)
+    }
+
+    // A reader's act `act` on part `number` of canvas `id`, through the
+    // part's own accessibility actions, which tell it.
+    func partAct(_ id: Int64, _ number: Int64, _ act: Int64) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard let view = widget.view as? CanvasView, widget.kind == kindCanvas else {
+            return answerInvalid
+        }
+        // The face has refused, in its words, a part that is none and an
+        // act its role takes none of; these are the arm's own backstops.
+        guard number >= 1, number <= Int64(view.parts.count) else {
+            return answerInvalid
+        }
+        let part = view.parts[Int(number - 1)]
+        let selector: Selector
+        switch act {
+        case partPress:
+            selector = #selector(NSAccessibilityElement.accessibilityPerformPress)
+        case partFocus:
+            selector = #selector(NSAccessibilityElement.setAccessibilityFocused(_:))
+        case partIncrease:
+            selector = #selector(NSAccessibilityElement.accessibilityPerformIncrement)
+        default:
+            selector = #selector(NSAccessibilityElement.accessibilityPerformDecrement)
+        }
+        guard part.isAccessibilitySelectorAllowed(selector) else {
+            return answerInvalid
+        }
+        switch act {
+        case partPress:
+            _ = part.accessibilityPerformPress()
+        case partFocus:
+            part.setAccessibilityFocused(true)
+        case partIncrease:
+            _ = part.accessibilityPerformIncrement()
+        default:
+            _ = part.accessibilityPerformDecrement()
+        }
+        return answerOk
+    }
+}
+
+@c
+public func hero_ui_appkit_set_parts(_ id: Int64, _ list: UnsafePointer<UInt8>?, _ count: Int64) -> Int64 {
+    var bytes: [UInt8] = []
+    if let list = list, count > 0 {
+        bytes = Array(UnsafeBufferPointer(start: list, count: Int(count)))
+    }
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setParts(id, bytes) ?? answerNotFound
+    }
+}
+
+@c
+public func hero_ui_appkit_parts(_ id: Int64, _ buffer: UnsafeMutablePointer<UInt8>?, _ count: Int64, _ length: UnsafeMutablePointer<Int64>?) -> Int64 {
+    guard let length = length else {
+        return answerInvalid
+    }
+    let (answer, bytes) = MainActor.assumeIsolated { () -> (Int64, [UInt8]) in
+        return backend()?.parts(id) ?? (answerNotFound, [])
+    }
+    if answer != answerOk {
+        return answer
+    }
+    length.pointee = Int64(bytes.count)
+    if let buffer = buffer, bytes.count <= Int(count) {
+        for at in 0..<bytes.count {
+            buffer[at] = bytes[at]
+        }
+    }
+    return answerOk
+}
+
+@c
+public func hero_ui_appkit_part_act(_ id: Int64, _ part: Int64, _ act: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.partAct(id, part, act) ?? answerNotFound
     }
 }

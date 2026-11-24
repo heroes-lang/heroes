@@ -1,0 +1,104 @@
+# The codes version 3's statuses cannot name, told by one look at the path
+# after a request failed: SFTP 3 has no status for a name taken, a folder
+# holding something or a path of the other kind, and OpenSSH's server
+# answers each as a bare `FAILURE`, as `NO_SUCH_FILE` (a file where a folder
+# was owed) or as `PERMISSION_DENIED` (a folder removed as a file), measured
+# against `sftp-server` of OpenSSH 10.5p1. The look is a second request, so
+# a path another program changes between the two is told as it then stands;
+# the server's own words stay in the message.
+
+use fs
+use sftp/internal/attrs
+use sftp/internal/calls
+use sftp/internal/conn
+use ssh
+
+## Codes
+
+# A name already taken.
+constant EXISTS: str
+    "exists"
+
+# A path of something other than a folder where one was owed.
+constant NOT_A_DIRECTORY: str
+    "not_a_directory"
+
+# A path of a folder where a file was owed.
+constant IS_A_DIRECTORY: str
+    "is_a_directory"
+
+# A folder removed while it holds something.
+constant NOT_EMPTY: str
+    "not_empty"
+
+## Refining
+
+# A failure `code` with `msg` of a request that names `path` new: `exists`
+# where the status is a bare failure or a refusal and something is at
+# `path`.
+function taken<T>(@c: ssh.Client, @st: conn.State, path: str, code: str, msg: str) -> T?
+    if code == conn.FAILED || code == conn.PERMISSION
+        match calls.stat(@c, @st, path: path, follow: false)
+            .ok _  => return fail(code: EXISTS, msg: msg + "; something is there already")
+            .err _ => _ = 0
+    return fail(code: code, msg: msg)
+
+# A failure `code` with `msg` of a request on the file `path`:
+# `is_a_directory` where `path` names a folder.
+function is_folder<T>(@c: ssh.Client, @st: conn.State, path: str, code: str, msg: str) -> T?
+    if kind_at(@c, @st, path: path, follow: false).default(.other) == .directory
+        return fail(code: IS_A_DIRECTORY, msg: msg + "; it is a folder")
+    return fail(code: code, msg: msg)
+
+# A failure `code` with `msg` of a request owed the folder `path`:
+# `not_a_directory` where it names something else.
+function not_folder<T>(@c: ssh.Client, @st: conn.State, path: str, code: str, msg: str) -> T?
+    match kind_at(@c, @st, path: path, follow: true)
+        .ok kind =>
+            if kind != .directory
+                return fail(code: NOT_A_DIRECTORY, msg: msg + "; it is no folder")
+        .err _ => _ = 0
+
+    return fail(code: code, msg: msg)
+
+# A failure `code` with `msg` of the removal of the folder `path`:
+# `not_a_directory` where it names something else, `not_empty` where the
+# status is a bare failure and it is a folder.
+function folder_removed<T>(@c: ssh.Client, @st: conn.State, path: str, code: str, msg: str) -> T?
+    kind = match kind_at(@c, @st, path: path, follow: false)
+        .ok k  => k
+        .err _ => return fail(code: code, msg: msg)
+
+    if kind != .directory
+        return fail(code: NOT_A_DIRECTORY, msg: msg + "; it is no folder")
+
+    if code == conn.FAILED
+        return fail(code: NOT_EMPTY, msg: msg + "; it is a folder, and holds something")
+    return fail(code: code, msg: msg)
+
+# A failed read of the open `handle`: `is_a_directory` where it is a
+# folder.
+function read_failure<T>(@c: ssh.Client, @st: conn.State, handle: [u8], code: str, msg: str) -> T?
+    if code == conn.FAILED
+        match calls.fstat(@c, @st, handle: handle, asked: msg)
+            .ok raw =>
+                if attrs.kind(raw).default(.other) == .directory
+                    return fail(code: IS_A_DIRECTORY, msg: msg + "; it is a folder")
+            .err _ => _ = 0
+    return fail(code: code, msg: msg)
+
+# `done`, with `file_not_found` taken as success: a path another program
+# removed first.
+function gone(done: ()?) -> ()?
+    match done
+        .ok _ => return ok()
+        .err e =>
+            if e.code == conn.FILE_NOT_FOUND
+                return ok()
+            return fail(code: e.code, msg: e.msg)
+
+# What `path` names, failing where the look fails or its answer holds no
+# type.
+function kind_at(@c: ssh.Client, @st: conn.State, path: str, follow: bool) -> fs.Kind?
+    raw = calls.stat(@c, @st, path: path, follow: follow)?
+    return attrs.kind(raw)

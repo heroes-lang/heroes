@@ -1,0 +1,218 @@
+# The ledger of `ssh`: what a client of SSH 2 lets a program do, one block
+# per capability, and what Rebel answers.
+#
+# Go 1.27, Rust 1.100 and Python 3.15 carry no SSH in their standard
+# libraries, so every `rust` and `python` line is `-`. The yardstick is Go's
+# `golang.org/x/crypto/ssh`, `ssh/knownhosts` and `ssh/agent` of
+# `golang.org/x/crypto` v0.59.0 (`go` below), every entry listed by `go doc
+# -all` run 2026-11-23 in a module cache inside the lane's scratch; and the
+# second implementation the tests are held to is OpenSSH 10.5p1, this Mac's
+# own: its `sshd` run as the user on 127.0.0.1 with host keys and a
+# configuration of its own, `ssh-keygen` for every key, fingerprint and
+# hashed `known_hosts` line the tests compare with, and `ssh` itself to
+# probe the server first.
+
+capability ssh/connect  a server reached: the version lines, a key exchange, the sign-in service
+  heroes  ssh.connect, ssh.options, ssh.Options, ssh.Client, ssh.close, ssh.set_wait
+  go      Dial, NewClient, NewClientConn, ClientConfig, Config, Config.SetDefaults, Client, Conn, ConnMetadata, NegotiatedAlgorithms, DirectionAlgorithms
+  rust    -
+  python  -
+  note    every call waits at most the options' `wait`, `time.max_duration()` for none, where Go sets one timeout on the dial alone; the server's version line may follow 1024 lines of at most 255 bytes, and a packet past 256 KiB is refused before a byte of it is kept, as OpenSSH bounds both
+
+capability ssh/key-exchange  the key agreed: curve25519-sha256 (RFC 8731), ecdh-sha2-nistp256 and -384 (RFC 5656), OpenSSH's strict exchange, keys exchanged again
+  heroes  ssh.connect
+  go      Config, Algorithms, SupportedAlgorithms, InsecureAlgorithms, AlgorithmNegotiationError, AlgorithmNegotiationError.Error
+  rust    -
+  python  -
+  note    the ephemeral keys and the agreement are `crypto/keypairs`', so the system's; X25519 is offered where the system has it (not Windows, whose ECDH on P-256 serves); `kex-strict-c-v00@openssh.com` is offered, so a message slipped into the first exchange ends it (the Terrapin attack, CVE-2023-48795); the server's KEXINIT is answered at any time and the client exchanges keys again past 1 GiB either way, as OpenSSH's `RekeyLimit` default; checked against sshd 10.5p1 with every exchange and every host key algorithm and both ciphers (32 connections) and with `RekeyLimit 64K`, so a transfer of 3 MB crossed about 45 exchanges the server asked; a later exchange must present the first's host key
+
+capability ssh/key-exchange-other  the finite-field Diffie-Hellman exchanges, diffie-hellman-group14-sha256, group16, group18 and group-exchange
+  heroes  refused: an exchange computed on a secret by the program's own arithmetic, which the system's cryptography here does not offer (`crypto/keypairs` leaves finite-field Diffie-Hellman pending); every OpenSSH since 5.7 speaks ECDH
+  go      -
+  rust    -
+  python  -
+
+capability ssh/key-exchange-post-quantum  the hybrid exchanges mlkem768x25519-sha256 and sntrup761x25519-sha512, OpenSSH 10's first choices
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    ML-KEM from the system's cryptography first (CryptoKit on macOS 26, OpenSSL 3.5, CNG): until then the server agrees curve25519-sha256 or ECDH, which OpenSSH 10.5 still offers
+
+capability ssh/ciphers  packets sealed by aes256-gcm@openssh.com and aes128-gcm@openssh.com (RFC 5647 § 7)
+  heroes  ssh.connect
+  go      Config, Algorithms
+  rust    -
+  python  -
+  note    each direction's key is a counted key of `crypto/seal`, whose nonce the layer computes from the derived IV (RFC 5647's invocation counter), so the program never holds a nonce; a packet that does not open ends the connection
+
+capability ssh/cipher-chacha20  the cipher chacha20-poly1305@openssh.com
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    OpenSSH's construction needs ChaCha20's stream and Poly1305 apart, which `crypto/seal` does not offer and CNG lacks; the system's own (OpenSSL 3, the runtime's Monocypher on macOS) first. AES-GCM serves every OpenSSH since 6.2
+
+capability ssh/host-key-check  the server's host key checked against a known_hosts file before anything is sent under the keys agreed
+  heroes  ssh.connect, ssh.UnknownHosts, ssh.check_known_host, ssh.HostKnown
+  go      HostKeyCallback, FixedHostKey, InsecureIgnoreHostKey, knownhosts.New, knownhosts.KeyError, knownhosts.KeyError.Error, knownhosts.KnownKey, knownhosts.KnownKey.String, knownhosts.RevokedError, knownhosts.RevokedError.Error, ParseKnownHosts
+  rust    -
+  python  -
+  note    the file is read as OpenSSH reads it: patterns with `*`, `?` and `!`, `[host]:port`, hashed names, `@revoked` (checked against `ssh-keygen -H`'s and hand-written lines); the host key algorithms the file holds for the host are offered first, as OpenSSH orders them, so a host known by one key type is asked for it; a host known by other keys only is `changed`, never trusted on first use; no `InsecureIgnoreHostKey`: an empty path is refused, and a key is fetched untrusted by `fetch_host_key` alone
+
+capability ssh/known-hosts-line  the line that adds a host, in clear or hashed
+  heroes  ssh.known_host_line
+  go      knownhosts.Line, knownhosts.HashHostname, knownhosts.Normalize
+  rust    -
+  python  -
+
+capability ssh/fetch-host-key  a server's host key fetched to be shown, as ssh-keyscan does
+  heroes  ssh.fetch_host_key, ssh.host_key
+  go      -
+  rust    -
+  python  -
+
+capability ssh/sign-in-key  a sign-in by a public key (RFC 4252 § 7), RSA over SHA-2 (RFC 8332)
+  heroes  ssh.sign_in_with_key, ssh.sign_in_methods, ssh.is_signed_in
+  go      PublicKeys, PublicKeysCallback, AuthMethod, RetryableAuthMethod, PartialSuccessError, PartialSuccessError.Error, ServerAuthError, ServerAuthError.Error, ClientAuthCallback, ClientAuthContext
+  rust    -
+  python  -
+  note    the key is offered first and signed only where the server takes it; RSA signs with SHA-512 or SHA-256 as `server-sig-algs` (RFC 8308) allows, never SHA-1; checked with Ed25519, ECDSA P-256 and P-384 and RSA 3072 keys of ssh-keygen 10.5 against its sshd; a program tries its keys in its own order, so Go's retry is the program's loop
+
+capability ssh/sign-in-password  a sign-in by a password, or by keyboard-interactive answering one hidden prompt
+  heroes  ssh.sign_in_with_password
+  go      Password, PasswordCallback, KeyboardInteractive
+  rust    -
+  python  -
+  note    the refusal and the methods it names checked against sshd; a server's success is unrun on this Mac, whose sshd checks passwords against the user's own, which no test holds
+
+capability ssh/sign-in-questions  keyboard-interactive with questions other than one hidden password: a second factor
+  heroes  pending
+  go      KeyboardInteractiveChallenge
+  rust    -
+  python  -
+  note    a function the program gives, called with each round's questions; written once a program needs it
+
+capability ssh/sign-in-gssapi  a sign-in by Kerberos through GSSAPI (RFC 4462)
+  heroes  pending
+  go      GSSAPIWithMICAuthMethod, GSSAPIClient, GSSAPIServer, GSSAPIWithMICConfig
+  rust    -
+  python  -
+  note    the system's GSSAPI library bound first
+
+capability ssh/banner  the banner a server shows before a sign-in
+  heroes  ssh.banner
+  go      BannerCallback, BannerDisplayStderr, BannerError, BannerError.Error, BannerError.Unwrap
+  rust    -
+  python  -
+
+capability ssh/run  a program run to its end: its output, its errors, its exit status or signal
+  heroes  ssh.run, ssh.Output
+  go      Session.Run, Session.Output, Session.CombinedOutput, ExitError, ExitError.Error, ExitMissingError, ExitMissingError.Error, Waitmsg, Waitmsg.ExitStatus, Waitmsg.Signal, Waitmsg.Msg, Waitmsg.Lang, Waitmsg.String
+  rust    -
+  python  -
+  note    3 MB of output read through the 2 MiB window; the output and the errors kept apart, never combined, so `CombinedOutput` is the program's join
+
+capability ssh/session  a session channel: a program started in it, fed, read and waited for
+  heroes  ssh.open_session, ssh.exec, ssh.start, ssh.write, ssh.read, ssh.read_errors, ssh.close_write, ssh.wait_exit, ssh.Exit, ssh.close_channel, ssh.Channel
+  go      Client.NewSession, Session, Session.Start, Session.Wait, Session.Close, Session.StdinPipe, Session.StdoutPipe, Session.StderrPipe, Channel, NewChannel, OpenChannelError, OpenChannelError.Error, RejectionReason, RejectionReason.String
+  rust    -
+  python  -
+  note    a channel is this package's number and not an `io.Stream`, every wait reading the connection's messages until its own answer stands; the data a server sends is kept within a window of 2 MiB per channel, opened again as the program reads; checked with 300 KB echoed through `cat` across the server's rekeys
+
+capability ssh/shell-and-terminal  the user's shell and a terminal for it: its type and size, its size changed
+  heroes  ssh.shell, ssh.ask_terminal, ssh.resize, ssh.Terminal
+  go      Session.Shell, Session.RequestPty, Session.WindowChange
+  rust    -
+  python  -
+
+capability ssh/terminal-modes  a terminal's modes set: echo, the erase character, the line discipline's flags (RFC 4254 § 8)
+  heroes  pending
+  go      TerminalModes
+  rust    -
+  python  -
+  note    a terminal is asked with no mode, the server's defaults kept
+
+capability ssh/env-subsystem-signal  a variable set for a program, a subsystem started, a signal sent
+  heroes  ssh.set_env, ssh.subsystem, ssh.send_signal
+  go      Session.Setenv, Session.RequestSubsystem, Session.Signal, Signal
+  rust    -
+  python  -
+  note    a variable the server's `AcceptEnv` does not list is refused `permission` and told, where Go's `Setenv` fails and OpenSSH's own client passes it over
+
+capability ssh/forward-local  a connection the server makes for the client, as ssh -L forwards one (RFC 4254 § 7.2)
+  heroes  ssh.dial
+  go      Client.Dial, Client.DialContext, Client.DialTCP
+  rust    -
+  python  -
+  note    the channel is read and written as any; a listener on this side, bridged to it, is the program's loop with `net` and `poll`
+
+capability ssh/forward-remote  connections the server accepts for the client, as ssh -R asks (RFC 4254 § 7.1)
+  heroes  ssh.listen_remote, ssh.accept_remote, ssh.cancel_remote, ssh.Forwarded
+  go      Client.Listen, Client.ListenTCP, Client.HandleChannelOpen
+  rust    -
+  python  -
+  note    a channel the server opens for a forward this client did not ask, or of another kind, is refused as administratively prohibited
+
+capability ssh/forward-unix  a Unix socket forwarded either way, OpenSSH's streamlocal extensions
+  heroes  pending
+  go      Client.ListenUnix
+  rust    -
+  python  -
+
+capability ssh/requests  a global or channel request of a kind the program names, and one the server makes answered by the program
+  heroes  pending
+  go      Conn, Request, Request.Reply, Session.SendRequest, DiscardRequests, NewControlClientConn
+  rust    -
+  python  -
+  note    the requests the server makes are answered here: refused where they ask an answer, keep-alives among them, as OpenSSH's client answers them
+
+capability ssh/public-keys  a public key read and written as an authorized_keys line or a blob, its fingerprints
+  heroes  ssh.parse_public_key, ssh.format_public_key, ssh.decode_public_key, ssh.fingerprint, ssh.fingerprint_md5, ssh.PublicKey
+  go      ParseAuthorizedKey, ParsePublicKey, NewPublicKey, MarshalAuthorizedKey, PublicKey, CryptoPublicKey, FingerprintSHA256, FingerprintLegacyMD5, Marshal, Unmarshal
+  rust    -
+  python  -
+  note    fingerprints checked against `ssh-keygen -l` and `-l -E md5`; options before a key in `authorized_keys` are not read; `Marshal` and `Unmarshal` of any message are the package's own plumbing
+
+capability ssh/private-keys  a private key read and written in OpenSSH's own file, read as PKCS #8, made, signed with
+  heroes  ssh.parse_private_key, ssh.format_private_key, ssh.generate_key, ssh.private_key_of, ssh.close_key, ssh.sign, ssh.verify, ssh.PrivateKey, ssh.KeyKind
+  go      ParsePrivateKey, ParseRawPrivateKey, MarshalPrivateKey, Signer, AlgorithmSigner, MultiAlgorithmSigner, NewSignerFromKey, NewSignerFromSigner, NewSignerWithAlgorithms, Signature
+  rust    -
+  python  -
+  note    files of ssh-keygen 10.5 read (Ed25519, ECDSA P-256 and P-384, RSA), and files written read back; the key's arithmetic is `crypto/keypairs`', and an RSA key's two CRT exponents, which OpenSSH's file does not hold, are computed once by `big`; P-521 is refused, the system's cryptography here having none
+
+capability ssh/private-keys-passphrase  a private key file under a passphrase, read and written
+  heroes  pending
+  go      ParsePrivateKeyWithPassphrase, ParseRawPrivateKeyWithPassphrase, MarshalPrivateKeyWithPassphrase, PassphraseMissingError, PassphraseMissingError.Error
+  rust    -
+  python  -
+  note    OpenSSH's bcrypt_pbkdf and AES-256-CTR first; a file under one fails `unsupported` saying `ssh-keygen -p` removes it
+
+capability ssh/dsa  DSA keys
+  heroes  refused: OpenSSH 10 removed them, and the system's cryptography here signs with none
+  go      ParseDSAPrivateKey
+  rust    -
+  python  -
+
+capability ssh/certificates  OpenSSH's certificates of hosts and users, read, checked and signed
+  heroes  pending
+  go      Certificate, Certificate.Marshal, Certificate.SignCert, Certificate.Type, Certificate.Verify, CertChecker, CertChecker.Authenticate, CertChecker.CheckCert, CertChecker.CheckHostKey, NewCertSigner
+  rust    -
+  python  -
+  note    `@cert-authority` lines of `known_hosts` are passed over until then
+
+capability ssh/agent  an SSH agent's keys signed with, and its forwarding
+  heroes  pending
+  go      agent.NewClient, agent.Agent, agent.ExtendedAgent, agent.AddedKey, agent.Key, agent.Key.Marshal, agent.Key.String, agent.Key.Type, agent.Key.Verify, agent.NewKeyring, agent.ConstraintExtension, agent.SignatureFlags, agent.ForwardToAgent, agent.ForwardToRemote, agent.RequestAgentForwarding, agent.ServeAgent
+  rust    -
+  python  -
+  note    the agent's socket is a Unix socket on POSIX and a named pipe on Windows
+
+capability ssh/server  the server's side: host keys, sign-ins checked, channels served
+  heroes  pending
+  go      ServerConfig, ServerConfig.AddHostKey, ServerConn, NewServerConn, ServerPreAuthConn, ServerAuthCallbacks, Permissions, AlgorithmsConnMetadata
+  rust    -
+  python  -
+  note    the client took the lane's work; a server is its own row
+
+dropped algorithm-choice  a program choosing the algorithms offered (Go's `Config.KeyExchanges`, `Ciphers`, `MACs`): the client offers what the system computes, safest first, and the tests alone narrow it

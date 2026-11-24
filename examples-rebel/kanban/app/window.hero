@@ -78,7 +78,15 @@ function loop(@d: desk.Desk, menus: Menus) -> ()?
 
                         _ = handler.act(@d, name: call)?
                     .files_chosen f => _ = handler.chosen(@d, dialog: f.dialog, choice: f.choice)?
-                    .close_asked _ => return ok()
-                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .timer_fired _ | .resized _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .print_chosen _ | .ready _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ | .handed _ => _ = 0
+                    .close_asked _  => return ok()
+                    # The system asks the app to end, by the Dock's Quit or
+                    # the session's end, and waits: the board ends as its
+                    # window's close ends it, every change already in the
+                    # database, and closing the app answers the ask.
+                    .quit_asked _ => return ok()
+                    # A drawing area's pointer, keys and parts: the board
+                    # makes no drawing area, so none of them comes.
+                    .pointer _ | .key _ | .part_acted _ => _ = 0
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .timer_fired _ | .resized _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .print_chosen _ | .ready _ | .appearance_changed _ | .files_dropped _ | .handed _ => _ = 0
 
     return ok()

@@ -1,0 +1,210 @@
+# SAML 2.0's metadata (SAML Metadata 2.0): an identity provider's read, its
+# endpoints, its signing certificates and what it asks; a service
+# provider's written.
+
+use bytes
+use saml/internal/names
+use strings
+use time
+use x509
+use xml
+
+# One endpoint, as `md:EndpointType` writes it.
+record Endpoint
+    # The binding's identifier.
+    binding: str
+    # The URL.
+    location: str
+    # The URL of responses, or "".
+    response_location: str
+
+# An identity provider as its metadata describes it.
+record Provider
+    # Its `entityID`.
+    entity_id: str
+    # Its `SingleSignOnService` endpoints.
+    sso: [Endpoint]
+    # Its `SingleLogoutService` endpoints.
+    logout: [Endpoint]
+    # The certificates of its signing keys.
+    certificates: [x509.Certificate]
+    # Its `WantAuthnRequestsSigned`.
+    want_requests_signed: bool
+    # Its `NameIDFormat`s.
+    name_id_formats: [str]
+
+# The identity provider `entity_id` of `doc`, or its one entity where
+# `entity_id` is "".
+#
+# Fails `invalid` where `doc` is not metadata, names `entity_id` twice,
+# holds several entities and none is named, has expired by `validUntil`, or
+# gives no signing certificate; `not_found` where no entity matches or it
+# has no identity provider of SAML 2.0.
+function identity_provider(doc: xml.Document, entity_id: str, now_ms: i64) -> Provider?
+    root = doc.root
+
+    if root.name.space != names.METADATA
+        return fail(code: names.INVALID, msg: f"<{root.name.local}> is not SAML metadata")
+    entities: [xml.Element] @= []
+
+    if root.name.local == "EntityDescriptor"
+        entities @ [root]
+    else if root.name.local == "EntitiesDescriptor"
+        entities @ xml.descendants_in(root, space: names.METADATA, local: "EntityDescriptor")
+    else
+        return fail(
+            code: names.INVALID,
+            msg: f"<{root.name.local}> is neither an EntityDescriptor nor an EntitiesDescriptor"
+        )
+    still_valid(root, now_ms: now_ms)?
+    chosen: [xml.Element] @= []
+
+    for e in entities
+        if entity_id == "" || names.attribute_or_empty(e, name: "entityID") == entity_id
+            chosen @ chosen.push(e)
+
+    if chosen.len() == 0
+        return fail(code: names.NOT_FOUND, msg: f"the metadata describes no entity \"{entity_id}\"")
+
+    if chosen.len() > 1
+        return fail(
+            code: names.INVALID,
+            msg: f"the metadata describes {chosen.len()} entities where one was to be named \"{entity_id}\""
+        )
+    e = chosen[0]
+    still_valid(e, now_ms: now_ms)?
+    idp @= xml.element("none")
+    found: bool @= false
+
+    for d in xml.children_in(e, space: names.METADATA, local: "IDPSSODescriptor")
+        protocols = strings.words(names.attribute_or_empty(d, name: "protocolSupportEnumeration"))
+        speaks: bool @= false
+
+        for p in protocols
+            if p == names.PROTOCOL
+                speaks @ true
+
+        if !found && speaks
+            idp @ d
+            found @ true
+
+    if !found
+        return fail(code: names.NOT_FOUND, msg: "the entity has no IDPSSODescriptor of SAML 2.0")
+    certificates = signing_certificates(idp)?
+
+    if certificates.len() == 0
+        return fail(code: names.INVALID, msg: "the identity provider's metadata gives no signing certificate")
+    want = names.attribute_or_empty(idp, name: "WantAuthnRequestsSigned")
+    formats: [str] @= []
+
+    for f in xml.children_in(idp, space: names.METADATA, local: "NameIDFormat")
+        formats @ formats.push(strings.trim(names.plain(f, what: "a NameIDFormat")?))
+
+    return ok(
+        Provider(entity_id: names.attribute_or_empty(e, name: "entityID"), sso: endpoints(idp, local: "SingleSignOnService")?, logout: endpoints(idp, local: "SingleLogoutService")?, certificates: certificates, want_requests_signed: want == "true" || want == "1", name_id_formats: formats)
+    )
+
+# Fails `invalid` where `e` writes a `validUntil` that has passed.
+function still_valid(e: xml.Element, now_ms: i64) -> ()?
+    match xml.attribute(e, name: "validUntil")
+        .ok until =>
+            at = names.instant_of(s: until, what: "the metadata's validUntil")?
+
+            if now_ms >= time.unix_milliseconds(at)
+                return fail(code: names.INVALID, msg: f"the metadata expired at {until}")
+            return ok()
+        .err _ => return ok()
+
+# The certificates of `d`'s key descriptors of no `use` or of `use` signing.
+function signing_certificates(d: xml.Element) -> [x509.Certificate]?
+    out: [x509.Certificate] @= []
+
+    for k in xml.children_in(d, space: names.METADATA, local: "KeyDescriptor")
+        purpose = names.attribute_or_empty(k, name: "use")
+
+        if purpose == "" || purpose == "signing"
+            for info in xml.children_in(k, space: names.DSIG, local: "KeyInfo")
+                for data in xml.children_in(info, space: names.DSIG, local: "X509Data")
+                    for c in xml.children_in(data, space: names.DSIG, local: "X509Certificate")
+                        text = strings.words(names.plain(c, what: "an X509Certificate")?).join("")
+
+                        der = match bytes.parse_base64(text)
+                            .ok b => b
+                            .err _ => return fail(
+                                code: names.INVALID,
+                                msg: "an X509Certificate of the metadata is not base 64"
+                            )
+
+                        out @ out.push(x509.decode_certificate(der)?)
+
+    return ok(out)
+
+# The endpoints `d` writes as `local`, in order.
+function endpoints(d: xml.Element, local: str) -> [Endpoint]?
+    out: [Endpoint] @= []
+
+    for e in xml.children_in(d, space: names.METADATA, local: local)
+        binding = names.attribute_or_empty(e, name: "Binding")
+        location = names.attribute_or_empty(e, name: "Location")
+
+        if binding == "" || location == ""
+            return fail(code: names.INVALID, msg: f"a {local} has no Binding or no Location")
+        out @ out.push(
+            Endpoint(binding: binding, location: location, response_location: names.attribute_or_empty(e, name: "ResponseLocation"))
+        )
+
+    return ok(out)
+
+# An element of the metadata namespace.
+function md(local: str) -> xml.Element
+    return xml.element_in(space: names.METADATA, name: "md:" + local)
+
+# A service provider's metadata: its `SPSSODescriptor` with its signing
+# certificates, its logout service by both bindings where it has one, the
+# format it asks, and its consumer service by HTTP-POST.
+function of_service_provider(entity_id: str, acs_url: str, logout_url: str, name_id_format: str, certificates: [x509.Certificate]) -> xml.Document
+    root @= md("EntityDescriptor")
+    root @ xml.with_namespace(root, prefix: "md", space: names.METADATA)
+    root @ xml.with_namespace(root, prefix: "ds", space: names.DSIG)
+    root @ xml.with_attribute(root, name: "entityID", value: entity_id)
+    sp @= md("SPSSODescriptor")
+
+    signs = if certificates.len() > 0
+        "true"
+    else
+        "false"
+    sp @ xml.with_attribute(sp, name: "AuthnRequestsSigned", value: signs)
+    sp @ xml.with_attribute(sp, name: "WantAssertionsSigned", value: "true")
+    sp @ xml.with_attribute(sp, name: "protocolSupportEnumeration", value: names.PROTOCOL)
+    children: [xml.Node] @= []
+
+    for c in certificates
+        value = xml.with_text(
+            xml.element_in(space: names.DSIG, name: "ds:X509Certificate"),
+            text: bytes.format_base64(c.der)
+        )
+        data = xml.with_child(e: xml.element_in(space: names.DSIG, name: "ds:X509Data"), inner: value)
+        info = xml.with_child(e: xml.element_in(space: names.DSIG, name: "ds:KeyInfo"), inner: data)
+        key = xml.with_child(e: xml.with_attribute(md("KeyDescriptor"), name: "use", value: "signing"), inner: info)
+        children @ children.push(.element(v: key))
+
+    if logout_url != ""
+        for b in ["urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect", "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"]
+            s @= xml.with_attribute(md("SingleLogoutService"), name: "Binding", value: b)
+            s @ xml.with_attribute(s, name: "Location", value: logout_url)
+            children @ children.push(.element(v: s))
+
+    if name_id_format != ""
+        children @ children.push(.element(v: xml.with_text(md("NameIDFormat"), text: name_id_format)))
+    acs @= xml.with_attribute(
+        md("AssertionConsumerService"),
+        name: "Binding",
+        value: "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"
+    )
+    acs @ xml.with_attribute(acs, name: "Location", value: acs_url)
+    acs @ xml.with_attribute(acs, name: "index", value: "0")
+    acs @ xml.with_attribute(acs, name: "isDefault", value: "true")
+    children @ children.push(.element(v: acs))
+    sp.children @ children
+    root.children @ [.element(v: sp)]
+    return xml.document(root)

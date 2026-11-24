@@ -1,0 +1,169 @@
+# What the tests of the draws measure, for `law_pick` and `law_strong`: how
+# far a sample lies from a distribution, by Kolmogorov and Smirnov's largest
+# gap between the sample's share below each point and the distribution's,
+# and by the counts of whole numbers, joined until they expect 25, held
+# within five standard deviations of what their probability expects; and the cumulative
+# distributions they are measured against, each written from its formula.
+# The samples are drawn from fixed seeds, so each test answers the same
+# every time; the bounds are those a sample of the true distribution passes
+# but once in ten thousand times, and a fault of the method moves the gap
+# far past them.
+
+use math
+
+# The largest gap a sample of 100,000 from the true distribution passes once
+# in ten thousand times: sqrt(ln(2 / 0.0001) / 2) / sqrt(100,000).
+constant KS_BOUND: f64
+    0.007037
+
+# How many numbers a sample holds.
+constant SIZE: i64
+    100000
+
+# Kolmogorov and Smirnov's statistic of `sample` against `cumulative`: the
+# largest gap between the share of the sample at or below a point and the
+# distribution's.
+function ks_distance(sample: [f64], cumulative: (function(f64) -> f64)) -> f64
+    sorted = sort(sample)
+    n = to_f64(sorted.len())
+    worst @= 0.0
+    at @= 0
+
+    while at < sorted.len()
+        p = cumulative(sorted[at])
+        worst @ math.max(a: worst, b: math.max(a: to_f64(at + 1) / n - p, b: p - to_f64(at) / n))
+        at @ at + 1
+
+    return worst
+
+# The mean of `xs`.
+function mean(xs: [f64]) -> f64
+    return math.sum(xs).must() / to_f64(xs.len())
+
+# The variance of `xs` about their mean, divided by their number.
+function variance(xs: [f64]) -> f64
+    centre = mean(xs)
+    total @= 0.0
+
+    for x in xs
+        total @ total + (x - centre) * (x - centre)
+
+    return total / to_f64(xs.len())
+
+# Whether the counts of `counts`, out of `draws`, agree with `weights`: the
+# cells taken in order and joined until they expect 25 or more, each group
+# within five standard deviations of what its weight expects, plus three for
+# the last group's small expectation; a group expecting 25 or more is close
+# enough to the bell curve for five deviations to be passed once in millions.
+# The weights need not add up to 1, and a count with no weight must be 0.
+function counts_agree(counts: [i64], weights: [f64], draws: i64) -> bool
+    total = math.sum(weights).must()
+    n = to_f64(draws)
+    seen @= 0
+    share @= 0.0
+    at @= 0
+
+    while at < counts.len()
+        seen @ seen + counts[at]
+        share @ share + weights[at] / total
+
+        if n * share >= 25.0 || at == counts.len() - 1
+            expected = n * share
+            spread = math.sqrt(n * share * math.max(a: 1.0 - share, b: 0.0))
+
+            if math.abs(to_f64(seen) - expected) > 5.0 * spread + 3.0
+                print("counts up to ", at, ": ", seen, " where ", expected, " were expected")
+                return false
+            seen @ 0
+            share @ 0.0
+        at @ at + 1
+
+    return true
+
+# The standard normal distribution's.
+function standard_normal(x: f64) -> f64
+    return 0.5 * math.erfc(-x / math.SQRT_2)
+
+# The standard exponential distribution's.
+function standard_exponential(x: f64) -> f64
+    if x <= 0.0
+        return 0.0
+    return -math.exp_minus_1(-x)
+
+# The uniform distribution's from 0 to 1.
+function unit(x: f64) -> f64
+    return math.clamp(x: x, low: 0.0, high: 1.0)
+
+# The triangular distribution's from 1 to 4 with mode 2.
+function triangle_1_4_2(x: f64) -> f64
+    if x <= 1.0
+        return 0.0
+
+    if x <= 2.0
+        return (x - 1.0) * (x - 1.0) / 3.0
+
+    if x < 4.0
+        return 1.0 - (4.0 - x) * (4.0 - x) / 6.0
+    return 1.0
+
+# The gamma distribution's of shape 3 and scale 1: 1 - exp(-x) (1 + x +
+# x^2 / 2).
+function gamma_3(x: f64) -> f64
+    if x <= 0.0
+        return 0.0
+    return 1.0 - math.exp(-x) * (1.0 + x + x * x / 2.0)
+
+# The gamma distribution's of shape 1/2 and scale 1: erf(sqrt(x)).
+function gamma_half(x: f64) -> f64
+    if x <= 0.0
+        return 0.0
+    return math.erf(math.sqrt(x))
+
+# The beta distribution's of shapes 2 and 5: 1 - (1 - x)^6 - 6 x (1 - x)^5.
+function beta_2_5(x: f64) -> f64
+    y = unit(x)
+    return 1.0 - math.pow(base: 1.0 - y, exponent: 6.0) - 6.0 * y * math.pow(base: 1.0 - y, exponent: 5.0)
+
+# The beta distribution's of shapes 1/2 and 1/2, the arcsine law: 2 asin(sqrt(x))
+# / pi.
+function arcsine(x: f64) -> f64
+    return 2.0 * math.asin(math.sqrt(unit(x))) / math.PI
+
+# The probability of `k` successes among `n` trials of probability `p`, from
+# the logarithms of the factorials.
+function binomial_weight(n: i64, p: f64, k: i64) -> f64
+    nf = to_f64(n)
+    kf = to_f64(k)
+    choose = math.ln_gamma(nf + 1.0) - math.ln_gamma(kf + 1.0) - math.ln_gamma(nf - kf + 1.0)
+    return math.exp(choose + kf * math.ln(p) + (nf - kf) * math.ln(1.0 - p))
+
+# The probability of `k` events of a Poisson distribution of mean `average`.
+function poisson_weight(average: f64, k: i64) -> f64
+    kf = to_f64(k)
+    return math.exp(kf * math.ln(average) - average - math.ln_gamma(kf + 1.0))
+
+# The weights (offset + k)^-exponent of Zipf's distribution from 0 to
+# `largest`.
+function zipf_weights(exponent: f64, offset: f64, largest: i64) -> [f64]
+    out: [f64] @= []
+
+    for k in range(from: 0, to: largest + 1)
+        out @ out.push(math.pow(base: offset + to_f64(k), exponent: -exponent))
+
+    return out
+
+# The counts of each value of `values` from 0 to `last`, the values above it
+# counted at `last`.
+function tally(values: [i64], last: i64) -> [i64]
+    out @= range(from: 0, to: last + 1).map(nothing)
+
+    for v in values
+        assert v >= 0
+        at = math.min_i64(a: v, b: last)
+        out[at] @ out[at] + 1
+
+    return out
+
+# 0, for any number: the start of a count.
+function nothing(_: i64) -> i64
+    return 0

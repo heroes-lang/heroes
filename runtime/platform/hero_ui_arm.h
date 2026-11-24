@@ -284,6 +284,21 @@ int64_t hero_ui_arm_set_accessible_name(int64_t id, const uint8_t *name, int64_t
 int64_t hero_ui_arm_accessible_name(int64_t id, uint8_t *buffer, int64_t count, int64_t *length);
 int64_t hero_ui_arm_set_label_for(int64_t id, int64_t label);
 
+/* A DRAWING AREA'S PARTS (`hero_ui.h`'s A DRAWING AREA'S PARTS, READ BY A
+ * SCREEN READER): `hero_ui.c` has checked the records whole
+ * (`hero_ui_parts_checked`) before `set_parts` hands their `count` bytes to
+ * the arm, which builds the system's accessibility objects of them;
+ * `parts` writes the records read back from those objects where `count`
+ * holds them and their length through `length`; `part_act` acts on part
+ * `part` (1 the first) as a screen reader does, `act` one of
+ * `HERO_UI_PART_PRESS` to `_DECREASE`, checked for the part's role and
+ * states by the arm, which holds them. On macOS by `hero_ui_appkit.swift`;
+ * refusals for the Win32 and GTK 4 arms in `hero_ui.c`'s block of the parts'
+ * calls, which a system leaves where its member defines them. */
+int64_t hero_ui_arm_set_parts(int64_t id, const uint8_t *list, int64_t count);
+int64_t hero_ui_arm_parts(int64_t id, uint8_t *buffer, int64_t count, int64_t *length);
+int64_t hero_ui_arm_part_act(int64_t id, int64_t part, int64_t act);
+
 /* -- WHAT THE WIN32 AND GTK ARMS SHARE ----------------------------------------
  *
  * Kept by `hero_ui.c` for whichever of the two is compiled, each object the

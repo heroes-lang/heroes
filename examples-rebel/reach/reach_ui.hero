@@ -117,6 +117,7 @@ function told(ws: Widgets, event: ui.Event) -> str
         .handed h             => "handed " + h.items.len().to_str()
         .pointer p            => "pointer " + named(ws, widget: p.widget) + " " + p.clicks.to_str()
         .key k                => "key " + named(ws, widget: k.widget) + " " + k.shortcut.key
+        .part_acted p         => "part_acted " + named(ws, widget: p.widget) + " " + p.part.to_str()
 
 # The word of `appearance`.
 function appearance_word(appearance: ui.Appearance) -> str
@@ -198,7 +199,7 @@ function run(@app: ui.App) -> ()?
                 counted @ counted + 1
                 ui.set_value(@app, widget: ws.done, value: counted)?
             .close_asked _ => closing @ true
-            .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .print_chosen _ | .ready _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ | .handed _ | .pointer _ | .key _ =>
+            .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .print_chosen _ | .ready _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ | .handed _ | .pointer _ | .part_acted _ | .key _ =>
                 _ = 0
 
     print("name: " + ui.text_of(app, widget: ws.name)?)
@@ -299,7 +300,7 @@ test "the driver: the session on the system's own widgets, the same events and t
 
         match event
             .close_asked _ => closing @ true
-            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .print_chosen _ | .ready _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ | .handed _ | .pointer _ | .key _ =>
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .print_chosen _ | .ready _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ | .handed _ | .pointer _ | .part_acted _ | .key _ =>
                 _ = 0
 
     assert lines == ["clicked button", "text_changed name 3 bytes", "text_changed note 12 bytes", "toggled wrap true", "selection_changed size [1]", "selection_changed fruits [0, 2]", "selection_changed day [2]", "value_changed volume 80", "menu_chosen open", "clicked button", "close_asked window"]

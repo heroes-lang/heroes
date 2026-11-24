@@ -1,0 +1,194 @@
+# SAML's two bindings through a browser (SAML Bindings 2.0): HTTP-Redirect,
+# a message deflated, written in base 64 and put in a query, its signature
+# over the query's own bytes (§ 3.4.4.1); and HTTP-POST, a message in base 64
+# in a form the browser posts itself (§ 3.5.4).
+
+use bytes
+use compress
+use html
+use saml/internal/names
+use strings
+use url
+
+# The most a message read from a binding may hold once inflated or decoded,
+# in bytes: far above any assertion an identity provider writes, and a bound
+# on what a forged query can make a program inflate.
+constant MOST_BYTES: i64
+    4194304
+
+# The most bytes a `RelayState` may hold (SAML Bindings § 3.4.3, § 3.5.3).
+constant MOST_RELAY_STATE: i64
+    80
+
+# `text` deflated as RFC 1951 writes it, raw, then written in base 64 with no
+# line break: the value of `SAMLRequest` or `SAMLResponse` before the query
+# escapes it (§ 3.4.4.1, steps 2 and 3).
+function deflated(text: str) -> str?
+    data = compress.compress(bytes.from_text(text), compress.default_options(.raw))?
+    return ok(bytes.format_base64(data))
+
+# The message a redirect's value holds: base 64 read, inflated, read as
+# UTF-8.
+#
+# - `value`: the parameter's value, its escapes already read.
+#
+# Fails `invalid` where it is not base 64, not raw DEFLATE or not UTF-8, and
+# `limit` past `MOST_BYTES`.
+function inflated(value: str) -> str?
+    data = match bytes.parse_base64(value)
+        .ok d  => d
+        .err _ => return fail(code: names.INVALID, msg: "the redirect's message is not base 64")
+
+    text = compress.decompress(data, format: .raw, limit: MOST_BYTES)?
+    return bytes.to_text(text)
+
+# The message a form's value holds: base 64 read, then UTF-8. Line breaks in
+# the base 64 are taken out first, since RFC 2045 lets a sender write them.
+#
+# - `value`: the field's value.
+#
+# Fails `invalid` where it is not base 64 or not UTF-8, and `limit` past
+# `MOST_BYTES`.
+function decoded(value: str) -> str?
+    if value.len() > MOST_BYTES / 3 * 4 + 4096
+        return fail(
+            code: "limit",
+            msg: f"a posted message of {value.len()} bytes, past the {MOST_BYTES} this package reads"
+        )
+    joined = strings.replace_all(s: strings.replace_all(s: value, old: "\r", new: ""), old: "\n", new: "")
+
+    match bytes.parse_base64(joined)
+        .ok d  => return bytes.to_text(d)
+        .err _ => return fail(code: names.INVALID, msg: "the posted message is not base 64")
+
+# Fails `invalid` where `relay_state` is longer than SAML lets it be.
+function check_relay_state(relay_state: str) -> ()?
+    if relay_state.len() > MOST_RELAY_STATE
+        return fail(
+            code: names.INVALID,
+            msg: f"a RelayState of {relay_state.len()} bytes, past the {MOST_RELAY_STATE} SAML Bindings § 3.4.3 allows"
+        )
+    return ok()
+
+# The bytes a redirect's signature covers (§ 3.4.4.1, step 2), each value as
+# the query writes it: `parameter=message`, then `&RelayState=` where one is
+# written, then `&SigAlg=`.
+#
+# - `parameter`: `SAMLRequest` or `SAMLResponse`.
+# - `message`, `relay_state`, `sig_alg`: the escaped values; `relay_state`
+#   empty where the query writes none.
+function signed_part(parameter: str, message: str, relay_state: str, sig_alg: str) -> str
+    relay = if relay_state == ""
+        ""
+    else
+        "&RelayState=" + relay_state
+    return parameter + "=" + message + relay + "&SigAlg=" + sig_alg
+
+# One pair of a query as it was received, its escapes left as they are: a
+# redirect's signature covers these bytes and no decoding of them.
+record RawPair
+    # The key, escapes read: it names the parameter.
+    key: str
+    # The value as written.
+    raw: str
+    # The value, escapes read.
+    value: str
+
+# The pairs of `query`, each value both as written and read. A `?` opening it
+# is taken off.
+#
+# Fails `invalid` where an escape is broken or a parameter SAML's binding
+# reads is written twice, since which one was signed would be a guess.
+function raw_pairs(query: str) -> [RawPair]?
+    text = if strings.has_prefix(s: query, prefix: "?")
+        query.slice(from: 1, to: query.len())
+    else
+        query
+    out: [RawPair] @= []
+
+    for piece in strings.split(s: text, sep: "&")
+        if piece != ""
+            at = strings.index_of(s: piece, substr: "=").default(piece.len())
+            key = url.unescape_query(piece.slice(from: 0, to: at))?
+
+            raw = if at < piece.len()
+                piece.slice(from: at + 1, to: piece.len())
+            else
+                ""
+            value = url.unescape_query(raw)?
+
+            for seen in out
+                if seen.key == key && is_binding_key(key)
+                    return fail(code: names.INVALID, msg: f"the query writes {key} twice")
+
+            out @ out.push(RawPair(key: key, raw: raw, value: value))
+
+    return ok(out)
+
+# Whether `key` is a parameter SAML's redirect binding reads.
+function is_binding_key(key: str) -> bool
+    return key == "SAMLRequest" || key == "SAMLResponse" || key == "RelayState" || key == "SigAlg" || key == "Signature"
+
+# The pair named `key`, or one whose key is empty where none is.
+function pair_named(pairs: [RawPair], key: str) -> RawPair
+    for p in pairs
+        if p.key == key
+            return p
+
+    return RawPair(key: "", raw: "", value: "")
+
+# The page that posts `fields` to `action` as soon as it is read: SAML
+# Bindings § 3.5.4's form, its button shown only where scripts do not run.
+#
+# - `action`: the endpoint's URL.
+# - `fields`: the form's fields, each value escaped here.
+function form_page(action: str, fields: [url.Pair]) -> str
+    inputs: [str] @= []
+
+    for f in fields
+        inputs @ inputs.push(
+            f"<input type=\"hidden\" name=\"{html.escape_attribute(f.key)}\" value=\"{html.escape_attribute(f.value)}\">"
+        )
+
+    head = "<!DOCTYPE html>\n<html><head><meta charset=\"utf-8\"><title>SAML</title></head>"
+    form = f"<body onload=\"document.forms[0].submit()\"><form method=\"post\" action=\"{html.escape_attribute(action)}\">"
+    tail = "<noscript><button type=\"submit\">Continue</button></noscript></form></body></html>\n"
+    return head + form + inputs.join("") + tail
+
+## Tests
+
+test "inflated: what deflated wrote, a value not base 64, and one not DEFLATE"
+    assert inflated(deflated("<samlp:AuthnRequest/>").must()).must() == "<samlp:AuthnRequest/>"
+    assert names.code_of(inflated("@@@")) == names.INVALID
+    assert inflated(bytes.format_base64(bytes.from_text("plain text"))).is_err()
+
+test "decoded: base 64 with line breaks, and a value not base 64"
+    assert decoded("PGEv\r\nPg==").must() == "<a/>"
+    assert names.code_of(decoded("<a/>")) == names.INVALID
+
+test "check_relay_state: 80 bytes and 81"
+    r80 = "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+    assert !check_relay_state(r80).is_err()
+    assert names.code_of(check_relay_state(r80 + "r")) == names.INVALID
+
+test "signed_part: with a RelayState and without one, which is then not written at all"
+    assert signed_part(parameter: "SAMLRequest", message: "m%2B", relay_state: "r", sig_alg: "s") == "SAMLRequest=m%2B&RelayState=r&SigAlg=s"
+    assert signed_part(parameter: "SAMLResponse", message: "m", relay_state: "", sig_alg: "s") == "SAMLResponse=m&SigAlg=s"
+
+test "raw_pairs: values kept as written and read, a leading ?, and a parameter written twice"
+    pairs = raw_pairs("?SAMLResponse=a%2Bb&RelayState=x+y&other=1&other=2").must()
+    assert pairs.len() == 4
+    assert pair_named(pairs, key: "SAMLResponse").raw == "a%2Bb"
+    assert pair_named(pairs, key: "SAMLResponse").value == "a+b"
+    assert pair_named(pairs, key: "RelayState").value == "x y"
+    assert pair_named(pairs, key: "Signature").key == ""
+    assert names.code_of(raw_pairs("SigAlg=a&SigAlg=b")) == names.INVALID
+
+test "form_page: every value escaped"
+    page = form_page(
+        action: "https://idp.example.org/sso?a=1&b=2",
+        fields: [url.Pair(key: "RelayState", value: "\"><script>")]
+    )
+    assert strings.contains(s: page, substr: "action=\"https://idp.example.org/sso?a=1&amp;b=2\"")
+    assert strings.contains(s: page, substr: "value=\"&quot;&gt;&lt;script&gt;\"")
+    assert !strings.contains(s: page, substr: "<script>")

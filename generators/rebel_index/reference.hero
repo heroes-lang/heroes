@@ -3,7 +3,9 @@
 # module doc, then a section `## <kind> <name>` for each declaration in the
 # order the face writes it. A function's section holds its signature on one
 # indented line, what documents it, the call a program writes on its last
-# indented line, and its examples under `### Example`; a record's, a
+# indented line, for a generic function what each call must give its type
+# parameters under a heading of its own (`asks`), and its examples under
+# `### Example`; a record's, a
 # variant's or a constant's holds the declaration as written, indented, then
 # what documents it. The index takes its words from the reference and never
 # from the source, so it says what `heroes doc` says, as the net's `docs`
@@ -27,6 +29,10 @@ record Declaration
     doc: [str]
     # The call a program writes to a function; "" for any other kind.
     call: str
+    # What each call of a generic function must give its type parameters,
+    # one obligation each, as `heroes doc` words them under `ASKS`; none for a
+    # function that asks nothing and for any other kind.
+    asks: [str]
 
 # A face's reference.
 record Reference
@@ -144,10 +150,13 @@ function read_section(heading: str, body: [str]) -> Declaration?
     lines = trimmed(body)
 
     if kind == "function"
-        if lines.len() < 2 || !indented(lines[0]) || !indented(lines[lines.len() - 1])
+        call = last_indented(lines)
+
+        if lines.len() < 2 || !indented(lines[0]) || call < 1
             return fail(code: "invalid", msg: f"the function {name} is printed with no signature or no call")
+        asks = asked(name: name, after: trimmed(lines.slice(from: call + 1, to: lines.len())))?
         return ok(
-            Declaration(kind: kind, name: name, block: [unindented(lines[0])], doc: trimmed(lines.slice(from: 1, to: lines.len() - 1)), call: unindented(lines[lines.len() - 1]))
+            Declaration(kind: kind, name: name, block: [unindented(lines[0])], doc: trimmed(lines.slice(from: 1, to: call)), call: unindented(lines[call]), asks: asks)
         )
 
     if kind != "record" && kind != "variant" && kind != "constant"
@@ -160,8 +169,59 @@ function read_section(heading: str, body: [str]) -> Declaration?
         at @ at + 1
 
     return ok(
-        Declaration(kind: kind, name: name, block: trimmed(block), doc: trimmed(lines.slice(from: at, to: lines.len())), call: "")
+        Declaration(kind: kind, name: name, block: trimmed(block), doc: trimmed(lines.slice(from: at, to: lines.len())), call: "", asks: [])
     )
+
+# The heading `heroes doc` prints over what each call of a generic function
+# must give its type parameters, after the call (`selfhost/cli/doc.hero`,
+# `asks`).
+constant ASKS: str
+    "What each call must give its type parameters (spec § 11):"
+
+# The index of the last indented line of a function's lines, its call, or -1
+# where none is. A doc may hold an indented line of its own, a block of code
+# in its Markdown, and the call is printed after it.
+#
+# - `lines`: the section's lines before its examples, the empty lines at
+#   either end off.
+function last_indented(lines: [str]) -> i64
+    at @= lines.len() - 1
+
+    while at >= 0 && !indented(lines[at])
+        at @ at - 1
+
+    return at
+
+# The obligations a function's lines after its call hold: none where nothing
+# follows the call, else the heading `ASKS`, an empty line and one item
+# `- <obligation>` each, the only section `heroes doc` prints there.
+#
+# - `name`: the function's, for the refusal.
+# - `after`: its lines after the call, the empty lines at either end off.
+#
+# Fails `invalid` where those lines are anything else, so a section a later
+# `heroes doc` adds there is told, never read as the call's or the doc's.
+function asked(name: str, after: [str]) -> [str]?
+    out: [str] @= []
+
+    if after.len() == 0
+        return ok(out)
+
+    if after[0] != ASKS || after.len() < 3 || after[1].len() != 0
+        return fail(
+            code: "invalid",
+            msg: f"the function {name} is printed with lines after its call that are not what its calls must give its type parameters"
+        )
+
+    for line in after.slice(from: 2, to: after.len())
+        if !strings.has_prefix(s: line, prefix: "- ") || line.len() == 2
+            return fail(
+                code: "invalid",
+                msg: f"the function {name} is printed with \"{line}\" among what its calls must give its type parameters"
+            )
+        out @ out.push(line.slice(from: 2, to: line.len()))
+
+    return ok(out)
 
 # Whether `line` is printed indented, a declaration's or a call's line.
 #
@@ -405,12 +465,50 @@ test "read_reference: a wrong title, an unknown kind and a function with no call
     assert read_reference(printed: "# <rebel>/a\n\n## function f\n\n    function f()\n", title: "<rebel>/a").is_err()
     assert read_reference(printed: "# <rebel>/a\n", title: "<rebel>/a").must().declarations.len() == 0
 
+# A generic function's section as `heroes doc` prints it (`<rebel>/poll`'s
+# `add_mailbox`, the section that was refused): what its calls must give its
+# type parameters, after the call and before the example, kept as its own;
+# the same heading inside the doc, before the call, is the doc's; and a doc
+# holding a block of code of its own keeps its call the last indented line.
+test "read_reference: a generic function's obligations kept, after its call and before its example"
+    printed = ["# <rebel>/poll", "", "## function add_mailbox", "", "    function add_mailbox<T>(set: Set, m: (mailbox T)) -> i64?", "", "Adds a mailbox to the set.", "", "What each call must give its type parameters (spec § 11):", "", "    poll.add_mailbox(set, m)", "", "What each call must give its type parameters (spec § 11):", "", "- `T` reaches no `ptr` and no `cstr`: `(mailbox T)` makes it cross between threads, line 319", "- `T` is not `()`: `(mailbox T)` is a mailbox of it, line 319", "", "### Example", "", "    test \"add_mailbox: told\"", "        assert true", "", "## function plain", "", "    function plain() -> i64", "", "Reads", "", "    x = 1", "", "and answers it.", "", "    poll.plain()", ""].join(
+        "\n"
+    )
+    r = read_reference(printed: printed, title: "<rebel>/poll").must()
+    g = r.declarations[0]
+    assert r.declarations.len() == 2 && g.call == "poll.add_mailbox(set, m)"
+    assert g.doc == ["Adds a mailbox to the set.", "", "What each call must give its type parameters (spec § 11):"]
+    assert g.asks == ["`T` reaches no `ptr` and no `cstr`: `(mailbox T)` makes it cross between threads, line 319", "`T` is not `()`: `(mailbox T)` is a mailbox of it, line 319"]
+    p = r.declarations[1]
+    assert p.call == "poll.plain()" && p.asks.len() == 0 && p.doc == ["Reads", "", "    x = 1", "", "and answers it."]
+
+# Lines after a call that are not the obligations' section, or a section
+# with no item or an item of another shape, are refused rather than read as
+# the call's or dropped.
+test "read_reference: lines after a function's call that are not its obligations refused"
+    head = "# <rebel>/a\n\n## function f\n\n    function f<T>(x: T)\n\n    a.f(x)\n\n"
+    assert read_reference(printed: head + "Something else.\n", title: "<rebel>/a").is_err()
+    assert read_reference(
+        printed: head + "What each call must give its type parameters (spec § 11):\n",
+        title: "<rebel>/a"
+    ).is_err()
+    assert read_reference(
+        printed: head + "What each call must give its type parameters (spec § 11):\n\n* `T` is not `()`\n",
+        title: "<rebel>/a"
+    ).is_err()
+    assert read_reference(
+        printed: head + "What each call must give its type parameters (spec § 11):\n\n- \n",
+        title: "<rebel>/a"
+    ).is_err()
+    assert read_reference(printed: head + "What each call must give its type parameters (spec § 11):\n\n- `T` is not `()`\n", title: "<rebel>/a").must().declarations[0].asks == ["`T` is not `()`"]
+
 test "value: a constant written on several lines has none"
     d = Declaration(
         kind: "constant",
         name: "ALL",
         block: ["constant ALL: [str]", "    [", "        \"a\"", "    ]"],
         doc: [],
-        call: ""
+        call: "",
+        asks: []
     )
     assert value(d) == "" && signature(d) == "constant ALL: [str]"

@@ -394,8 +394,11 @@
  * `.swift`); the header every web view's arm and `hero_ui.c` share,
  * `platform/hero_ui_web.h`, and the one `hero_ui.c` shares with its two C
  * arms, `platform/hero_ui_arm.h`, the Win32 arm's table of the events its
- * wait watches, `platform/hero_ui_win32_watch.h`, and the pure half of its
- * pickers, `platform/hero_ui_win32_pickers.h`; and Monocypher's, which
+ * wait watches, `platform/hero_ui_win32_watch.h`, the pure half of its
+ * pickers, `platform/hero_ui_win32_pickers.h`, and the pure half of its
+ * drawing area, `platform/hero_ui_win32_canvas.h`, with the Direct2D and
+ * DirectWrite its member calls, `platform/hero_ui_win32_direct2d.h`; the
+ * Win32 arm's drawing area, a member after its own header; and Monocypher's, which
  * `hero_crypto.c` compiles inside itself on macOS and which stand under
  * `vendor/`, outside `platform/`, so none is archived alone
  * (`runtime/vendor/monocypher/README.md`; decision 2594), its licence with
@@ -482,6 +485,8 @@
 #include "platform/hero_ui_gtk.c"
 #include "hero_ui_canvas_gtk.h"
 #include "platform/hero_ui_canvas_gtk.c"
+#include "hero_ui_parts_gtk.h"
+#include "platform/hero_ui_parts_gtk.c"
 #include "hero_ui_web_gtk.h"
 #include "platform/hero_ui_web_gtk.c"
 #include "hero_ui_web_win32.h"
@@ -490,6 +495,10 @@
 #include "platform/hero_ui_win32.c"
 #include "platform/hero_ui_win32_watch.h"
 #include "platform/hero_ui_win32_pickers.h"
+#include "platform/hero_ui_win32_canvas.h"
+#include "platform/hero_ui_win32_direct2d.h"
+#include "hero_ui_canvas_win32.h"
+#include "platform/hero_ui_canvas_win32.c"
 #include "hero_watch.h"
 #include "platform/hero_watch.c"
 #include "hero_service.h"

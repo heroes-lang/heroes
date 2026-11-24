@@ -1,0 +1,2187 @@
+# A client of SFTP, the SSH File Transfer Protocol version 3
+# (draft-ietf-secsh-filexfer-02) as OpenSSH's `sftp-server` speaks it, over a
+# channel of an `ssh` client: files opened, read and written, their
+# attributes read and set, folders listed, made and removed, paths renamed,
+# linked and resolved, with OpenSSH's extensions where the server announces
+# them, each checked by the version OpenSSH's `PROTOCOL` gives it:
+# `posix-rename@openssh.com`, `hardlink@openssh.com`, `fsync@openssh.com`,
+# `lsetstat@openssh.com`, `statvfs@openssh.com`, `fstatvfs@openssh.com`,
+# `limits@openssh.com`, `expand-path@openssh.com`, `copy-data`,
+# `home-directory` and `users-groups-by-id@openssh.com`.
+#
+# **One session, many requests in flight**: a session is a channel of the
+# client the program signed in, and every call takes both, the client and
+# the session, each changed in its place. A read or a write of many bytes is
+# a pipeline of requests of 32 KiB, 64 of them in flight, OpenSSH's own
+# client's defaults, lowered to the server's bounds where it announces them;
+# a read the server answers short is asked again from where it stopped, so
+# a read ends short only at the end of the file. Every wait is the client's
+# `wait`.
+#
+# It does not serve SFTP, speak SCP, or speak the protocol's versions 4 to 6,
+# which OpenSSH does not; the paths are text, and a name that is not UTF-8
+# fails `not_text`, as `fs` reads names.
+#
+# It fails with `file_not_found` (a path that names nothing), `exists` (a
+# name already taken), `not_a_directory`, `is_a_directory` and `not_empty`
+# (a path of the other kind, or a folder holding something), `permission`
+# (the server refused), `invalid` (an argument outside its range, or an
+# answer the protocol does not allow), `not_text` (a name that is not
+# UTF-8), `closed` (the session or its connection ended), `timeout` (the wait
+# ran out), `unsupported` (an extension the server did not announce, an
+# operation it refuses as unsupported, a version older than 3) and `failed`
+# (the server failed and its status names no reason). Version 3's statuses
+# name no `exists`, `not_empty` or folder: where one fails for a reason
+# they cannot name, the path is looked at once and the code says what it
+# shows.
+#
+# Not written yet, each a `pending` block of its ledger: a file's named
+# attribute extensions written; a folder's tree walked and the server's paths
+# matched by a pattern; the server's side: requests served from the
+# program's own files or handlers.
+
+use fs
+use os
+use sftp/internal/attrs
+use sftp/internal/calls
+use sftp/internal/conn
+use sftp/internal/lab
+use sftp/internal/refine
+use sftp/internal/transfer
+use sftp/internal/wire
+use ssh
+use strings
+use time
+
+## Codes
+
+# An argument outside its range, or an answer the protocol does not allow:
+# a malformed packet, a status `BAD_MESSAGE`; the message says where.
+constant INVALID: str
+    conn.INVALID
+
+# A path that names nothing, the language's own code: the status
+# `NO_SUCH_FILE`.
+constant FILE_NOT_FOUND: str
+    conn.FILE_NOT_FOUND
+
+# A name already taken: a folder made, a file made new, a link or a name
+# given where one stands.
+constant EXISTS: str
+    "exists"
+
+# A path that names something other than a folder where one was owed.
+constant NOT_A_DIRECTORY: str
+    "not_a_directory"
+
+# A path that names a folder where a file was owed.
+constant IS_A_DIRECTORY: str
+    "is_a_directory"
+
+# A folder removed while it holds something.
+constant NOT_EMPTY: str
+    "not_empty"
+
+# The server refused: the status `PERMISSION_DENIED`.
+constant PERMISSION: str
+    conn.PERMISSION
+
+# A name the server holds that is not UTF-8, the language's own code.
+constant NOT_TEXT: str
+    wire.NOT_TEXT
+
+# The session, its channel or its connection ended.
+constant CLOSED: str
+    conn.CLOSED
+
+# The client's wait ran out.
+constant TIMEOUT: str
+    conn.TIMEOUT
+
+# The server does not offer what was asked: an extension it did not
+# announce, the status `OP_UNSUPPORTED`, a version older than 3.
+constant UNSUPPORTED: str
+    conn.UNSUPPORTED
+
+# The server failed and its status, `FAILURE`, names no reason; its words
+# are in the message.
+constant FAILED: str
+    conn.FAILED
+
+## Types
+
+# An SFTP session on a channel of an `ssh` client. Made by `start`; `close`
+# ends it.
+record Session
+    # The conversation's state, which this package's functions alone read.
+    state: conn.State
+
+# A file open on the server: the handle the server gave and the path it was
+# opened by. Made by `open`, `create` and `open_with`; `close_file` closes
+# it, and closing the session closes every file left open.
+record File
+    # The server's handle, at most 256 bytes.
+    handle: [u8]
+    # The path it was opened by.
+    path: str
+
+# The attributes of what a path names, as the server gave them at one
+# moment. The protocol lets a server leave any of them out, so each fails
+# `not_found` where it did; OpenSSH's sends every one but `extended`.
+record Attributes
+    # What the path names, read from the type bits of its permissions.
+    kind: fs.Kind?
+    # The length in bytes.
+    size: i64?
+    # The permission bits, 0 to 0o7777.
+    permission: i64?
+    # The owner's number.
+    user: i64?
+    # The group's number.
+    group: i64?
+    # The last write, in whole seconds.
+    written: time.Instant?
+    # The last read, in whole seconds.
+    read: time.Instant?
+    # The named extensions, `name@domain`, by name.
+    extended: {str: [u8]}
+
+# One entry of a folder on the server.
+record Listed
+    # The entry's name, within the folder.
+    name: str
+    # The line `ls -l` prints for it, as the server wrote it, for a person
+    # to read; the protocol gives it no fixed form.
+    long_name: str
+    # Its attributes, of the link itself where it is one.
+    attributes: Attributes
+
+# The facts of the volume a path stands on (`statvfs@openssh.com`): its
+# space in bytes and its files.
+record Volume
+    # The volume's size in bytes.
+    total: i64
+    # The bytes free.
+    free: i64
+    # The bytes free that this user may write.
+    available: i64
+    # The size of a block the volume prefers to be written by.
+    block_size: i64
+    # How many files it can hold.
+    files: i64
+    # How many more files it can hold.
+    files_free: i64
+    # How many more files this user may make.
+    files_available: i64
+    # The volume's number.
+    id: i64
+    # Whether it is mounted to be read only.
+    read_only: bool
+    # Whether it ignores the set-user and set-group bits.
+    no_setuid: bool
+    # The longest name it holds, in bytes.
+    name_max: i64
+
+## The session
+
+# A session of SFTP on a new channel of `c`: the subsystem `sftp` started,
+# the version agreed, the server's extensions and bounds read.
+#
+# - `c`: the client, signed in; the session's channel is opened in it.
+#
+# The session is the caller's to close with `close`. Fails `permission`
+# where the server refuses a session or has no subsystem `sftp`,
+# `unsupported` where it speaks a version older than 3, `invalid` where its
+# answer is not the protocol's, and as `ssh.open_session` fails. See also
+# `close`, `has_extension`.
+function start(@c: ssh.Client) -> Session?
+    channel = ssh.open_session(@c)?
+
+    match ssh.subsystem(@c, channel: channel, name: "sftp")
+        .ok _ => _ = 0
+        .err e =>
+            _ = ssh.close_channel(@c, channel: channel).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    match conn.begin(@c, channel: channel)
+        .ok st => return ok(Session(state: st))
+        .err e =>
+            _ = ssh.close_channel(@c, channel: channel).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# Ends `s` and closes its channel; the server closes the files and folders
+# left open. The client stays open.
+#
+# - `c`: the client the session runs on.
+# - `s`: the session, ended: every later call on it fails `closed`.
+#
+# Fails as the connection fails. See also `start`.
+function close(@c: ssh.Client, @s: Session) -> ()?
+    if s.state.ended
+        return ok()
+    s.state.ended @ true
+    s.state.why @ "the program closed it"
+    return ssh.close_channel(@c, channel: s.state.channel)
+
+# The names of the extensions the server announced, in its order.
+#
+# - `s`: the session.
+#
+# See also `has_extension`.
+function extensions(s: Session) -> [str]
+    out: [str] @= []
+
+    for e in s.state.extensions
+        out @ out.push(e.name)
+
+    return out
+
+# Whether the server announced the extension `name`, any version of it.
+#
+# - `s`: the session.
+# - `name`: the extension's name, `fsync@openssh.com`.
+#
+# See also `extensions`.
+function has_extension(s: Session, name: str) -> bool
+    for e in s.state.extensions
+        if e.name == name
+            return true
+
+    return false
+
+## Files
+
+# The file `path` names, open to read.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the file's path on the server, absolute or from the folder the
+#   session starts in, the user's home for OpenSSH.
+#
+# The file is the caller's to close with `close_file`. Fails
+# `file_not_found` where nothing is there and `permission` where the server
+# refuses. See also `open_with`, `read`.
+function open(@c: ssh.Client, @s: Session, path: str) -> File?
+    return open_with(@c, @s, path: path, access: .read, permission: 0o666)
+
+# The file `path` names, open to write from its start: made where it is not
+# there, emptied where it is, its permission 0o666 less the server's mask.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the file's path on the server.
+#
+# The file is the caller's to close. Fails as `open_with` does. See also
+# `write`, `write_bytes`.
+function create(@c: ssh.Client, @s: Session, path: str) -> File?
+    return open_with(@c, @s, path: path, access: .write, permission: 0o666)
+
+# The file `path` names, open as `access` says, made with `permission`
+# where `access` makes it.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the file's path on the server.
+# - `access`: how it is opened, as `fs.open_with` takes it: `.read`,
+#   `.write` (made or emptied), `.append` (made where it is not there, every
+#   write at its end), `.create_new` (made, failing `exists` where anything
+#   is there) or `.read_write`.
+# - `permission`: the bits a file made is given, 0 to 0o7777, less the
+#   server's mask; unused where nothing is made.
+#
+# The file is the caller's to close. Fails `invalid` where `permission` is
+# outside 0 to 0o7777, `exists` where `.create_new` finds a name taken,
+# `file_not_found` where the file or its folder is not there, and
+# `permission` where the server refuses. See also `open`, `create`.
+function open_with(@c: ssh.Client, @s: Session, path: str, access: fs.Access, permission: i64) -> File?
+    if permission < 0 || permission > 0o7777
+        return fail(code: INVALID, msg: f"opening \"{path}\" with the permission {permission}, outside 0 to 0o7777")
+
+    flags = match access
+        .read       => 1
+        .write      => 2 | 8 | 16
+        .append     => 2 | 4 | 8
+        .create_new => 2 | 8 | 32
+        .read_write => 1 | 2
+
+    raw @= attrs.none()
+
+    if access != .read && access != .read_write
+        raw.flags @ attrs.PERMISSIONS
+        raw.permissions @ permission
+    packet @= conn.packet_of(conn.OPEN)
+    wire.put_text(@packet, text: path)
+    wire.put_u32(@packet, n: flags)
+    attrs.write(@packet, raw: raw)
+    asked = f"opening \"{path}\""
+
+    match conn.call(@c, @s.state, @packet, kind: conn.HANDLE, asked: asked)
+        .ok r =>
+            reader @= r
+            return ok(File(handle: calls.handle_of(@reader, asked: asked)?, path: path))
+        .err e =>
+            if access == .create_new && e.code == FAILED
+                return refine.taken(@c, @s.state, path: path, code: e.code, msg: e.msg)
+            return fail(code: e.code, msg: e.msg)
+
+# Closes `file` on the server.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `file`: the file, closed: its handle names nothing after.
+#
+# Fails where the server refuses, `failed` for a write it could not finish.
+# See also `open`.
+function close_file(@c: ssh.Client, @s: Session, file: File) -> ()?
+    packet @= conn.packet_of(conn.CLOSE)
+    wire.put_string(out: @packet, data: file.handle)
+    return conn.call_ok(@c, @s.state, @packet, asked: f"closing \"{file.path}\"")
+
+# Up to `n` bytes of `file` from `offset`: fewer only where the file ends
+# first, empty at or past its end.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `file`: a file open to read.
+# - `offset`: where the bytes begin, 0 or more.
+# - `n`: how many, 0 or more; asked in requests kept in flight, and held
+#   whole in memory.
+#
+# Fails `invalid` where `offset` or `n` is below 0 or their sum past
+# 2^63 - 1, `is_a_directory` where `file` is a folder, and where the server
+# refuses. See also `write`, `read_bytes`.
+function read(@c: ssh.Client, @s: Session, file: File, offset: i64, n: i64) -> [u8]?
+    if offset < 0 || n < 0 || n > 9223372036854775807 - offset
+        return fail(code: INVALID, msg: f"reading \"{file.path}\": {n} bytes at {offset}")
+
+    match transfer.read(@c, @s.state, handle: file.handle, name: file.path, offset: offset, length: n, to_end: false)
+        .ok got => return ok(got)
+        .err e  => return refine.read_failure(@c, @s.state, handle: file.handle, code: e.code, msg: e.msg)
+
+# Writes `data` to `file` at `offset`, where a file is longer it is
+# overwritten and where shorter it grows.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `file`: a file open to write; one opened `.append` takes every write at
+#   its end, whatever `offset` says.
+# - `offset`: where the bytes go, 0 or more.
+# - `data`: the bytes, any length; sent in requests kept in flight.
+#
+# Fails `invalid` where `offset` is below 0 or the end past 2^63 - 1, and
+# where the server refuses, `failed` for a volume that is full; bytes the
+# requests before the failure carried may be written. See also `read`,
+# `write_bytes`.
+function write(@c: ssh.Client, @s: Session, file: File, offset: i64, data: [u8]) -> ()?
+    if offset < 0 || data.len() > 9223372036854775807 - offset
+        return fail(code: INVALID, msg: f"writing \"{file.path}\": {data.len()} bytes at {offset}")
+    return transfer.write(@c, @s.state, handle: file.handle, name: file.path, offset: offset, data: data)
+
+# The bytes of the file at `path`, all of them.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the file's path on the server.
+#
+# The file is held whole in memory. Fails `file_not_found` where nothing is
+# there, `is_a_directory` where it is a folder, and where the server
+# refuses. See also `write_bytes`, `read`.
+function read_bytes(@c: ssh.Client, @s: Session, path: str) -> [u8]?
+    file = open(@c, @s, path: path)?
+
+    match transfer.read(@c, @s.state, handle: file.handle, name: path, offset: 0, length: 0, to_end: true)
+        .ok got =>
+            close_file(@c, @s, file: file)?
+            return ok(got)
+        .err e =>
+            failed: [u8]? = refine.read_failure(@c, @s.state, handle: file.handle, code: e.code, msg: e.msg)
+            _ = close_file(@c, @s, file: file).is_err()
+            return failed
+
+# Writes `data` as the whole of the file at `path`: made where it is not
+# there, its permission 0o666 less the server's mask, and emptied first
+# where it is.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the file's path on the server.
+# - `data`: its bytes, any length.
+#
+# Fails as `create` and `write` do. See also `read_bytes`.
+function write_bytes(@c: ssh.Client, @s: Session, path: str, data: [u8]) -> ()?
+    file = create(@c, @s, path: path)?
+
+    match write(@c, @s, file: file, offset: 0, data: data)
+        .ok _ => return close_file(@c, @s, file: file)
+        .err e =>
+            _ = close_file(@c, @s, file: file).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# The attributes of the open `file`.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `file`: an open file.
+#
+# Fails where the server refuses. See also `info`.
+function file_info(@c: ssh.Client, @s: Session, file: File) -> Attributes?
+    raw = calls.fstat(@c, @s.state, handle: file.handle, asked: f"reading the attributes of \"{file.path}\"")?
+    return ok(
+        Attributes(kind: attrs.kind(raw), size: attrs.size(raw), permission: attrs.permission(raw), user: attrs.user(raw), group: attrs.group(raw), written: attrs.written(raw), read: attrs.accessed(raw), extended: attrs.extended(raw))
+    )
+
+# Asks the server to write `file`'s bytes to its disk before answering
+# (`fsync@openssh.com`).
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `file`: an open file.
+#
+# Fails `unsupported` where the server did not announce the extension, and
+# where the server refuses. See also `close_file`.
+function sync(@c: ssh.Client, @s: Session, file: File) -> ()?
+    asked = f"syncing \"{file.path}\""
+    packet @= calls.extension(s.state, name: "fsync@openssh.com", version: "1", asked: asked)?
+    wire.put_string(out: @packet, data: file.handle)
+    return conn.call_ok(@c, @s.state, @packet, asked: asked)
+
+# Makes the open `file` `length` bytes long: shorter, it loses its end;
+# longer, its new bytes are zero.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `file`: a file open to write.
+# - `length`: its length afterwards, 0 or more.
+#
+# Fails `invalid` where `length` is below 0, and where the server refuses.
+# See also `truncate`.
+function truncate_file(@c: ssh.Client, @s: Session, file: File, length: i64) -> ()?
+    if length < 0
+        return fail(code: INVALID, msg: f"truncating \"{file.path}\" to {length} bytes")
+    raw @= attrs.none()
+    raw.flags @ attrs.SIZE
+    raw.size @ length
+    return calls.set_handle(@c, @s.state, handle: file.handle, raw: raw, asked: f"truncating \"{file.path}\"")
+
+# Sets the permission bits of the open `file`.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `file`: an open file.
+# - `permission`: the bits, 0 to 0o7777, set as given.
+#
+# Fails `invalid` where `permission` is outside 0 to 0o7777, and where the
+# server refuses. See also `set_permission`.
+function set_file_permission(@c: ssh.Client, @s: Session, file: File, permission: i64) -> ()?
+    raw = calls.permission_change(permission, path: file.path)?
+    return calls.set_handle(
+        @c,
+        @s.state,
+        handle: file.handle,
+        raw: raw,
+        asked: f"setting the permission of \"{file.path}\""
+    )
+
+# Gives the open `file` to the user and the group of those numbers, -1
+# leaving either as it is.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `file`: an open file.
+# - `user`: the user's number, 0 to 2^32 - 2, or -1 to keep it.
+# - `group`: the group's number, as `user`.
+#
+# Fails `invalid` where a number is out of range, `permission` where the
+# server may not give it. See also `set_owner`.
+function set_file_owner(@c: ssh.Client, @s: Session, file: File, user: i64, group: i64) -> ()?
+    raw = calls.owner_change(user: user, group: group, path: file.path)?
+    return calls.set_handle(@c, @s.state, handle: file.handle, raw: raw, asked: f"setting the owner of \"{file.path}\"")
+
+# Sets the times of the last write and the last read of the open `file`,
+# in whole seconds.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `file`: an open file.
+# - `written`: the last write, from 1970 to 2106; its fraction of a second
+#   is dropped.
+# - `accessed`: the last read, as `written`.
+#
+# Fails `invalid` for a time outside 1970 to 2106, which version 3 cannot
+# carry, and where the server refuses. See also `set_times`.
+function set_file_times(@c: ssh.Client, @s: Session, file: File, written: time.Instant, accessed: time.Instant) -> ()?
+    raw = calls.times_change(written: written, accessed: accessed, path: file.path)?
+    return calls.set_handle(@c, @s.state, handle: file.handle, raw: raw, asked: f"setting the times of \"{file.path}\"")
+
+## Paths
+
+# The attributes of what `path` names, every link followed.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the path on the server.
+#
+# Fails `file_not_found` where nothing is there, and where the server
+# refuses. See also `link_info`, `file_info`.
+function info(@c: ssh.Client, @s: Session, path: str) -> Attributes?
+    raw = calls.stat(@c, @s.state, path: path, follow: true)?
+    return ok(
+        Attributes(kind: attrs.kind(raw), size: attrs.size(raw), permission: attrs.permission(raw), user: attrs.user(raw), group: attrs.group(raw), written: attrs.written(raw), read: attrs.accessed(raw), extended: attrs.extended(raw))
+    )
+
+# The attributes of what `path` names, of the link itself where it names
+# one.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the path on the server.
+#
+# Fails as `info` does. See also `info`, `read_link`.
+function link_info(@c: ssh.Client, @s: Session, path: str) -> Attributes?
+    raw = calls.stat(@c, @s.state, path: path, follow: false)?
+    return ok(
+        Attributes(kind: attrs.kind(raw), size: attrs.size(raw), permission: attrs.permission(raw), user: attrs.user(raw), group: attrs.group(raw), written: attrs.written(raw), read: attrs.accessed(raw), extended: attrs.extended(raw))
+    )
+
+# Sets the permission bits of what `path` names, every link followed.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the path on the server.
+# - `permission`: the bits, 0 to 0o7777, set as given.
+#
+# Fails `invalid` where `permission` is outside 0 to 0o7777,
+# `file_not_found` where nothing is there, and `permission` where the
+# server refuses. See also `set_file_permission`.
+function set_permission(@c: ssh.Client, @s: Session, path: str, permission: i64) -> ()?
+    raw = calls.permission_change(permission, path: path)?
+    return calls.set_path(@c, @s.state, path: path, raw: raw, asked: f"setting the permission of \"{path}\"")
+
+# Gives what `path` names, every link followed, to the user and the group
+# of those numbers, -1 leaving either as it is.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the path on the server.
+# - `user`: the user's number, 0 to 2^32 - 2, or -1 to keep it.
+# - `group`: the group's number, as `user`.
+#
+# Fails `invalid` where a number is out of range, `permission` where the
+# server may not give it, `file_not_found` where nothing is there. See also
+# `set_file_owner`.
+function set_owner(@c: ssh.Client, @s: Session, path: str, user: i64, group: i64) -> ()?
+    raw = calls.owner_change(user: user, group: group, path: path)?
+    return calls.set_path(@c, @s.state, path: path, raw: raw, asked: f"setting the owner of \"{path}\"")
+
+# Sets the times of the last write and the last read of what `path` names,
+# every link followed, in whole seconds.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the path on the server.
+# - `written`: the last write, from 1970 to 2106; its fraction of a second
+#   is dropped.
+# - `accessed`: the last read, as `written`.
+#
+# Fails `invalid` for a time version 3 cannot carry, `file_not_found` where
+# nothing is there. See also `set_file_times`.
+function set_times(@c: ssh.Client, @s: Session, path: str, written: time.Instant, accessed: time.Instant) -> ()?
+    raw = calls.times_change(written: written, accessed: accessed, path: path)?
+    return calls.set_path(@c, @s.state, path: path, raw: raw, asked: f"setting the times of \"{path}\"")
+
+# Makes the file `path` names, every link followed, `length` bytes long:
+# shorter, it loses its end; longer, its new bytes are zero.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the file's path on the server.
+# - `length`: its length afterwards, 0 or more.
+#
+# Fails `invalid` where `length` is below 0, `file_not_found` where nothing
+# is there, `is_a_directory` for a folder. See also `truncate_file`.
+function truncate(@c: ssh.Client, @s: Session, path: str, length: i64) -> ()?
+    if length < 0
+        return fail(code: INVALID, msg: f"truncating \"{path}\" to {length} bytes")
+    raw @= attrs.none()
+    raw.flags @ attrs.SIZE
+    raw.size @ length
+
+    match calls.set_path(@c, @s.state, path: path, raw: raw, asked: f"truncating \"{path}\"")
+        .ok _ => return ok()
+        .err e =>
+            if e.code == FILE_NOT_FOUND
+                return fail(code: e.code, msg: e.msg)
+            return refine.is_folder(@c, @s.state, path: path, code: e.code, msg: e.msg)
+
+## Folders
+
+# The entries of the folder `path`, sorted by their names' bytes, `.` and
+# `..` never among them; a link is listed as a link.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the folder's path on the server; every link on it is followed.
+#
+# Fails `file_not_found` where nothing is there, `not_a_directory` where it
+# is no folder, `not_text` where a name is not UTF-8, and where the server
+# refuses. See also `info`.
+function read_dir(@c: ssh.Client, @s: Session, path: str) -> [Listed]?
+    asked = f"reading the folder \"{path}\""
+    packet @= conn.packet_of(conn.OPENDIR)
+    wire.put_text(@packet, text: path)
+
+    handle = match conn.call(@c, @s.state, @packet, kind: conn.HANDLE, asked: asked)
+        .ok r =>
+            reader @= r
+            calls.handle_of(@reader, asked: asked)?
+        .err e =>
+            if e.code == FILE_NOT_FOUND || e.code == FAILED
+                return refine.not_folder(@c, @s.state, path: path, code: e.code, msg: e.msg)
+            return fail(code: e.code, msg: e.msg)
+
+    folder = File(handle: handle, path: path)
+
+    match calls.listing(@c, @s.state, handle: handle, asked: asked)
+        .ok entries =>
+            close_file(@c, @s, file: folder)?
+            out: [Listed] @= []
+
+            for e in entries
+                attributes = Attributes(
+                    kind: attrs.kind(e.raw),
+                    size: attrs.size(e.raw),
+                    permission: attrs.permission(e.raw),
+                    user: attrs.user(e.raw),
+                    group: attrs.group(e.raw),
+                    written: attrs.written(e.raw),
+                    read: attrs.accessed(e.raw),
+                    extended: attrs.extended(e.raw)
+                )
+                out @ out.push(Listed(name: e.name, long_name: e.long_name, attributes: attributes))
+
+            return ok(out)
+        .err e =>
+            _ = close_file(@c, @s, file: folder).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# Makes the folder `path`, its permission 0o777 less the server's mask.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the new folder's path on the server.
+#
+# Fails `exists` where anything is at `path`, `file_not_found` where its
+# folder is not there, and `permission` where the server refuses. See also
+# `make_dir_with`, `make_dir_all`.
+function make_dir(@c: ssh.Client, @s: Session, path: str) -> ()?
+    return make_dir_with(@c, @s, path: path, permission: 0o777)
+
+# Makes the folder `path` with the permission `permission`, less the
+# server's mask.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the new folder's path on the server.
+# - `permission`: its bits, 0 to 0o7777.
+#
+# Fails `invalid` where `permission` is outside 0 to 0o7777, and as
+# `make_dir` does. See also `make_dir`.
+function make_dir_with(@c: ssh.Client, @s: Session, path: str, permission: i64) -> ()?
+    raw = calls.permission_change(permission, path: path)?
+    packet @= conn.packet_of(conn.MKDIR)
+    wire.put_text(@packet, text: path)
+    attrs.write(@packet, raw: raw)
+
+    match conn.call_ok(@c, @s.state, @packet, asked: f"making the folder \"{path}\"")
+        .ok _  => return ok()
+        .err e => return refine.taken(@c, @s.state, path: path, code: e.code, msg: e.msg)
+
+# Makes the folder `path` and every folder above it that is not there.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the folder's path on the server; one there already is no
+#   failure.
+#
+# Fails `not_a_directory` where a part of the path names something else,
+# and as `make_dir` does. See also `make_dir`.
+function make_dir_all(@c: ssh.Client, @s: Session, path: str) -> ()?
+    parts = strings.split(s: path, sep: "/")
+    so_far @= ""
+
+    for i in range(from: 0, to: parts.len())
+        if i > 0
+            so_far @ so_far + "/"
+        so_far @ so_far + parts[i]
+
+        if parts[i] == "" || parts[i] == "."
+            continue
+
+        match info(@c, @s, path: so_far)
+            .ok found =>
+                if found.kind.default(.other) != .directory
+                    return fail(
+                        code: NOT_A_DIRECTORY,
+                        msg: f"making the folder \"{path}\": \"{so_far}\" is not a folder"
+                    )
+            .err e =>
+                if e.code != FILE_NOT_FOUND
+                    return fail(code: e.code, msg: e.msg)
+
+                match make_dir(@c, @s, path: so_far)
+                    .ok _ => _ = 0
+                    .err made =>
+                        if made.code != EXISTS
+                            return fail(code: made.code, msg: made.msg)
+
+    return ok()
+
+# Removes the file or the link at `path`; a link is removed, never what it
+# names.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the path on the server.
+#
+# Fails `file_not_found` where nothing is there, `is_a_directory` where it
+# is a folder, which `remove_dir` removes, and `permission` where the
+# server refuses. See also `remove_dir`, `remove_all`.
+function remove(@c: ssh.Client, @s: Session, path: str) -> ()?
+    packet @= conn.packet_of(conn.REMOVE)
+    wire.put_text(@packet, text: path)
+
+    match conn.call_ok(@c, @s.state, @packet, asked: f"removing \"{path}\"")
+        .ok _ => return ok()
+        .err e =>
+            if e.code == FILE_NOT_FOUND
+                return fail(code: e.code, msg: e.msg)
+            return refine.is_folder(@c, @s.state, path: path, code: e.code, msg: e.msg)
+
+# Removes the empty folder `path`.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the folder's path on the server.
+#
+# Fails `file_not_found` where nothing is there, `not_a_directory` where it
+# is no folder, `not_empty` where it holds something, and `permission`
+# where the server refuses. See also `remove`, `remove_all`.
+function remove_dir(@c: ssh.Client, @s: Session, path: str) -> ()?
+    packet @= conn.packet_of(conn.RMDIR)
+    wire.put_text(@packet, text: path)
+
+    match conn.call_ok(@c, @s.state, @packet, asked: f"removing the folder \"{path}\"")
+        .ok _  => return ok()
+        .err e => return refine.folder_removed(@c, @s.state, path: path, code: e.code, msg: e.msg)
+
+# Removes `path` with everything it holds; a link inside is removed, never
+# followed.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the path on the server; a link at its end is removed itself.
+#
+# Fails `file_not_found` where nothing is at `path`, and on the first entry
+# that cannot be removed, leaving what it had not reached. An entry another
+# program removes meanwhile is no failure. See also `remove`.
+function remove_all(@c: ssh.Client, @s: Session, path: str) -> ()?
+    found = link_info(@c, @s, path: path)?
+
+    if found.kind.default(.other) != .directory
+        return refine.gone(remove(@c, @s, path: path))
+
+    entries = match read_dir(@c, @s, path: path)
+        .ok entries_found => entries_found
+        .err e =>
+            if e.code == FILE_NOT_FOUND
+                return ok()
+            return fail(code: e.code, msg: e.msg)
+
+    for entry in entries
+        match remove_all(@c, @s, path: path + "/" + entry.name)
+            .ok _ => _ = 0
+            .err e =>
+                if e.code != FILE_NOT_FOUND
+                    return fail(code: e.code, msg: e.msg)
+
+    return refine.gone(remove_dir(@c, @s, path: path))
+
+## Names
+
+# Gives `from` the name `to`, where nothing is at `to`: SFTP's own rename,
+# which never replaces.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `from`: the path that changes name.
+# - `to`: its new name, where nothing must be.
+#
+# Fails `exists` where anything is at `to`, `file_not_found` where `from`
+# names nothing or the folder of `to` is not there, and `permission` where
+# the server refuses. See also `posix_rename`.
+function rename(@c: ssh.Client, @s: Session, from: str, to: str) -> ()?
+    packet @= conn.packet_of(conn.RENAME)
+    wire.put_text(@packet, text: from)
+    wire.put_text(@packet, text: to)
+
+    match conn.call_ok(@c, @s.state, @packet, asked: f"renaming \"{from}\" to \"{to}\"")
+        .ok _  => return ok()
+        .err e => return refine.taken(@c, @s.state, path: to, code: e.code, msg: e.msg)
+
+# Gives `from` the name `to` as POSIX's `rename` does, at once, a file at
+# `to` replaced (`posix-rename@openssh.com`).
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `from`: the path that changes name.
+# - `to`: its new name; a file there is replaced, an empty folder by a
+#   folder.
+#
+# Fails `unsupported` where the server did not announce the extension,
+# `file_not_found` where `from` names nothing, and where the server refuses.
+# See also `rename`.
+function posix_rename(@c: ssh.Client, @s: Session, from: str, to: str) -> ()?
+    asked = f"renaming \"{from}\" to \"{to}\""
+    packet @= calls.extension(s.state, name: "posix-rename@openssh.com", version: "1", asked: asked)?
+    wire.put_text(@packet, text: from)
+    wire.put_text(@packet, text: to)
+    return conn.call_ok(@c, @s.state, @packet, asked: asked)
+
+# The text the link `path` holds.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the link's path on the server.
+#
+# Fails `file_not_found` where nothing is there, `invalid` where it is no
+# link, `not_text` where the target is not UTF-8. See also `symlink`.
+function read_link(@c: ssh.Client, @s: Session, path: str) -> str?
+    packet @= conn.packet_of(conn.READLINK)
+    wire.put_text(@packet, text: path)
+    asked = f"reading the link \"{path}\""
+
+    match calls.one_name(@c, @s.state, packet: packet, asked: asked)
+        .ok target => return ok(target)
+        .err e =>
+            if e.code != FAILED && e.code != INVALID
+                return fail(code: e.code, msg: e.msg)
+
+            match link_info(@c, @s, path: path)
+                .ok found =>
+                    if found.kind.default(.other) != .link
+                        return fail(code: INVALID, msg: e.msg + "; it is no link")
+                    return fail(code: e.code, msg: e.msg)
+                .err _ => return fail(code: e.code, msg: e.msg)
+
+# Makes `name` a symbolic link holding `target`.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `target`: the text the link holds, relative to the link's folder or
+#   absolute; it is not looked for, so a link to nothing is made.
+# - `name`: the link's own path, where nothing must be.
+#
+# OpenSSH's server reads the request's two paths in the order other than
+# the draft's, the target first (OpenSSH's `PROTOCOL` § 4.1); this client
+# sends them so. Fails `exists` where anything is at `name`,
+# `file_not_found` where its folder is not there. See also `read_link`,
+# `hard_link`.
+function symlink(@c: ssh.Client, @s: Session, target: str, name: str) -> ()?
+    packet @= conn.packet_of(conn.SYMLINK)
+    wire.put_text(@packet, text: target)
+    wire.put_text(@packet, text: name)
+
+    match conn.call_ok(@c, @s.state, @packet, asked: f"making the link \"{name}\" to \"{target}\"")
+        .ok _  => return ok()
+        .err e => return refine.taken(@c, @s.state, path: name, code: e.code, msg: e.msg)
+
+# Makes `name` a second name of the file `existing` names, a hard link
+# (`hardlink@openssh.com`).
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `existing`: the file.
+# - `name`: the new name, where nothing must be.
+#
+# Fails `unsupported` where the server did not announce the extension,
+# `exists` where anything is at `name`, `file_not_found` where `existing`
+# or the folder of `name` is not there. See also `symlink`.
+function hard_link(@c: ssh.Client, @s: Session, existing: str, name: str) -> ()?
+    asked = f"linking \"{name}\" to \"{existing}\""
+    packet @= calls.extension(s.state, name: "hardlink@openssh.com", version: "1", asked: asked)?
+    wire.put_text(@packet, text: existing)
+    wire.put_text(@packet, text: name)
+
+    match conn.call_ok(@c, @s.state, @packet, asked: asked)
+        .ok _  => return ok()
+        .err e => return refine.taken(@c, @s.state, path: name, code: e.code, msg: e.msg)
+
+# The absolute path `path` names on the server, cleaned, every link
+# followed: `resolve(".")` is the folder the session starts in.
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the path, absolute or from the folder the session starts in.
+#
+# Fails `file_not_found` where it names nothing, `not_text` where the
+# answer is not UTF-8. See also `info`.
+function resolve(@c: ssh.Client, @s: Session, path: str) -> str?
+    packet @= conn.packet_of(conn.REALPATH)
+    wire.put_text(@packet, text: path)
+    return calls.one_name(@c, @s.state, packet: packet, asked: f"resolving \"{path}\"")
+
+# The facts of the volume `path` stands on (`statvfs@openssh.com`).
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: a path on the volume.
+#
+# Fails `unsupported` where the server did not announce the extension,
+# `file_not_found` where nothing is there, and `invalid` for a size past
+# 2^63 - 1 bytes. See also `info`.
+function volume(@c: ssh.Client, @s: Session, path: str) -> Volume?
+    asked = f"reading the volume of \"{path}\""
+    packet @= calls.extension(s.state, name: "statvfs@openssh.com", version: "2", asked: asked)?
+    wire.put_text(@packet, text: path)
+    r @= conn.call(@c, @s.state, @packet, kind: conn.EXTENDED_REPLY, asked: asked)?
+    v = calls.space_of(@r, asked: asked)?
+    return ok(
+        Volume(total: v.total, free: v.free, available: v.available, block_size: v.block_size, files: v.files, files_free: v.files_free, files_available: v.files_available, id: v.id, read_only: v.read_only, no_setuid: v.no_setuid, name_max: v.name_max)
+    )
+
+## Links themselves
+
+# Sets the permission bits of the link itself where `path` names one, and
+# of what it names where it names no link (`lsetstat@openssh.com`).
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the path on the server.
+# - `permission`: the bits, 0 to 0o7777, set as given.
+#
+# Fails `unsupported` where the server did not announce the extension or
+# its system keeps no bits of a link's own (Linux), and as
+# `set_permission` does. See also `set_permission`.
+function set_link_permission(@c: ssh.Client, @s: Session, path: str, permission: i64) -> ()?
+    raw = calls.permission_change(permission, path: path)?
+    return calls.set_link(@c, @s.state, path: path, raw: raw, asked: f"setting the permission of the link \"{path}\"")
+
+# Gives the link itself where `path` names one, and what it names where it
+# names no link, to the user and the group of those numbers, -1 leaving
+# either as it is (`lsetstat@openssh.com`).
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the path on the server.
+# - `user`: the user's number, 0 to 2^32 - 2, or -1 to keep it.
+# - `group`: the group's number, as `user`.
+#
+# Fails `unsupported` where the server did not announce the extension, and
+# as `set_owner` does. See also `set_owner`.
+function set_link_owner(@c: ssh.Client, @s: Session, path: str, user: i64, group: i64) -> ()?
+    raw = calls.owner_change(user: user, group: group, path: path)?
+    return calls.set_link(@c, @s.state, path: path, raw: raw, asked: f"setting the owner of the link \"{path}\"")
+
+# Sets the times of the last write and the last read of the link itself
+# where `path` names one, and of what it names where it names no link, in
+# whole seconds (`lsetstat@openssh.com`).
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the path on the server.
+# - `written`: the last write, from 1970 to 2106; its fraction of a second
+#   is dropped.
+# - `accessed`: the last read, as `written`.
+#
+# Fails `unsupported` where the server did not announce the extension, and
+# as `set_times` does. See also `set_times`.
+function set_link_times(@c: ssh.Client, @s: Session, path: str, written: time.Instant, accessed: time.Instant) -> ()?
+    raw = calls.times_change(written: written, accessed: accessed, path: path)?
+    return calls.set_link(@c, @s.state, path: path, raw: raw, asked: f"setting the times of the link \"{path}\"")
+
+## The server's own
+
+# The path `path` names with a leading `~` or `~user` expanded to a home
+# folder, made absolute and cleaned as `resolve` does
+# (`expand-path@openssh.com`).
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `path`: the path: `~`, `~/notes`, `~ana/notes`, or any `resolve` takes.
+#
+# Fails `unsupported` where the server did not announce the extension,
+# `file_not_found` where a user or the path names nothing, `not_text` where
+# the answer is not UTF-8. See also `resolve`, `home`.
+function expand(@c: ssh.Client, @s: Session, path: str) -> str?
+    asked = f"expanding \"{path}\""
+    packet @= calls.extension(s.state, name: "expand-path@openssh.com", version: "1", asked: asked)?
+    wire.put_text(@packet, text: path)
+    return calls.one_name(@c, @s.state, packet: packet, asked: asked)
+
+# The home folder of the user `user` on the server (`home-directory`).
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `user`: the user's name; empty for the user signed in.
+#
+# Fails `unsupported` where the server did not announce the extension,
+# `failed` where the server knows no such user, as OpenSSH's answers it,
+# and `not_text` where the answer is not UTF-8. See also `expand`.
+function home(@c: ssh.Client, @s: Session, user: str) -> str?
+    asked = f"asking the home folder of \"{user}\""
+    packet @= calls.extension(s.state, name: "home-directory", version: "1", asked: asked)?
+    wire.put_text(@packet, text: user)
+    return calls.one_name(@c, @s.state, packet: packet, asked: asked)
+
+# Copies `n` bytes of `from` at `from_offset` to `to` at `to_offset`, the
+# server reading and writing them itself, so they never cross the network
+# (`copy-data`).
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `from`: a file open to read.
+# - `from_offset`: where the bytes begin in `from`, 0 or more.
+# - `n`: how many, 0 or more; fewer are copied where `from` ends first, and
+#   0 asks nothing.
+# - `to`: a file open to write, another than `from`.
+# - `to_offset`: where they go in `to`, 0 or more.
+#
+# Fails `unsupported` where the server did not announce the extension,
+# `invalid` where `from` and `to` are one handle or a number is below 0,
+# and where the server refuses. See also `read`, `write`.
+function copy_range(@c: ssh.Client, @s: Session, from: File, from_offset: i64, n: i64, to: File, to_offset: i64) -> ()?
+    if from_offset < 0 || n < 0 || to_offset < 0 || from.handle == to.handle
+        return fail(
+            code: INVALID,
+            msg: f"copying {n} bytes of \"{from.path}\" at {from_offset} to \"{to.path}\" at {to_offset}: a number below 0, or one file both sides"
+        )
+    asked = f"copying {n} bytes of \"{from.path}\" to \"{to.path}\""
+    packet @= calls.extension(s.state, name: "copy-data", version: "1", asked: asked)?
+
+    if n == 0
+        return ok()
+    wire.put_string(out: @packet, data: from.handle)
+    wire.put_u64(@packet, n: from_offset)
+    wire.put_u64(@packet, n: n)
+    wire.put_string(out: @packet, data: to.handle)
+    wire.put_u64(@packet, n: to_offset)
+    return conn.call_ok(@c, @s.state, @packet, asked: asked)
+
+# The names of the users whose numbers are `users`, as the server's system
+# knows them (`users-groups-by-id@openssh.com`).
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `users`: the users' numbers, 0 to 2^32 - 1; empty asks nothing.
+#
+# A number the server knows no name for is not among the keys. Fails
+# `unsupported` where the server did not announce the extension, `invalid`
+# for a number out of range. See also `group_names`.
+function user_names(@c: ssh.Client, @s: Session, users: [i64]) -> {i64: str}?
+    return calls.names_by_id(@c, @s.state, ids: users, of_users: true)
+
+# The names of the groups whose numbers are `groups`, as the server's
+# system knows them (`users-groups-by-id@openssh.com`).
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `groups`: the groups' numbers, 0 to 2^32 - 1; empty asks nothing.
+#
+# A number the server knows no name for is not among the keys. Fails as
+# `user_names` does. See also `user_names`.
+function group_names(@c: ssh.Client, @s: Session, groups: [i64]) -> {i64: str}?
+    return calls.names_by_id(@c, @s.state, ids: groups, of_users: false)
+
+# The facts of the volume the open `file` stands on
+# (`fstatvfs@openssh.com`).
+#
+# - `c`: the client.
+# - `s`: the session.
+# - `file`: an open file.
+#
+# Fails as `volume` does. See also `volume`.
+function file_volume(@c: ssh.Client, @s: Session, file: File) -> Volume?
+    asked = f"reading the volume of \"{file.path}\""
+    packet @= calls.extension(s.state, name: "fstatvfs@openssh.com", version: "2", asked: asked)?
+    wire.put_string(out: @packet, data: file.handle)
+    r @= conn.call(@c, @s.state, @packet, kind: conn.EXTENDED_REPLY, asked: asked)?
+    v = calls.space_of(@r, asked: asked)?
+    return ok(
+        Volume(total: v.total, free: v.free, available: v.available, block_size: v.block_size, files: v.files, files_free: v.files_free, files_available: v.files_available, id: v.id, read_only: v.read_only, no_setuid: v.no_setuid, name_max: v.name_max)
+    )
+
+test "start and close: version 3, the eleven extensions sftp-server of OpenSSH 10.5p1 lists, two sessions on one client, a session closed refused"
+    match lab.signed_in("start")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            assert s.state.version == 3
+            assert extensions(s) == ["posix-rename@openssh.com", "statvfs@openssh.com", "fstatvfs@openssh.com", "hardlink@openssh.com", "fsync@openssh.com", "lsetstat@openssh.com", "limits@openssh.com", "expand-path@openssh.com", "copy-data", "home-directory", "users-groups-by-id@openssh.com"]
+            assert has_extension(s, name: "fsync@openssh.com")
+            assert !has_extension(s, name: "nothing@example.org")
+            assert s.state.read_chunk == 32768
+            assert s.state.write_chunk == 32768
+            other @= start(@l.client).must()
+            write_bytes(@l.client, @other, path: l.dir + "/a", data: [1]).must()
+            assert read_bytes(@l.client, @s, path: l.dir + "/a").must() == [1]
+            close(@l.client, @other).must()
+            close(@l.client, @s).must()
+            close(@l.client, @s).must()
+
+            match info(@l.client, @s, path: l.dir)
+                .ok _  => assert false
+                .err e => assert e.code == CLOSED
+
+            lab.done(@l).must()
+
+test "write_bytes and read_bytes: empty, one byte, 3 MB across the pipeline as the system's own read holds them, a longer file emptied first, a missing path and a folder refused"
+    match lab.signed_in("whole")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            d = l.dir
+            none: [u8] = []
+            write_bytes(@l.client, @s, path: d + "/empty", data: none).must()
+            assert read_bytes(@l.client, @s, path: d + "/empty").must() == none
+            assert fs.read_bytes(d + "/empty").must() == none
+            write_bytes(@l.client, @s, path: d + "/one", data: [0]).must()
+            assert read_bytes(@l.client, @s, path: d + "/one").must() == [0]
+            big: [u8] @= []
+
+            for i in range(from: 0, to: 3000000)
+                big @ big.push(to_u8(i * 7 % 251).must())
+
+            write_bytes(@l.client, @s, path: d + "/big", data: big).must()
+            assert fs.read_bytes(d + "/big").must() == big
+            assert read_bytes(@l.client, @s, path: d + "/big").must() == big
+            write_bytes(@l.client, @s, path: d + "/big", data: [1, 2]).must()
+            assert fs.read_bytes(d + "/big").must() == [1, 2]
+
+            match read_bytes(@l.client, @s, path: d + "/none")
+                .ok _  => assert false
+                .err e => assert e.code == FILE_NOT_FOUND
+
+            match read_bytes(@l.client, @s, path: d)
+                .ok _  => assert false
+                .err e => assert e.code == IS_A_DIRECTORY
+
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+test "read and write at offsets: nothing asked, across the end, at and past it, a write past the end leaving zeros, numbers below 0 and past 2^63 - 1 refused"
+    match lab.signed_in("offsets")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            p = l.dir + "/f"
+            f = create(@l.client, @s, path: p).must()
+            write(@l.client, @s, file: f, offset: 0, data: [1, 2, 3, 4]).must()
+            write(@l.client, @s, file: f, offset: 6, data: [9]).must()
+            close_file(@l.client, @s, file: f).must()
+            assert fs.read_bytes(p).must() == [1, 2, 3, 4, 0, 0, 9]
+            g = open(@l.client, @s, path: p).must()
+            none: [u8] = []
+            assert read(@l.client, @s, file: g, offset: 0, n: 0).must() == none
+            assert read(@l.client, @s, file: g, offset: 2, n: 100).must() == [3, 4, 0, 0, 9]
+            assert read(@l.client, @s, file: g, offset: 7, n: 5).must() == none
+            assert read(@l.client, @s, file: g, offset: 100, n: 5).must() == none
+            assert read(@l.client, @s, file: g, offset: -1, n: 1).is_err()
+
+            match read(@l.client, @s, file: g, offset: 1, n: 9223372036854775807)
+                .ok _  => assert false
+                .err e => assert e.code == INVALID
+
+            assert write(@l.client, @s, file: g, offset: -1, data: [1]).is_err()
+            close_file(@l.client, @s, file: g).must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+test "open_with: each access as the system then reads the file, a name taken for create_new, a missing file, a permission outside 0 to 0o7777"
+    match lab.signed_in("access")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            p = l.dir + "/f"
+            made = open_with(@l.client, @s, path: p, access: .create_new, permission: 0o640).must()
+            write(@l.client, @s, file: made, offset: 0, data: [1, 2, 3]).must()
+            close_file(@l.client, @s, file: made).must()
+            assert fs.info(p).must().permission == 0o640
+
+            match open_with(@l.client, @s, path: p, access: .create_new, permission: 0o600)
+                .ok _  => assert false
+                .err e => assert e.code == EXISTS
+
+            appended = open_with(@l.client, @s, path: p, access: .append, permission: 0o600).must()
+            write(@l.client, @s, file: appended, offset: 0, data: [4]).must()
+            close_file(@l.client, @s, file: appended).must()
+            assert fs.read_bytes(p).must() == [1, 2, 3, 4]
+            both = open_with(@l.client, @s, path: p, access: .read_write, permission: 0).must()
+            write(@l.client, @s, file: both, offset: 1, data: [7]).must()
+            assert read(@l.client, @s, file: both, offset: 0, n: 4).must() == [1, 7, 3, 4]
+            close_file(@l.client, @s, file: both).must()
+            emptied = open_with(@l.client, @s, path: p, access: .write, permission: 0o600).must()
+            close_file(@l.client, @s, file: emptied).must()
+            assert fs.read_bytes(p).must().len() == 0
+
+            match open(@l.client, @s, path: l.dir + "/none")
+                .ok _  => assert false
+                .err e => assert e.code == FILE_NOT_FOUND
+
+            match open_with(@l.client, @s, path: p, access: .read, permission: 0o10000)
+                .ok _  => assert false
+                .err e => assert e.code == INVALID
+
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+test "info, link_info and file_info: kind, size, permission, owner and times as the system's own stat holds them, a link followed and not, a missing path"
+    match lab.signed_in("info")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            p = l.dir + "/f"
+            write_bytes(@l.client, @s, path: p, data: [1, 2, 3]).must()
+            local = fs.info(p).must()
+            a = info(@l.client, @s, path: p).must()
+            assert a.kind.must() == .file
+            assert a.size.must() == 3
+            assert a.permission.must() == local.permission
+            assert a.user.must() == os.user_id().must()
+            assert time.unix_seconds(a.written.must()) == time.unix_seconds(local.written)
+            assert time.unix_seconds(a.read.must()) == time.unix_seconds(local.read)
+            assert a.extended.len() == 0
+            symlink(@l.client, @s, target: "f", name: l.dir + "/l").must()
+            assert info(@l.client, @s, path: l.dir + "/l").must().kind.must() == .file
+            link = link_info(@l.client, @s, path: l.dir + "/l").must()
+            assert link.kind.must() == .link
+            assert link.size.must() == 1
+            assert info(@l.client, @s, path: l.dir).must().kind.must() == .directory
+            f = open(@l.client, @s, path: p).must()
+            assert file_info(@l.client, @s, file: f).must().size.must() == 3
+            close_file(@l.client, @s, file: f).must()
+
+            match info(@l.client, @s, path: l.dir + "/none")
+                .ok _  => assert false
+                .err e => assert e.code == FILE_NOT_FOUND
+
+            match link_info(@l.client, @s, path: l.dir + "/none")
+                .ok _  => assert false
+                .err e => assert e.code == FILE_NOT_FOUND
+
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+test "set_permission, set_times, truncate, set_owner and their forms on an open file: as the system then reads them; an owner and a folder refused"
+    match lab.signed_in("set")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            p = l.dir + "/f"
+            write_bytes(@l.client, @s, path: p, data: [1, 2, 3, 4, 5, 6, 7, 8]).must()
+            set_permission(@l.client, @s, path: p, permission: 0o600).must()
+            assert fs.info(p).must().permission == 0o600
+            t = time.from_unix(whole_seconds: 1700000000, extra_nanoseconds: 0).must()
+            u = time.from_unix(whole_seconds: 1600000000, extra_nanoseconds: 0).must()
+            set_times(@l.client, @s, path: p, written: t, accessed: u).must()
+            assert time.unix_seconds(fs.info(p).must().written) == 1700000000
+            assert time.unix_seconds(fs.info(p).must().read) == 1600000000
+            truncate(@l.client, @s, path: p, length: 4).must()
+            assert fs.read_bytes(p).must() == [1, 2, 3, 4]
+            truncate(@l.client, @s, path: p, length: 6).must()
+            assert fs.read_bytes(p).must() == [1, 2, 3, 4, 0, 0]
+            set_owner(@l.client, @s, path: p, user: -1, group: -1).must()
+            set_owner(@l.client, @s, path: p, user: os.user_id().must(), group: -1).must()
+
+            if os.user_id().must() != 0
+                match set_owner(@l.client, @s, path: p, user: 0, group: -1)
+                    .ok _  => assert false
+                    .err e => assert e.code == PERMISSION
+            f = open_with(@l.client, @s, path: p, access: .read_write, permission: 0).must()
+            set_file_permission(@l.client, @s, file: f, permission: 0o640).must()
+            assert fs.info(p).must().permission == 0o640
+            set_file_times(@l.client, @s, file: f, written: u, accessed: t).must()
+            assert time.unix_seconds(fs.info(p).must().written) == 1600000000
+            truncate_file(@l.client, @s, file: f, length: 2).must()
+            assert fs.read_bytes(p).must() == [1, 2]
+            set_file_owner(@l.client, @s, file: f, user: -1, group: -1).must()
+            assert truncate_file(@l.client, @s, file: f, length: -1).is_err()
+            close_file(@l.client, @s, file: f).must()
+
+            match truncate(@l.client, @s, path: l.dir, length: 0)
+                .ok _  => assert false
+                .err e => assert e.code == IS_A_DIRECTORY
+
+            late = time.from_unix(whole_seconds: 4294967296, extra_nanoseconds: 0).must()
+
+            match set_times(@l.client, @s, path: p, written: late, accessed: t)
+                .ok _  => assert false
+                .err e => assert e.code == INVALID
+
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+test "read_dir: 250 names across the server's answers, sorted by their bytes as the system lists them, . and .. left out, a link listed as a link, a file and a missing path refused"
+    match lab.signed_in("dir")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            none: [u8] = []
+
+            for i in range(from: 0, to: 250)
+                write_bytes(@l.client, @s, path: f"{l.dir}/n{i}", data: none).must()
+
+            symlink(@l.client, @s, target: "n0", name: l.dir + "/link").must()
+            entries = read_dir(@l.client, @s, path: l.dir).must()
+            assert entries.len() == 251
+            names: [str] @= []
+
+            for e in entries
+                names @ names.push(e.name)
+
+            local: [str] @= []
+
+            for e in fs.read_dir(l.dir).must()
+                local @ local.push(e.name)
+
+            assert names == local
+            assert names == sort(names)
+            assert entries[0].attributes.kind.must() == .link
+            assert entries[1].name == "n0"
+            assert entries[1].attributes.kind.must() == .file
+            assert strings.has_prefix(s: entries[1].long_name, prefix: "-rw")
+
+            match read_dir(@l.client, @s, path: l.dir + "/n0")
+                .ok _  => assert false
+                .err e => assert e.code == NOT_A_DIRECTORY
+
+            match read_dir(@l.client, @s, path: l.dir + "/none")
+                .ok _  => assert false
+                .err e => assert e.code == FILE_NOT_FOUND
+
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+test "make_dir, make_dir_all, remove, remove_dir and remove_all: the codes version 3 cannot name, told by a look at the path"
+    match lab.signed_in("dirs")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            d = l.dir
+            make_dir(@l.client, @s, path: d + "/a").must()
+
+            match make_dir(@l.client, @s, path: d + "/a")
+                .ok _  => assert false
+                .err e => assert e.code == EXISTS
+
+            match make_dir(@l.client, @s, path: d + "/x/y")
+                .ok _  => assert false
+                .err e => assert e.code == FILE_NOT_FOUND
+
+            make_dir_with(@l.client, @s, path: d + "/b", permission: 0o700).must()
+            assert fs.info(d + "/b").must().permission == 0o700
+            make_dir_all(@l.client, @s, path: d + "/c/d/e").must()
+            make_dir_all(@l.client, @s, path: d + "/c/d/e").must()
+            assert fs.is_dir(d + "/c/d/e").must()
+            write_bytes(@l.client, @s, path: d + "/a/f", data: [1]).must()
+
+            match make_dir_all(@l.client, @s, path: d + "/a/f/g")
+                .ok _  => assert false
+                .err e => assert e.code == NOT_A_DIRECTORY
+
+            match remove_dir(@l.client, @s, path: d + "/a")
+                .ok _  => assert false
+                .err e => assert e.code == NOT_EMPTY
+
+            match remove_dir(@l.client, @s, path: d + "/a/f")
+                .ok _  => assert false
+                .err e => assert e.code == NOT_A_DIRECTORY
+
+            match remove(@l.client, @s, path: d + "/a")
+                .ok _  => assert false
+                .err e => assert e.code == IS_A_DIRECTORY
+
+            remove(@l.client, @s, path: d + "/a/f").must()
+
+            match remove(@l.client, @s, path: d + "/a/f")
+                .ok _  => assert false
+                .err e => assert e.code == FILE_NOT_FOUND
+
+            remove_dir(@l.client, @s, path: d + "/a").must()
+            symlink(@l.client, @s, target: "c", name: d + "/lc").must()
+            remove_all(@l.client, @s, path: d + "/lc").must()
+            assert fs.is_dir(d + "/c/d").must()
+            remove_all(@l.client, @s, path: d + "/c").must()
+            assert !fs.exists(d + "/c").must()
+
+            match remove_all(@l.client, @s, path: d + "/c")
+                .ok _  => assert false
+                .err e => assert e.code == FILE_NOT_FOUND
+
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+test "rename and posix_rename: a name taken refused by the one and replaced by the other, a missing path"
+    match lab.signed_in("rename")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            d = l.dir
+            write_bytes(@l.client, @s, path: d + "/a", data: [1]).must()
+            write_bytes(@l.client, @s, path: d + "/b", data: [2]).must()
+
+            match rename(@l.client, @s, from: d + "/a", to: d + "/b")
+                .ok _  => assert false
+                .err e => assert e.code == EXISTS
+
+            rename(@l.client, @s, from: d + "/a", to: d + "/c").must()
+            assert fs.read_bytes(d + "/c").must() == [1]
+            posix_rename(@l.client, @s, from: d + "/c", to: d + "/b").must()
+            assert fs.read_bytes(d + "/b").must() == [1]
+            assert !fs.exists(d + "/c").must()
+
+            match rename(@l.client, @s, from: d + "/none", to: d + "/x")
+                .ok _  => assert false
+                .err e => assert e.code == FILE_NOT_FOUND
+
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+test "symlink, read_link and hard_link: the target first as OpenSSH reads it, a link to nothing, names taken, a file that is no link, a missing path"
+    match lab.signed_in("links")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            d = l.dir
+            symlink(@l.client, @s, target: "nowhere", name: d + "/l").must()
+            assert fs.read_link(d + "/l").must() == "nowhere"
+            assert read_link(@l.client, @s, path: d + "/l").must() == "nowhere"
+
+            match symlink(@l.client, @s, target: "x", name: d + "/l")
+                .ok _  => assert false
+                .err e => assert e.code == EXISTS
+
+            write_bytes(@l.client, @s, path: d + "/f", data: [5]).must()
+
+            match read_link(@l.client, @s, path: d + "/f")
+                .ok _  => assert false
+                .err e => assert e.code == INVALID
+
+            match read_link(@l.client, @s, path: d + "/none")
+                .ok _  => assert false
+                .err e => assert e.code == FILE_NOT_FOUND
+
+            hard_link(@l.client, @s, existing: d + "/f", name: d + "/h").must()
+            assert fs.is_same_file(path: d + "/f", other: d + "/h").must()
+
+            match hard_link(@l.client, @s, existing: d + "/f", name: d + "/h")
+                .ok _  => assert false
+                .err e => assert e.code == EXISTS
+
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+test "resolve, expand and home: the user's home as the system names it, a parent folder cleaned, a user that names nothing"
+    match lab.signed_in("resolve")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            home_dir = os.home_dir().must()
+            assert resolve(@l.client, @s, path: ".").must() == home_dir
+            make_dir(@l.client, @s, path: l.dir + "/x").must()
+            assert resolve(@l.client, @s, path: l.dir + "/x/..").must() == l.dir
+            assert expand(@l.client, @s, path: "~").must() == home_dir
+            assert expand(@l.client, @s, path: "~/x").must() == home_dir + "/x"
+
+            match expand(@l.client, @s, path: "~nobody-of-this-test")
+                .ok _  => assert false
+                .err e => assert e.code == FILE_NOT_FOUND
+
+            assert home(@l.client, @s, user: "").must() == home_dir
+            assert home(@l.client, @s, user: os.user_name().must()).must() == home_dir
+
+            match home(@l.client, @s, user: "nobody-of-this-test")
+                .ok _  => assert false
+                .err e => assert e.code == FAILED
+
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+test "volume, file_volume, sync and copy_range: the volume's size as the system's own gives it, bytes copied by the server, past the end, one file both sides"
+    match lab.signed_in("server")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            d = l.dir
+            v = volume(@l.client, @s, path: d).must()
+            assert v.total == fs.space(d).must().total
+            assert v.available <= v.free && v.free <= v.total
+            assert !v.read_only
+            source: [u8] @= []
+
+            for i in range(from: 0, to: 100)
+                source @ source.push(to_u8(i).must())
+
+            write_bytes(@l.client, @s, path: d + "/src", data: source).must()
+            from = open(@l.client, @s, path: d + "/src").must()
+            assert file_volume(@l.client, @s, file: from).must().total == v.total
+            to = create(@l.client, @s, path: d + "/dst").must()
+            copy_range(@l.client, @s, from: from, from_offset: 10, n: 50, to: to, to_offset: 5).must()
+            sync(@l.client, @s, file: to).must()
+            want: [u8] @= [0, 0, 0, 0, 0]
+
+            for b in source.slice(from: 10, to: 60)
+                want @ want.push(b)
+
+            assert fs.read_bytes(d + "/dst").must() == want
+            copy_range(@l.client, @s, from: from, from_offset: 90, n: 50, to: to, to_offset: 0).must()
+            assert fs.read_bytes(d + "/dst").must().slice(from: 0, to: 10) == source.slice(from: 90, to: 100)
+            copy_range(@l.client, @s, from: from, from_offset: 0, n: 0, to: to, to_offset: 0).must()
+
+            match copy_range(@l.client, @s, from: to, from_offset: 0, n: 1, to: to, to_offset: 4)
+                .ok _  => assert false
+                .err e => assert e.code == INVALID
+
+            close_file(@l.client, @s, file: to).must()
+            close_file(@l.client, @s, file: from).must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+test "set_link_permission, set_link_times, set_link_owner, user_names and group_names: a link's own attributes as the system reads them, names by number"
+    match lab.signed_in("own")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            d = l.dir
+            write_bytes(@l.client, @s, path: d + "/f", data: [1]).must()
+            symlink(@l.client, @s, target: "f", name: d + "/l").must()
+            set_link_permission(@l.client, @s, path: d + "/l", permission: 0o700).must()
+            assert fs.link_info(d + "/l").must().permission == 0o700
+            assert fs.info(d + "/l").must().permission != 0o700
+            t = time.from_unix(whole_seconds: 1500000000, extra_nanoseconds: 0).must()
+            set_link_times(@l.client, @s, path: d + "/l", written: t, accessed: t).must()
+            assert time.unix_seconds(fs.link_info(d + "/l").must().written) == 1500000000
+            assert time.unix_seconds(fs.info(d + "/l").must().written) != 1500000000
+            set_link_owner(@l.client, @s, path: d + "/l", user: -1, group: -1).must()
+            me = os.user_id().must()
+            users = user_names(@l.client, @s, users: [me, 4294967290]).must()
+            assert users[me].must() == os.user_name().must()
+            assert users[4294967290].is_err()
+            groups = group_names(@l.client, @s, groups: [os.group_id().must()]).must()
+            assert groups.len() == 1
+            none: [i64] = []
+            assert user_names(@l.client, @s, users: none).must().len() == 0
+            assert user_names(@l.client, @s, users: [-1]).is_err()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+## Examples
+
+# A session started on a client signed in, and closed.
+test "start: a session on a signed-in client"
+    match lab.signed_in("ex-start")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A session closed; the client goes on.
+test "close: a session ended, the client still open"
+    match lab.signed_in("ex-close")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            close(@l.client, @s).must()
+            assert ssh.run(@l.client, command: "true").must().status.must() == 0
+            lab.done(@l).must()
+
+# The extensions the server announced.
+test "extensions: what the server offers"
+    match lab.signed_in("ex-extensions")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            assert extensions(s).len() > 0
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# Whether the server offers `fsync@openssh.com`.
+test "has_extension: fsync offered"
+    match lab.signed_in("ex-has-extension")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            assert has_extension(s, name: "fsync@openssh.com")
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A file opened and read.
+test "open: a file read"
+    match lab.signed_in("ex-open")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            write_bytes(@l.client, @s, path: l.dir + "/a", data: [1, 2]).must()
+            f = open(@l.client, @s, path: l.dir + "/a").must()
+            assert read(@l.client, @s, file: f, offset: 0, n: 2).must() == [1, 2]
+            close_file(@l.client, @s, file: f).must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A file made and written.
+test "create: a file made and written"
+    match lab.signed_in("ex-create")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            f = create(@l.client, @s, path: l.dir + "/a").must()
+            write(@l.client, @s, file: f, offset: 0, data: [1]).must()
+            close_file(@l.client, @s, file: f).must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A file made new, refusing a name taken, with the permission 0o600.
+test "open_with: a file made new with its permission"
+    match lab.signed_in("ex-open-with")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            f = open_with(@l.client, @s, path: l.dir + "/a", access: .create_new, permission: 0o600).must()
+            close_file(@l.client, @s, file: f).must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A file closed after its last write.
+test "close_file: a file closed"
+    match lab.signed_in("ex-close-file")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            f = create(@l.client, @s, path: l.dir + "/a").must()
+            close_file(@l.client, @s, file: f).must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# Two bytes read from the middle of a file.
+test "read: two bytes at an offset"
+    match lab.signed_in("ex-read")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            write_bytes(@l.client, @s, path: l.dir + "/a", data: [1, 2, 3, 4]).must()
+            f = open(@l.client, @s, path: l.dir + "/a").must()
+            assert read(@l.client, @s, file: f, offset: 1, n: 2).must() == [2, 3]
+            close_file(@l.client, @s, file: f).must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# Bytes written at an offset of a file.
+test "write: bytes at an offset"
+    match lab.signed_in("ex-write")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            f = create(@l.client, @s, path: l.dir + "/a").must()
+            write(@l.client, @s, file: f, offset: 2, data: [9]).must()
+            close_file(@l.client, @s, file: f).must()
+            assert fs.read_bytes(l.dir + "/a").must() == [0, 0, 9]
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A whole file read.
+test "read_bytes: a whole file"
+    match lab.signed_in("ex-read-bytes")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            write_bytes(@l.client, @s, path: l.dir + "/a", data: [7]).must()
+            assert read_bytes(@l.client, @s, path: l.dir + "/a").must() == [7]
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A whole file written.
+test "write_bytes: a whole file"
+    match lab.signed_in("ex-write-bytes")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            write_bytes(@l.client, @s, path: l.dir + "/a", data: [7, 8]).must()
+            assert fs.read_bytes(l.dir + "/a").must() == [7, 8]
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# An open file's size.
+test "file_info: an open file's size"
+    match lab.signed_in("ex-file-info")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            write_bytes(@l.client, @s, path: l.dir + "/a", data: [1, 2, 3]).must()
+            f = open(@l.client, @s, path: l.dir + "/a").must()
+            assert file_info(@l.client, @s, file: f).must().size.must() == 3
+            close_file(@l.client, @s, file: f).must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A file's bytes asked onto the server's disk before it is closed.
+test "sync: a file's bytes on the disk"
+    match lab.signed_in("ex-sync")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            f = create(@l.client, @s, path: l.dir + "/a").must()
+            write(@l.client, @s, file: f, offset: 0, data: [1]).must()
+            sync(@l.client, @s, file: f).must()
+            close_file(@l.client, @s, file: f).must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# An open file cut to one byte.
+test "truncate_file: an open file cut"
+    match lab.signed_in("ex-truncate-file")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            write_bytes(@l.client, @s, path: l.dir + "/a", data: [1, 2, 3]).must()
+            f = open_with(@l.client, @s, path: l.dir + "/a", access: .read_write, permission: 0).must()
+            truncate_file(@l.client, @s, file: f, length: 1).must()
+            close_file(@l.client, @s, file: f).must()
+            assert fs.read_bytes(l.dir + "/a").must() == [1]
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# An open file's permission set to 0o600.
+test "set_file_permission: an open file made private"
+    match lab.signed_in("ex-set-file-permission")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            f = create(@l.client, @s, path: l.dir + "/a").must()
+            set_file_permission(@l.client, @s, file: f, permission: 0o600).must()
+            close_file(@l.client, @s, file: f).must()
+            assert fs.info(l.dir + "/a").must().permission == 0o600
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# An open file's owner and group left as they are.
+test "set_file_owner: an open file's owner kept"
+    match lab.signed_in("ex-set-file-owner")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            f = create(@l.client, @s, path: l.dir + "/a").must()
+            set_file_owner(@l.client, @s, file: f, user: -1, group: -1).must()
+            close_file(@l.client, @s, file: f).must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# An open file's times set.
+test "set_file_times: an open file's times"
+    match lab.signed_in("ex-set-file-times")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            f = create(@l.client, @s, path: l.dir + "/a").must()
+            t = time.from_unix(whole_seconds: 1000000000, extra_nanoseconds: 0).must()
+            set_file_times(@l.client, @s, file: f, written: t, accessed: t).must()
+            close_file(@l.client, @s, file: f).must()
+            assert time.unix_seconds(fs.info(l.dir + "/a").must().written) == 1000000000
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A file's size.
+test "info: a file's size"
+    match lab.signed_in("ex-info")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            write_bytes(@l.client, @s, path: l.dir + "/a", data: [1, 2]).must()
+            assert info(@l.client, @s, path: l.dir + "/a").must().size.must() == 2
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A link's own kind, not what it names.
+test "link_info: a link itself"
+    match lab.signed_in("ex-link-info")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            symlink(@l.client, @s, target: "a", name: l.dir + "/l").must()
+            assert link_info(@l.client, @s, path: l.dir + "/l").must().kind.must() == .link
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A file's permission set to 0o600.
+test "set_permission: a file made private"
+    match lab.signed_in("ex-set-permission")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            write_bytes(@l.client, @s, path: l.dir + "/a", data: [1]).must()
+            set_permission(@l.client, @s, path: l.dir + "/a", permission: 0o600).must()
+            assert fs.info(l.dir + "/a").must().permission == 0o600
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A file's owner and group left as they are.
+test "set_owner: a file's owner kept"
+    match lab.signed_in("ex-set-owner")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            write_bytes(@l.client, @s, path: l.dir + "/a", data: [1]).must()
+            set_owner(@l.client, @s, path: l.dir + "/a", user: -1, group: -1).must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A file's times set.
+test "set_times: a file's times"
+    match lab.signed_in("ex-set-times")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            write_bytes(@l.client, @s, path: l.dir + "/a", data: [1]).must()
+            t = time.from_unix(whole_seconds: 1000000000, extra_nanoseconds: 0).must()
+            set_times(@l.client, @s, path: l.dir + "/a", written: t, accessed: t).must()
+            assert time.unix_seconds(fs.info(l.dir + "/a").must().written) == 1000000000
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A file cut to one byte.
+test "truncate: a file cut"
+    match lab.signed_in("ex-truncate")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            write_bytes(@l.client, @s, path: l.dir + "/a", data: [1, 2]).must()
+            truncate(@l.client, @s, path: l.dir + "/a", length: 1).must()
+            assert fs.read_bytes(l.dir + "/a").must() == [1]
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A folder's entries by name.
+test "read_dir: a folder's names"
+    match lab.signed_in("ex-read-dir")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            write_bytes(@l.client, @s, path: l.dir + "/b", data: [1]).must()
+            write_bytes(@l.client, @s, path: l.dir + "/a", data: [1]).must()
+            entries = read_dir(@l.client, @s, path: l.dir).must()
+            assert entries[0].name == "a" && entries[1].name == "b"
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A folder made.
+test "make_dir: a folder"
+    match lab.signed_in("ex-make-dir")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            make_dir(@l.client, @s, path: l.dir + "/d").must()
+            assert fs.is_dir(l.dir + "/d").must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A folder made with the permission 0o700.
+test "make_dir_with: a private folder"
+    match lab.signed_in("ex-make-dir-with")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            make_dir_with(@l.client, @s, path: l.dir + "/d", permission: 0o700).must()
+            assert fs.info(l.dir + "/d").must().permission == 0o700
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A folder and the folders above it made.
+test "make_dir_all: folders within folders"
+    match lab.signed_in("ex-make-dir-all")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            make_dir_all(@l.client, @s, path: l.dir + "/a/b/c").must()
+            assert fs.is_dir(l.dir + "/a/b/c").must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A file removed.
+test "remove: a file"
+    match lab.signed_in("ex-remove")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            write_bytes(@l.client, @s, path: l.dir + "/a", data: [1]).must()
+            remove(@l.client, @s, path: l.dir + "/a").must()
+            assert !fs.exists(l.dir + "/a").must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# An empty folder removed.
+test "remove_dir: an empty folder"
+    match lab.signed_in("ex-remove-dir")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            make_dir(@l.client, @s, path: l.dir + "/d").must()
+            remove_dir(@l.client, @s, path: l.dir + "/d").must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A folder removed with what it holds.
+test "remove_all: a folder and what it holds"
+    match lab.signed_in("ex-remove-all")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            make_dir_all(@l.client, @s, path: l.dir + "/d/e").must()
+            write_bytes(@l.client, @s, path: l.dir + "/d/e/f", data: [1]).must()
+            remove_all(@l.client, @s, path: l.dir + "/d").must()
+            assert !fs.exists(l.dir + "/d").must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A file given a new name.
+test "rename: a file renamed"
+    match lab.signed_in("ex-rename")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            write_bytes(@l.client, @s, path: l.dir + "/a", data: [1]).must()
+            rename(@l.client, @s, from: l.dir + "/a", to: l.dir + "/b").must()
+            assert fs.read_bytes(l.dir + "/b").must() == [1]
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A file put in another's place at once.
+test "posix_rename: a file replacing another"
+    match lab.signed_in("ex-posix-rename")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            write_bytes(@l.client, @s, path: l.dir + "/new", data: [2]).must()
+            write_bytes(@l.client, @s, path: l.dir + "/old", data: [1]).must()
+            posix_rename(@l.client, @s, from: l.dir + "/new", to: l.dir + "/old").must()
+            assert fs.read_bytes(l.dir + "/old").must() == [2]
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# The text a link holds.
+test "read_link: a link's target"
+    match lab.signed_in("ex-read-link")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            symlink(@l.client, @s, target: "notes.txt", name: l.dir + "/l").must()
+            assert read_link(@l.client, @s, path: l.dir + "/l").must() == "notes.txt"
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A symbolic link to a file beside it.
+test "symlink: a link to a file"
+    match lab.signed_in("ex-symlink")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            write_bytes(@l.client, @s, path: l.dir + "/a", data: [1]).must()
+            symlink(@l.client, @s, target: "a", name: l.dir + "/l").must()
+            assert fs.read_bytes(l.dir + "/l").must() == [1]
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A second name of one file.
+test "hard_link: a second name"
+    match lab.signed_in("ex-hard-link")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            write_bytes(@l.client, @s, path: l.dir + "/a", data: [1]).must()
+            hard_link(@l.client, @s, existing: l.dir + "/a", name: l.dir + "/b").must()
+            assert fs.is_same_file(path: l.dir + "/a", other: l.dir + "/b").must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# The folder the session starts in, as an absolute path.
+test "resolve: the folder a session starts in"
+    match lab.signed_in("ex-resolve")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            assert strings.has_prefix(s: resolve(@l.client, @s, path: ".").must(), prefix: "/")
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# The bytes free on the volume a folder stands on.
+test "volume: a volume's free bytes"
+    match lab.signed_in("ex-volume")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            v = volume(@l.client, @s, path: l.dir).must()
+            assert v.available <= v.total
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A link's own permission set, on a system that keeps one (macOS).
+test "set_link_permission: a link's own permission"
+    match lab.signed_in("ex-set-link-permission")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            symlink(@l.client, @s, target: "a", name: l.dir + "/l").must()
+            set_link_permission(@l.client, @s, path: l.dir + "/l", permission: 0o700).must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A link's own owner and group left as they are.
+test "set_link_owner: a link's owner kept"
+    match lab.signed_in("ex-set-link-owner")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            symlink(@l.client, @s, target: "a", name: l.dir + "/l").must()
+            set_link_owner(@l.client, @s, path: l.dir + "/l", user: -1, group: -1).must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A link's own times set, not those of what it names.
+test "set_link_times: a link's own times"
+    match lab.signed_in("ex-set-link-times")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            symlink(@l.client, @s, target: "a", name: l.dir + "/l").must()
+            t = time.from_unix(whole_seconds: 1000000000, extra_nanoseconds: 0).must()
+            set_link_times(@l.client, @s, path: l.dir + "/l", written: t, accessed: t).must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# A path under the user's home expanded.
+test "expand: a path under the home"
+    match lab.signed_in("ex-expand")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            assert strings.has_suffix(s: expand(@l.client, @s, path: "~/notes").must(), suffix: "/notes")
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# The home folder of the user signed in.
+test "home: the user's own home"
+    match lab.signed_in("ex-home")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            assert home(@l.client, @s, user: "").must() == os.home_dir().must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# Bytes copied from one file to another by the server itself.
+test "copy_range: bytes copied by the server"
+    match lab.signed_in("ex-copy-range")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            write_bytes(@l.client, @s, path: l.dir + "/a", data: [1, 2, 3]).must()
+            from = open(@l.client, @s, path: l.dir + "/a").must()
+            to = create(@l.client, @s, path: l.dir + "/b").must()
+            copy_range(@l.client, @s, from: from, from_offset: 1, n: 2, to: to, to_offset: 0).must()
+            close_file(@l.client, @s, file: to).must()
+            close_file(@l.client, @s, file: from).must()
+            assert fs.read_bytes(l.dir + "/b").must() == [2, 3]
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# The name of the user signed in, by number.
+test "user_names: the user signed in"
+    match lab.signed_in("ex-user-names")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            me = os.user_id().must()
+            assert user_names(@l.client, @s, users: [me]).must()[me].must() == os.user_name().must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# The name of the user's group, by number.
+test "group_names: the user's group"
+    match lab.signed_in("ex-group-names")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            g = os.group_id().must()
+            assert group_names(@l.client, @s, groups: [g]).must()[g].must() != ""
+            close(@l.client, @s).must()
+            lab.done(@l).must()
+
+# The size of the volume an open file stands on.
+test "file_volume: an open file's volume"
+    match lab.signed_in("ex-file-volume")
+        .err _ => skip_test(reason: lab.SKIP)
+        .ok found =>
+            l @= found
+            s @= start(@l.client).must()
+            f = create(@l.client, @s, path: l.dir + "/a").must()
+            assert file_volume(@l.client, @s, file: f).must().total > 0
+            close_file(@l.client, @s, file: f).must()
+            close(@l.client, @s).must()
+            lab.done(@l).must()

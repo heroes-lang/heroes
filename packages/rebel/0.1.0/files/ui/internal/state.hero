@@ -149,6 +149,9 @@ function of_code(code: i64) -> ui.Kind
     if code == hero_ui.HERO_UI_CANVAS
         return .canvas
 
+    if code == hero_ui.HERO_UI_CALENDAR
+        return .calendar
+
     if code == hero_ui.HERO_UI_PANE
         return .pane
     return .webview
@@ -346,13 +349,13 @@ function valued(app: ui.App, widget: ui.Widget, kind: i64) -> model.Node?
     return check.node_kind(
         app,
         widget: widget,
-        kinds: [hero_ui.HERO_UI_SLIDER, hero_ui.HERO_UI_SPIN, hero_ui.HERO_UI_PROGRESS, hero_ui.HERO_UI_SPLIT_ROW, hero_ui.HERO_UI_SPLIT_COLUMN, hero_ui.HERO_UI_DATE_PICKER, hero_ui.HERO_UI_TIME_PICKER, hero_ui.HERO_UI_DATE_TIME_PICKER, hero_ui.HERO_UI_COLOR_WELL],
-        what: "a slider, a spin, a progress bar, a split, a picker or a colour well"
+        kinds: [hero_ui.HERO_UI_SLIDER, hero_ui.HERO_UI_SPIN, hero_ui.HERO_UI_PROGRESS, hero_ui.HERO_UI_SPLIT_ROW, hero_ui.HERO_UI_SPLIT_COLUMN, hero_ui.HERO_UI_DATE_PICKER, hero_ui.HERO_UI_TIME_PICKER, hero_ui.HERO_UI_DATE_TIME_PICKER, hero_ui.HERO_UI_CALENDAR, hero_ui.HERO_UI_COLOR_WELL],
+        what: "a slider, a spin, a progress bar, a split, a picker, a calendar or a colour well"
     )
 
 # What a picker of `kind` holds, in words.
 function picker_words(kind: i64) -> str
-    if kind == hero_ui.HERO_UI_DATE_PICKER
+    if kind == hero_ui.HERO_UI_DATE_PICKER || kind == hero_ui.HERO_UI_CALENDAR
         return "a whole day's seconds, a multiple of 86400, in the years 1 to 9999"
 
     if kind == hero_ui.HERO_UI_TIME_PICKER

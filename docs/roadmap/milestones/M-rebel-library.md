@@ -778,6 +778,51 @@ name where a system has none.
 of defect 2704 (callback frames abandoned by a C jump are not audited for missing decrefs), reported for the author's
 reading.
 
+## The author's answer of 2026-11-24, about 00:25: a C jump over a callback's frame, *2c*
+
+`/decide` put three questions on 2026-11-23, late evening (the one decision open on GitHub, 2610, was already settled by
+the author's *4a* and stays open until this milestone's close). On the second, the author asked whether the exit audit
+turned off after a C jump over a callback's frame (defect 2704, `runtime/parts/callback.c`) is the most robust answer,
+and the coordinator measured before answering: a callback holding a string of about 1 KB and an array of 50 numbers,
+jumped over by `longjmp` in a loop, a correct program that exits 0, peaks at 6 MB resident after 1,000 jumps and at
+**353 MB after 100,000**, about 3.5 KB lost a jump. So the harm is not the audit turned off but **a leak that grows with
+each jump**, which turning the audit off (*a*) leaves whole and auditing by subtraction (*b*) leaves whole too, since
+whoever knows which blocks the abandoned frames held can release them. The author answered *2c*: **the audit stays off
+as the interim measure, and a sitting of the panel's soundness lane (the compiler-engineer and the ffi-pragmatist)
+decides whether a jump releases what the abandoned frames held.** What the sitting is handed, read on 2026-11-24: the
+runtime already interposes `longjmp`, `_longjmp`, `siglongjmp` and `__longjmp_chk` and decodes the target's stack
+pointer wherever it is neither Windows nor Darwin (`runtime/parts/sigjump_save.c`), Darwin's route is
+`runtime/parts/rebind_jump.c`, and no runtime file named for Windows holds `longjmp`; a callback's thunk already tells
+the runtime its frame (`hero_callback_entered`); and a function's refcounted values are C locals zeroed in its prologue
+and released one by one at its end (read in the emitted C), but **nothing registers them**, so the runtime cannot find
+them at a jump. The briefs are `docs/panel/258-briefs/` (written 2026-11-24).
+
+**Still open from the same `/decide`, with their blockers**: (1) when the CI's `--partial` for the coverage of Rebel's
+applications ends, today 26 applications (the list asked for twenty), 172 faces and 21 of them listed by no application;
+it blocks the CI's first run and the tag; the coordinator recommends keeping the flag to the push and taking it away
+before the tag; (3) whether defect 2745, the residue of 2702, is `adjacent` (as filed) or `blocking`; it blocks the tag
+only if `blocking`; recommended `adjacent`, reachable only under a define no shipped build uses.
+
+## The author's answers of 2026-11-24, about 01:20: the other three questions of that `/decide`, *1a 2b 3a*
+
+- **1a. `--partial` stays to the push and goes before the tag.** The CI's check of Rebel's applications
+  (`.github/workflows/rebel.yml`) runs `--partial`, so a face no application lists is told and fails nothing; its own comment
+  says the flag goes when the last of the twenty applications lands, and 26 exist, but 23 of 174 faces (counted at 01:19 by
+  reading every ledger against the `packages` line of every application's catalogue but the drivers') are listed by none:
+  `audio`, `font`, `ical`, `ical/vcard`, the six `image/` faces, `java_properties`, `math/matrix`, `math/sparse`, `mdns`,
+  `plist`, `printing`, `saml`, `service`, `sftp`, `sse`, `ssh`, `template/sanitized` and `xmldsig`. **The applications that
+  list them are written after the push, while the CI is repaired on `main`, and the tag waits for the check to pass
+  without the flag**; every package a lane adds meanwhile adds a face to cover.
+- **2b. Defect 2745, the residue of 2702, is `blocking`**, made so on GitHub on 2026-11-24 (the issues program's `edit`; its
+  labels read back `class:blocking`). The tag waits for the route-A own-stack rows to be refused.
+- **3a. Defects 2752, 2753, 2754 and 2755 stay `blocking`** (a correct program whose C jumps over a Heroes callback is ended
+  with words that name a cause that is not there; 2756, the lent buffer's leak, is `adjacent`). **They are panel 258's to
+  resolve and the tag waits for that resolution built.**
+
+**So the list the tag waits on, read from GitHub on 2026-11-24: 2572 (its two FIFO tests wait on the CI's Windows leg), 2745,
+2752, 2753, 2754 and 2755**, and decision 2610 closing with the milestone. **The push waits on none of them**: it waits on the
+lanes in flight and the last check on the exact tree pushed.
+
 ## Decided on the fly by the coordinator, for the author to turn
 
 - **The packages, in layers** (`examples-rebel/README.md` § A1): `io` holds

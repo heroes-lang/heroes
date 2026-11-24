@@ -21,8 +21,9 @@
 # It fails with `invalid`, for data a statistic cannot read (too few values,
 # a nan to order, lists of different lengths), and `does_not_fit`.
 #
-# Not written yet, each a `pending` block of its ledger: the harmonic mean with
-# a weight for each value; numbers drawn at random from a normal distribution.
+# Not written yet, a `pending` block of its ledger: the harmonic mean with a
+# weight for each value. Numbers drawn at random from a normal distribution
+# are `random.normal`'s.
 
 use math
 use stats/internal/exact
