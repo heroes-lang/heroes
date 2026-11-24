@@ -84,6 +84,8 @@
 #endif
 #else
 #include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
 #include <pwd.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -562,6 +564,76 @@ int64_t hero_sys_open(const char *target) {
     default:
         return hero_sys_fail(HERO_SYS_OTHER, (int64_t)code);
     }
+}
+
+/* `SHOpenFolderAndSelectItems` on the item's shell identifier, made from its
+ * full path, COM begun on the calling thread where it was not, as
+ * `hero_sys_open` begins it: Explorer opens the folder, or brings forward the
+ * window already showing it, with the item selected. */
+int64_t hero_sys_reveal(const char *path) {
+    WCHAR *wide = NULL;
+    WCHAR *full = NULL;
+    int units = 0;
+    DWORD need = 0;
+    HRESULT began = S_OK;
+    HRESULT shown = S_OK;
+    PIDLIST_ABSOLUTE item = NULL;
+
+    if (path == NULL || path[0] == '\0') {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    units = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1, NULL, 0);
+    if (units <= 0) {
+        return hero_sys_fail(HERO_SYS_INVALID, (int64_t)GetLastError());
+    }
+    wide = (WCHAR *)HeapAlloc(GetProcessHeap(), 0, (SIZE_T)units * sizeof(WCHAR));
+    if (wide == NULL) {
+        return hero_sys_fail(HERO_SYS_LIMIT, 0);
+    }
+    if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, path, -1, wide, units) != units) {
+        DWORD why = GetLastError();
+
+        HeapFree(GetProcessHeap(), 0, wide);
+        return hero_sys_fail(HERO_SYS_INVALID, (int64_t)why);
+    }
+    need = GetFullPathNameW(wide, 0, NULL, NULL);
+    if (need == 0) {
+        DWORD why = GetLastError();
+
+        HeapFree(GetProcessHeap(), 0, wide);
+        return hero_sys_fail(HERO_SYS_INVALID, (int64_t)why);
+    }
+    full = (WCHAR *)HeapAlloc(GetProcessHeap(), 0, (SIZE_T)need * sizeof(WCHAR));
+    if (full == NULL) {
+        HeapFree(GetProcessHeap(), 0, wide);
+        return hero_sys_fail(HERO_SYS_LIMIT, 0);
+    }
+    if (GetFullPathNameW(wide, need, full, NULL) == 0) {
+        DWORD why = GetLastError();
+
+        HeapFree(GetProcessHeap(), 0, full);
+        HeapFree(GetProcessHeap(), 0, wide);
+        return hero_sys_fail(HERO_SYS_INVALID, (int64_t)why);
+    }
+    HeapFree(GetProcessHeap(), 0, wide);
+    began = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    item = ILCreateFromPathW(full);
+    if (item != NULL) {
+        shown = SHOpenFolderAndSelectItems(item, 0, NULL, 0);
+        ILFree(item);
+    }
+    if (began == S_OK || began == S_FALSE) {
+        CoUninitialize();
+    }
+    HeapFree(GetProcessHeap(), 0, full);
+    if (item == NULL) {
+        return hero_sys_fail(HERO_SYS_NOT_FOUND, 0);
+    }
+    if (FAILED(shown)) {
+        return hero_sys_fail(shown == E_ACCESSDENIED ? HERO_SYS_DENIED : HERO_SYS_OTHER, (int64_t)shown);
+    }
+    hero_sys_fine();
+    return 0;
 }
 
 /* The block is a copy the system makes for this call, each variable ended by
@@ -1251,33 +1323,35 @@ int64_t hero_sys_runtime_folder(void *buffer, uint64_t count) {
     return hero_sys_filled(&f);
 }
 
-/* The launcher is started with every signal at its default and none blocked,
- * whatever the program set (a runtime that ignores SIGPIPE, a thread that
- * blocks SIGINT), and waited for, a wait that a signal breaks asked again. */
-int64_t hero_sys_open(const char *target) {
+/* Starts the program `arguments[0]` names with the rest of `arguments`, no
+ * shell between, every signal at its default and none blocked, whatever the
+ * program set (a runtime that ignores SIGPIPE, a thread that blocks SIGINT),
+ * its output and errors sent to `/dev/null` where `quiet`, and waits for it,
+ * a wait that a signal breaks asked again. A name with a `/` is that file,
+ * any other is found by `PATH`. 0 with `*code` its exit status, 128 and the
+ * signal's number where a signal ended it; -1 with the failure set where it
+ * could not be started, `HERO_SYS_NOT_FOUND` where it is not there. */
+static int64_t hero_sys_launch(char *const arguments[], bool quiet, int *code) {
 #if defined(__APPLE__)
-    char launcher[] = "/usr/bin/open";
     char **environment = *_NSGetEnviron();
 #else
-    char launcher[] = "xdg-open";
     char **environment = environ;
 #endif
-    char *arguments[3];
     posix_spawnattr_t attributes;
+    posix_spawn_file_actions_t actions;
     sigset_t none;
     sigset_t every;
     pid_t child = 0;
     int status = 0;
     int refused = 0;
 
-    if (target == NULL || target[0] == '\0') {
-        return hero_sys_fail(HERO_SYS_INVALID, 0);
-    }
-    arguments[0] = launcher;
-    arguments[1] = (char *)(uintptr_t)target;
-    arguments[2] = NULL;
     refused = posix_spawnattr_init(&attributes);
     if (refused != 0) {
+        return hero_sys_fail(hero_sys_kind_of(refused), refused);
+    }
+    refused = posix_spawn_file_actions_init(&actions);
+    if (refused != 0) {
+        (void)posix_spawnattr_destroy(&attributes);
         return hero_sys_fail(hero_sys_kind_of(refused), refused);
     }
     sigemptyset(&none);
@@ -1291,13 +1365,20 @@ int64_t hero_sys_open(const char *target) {
     if (refused == 0) {
         refused = posix_spawnattr_setflags(&attributes, POSIX_SPAWN_SETSIGMASK | POSIX_SPAWN_SETSIGDEF);
     }
-    if (refused == 0) {
-#if defined(__APPLE__)
-        refused = posix_spawn(&child, launcher, NULL, &attributes, arguments, environment);
-#else
-        refused = posix_spawnp(&child, launcher, NULL, &attributes, arguments, environment);
-#endif
+    if (refused == 0 && quiet) {
+        refused = posix_spawn_file_actions_addopen(&actions, 1, "/dev/null", O_WRONLY, 0);
+        if (refused == 0) {
+            refused = posix_spawn_file_actions_addopen(&actions, 2, "/dev/null", O_WRONLY, 0);
+        }
     }
+    if (refused == 0) {
+        if (strchr(arguments[0], '/') != NULL) {
+            refused = posix_spawn(&child, arguments[0], &actions, &attributes, arguments, environment);
+        } else {
+            refused = posix_spawnp(&child, arguments[0], &actions, &attributes, arguments, environment);
+        }
+    }
+    (void)posix_spawn_file_actions_destroy(&actions);
     (void)posix_spawnattr_destroy(&attributes);
     if (refused != 0) {
         return hero_sys_fail(refused == ENOENT ? HERO_SYS_NOT_FOUND : hero_sys_kind_of(refused), refused);
@@ -1310,26 +1391,232 @@ int64_t hero_sys_open(const char *target) {
         }
     }
     if (WIFEXITED(status)) {
-        int code = WEXITSTATUS(status);
+        *code = WEXITSTATUS(status);
+    } else if (WIFSIGNALED(status)) {
+        *code = 128 + WTERMSIG(status);
+    } else {
+        *code = status;
+    }
+    return 0;
+}
 
-        if (code == 0) {
+/* What the launcher's exit status `code` answers: 0 for 0; on every POSIX
+ * but Darwin xdg-open's 2, a file that is not there, `HERO_SYS_NOT_FOUND`,
+ * and its 3, no tool to open with, `HERO_SYS_UNSUPPORTED`; any other the
+ * status itself, as `HERO_SYS_OTHER`. */
+static int64_t hero_sys_launched(int code) {
+    if (code == 0) {
+        hero_sys_fine();
+        return 0;
+    }
+#if !defined(__APPLE__)
+    if (code == 2) {
+        return hero_sys_fail(HERO_SYS_NOT_FOUND, code);
+    }
+    if (code == 3) {
+        return hero_sys_fail(HERO_SYS_UNSUPPORTED, code);
+    }
+#endif
+    return hero_sys_fail(HERO_SYS_OTHER, code);
+}
+
+#if defined(__APPLE__)
+#define HERO_SYS_OPENER "/usr/bin/open"
+#else
+#define HERO_SYS_OPENER "xdg-open"
+#endif
+
+int64_t hero_sys_open(const char *target) {
+    char opener[] = HERO_SYS_OPENER;
+    char *arguments[3];
+    int code = 0;
+
+    if (target == NULL || target[0] == '\0') {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    arguments[0] = opener;
+    arguments[1] = (char *)(uintptr_t)target;
+    arguments[2] = NULL;
+    if (hero_sys_launch(arguments, false, &code) != 0) {
+        return -1;
+    }
+    return hero_sys_launched(code);
+}
+
+#if !defined(__APPLE__)
+
+/* The bytes a `file:` URI writes as themselves in a path: RFC 3986's
+ * unreserved characters and the `/` between segments. Every other byte is
+ * written `%` and two hexadecimal digits, a `,` among them, which dbus-send
+ * would otherwise read as the end of an array's element. */
+static bool hero_sys_uri_plain(unsigned char c) {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '.' ||
+           c == '_' || c == '~' || c == '/';
+}
+
+/* The room a path's URI is built in: a folder's real path and a name, each
+ * under `PATH_MAX` bytes and each byte at most three of the URI's, and the
+ * words around them. */
+#define HERO_SYS_URI (3 * 2 * PATH_MAX + 64)
+
+#endif
+
+/* On Darwin `/usr/bin/open -R`, which Finder answers by selecting the item in
+ * a window of its folder. On every other POSIX the freedesktop.org file
+ * manager interface over the session's D-Bus (`org.freedesktop.FileManager1`,
+ * `ShowItems`, by `dbus-send`), the item named by a `file:` URI of its folder's
+ * real path and its own name, so a link is shown as itself; where no file
+ * manager answers it (no session bus, no `dbus-send`, a desktop with none),
+ * the folder holding the item is opened by `xdg-open`, shown without the item
+ * selected, as Chromium's `ShowItemInFolder` falls back. */
+int64_t hero_sys_reveal(const char *path) {
+    int code = 0;
+
+    if (path == NULL || path[0] == '\0') {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+#if defined(__APPLE__)
+    {
+        char opener[] = HERO_SYS_OPENER;
+        char flag[] = "-R";
+        char *arguments[4];
+
+        arguments[0] = opener;
+        arguments[1] = flag;
+        arguments[2] = (char *)(uintptr_t)path;
+        arguments[3] = NULL;
+        if (hero_sys_launch(arguments, false, &code) != 0) {
+            return -1;
+        }
+        return hero_sys_launched(code);
+    }
+#else
+    {
+        char trimmed[PATH_MAX];
+        char folder[PATH_MAX];
+        char real[PATH_MAX];
+        const char *name = NULL;
+        size_t length = strlen(path);
+        char *cut = NULL;
+        char *uri = NULL;
+        size_t at = 0;
+        static const char hex[] = "0123456789ABCDEF";
+        char sender[] = "dbus-send";
+        char session[] = "--session";
+        char reply[] = "--print-reply";
+        char destination[] = "--dest=org.freedesktop.FileManager1";
+        char call[] = "--type=method_call";
+        char object[] = "/org/freedesktop/FileManager1";
+        char method[] = "org.freedesktop.FileManager1.ShowItems";
+        char startup[] = "string:";
+        char opener[] = HERO_SYS_OPENER;
+        char *arguments[10];
+        char *folder_arguments[3];
+
+        if (length >= sizeof trimmed) {
+            return hero_sys_fail(HERO_SYS_INVALID, ENAMETOOLONG);
+        }
+        memcpy(trimmed, path, length + 1);
+        while (length > 1 && trimmed[length - 1] == '/') {
+            length -= 1;
+            trimmed[length] = '\0';
+        }
+        cut = strrchr(trimmed, '/');
+        if (cut == NULL) {
+            memcpy(folder, ".", 2);
+            name = trimmed;
+        } else if (cut == trimmed) {
+            memcpy(folder, "/", 2);
+            name = cut + 1;
+        } else {
+            *cut = '\0';
+            memcpy(folder, trimmed, (size_t)(cut - trimmed) + 1);
+            name = cut + 1;
+        }
+        if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
+            /* The folder `.` or `..` names is the item, shown in its own
+             * parent: its real path is the whole. */
+            char whole[PATH_MAX];
+            size_t folder_length = strlen(folder);
+
+            if (folder_length + 1 + strlen(name) >= sizeof whole) {
+                return hero_sys_fail(HERO_SYS_INVALID, ENAMETOOLONG);
+            }
+            memcpy(whole, folder, folder_length);
+            whole[folder_length] = '/';
+            memcpy(whole + folder_length + 1, name, strlen(name) + 1);
+            if (realpath(whole, real) == NULL) {
+                int why = errno;
+
+                return hero_sys_fail(why == ENOENT ? HERO_SYS_NOT_FOUND : hero_sys_kind_of(why), why);
+            }
+            name = "";
+        } else if (realpath(folder, real) == NULL) {
+            int why = errno;
+
+            return hero_sys_fail(why == ENOENT ? HERO_SYS_NOT_FOUND : hero_sys_kind_of(why), why);
+        }
+        uri = hero_layer_alloc(HERO_SYS_URI);
+        if (uri == NULL) {
+            return hero_sys_fail(HERO_SYS_LIMIT, 0);
+        }
+        memcpy(uri, "array:string:file://", 20);
+        at = 20;
+        for (int part = 0; part < 2; part += 1) {
+            const char *bytes = part == 0 ? real : name;
+
+            if (part == 1 && name[0] != '\0' && !(real[0] == '/' && real[1] == '\0')) {
+                uri[at] = '/';
+                at += 1;
+            }
+            for (const unsigned char *c = (const unsigned char *)bytes; *c != '\0'; c += 1) {
+                if (hero_sys_uri_plain(*c)) {
+                    uri[at] = (char)*c;
+                    at += 1;
+                } else {
+                    uri[at] = '%';
+                    uri[at + 1] = hex[*c >> 4];
+                    uri[at + 2] = hex[*c & 0x0F];
+                    at += 3;
+                }
+            }
+        }
+        uri[at] = '\0';
+        arguments[0] = sender;
+        arguments[1] = session;
+        arguments[2] = reply;
+        arguments[3] = destination;
+        arguments[4] = call;
+        arguments[5] = object;
+        arguments[6] = method;
+        arguments[7] = uri;
+        arguments[8] = startup;
+        arguments[9] = NULL;
+        if (hero_sys_launch(arguments, true, &code) == 0 && code == 0) {
+            hero_layer_free(uri);
             hero_sys_fine();
             return 0;
         }
-#if !defined(__APPLE__)
-        if (code == 2) {
-            return hero_sys_fail(HERO_SYS_NOT_FOUND, code);
+        hero_layer_free(uri);
+        /* No file manager took it: the folder holding the item, opened. */
+        if (name[0] == '\0') {
+            char *slash = strrchr(real, '/');
+
+            if (slash != NULL && slash != real) {
+                *slash = '\0';
+            } else {
+                memcpy(real, "/", 2);
+            }
         }
-        if (code == 3) {
-            return hero_sys_fail(HERO_SYS_UNSUPPORTED, code);
+        folder_arguments[0] = opener;
+        folder_arguments[1] = real;
+        folder_arguments[2] = NULL;
+        if (hero_sys_launch(folder_arguments, false, &code) != 0) {
+            return -1;
         }
+        return hero_sys_launched(code);
+    }
 #endif
-        return hero_sys_fail(HERO_SYS_OTHER, code);
-    }
-    if (WIFSIGNALED(status)) {
-        return hero_sys_fail(HERO_SYS_OTHER, 128 + WTERMSIG(status));
-    }
-    return hero_sys_fail(HERO_SYS_OTHER, status);
 }
 
 int64_t hero_sys_environment(void *buffer, uint64_t count) {
