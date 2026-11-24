@@ -51,19 +51,34 @@ constant HEAD: str
 # (`stop_place.CALLER`), a discarded result a `when` reads, a converted
 # text's two, an element store's header, a map lookup's entry, the extern
 # table's reference, a library function's held result, and the out
-# parameter of a result returned through a pointer.
+# parameter of a result returned through a pointer; and those of a thread's
+# and a mailbox's calls (`emit/threads.hero`, feature 2647): a send's or a
+# receive's answer, a box being filled or emptied, a refusal's reason, the
+# thread started, a crossing nobody receives; and a thread's runner's
+# (`emit/crossing_bodies.hero`): its parameter, its argument, its answer.
+# Each of those stands in a block or a function that spells no bound name
+# today (measured 2026-11-24: a program binding all seven built and printed
+# right before they were listed); they are listed so that no premise about
+# what such a block spells is what keeps a bound name of theirs reachable.
 constant LOCALS: [str]
     [
         "found"
+        "hero_answer"
+        "hero_arg"
+        "hero_box"
         "hero_caller"
+        "hero_head"
         "hero_here"
+        "hero_left"
         "hero_out"
         "hero_ref"
         "hero_result"
         "hero_slot"
+        "hero_thread"
         "hero_vb_status"
         "hero_vb_text"
         "hero_when"
+        "hero_why"
     ]
 
 # The heads of the names it composes there: a handle's life
@@ -301,7 +316,9 @@ function elsewhere(word: str) -> bool
     return false
 
 # C's own words and a value (`return;`, `break;`, `= true;`), the members of
-# an option's and a variant's structs (`types.hero`), a word of a Heroes text
+# an option's and a variant's structs (`types.hero`) and of a thread's box
+# (`crossing_bodies.hero`, `head`; C keeps a member's name apart from the
+# ordinary names a bound function has), a word of a Heroes text
 # a constant holds (`callback_guard.hero`, `_`) and a statement the runtime
 # defines (`inst.hero`); the locals of functions that call no bound C
 # function, C's `main` (`which`), a thunk (`f`), the per-type functions and
@@ -320,6 +337,7 @@ constant ELSEWHERE: [str]
         "err"
         "ok"
         "tag"
+        "head"
         "_"
         "HERO_ELEMENT_WRITE_NOT_EMITTED"
         "which"
