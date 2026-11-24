@@ -1,0 +1,589 @@
+# PKCS #12 (RFC 7292), the `.pfx` and `.p12` files Windows, macOS, Java,
+# OpenSSL and load balancers import and export a key and its certificates
+# in, read and written: the keys, the certificates, the revocation lists and
+# the secrets of a file, each with its name and its key identifier; the key
+# and the chain that belong together; and a file made of a key and its chain,
+# or of trusted certificates alone, as Java's trust stores are.
+#
+# **The MAC is checked before anything is deciphered**, and `decode` refuses
+# a file that carries none, since nothing would tell a certificate put in its
+# place. RFC 7292's HMAC over SHA-1, SHA-2 or MD5 and RFC 9579's PBMAC1 are
+# read; a file with no MAC (Java's trust stores with no password, OpenSSL's
+# `-nomac`) is read by `decode_without_integrity` alone.
+#
+# **Every scheme the writers use is read**: PBES2 with PBKDF2 (HMAC over
+# SHA-1 or SHA-2) or scrypt and AES-128, -192 or -256, triple DES, DES or
+# RC2 in CBC; PKCS #12's own six (triple DES of two or three keys, RC2 of 40
+# or 128 bits, RC4 of 40 or 128 bits) and PKCS #5's PBES1 (DES or RC2 under
+# MD5 or SHA-1). The ciphers are this package's own, every lookup whose index
+# is a secret a walk of the whole table, so their time does not depend on the
+# key. A file is read as BER, Windows writing indefinite lengths.
+#
+# **Two protections are written**: `aes256`, AES-256 under PBKDF2 with
+# HMAC-SHA-256 and an HMAC-SHA-256 MAC, OpenSSL 3's and Java's default, and
+# `triple_des`, PKCS #12's triple DES with an HMAC-SHA-1 MAC, for the readers
+# that know nothing newer (Windows Server 2016, Java before 8u301). What is
+# written is read back before it is answered.
+#
+# A password is any text: RFC 7292's BMPString derives the MAC and PKCS #12's
+# own schemes, a character above U+FFFF as its two surrogates; its UTF-8
+# bytes derive PBES2's key, as OpenSSL, Java and Windows write it, and the
+# BMPString is tried where they do not open it. The empty password is tried
+# in its two forms, two zero bytes and none, as writers differ.
+#
+# It does not read or write public-key integrity or privacy (a file signed
+# or enveloped to a certificate), an SDSI certificate, or a key other than
+# as PKCS #8 bytes: `crypto/keypairs` opens one. It writes no RC2 or RC4,
+# both broken. It fails with `invalid`, `not_found`, `permission` (the
+# password does not open the file) and `unsupported`.
+
+use asn1
+use crypto
+use crypto/keypairs
+use pem
+use x509
+use x509/pkcs12/internal/bags
+use x509/pkcs12/internal/derive
+use x509/pkcs12/internal/octets
+use x509/pkcs12/internal/reading
+use x509/pkcs12/internal/samples
+use x509/pkcs12/internal/writing
+use x509/pkcs12/internal/written
+
+## Codes
+
+# A file that is not what RFC 7292 says, the message saying which part; a
+# file with no MAC given to `decode`; an argument refused by `encode`.
+constant INVALID: str
+    "invalid"
+
+# No key in the file, or no certificate that is the key's: `identities_of`.
+constant NOT_FOUND: str
+    "not_found"
+
+# The password does not open the file: its MAC does not hold, or, where it
+# has none, a content does not decipher.
+constant PERMISSION: str
+    "permission"
+
+# A scheme, a digest or a mode this package does not read, the message
+# naming it; an iteration count above `MAX_ITERATIONS`.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## Limits
+
+# The most iterations a file is read or written with, ten million: a count
+# is the writer's and the time is the reader's.
+constant MAX_ITERATIONS: i64
+    derive.MAX_ITERATIONS
+
+# The fewest iterations `encode` writes with, RFC 8018 § 4.2's 1000.
+constant MIN_ITERATIONS: i64
+    writing.MIN_ITERATIONS
+
+# The purpose Java trusts a certificate of a trust store for,
+# `anyExtendedKeyUsage`, `2.5.29.37.0`.
+constant ANY_EXTENDED_KEY_USAGE: str
+    writing.ANY_EXTENDED_KEY_USAGE
+
+## Reading
+
+# An attribute of a bag this package does not read into a field.
+record Attribute
+    # Its identifier: Microsoft's CSP name is `1.3.6.1.4.1.311.17.1`.
+    oid: str
+    # Its values, as written.
+    values: [asn1.Value]
+
+# A private key a file holds.
+record Key
+    # Its PrivateKeyInfo (PKCS #8) as DER, deciphered:
+    # `keypairs.decode_private_der` opens it.
+    der: [u8]
+    # Its friendlyName, the alias Java and Windows show; "" where none.
+    name: str
+    # Its localKeyId; [] where none. A certificate of the same identifier
+    # is the key's.
+    id: [u8]
+    # Its other attributes, as written.
+    attributes: [Attribute]
+
+# A certificate a file holds.
+record Entry
+    # The certificate.
+    certificate: x509.Certificate
+    # Its friendlyName; "" where none.
+    name: str
+    # Its localKeyId; [] where none.
+    id: [u8]
+    # The purposes Java trusts it for, Oracle's trustedKeyUsage
+    # (`2.16.840.1.113894.746875.1.1`): `ANY_EXTENDED_KEY_USAGE` in a trust
+    # store; [] where the attribute is not written.
+    trusted_for: [str]
+    # Its other attributes, as written.
+    attributes: [Attribute]
+
+# A secret a file holds, a SecretBag.
+record Secret
+    # The secret's type, `secretTypeId`.
+    kind: str
+    # Its value, as written.
+    value: asn1.Value
+    # Its friendlyName; "" where none.
+    name: str
+    # Its localKeyId; [] where none.
+    id: [u8]
+    # Its other attributes, as written.
+    attributes: [Attribute]
+
+# What told that a file is unchanged.
+variant Integrity
+    # Nothing: the file writes no MAC. Only `decode_without_integrity`
+    # reads such a file.
+    none
+    # RFC 7292's HMAC, its key derived from the password.
+    hmac
+        # The HMAC's digest.
+        digest: crypto.Algorithm
+        # The derivation's iterations.
+        iterations: i64
+    # RFC 9579's PBMAC1, its key from PBKDF2.
+    pbmac1
+        # The HMAC's digest.
+        digest: crypto.Algorithm
+        # PBKDF2's iterations.
+        iterations: i64
+
+# What a file holds, in the order it holds it.
+record Contents
+    # The private keys.
+    keys: [Key]
+    # The certificates.
+    certificates: [Entry]
+    # The revocation lists.
+    crls: [x509.RevocationList]
+    # The secrets.
+    secrets: [Secret]
+    # What told the file unchanged.
+    integrity: Integrity
+
+# What the file `der` holds, opened by `password`.
+#
+# - `der`: the file's bytes, DER or BER.
+# - `password`: the password it was written with; "" for none.
+#
+# Fails `permission` where the MAC does not hold for `password`; `invalid`
+# where the file writes no MAC (`decode_without_integrity` reads one), or is
+# not what RFC 7292 says, the message saying which part; `unsupported` for a
+# scheme not read here or more than `MAX_ITERATIONS`. See also
+# `identities_of`.
+function decode(der: [u8], password: str) -> Contents?
+    if !reading.has_mac(der)?
+        return fail(
+            code: INVALID,
+            msg: "the file writes no MAC, so nothing tells a change made to it; `decode_without_integrity` reads it"
+        )
+    return decode_without_integrity(der: der, password: password)
+
+# What the file `der` holds, opened by `password`, whether it writes a MAC or
+# not: a MAC written is checked all the same.
+#
+# - `der`: the file's bytes, DER or BER.
+# - `password`: the password it was written with; "" for none.
+#
+# Fails as `decode` does, and `permission` where, with no MAC, a content does
+# not decipher under `password`. See also `decode`.
+function decode_without_integrity(der: [u8], password: str) -> Contents?
+    opened = reading.open_file(der: der, password: password)?
+    integrity: Integrity @= .none
+
+    if opened.pbmac1
+        integrity @ .pbmac1(digest: opened.digest, iterations: opened.iterations)
+    else if opened.mac
+        integrity @ .hmac(digest: opened.digest, iterations: opened.iterations)
+    out: Contents @= Contents(keys: [], certificates: [], crls: [], secrets: [], integrity: integrity)
+
+    for bag in opened.bags
+        said = reading.said_of(bag.attributes)?
+        others: [Attribute] @= []
+
+        for other in said.others
+            others @ others.push(Attribute(oid: other.oid, values: other.values))
+
+        if bag.kind == bags.KEY_BAG || bag.kind == bags.SHROUDED_KEY_BAG
+            out.keys @ out.keys.push(
+                Key(der: reading.key_der(bag.value)?, name: said.name, id: said.id, attributes: others)
+            )
+        else if bag.kind == bags.CERT_BAG
+            certificate = x509.decode_certificate(reading.typed_der(v: bag.value, expected: reading.X509_CERTIFICATE, what: "a certificate bag")?)?
+            out.certificates @ out.certificates.push(
+                Entry(certificate: certificate, name: said.name, id: said.id, trusted_for: said.trusted_for, attributes: others)
+            )
+        else if bag.kind == bags.CRL_BAG
+            out.crls @ out.crls.push(
+                x509.decode_crl(reading.typed_der(v: bag.value, expected: reading.X509_CRL, what: "a revocation list bag")?)?
+            )
+        else if bag.kind == bags.SECRET_BAG
+            secret = reading.secret_of(bag.value)?
+            kind = bags.oid_text(v: secret[0], what: "a secret's type")?
+            out.secrets @ out.secrets.push(
+                Secret(kind: kind, value: secret[1], name: said.name, id: said.id, attributes: others)
+            )
+        else
+            return fail(code: UNSUPPORTED, msg: f"a bag of type {bag.kind}, which RFC 7292 § 4.2 does not name")
+
+    return ok(out)
+
+## The key and its certificates
+
+# A key and the certificates that belong to it.
+record Identity
+    # The key's PrivateKeyInfo (PKCS #8) as DER.
+    key: [u8]
+    # The key's certificate first, then the one that issued it, and so on,
+    # as far as the file holds them.
+    chain: [x509.Certificate]
+
+# Each key of `contents` with its chain: its certificate, then the ones of
+# the file that issued it (`x509.chain_of`).
+#
+# - `contents`: what `decode` read.
+#
+# Fails `not_found` where `contents` holds no key, or a key no certificate
+# of which is its own; `unsupported` where `crypto/keypairs` does not read a
+# key's kind on this system and the key writes no localKeyId. See also
+# `chain_pem`, `key_pem`.
+function identities_of(contents: Contents) -> [Identity]?
+    pool: [x509.Certificate] @= []
+    ids: [[u8]] @= []
+
+    for entry in contents.certificates
+        pool @ pool.push(entry.certificate)
+        ids @ ids.push(entry.id)
+
+    out: [Identity] @= []
+
+    for key in contents.keys
+        at = reading.leaf_index(key: key.der, key_id: key.id, certificates: pool, ids: ids)?
+        out @ out.push(Identity(key: key.der, chain: x509.chain_of(leaf: pool[at], pool: pool)))
+
+    if out.len() == 0
+        return fail(code: NOT_FOUND, msg: "the file holds no key")
+    return ok(out)
+
+# The PEM of `identity`'s chain, the key's certificate first: `tls.Server`'s
+# `chain`.
+#
+# - `identity`: a key and its chain.
+#
+# See also `key_pem`.
+function chain_pem(identity: Identity) -> str
+    parts: [str] @= []
+
+    for certificate in identity.chain
+        parts @ parts.push(x509.format_certificate(certificate))
+
+    return parts.join("")
+
+# The PEM of `identity`'s key, `PRIVATE KEY` (PKCS #8): `tls.Server`'s
+# `key`.
+#
+# - `identity`: a key and its chain.
+#
+# See also `chain_pem`.
+function key_pem(identity: Identity) -> str
+    return pem.format(pem.Block(label: "PRIVATE KEY", headers: [], data: identity.key)).must()
+
+## Writing
+
+# How a file is written.
+variant Protection
+    # AES-256 in CBC under PBES2's PBKDF2 over HMAC-SHA-256, salts of 16
+    # bytes, and an HMAC-SHA-256 MAC: OpenSSL 3's and Java's default, which
+    # Windows 10 (1709) and Server 2019, Java 8u301 and OpenSSL 1.1.1 and
+    # later read.
+    aes256
+    # PKCS #12's triple DES of three keys over SHA-1, salts of 8 bytes, and
+    # an HMAC-SHA-1 MAC: for the readers that know nothing newer, Windows
+    # Server 2016 and older Java. Triple DES and SHA-1 are weak; it is here
+    # for them alone. Java opens it only under an ASCII password, its keys of
+    # this scheme taking ASCII alone (OpenJDK 27.0.1 refused one Python
+    # wrote under `pässwörd`).
+    triple_des
+
+# The protection and the iterations a file is written with.
+record Options
+    # The protection.
+    protection: Protection
+    # The iterations of every derivation, `MIN_ITERATIONS` to
+    # `MAX_ITERATIONS`.
+    iterations: i64
+
+# `aes256` with 10000 iterations, Java's count.
+function default_options() -> Options
+    return Options(protection: .aes256, iterations: 10000)
+
+# The file of `key` and its `chain`, named `name`, under `password`: the key
+# shrouded, the certificates in one enciphered safe, a MAC over both, as
+# OpenSSL lays them out. The key and its certificate carry `name` and a
+# localKeyId, the SHA-1 of the certificate, as OpenSSL, Python and Windows
+# write it.
+#
+# - `key`: the private key, which stays open.
+# - `chain`: the key's certificate first, then the ones that issued it.
+# - `name`: the friendlyName, the alias Java and Windows show; "" for none.
+# - `password`: the password; "" for none.
+# - `options`: the protection and the iterations.
+#
+# Fails `invalid` where `chain` is empty, its first certificate is not
+# `key`'s, or the iterations are out of range; `unsupported` where
+# `crypto/keypairs` does not write `key`'s kind. See also `decode`,
+# `encode_trust_store`.
+function encode(key: keypairs.PrivateKey, chain: [x509.Certificate], name: str, password: str, options: Options) -> [u8]?
+    forms = writing.prepared(iterations: options.iterations, password: password)?
+    legacy = options.protection == .triple_des
+
+    if chain.len() == 0
+        return fail(code: INVALID, msg: "a chain of no certificate, where it holds the key's at least")
+    der = keypairs.encode_private_der(key)?
+
+    if !reading.is_same_key(spki: chain[0].public_key.der, expected: reading.public_of(der)?)
+        return fail(code: INVALID, msg: "the chain's first certificate is not the key's")
+    attributes = writing.attributes_of(name: name, rest: [writing.local_key_id(chain[0])])
+    shroud = writing.sealed(legacy: legacy, iterations: options.iterations, password: forms, text: der)?
+    key_bag = bags.bag(
+        kind: bags.SHROUDED_KEY_BAG,
+        value: .sequence(items: [shroud.algorithm, .octet_string(v: shroud.data)]),
+        attributes: attributes
+    )
+    certificates: [asn1.Value] @= [writing.certificate_bag(certificate: chain[0], attributes: attributes)]
+
+    for certificate in chain.slice(from: 1, to: chain.len())
+        certificates @ certificates.push(writing.certificate_bag(certificate: certificate, attributes: []))
+
+    safe = bags.encrypted_info(writing.sealed(legacy: legacy, iterations: options.iterations, password: forms, text: bags.safe_of(certificates)?)?)?
+    file = writing.finished(safes: [safe, bags.data_info(bags.safe_of([key_bag])?)], password: forms, legacy: legacy, iterations: options.iterations)?
+    back = identities_of(decode(der: file, password: password)?)?
+
+    if back.len() != 1 || back[0].key != der || back[0].chain[0].der != chain[0].der
+        return fail(code: INVALID, msg: "the file written does not read back as the key and its chain")
+    return ok(file)
+
+# A trust store of `certificates`, as Java's: each certificate trusted for
+# `ANY_EXTENDED_KEY_USAGE` and named, all in one enciphered safe, a MAC over
+# it, and no key.
+#
+# - `certificates`: the trusted certificates, one or more.
+# - `names`: the alias of each, in order, or [] for none.
+# - `password`: the password; "" for none.
+# - `options`: the protection and the iterations.
+#
+# Fails `invalid` where `certificates` is empty, `names` is neither empty
+# nor as long, or the iterations are out of range. See also `encode`.
+function encode_trust_store(certificates: [x509.Certificate], names: [str], password: str, options: Options) -> [u8]?
+    forms = writing.prepared(iterations: options.iterations, password: password)?
+    legacy = options.protection == .triple_des
+
+    if certificates.len() == 0
+        return fail(code: INVALID, msg: "a trust store of no certificate")
+
+    if names.len() != 0 && names.len() != certificates.len()
+        return fail(code: INVALID, msg: f"{names.len()} names for {certificates.len()} certificates")
+    bags_made: [asn1.Value] @= []
+    i: i64 @= 0
+
+    while i < certificates.len()
+        name: str @= ""
+
+        if names.len() > 0
+            name @ names[i]
+        bags_made @ bags_made.push(
+            writing.certificate_bag(certificate: certificates[i], attributes: writing.attributes_of(name: name, rest: [writing.trusted()]))
+        )
+        i @ i + 1
+
+    safe = bags.encrypted_info(writing.sealed(legacy: legacy, iterations: options.iterations, password: forms, text: bags.safe_of(bags_made)?)?)?
+    file = writing.finished(safes: [safe], password: forms, legacy: legacy, iterations: options.iterations)?
+    back = decode(der: file, password: password)?
+
+    if back.certificates.len() != certificates.len()
+        return fail(code: INVALID, msg: "the trust store written does not read back")
+    return ok(file)
+
+## Examples
+
+# A server's identity read from a `.pfx`, as `tls.Server` takes it.
+test "identities_of: a server's key and chain from a file OpenSSL wrote"
+    contents = decode(der: samples.modern(), password: "hero").must()
+    identity = identities_of(contents).must()[0]
+    assert pem.parse(key_pem(identity)).must().label == "PRIVATE KEY"
+    assert identity.chain.len() == 2
+
+test "decode: OpenSSL's default, the key and both certificates, their names and the MAC"
+    contents = decode(der: samples.modern(), password: "hero").must()
+    assert contents.keys.len() == 1
+    assert contents.keys[0].der == written.key_plain()
+    assert contents.keys[0].name == "Hero"
+    assert contents.keys[0].id.len() == 20
+    assert contents.certificates.len() == 2
+    assert x509.format_name(contents.certificates[0].certificate.subject) == "CN=leaf.example"
+    assert contents.certificates[0].id == contents.keys[0].id
+    assert contents.certificates[1].name == ""
+    assert contents.integrity == .hmac(digest: .sha256, iterations: 2048)
+    identity = identities_of(contents).must()[0]
+    assert identity.key == written.key_plain()
+    assert x509.format_name(identity.chain[1].subject) == "CN=Hero Test CA"
+
+test "decode: every scheme OpenSSL writes opens to the same key and the same two certificates"
+    files: [[u8]] = [
+        samples.legacy()
+        samples.triple_des()
+        samples.pbmac1()
+        samples.rc4()
+        samples.rc2()
+        samples.mixed()
+        samples.clear_certificates()
+    ]
+
+    for file in files
+        contents = decode(der: file, password: "hero").must()
+        assert contents.keys[0].der == written.key_plain()
+        assert contents.certificates.len() == 2
+        assert identities_of(contents).must()[0].chain.len() == 2
+
+    assert decode(der: samples.pbmac1(), password: "hero").must().integrity == .pbmac1(digest: .sha256, iterations: 2048)
+    assert decode(der: samples.mixed(), password: "hero").must().integrity == .hmac(digest: .sha512, iterations: 2048)
+    assert decode(der: samples.clear_certificates(), password: "hero").must().integrity == .hmac(digest: .sha384, iterations: 1)
+
+test "decode: the empty password, and one of characters past ASCII and past U+FFFF"
+    assert decode(der: samples.empty(), password: "").must().keys[0].der == written.key_plain()
+    assert decode(der: samples.unicode(), password: "pässwörd€😀").must().keys[0].der == written.key_plain()
+    assert decode(der: written.python_clear(), password: "").must().keys[0].der == written.key_plain()
+
+test "decode: a wrong password, an empty one where one was set, and the reverse, refused permission"
+    assert octets.code_of(decode(der: samples.modern(), password: "Hero")) == PERMISSION
+    assert octets.code_of(decode(der: samples.legacy(), password: "")) == PERMISSION
+    assert octets.code_of(decode(der: samples.pbmac1(), password: "hero ")) == PERMISSION
+    assert octets.code_of(decode(der: samples.empty(), password: "hero")) == PERMISSION
+    assert octets.code_of(decode(der: samples.unicode(), password: "passwörd€😀")) == PERMISSION
+
+test "decode and decode_without_integrity: a file with no MAC, refused by the one and read by the other"
+    assert octets.code_of(decode(der: samples.no_mac(), password: "hero")) == INVALID
+    contents = decode_without_integrity(der: samples.no_mac(), password: "hero").must()
+    assert contents.integrity == .none
+    assert contents.keys[0].der == written.key_plain()
+    assert octets.code_of(decode_without_integrity(der: samples.no_mac(), password: "other")) == PERMISSION
+    assert decode_without_integrity(der: samples.modern(), password: "hero").must().integrity == .hmac(digest: .sha256, iterations: 2048)
+    assert octets.code_of(decode_without_integrity(der: samples.modern(), password: "other")) == PERMISSION
+
+test "decode_without_integrity: twenty wrong passwords against a file with no MAC, each refused permission, none a content read wrong"
+    tries: [str] = [
+        "other"
+        ""
+        "Hero"
+        "hero "
+        "a"
+        "b"
+        "c"
+        "d"
+        "e"
+        "f"
+        "g"
+        "h"
+        "i"
+        "j"
+        "k"
+        "l"
+        "m"
+        "n"
+        "o"
+        "p"
+    ]
+
+    for password in tries
+        assert octets.code_of(decode_without_integrity(der: samples.no_mac(), password: password)) == PERMISSION
+
+test "decode and identities_of: certificates and no key, a Java key store, Java's and Python's trust stores"
+    only = decode(der: samples.certificates_only(), password: "hero").must()
+    assert only.keys.len() == 0
+    assert only.certificates.len() == 2
+    assert octets.code_of(identities_of(only)) == NOT_FOUND
+    java = decode(der: written.java(), password: "herohero").must()
+    assert java.keys[0].name == "hero"
+    assert x509.format_name(identities_of(java).must()[0].chain[0].subject) == "CN=java.example"
+    assert java.integrity == .hmac(digest: .sha256, iterations: 10000)
+    trust = decode(der: written.java_trust(), password: "herohero").must()
+    assert trust.keys.len() == 0
+    assert trust.certificates[0].name == "heroca"
+    assert trust.certificates[0].trusted_for == [ANY_EXTENDED_KEY_USAGE]
+    python = decode(der: written.python_trust(), password: "hero").must()
+    assert python.certificates[0].trusted_for == [ANY_EXTENDED_KEY_USAGE]
+
+test "decode: Python's files, AES-256 and triple DES"
+    assert decode(der: written.python_best(), password: "hero").must().keys[0].der == written.key_plain()
+    assert decode(der: written.python_triple_des(), password: "hero").must().integrity == .hmac(digest: .sha1, iterations: 2048)
+
+test "decode: nothing, every shorter prefix of a file, and a file with a byte after it, refused and never aborted"
+    file = samples.modern()
+    assert octets.code_of(decode(der: [], password: "hero")) == INVALID
+    n: i64 @= 0
+
+    while n < file.len()
+        assert decode(der: file.slice(from: 0, to: n), password: "hero").is_err()
+        n @ n + 1
+
+    assert decode(der: file.push(0), password: "hero").is_err()
+
+test "encode: a key and its chain, both protections, read back here with their names"
+    contents = decode(der: samples.modern(), password: "hero").must()
+    key @= keypairs.decode_private_der(written.key_plain()).must()
+    chain = identities_of(contents).must()[0].chain
+    fast = Options(protection: .aes256, iterations: MIN_ITERATIONS)
+    old = Options(protection: .triple_des, iterations: MIN_ITERATIONS)
+
+    for options in [fast, old]
+        file = encode(key: key, chain: chain, name: "Hero", password: "pässwörd", options: options).must()
+        back = decode(der: file, password: "pässwörd").must()
+        assert back.keys[0].der == written.key_plain()
+        assert back.keys[0].name == "Hero"
+        assert back.certificates[0].id == crypto.sha1(chain[0].der)
+        assert back.certificates[1].certificate.der == chain[1].der
+
+    assert decode(der: encode(key: key, chain: chain, name: "", password: "", options: fast).must(), password: "").must().keys[0].name == ""
+    keypairs.close_private(@key).must()
+
+test "encode: an empty chain, another key's certificate, and iterations below and above the range, refused"
+    contents = decode(der: samples.modern(), password: "hero").must()
+    key @= keypairs.decode_private_der(written.key_plain()).must()
+    chain = identities_of(contents).must()[0].chain
+    assert octets.code_of(encode(key: key, chain: [], name: "", password: "x", options: default_options())) == INVALID
+    assert octets.code_of(encode(key: key, chain: [chain[1]], name: "", password: "x", options: default_options())) == INVALID
+    assert octets.code_of(encode(key: key, chain: chain, name: "", password: "x", options: Options(protection: .aes256, iterations: MIN_ITERATIONS - 1))) == INVALID
+    assert octets.code_of(encode(key: key, chain: chain, name: "", password: "x", options: Options(protection: .aes256, iterations: MAX_ITERATIONS + 1))) == INVALID
+    keypairs.close_private(@key).must()
+
+test "encode_trust_store: one certificate and two, named and not, and the refusals"
+    chain = identities_of(decode(der: samples.modern(), password: "hero").must()).must()[0].chain
+    options = Options(protection: .aes256, iterations: MIN_ITERATIONS)
+    store = decode(
+        der: encode_trust_store(certificates: chain, names: ["leaf", "ca"], password: "hero", options: options).must(),
+        password: "hero"
+    ).must()
+    assert store.keys.len() == 0
+    assert store.certificates[1].name == "ca"
+    assert store.certificates[1].trusted_for == [ANY_EXTENDED_KEY_USAGE]
+    bare = decode(
+        der: encode_trust_store(certificates: [chain[1]], names: [], password: "", options: options).must(),
+        password: ""
+    ).must()
+    assert bare.certificates[0].name == ""
+    assert octets.code_of(encode_trust_store(certificates: [], names: [], password: "", options: options)) == INVALID
+    assert octets.code_of(encode_trust_store(certificates: chain, names: ["one"], password: "", options: options)) == INVALID
+
+test "chain_pem and key_pem: the chain's two blocks in order, and the key as PKCS #8"
+    identity = identities_of(decode(der: samples.modern(), password: "hero").must()).must()[0]
+    chain = x509.parse_certificates(chain_pem(identity)).must()
+    assert chain.len() == 2
+    assert chain[0].der == identity.chain[0].der
+    assert pem.parse(key_pem(identity)).must().data == written.key_plain()

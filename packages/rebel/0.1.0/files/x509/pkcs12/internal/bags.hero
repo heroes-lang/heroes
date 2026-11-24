@@ -1,0 +1,245 @@
+# A PFX (RFC 7292 § 4) read into its bags and written from them: the
+# authSafe's content, which the MAC covers; the AuthenticatedSafe, a list of
+# safes, each plain data or EncryptedData (RFC 5652 § 8) deciphered by its
+# scheme; and each safe's bags (§ 4.2), a shrouded key's deciphered, a safe
+# inside a bag read in its place. The files of Windows, which write BER's
+# indefinite lengths, are read as BER; what is written is DER.
+
+use asn1
+use crypto
+use x509/pkcs12/internal/cbc
+use x509/pkcs12/internal/macs
+use x509/pkcs12/internal/octets
+use x509/pkcs12/internal/schemes
+
+# PKCS #7's `data`.
+constant DATA: str
+    "1.2.840.113549.1.7.1"
+
+# PKCS #7's `encryptedData`.
+constant ENCRYPTED_DATA: str
+    "1.2.840.113549.1.7.6"
+
+# The bag of a key in clear, `keyBag`.
+constant KEY_BAG: str
+    "1.2.840.113549.1.12.10.1.1"
+
+# The bag of an enciphered key, `pkcs8ShroudedKeyBag`.
+constant SHROUDED_KEY_BAG: str
+    "1.2.840.113549.1.12.10.1.2"
+
+# The bag of a certificate, `certBag`.
+constant CERT_BAG: str
+    "1.2.840.113549.1.12.10.1.3"
+
+# The bag of a revocation list, `crlBag`.
+constant CRL_BAG: str
+    "1.2.840.113549.1.12.10.1.4"
+
+# The bag of a secret, `secretBag`.
+constant SECRET_BAG: str
+    "1.2.840.113549.1.12.10.1.5"
+
+# The bag of a safe, `safeContentsBag`.
+constant SAFE_BAG: str
+    "1.2.840.113549.1.12.10.1.6"
+
+# A bag read.
+record Bag
+    # Its type's identifier: one of the six above, or another kept as is.
+    kind: str
+    # Its value: a key's PrivateKeyInfo, deciphered where it was shrouded;
+    # the other bags' value as written.
+    value: asn1.Value
+    # Its attributes, each a SEQUENCE of an identifier and a SET of values.
+    attributes: [asn1.Value]
+
+# What a PFX read holds before its safes are opened.
+record Pfx
+    # The content of the authSafe, which the MAC covers.
+    content: [u8]
+    # The MacData; it fails `not_found` where none is written.
+    mac: asn1.Value?
+
+# The value under `v`'s EXPLICIT tag `[0]`, `what` naming it.
+function explicit(v: asn1.Value, what: str) -> asn1.Value?
+    match v
+        .constructed c =>
+            if asn1.tag_of(v).number != 0 || c.items.len() != 1
+                return fail(code: "invalid", msg: f"{what}: an EXPLICIT [0] of one element was expected")
+            return ok(c.items[0])
+        .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .set _ | .primitive _ =>
+            return fail(code: "invalid", msg: f"{what}: an EXPLICIT [0] was expected")
+
+# The identifier `v` holds, `what` naming it.
+function oid_text(v: asn1.Value, what: str) -> str?
+    match asn1.oid_of(v)
+        .ok o  => return ok(o.dotted)
+        .err _ => return fail(code: "invalid", msg: f"{what}: an OBJECT IDENTIFIER was expected")
+
+# `data` read as BER, `what` naming it.
+function read(data: [u8], what: str) -> asn1.Value?
+    match asn1.decode_ber(data)
+        .ok v  => return ok(v)
+        .err e => return fail(code: "invalid", msg: f"{what}: {e.msg}")
+
+# The PFX `der` holds: version 3, an authSafe of `data`.
+function pfx(der: [u8]) -> Pfx?
+    fields = schemes.items(v: read(data: der, what: "the PFX")?, least: 2, most: 3, what: "the PFX")?
+
+    version = schemes.count_of(v: fields[0], least: 0, most: 1 << 31, what: "the PFX's version")?
+
+    if version != 3
+        return fail(code: "invalid", msg: f"the PFX's version {version}, where RFC 7292 § 4 writes 3")
+    info = schemes.items(v: fields[1], least: 2, most: 2, what: "the authSafe")?
+    kind = oid_text(v: info[0], what: "the authSafe's type")?
+
+    if kind == "1.2.840.113549.1.7.2"
+        return fail(
+            code: "unsupported",
+            msg: "the authSafe is signedData: public-key integrity mode, which this package does not read"
+        )
+
+    if kind != DATA
+        return fail(code: "invalid", msg: f"the authSafe's type {kind}, where RFC 7292 § 4 writes data")
+    content = schemes.octets_of(v: explicit(v: info[1], what: "the authSafe")?, what: "the authSafe")?
+
+    if fields.len() == 3
+        return ok(Pfx(content: content, mac: ok(fields[2])))
+    return ok(Pfx(content: content, mac: fail(code: "not_found", msg: "the PFX writes no MacData")))
+
+# The BER value `data` holds once deciphered by `algorithm` under the first
+# of `passwords` that opens it: deciphered with a padding that holds, and
+# read as BER, `what` naming it. Each password is tried in its own forms and
+# then with PBES2 taking its BMPString, as RFC 9579 § 6 writes it, where
+# OpenSSL, Java and Windows take UTF-8. Where `checked` is true a MAC has
+# vouched for the password, so a content that does not read is `invalid`;
+# else it is told as a wrong password, `permission`, since a wrong key leaves
+# a padding that holds one time in about 256.
+function open(algorithm: asn1.Value, passwords: [schemes.Password], data: [u8], what: str, checked: bool) -> asn1.Value?
+    tried: [schemes.Password] @= []
+
+    for password in passwords
+        tried @ tried.push(password)
+        tried @ tried.push(schemes.Password(bmp: password.bmp, utf8: password.bmp))
+
+    for password in tried
+        opened = schemes.decrypt(v: algorithm, password: password, data: data)
+
+        if octets.code_of(opened) != "" && octets.code_of(opened) != "permission"
+            return fail(code: octets.code_of(opened), msg: octets.message_of(opened))
+
+        if octets.code_of(opened) == ""
+            read_back = asn1.decode_ber(opened.must())
+
+            if !read_back.is_err()
+                return read_back
+
+    if checked
+        return fail(code: "invalid", msg: f"{what} deciphered under the password its MAC holds for is not BER")
+    return fail(code: "permission", msg: cbc.DOES_NOT_OPEN)
+
+# The bags of the AuthenticatedSafe `content`, its safes opened by
+# `passwords`, vouched for by a MAC where `checked` is true.
+function bags_of(content: [u8], passwords: [schemes.Password], checked: bool) -> [Bag]?
+    out: [Bag] @= []
+
+    for info in schemes.items(v: read(data: content, what: "the AuthenticatedSafe")?, least: 0, most: 1 << 20, what: "the AuthenticatedSafe")?
+        fields = schemes.items(v: info, least: 1, most: 2, what: "a safe")?
+        kind = oid_text(v: fields[0], what: "a safe's type")?
+
+        if fields.len() == 1
+            return fail(code: "invalid", msg: "a safe writes no content")
+        inner = explicit(v: fields[1], what: "a safe")?
+        safe: asn1.Value @= .null_value
+
+        if kind == DATA
+            safe @ read(data: schemes.octets_of(v: inner, what: "a safe of data")?, what: "a SafeContents")?
+        else if kind == ENCRYPTED_DATA
+            parts = schemes.items(v: inner, least: 2, most: 3, what: "an EncryptedData")?
+            encrypted = schemes.items(v: parts[1], least: 2, most: 3, what: "an EncryptedContentInfo")?
+
+            if encrypted.len() == 2
+                return fail(code: "invalid", msg: "an EncryptedContentInfo writes no content")
+            safe @ open(algorithm: encrypted[1], passwords: passwords, data: sealed_content(encrypted[2])?, what: "an encrypted safe", checked: checked)?
+        else if kind == "1.2.840.113549.1.7.3"
+            return fail(
+                code: "unsupported",
+                msg: "a safe of envelopedData: public-key privacy mode, which this package does not read"
+            )
+        else
+            return fail(
+                code: "invalid",
+                msg: f"a safe of type {kind}, where RFC 7292 § 4.1 writes data or encryptedData"
+            )
+        out @ bags_into(out: out, safe: safe, passwords: passwords, checked: checked)?
+
+    return ok(out)
+
+# The bytes of `v`, an EncryptedContentInfo's `[0] IMPLICIT OCTET STRING`,
+# primitive or, in BER, constructed.
+function sealed_content(v: asn1.Value) -> [u8]?
+    if asn1.tag_of(v).number != 0
+        return fail(code: "invalid", msg: "the encrypted content: an IMPLICIT [0] was expected")
+
+    match asn1.to_universal(v: v, number: asn1.OCTET_STRING, encoding: .ber)
+        .ok u  => return schemes.octets_of(v: u, what: "the encrypted content")
+        .err e => return fail(code: "invalid", msg: f"the encrypted content: {e.msg}")
+
+# `out` with the bags of the SafeContents `safe` after it.
+function bags_into(out: [Bag], safe: asn1.Value, passwords: [schemes.Password], checked: bool) -> [Bag]?
+    found: [Bag] @= out
+
+    for one in schemes.items(v: safe, least: 0, most: 1 << 20, what: "a SafeContents")?
+        fields = schemes.items(v: one, least: 2, most: 3, what: "a SafeBag")?
+        kind = oid_text(v: fields[0], what: "a bag's type")?
+        value: asn1.Value @= explicit(v: fields[1], what: "a bag's value")?
+        attributes: [asn1.Value] @= []
+
+        if fields.len() == 3
+            match fields[2]
+                .set s => attributes @ s.items
+                .boolean _ | .integer _ | .big_integer _ | .enumerated _ | .real _ | .bit_string _ | .octet_string _ | .null_value | .oid _ | .relative_oid _ | .text _ | .utc_time _ | .generalized_time _ | .sequence _ | .primitive _ | .constructed _ =>
+                    return fail(code: "invalid", msg: "a bag's attributes: a SET was expected")
+
+        if kind == SAFE_BAG
+            found @ bags_into(out: found, safe: value, passwords: passwords, checked: checked)?
+        else
+            if kind == SHROUDED_KEY_BAG
+                shroud = schemes.items(v: value, least: 2, most: 2, what: "an EncryptedPrivateKeyInfo")?
+                value @ open(algorithm: shroud[0], passwords: passwords, data: schemes.octets_of(v: shroud[1], what: "the encrypted key")?, what: "a shrouded key", checked: checked)?
+            found @ found.push(Bag(kind: kind, value: value, attributes: attributes))
+
+    return ok(found)
+
+# A SafeBag of `kind`, `value` and `attributes`, which are left out where
+# there are none.
+function bag(kind: str, value: asn1.Value, attributes: [asn1.Value]) -> asn1.Value
+    fields: [asn1.Value] @= [.oid(v: asn1.Oid(dotted: kind)), asn1.tagged(v: value, number: 0)]
+
+    if attributes.len() > 0
+        fields @ fields.push(.set(items: attributes))
+    return .sequence(items: fields)
+
+# The DER of a SafeContents of `bags`.
+function safe_of(bags: [asn1.Value]) -> [u8]?
+    return asn1.encode_der(.sequence(items: bags))
+
+# The ContentInfo of data `content`.
+function data_info(content: [u8]) -> asn1.Value
+    return .sequence(items: [.oid(v: asn1.Oid(dotted: DATA)), asn1.tagged(v: .octet_string(v: content), number: 0)])
+
+# The ContentInfo of EncryptedData `sealed`.
+function encrypted_info(sealed: schemes.Sealed) -> asn1.Value?
+    encrypted = asn1.with_tag(v: .octet_string(v: sealed.data), tag: asn1.Tag(kind: .context_specific, number: 0, constructed: false))?
+    content: asn1.Value = .sequence(items: [.oid(v: asn1.Oid(dotted: DATA)), sealed.algorithm, encrypted])
+    return ok(
+        .sequence(items: [.oid(v: asn1.Oid(dotted: ENCRYPTED_DATA)), asn1.tagged(v: .sequence(items: [.integer(v: 0), content]), number: 0)])
+    )
+
+# The PFX of the AuthenticatedSafe `safes`, its MAC over them made for
+# `password` by `digest` with `iterations` and a salt of `salt_length`.
+function pfx_der(safes: [asn1.Value], password: schemes.Password, digest: crypto.Algorithm, iterations: i64, salt_length: i64) -> [u8]?
+    content = asn1.encode_der(.sequence(items: safes))?
+    mac = macs.make(password: password, digest: digest, iterations: iterations, salt_length: salt_length, content: content)?
+    return asn1.encode_der(.sequence(items: [.integer(v: 3), data_info(content), mac]))

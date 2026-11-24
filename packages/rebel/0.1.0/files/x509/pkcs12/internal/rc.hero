@@ -1,0 +1,209 @@
+# RC2 (RFC 2268), a block of 8 bytes under a key of any length and an
+# effective key of so many bits, and RC4, a stream: the two ciphers the
+# PKCS #12 files of older Windows and of OpenSSL's `-legacy` encipher their
+# certificates with. They are read and never written, both being weak. Every
+# lookup whose index is a secret walks the whole table and keeps its one
+# entry by a mask.
+
+use x509/pkcs12/internal/aes
+use x509/pkcs12/internal/octets
+use x509/pkcs12/internal/tables
+
+# The bytes of an RC2 block.
+constant BLOCK: i64
+    8
+
+# How far each of RC2's four words turns in a mixing step.
+constant TURNS: [i64]
+    [1, 2, 3, 5]
+
+# The entry `at` of `table`, of 64 or 256 entries, read by walking every
+# entry.
+function walk(table: [i64] lent, at: i64) -> i64
+    found: i64 @= 0
+    i: i64 @= 0
+
+    while i < table.len()
+        found @ found | table[i] & aes.same(a: i, b: at)
+        i @ i + 1
+
+    return found
+
+# RC2's 64 words of 16 bits from `key`, of 1 to 128 bytes, its effective
+# key `bits` from 1 to 1024; the caller checks both.
+function expand(key: [u8] lent, bits: i64) -> [i64]
+    l: [i64] @= []
+
+    for b in key
+        l @ l.push(to_i64(b).must())
+
+    t = key.len()
+
+    while l.len() < 128
+        l @ l.push(walk(table: tables.PITABLE, at: l[l.len() - 1] + l[l.len() - t] & 0xff))
+
+    t8 = (bits + 7) / 8
+    tm = 0xff >> 8 * t8 - bits
+    l[128 - t8] @ walk(table: tables.PITABLE, at: l[128 - t8] & tm)
+    i: i64 @= 127 - t8
+
+    while i >= 0
+        l[i] @ walk(table: tables.PITABLE, at: l[i + 1] ^ l[i + t8])
+        i @ i - 1
+
+    words: [i64] @= []
+    i @ 0
+
+    while i < 64
+        words @ words.push(l[2 * i] | l[2 * i + 1] << 8)
+        i @ i + 1
+
+    return words
+
+# The four words of the block of `data` from `at`, the lower byte first.
+function words_of(data: [u8] lent, at: i64) -> [i64]
+    out: [i64] @= []
+    i: i64 @= 0
+
+    while i < 4
+        out @ out.push(to_i64(data[at + 2 * i]).must() | to_i64(data[at + 2 * i + 1]).must() << 8)
+        i @ i + 1
+
+    return out
+
+# The bytes of the four words `r`, the lower byte of each first.
+function block_of(r: [i64] lent) -> [i64]
+    out: [i64] @= []
+
+    for w in r
+        out @ out.push(w & 0xff)
+        out @ out.push(w >> 8)
+
+    return out
+
+# The block of `data` from `at` enciphered under the words `k`.
+function encrypt(k: [i64] lent, data: [u8] lent, at: i64) -> [i64]
+    r: [i64] @= words_of(data: data, at: at)
+    j: i64 @= 0
+    round: i64 @= 0
+
+    while round < 16
+        i: i64 @= 0
+
+        while i < 4
+            sum = r[i] + k[j] + (r[(i + 3) % 4] & r[(i + 2) % 4]) + (~r[(i + 3) % 4] & 0xffff & r[(i + 1) % 4]) & 0xffff
+            r[i] @ (sum << TURNS[i] | sum >> 16 - TURNS[i]) & 0xffff
+            j @ j + 1
+            i @ i + 1
+
+        if round == 4 || round == 10
+            i @ 0
+
+            while i < 4
+                r[i] @ r[i] + walk(table: k, at: r[(i + 3) % 4] & 63) & 0xffff
+                i @ i + 1
+        round @ round + 1
+
+    return block_of(r)
+
+# The block of `data` from `at` deciphered under the words `k`.
+function decrypt(k: [i64] lent, data: [u8] lent, at: i64) -> [i64]
+    r: [i64] @= words_of(data: data, at: at)
+    j: i64 @= 63
+    round: i64 @= 15
+
+    while round >= 0
+        i: i64 @= 3
+
+        while i >= 0
+            turned = (r[i] >> TURNS[i] | r[i] << 16 - TURNS[i]) & 0xffff
+            r[i] @ turned - k[j] - (r[(i + 3) % 4] & r[(i + 2) % 4]) - (~r[(i + 3) % 4] & 0xffff & r[(i + 1) % 4]) & 0xffff
+            j @ j - 1
+            i @ i - 1
+
+        if round == 5 || round == 11
+            i @ 3
+
+            while i >= 0
+                r[i] @ r[i] - walk(table: k, at: r[(i + 3) % 4] & 63) & 0xffff
+                i @ i - 1
+        round @ round - 1
+
+    return block_of(r)
+
+# `data` enciphered or deciphered by RC4 under `key`, of 1 to 256 bytes,
+# which the caller checks: the two are one operation.
+function rc4(key: [u8] lent, data: [u8] lent) -> [u8]
+    s: [i64] @= []
+
+    while s.len() < 256
+        s @ s.push(s.len())
+
+    j: i64 @= 0
+    i: i64 @= 0
+
+    while i < 256
+        si = walk(table: s, at: i)
+        j @ j + si + to_i64(key[i % key.len()]).must() & 0xff
+        s @ swap(s: s, a: i, b: j)
+        i @ i + 1
+
+    out: [u8] @= []
+    i @ 0
+    j @ 0
+
+    for b in data
+        i @ i + 1 & 0xff
+        j @ j + walk(table: s, at: i) & 0xff
+        s @ swap(s: s, a: i, b: j)
+        pad = walk(table: s, at: walk(table: s, at: i) + walk(table: s, at: j) & 0xff)
+        out @ out.push(to_u8(to_i64(b).must() ^ pad).must())
+
+    return out
+
+# `s` with its entries `a` and `b` exchanged, every entry rewritten so the
+# memory written does not depend on either.
+function swap(s: [i64], a: i64, b: i64) -> [i64]
+    at_a = walk(table: s, at: a)
+    at_b = walk(table: s, at: b)
+    out: [i64] @= []
+    i: i64 @= 0
+
+    while i < 256
+        is_a = aes.same(a: i, b: a)
+        is_b = aes.same(a: i, b: b) & ~is_a
+        out @ out.push(s[i] & ~(is_a | is_b) | at_b & is_a | at_a & is_b)
+        i @ i + 1
+
+    return out
+
+test "encrypt and decrypt: RFC 2268's vectors, a key of 1, 7, 8, 16 and 33 bytes, an effective key of 63, 64, 128 and 129 bits"
+    cases: [[str]] = [
+        ["0000000000000000", "0000000000000000", "ebb773f993278eff"]
+        ["ffffffffffffffff", "ffffffffffffffff", "278b27e42e2f0d49"]
+        ["3000000000000000", "1000000000000001", "30649edf9be7d2c2"]
+        ["88", "0000000000000000", "61a8a244adacccf0"]
+        ["88bca90e90875a", "0000000000000000", "6ccf4308974c267f"]
+        ["88bca90e90875a7f0f79c384627bafb2", "0000000000000000", "1a807d272bbe5db1"]
+        ["88bca90e90875a7f0f79c384627bafb2", "0000000000000000", "2269552ab0f85ca6"]
+    ]
+
+    bits: [i64] = [63, 64, 64, 64, 64, 64, 128]
+    n: i64 @= 0
+
+    while n < cases.len()
+        c = cases[n]
+        k = expand(key: octets.unhex(c[0]), bits: bits[n])
+        assert octets.bytes_of(encrypt(k: k, data: octets.unhex(c[1]), at: 0)) == octets.unhex(c[2])
+        assert octets.bytes_of(decrypt(k: k, data: octets.unhex(c[2]), at: 0)) == octets.unhex(c[1])
+        n @ n + 1
+
+    long = expand(key: octets.unhex("88bca90e90875a7f0f79c384627bafb216f80a6f85920584c42fceb0be255daf1e"), bits: 129)
+    assert octets.bytes_of(encrypt(k: long, data: octets.unhex("0000000000000000"), at: 0)) == octets.unhex("5b78d3a43dfff1f1")
+
+test "rc4: nothing, a key of 5 bytes over 16 zeros and one of 16 over Plaintext, as Python's cryptography 50.0.2 answers"
+    assert rc4(key: octets.unhex("0102030405"), data: []) == []
+    assert rc4(key: octets.unhex("0102030405"), data: octets.unhex("00000000000000000000000000000000")) == octets.unhex("b2396305f03dc027ccc3524a0a1118a8")
+    long = octets.unhex("0102030405060708090a0b0c0d0e0f10")
+    assert rc4(key: long, data: octets.unhex("506c61696e74657874")) == octets.unhex("caabadf30ee97b8fc6")
+    assert rc4(key: long, data: octets.unhex("caabadf30ee97b8fc6")) == octets.unhex("506c61696e74657874")
