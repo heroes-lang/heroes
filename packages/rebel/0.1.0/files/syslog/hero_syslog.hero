@@ -1,0 +1,100 @@
+# The platform layer's way into the system's own log, `hero_syslog.h`, bound
+# thin: one function per C function, in C's order, each answering what C
+# answers. Rebel's floor of `syslog` (`examples-rebel/README.md` § A2): where a
+# call fails it answers -1, and `last_error` then names the kind,
+# `last_os_error` the system's number and `last_message` the layer's own
+# words; no policy stands here, and the face above it turns every kind into a
+# code.
+#
+# The layer is C of the language's own beside the runtime, so this group names
+# its header and no `link`: no platform type reaches it, and the same lines
+# bind it on every platform. The datagram exists on POSIX, the unified log on
+# macOS and the Event Log on Windows; every other call answers
+# `HERO_SYSLOG_UNSUPPORTED`.
+
+extern "hero_syslog.h"
+    # The kinds of failure `last_error` answers, the same numbers on every
+    # platform.
+    constant HERO_SYSLOG_OK: i64
+    constant HERO_SYSLOG_INVALID: i64
+    constant HERO_SYSLOG_UNSUPPORTED: i64
+    constant HERO_SYSLOG_NOT_FOUND: i64
+    constant HERO_SYSLOG_DENIED: i64
+    constant HERO_SYSLOG_LIMIT: i64
+    constant HERO_SYSLOG_EXISTS: i64
+    constant HERO_SYSLOG_TIMEOUT: i64
+    constant HERO_SYSLOG_OTHER: i64
+    # What `has` is asked.
+    constant HERO_SYSLOG_HAS_DATAGRAM: i64
+    constant HERO_SYSLOG_HAS_UNIFIED: i64
+    constant HERO_SYSLOG_HAS_EVENT_LOG: i64
+    # The most a level is, and the most bytes of one line the unified log and
+    # the Event Log are given.
+    constant HERO_SYSLOG_LEVEL_MOST: i64
+    constant HERO_SYSLOG_LINE_MOST: i64
+    function hero_syslog_has(what: i64) -> i64
+    function hero_syslog_send(path: cstr lent, @data: [u8] counted_by count lent, count: u64, sealed: i64) -> i64
+    function hero_syslog_unified(subsystem: cstr lent, category: cstr lent, level: i64, line: cstr lent) -> i64
+    function hero_syslog_event(source: cstr lent, level: i64, id: i64, line: cstr lent) -> i64
+    function hero_syslog_event_install(source: cstr lent) -> i64
+    function hero_syslog_event_remove(source: cstr lent) -> i64
+    function hero_syslog_last_error() -> i64
+    function hero_syslog_last_os_error() -> i64
+    function hero_syslog_last_message(@buffer: [u8] counted_by n lent, n: u64) -> i64
+
+# 1 where this system has `what`, one of the `HERO_SYSLOG_HAS_*`, else 0.
+function has(what: i64) -> i64
+    return hero_syslog_has(what)
+
+# Sends `data` as one datagram to the local socket at `path`, never waiting: 0,
+# or -1.
+#
+# - `path`: the socket's path.
+# - `data`: the datagram, one byte or more.
+# - `sealed`: 1 where a datagram too long for one goes as the journal's sealed
+#   memory file, 0 where it is `HERO_SYSLOG_LIMIT`.
+function send(path: str, @data: [u8], sealed: i64) -> i64
+    return hero_syslog_send(path.cstr(), @data, count: data.len().to_u64().must(), sealed: sealed)
+
+# One line into the unified log: 0, or -1.
+#
+# - `subsystem`: the subsystem the line is filed under.
+# - `category`: the category within it.
+# - `level`: 0 to 7.
+# - `line`: the line.
+function unified(subsystem: str, category: str, level: i64, line: str) -> i64
+    return hero_syslog_unified(subsystem: subsystem.cstr(), category: category.cstr(), level: level, line: line.cstr())
+
+# One event into the Event Log: 0, or -1.
+#
+# - `source`: the event's source.
+# - `level`: 0 to 7.
+# - `id`: the event id, 1 to 1000.
+# - `line`: the event's one string.
+function event(source: str, level: i64, id: i64, line: str) -> i64
+    return hero_syslog_event(source: source.cstr(), level: level, id: id, line: line.cstr())
+
+# Registers `source` under the Application log: 0, or -1.
+#
+# - `source`: the source's name.
+function event_install(source: str) -> i64
+    return hero_syslog_event_install(source.cstr())
+
+# Removes the registration `event_install` made: 0, or -1.
+#
+# - `source`: the source's name.
+function event_remove(source: str) -> i64
+    return hero_syslog_event_remove(source.cstr())
+
+function last_error() -> i64
+    return hero_syslog_last_error()
+
+function last_os_error() -> i64
+    return hero_syslog_last_os_error()
+
+# The layer's own words for the last failure, written into `buffer`; their
+# length, 0 where there are none.
+#
+# - `buffer`: room for the words, as many bytes as the caller sized.
+function last_message(@buffer: [u8]) -> i64
+    return hero_syslog_last_message(@buffer, n: buffer.len().to_u64().must())

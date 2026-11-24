@@ -1,0 +1,35 @@
+# Reaches Rebel's `syslog`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12). It writes one line at each of three levels
+# to the system's log under the name its first argument gives, or
+# `org.heroes-lang.reach-syslog`, and prints where they went: the journal or
+# `/dev/log` on Linux (`journalctl -t <name>`), the unified log on macOS
+# (`log show --predicate 'subsystem == "<name>"'`), the Event Log on Windows
+# (`wevtutil qe Application`). With a second argument `long` it also writes a
+# line of 300,000 bytes, which the journal takes through a sealed memory file;
+# with `classic` it writes RFC 3164's lines to `/dev/log` instead.
+
+use <rebel>/syslog
+
+function main()
+    given = args()
+    name: str @= "org.heroes-lang.reach-syslog"
+
+    if given.len() >= 1
+        name @ given[0]
+
+    opened: syslog.Log? @= syslog.open(name)
+
+    if given.len() >= 2 && given[1] == "classic"
+        opened @ syslog.open_socket(name: name, destination: .syslog, socket: syslog.SYSLOG_SOCKET)
+
+    match opened
+        .err e => print(e.msg)
+        .ok log =>
+            print(f"writing to {log.socket} as {log.name}")
+            syslog.write(log, level: .notice, line: "reach_syslog: a notice").must()
+            syslog.write(log, level: .warning, line: "reach_syslog: a warning\nof two lines").must()
+            syslog.write(log, level: .error, line: "reach_syslog: an error").must()
+
+            if given.len() >= 2 && given[1] == "long"
+                syslog.write(log, level: .info, line: "L".repeat(300000)).must()
+            print("written")
