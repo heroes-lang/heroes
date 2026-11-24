@@ -273,23 +273,10 @@ function defined_by(t: toolchain.Toolchain, path: str) -> [Defined]
     member: str @= ""
 
     for line in deps.lines(read_back.words(out_path).must())
-        if strings.ends_with(text: line, suffix: ".o):") || strings.ends_with(text: line, suffix: ".o:")
-            open: i64 @= line.len() - 1
-
-            while open > 0 && line[open - 1] != '(' && line[open - 1] != '/'
-                open @ open - 1
-
-            close: i64 @= line.len() - 1
-
-            if strings.ends_with(text: line, suffix: ".o):")
-                close @ close - 1
-            member @ base_of(line.slice(from: open, to: close))
+        if member_of(line) != ""
+            member @ member_of(line)
             continue
-        cut: i64 @= line.len()
-
-        while cut > 0 && line[cut - 1] != ' '
-            cut @ cut - 1
-
+        cut = name_at(line)
         name: str @= line.slice(from: cut, to: line.len())
 
         if link_flags.apple(t.target) && strings.starts_with(text: name, prefix: "_")
@@ -299,6 +286,31 @@ function defined_by(t: toolchain.Toolchain, path: str) -> [Defined]
             found @ found.push(Defined(member: member, name: name))
 
     return found
+
+# The member an `nm` line of an archive opens, `hero_time` for
+# `lib.a(hero_time.o):` and for `hero_time.o:`; "" for a symbol's line.
+function member_of(line: str) -> str
+    if !strings.ends_with(text: line, suffix: ".o):") && !strings.ends_with(text: line, suffix: ".o:")
+        return ""
+    open: i64 @= line.len() - 1
+
+    while open > 0 && line[open - 1] != '(' && line[open - 1] != '/'
+        open @ open - 1
+
+    close: i64 @= line.len() - 1
+
+    if strings.ends_with(text: line, suffix: ".o):")
+        close @ close - 1
+    return base_of(line.slice(from: open, to: close))
+
+# Where the symbol's name starts on an `nm` line, its type two bytes before.
+function name_at(line: str) -> i64
+    cut: i64 @= line.len()
+
+    while cut > 0 && line[cut - 1] != ' '
+        cut @ cut - 1
+
+    return cut
 
 # The members of `members`, an archive's functions, of which `by` defines a
 # function, in the archive's order, each once: the linker takes a member
@@ -363,11 +375,46 @@ test "every link carries the layer, and a program takes only the members it call
         archived = archive(t, level: "-O0", sanitize: false, swift: layer_reach.no_members()).must()[0]
         members = defined_by(t, path: archived)
 
-        # Every member of the layer defines a function, so a member no
-        # binary below takes is still read here; none of the programs below
-        # reaches a member written in Swift, so the archive holds the C
+        # Every member of the layer stands in the archive, and each either
+        # defines a function, so a member no binary below takes is still read
+        # here, or defines no global symbol at all and can be taken into no
+        # link: an arm of another platform, whose whole text stands under that
+        # platform's condition (on macOS, eight on 2026-11-24: the GTK and
+        # Win32 arms, PulseAudio's and WASAPI's). A member defining data
+        # alone, or one the archive lost, fails here. None of the programs
+        # below reaches a member written in Swift, so the archive holds the C
         # members alone (defect 2625).
-        assert taken(members: members, by: defined_by(t, path: archived)).len() == runtime_key.layer_members(t.runtime).must().len()
+        listing = archived + ".members.txt"
+        ran = process.run(program: "nm", words: ["nm", archived], out: listing, err: process.discard())
+        assert ran.started && ran.code == 0
+        names: [str] @= []
+        globals: [i64] @= []
+
+        # A global symbol defined: a type that is a capital letter but `U`,
+        # a name the member needs from elsewhere.
+        for line in deps.lines(read_back.words(listing).must())
+            if member_of(line) != ""
+                names @ names.push(member_of(line))
+                globals @ globals.push(0)
+            else
+                cut = name_at(line)
+
+                if names.len() > 0 && cut >= 2 && line[cut - 2] >= 'A' && line[cut - 2] <= 'Z' && line[cut - 2] != 'U'
+                    globals[globals.len() - 1] @ globals[globals.len() - 1] + 1
+
+        bare: i64 @= 0
+
+        for count in globals
+            if count == 0
+                bare @ bare + 1
+
+        layered: [str] @= []
+
+        for member in runtime_key.layer_members(t.runtime).must()
+            layered @ layered.push(base_of(member))
+
+        assert sort(names) == sort(layered)
+        assert taken(members: members, by: defined_by(t, path: archived)).len() + bare == layered.len()
         assert taken(members: members, by: defined_by(t, path: none)).len() == 0
         assert taken(members: members, by: defined_by(t, path: clock)) == ["hero_time"]
         assert taken(members: members, by: defined_by(t, path: named)).len() == 0
