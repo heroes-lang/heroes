@@ -77,6 +77,18 @@ function response(@r: io.Reader, method: str, bounds: wire.Bounds) -> Message?
 # `wire.parse_response` do, `unsupported` for 101 or a version other than
 # 1.x, and `limit` past `MOST_INTERIM` informational responses.
 function final_head(@r: io.Reader, bounds: wire.Bounds) -> wire.Head?
+    return past_interim(@r, bounds: bounds, switching: false)
+
+# The head of the next response of `r` that is final or a 101, the other
+# informational ones before it read and skipped: what answers a request that
+# asked to switch protocols. Fails as `final_head` does, 101 aside.
+function switch_or_final_head(@r: io.Reader, bounds: wire.Bounds) -> wire.Head?
+    return past_interim(@r, bounds: bounds, switching: true)
+
+# The head of the next response of `r` that is final, or a 101 where
+# `switching`, the informational ones before it skipped. Fails as
+# `final_head` says.
+function past_interim(@r: io.Reader, bounds: wire.Bounds, switching: bool) -> wire.Head?
     interim: i64 @= 0
 
     while true
@@ -84,6 +96,9 @@ function final_head(@r: io.Reader, bounds: wire.Bounds) -> wire.Head?
 
         if h.major != 1
             return fail(code: UNSUPPORTED, msg: f"reading a response: its version HTTP/{h.major}.{h.minor} is not 1.x")
+
+        if h.status == 101 && switching
+            return ok(h)
 
         if h.status == 101
             return fail(
