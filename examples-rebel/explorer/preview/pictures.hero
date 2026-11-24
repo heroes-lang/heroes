@@ -5,9 +5,9 @@
 # depth. A file that says it is an image and does not decode is told as
 # broken, never a crash: `image` reads a broken file as `invalid`.
 #
-# GIF, BMP and the Netpbm formats are told by their signature and named,
-# and shown without a picture, since the explorer carries only the two
-# decoders a person's photos and screenshots need.
+# GIF, BMP, the Netpbm formats, TIFF, ICO and WebP are told by their
+# signature and named, and shown without a picture, since the explorer
+# carries only the two decoders a person's photos and screenshots need.
 
 use <rebel>/image
 use <rebel>/image/jpeg
@@ -70,6 +70,9 @@ function shown_of(data: [u8]) -> Shown
         .gif    => return Shown(facts: ["GIF image", "no preview of GIF"], pictures: nothing)
         .bmp    => return Shown(facts: ["BMP image", "no preview of BMP"], pictures: nothing)
         .netpbm => return Shown(facts: ["Netpbm image", "no preview of Netpbm"], pictures: nothing)
+        .tiff   => return Shown(facts: ["TIFF image", "no preview of TIFF"], pictures: nothing)
+        .ico    => return Shown(facts: ["ICO image", "no preview of ICO"], pictures: nothing)
+        .webp   => return Shown(facts: ["WebP image", "no preview of WebP"], pictures: nothing)
 
 # `img` scaled down to fit the pane, never enlarged, as RGBA.
 #
@@ -141,3 +144,12 @@ test "shown_of: a PNG cut short is broken, bytes of no image are none"
     assert cut.facts[0] == "PNG image" && cut.pictures.len() == 0
     assert shown_of([1, 2, 3]).facts == ["not an image"]
     assert !is_image([1, 2, 3])
+
+test "shown_of: a TIFF, an icon and a WebP named by their signature, shown with no picture"
+    tiff = shown_of(['I', 'I', 42, 0, 8, 0, 0, 0])
+    assert tiff.facts == ["TIFF image", "no preview of TIFF"] && tiff.pictures.len() == 0
+    icon = shown_of([0, 0, 1, 0, 1, 0])
+    assert icon.facts == ["ICO image", "no preview of ICO"] && icon.pictures.len() == 0
+    webp = shown_of(['R', 'I', 'F', 'F', 4, 0, 0, 0, 'W', 'E', 'B', 'P'])
+    assert webp.facts == ["WebP image", "no preview of WebP"] && webp.pictures.len() == 0
+    assert is_image(['M', 'M', 0, 42])

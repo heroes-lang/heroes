@@ -1,0 +1,11 @@
+# Reaches Rebel's floor over the platform layer's locale settings,
+# `hero_locale.h`, so that `heroes test` on this file runs the floor's own
+# tests (spec § 12, § 13). It asks for the settings with no room and prints
+# the kind the layer answers: 3 where this system keeps settings, 1 where it
+# keeps its locale in the environment alone.
+
+use <rebel>/i18n/hero_locale
+
+function main()
+    none: [u8] @= []
+    print(hero_locale.settings(@none, n: 0) >> 32)

@@ -1,0 +1,22 @@
+extern "fixedbugs-2704-longjmp.h"
+    function ab_try(cb: (function(i64) -> i64)) -> i64
+    function ab_throw()
+
+# A callback that holds a string of about 1 KB and an array when C jumps over it.
+function body(n: i64) -> i64
+    word = f"{n}-held" + "0123456789".repeat(100)
+    nums: [i64] @= []
+
+    for i in range(from: 0, to: 50)
+        nums @ nums.push(i)
+
+    ab_throw()
+    return word.len() + nums.len()
+
+function main()
+    total: i64 @= 0
+
+    for _ in range(from: 0, to: 1000)
+        total @ total + ab_try(cb: body)
+
+    print("jumped 1000 times, sum ", total)

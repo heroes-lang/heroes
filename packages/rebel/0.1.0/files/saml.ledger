@@ -1,0 +1,102 @@
+# The ledger of `saml`: what SAML 2.0's service provider (OASIS, 2005: SAML
+# Core, Bindings, Profiles and Metadata 2.0) lets a program do, one block per
+# capability, and what Rebel answers. Go 1.27.4's standard library, Rust
+# 1.100's and Python 3.15.2's hold no SAML, so their lines are `-` in every
+# block (`go list std`, the `std/all.html` of every Rust toolchain of this
+# machine, `pkgutil.iter_modules()`, 2026-11-24). The yardstick is the
+# specifications themselves, whose sections each note names; the second
+# implementations the tests rest on are OpenJDK 27.0.1's XML Signature
+# library, which signed the identity provider's messages and checked this
+# package's, OpenSSL 4.1.0, which signed and checked the redirect binding's
+# bytes, and Python 3.15.2's `zlib`, which deflated and inflated them.
+
+capability saml/metadata-read  an identity provider's metadata read: its endpoints, its signing certificates, what it asks, a federation's document, its validity and its signature
+  heroes  saml.parse_metadata, saml.IdentityProvider, saml.Endpoint, saml.Source
+  go      -
+  rust    -
+  python  -
+  note    SAML Metadata §§ 2.3 to 2.4.3. A KeyDescriptor of `use="encryption"` gives no certificate a response is checked by; an expired `validUntil` and a signature that does not hold or covers another element are refused
+
+capability saml/metadata-write  a service provider's metadata written
+  heroes  saml.format_metadata, saml.ServiceProvider, saml.service_provider
+  go      -
+  rust    -
+  python  -
+  note    SAML Metadata § 2.4.4: its signing certificates, its logout service by both bindings, the format it asks, its consumer service by HTTP-POST, WantAssertionsSigned
+
+capability saml/authn-request  an authentication request made, its identifier drawn from the system's generator
+  heroes  saml.authn_request, saml.RequestOptions, saml.default_request_options, saml.Outgoing
+  go      -
+  rust    -
+  python  -
+  note    SAML Core § 3.4.1: ForceAuthn, IsPassive, the NameIDPolicy's format and AllowCreate, a RequestedAuthnContext compared exactly
+
+capability saml/redirect-binding  a message sent by HTTP-Redirect: deflated, in base 64, a RelayState of at most 80 bytes, signed over the query's own bytes
+  heroes  saml.redirect_url, saml.Signer
+  go      -
+  rust    -
+  python  -
+  note    SAML Bindings § 3.4.4.1. Its signature was made identical by `openssl dgst -sha256 -sign` and its message inflated by Python's `zlib`; xmldsig.sign_bytes signs it, so every method of a key pair `xmldsig` makes is offered
+
+capability saml/post-binding  a message sent by HTTP-POST: a page that posts itself, the message signed inside it
+  heroes  saml.post_page, saml.Signer
+  go      -
+  rust    -
+  python  -
+  note    SAML Bindings § 3.5.4; the signature enveloped after the Issuer over exclusive Canonical XML, checked by the JDK's javax.xml.crypto.dsig
+
+capability saml/response-check  a response checked and the login it holds answered: signature, issuer, destination, request answered, bearer confirmation, window, audience, conditions, attributes
+  heroes  saml.check_response, saml.ResponseOptions, saml.response_options, saml.unsolicited_options, saml.Login, saml.Attribute, saml.values_of
+  go      -
+  rust    -
+  python  -
+  note    SAML Profiles §§ 4.1.4.2 to 4.1.4.5 and SAML Core §§ 2.5.1, 5.4.2: the assertion's own signature asked unless the program says otherwise; a signature whose one reference does not name the element it stands in is refused, so a signed assertion moved under a forged one vouches for nothing; a condition not understood is refused; a comment inside a signed name cannot cut it; the identity provider's status told as it wrote it
+
+capability saml/replay  a bearer assertion read once, its identifier kept until it expires
+  heroes  saml.Seen, saml.new_seen, saml.check_response
+  go      -
+  rust    -
+  python  -
+  note    SAML Profiles § 4.1.4.5. The record is the program's, so several processes keep it where they all reach it
+
+capability saml/unsolicited  a response no request asked, read only where the program says so
+  heroes  saml.unsolicited_options
+  go      -
+  rust    -
+  python  -
+  note    SAML Profiles § 4.1.5: it must then answer no request
+
+capability saml/logout-sp  a logout the service provider begins: its request made, the identity provider's answer checked
+  heroes  saml.logout_request, saml.check_logout_response, saml.Incoming
+  go      -
+  rust    -
+  python  -
+  note    SAML Profiles § 4.4.4: the request names the subject as the login did and its session index; an answer unsigned, by either binding, is refused
+
+capability saml/logout-idp  a logout the identity provider asks: its request checked, the answer made
+  heroes  saml.check_logout_request, saml.logout_response, saml.LogoutOrder, saml.Incoming
+  go      -
+  rust    -
+  python  -
+  note    SAML Profiles § 4.4.4; a request signed over the query by OpenSSL and one signed inside by the JDK are both read, an expired NotOnOrAfter refused
+
+capability saml/encrypted  an encrypted assertion, identifier or attribute read
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    XML Encryption 1.1 is not written in Rebel: no `xmlenc` package decrypts an EncryptedData by RSA-OAEP and AES-GCM. Until one is, each is refused `unsupported` by name, never read in part
+
+capability saml/artifact-soap  the HTTP-Artifact binding and the SOAP binding's back channel
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    SAML Bindings §§ 3.2 and 3.6: an artifact resolved over a mutually authenticated SOAP call, and logout by the back channel; both need a SOAP client over `http` with a client certificate, not written here
+
+capability saml/identity-provider  the identity provider's side: requests read, assertions issued and signed
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    The gap catalogue's row J15 asks the service provider's side; an identity provider is its own work, on `xmldsig.sign` and these messages

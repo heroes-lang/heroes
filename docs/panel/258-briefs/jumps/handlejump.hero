@@ -1,0 +1,17 @@
+extern "handlejump.h"
+    record Slot tag Slot
+    function slot_open(n: i64) -> Slot acquires slot_close
+    function slot_close(s: Slot consumes)
+    function slot_value(s: Slot) -> i64
+    function hj_try(cb: (function(i64) -> i64)) -> i64
+    function hj_throw()
+
+function body(n: i64) -> i64
+    a = slot_open(n: n)
+    v = slot_value(s: a)
+    hj_throw()
+    slot_close(a)
+    return v
+
+function main()
+    print("result ", hj_try(cb: body))

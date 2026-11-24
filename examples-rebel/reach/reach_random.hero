@@ -1,6 +1,7 @@
 # Reaches Rebel's package `random`, so that `heroes test` on this file runs
 # the package's own tests (spec § 12). It throws a die three times from a
-# seeded generator and prints a float from one the system seeds.
+# seeded generator, draws a height from a normal distribution and the heads
+# among ten throws of a coin, and prints a float from one the system seeds.
 
 use <rebel>/random
 
@@ -9,6 +10,14 @@ function main()
 
     for _ in range(from: 0, to: 3)
         print(random.int_in(@g, from: 1, to: 7))
+
+    match random.normal(mean: 170.0, deviation: 8.0)
+        .ok heights => print(random.draw(@g, heights).default(170.0))
+        .err e      => print(e.msg)
+
+    match random.binomial(trials: 10, probability: 0.5)
+        .ok coin => print(random.draw_discrete(@g, coin))
+        .err e   => print(e.msg)
 
     match random.from_system()
         .ok fresh =>

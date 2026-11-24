@@ -1,0 +1,276 @@
+# One assertion of SAML's Web Browser SSO profile read and checked: its
+# issuer, its subject and a bearer confirmation of it (SAML Profiles
+# § 4.1.4.2 and § 4.1.4.3), its conditions and audience (SAML Core § 2.5.1),
+# its authentication statement and its attributes. The signature is the
+# caller's to have checked before.
+
+use saml/internal/names
+use time
+use xml
+
+# What the assertion is checked against.
+record Expect
+    # The service provider's entity identifier, the audience required.
+    sp_entity: str
+    # The assertion consumer service's URL, the recipient required.
+    acs_url: str
+    # The identity provider's entity identifier, the issuer required.
+    idp_entity: str
+    # The request answered, or "" where the response is unsolicited and must
+    # then name none.
+    request_id: str
+    # The instant of the check, in milliseconds since 1970 in UTC.
+    now_ms: i64
+    # The clock skew allowed either way, in milliseconds.
+    skew_ms: i64
+
+# One attribute, as the face answers it.
+record Attribute
+    # Its `Name`.
+    name: str
+    # Its `NameFormat`, or "".
+    name_format: str
+    # Its `FriendlyName`, or "".
+    friendly_name: str
+    # Its values in order, a nil value read as "".
+    values: [str]
+
+# What an assertion that holds says.
+record Reading
+    # The assertion's `ID`.
+    id: str
+    # The subject's `NameID`.
+    name_id: str
+    # Its `Format`, or "".
+    name_id_format: str
+    # Its `NameQualifier`, or "".
+    name_qualifier: str
+    # Its `SPNameQualifier`, or "".
+    sp_name_qualifier: str
+    # The authentication statement's `SessionIndex`, or "".
+    session_index: str
+    # Whether the statement writes `SessionNotOnOrAfter`.
+    session_ends: bool
+    # That instant, in milliseconds since 1970 in UTC; 0 where none.
+    session_end_ms: i64
+    # The statement's `AuthnInstant`, in milliseconds since 1970 in UTC.
+    authn_ms: i64
+    # The class of the authentication's context, or "".
+    authn_context: str
+    # The attributes of every attribute statement, in order.
+    attributes: [Attribute]
+    # The bearer confirmation's `NotOnOrAfter`, in milliseconds since 1970 in
+    # UTC: until then the assertion's identifier is kept, so it is read once.
+    expires_ms: i64
+    # Whether the conditions write `OneTimeUse`.
+    one_time_use: bool
+
+# What the assertion `a` says, once every rule of the profile holds for
+# `expect`.
+#
+# Fails `invalid` where a rule does not hold, the message naming it;
+# `not_found` where an element the profile asks is absent; `unsupported` for
+# an encrypted identifier or attribute, a condition not understood, two
+# authentication statements, or an attribute value of elements.
+function read(a: xml.Element, expect: Expect) -> Reading?
+    if names.attribute_or_empty(a, name: "Version") != "2.0"
+        return fail(code: names.INVALID, msg: "the assertion is not of SAML 2.0")
+    id = names.attribute_or_empty(a, name: "ID")
+
+    if id == ""
+        return fail(code: names.INVALID, msg: "the assertion has no ID")
+    _ = names.instant_of(s: xml.attribute(a, name: "IssueInstant").default(""), what: "the assertion's IssueInstant")?
+    names.check_issuer(a, expected: expect.idp_entity, required: true, what: "the assertion")?
+    subject = names.one_child(a, space: names.ASSERTION, local: "Subject", what: "the assertion's Subject")?
+
+    if names.has_child(subject, space: names.ASSERTION, local: "EncryptedID")
+        return fail(
+            code: names.UNSUPPORTED,
+            msg: "the subject's identifier is encrypted, and XML Encryption is not read"
+        )
+    name = names.one_child(subject, space: names.ASSERTION, local: "NameID", what: "the subject's NameID")?
+    expires = bearer_expiry(subject, expect: expect)?
+    one_time = conditions(a, expect: expect)?
+    statements = xml.children_in(a, space: names.ASSERTION, local: "AuthnStatement")
+
+    if statements.len() == 0
+        return fail(
+            code: names.INVALID,
+            msg: "the assertion holds no AuthnStatement, which SAML Profiles § 4.1.4.2 asks"
+        )
+
+    if statements.len() > 1
+        return fail(
+            code: names.UNSUPPORTED,
+            msg: f"the assertion holds {statements.len()} AuthnStatements, and which one speaks for the session would be a guess"
+        )
+    s = statements[0]
+    authn = names.instant_of(s: xml.attribute(s, name: "AuthnInstant").default(""), what: "the AuthnStatement's AuthnInstant")?
+    ends = xml.attribute(s, name: "SessionNotOnOrAfter")
+    end_ms: i64 @= 0
+
+    if !ends.is_err()
+        end_ms @ time.unix_milliseconds(names.instant_of(s: ends.must(), what: "SessionNotOnOrAfter")?)
+
+        if expect.now_ms - expect.skew_ms >= end_ms
+            return fail(code: names.INVALID, msg: f"the session ended at {ends.must()}")
+    context: str @= ""
+
+    match xml.child_in(s, space: names.ASSERTION, local: "AuthnContext")
+        .ok c =>
+            match xml.child_in(c, space: names.ASSERTION, local: "AuthnContextClassRef")
+                .ok r  => context @ names.plain(r, what: "the AuthnContextClassRef")?
+                .err _ => _ = 0
+        .err _ => _ = 0
+
+    return ok(
+        Reading(id: id, name_id: names.plain(name, what: "the subject's NameID")?, name_id_format: names.attribute_or_empty(name, name: "Format"), name_qualifier: names.attribute_or_empty(name, name: "NameQualifier"), sp_name_qualifier: names.attribute_or_empty(name, name: "SPNameQualifier"), session_index: names.attribute_or_empty(s, name: "SessionIndex"), session_ends: !ends.is_err(), session_end_ms: end_ms, authn_ms: time.unix_milliseconds(authn), authn_context: context, attributes: attributes_of(a)?, expires_ms: expires, one_time_use: one_time)
+    )
+
+# The `NotOnOrAfter` of the first bearer confirmation of `subject` that holds
+# for `expect`: SAML Profiles § 4.1.4.2 and § 4.1.4.3.
+#
+# Fails `invalid` where none holds, with the first one's reason, or where none
+# is a bearer's.
+function bearer_expiry(subject: xml.Element, expect: Expect) -> i64?
+    first: str @= ""
+
+    for c in xml.children_in(subject, space: names.ASSERTION, local: "SubjectConfirmation")
+        if names.attribute_or_empty(c, name: "Method") == names.BEARER
+            match confirmed(c, expect: expect)
+                .ok at => return ok(at)
+                .err e =>
+                    if first == ""
+                        first @ e.msg
+
+    if first == ""
+        return fail(code: names.INVALID, msg: "the subject has no bearer SubjectConfirmation")
+    return fail(code: names.INVALID, msg: first)
+
+# The expiry of the bearer confirmation `c`, once its data holds: a
+# recipient that is the consumer service, a `NotOnOrAfter` not passed, no
+# `NotBefore`, and an `InResponseTo` that is the request's or none where the
+# response is unsolicited.
+function confirmed(c: xml.Element, expect: Expect) -> i64?
+    data = names.one_child(c, space: names.ASSERTION, local: "SubjectConfirmationData", what: "the bearer's SubjectConfirmationData")?
+
+    if xml.has_attribute(data, name: "NotBefore")
+        return fail(
+            code: names.INVALID,
+            msg: "the bearer's SubjectConfirmationData writes NotBefore, which SAML Profiles § 4.1.4.2 forbids"
+        )
+    recipient = names.attribute_or_empty(data, name: "Recipient")
+
+    if recipient != expect.acs_url
+        return fail(code: names.INVALID, msg: f"the bearer's Recipient is \"{recipient}\", not \"{expect.acs_url}\"")
+    limit = xml.attribute(data, name: "NotOnOrAfter")
+
+    if limit.is_err()
+        return fail(code: names.INVALID, msg: "the bearer's SubjectConfirmationData writes no NotOnOrAfter")
+    at = time.unix_milliseconds(names.instant_of(s: limit.must(), what: "the bearer's NotOnOrAfter")?)
+
+    if expect.now_ms - expect.skew_ms >= at
+        return fail(code: names.INVALID, msg: f"the bearer's NotOnOrAfter {limit.must()} has passed")
+    answered = names.attribute_or_empty(data, name: "InResponseTo")
+
+    if answered != expect.request_id
+        return fail(
+            code: names.INVALID,
+            msg: f"the bearer's InResponseTo is \"{answered}\" where \"{expect.request_id}\" was expected"
+        )
+    return ok(at)
+
+# Whether `a`'s conditions write `OneTimeUse`, once they hold: the window of
+# validity, every audience restriction naming the service provider, and no
+# condition this package does not understand (SAML Core § 2.5.1).
+function conditions(a: xml.Element, expect: Expect) -> bool?
+    c = match names.one_child(a, space: names.ASSERTION, local: "Conditions", what: "the assertion's Conditions")
+        .ok e  => e
+        .err _ => return fail(code: names.INVALID, msg: "the assertion has no Conditions, so no AudienceRestriction")
+
+    before = xml.attribute(c, name: "NotBefore")
+
+    if !before.is_err()
+        at = time.unix_milliseconds(names.instant_of(s: before.must(), what: "the Conditions' NotBefore")?)
+
+        if expect.now_ms + expect.skew_ms < at
+            return fail(code: names.INVALID, msg: f"the assertion is not valid before {before.must()}")
+    after = xml.attribute(c, name: "NotOnOrAfter")
+
+    if !after.is_err()
+        at = time.unix_milliseconds(names.instant_of(s: after.must(), what: "the Conditions' NotOnOrAfter")?)
+
+        if expect.now_ms - expect.skew_ms >= at
+            return fail(code: names.INVALID, msg: f"the assertion expired at {after.must()}")
+    restrictions: i64 @= 0
+    one_time: i64 @= 0
+    proxy: i64 @= 0
+
+    for e in xml.child_elements(c)
+        if e.name.space != names.ASSERTION
+            return fail(
+                code: names.UNSUPPORTED,
+                msg: f"a condition <{e.name.local}> of another namespace is not understood"
+            )
+
+        if e.name.local == "AudienceRestriction"
+            restrictions @ restrictions + 1
+            heard: bool @= false
+
+            for audience in xml.children_in(e, space: names.ASSERTION, local: "Audience")
+                if names.plain(audience, what: "an Audience")? == expect.sp_entity
+                    heard @ true
+
+            if !heard
+                return fail(
+                    code: names.INVALID,
+                    msg: f"an AudienceRestriction does not name this service provider, \"{expect.sp_entity}\""
+                )
+        else if e.name.local == "OneTimeUse"
+            one_time @ one_time + 1
+        else if e.name.local == "ProxyRestriction"
+            proxy @ proxy + 1
+        else
+            return fail(
+                code: names.UNSUPPORTED,
+                msg: f"the condition <{e.name.local}> is not understood, which SAML Core § 2.5.1.1 makes the assertion's validity indeterminate"
+            )
+
+    if restrictions == 0
+        return fail(
+            code: names.INVALID,
+            msg: "the assertion has no AudienceRestriction, which SAML Profiles § 4.1.4.2 asks"
+        )
+
+    if one_time > 1 || proxy > 1
+        return fail(code: names.INVALID, msg: "the conditions write OneTimeUse or ProxyRestriction more than once")
+    return ok(one_time == 1)
+
+# The attributes of every attribute statement of `a`, in order.
+function attributes_of(a: xml.Element) -> [Attribute]?
+    out: [Attribute] @= []
+
+    for statement in xml.children_in(a, space: names.ASSERTION, local: "AttributeStatement")
+        if names.has_child(statement, space: names.ASSERTION, local: "EncryptedAttribute")
+            return fail(code: names.UNSUPPORTED, msg: "an attribute is encrypted, and XML Encryption is not read")
+
+        for e in xml.children_in(statement, space: names.ASSERTION, local: "Attribute")
+            name = names.attribute_or_empty(e, name: "Name")
+
+            if name == ""
+                return fail(code: names.INVALID, msg: "an Attribute has no Name")
+            values: [str] @= []
+
+            for v in xml.children_in(e, space: names.ASSERTION, local: "AttributeValue")
+                match names.plain(v, what: "a value")
+                    .ok text => values @ values.push(text)
+                    .err _ => return fail(
+                        code: names.UNSUPPORTED,
+                        msg: f"the attribute \"{name}\" has a value of elements, which this package does not read"
+                    )
+
+            out @ out.push(
+                Attribute(name: name, name_format: names.attribute_or_empty(e, name: "NameFormat"), friendly_name: names.attribute_or_empty(e, name: "FriendlyName"), values: values)
+            )
+
+    return ok(out)

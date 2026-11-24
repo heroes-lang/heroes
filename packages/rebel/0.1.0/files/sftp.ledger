@@ -1,0 +1,164 @@
+# The ledger of `sftp`: what a client of SFTP version 3 lets a program do,
+# one block per capability, and what Rebel answers.
+#
+# Go 1.27, Rust 1.100 and Python 3.15 carry no SFTP in their standard
+# libraries, so every `rust` and `python` line is `-`. The yardstick is Go's
+# `github.com/pkg/sftp` v1.13.12 (`go` below), every entry listed by `go doc
+# -all` run 2026-11-24 in a module cache inside the lane's scratch. The
+# protocol is draft-ietf-secsh-filexfer-02 and OpenSSH's `PROTOCOL` §§ 4.1
+# to 4.12 (read 2026-11-24), and the second implementation the tests are
+# held to is OpenSSH 10.5p1, this Mac's own: its `sshd` run as the user on
+# 127.0.0.1 with a configuration of its own and `/usr/libexec/sftp-server`
+# as the subsystem, whose `-Q requests` listed every request this package
+# sends; every file the tests write through SFTP is read back through the
+# system's own calls, and every one the system writes read through SFTP.
+
+capability sftp/session  a session on a channel of an `ssh` client: the subsystem started, version 3 agreed, the server's extensions read
+  heroes  sftp.start, sftp.close, sftp.Session, sftp.extensions, sftp.has_extension
+  go      NewClient, NewClientPipe, Client, Client.Close, Client.Wait, Client.HasExtension, ClientOption
+  rust    -
+  python  -
+  note    one client carries any number of sessions and other channels beside them, each call taking the client and the session in their places; an extension is used only where the server announced it with the version `PROTOCOL` § 4.2 says a client must check, so a later incompatible version is `unsupported`, never misread; a frame the session cannot read ends it, every later call `closed` with the reason
+
+capability sftp/pipeline  many requests in flight, sized to the server's limits
+  heroes  sftp.read, sftp.write, sftp.read_bytes, sftp.write_bytes
+  go      MaxPacket, MaxPacketChecked, MaxPacketUnchecked, MaxConcurrentRequestsPerFile, UseConcurrentReads, UseConcurrentWrites
+  rust    -
+  python  -
+  note    requests of 32 KiB, 64 in flight, the defaults of OpenSSH's own `sftp` (`-B`, `-R`, its manual read 2026-11-24), lowered where `limits@openssh.com` (`PROTOCOL` § 4.8) announces less, since a server may end the connection past them; 64 answers of 32 KiB fill the `ssh` channel's window of 2 MiB and no more; a read whose end is not known opens at one request and doubles with each full answer; answers are matched by number in whatever order they come, and an answer to a request never sent ends the session; where Go lets a program choose the sizes, Rebel takes OpenSSH's and the server's
+
+capability sftp/open  a file opened to read, write, append, make new or both, and closed
+  heroes  sftp.open, sftp.create, sftp.open_with, sftp.close_file, sftp.File
+  go      Client.Open, Client.Create, Client.OpenFile, File, File.Close, File.Name, FileOpenFlags
+  rust    -
+  python  -
+  note    the accesses are `fs.Access`'s, so a program opens a remote file as it opens a local one; a file made takes the permission asked less the server's mask; a name taken for `.create_new` is `exists`, told by a look at the path, since version 3's status names it a bare failure
+
+capability sftp/read-write  bytes read and written at an offset, and whole files
+  heroes  sftp.read, sftp.write, sftp.read_bytes, sftp.write_bytes
+  go      File.ReadAt, File.WriteAt, File.ReadFrom, File.ReadFromWithConcurrency, File.WriteTo
+  rust    -
+  python  -
+  note    a read ends short only at the end of the file: an answer shorter than asked is asked again from where it stopped, and the pieces must cover the bytes with no gap or the answer is `invalid`; a write past the end leaves zeros, as the system's `pwrite` does; checked with 3 MB and 5 MB files written through SFTP and read by the system, and back
+
+capability sftp/attributes  what a path or an open file names: kind, size, permission, owner, group, times, a link followed or not
+  heroes  sftp.info, sftp.link_info, sftp.file_info, sftp.Attributes
+  go      Client.Stat, Client.Lstat, File.Stat, FileStat, FileStat.AccessTime, FileStat.FileMode, FileStat.ModTime, FileAttrFlags, FileInfoUidGid, FileInfoExtendedData, StatExtended, S_IFMT, UseFstat
+  rust    -
+  python  -
+  note    each field is `not_found` where the server left it out, which version 3 allows, never a zero that reads as a value; the kind is `fs.Kind`, read from the type bits POSIX numbers; times are whole seconds, all version 3 carries; checked field by field against the system's own `stat` of the same files
+
+capability sftp/set-attributes  permission, owner, times and size set by path or on an open file
+  heroes  sftp.set_permission, sftp.set_owner, sftp.set_times, sftp.truncate, sftp.set_file_permission, sftp.set_file_owner, sftp.set_file_times, sftp.truncate_file
+  go      Client.Chmod, Client.Chown, Client.Chtimes, Client.Truncate, File.Chmod, File.Chown, File.Truncate
+  rust    -
+  python  -
+  note    each call sets its own attributes alone; an owner of -1 is kept, written as 2^32 - 1 as POSIX's `chown` reads it; a time outside 1970 to 2106 is `invalid` before anything is sent, version 3 carrying a `uint32` of seconds; a folder truncated is `is_a_directory`
+
+capability sftp/set-link-attributes  a link's own permission, owner and times set, never what it names
+  heroes  sftp.set_link_permission, sftp.set_link_owner, sftp.set_link_times
+  go      -
+  rust    -
+  python  -
+  note    `lsetstat@openssh.com` (`PROTOCOL` § 4.7), `unsupported` where the server does not announce it; macOS keeps a link's own permission, checked by the system's `lstat`
+
+capability sftp/extended-attributes-set  a file's named attribute extensions written
+  heroes  pending
+  go      Client.SetExtendedData, File.SetExtendedData
+  rust    -
+  python  -
+  note    the pairs are read (`Attributes.extended`); a write of them waits for a server that keeps them, since OpenSSH's, the one the tests reach, announces none and sends none
+
+capability sftp/folders  a folder listed, made, made with those above it, removed
+  heroes  sftp.read_dir, sftp.Listed, sftp.make_dir, sftp.make_dir_with, sftp.make_dir_all, sftp.remove_dir
+  go      Client.ReadDir, Client.ReadDirContext, Client.Mkdir, Client.MkdirAll, Client.RemoveDirectory
+  rust    -
+  python  -
+  note    a listing is read to its end and sorted by its names' bytes, `.` and `..` left out, as `fs.read_dir` answers, a name that is not UTF-8 `not_text`; 250 names across OpenSSH's answers checked against the system's own listing; a folder taken is `exists`, one holding something `not_empty` and a file `not_a_directory`, each told by a look at the path where version 3's status names a bare failure or no such file
+
+capability sftp/remove  a file or a link removed, and a tree with what it holds
+  heroes  sftp.remove, sftp.remove_all
+  go      Client.Remove, Client.RemoveAll
+  rust    -
+  python  -
+  note    `remove` takes a file or a link and answers a folder `is_a_directory`, keeping the protocol's two requests apart, where Go's `Remove` tries both; `remove_all` removes a link inside, never what it names, and answers `file_not_found` for a path that names nothing, as `fs.remove_all` does
+
+capability sftp/rename  a path renamed: never over a name taken, or over it at once
+  heroes  sftp.rename, sftp.posix_rename
+  go      Client.Rename, Client.PosixRename
+  rust    -
+  python  -
+  note    `rename` is version 3's, which never replaces, a name taken `exists`; `posix_rename` is `posix-rename@openssh.com` (`PROTOCOL` § 4.3), POSIX's `rename`, as Go's two are
+
+capability sftp/links  symbolic links made and read, hard links made
+  heroes  sftp.symlink, sftp.read_link, sftp.hard_link
+  go      Client.Symlink, Client.ReadLink, Client.Link
+  rust    -
+  python  -
+  note    OpenSSH's server reads `SYMLINK`'s two paths in the order other than the draft's (`PROTOCOL` § 4.1), so the target goes first, checked by the system's `readlink` of the link made; `hard_link` is `hardlink@openssh.com` (§ 4.5); a file that is no link read as one is `invalid`
+
+capability sftp/paths  a path made absolute and clean, `~` expanded, a user's home
+  heroes  sftp.resolve, sftp.expand, sftp.home
+  go      Client.RealPath, Client.Getwd
+  rust    -
+  python  -
+  note    `resolve(".")` is the folder the session starts in, which is Go's `Getwd`; `expand` is `expand-path@openssh.com` (§ 4.9) and `home` `home-directory` (§ 4.11); OpenSSH answers an unknown user's home a bare failure, `failed`, and its `~` `no such file`, `file_not_found`
+
+capability sftp/sync  an open file's bytes written to the server's disk
+  heroes  sftp.sync
+  go      File.Sync
+  rust    -
+  python  -
+  note    `fsync@openssh.com` (§ 4.6), `unsupported` where the server does not announce it
+
+capability sftp/volume  the space and the files of the volume a path or an open file stands on
+  heroes  sftp.volume, sftp.file_volume, sftp.Volume
+  go      Client.StatVFS, StatVFS, StatVFS.FreeSpace, StatVFS.TotalSpace, StatVFS.MarshalBinary
+  rust    -
+  python  -
+  note    `statvfs@openssh.com` and `fstatvfs@openssh.com` (§ 4.4); the block counts are turned into bytes once, a product past 2^63 - 1 `invalid`, so a program multiplies nothing; the size checked against the system's own `statvfs` through `fs.space`
+
+capability sftp/copy  bytes copied between two open files by the server itself
+  heroes  sftp.copy_range
+  go      -
+  rust    -
+  python  -
+  note    `copy-data` (§ 4.10); a count of 0 asks nothing, where the extension reads 0 as to the end of the file, so no number means all; one handle both sides is refused before anything is sent
+
+capability sftp/names  the names of users and groups by their numbers
+  heroes  sftp.user_names, sftp.group_names
+  go      -
+  rust    -
+  python  -
+  note    `users-groups-by-id@openssh.com` (§ 4.12); a number the server knows no name for is left out of the map, where the extension answers it empty
+
+capability sftp/failure  each status of version 3 answered by a code of Rebel's closed vocabulary
+  heroes  sftp.FILE_NOT_FOUND, sftp.EXISTS, sftp.NOT_A_DIRECTORY, sftp.IS_A_DIRECTORY, sftp.NOT_EMPTY, sftp.PERMISSION, sftp.INVALID, sftp.NOT_TEXT, sftp.CLOSED, sftp.TIMEOUT, sftp.UNSUPPORTED, sftp.FAILED
+  go      StatusError, StatusError.Error, StatusError.FxCode, TransferError, ErrSSHFxOk, ErrSSHFxEOF, ErrSSHFxNoSuchFile, ErrSSHFxPermissionDenied, ErrSSHFxFailure, ErrSSHFxBadMessage, ErrSSHFxNoConnection, ErrSSHFxConnectionLost, ErrSSHFxOpUnsupported, ErrSshFxOk, ErrSshFxEof, ErrSshFxNoSuchFile, ErrSshFxPermissionDenied, ErrSshFxFailure, ErrSshFxBadMessage, ErrSshFxNoConnection, ErrSshFxConnectionLost, ErrSshFxOpUnsupported, EBADF, ErrInternalInconsistency, InternalInconsistency
+  rust    -
+  python  -
+  note    `NO_SUCH_FILE` is `file_not_found`, `PERMISSION_DENIED` `permission`, `FAILURE` `failed`, `BAD_MESSAGE` `invalid`, `NO_CONNECTION` and `CONNECTION_LOST` `closed`, `OP_UNSUPPORTED` `unsupported`; the codes version 3 cannot name, `exists`, `not_empty`, `not_a_directory` and `is_a_directory`, are told by one look at the path after the failure, as each status of OpenSSH 10.5p1 was measured; the server's own words stay in every message
+
+capability sftp/walk-glob  a folder's tree walked and the server's paths matched by a pattern
+  heroes  pending
+  go      Client.Walk, Client.Glob, Match, ErrBadPattern
+  rust    -
+  python  -
+  note    `read_dir` and `link_info` give a program each step; a walk and a glob are written once `fs`'s walks and glob read folders through a reader the program names, so the local and the remote share one walker
+
+capability sftp/server  the server's side: requests served from the program's own files or handlers
+  heroes  pending
+  go      Server, NewServer, Server.Close, Server.Serve, ServerOption, ReadOnly, WindowsRootEnumeratesDrives, WithAllocator, WithDebug, WithMaxTxPacket, WithServerWorkingDirectory, RequestServer, NewRequestServer, RequestServer.Close, RequestServer.Serve, RequestServerOption, WithRSAllocator, WithRSMaxTxPacket, WithStartDirectory, Handlers, InMemHandler, Request, NewRequest, Request.AttrFlags, Request.Attributes, Request.Context, Request.Pflags, Request.WithContext, FileCmder, FileLister, FileReader, FileWriter, ListerAt, LstatFileLister, NameLookupFileLister, OpenFileWriter, PosixRenameFileCmder, ReadlinkFileLister, RealPathFileLister, StatVFSFileCmder, WriterAtReaderAt, SftpServerWorkerCount, MaxFilelist, SetSFTPExtensions
+  rust    -
+  python  -
+  note    it stands on `ssh`'s server side, itself a `pending` block of `ssh.ledger`
+
+capability sftp/versions-4-6  versions 4 to 6 of the protocol
+  heroes  refused: OpenSSH, the server this client is written for, speaks version 3 alone, and a server of a later version answers 3 to a client asking 3 (each draft's § on version negotiation); a server of version 3 that refused a client of 3 would make it wrong
+  go      -
+  rust    -
+  python  -
+
+dropped cursor  a file's own place read and moved (Go's `File.Read`, `File.Write`, `File.Seek`): every read and write names its offset, so two parts of a program never share a hidden place
+dropped path-text  a remote path's parts joined and split (Go's `Join`, `Split`, `Client.Join`): `path` with POSIX's rules, which every SFTP server's paths follow
+dropped stderr  the subsystem's errors copied out (Go's `CopyStderrTo`): a server's words for a person at the server, where every answer the program needs is a status with its message

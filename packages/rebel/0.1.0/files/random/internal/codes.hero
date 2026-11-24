@@ -1,7 +1,13 @@
-# The code `random` fails with, held once so that the face and every module
+# The codes `random` fails with, held once so that the face and every module
 # name the same constant, and a misspelt code is a compile error.
 
 # The input is not what the function reads: an empty list to choose from, a
-# count past the list, or weights that cannot be drawn from.
+# count past the list, weights that cannot be drawn from, or the parameters
+# of a distribution outside the ones it is defined for.
 constant INVALID: str
     "invalid"
+
+# A number drawn from a distribution lies beyond the largest float, as a
+# heavy tail's rare draws can.
+constant DOES_NOT_FIT: str
+    "does_not_fit"

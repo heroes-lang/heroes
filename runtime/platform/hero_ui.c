@@ -4739,41 +4739,10 @@ int64_t hero_ui_arm_tip(int64_t id, uint8_t *buffer, int64_t count, int64_t *len
 
 #endif
 
-/* THE DRAWING AREA'S CALLS on Windows, whose arm draws no area yet: each
- * refuses in words of its own (`hero_ui_refused`). An arm that draws the
- * area defines them in its own member, and its system leaves this block's
- * condition: GTK 4's in `hero_ui_gtk.c`, over `hero_ui_canvas_gtk.c`. */
-
-#if defined(_WIN32)
-
-int64_t hero_ui_arm_set_drawing(int64_t id, const uint8_t *list, int64_t count) {
-    (void)id;
-    (void)list;
-    (void)count;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer draws a drawing area on macOS alone, and this system's arm has no such call");
-}
-
-int64_t hero_ui_arm_snapshot(int64_t id, uint8_t *rgba, int64_t count, int64_t *width, int64_t *height) {
-    (void)id;
-    (void)rgba;
-    (void)count;
-    (void)width;
-    (void)height;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer reads a drawing area's pixels on macOS alone, and this system's arm has no such call");
-}
-
-int64_t hero_ui_arm_pointer(int64_t id, int64_t x, int64_t y, int64_t phase, int64_t button, int64_t clicks, int64_t modifiers) {
-    (void)id;
-    (void)x;
-    (void)y;
-    (void)phase;
-    (void)button;
-    (void)clicks;
-    (void)modifiers;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer acts as a drawing area's pointer on macOS alone, and this system's arm has no such call");
-}
-
-#endif
+/* THE DRAWING AREA'S CALLS are every arm's own: macOS's above, over
+ * `hero_ui_appkit.swift`; GTK 4's in `hero_ui_gtk.c`, over
+ * `hero_ui_canvas_gtk.c`; Win32's in `hero_ui_win32.c`, over
+ * `hero_ui_canvas_win32.c`. */
 
 int64_t hero_ui_set_docked(hero_ui_app *app, int64_t on) {
     if (hero_ui_enter_native(app) == NULL) {

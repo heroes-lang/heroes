@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and seventy-two packages, in layers. **A package may use any package of a layer below
+A hundred and seventy-four packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -56,7 +56,7 @@ package moves its row in the same change. There is no cycle.
 | 1 | `strings` | text searched, cut, trimmed, replaced, padded, cased | `unicode` |  |
 | 1 | `bytes` | the same for `[u8]`, and bytes as hexadecimal and base 64 | `math`, `unicode` |  |
 | 1 | `regex` | a regular expression matched in linear time | `unicode` |  |
-| 1 | `random` | a seeded generator, ranges, shuffling, choosing, sampling; secure values from `os` | `math`, `os` |  |
+| 1 | `random` | a seeded generator, ranges, shuffling, choosing, sampling, numbers drawn from twelve distributions; secure values from `os` | `math`, `os` |  |
 | 1 | `stats` | mean, median, mode, variance, deviation, quantiles, correlation | `lists`, `math` |  |
 | 1 | `math/complex` | complex numbers and their functions as C11's Annex G computes them: arithmetic, the polar form, exponentials, logarithms, powers, the circular and hyperbolic functions and their inverses | `math` |  |
 | 1 | `math/linear` | vectors of two, three and four, matrices, quaternions, transforms, cameras and Euler angles in all twelve orders | `math` |  |
@@ -92,7 +92,7 @@ package moves its row in the same change. There is no cycle.
 | 2 | `image/vector` | paths of lines, curves and arcs (built, moved by a matrix, read from SVG's path data) filled and stroked into an image, anti-aliased, with caps, joins and dashes, and a region painted from a point | `image`, `lists`, `math`, `numbers` |  |
 | 2 | `image/webp` | WebP read and written, lossless: still pictures and animations (every transform, the colour cache, groups of codes; frames laid over a canvas), the ICC profile, EXIF and XMP chunks; the lossy coding is pending | `bytes`, `hash`, `image`, `math` |  |
 | 2 | `url/idna` | internationalized domain names (UTS 46): to ASCII and back, Punycode; its tables apart, so only its users carry them | `unicode`, `unicode/normalize` |  |
-| 2 | `i18n` | locales, CLDR's plural rules and message catalogs (gettext); numbers, dates, ordering and locale data in subpackages, from CLDR 49 | `bytes`, `numbers`, `os`, `strings` |  |
+| 2 | `i18n` | locales, the languages and formats chosen in the system's settings, CLDR's plural rules and message catalogs (gettext); numbers, dates, ordering and locale data in subpackages, from CLDR 49 | `bytes`, `numbers`, `os`, `strings` | `hero_locale.h` |
 | 2 | `font` | TrueType and OpenType fonts read (the `sfnt` tables, `cmap`, `glyf` and `CFF ` outlines as paths, advances, names, metrics), the width of a text, and a TrueType font cut down to the glyphs a document uses; a font found by its name, WOFF, GPOS and GSUB are pending | `bytes`, `unicode` |  |
 | 3 | `time` | an instant, a duration, the calendar, time zones (the system's files, or the IANA data Rebel carries), text of a time, sleeping | `bytes`, `io`, `numbers`, `os`, `strings` | `hero_time.h`, `hero_stream.h`, `hero_disk.h` |
 | 3 | `net` | TCP, UDP, names, addresses | `io`, `numbers`, `strings`, `threads` | `hero_net.h`, `hero_stream_net.h` |
@@ -184,9 +184,11 @@ package moves its row in the same change. There is no cycle.
 | 6 | `jobs/redis_store` | jobs kept in Redis: every change a Lua script the server runs whole | `bytes`, `jobs`, `json`, `numbers`, `os`, `redis`, `strings`, `time` |  |
 | 6 | `ui/webview` | a web page as a program's interface, in the manner of Tauri: the system's own web view as a widget of a `ui` app, its HTML, CSS and scripts served from the program's own assets at `app://localhost` with no port, a content security policy on every response, the page held to its own origin, and a bridge of texts and framed calls between the page and the program | `bytes`, `json`, `printing`, `time`, `ui` | `hero_ui.h` |
 | 6 | `xmldsig` | XML Signature checked against a trusted key and made, enveloped or detached, over Canonical XML; SHA-1 refused | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `strings`, `x509`, `xml` |  |
+| 6 | `sftp` | an SFTP version 3 client over an `ssh` channel, as OpenSSH's server speaks it: files opened, read and written by requests kept in flight, attributes read and set, folders listed, made and removed, renames, links, paths resolved, and OpenSSH's extensions (POSIX rename, hard links, fsync, a link's own attributes, volumes, limits, `~`, copies by the server, names by number) | `bytes`, `fs`, `numbers`, `os`, `ssh`, `strings`, `time` |  |
 | 7 | `web` | a router in the manner of Echo: routes with methods and parameters, groups, middleware as functions over a request and a response, the right 404 and 405, responses for JSON, text, redirects and static files; the program calls its own handler with its own state | `bytes`, `compress`, `crypto`, `crypto/seal`, `fs`, `html`, `http`, `io`, `json`, `log`, `mail`, `net`, `numbers`, `os`, `path`, `strings`, `template`, `time`, `tls`, `url`, `uuid` |  |
 | 7 | `websocket` | WebSocket (RFC 6455) client and server, compressed or not, many connections on one thread | `bytes`, `compress`, `crypto`, `http`, `io`, `json`, `net`, `os`, `poll`, `strings`, `threads`, `time`, `tls`, `unicode`, `url` |  |
 | 7 | `oauth2` | an OAuth 2.0 client (authorization code with PKCE, client credentials, device flow, refresh) and OpenID Connect | `bytes`, `crypto`, `http`, `io`, `jose`, `json`, `net`, `random`, `strings`, `threads`, `time`, `url` |  |
+| 7 | `saml` | SAML 2.0's service provider: an identity provider's metadata read and its own written, a request sent by redirect or by a form, signed or not, a response's signature, conditions and audience checked and the login answered once, single logout both ways | `bytes`, `compress`, `crypto/keypairs`, `html`, `random`, `strings`, `time`, `url`, `x509`, `xml`, `xmldsig` |  |
 | 7 | `s3` | the S3 API with Signature Version 4: objects, buckets, multipart uploads, presigned URLs | `bytes`, `crypto`, `hash`, `http`, `ini`, `io`, `json`, `lists`, `net`, `numbers`, `os`, `strings`, `time`, `tls`, `url`, `xml` |  |
 | 7 | `jsonrpc` | JSON-RPC 2.0 requests, answers and notifications over a stream or HTTP | `bytes`, `containers/deque`, `http`, `io`, `json`, `net`, `numbers`, `strings`, `threads` |  |
 | 7 | `acme` | an ACME client (RFC 8555): account, order, HTTP-01 and DNS-01 challenges, the certificate downloaded; the certificate request made by `x509.create_request` | `big`, `bytes`, `crypto`, `http`, `jose`, `json`, `os`, `pem`, `time`, `x509` |  |

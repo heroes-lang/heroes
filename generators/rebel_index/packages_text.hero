@@ -165,7 +165,9 @@ function face_section(face: str, layer: i64, r: reference.Reference, vocabulary:
     return lines.join("\n") + "\n\n"
 
 # One declaration on one line: its signature, a function's call, its first
-# sentence, and the codes a function's `Fails` paragraphs name.
+# sentence, the codes a function's `Fails` paragraphs name, and what each
+# call of a generic function must give its type parameters, as the reference
+# words it.
 #
 # - `d`: the declaration.
 # - `vocabulary`: README § A4's codes.
@@ -194,6 +196,9 @@ function declaration_line(d: reference.Declaration, vocabulary: {str: bool}) -> 
 
         if handed.len() > 0
             out @ out + " " + handed
+
+    if d.asks.len() > 0
+        out @ out + " What each call must give its type parameters: " + d.asks.join("; ") + "."
     return out
 
 ## Tests
@@ -202,14 +207,15 @@ test "page_of: a face's reference page, a nested one too"
     assert page_of("csv") == "https://heroes-lang.org/rebel/csv/"
     assert page_of("unicode/segment") == "https://heroes-lang.org/rebel/unicode/segment/"
 
-test "declaration_line: a function with its call and codes, a constant with its value, a record"
+test "declaration_line: a function with its call and codes, a constant with its value, a record, a generic function with what its calls give"
     vocabulary = {"invalid": true}
     f = reference.Declaration(
         kind: "function",
         name: "parse",
         block: ["function parse(text: str) -> [[str]]?"],
         doc: ["Every row of `text`.", "", "Fails `invalid` where it is not CSV."],
-        call: "csv.parse(text)"
+        call: "csv.parse(text)",
+        asks: []
     )
     assert declaration_line(d: f, vocabulary: vocabulary) == "- `function parse(text: str) -> [[str]]?`, called `csv.parse(text)`: Every row of `text`. Fails `invalid`."
     c = reference.Declaration(
@@ -217,7 +223,8 @@ test "declaration_line: a function with its call and codes, a constant with its 
         name: "INVALID",
         block: ["constant INVALID: str", "    \"invalid\""],
         doc: ["The code."],
-        call: ""
+        call: "",
+        asks: []
     )
     assert declaration_line(d: c, vocabulary: vocabulary) == "- `constant INVALID: str`, value `\"invalid\"`: The code."
     r = reference.Declaration(
@@ -225,9 +232,21 @@ test "declaration_line: a function with its call and codes, a constant with its 
         name: "P",
         block: ["record P", "    # X.", "    x: i64"],
         doc: [],
-        call: ""
+        call: "",
+        asks: []
     )
     assert declaration_line(d: r, vocabulary: vocabulary) == "- `record P(x: i64)`"
+    g = reference.Declaration(
+        kind: "function",
+        name: "add_mailbox",
+        block: ["function add_mailbox<T>(set: Set, m: (mailbox T)) -> i64?"],
+        doc: ["Adds a mailbox to the set."],
+        call: "poll.add_mailbox(set, m)",
+        asks: ["`T` reaches no `ptr` and no `cstr`: `(mailbox T)` makes it cross between threads, line 319", "`T` is not `()`: `(mailbox T)` is a mailbox of it, line 319"]
+    )
+    said = "- `function add_mailbox<T>(set: Set, m: (mailbox T)) -> i64?`, called `poll.add_mailbox(set, m)`: Adds a mailbox to the set."
+    asked = " What each call must give its type parameters: `T` reaches no `ptr` and no `cstr`: `(mailbox T)` makes it cross between threads, line 319; `T` is not `()`: `(mailbox T)` is a mailbox of it, line 319."
+    assert declaration_line(d: g, vocabulary: vocabulary) == said + asked
 
 test "layers_of: each layer once, from the lowest"
     rows = [

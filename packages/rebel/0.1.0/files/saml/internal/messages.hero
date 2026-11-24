@@ -1,0 +1,112 @@
+# The messages a service provider sends, built as SAML Core § 3 writes
+# them: an `AuthnRequest`, a `LogoutRequest` and a `LogoutResponse`, each
+# with its `Issuer` first, where an enveloped signature then goes after it.
+
+use saml/internal/names
+use xml
+
+# An element of the assertion namespace holding `text`.
+function in_assertion(local: str, text: str) -> xml.Element
+    return xml.with_text(xml.element_in(space: names.ASSERTION, name: "saml:" + local), text: text)
+
+# The root of a protocol message: its namespaces, `ID`, `Version`,
+# `IssueInstant` and `Destination`; its `Issuer` is the caller's first child.
+function opened(local: str, id: str, issued: str, destination: str) -> xml.Element
+    e @= xml.element_in(space: names.PROTOCOL, name: "samlp:" + local)
+    e @ xml.with_namespace(e, prefix: "samlp", space: names.PROTOCOL)
+    e @ xml.with_namespace(e, prefix: "saml", space: names.ASSERTION)
+    e @ xml.with_attribute(e, name: "ID", value: id)
+    e @ xml.with_attribute(e, name: "Version", value: "2.0")
+    e @ xml.with_attribute(e, name: "IssueInstant", value: issued)
+    e @ xml.with_attribute(e, name: "Destination", value: destination)
+    return e
+
+# What an authentication request asks beyond its identity.
+record Asked
+    # Whether the user must sign in again.
+    force_authn: bool
+    # Whether the identity provider must not ask the user anything.
+    is_passive: bool
+    # The format of the name asked, or "" for the identity provider's choice.
+    name_id_format: str
+    # Whether the identity provider may make a name for a new user.
+    allow_create: bool
+    # The classes of authentication context asked, exactly; empty for any.
+    contexts: [str]
+
+# An `AuthnRequest` whose response goes to `acs_url` by HTTP-POST.
+function authn_request(id: str, issued: str, destination: str, issuer: str, acs_url: str, asked: Asked) -> xml.Document
+    e @= opened(local: "AuthnRequest", id: id, issued: issued, destination: destination)
+    e @ xml.with_attribute(e, name: "AssertionConsumerServiceURL", value: acs_url)
+    e @ xml.with_attribute(e, name: "ProtocolBinding", value: "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST")
+
+    if asked.force_authn
+        e @ xml.with_attribute(e, name: "ForceAuthn", value: "true")
+
+    if asked.is_passive
+        e @ xml.with_attribute(e, name: "IsPassive", value: "true")
+    policy @= xml.element_in(space: names.PROTOCOL, name: "samlp:NameIDPolicy")
+
+    if asked.name_id_format != ""
+        policy @ xml.with_attribute(policy, name: "Format", value: asked.name_id_format)
+
+    allow = if asked.allow_create
+        "true"
+    else
+        "false"
+    policy @ xml.with_attribute(policy, name: "AllowCreate", value: allow)
+    children: [xml.Node] @= [.element(v: in_assertion(local: "Issuer", text: issuer)), .element(v: policy)]
+
+    if asked.contexts.len() > 0
+        requested @= xml.element_in(space: names.PROTOCOL, name: "samlp:RequestedAuthnContext")
+        requested @ xml.with_attribute(requested, name: "Comparison", value: "exact")
+
+        for c in asked.contexts
+            requested @ xml.with_child(e: requested, inner: in_assertion(local: "AuthnContextClassRef", text: c))
+
+        children @ children.push(.element(v: requested))
+    e.children @ children
+    return xml.document(e)
+
+# The subject a logout names, as the assertion named it.
+record Subject
+    # The `NameID`.
+    name_id: str
+    # Its `Format`, or "".
+    format: str
+    # Its `NameQualifier`, or "".
+    name_qualifier: str
+    # Its `SPNameQualifier`, or "".
+    sp_name_qualifier: str
+
+# A `LogoutRequest` of a session participant: the subject and the session's
+# index, which SAML Profiles § 4.4.4.1 asks of one.
+function logout_request(id: str, issued: str, destination: str, issuer: str, subject: Subject, session_index: str) -> xml.Document
+    e @= opened(local: "LogoutRequest", id: id, issued: issued, destination: destination)
+    name @= in_assertion(local: "NameID", text: subject.name_id)
+
+    if subject.format != ""
+        name @ xml.with_attribute(name, name: "Format", value: subject.format)
+
+    if subject.name_qualifier != ""
+        name @ xml.with_attribute(name, name: "NameQualifier", value: subject.name_qualifier)
+
+    if subject.sp_name_qualifier != ""
+        name @ xml.with_attribute(name, name: "SPNameQualifier", value: subject.sp_name_qualifier)
+    index = xml.with_text(xml.element_in(space: names.PROTOCOL, name: "samlp:SessionIndex"), text: session_index)
+    e.children @ [.element(v: in_assertion(local: "Issuer", text: issuer)), .element(v: name), .element(v: index)]
+    return xml.document(e)
+
+# A `LogoutResponse` to the request `in_response_to`, of the status
+# `status`.
+function logout_response(id: str, issued: str, destination: str, issuer: str, in_response_to: str, status: str) -> xml.Document
+    e @= opened(local: "LogoutResponse", id: id, issued: issued, destination: destination)
+    e @ xml.with_attribute(e, name: "InResponseTo", value: in_response_to)
+    code = xml.with_attribute(
+        xml.element_in(space: names.PROTOCOL, name: "samlp:StatusCode"),
+        name: "Value",
+        value: status
+    )
+    held = xml.with_child(e: xml.element_in(space: names.PROTOCOL, name: "samlp:Status"), inner: code)
+    e.children @ [.element(v: in_assertion(local: "Issuer", text: issuer)), .element(v: held)]
+    return xml.document(e)

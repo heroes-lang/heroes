@@ -94,6 +94,13 @@ capability xmldsig/manifest  a Manifest's references checked
   python  -
   note    Java's Manifest, Reference.validate on a Manifest's references
 
+capability xmldsig/bytes  bytes signed and checked by a method of XML Signature, its value as XML Signature writes it
+  heroes  xmldsig.sign_bytes, xmldsig.check_bytes
+  go      -
+  rust    -
+  python  -
+  note    What SAML's HTTP-Redirect binding signs a query's bytes with, the method's identifier sent as SigAlg (SAML Bindings § 3.4.4.1); OpenSSL 4.1.0's `openssl dgst -sha256 -sign` made the same RSA value over the same bytes and verified it (2026-11-24). Java has no counterpart: java.security.Signature works on DER values and names of its own
+
 capability xmldsig/enveloping  an enveloping signature made, its content inside an `Object`
   heroes  pending
   go      -
