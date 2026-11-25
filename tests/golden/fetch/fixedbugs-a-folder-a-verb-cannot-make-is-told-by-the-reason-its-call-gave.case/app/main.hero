@@ -1,0 +1,11 @@
+# Defect d-lane-blocking-small2-1 (2026-11-25): `heroes build -o
+# app/main.hero/b`, the folder `-o` names being a file, was told *the
+# operating system's own reason is 0*: the link asked the thread's last
+# reason again after the question of what stands at each part of the path
+# had cleared it. The reason is now the one the failed `mkdir` gave, carried
+# in its failure, with what stands in the way; through a link that loops the
+# same read told a question's refusal as the runtime's own. And `add`, a
+# catalogue or the packages' folder being a link to itself, said *a link to
+# nothing*: it is told by what its chain names.
+function main()
+    print(1)

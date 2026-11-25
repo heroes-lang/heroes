@@ -1,0 +1,60 @@
+# The reason a call to the machine failed, as a message tells it (design.md
+# §4.17, §1.12; defects 134, 346 and d-lane-blocking-small2-1, 2026-11-25).
+#
+# **A reason is the one the failed call set, read at once.** The runtime
+# keeps one per thread for the filesystem (`hero_fs_why`) and one for the
+# runs it starts (`hero_run_why`), and every call clears its own on the way
+# in, so a reason read after any other question of the machine is that
+# question's: `heroes build -o app/main.hero/b` was told *the operating
+# system's own reason is 0* because the link asked again after `mkdir` had
+# failed and what stands in the way had been asked of each part of the
+# path, each question clearing it; through a link that loops, the same read
+# told a question's refusal, *the runtime refused it before the system was
+# asked*, for `mkdir`'s. So a failure carries its reason in its message from
+# the line after the call (`process.made_dir`), and this module is the one
+# place that words a number.
+#
+# **0 is no reason**: it is what a call that succeeded leaves. A refusal
+# that reads 0 was told after another question, or by a runtime door that
+# set none, and says that no reason was kept rather than a false one; below
+# 0 the runtime refused before asking the system, told as its own since
+# defect 346.
+#
+# Its own module, below `cli/process` and `cli/stands`, which both tell a
+# reason, so it uses nothing.
+
+extern "hero_os.h"
+    function hero_fs_why() -> i64
+
+# The clause a refusal of a filesystem call ends with, asked on the line
+# after the call that failed.
+function because() -> str
+    return ": " + told(hero_fs_why())
+
+# The number `because` tells, for a caller whose sentence words it with
+# `told`, asked as `because` is, on the line after the call.
+function last() -> i64
+    return hero_fs_why()
+
+# A reason, `hero_fs_why`'s or a run's `why`, as a message says it.
+function told(why: i64) -> str
+    if why < 0
+        return "the runtime refused it before the system was asked, for the reason the system numbers " + (0 - why).to_str()
+
+    if why == 0
+        return "no reason was kept"
+    return "the operating system's own reason is " + why.to_str()
+
+## Tests
+
+# Defect d-lane-blocking-small2-1: a reason is the failed call's, and a 0 is
+# never told as one.
+test "a reason is told as the system's, the runtime's, or as none kept, and 0 is never a reason (defect d-lane-blocking-small2-1)"
+    assert told(13) == "the operating system's own reason is 13"
+    assert told(-63) == "the runtime refused it before the system was asked, for the reason the system numbers 63"
+    assert told(0) == "no reason was kept"
+
+    # A call that succeeded leaves 0, so a reason asked after it is none:
+    # the reason a refusal tells is read on the line after its own call.
+    _ = hero_fs_why()
+    assert because() == ": " + told(hero_fs_why())

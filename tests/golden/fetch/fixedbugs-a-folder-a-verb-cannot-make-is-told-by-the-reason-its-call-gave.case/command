@@ -1,0 +1,3 @@
+cd <work> && build app/main.hero -o app/main.hero/b
+cd <work> && build app/main.hero -o loop/b
+cd <work> && add -C app --path ../local/lib

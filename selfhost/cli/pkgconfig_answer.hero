@@ -22,6 +22,7 @@
 
 use cli/environment
 use cli/files
+use cli/os_reason
 use cli/process
 use cli/publish
 use cli/shell_split
@@ -116,7 +117,7 @@ function worded(pkgconfig: str, complained: str, present: bool) -> str
 function unasked(pkgconfig: str, why: i64) -> str
     if why == 2
         return "heroes-ffi-pkgconfig `" + pkgconfig + "` cannot be looked up: pkg-config is not on this machine, and `pkgconfig \"" + pkgconfig + "\"` asks it where the library is\n  install pkg-config, or name the library directly with `link`"
-    return "heroes-ffi-pkgconfig `" + pkgconfig + "` cannot be looked up: pkg-config could not be started, the operating system's own reason being " + why.to_str() + ", and `pkgconfig \"" + pkgconfig + "\"` asks it where the library is\n  the machine refused to start `pkg-config`, for the reason that number names (13 is a file it may not run, on Linux and macOS): make it a program the machine starts, or name the library directly with `link`"
+    return "heroes-ffi-pkgconfig `" + pkgconfig + "` cannot be looked up: pkg-config could not be started: " + os_reason.told(why) + "; and `pkgconfig \"" + pkgconfig + "\"` asks it where the library is\n  the machine refused to start `pkg-config`, for the reason that number names (13 is a file it may not run, on Linux and macOS): make it a program the machine starts, or name the library directly with `link`"
 
 # **Whether `pkgconfig` is installed, asked three ways, any one enough, so *not
 # installed* is said only where all three say no** (defect 292): `pkg-config`
@@ -365,8 +366,8 @@ test "a pkg-config the machine refuses to start is told by its reason, never as 
 
     if process.exe_suffix() != ".exe"
         assert ran.why == 13
-        assert told == "heroes-ffi-pkgconfig `zlib` cannot be looked up: pkg-config could not be started, the operating system's own reason being 13, and `pkgconfig \"zlib\"` asks it where the library is\n  the machine refused to start `pkg-config`, for the reason that number names (13 is a file it may not run, on Linux and macOS): make it a program the machine starts, or name the library directly with `link`"
-        head = "heroes-ffi-pkgconfig `zlib` cannot be looked up: pkg-config could not be started, the operating system's own reason being 13, and `pkgconfig \"zlib\"` asks it where the library is"
+        assert told == "heroes-ffi-pkgconfig `zlib` cannot be looked up: pkg-config could not be started: the operating system's own reason is 13; and `pkgconfig \"zlib\"` asks it where the library is\n  the machine refused to start `pkg-config`, for the reason that number names (13 is a file it may not run, on Linux and macOS): make it a program the machine starts, or name the library directly with `link`"
+        head = "heroes-ffi-pkgconfig `zlib` cannot be looked up: pkg-config could not be started: the operating system's own reason is 13; and `pkgconfig \"zlib\"` asks it where the library is"
         text = "extern \"zlib.h\" pkgconfig \"zlib\"\n    constant Z_OK: i64\n\nfunction main()\n    print(Z_OK)\n"
         parsed = parse.parse(text)
         s = source.new_source(name: "refused.hero", text: text)

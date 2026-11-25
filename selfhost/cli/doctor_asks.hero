@@ -13,6 +13,7 @@
 # asked, and the row said *nothing was written* beside the empty folder.
 
 use cli/environment
+use cli/os_reason
 use cli/process
 use cli/publish
 use cli/read_back
@@ -141,7 +142,7 @@ function linked_and_ran(dir: str, source: str) -> str?
     said = dir + "/said.txt"
 
     if write_file(path: unit, text: source).is_err()
-        return fail(code: "none", msg: "cannot write " + unit + process.because())
+        return fail(code: "none", msg: "cannot write " + unit + os_reason.because())
     built = process.run(program: "clang", words: ["clang", unit, "-o", binary], out: process.discard(), err: said)
 
     if !built.started

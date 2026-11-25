@@ -2014,7 +2014,12 @@ int64_t hero_run_go(const char *program, const char *in_path,
     hero_run_why_code = 0;
     hero_run_signal_code = 0;
 
+    /* A refusal of the runtime's own, before the system is asked, carries
+     * its reason negated as `hero_fs_why`'s do (defect 346), so no caller
+     * tells a run that did not start by a 0 (defect
+     * d-lane-blocking-small2-1's class). */
     if (hero_run_count == 0) {
+        hero_run_why_code = -(int64_t)EINVAL;
         *status = HERO_OS_FAILED;
         return -1;
     }
@@ -2396,6 +2401,8 @@ int64_t hero_run_go(const char *program, const char *in_path,
         close(report[0]);
         close(report[1]);
         hero_run_give_back(&launch);
+        /* This process is ending on a signal: the runtime's refusal. */
+        hero_run_why_code = -(int64_t)EINTR;
         *status = HERO_OS_FAILED;
         return -1;
     }

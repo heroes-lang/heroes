@@ -429,10 +429,14 @@ int64_t hero_fs_kind(const char *path) {
     DWORD type = GetFileType(h);
     BY_HANDLE_FILE_INFORMATION info;
     BOOL known = type == FILE_TYPE_DISK && GetFileInformationByHandle(h, &info);
+    /* Read before `CloseHandle`, which may set the thread's last error
+     * itself (`parts/run.c` measured a success setting it to 0): a reason is
+     * the failed call's (defect d-lane-blocking-small2-1's class). */
+    DWORD why = known ? 0 : GetLastError();
     CloseHandle(h);
     if (type != FILE_TYPE_DISK) return HERO_FS_OTHER;
     if (!known) {
-        hero_fs_why_code = (int64_t)GetLastError();
+        hero_fs_why_code = (int64_t)why;
         return HERO_FS_UNKNOWN;
     }
     return (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0 ? HERO_FS_DIRECTORY : HERO_FS_FILE;
@@ -1268,7 +1272,12 @@ int64_t hero_fs_deny_delete(const char *path) {
     hero_fs_why_code = 0;
 #if defined(__APPLE__)
     uuid_t me;
-    if (mbr_uid_to_uuid(getuid(), me) != 0) return HERO_OS_FAILED;
+    /* `mbr_uid_to_uuid` answers its reason rather than setting `errno`. */
+    int unmapped = mbr_uid_to_uuid(getuid(), me);
+    if (unmapped != 0) {
+        hero_fs_why_code = (int64_t)unmapped;
+        return HERO_OS_FAILED;
+    }
     acl_t acl = acl_get_file(path, ACL_TYPE_EXTENDED);
     if (acl == NULL) acl = acl_init(1);
     if (acl == NULL) {

@@ -50,6 +50,7 @@
 use cli/argv
 use cli/files
 use cli/io
+use cli/os_reason
 use cli/process
 use cli/stands
 use cli/table as cli_table
@@ -165,7 +166,7 @@ function free(folder: str) -> ()?
         .unknown =>
             return fail(
                 code: "bad_usage",
-                msg: "whether anything stands at `" + folder + "` cannot be asked" + process.because() + ", and nothing was written"
+                msg: "whether anything stands at `" + folder + "` cannot be asked" + os_reason.because() + ", and nothing was written"
             )
 
 function taken(folder: str, what: str) -> ()?
@@ -185,6 +186,16 @@ function placed(made: Made) -> ()?
         return fail(
             code: "write_failed",
             msg: "`" + staged + "` stands where `heroes new` stages its folder, and nothing was written: move it away"
+        )
+    stage_made = process.made_dir(staged)
+
+    # Said of the folder asked for, never of the staged one, whose name
+    # nobody gave: a folder `-C` names that may not be written was told
+    # *could not create the directory U/.heroes-new-45412-1*.
+    if stage_made.is_err()
+        return fail(
+            code: "write_failed",
+            msg: "`" + folder_of(made) + "` was not made, and nothing was written: no folder could be made beside it to stage its files" + verb_place.why(stage_made)
         )
     done: ()? @= staged_files(staged: staged, wanted: made.files)
 
@@ -417,4 +428,26 @@ test "a write that fails leaves nothing, staged or made"
 
     assert !process.path_exists(SCRATCH + "/half")
     assert process.walk(SCRATCH).must().files.len() == 0
+    assert !process.remove_tree(SCRATCH).is_err()
+
+# The folder `-C` names, where this user may not write and the system
+# refuses it (root writes one, and Windows keeps no read-only folder), is
+# told by the folder asked for and the system's reason, never by the staged
+# one's name, which nobody gave: it was *could not create the directory
+# U/.heroes-new-45412-1* (found beside defect d-lane-blocking-small2-1).
+test "a folder that may not be written is told by the folder asked for, never the staged one"
+    assert !process.remove_tree(SCRATCH).is_err()
+    assert !process.mkdir_all(SCRATCH + "/shut").is_err()
+    assert !files.set_mode(path: SCRATCH + "/shut", mode: 0o555).is_err()
+    made = Made(
+        within: SCRATCH + "/shut/",
+        name: "proj",
+        package: false,
+        files: [Written(path: "main.hero", text: "x\n")]
+    )
+    answer = placed(made)
+
+    if answer.is_err()
+        assert verb_place.why(answer) == "`" + SCRATCH + "/shut/proj` was not made, and nothing was written: no folder could be made beside it to stage its files: the operating system's own reason is 13"
+    assert !files.set_mode(path: SCRATCH + "/shut", mode: 0o755).is_err()
     assert !process.remove_tree(SCRATCH).is_err()

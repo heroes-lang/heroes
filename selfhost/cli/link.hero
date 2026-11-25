@@ -12,6 +12,7 @@ use cli/link_again
 use cli/link_flags
 use cli/link_output
 use cli/link_warning
+use cli/os_reason
 use cli/process
 use cli/publish
 use cli/response_file
@@ -93,17 +94,19 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
     line @ strings.with_all(list: line, more: supplied.real_words(t, j: judging))
     line @ response_file.for_link(line: line, home: home)?
     stage = publish.private_name(at)
-    stage_made = process.mkdir_all(stage)
 
-    # Said of the author's file, which is untouched, and not of the private
-    # directory, whose name they never gave (measured: `could not create the
-    # directory ro/out.3932-27.tmp`, for an `-o ro/out` in a read-only one).
-    if stage_made.is_err() && !keyed
+    # Said of the binary's path, which is untouched, and not of the private
+    # directory, whose name nobody gave (measured: `could not create the
+    # directory ro/out.3932-27.tmp`, for an `-o ro/out` in a read-only one),
+    # with the reason the failure carries, read at once: asked again here it
+    # was 0 (defect d-lane-blocking-small2-1).
+    stage_made = process.made_dir(stage)
+
+    if stage_made.is_err()
         return publish.refused(
             path: binary,
-            what: "no directory could be made beside it for the linker's output" + process.because()
+            what: "no directory could be made beside it for the linker's output" + publish.message_of(stage_made)
         )
-    stage_made?
     err_path = publish.private_name(t.build + "/link-clang-stderr.txt")
     inner = module + process.exe_suffix()
     line @ strings.with_all(
@@ -327,7 +330,7 @@ function build_beside(index: i64) -> i64
             dir: dir,
             index: index,
             step: "the run",
-            words: "it did not start, the system's reason " + ran.why.to_str()
+            words: "it did not start: " + os_reason.told(ran.why)
         )
 
     if ran.code != 0
