@@ -43,6 +43,13 @@
  * holds, is still the compiler's error and stops as it did. The marks are
  * this room's machinery, an array of the same raw `malloc` as its chunks.
  *
+ * AND ONLY THE THREAD'S OWN STACK TAKES HERE (the defect lane panel258-r1
+ * found beside 2752; `parts/stack_lane.c`). Two coroutines on one thread
+ * interleave their frames, so one room for both gave back out of order and
+ * said *compiler bug* of a correct program (`co_room`, exit 134); a take of a
+ * frame on any other stack is a block of its own (`parts/frame_aside.c`),
+ * counted against the same bound, and its give finds it there.
+ *
  * The chunks come from
  * the one `malloc` neither counter weighs and go back through its mate
  * (`hero_malloc_raw`, which stops at `out of memory` rather than return NULL,
@@ -177,11 +184,18 @@ static void hero_frame_heal_below(uintptr_t frame) {
     }
 }
 
+/* `parts/frame_aside.c`, later in this unit: a take of a frame on another
+ * stack than the thread's own, and the give of one. */
+static void *hero_frame_aside_take(size_t bytes, uintptr_t frame, uintptr_t stack, void *caller);
+static void hero_frame_aside_give(void *p);
+
 /* The taking function's frame is read from where this was called
  * (`parts/callback.c`'s HERO_CALLER_FRAME), so this is never inlined; the
  * caller named where the room runs out is the taking function's code. */
 __attribute__((noinline)) void *hero_frame_take(size_t bytes) {
     uintptr_t own = HERO_CALLER_FRAME();
+    uintptr_t stack = 0;
+    if (!hero_stack_lane(own, &stack)) return hero_frame_aside_take(bytes, own, stack, __builtin_return_address(0));
     hero_frame_heal_below(own);
     if (hero_frame_marked == hero_frame_mark_cap) {
         size_t cap = hero_frame_mark_cap == 0 ? 64 : hero_frame_mark_cap * 2;
@@ -204,7 +218,9 @@ __attribute__((noinline)) void *hero_frame_take(size_t bytes) {
  * frame below `p`'s own taker, which is giving `p` back at its exit and so is
  * the deepest frame alive. `p`'s own mark names that frame, never the frame
  * this call came from: a give is the last call of its function and may be
- * reached by a tail call from the function's caller. */
+ * reached by a tail call from the function's caller. A `p` no mark holds was
+ * taken on another stack, aside, or is the compiler's error, which the aside's
+ * give tells. */
 void hero_frame_give(void *p) {
     if (hero_frame_marked > 0 && hero_frame_marks[hero_frame_marked - 1].at == p) {
         hero_frame_pop();
@@ -212,7 +228,10 @@ void hero_frame_give(void *p) {
     }
     size_t at = hero_frame_marked;
     while (at > 0 && hero_frame_marks[at - 1].at != p) at -= 1;
-    if (at == 0) hero_frame_out_of_order();
+    if (at == 0) {
+        hero_frame_aside_give(p);
+        return;
+    }
     uintptr_t giver = hero_frame_marks[at - 1].frame;
     for (size_t above = at; above < hero_frame_marked; above += 1) {
         if (!hero_frame_is_below(hero_frame_marks[above].frame, giver)) hero_frame_out_of_order();
