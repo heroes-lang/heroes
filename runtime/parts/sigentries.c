@@ -45,10 +45,16 @@
  *    handler's frames and stands as an entry of its own. A landing at or below
  *    a standing entry on its range is that handler running again.
  * 7. The known stacks are learned where `makecontext` is called (an assembly
- *    wrapper in `sigjump_save.c`: the C library reads `uc_stack` nowhere
+ *    wrapper in `sigjump_make.c`: the C library reads `uc_stack` nowhere
  *    else), and nothing tells this route one has ended: a stale range is
  *    never asked about an entry, only about a target, where it costs a told
- *    refusal.
+ *    refusal. Where contexts fall to route A no switch's target is read, so
+ *    a range is held from its `makecontext` on (defect 2745).
+ * Route A obeys the same rules (defect 2745): its trusted record holds a
+ * frame just below the target's stack pointer, on the target's stack, and
+ * that bound is judged here as route C's decoded target is, but for whether
+ * it lies below the jumping frame, which a bound cannot say and the record's
+ * handler serial does (`sigjump_record.c`).
  * A jump or an entry this file cannot judge keeps every entry: a miss is a
  * told refusal, never Heroes code inside a signal. Every step is an atomic
  * load or store, a system call or a read of the thread's own record, so each
@@ -104,10 +110,20 @@ static _Atomic int hero_sig_stack_any = 0;
  * helper's returned frame once lent `makecontext` (panel 257's `fp3` and the
  * critic's `n6`), and a jump to it is judged on the stack it lies on, the
  * thread's own, where a target above a handler leaves it. A switch into the
- * range clears its end again. */
+ * range clears its end again.
+ *
+ * WHERE CONTEXTS FALL TO ROUTE A (defect 2745) no switch's target is read and
+ * no coroutine's end is seen, so a range is HELD from its `makecontext` on:
+ * it may hold a coroutine's frames for as long as it stands, and a target in
+ * it lies on that coroutine. A switch to the very context `makecontext` was
+ * handed for it (`hero_sig_stack_ctx`, a pointer compared, never read)
+ * enters it as route C's does; a range held and never so entered is told in
+ * words of its own, since no switch into it was seen. */
 #define HERO_SIG_RANGE_ENTERED 1
 #define HERO_SIG_RANGE_ENDED 2
+#define HERO_SIG_RANGE_HELD 4
 static _Atomic int hero_sig_stack_state[HERO_SIG_STACKS];
+static _Atomic uintptr_t hero_sig_stack_ctx[HERO_SIG_STACKS];
 
 static void hero_sig_stack_put(int i, uintptr_t lo, uintptr_t hi) {
     atomic_fetch_add(&hero_sig_stack_seq[i], 1);
@@ -116,8 +132,8 @@ static void hero_sig_stack_put(int i, uintptr_t lo, uintptr_t hi) {
     atomic_fetch_add(&hero_sig_stack_seq[i], 1);
 }
 
-void hero_sig_known_stack(const void *context);
-void hero_sig_known_stack(const void *context) {
+void hero_sig_known_stack(const void *context, bool held);
+void hero_sig_known_stack(const void *context, bool held) {
     const ucontext_t *uc = (const ucontext_t *)context;
     if (uc == NULL) return;
     uintptr_t lo = (uintptr_t)uc->uc_stack.ss_sp;
@@ -128,13 +144,26 @@ void hero_sig_known_stack(const void *context) {
     for (int i = 0; i < HERO_SIG_STACKS; i += 1) {
         uintptr_t l = atomic_load(&hero_sig_stack_lo[i]), h = atomic_load(&hero_sig_stack_hi[i]);
         if (h > l && l < hi && lo < h) hero_sig_stack_put(i, 0, 0);
+        if (atomic_load(&hero_sig_stack_ctx[i]) == (uintptr_t)context) atomic_store(&hero_sig_stack_ctx[i], 0);
     }
     unsigned at = atomic_fetch_add(&hero_sig_stack_next, 1) % HERO_SIG_STACKS;
-    atomic_store_explicit(&hero_sig_stack_state[at], 0, memory_order_relaxed);
+    atomic_store_explicit(&hero_sig_stack_state[at], held ? HERO_SIG_RANGE_HELD : 0, memory_order_relaxed);
+    atomic_store(&hero_sig_stack_ctx[at], (uintptr_t)context);
     hero_sig_stack_put((int)at, lo, hi);
     atomic_store_explicit(&hero_sig_stack_any, 1, memory_order_release);
     atomic_fetch_add_explicit(&hero_stacks_made, 1, memory_order_release);
     atomic_store(&hero_sig_stack_writing, 0);
+}
+
+/* Route A's switch to `context`: the range `makecontext` was handed it for,
+ * where one was, entered (a pointer compared, nothing of the context read). */
+static void hero_sig_range_switched(const void *context) {
+    if (context == NULL || !atomic_load_explicit(&hero_sig_stack_any, memory_order_acquire)) return;
+    for (int i = 0; i < HERO_SIG_STACKS; i += 1) {
+        if (atomic_load(&hero_sig_stack_ctx[i]) == (uintptr_t)context) {
+            atomic_fetch_or_explicit(&hero_sig_stack_state[i], HERO_SIG_RANGE_ENTERED, memory_order_relaxed);
+        }
+    }
 }
 
 /* The known ranges that overlap `[lo, hi)`, the first `room` of them into
@@ -180,14 +209,19 @@ static int hero_sig_range_slot(uintptr_t at, uintptr_t *lo, uintptr_t *hi) {
  * handed out and nothing overlapped since, whether or not it may hold frames. */
 static bool hero_sig_known_range(uintptr_t at, uintptr_t *lo, uintptr_t *hi) { return hero_sig_range_slot(at, lo, hi) >= 0; }
 
-/* The known range holding `at` that may hold a coroutine's frames now: a
- * switch entered it and none saw its coroutine end. */
-static bool hero_sig_live_range(uintptr_t at, uintptr_t *lo, uintptr_t *hi) {
+/* What the known range holding `at` may hold now: 0 no coroutine's frames,
+ * `HERO_SIG_RANGE_ENTERED` a coroutine a switch entered and none saw end,
+ * `HERO_SIG_RANGE_HELD` a coroutine route A cannot see entered or ended. */
+static int hero_sig_range_life(uintptr_t at, uintptr_t *lo, uintptr_t *hi) {
     int i = hero_sig_range_slot(at, lo, hi);
-    if (i < 0) return false;
+    if (i < 0) return 0;
     int state = atomic_load_explicit(&hero_sig_stack_state[i], memory_order_relaxed);
-    return (state & HERO_SIG_RANGE_ENTERED) != 0 && (state & HERO_SIG_RANGE_ENDED) == 0;
+    if ((state & HERO_SIG_RANGE_ENTERED) != 0 && (state & HERO_SIG_RANGE_ENDED) == 0) return HERO_SIG_RANGE_ENTERED;
+    return (state & HERO_SIG_RANGE_HELD) != 0 ? HERO_SIG_RANGE_HELD : 0;
 }
+
+/* The known range holding `at` that may hold a coroutine's frames now. */
+static bool hero_sig_live_range(uintptr_t at, uintptr_t *lo, uintptr_t *hi) { return hero_sig_range_life(at, lo, hi) != 0; }
 
 /* A switch whose target's stack pointer is `at` enters the range holding it
  * (a `swapcontext` or `setcontext`, called before anything judges the target). */
@@ -312,9 +346,11 @@ static void hero_sig_prune_to(HeroSignalStack *own, uintptr_t t, bool by_jump) {
     uintptr_t lo = 0, hi = 0;
     bool ranged = hero_sig_target_range(own, t, &lo, &hi);
     /* A jump onto a coroutine's stack that an entry survives is told as such
-     * (`unsure` 3, defect 2705): the words say what the runtime judged. */
+     * (`unsure` 3, defect 2705; 4 where route A holds the range and saw no
+     * switch into it, defect 2745): the words say what the runtime judged. */
     uintptr_t clo = 0, chi = 0;
-    bool oncoroutine = by_jump && hero_sig_live_range(t, &clo, &chi);
+    int life = by_jump ? hero_sig_range_life(t, &clo, &chi) : 0;
+    bool oncoroutine = life != 0;
     for (int i = own->depth - 1; i >= 0; i -= 1) {
         HeroSigEntry *e = &own->entries[i];
         if (e->dead || hero_sig_pinned(e)) continue;
@@ -323,7 +359,7 @@ static void hero_sig_prune_to(HeroSignalStack *own, uintptr_t t, bool by_jump) {
         if (above || left_alt) {
             hero_sig_drop(own, i);
         } else if (oncoroutine && e->unsure == 0) {
-            e->unsure = 3;
+            e->unsure = life == HERO_SIG_RANGE_ENTERED ? 3 : 4;
         }
     }
 }
@@ -338,10 +374,21 @@ static void hero_sig_prune_to(HeroSignalStack *own, uintptr_t t, bool by_jump) {
  * or a jump leaving the alternate stack it lies on, proves it left. Every
  * correct jump lands above the frame that makes it, on its own range or on
  * another. */
+static void hero_sig_reentered(HeroSignalStack *own, uintptr_t t, bool below, uintptr_t here);
+
 static void hero_sig_reenter(HeroSignalStack *own, uintptr_t t) {
     uintptr_t here = (uintptr_t)__builtin_frame_address(0);
-    uintptr_t lo = 0, hi = 0, al = 0, ah = 0;
+    uintptr_t lo = 0, hi = 0;
     bool below = hero_sig_target_range(own, here, &lo, &hi) && hero_sig_holds(lo, hi, t) && t < here;
+    hero_sig_reentered(own, t, below, here);
+}
+
+/* The landing at `t` judged once it is known whether it lies below the frame
+ * making the jump (`here`, on the jumping stack): route C knows it by the two
+ * addresses; route A, whose `t` is only a bound of the target, by its record
+ * naming a handler no longer standing (`sigjump_record.c`). */
+static void hero_sig_reentered(HeroSignalStack *own, uintptr_t t, bool below, uintptr_t here) {
+    uintptr_t lo = 0, hi = 0, al = 0, ah = 0;
     /* The alternate stack is asked only where it can matter: a landing below,
      * whose entry records it, or a thread a handler once ran on it. */
     bool alt = (below || own->alt_seen) && hero_sig_alt_now(&al, &ah) && hero_sig_holds(al, ah, t);
@@ -387,7 +434,12 @@ static int hero_sig_inside(HeroSignalStack *own) {
     for (int i = own->depth - 1; i >= 0; i -= 1) {
         HeroSigEntry *e = &own->entries[i];
         if (e->dead) continue;
-        if (e->unsure) return e->unsure == 2 ? HERO_SIG_REENTERED : e->unsure == 3 ? HERO_SIG_ONSTACK : HERO_SIG_UNSURE;
+        if (e->unsure) {
+            return e->unsure == 2   ? HERO_SIG_REENTERED
+                   : e->unsure == 3 ? HERO_SIG_ONSTACK
+                   : e->unsure == 4 ? HERO_SIG_HELD
+                                    : HERO_SIG_UNSURE;
+        }
         return hero_sig_pinned(e) ? HERO_SIG_SWITCHED : HERO_SIG_INSIDE;
     }
     return HERO_SIG_INSIDE;

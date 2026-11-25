@@ -1,0 +1,25 @@
+# Fixed 2026-11-25, defect 2745, lane-d2745.
+# The inner of two nested handlers jumps to a buffer the outer one saved; the
+# outer handler, running again, calls the function: refused.
+# Symptom: before, built with `HERO_JMP_FORCE_UNCALIBRATED` 1 (the setjmp
+# family on route A, where the C library's key does not verify), the two
+# coroutine rows of this family whose handlers run on the thread's own stack
+# ran the Heroes function inside the signal on Linux arm64 and on this Mac,
+# and with 3 on Linux arm64 (panel 255's A''), where route C refuses them;
+# with 2, and with 3 on this Mac, they were refused in other words.
+# Cause: route A left every handler pushed after a trusted record's save,
+# whatever stack the save was made on.
+# Fix: route A's record holds a frame just below the stack pointer the save
+# wrote, and a trusted record's jump is judged by the stack that frame lies on
+# and whether it lies above an entry, as route C judges its decoded target.
+# The forced builds are run apart (a golden carries no define); this case
+# holds what both routes must say.
+extern "fixedbugs-2745-a-jump-from-a-nested-handler.h"
+    function nj_run(form: i32, onstack: i32, stack: i32, cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("nj_1_0_0: ", nj_run(form: 1, onstack: 0, stack: 0, cb: answer))

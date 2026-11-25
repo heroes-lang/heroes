@@ -43,8 +43,8 @@ constant SENTENCE_OPENS: str
 constant EXEMPT: str
     "DELIVERED"
 
-# `hero_signal_refuse` has seven arms (a callback delivered as a handler, and
-# six of a callback called after a jump or inside a handler); fewer read means
+# `hero_signal_refuse` has eight arms (a callback delivered as a handler, and
+# seven of a callback called after a jump or inside a handler); fewer read means
 # the extractor stopped reading the shape, and the check would pass without
 # looking.
 constant LEAST_ARMS: i64
@@ -207,6 +207,9 @@ test "a refusal that keeps neither claim, a sentence that loses one and an extra
     # No arms at all: the vacuity guard, not a pass.
     assert strings.contains(s: verdict(spec: spec, c: "int main(void) {}\n"), substr: "read 0 arms")
 
+# The arms the sitting named, and HELD, added by defect 2745 (a jump onto a
+# stack route A holds a coroutine's, no switch into it seen), held to the
+# sentence as the rest are.
 test "the runtime's refusals as the tree holds them keep a claim each, and the arms are the ones the sitting named"
     c = read_file("runtime/parts/sigguard.c").must()
     got = refusals(c)
@@ -215,5 +218,5 @@ test "the runtime's refusals as the tree holds them keep a claim each, and the a
     for arm in got
         kinds @ kinds.push(arm.kind)
 
-    assert kinds.join(" ") == "DELIVERED STANDING SWITCHED REENTERED ONSTACK UNFOLLOWED default"
+    assert kinds.join(" ") == "DELIVERED STANDING SWITCHED REENTERED ONSTACK HELD UNFOLLOWED default"
     assert verdict(spec: read_file("spec/heroes-spec.md").must(), c: c) == ""

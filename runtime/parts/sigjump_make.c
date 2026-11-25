@@ -17,7 +17,8 @@
  * kept, the range noted, then a branch to the C library's own with the stack
  * as the caller left it (Darwin's `parts/rebind_jump.c` does the same). Where
  * the context's own field does not decode (route A for contexts) its record
- * goes, the context now naming another stack. On glibc's other architectures
+ * goes, the context now naming another stack, and its range is held
+ * (defect 2745). On glibc's other architectures
  * no wrapper is defined: no context stack is known there, and a coroutine's
  * frames are of unknown extent, which proves no handler left (a told refusal). */
 
@@ -26,7 +27,10 @@
 __attribute__((used, visibility("hidden"))) void hero_sig_made_context(const void *context);
 __attribute__((used, visibility("hidden"))) void hero_sig_made_context(const void *context) {
     hero_jmp_find();
-    hero_sig_known_stack(context);
+    /* Route A reads no switch's target, so it cannot see the range entered
+     * or its coroutine end: the range is held from here on, and a target in
+     * it lies on the coroutine (rule 7, defect 2745). */
+    hero_sig_known_stack(context, hero_ctx_recording());
     if (hero_ctx_recording()) hero_jmp_forget(context);
 }
 

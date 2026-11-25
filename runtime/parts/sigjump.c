@@ -43,12 +43,14 @@
  * moment, so none can have been given back (defect 2679).
  *
  * ROUTE A, WHERE THE KEY IS NOT VERIFIED (glibc's four other architectures, a
- * glibc whose layout moved, a build forced to it by `HERO_JMP_FORCE_ROUTE_A`):
- * the save points record which buffer they filled and the frame of the call,
- * and the fingerprint that validates a record is read ONLY of a buffer the
- * runtime can prove lives (`sigjump_record.c`). A jump to a buffer with no
- * record keeps every entry: a told refusal (R1), never Heroes code running
- * inside a signal.
+ * glibc whose layout moved, a build forced to it by
+ * `HERO_JMP_FORCE_UNCALIBRATED`): the save points record which buffer they
+ * filled and a frame just below the stack pointer they saved, and the
+ * fingerprint that validates a record is read ONLY of a buffer the runtime
+ * can prove lives (`sigjump_record.c`). A trusted record's frame is judged by
+ * `sigentries.c`'s rules 4 to 7 as route C's decoded target is (defect 2745);
+ * a jump to a buffer with no trusted record keeps every entry: a told refusal
+ * (R1), never Heroes code running inside a signal.
  *
  * WHICH ROUTE IS ON is `hero_signal_jump_route`: bit 1 when the `setjmp`
  * family decodes, bit 2 when contexts do, so 3 is route C for both and 0 is
