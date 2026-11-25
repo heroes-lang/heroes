@@ -55,8 +55,10 @@
  * thread's count may be negative and another's positive: a thread's end adds
  * its own, and the gate reads the sum with the main thread's.
  *
- * AND THE COUNT IS TOLD WHERE THE PROGRAM STOPS FOR WHAT THOSE FRAMES HELD,
- * by the gates' words (panel 258's R1, below). Needs `parts/panic.c`. */
+ * AND THE COUNT IS TOLD WHERE THE PROGRAM STOPS FOR WHAT THOSE FRAMES HELD:
+ * by the gates' words (panel 258's R1, below), and by the room's abort, which
+ * says how many callbacks have not returned (panel 259's R2,
+ * `parts/frame.c`). Needs `parts/panic.c`. */
 
 #if defined(_WIN32)
 #include <windows.h>

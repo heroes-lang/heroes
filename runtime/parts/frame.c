@@ -92,8 +92,26 @@ static _Atomic size_t hero_frame_held = 0;
  * tells it, through the guard's own flag (`hero_stack_tell_first`, defect
  * 2287): a second that runs out while the first is telling, of its room or of
  * its stack, waits for the process to end, so two messages never interleave.
- */
+ *
+ * AND HOW MANY CALLBACKS C CALLED HAVE NOT RETURNED, where any have not (panel
+ * 259's R2, provisional, author ratification pending; the end spec § 13
+ * promises such a program): what C left without its give stays held, so a room
+ * full while callbacks stand unreturned is the one a reader looks into, and the
+ * count is the fact this runtime has. It was 1,261 at the abort of the
+ * sitting's `asm_jump`, a jump nothing sees, and 2,047 at its blind q5 and q6,
+ * a coroutine left for good and a seen `longjmp` (one run each). The count is
+ * `parts/callback.c`'s, the calling thread's and every ended thread's, and the
+ * words name no cause of it, since a jump, an exception and a coroutine nobody
+ * resumes each leave one. Where none is unreturned, the room's words alone. */
 static _Noreturn void hero_frame_exhausted(void *caller) {
+    int64_t left = hero_callbacks_unfinished();
+    char tail[128];
+    if (left > 0) {
+        snprintf(tail, sizeof tail, ", while %lld callback%s C called %s not returned", (long long)left,
+                 left == 1 ? "" : "s", left == 1 ? "has" : "have");
+    } else {
+        tail[0] = '\0';
+    }
     hero_report_begin();
 #if !defined(_WIN32)
     hero_stack_tell_first();
@@ -103,11 +121,16 @@ static _Noreturn void hero_frame_exhausted(void *caller) {
         hero_stack_say(" in ");
         hero_stack_say_heroes_name(who);
     }
-    hero_stack_say(": the room large values take off the stack is full, 1 GiB for the whole program\n");
+    hero_stack_say(": the room large values take off the stack is full, 1 GiB for the whole program");
+    hero_stack_say(tail);
+    hero_stack_say("\n");
     hero_abort();
 #else
     (void)caller;
-    hero_panic("stack exhausted: the room large values take off the stack is full, 1 GiB for the whole program");
+    char msg[256];
+    snprintf(msg, sizeof msg,
+             "stack exhausted: the room large values take off the stack is full, 1 GiB for the whole program%s", tail);
+    hero_panic(msg);
 #endif
 }
 
