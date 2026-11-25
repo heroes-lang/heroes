@@ -192,7 +192,7 @@ function direct_arguments(f: containers.Function, names: ctype.Names, callee: ir
 
     if called_in_place(names, callee: callee, ty: result)
         if target.is_err()
-            out @ out.push("NULL")
+            out @ out.push("((void *)0)")
         else
             out @ out.push("&" + target.must())
     at: i64 @= 0

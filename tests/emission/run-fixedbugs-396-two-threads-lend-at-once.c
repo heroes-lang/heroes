@@ -236,23 +236,23 @@ __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_fr
 
 HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *hero_v);
 HERO_TU_LOCAL void h_0opt_1ec004_release(h_0opt_1ec004 *hero_v);
-HERO_TU_LOCAL bool h_0opt_1ec004_eq(const h_0opt_1ec004 *hero_a, const h_0opt_1ec004 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_1ec004_eq(const h_0opt_1ec004 *hero_a, const h_0opt_1ec004 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_1ec004_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *hero_v);
 HERO_TU_LOCAL void h_0opt_fbbb698_release(h_0opt_fbbb698 *hero_v);
-HERO_TU_LOCAL bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *hero_a, const h_0opt_fbbb698 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *hero_a, const h_0opt_fbbb698 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_fbbb698_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 uint8_t h_fixedbugs396twothreadslendatonce_expected(int64_t h0_seed, int64_t h1_at);
@@ -268,8 +268,8 @@ __attribute__((__unused__)) static void (*hero_callback_of(void (*hero_f)(void))
 
 
 #line 14 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
-uint8_t h_fixedbugs396twothreadslendatonce_expected(int64_t h0_seed, int64_t h1_at) { HERO_NODEBUG h_0opt_1ec004 h2_f0 = {0}, h3_own3 = {0}, t12, t13, t17, t19, t21, t22; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t14, t15; HERO_NODEBUG bool t16; HERO_NODEBUG HeroFailure t18; HERO_NODEBUG uint8_t t20; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = h0_seed; t2 = INT64_C(31); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.expected", 15, 14); t4 = h1_at; t5 = INT64_C(17); if (__builtin_mul_overflow(t4, t5, &t6)) hero_panic_overflow_at("fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.expected", 15, 26); if (__builtin_add_overflow(t3, t6, &t7)) hero_panic_overflow_at("fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.expected", 15, 14); t8 = INT64_C(63); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.expected", 15, 14); t10 = INT64_C(256); if (t10 == 0) hero_panic_at("division by zero", "fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.expected", 15, 13); if (t9 == INT64_MIN && t10 == INT64_C(-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.expected", 15, 13); t11 = t9 % t10; if (t11 >= 0LL && t11 <= 255LL) { t12 = (h_0opt_1ec004){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint8_t)t11}; } else { t12 = (h_0opt_1ec004){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t21 = h3_own3; h3_own3 = t12; h_0opt_1ec004_release(&t21); t22 = h2_f0; h_0opt_1ec004_retain(&t12); h2_f0 = t12; h_0opt_1ec004_release(&t22); t13 = h2_f0; t14 = t13.hero_tag; t15 = INT64_C(0); t16 = t14 == t15; if (t16) goto hero_bb1; else goto hero_bb2; hero_bb1: t19 = h2_f0; t20 = t19.hero_as.hero_ok;
+uint8_t h_fixedbugs396twothreadslendatonce_expected(int64_t h0_seed, int64_t h1_at) { HERO_NODEBUG h_0opt_1ec004 h2_f0 = {0}, h3_own3 = {0}, t12, t13, t17, t19, t21, t22; HERO_NODEBUG int64_t t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t14, t15; HERO_NODEBUG _Bool t16; HERO_NODEBUG HeroFailure t18; HERO_NODEBUG uint8_t t20; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_seed; t2 = ((__INT64_TYPE__)31); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.expected", 15, 14); t4 = h1_at; t5 = ((__INT64_TYPE__)17); if (__builtin_mul_overflow(t4, t5, &t6)) hero_panic_overflow_at("fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.expected", 15, 26); if (__builtin_add_overflow(t3, t6, &t7)) hero_panic_overflow_at("fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.expected", 15, 14); t8 = ((__INT64_TYPE__)63); if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.expected", 15, 14); t10 = ((__INT64_TYPE__)256); if (t10 == 0) hero_panic_at("division by zero", "fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.expected", 15, 13); if (t9 == (-__INT64_MAX__ - 1) && t10 == ((__INT64_TYPE__)-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.expected", 15, 13); t11 = t9 % t10; if (t11 >= 0LL && t11 <= 255LL) { t12 = (h_0opt_1ec004){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = (uint8_t)t11}; } else { t12 = (h_0opt_1ec004){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t21 = h3_own3; h3_own3 = t12; h_0opt_1ec004_release(&t21); t22 = h2_f0; h_0opt_1ec004_retain(&t12); h2_f0 = t12; h_0opt_1ec004_release(&t22); t13 = h2_f0; t14 = t13.hero_tag; t15 = ((__INT64_TYPE__)0); t16 = t14 == t15; if (t16) goto hero_bb1; else goto hero_bb2; hero_bb1: t19 = h2_f0; t20 = t19.hero_as.hero_ok;
 #line 274 "fixedbugs396twothreadslendatonce.c"
     h_0opt_1ec004_release(hero_slot_escape(&h2_f0));
     h_0opt_1ec004_release(hero_slot_escape(&h3_own3));
@@ -283,13 +283,13 @@ hero_bb2:
 }
 
 #line 17 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
-int64_t h_fixedbugs396twothreadslendatonce_worker(int64_t h0_seed) { hero_thread_guard("fixedbugs396twothreadslendatonce.worker"); int64_t h1_wrong; int64_t h2_round; HeroArrayHeader * h3_md = {0}; HERO_NODEBUG h_0opt_fbbb698 h4_f0 = {0}, h7_own7 = {0}, t8, t9, t13, t15, t40, t41; int64_t h5_at; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t6, *t21, *t38, *t39; HERO_NODEBUG int64_t t1, t2, t3, t4, t7, t10, t11, t17, t18, t19, t22, t24, t25, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37; HERO_NODEBUG bool t5, t12, t20, t27; HERO_NODEBUG HeroFailure t14; HERO_NODEBUG uint64_t t16; HERO_NODEBUG uint8_t t23, t26; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = INT64_C(0); h1_wrong = t1;
-    t2 = INT64_C(0); h2_round = t2; goto hero_bb1; hero_bb1:
+int64_t h_fixedbugs396twothreadslendatonce_worker(int64_t h0_seed) { hero_thread_guard("fixedbugs396twothreadslendatonce.worker"); int64_t h1_wrong; int64_t h2_round; HeroArrayHeader * h3_md = {0}; HERO_NODEBUG h_0opt_fbbb698 h4_f0 = {0}, h7_own7 = {0}, t8, t9, t13, t15, t40, t41; int64_t h5_at; HERO_NODEBUG HeroArrayHeader *h6_own6 = {0}, *t6, *t21, *t38, *t39; HERO_NODEBUG int64_t t1, t2, t3, t4, t7, t10, t11, t17, t18, t19, t22, t24, t25, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37; HERO_NODEBUG _Bool t5, t12, t20, t27; HERO_NODEBUG HeroFailure t14; HERO_NODEBUG uint64_t t16; HERO_NODEBUG uint8_t t23, t26; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = ((__INT64_TYPE__)0); h1_wrong = t1;
+    t2 = ((__INT64_TYPE__)0); h2_round = t2; goto hero_bb1; hero_bb1:
 #line 21
-    t3 = h2_round; t4 = INT64_C(2000); t5 = t3 < t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb2:
+    t3 = h2_round; t4 = ((__INT64_TYPE__)2000); t5 = t3 < t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb2:
     t6 = hero_array_new(&hero_desc_u8, 1); t38 = h6_own6; h6_own6 = t6; hero_array_decref(t38); t39 = h3_md; hero_array_incref(t6); h3_md = t6; hero_array_decref(t39);
-    t7 = h0_seed; if (t7 >= 0LL) { t8 = (h_0opt_fbbb698){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint64_t)t7}; } else { t8 = (h_0opt_fbbb698){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t40 = h7_own7; h7_own7 = t8; h_0opt_fbbb698_release(&t40); t41 = h4_f0; h_0opt_fbbb698_retain(&t8); h4_f0 = t8; h_0opt_fbbb698_release(&t41); t9 = h4_f0; t10 = t9.hero_tag; t11 = INT64_C(0); t12 = t10 == t11; if (t12) goto hero_bb4; else goto hero_bb5; hero_bb3:
+    t7 = h0_seed; if (t7 >= 0LL) { t8 = (h_0opt_fbbb698){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = (uint64_t)t7}; } else { t8 = (h_0opt_fbbb698){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t40 = h7_own7; h7_own7 = t8; h_0opt_fbbb698_release(&t40); t41 = h4_f0; h_0opt_fbbb698_retain(&t8); h4_f0 = t8; h_0opt_fbbb698_release(&t41); t9 = h4_f0; t10 = t9.hero_tag; t11 = ((__INT64_TYPE__)0); t12 = t10 == t11; if (t12) goto hero_bb4; else goto hero_bb5; hero_bb3:
 #line 33
     t37 = h1_wrong;
 #line 296 "fixedbugs396twothreadslendatonce.c"
@@ -300,8 +300,8 @@ int64_t h_fixedbugs396twothreadslendatonce_worker(int64_t h0_seed) { hero_thread
     return t37;
 hero_bb4:
 #line 23 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
-    t15 = h4_f0; t16 = t15.hero_as.hero_ok; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.worker", 23, 9}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer stamp32 md 503 505 u8 unsigned char *"); HERO_NODEBUG int64_t hero_lend_e2_0 = INT64_C(32); HERO_NODEBUG void *hero_lend_b2_0 = hero_lend_take_at(h3_md, hero_lend_e2_0, "stamp32", "md", &hero_here); (void)stamp32((void *)hero_lend_b2_0, t16); h3_md = hero_lend_give_at(h3_md, hero_lend_b2_0, hero_lend_e2_0, &hero_here); } }
-    t17 = INT64_C(0); h5_at = t17; goto hero_bb6; hero_bb5:
+    t15 = h4_f0; t16 = t15.hero_as.hero_ok; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.worker", 23, 9}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer stamp32 md 503 505 u8 unsigned char *"); HERO_NODEBUG int64_t hero_lend_e2_0 = ((__INT64_TYPE__)32); HERO_NODEBUG void *hero_lend_b2_0 = hero_lend_take_at(h3_md, hero_lend_e2_0, "stamp32", "md", &hero_here); (void)stamp32((void *)hero_lend_b2_0, t16); h3_md = hero_lend_give_at(h3_md, hero_lend_b2_0, hero_lend_e2_0, &hero_here); } }
+    t17 = ((__INT64_TYPE__)0); h5_at = t17; goto hero_bb6; hero_bb5:
 #line 23
     t13 = h4_f0; t14 = t13.hero_as.hero_err;
 #line 308 "fixedbugs396twothreadslendatonce.c"
@@ -309,14 +309,14 @@ hero_bb4:
     hero_unreachable();
 hero_bb6:
 #line 26 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
-    t18 = h5_at; t19 = INT64_C(32); t20 = t18 < t19; if (t20) goto hero_bb7; else goto hero_bb8; hero_bb7:
-    t21 = h3_md; t22 = h5_at; t23 = ((void)((t21 == NULL || t22 < 0 || t22 >= t21->len) ? hero_panic_index_at(t21, t22, "fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.worker", 27, 16) : (void)0), (void)(t21->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t21 + 1))[t22]); t24 = h0_seed; t25 = h5_at; t26 = h_fixedbugs396twothreadslendatonce_expected(t24, t25); t27 = t23 != t26; if (t27) goto hero_bb10; else goto hero_bb11; hero_bb8:
+    t18 = h5_at; t19 = ((__INT64_TYPE__)32); t20 = t18 < t19; if (t20) goto hero_bb7; else goto hero_bb8; hero_bb7:
+    t21 = h3_md; t22 = h5_at; t23 = ((void)((t21 == ((void *)0) || t22 < 0 || t22 >= t21->len) ? hero_panic_index_at(t21, t22, "fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.worker", 27, 16) : (void)0), (void)(HERO_ARRAY_ELEM_SIZE(t21) != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t21 + 1))[t22]); t24 = h0_seed; t25 = h5_at; t26 = h_fixedbugs396twothreadslendatonce_expected(t24, t25); t27 = t23 != t26; if (t27) goto hero_bb10; else goto hero_bb11; hero_bb8:
 #line 31
-    t34 = h2_round; t35 = INT64_C(1); if (__builtin_add_overflow(t34, t35, &t36)) hero_panic_overflow_at("fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.worker", 31, 17); h2_round = t36; goto hero_bb1; hero_bb9:
+    t34 = h2_round; t35 = ((__INT64_TYPE__)1); if (__builtin_add_overflow(t34, t35, &t36)) hero_panic_overflow_at("fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.worker", 31, 17); h2_round = t36; goto hero_bb1; hero_bb9:
 #line 29
-    t31 = h5_at; t32 = INT64_C(1); if (__builtin_add_overflow(t31, t32, &t33)) hero_panic_overflow_at("fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.worker", 29, 18); h5_at = t33; goto hero_bb6; hero_bb10:
+    t31 = h5_at; t32 = ((__INT64_TYPE__)1); if (__builtin_add_overflow(t31, t32, &t33)) hero_panic_overflow_at("fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.worker", 29, 18); h5_at = t33; goto hero_bb6; hero_bb10:
 #line 28
-    t28 = h1_wrong; t29 = INT64_C(1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.worker", 28, 25); h1_wrong = t30; goto hero_bb9; hero_bb11: goto hero_bb9;
+    t28 = h1_wrong; t29 = ((__INT64_TYPE__)1); if (__builtin_add_overflow(t28, t29, &t30)) hero_panic_overflow_at("fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.worker", 28, 25); h1_wrong = t30; goto hero_bb9; hero_bb11: goto hero_bb9;
 #line 321 "fixedbugs396twothreadslendatonce.c"
 }
 
@@ -329,14 +329,14 @@ __attribute__((__noinline__)) int64_t h_0cb_fixedbugs396twothreadslendatonce_wor
 
 #line 35 "tests/golden/run/fixedbugs-396-two-threads-lend-at-once.hero"
 void h_fixedbugs396twothreadslendatonce_main(void) { int64_t h0_a; int64_t h1_b; int64_t h2_here; HERO_NODEBUG h_0fn_48ac9712 t1, t4; HERO_NODEBUG int64_t t2, t3, t5, t6, t7, t8, t9, t10, t12, t13, t15; HERO_NODEBUG HeroStr t11, t14; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = h_fixedbugs396twothreadslendatonce_worker; t2 = INT64_C(1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.main", 36, 9}; t3 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t1), t2); } h0_a = t3;
-    t4 = h_fixedbugs396twothreadslendatonce_worker; t5 = INT64_C(2); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.main", 37, 9}; t6 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t4), t5); } h1_b = t6;
-    t7 = INT64_C(3); t8 = h_fixedbugs396twothreadslendatonce_worker(t7); h2_here = t8;
+    t1 = h_fixedbugs396twothreadslendatonce_worker; t2 = ((__INT64_TYPE__)1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.main", 36, 9}; t3 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t1), t2); } h0_a = t3;
+    t4 = h_fixedbugs396twothreadslendatonce_worker; t5 = ((__INT64_TYPE__)2); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.main", 37, 9}; t6 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t4), t5); } h1_b = t6;
+    t7 = ((__INT64_TYPE__)3); t8 = h_fixedbugs396twothreadslendatonce_worker(t7); h2_here = t8;
     t9 = h0_a; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.main", 39, 11}; t10 = hero_thread_join(t9); } t11 = HERO_STR_LIT(hero_str_20); t12 = h1_b; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-396-two-threads-lend-at-once.hero", "fixedbugs-396-two-threads-lend-at-once.main", 39, 45}; t13 = hero_thread_join(t12); } t14 = HERO_STR_LIT(hero_str_20); t15 = h2_here; hero_print_int(t10); hero_print_str(t11); hero_print_int(t13); hero_print_str(t14); hero_print_int(t15); hero_print_end(); return;
 #line 337 "fixedbugs396twothreadslendatonce.c"
 }
 HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -344,31 +344,31 @@ HERO_TU_LOCAL void h_0opt_1ec004_retain(const h_0opt_1ec004 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_1ec004_release(h_0opt_1ec004 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_1ec004_eq(const h_0opt_1ec004 *hero_a, const h_0opt_1ec004 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_1ec004_eq(const h_0opt_1ec004 *hero_a, const h_0opt_1ec004 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_u8)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_u8)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_1ec004_hash(const void *hero_elem) {
     const h_0opt_1ec004 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_u8)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_u8)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -376,31 +376,31 @@ HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_fbbb698_release(h_0opt_fbbb698 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *hero_a, const h_0opt_fbbb698 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *hero_a, const h_0opt_fbbb698 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_u64)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_u64)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_fbbb698_hash(const void *hero_elem) {
     const h_0opt_fbbb698 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_u64)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_u64)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -408,31 +408,31 @@ HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_str)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
     const h_0opt_f87774a *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_str)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -440,31 +440,31 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
     const h_0opt_a8ea2 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
     return hero_h;
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -472,31 +472,31 @@ HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_int)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
     const h_0opt_e201354 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_int)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5e9bde7c3bf0d678", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("310d28cd675e51ee", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs396twothreadslendatonce\tfixedbugs-396-two-threads-lend-at-once\n");

@@ -222,15 +222,15 @@ __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_fr
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 
 int64_t h_fixedbugs2753aleaseheldbyacallbackcjumpsoveristoldwiththejump_body(int64_t h0_n);
@@ -245,13 +245,13 @@ __attribute__((__unused__)) static void (*hero_callback_of(void (*hero_f)(void))
 
 
 #line 18 "tests/golden/run/fixedbugs-2753-a-lease-held-by-a-callback-c-jumps-over-is-told-with-the-jump.hero"
-int64_t h_fixedbugs2753aleaseheldbyacallbackcjumpsoveristoldwiththejump_body(int64_t h0_n) { hero_thread_guard("fixedbugs2753aleaseheldbyacallbackcjumpsoveristoldwiththejump.body"); HeroStr h1_word = {0}; const char * h2_c; uint64_t h3_k; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}, h7_own7 = {0}, t11, t12, t16, t18, t23, t24; HERO_NODEBUG HeroStr h5_own5 = {0}, h6_own6 = {0}, t2, t3, t4, t5, t20, t21, t22; HERO_NODEBUG int64_t t1, t9, t13, t14, t19; HERO_NODEBUG const char *t6, *t7; HERO_NODEBUG uint64_t t8, t10; HERO_NODEBUG bool t15; HERO_NODEBUG HeroFailure t17; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+int64_t h_fixedbugs2753aleaseheldbyacallbackcjumpsoveristoldwiththejump_body(int64_t h0_n) { hero_thread_guard("fixedbugs2753aleaseheldbyacallbackcjumpsoveristoldwiththejump.body"); HeroStr h1_word = {0}; const char * h2_c; uint64_t h3_k; HERO_NODEBUG h_0opt_e201354 h4_f0 = {0}, h7_own7 = {0}, t11, t12, t16, t18, t23, t24; HERO_NODEBUG HeroStr h5_own5 = {0}, h6_own6 = {0}, t2, t3, t4, t5, t20, t21, t22; HERO_NODEBUG int64_t t1, t9, t13, t14, t19; HERO_NODEBUG const char *t6, *t7; HERO_NODEBUG uint64_t t8, t10; HERO_NODEBUG _Bool t15; HERO_NODEBUG HeroFailure t17; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = hero_int_to_str(t1); t20 = h5_own5; h5_own5 = t2; hero_str_decref(t20); t3 = HERO_STR_LIT(hero_str_593d85c8); t4 = hero_str_concat(t2, t3); t21 = h6_own6; h6_own6 = t4; hero_str_decref(t21); t22 = h1_word; hero_str_incref(t4); h1_word = t4; hero_str_decref(t22);
     t5 = h1_word; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2753-a-lease-held-by-a-callback-c-jumps-over-is-told-with-the-jump.hero", "fixedbugs-2753-a-lease-held-by-a-callback-c-jumps-over-is-told-with-the-jump.body", 20, 16}; t6 = hero_str_held_at(t5, &hero_here); } h2_c = t6;
     t7 = h2_c; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2753-a-lease-held-by-a-callback-c-jumps-over-is-told-with-the-jump.hero", "fixedbugs-2753-a-lease-held-by-a-callback-c-jumps-over-is-told-with-the-jump.body", 21, 9}; t8 = strlen(hero_cstr_nonnull_at(t7, &hero_here)); } h3_k = t8;
-    t9 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2753-a-lease-held-by-a-callback-c-jumps-over-is-told-with-the-jump.hero", "fixedbugs-2753-a-lease-held-by-a-callback-c-jumps-over-is-told-with-the-jump.body", 22, 5}; (void)lv_throw(t9); }
+    t9 = ((__INT64_TYPE__)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2753-a-lease-held-by-a-callback-c-jumps-over-is-told-with-the-jump.hero", "fixedbugs-2753-a-lease-held-by-a-callback-c-jumps-over-is-told-with-the-jump.body", 22, 5}; (void)lv_throw(t9); }
     { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2753-a-lease-held-by-a-callback-c-jumps-over-is-told-with-the-jump.hero", "fixedbugs-2753-a-lease-held-by-a-callback-c-jumps-over-is-told-with-the-jump.body", 23, 5}; hero_held_release_at(&h2_c, &hero_here); }
-    t10 = h3_k; if (t10 <= 9223372036854775807ULL) { t11 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = (int64_t)t10}; } else { t11 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t23 = h7_own7; h7_own7 = t11; h_0opt_e201354_release(&t23); t24 = h4_f0; h_0opt_e201354_retain(&t11); h4_f0 = t11; h_0opt_e201354_release(&t24); t12 = h4_f0; t13 = t12.hero_tag; t14 = INT64_C(0); t15 = t13 == t14; if (t15) goto hero_bb1; else goto hero_bb2; hero_bb1: t18 = h4_f0; t19 = t18.hero_as.hero_ok;
+    t10 = h3_k; if (t10 <= 9223372036854775807ULL) { t11 = (h_0opt_e201354){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = (int64_t)t10}; } else { t11 = (h_0opt_e201354){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t23 = h7_own7; h7_own7 = t11; h_0opt_e201354_release(&t23); t24 = h4_f0; h_0opt_e201354_retain(&t11); h4_f0 = t11; h_0opt_e201354_release(&t24); t12 = h4_f0; t13 = t12.hero_tag; t14 = ((__INT64_TYPE__)0); t15 = t13 == t14; if (t15) goto hero_bb1; else goto hero_bb2; hero_bb1: t18 = h4_f0; t19 = t18.hero_as.hero_ok;
 #line 256 "fixedbugs2753aleaseheldbyacallbackcjumpsoveristoldwiththejump.c"
     hero_str_release_at(&h1_word);
     h_0opt_e201354_release(hero_slot_escape(&h4_f0));
@@ -276,11 +276,11 @@ __attribute__((__noinline__)) int64_t h_0cb_fixedbugs2753aleaseheldbyacallbackcj
 
 #line 26 "tests/golden/run/fixedbugs-2753-a-lease-held-by-a-callback-c-jumps-over-is-told-with-the-jump.hero"
 void h_fixedbugs2753aleaseheldbyacallbackcjumpsoveristoldwiththejump_main(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG int64_t t3, t4; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = HERO_STR_LIT(hero_str_25322baa); t2 = h_fixedbugs2753aleaseheldbyacallbackcjumpsoveristoldwiththejump_body; t3 = INT64_C(4); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2753-a-lease-held-by-a-callback-c-jumps-over-is-told-with-the-jump.hero", "fixedbugs-2753-a-lease-held-by-a-callback-c-jumps-over-is-told-with-the-jump.main", 27, 22}; t4 = lv_try((h_0fn_48ac9712)hero_callback_of((void (*)(void))t2), t3); } hero_print_str(t1); hero_print_int(t4); hero_print_end(); return;
+    t1 = HERO_STR_LIT(hero_str_25322baa); t2 = h_fixedbugs2753aleaseheldbyacallbackcjumpsoveristoldwiththejump_body; t3 = ((__INT64_TYPE__)4); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2753-a-lease-held-by-a-callback-c-jumps-over-is-told-with-the-jump.hero", "fixedbugs-2753-a-lease-held-by-a-callback-c-jumps-over-is-told-with-the-jump.main", 27, 22}; t4 = lv_try((h_0fn_48ac9712)hero_callback_of((void (*)(void))t2), t3); } hero_print_str(t1); hero_print_int(t4); hero_print_end(); return;
 #line 281 "fixedbugs2753aleaseheldbyacallbackcjumpsoveristoldwiththejump.c"
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -288,31 +288,31 @@ HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_int)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
     const h_0opt_e201354 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_int)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -320,31 +320,31 @@ HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_str)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
     const h_0opt_f87774a *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_str)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -352,31 +352,31 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
     const h_0opt_a8ea2 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
     return hero_h;
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("67f5e5413e47fd2b", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("238c322e1f88ba85", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2753aleaseheldbyacallbackcjumpsoveristoldwiththejump\tfixedbugs-2753-a-lease-held-by-a-callback-c-jumps-over-is-told-with-the-jump\n");

@@ -35,7 +35,10 @@ record FieldRead
 
 function field(c: state.Checked, s: source.Source, decls: [ast.Decl], owner: i64, index: i64) -> FieldRead?
     # §4.6's built-in record: two strs, code then msg, with no
-    # declaration anywhere to read them from.
+    # declaration anywhere to read them from. Their C names are the
+    # runtime's own, `hero_code` and `hero_msg` (`runtime/heroes_runtime.h`,
+    # defect d-lane-macro-members2-1): `code` and `msg` are words a group's
+    # header may define and a program may bind.
     is_failure: bool @= false
 
     match table.get(c.types, owner)
@@ -45,10 +48,10 @@ function field(c: state.Checked, s: source.Source, decls: [ast.Decl], owner: i64
         .case_ty | .generic | .error | .thread_ty | .mailbox_ty    => is_failure @ is_failure
 
     if is_failure
-        member: str @= "msg"
+        member: str @= "hero_msg"
 
         if index == 0
-            member @ "code"
+            member @ "hero_code"
         return ok(FieldRead(member: member, ty: table.str_ty(c.types)))
     decl: i64 @= 0 - 1
     case_at: i64 @= 0 - 1
@@ -257,7 +260,7 @@ function element_c_type(c: state.Checked, names: ctype.Names, ty: i64) -> str?
 # place the abort names, the four arguments `emit/stop_place.hero` writes (panel
 # 230's R1).
 function subscript(base: str, index: str, length: i64, where: str) -> str
-    return base + "[((uint64_t)(" + index + ") >= UINT64_C(" + length.to_str() + ") ? (hero_panic_at(\"index out of range for a fixed array\", " + where + "), (int64_t)0) : (" + index + "))]"
+    return base + "[((uint64_t)(" + index + ") >= ((__UINT64_TYPE__)" + length.to_str() + ") ? (hero_panic_at(\"index out of range for a fixed array\", " + where + "), (int64_t)0) : (" + index + "))]"
 
 # An `@` argument as the call hands it over: the unshares its array steps
 # owe, written here, then the place's own address (panel 196's R1). The

@@ -54,7 +54,10 @@ function emit(@w: writer.Writer, f: containers.Function, c: state.Checked, term:
             writer.line(@w, text: "    }")
         .return_term ret =>
             if out && !ret.value.is_err()
-                writer.line(@w, text: "    if (hero_out != NULL) *hero_out = " + mangle.value(ret.value.must()) + ";")
+                writer.line(
+                    @w,
+                    text: "    if (hero_out != ((void *)0)) *hero_out = " + mangle.value(ret.value.must()) + ";"
+                )
 
             # The guarded locals' regions go back before the function does
             # (panel 196's R7, `emit/lend_local.releases`): the one exit is

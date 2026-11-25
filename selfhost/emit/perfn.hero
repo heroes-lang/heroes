@@ -85,7 +85,7 @@ function prototypes(@w: writer.Writer, c: state.Checked, names: ctype.Names, dec
             writer.line(@w, text: "HERO_TU_LOCAL void " + one.at.prefix + "_release(" + one.at.c_type + " *hero_v);")
         writer.line(
             @w,
-            text: "HERO_TU_LOCAL bool " + one.at.prefix + "_eq(" + handles.const_pointer(one.at.c_type) + "hero_a, " + handles.const_pointer(one.at.c_type) + "hero_b);"
+            text: "HERO_TU_LOCAL _Bool " + one.at.prefix + "_eq(" + handles.const_pointer(one.at.c_type) + "hero_a, " + handles.const_pointer(one.at.c_type) + "hero_b);"
         )
         writer.line(@w, text: "HERO_TU_LOCAL uint64_t " + one.at.prefix + "_hash(const void *hero_elem);")
         wrote @ true
@@ -98,7 +98,7 @@ function prototypes(@w: writer.Writer, c: state.Checked, names: ctype.Names, dec
         writer.line(@w, text: "HERO_TU_LOCAL void " + entry.name + "_release(" + entry.name + " *hero_v);")
         writer.line(
             @w,
-            text: "HERO_TU_LOCAL bool " + entry.name + "_eq(const " + entry.name + " *hero_a, const " + entry.name + " *hero_b);"
+            text: "HERO_TU_LOCAL _Bool " + entry.name + "_eq(const " + entry.name + " *hero_a, const " + entry.name + " *hero_b);"
         )
         writer.line(@w, text: "HERO_TU_LOCAL uint64_t " + entry.name + "_hash(const void *hero_elem);")
         wrote @ true
@@ -180,12 +180,12 @@ function option_bodies(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
         # equality: different tags are never equal.
         writer.line(
             @w,
-            text: "HERO_TU_LOCAL bool " + entry.name + "_eq(const " + entry.name + " *hero_a, const " + entry.name + " *hero_b) {"
+            text: "HERO_TU_LOCAL _Bool " + entry.name + "_eq(const " + entry.name + " *hero_a, const " + entry.name + " *hero_b) {"
         )
         writer.line(@w, text: "    if (hero_a->hero_tag != hero_b->hero_tag) return false;")
         writer.line(
             @w,
-            text: "    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);"
+            text: "    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);"
         )
 
         if has_ok
@@ -196,7 +196,7 @@ function option_bodies(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
             else
                 writer.line(
                     @w,
-                    text: "    return (" + desc.must() + ")->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);"
+                    text: "    return HERO_DESC_EQ(" + desc.must() + ")(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);"
                 )
         else
 
@@ -206,12 +206,15 @@ function option_bodies(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
         writer.blank(@w)
         writer.line(@w, text: "HERO_TU_LOCAL uint64_t " + entry.name + "_hash(const void *hero_elem) {")
         writer.line(@w, text: "    const " + entry.name + " *hero_v = hero_elem;")
-        writer.line(@w, text: "    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)")
-        writer.line(@w, text: "        * UINT64_C(0x100000001b3);")
-        writer.line(@w, text: "    if (hero_v->hero_tag != INT64_C(0)) {")
         writer.line(
             @w,
-            text: "        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);"
+            text: "    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)"
+        )
+        writer.line(@w, text: "        * ((__UINT64_TYPE__)0x100000001b3);")
+        writer.line(@w, text: "    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {")
+        writer.line(
+            @w,
+            text: "        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);"
         )
         writer.line(@w, text: "    }")
 
@@ -223,7 +226,7 @@ function option_bodies(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
             else
                 writer.line(
                     @w,
-                    text: "    return (hero_h ^ (" + desc.must() + ")->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);"
+                    text: "    return (hero_h ^ HERO_DESC_HASH(" + desc.must() + ")(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);"
                 )
         else
             writer.line(@w, text: "    return hero_h;")
@@ -245,7 +248,7 @@ function one_reference(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
         writer.line(@w, text: "HERO_TU_LOCAL void " + name + "_retain(const " + name + " *hero_v) {")
     else
         writer.line(@w, text: "HERO_TU_LOCAL void " + name + "_release(" + name + " *hero_v) {")
-    writer.line(@w, text: "    if (hero_v->hero_tag == INT64_C(0)) {")
+    writer.line(@w, text: "    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {")
 
     if counted && has_ok
         found = emit_counted.reference_line(c, names, ty: payload, place: "hero_v->hero_as.hero_ok", keep: keep)
@@ -278,7 +281,7 @@ test "payloads come before their variant, and every option gets four functions"
     protos = writer.finish(w)
     assert strings.holds(
         text: protos,
-        needle: "HERO_TU_LOCAL bool h_t_0Tok_c_word_eq(const h_t_0Tok_c_word *hero_a, const h_t_0Tok_c_word *hero_b);"
+        needle: "HERO_TU_LOCAL _Bool h_t_0Tok_c_word_eq(const h_t_0Tok_c_word *hero_a, const h_t_0Tok_c_word *hero_b);"
     )
     assert strings.holds(
         text: protos,
@@ -300,11 +303,11 @@ test "payloads come before their variant, and every option gets four functions"
     # last slice ran past the end and the test aborted, exactly as spec § 10
     # Strings, arrays, maps promises.
     while scan < body_text.len()
-        if bytes.bytes_at(text: body_text, at: scan, needle: "HERO_TU_LOCAL bool h_t_0Tok_c_word_eq(const h")
+        if bytes.bytes_at(text: body_text, at: scan, needle: "HERO_TU_LOCAL _Bool h_t_0Tok_c_word_eq(const h")
             if payload_at < 0
                 payload_at @ scan
 
-        if bytes.bytes_at(text: body_text, at: scan, needle: "HERO_TU_LOCAL bool h_t_0Tok_eq(const")
+        if bytes.bytes_at(text: body_text, at: scan, needle: "HERO_TU_LOCAL _Bool h_t_0Tok_eq(const")
             if outer_at < 0
                 outer_at @ scan
         scan @ scan + 1
@@ -320,9 +323,9 @@ test "payloads come before their variant, and every option gets four functions"
     )
     assert strings.holds(
         text: body_text,
-        needle: "    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);"
+        needle: "    return HERO_DESC_EQ(&hero_desc_int)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);"
     )
     assert strings.holds(
         text: body_text,
-        needle: "        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);"
+        needle: "        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);"
     )

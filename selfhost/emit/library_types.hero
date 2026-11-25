@@ -1,0 +1,256 @@
+# The types of C's library the unit's own C writes by their names after its
+# groups (design.md §4.19; defect d-lane-macro-members2-1, 2026-11-25): the
+# integer types the runtime declares before them, each `typedef
+# __<X>_TYPE__ <name>;`, and `<stddef.h>`'s `size_t`.
+#
+# **Why these keep their names.** Every other word of C's library the unit
+# wrote after its groups is spelled in a form C reserves since this defect,
+# `_Bool`, `((void *)0)`, a literal cast to `__INT64_TYPE__`, `(-__INT64_MAX__
+# - 1)`, `__builtin_fmod`, `__builtin_huge_val()` (`emit/literal.hero`), so a
+# group's header that defines one and a program that binds it leave the unit
+# building. A type is the one word a debugger shows by the name the
+# declaration spells, `(int64_t) h0_n = 2` in every session of
+# `tests/golden/lldb/`: clang's own `__INT64_TYPE__` would show `long long`
+# on this Mac and `long` on Linux. So the unit keeps these, and a header that
+# defines one as a macro is refused where the program binds it
+# (`cli/bound_macro.hero`, `ffi_macro_name`): C's own headers declare each
+# with `typedef` and define none as a macro, C11 7.1.3 reserves each once a
+# header declaring it is included, and the C this compiler writes needs C's.
+
+use cli/process
+use cli/strings
+use emit/c_words
+use emit/guarded_names
+
+constant C_TYPES: [str]
+    [
+        "int8_t"
+        "int16_t"
+        "int32_t"
+        "int64_t"
+        "uint8_t"
+        "uint16_t"
+        "uint32_t"
+        "uint64_t"
+        "intptr_t"
+        "uintptr_t"
+        "size_t"
+    ]
+
+# Whether `name` is one of them.
+function holds(name: str) -> bool
+    for one in C_TYPES
+        if one == name
+            return true
+
+    return false
+
+# **The words the unit's own C wrote after its groups until this defect**,
+# each a word a group's header may define and a program may bind: the members
+# of the runtime's structs, now read through `heroes_runtime.h`'s functions or
+# by the runtime-form names of a failure, and the macros of C's library, now
+# spelled in forms C reserves. `len` and `ptr` stay, an array's length and
+# the two members of `HeroStr`, names the language takes everywhere
+# (`builtin_name_taken`), so no program binds them; and `true` and `false`,
+# keywords of Heroes.
+constant MEMBERS: [str]
+    [
+        "run"
+        "body"
+        "arg"
+        "answer"
+        "code"
+        "msg"
+        "size"
+        "copy"
+        "drop"
+        "eq"
+        "hash"
+        "elem"
+        "cap"
+        "refcount"
+        "magic"
+        "path"
+        "name"
+        "line"
+        "column"
+        "key"
+        "val"
+        "states"
+        "keys"
+        "vals"
+        "bytes"
+        "at"
+    ]
+
+constant MACROS: [str]
+    [
+        "NULL"
+        "bool"
+        "INT8_C"
+        "INT16_C"
+        "INT32_C"
+        "INT64_C"
+        "UINT64_C"
+        "INT8_MIN"
+        "INT16_MIN"
+        "INT32_MIN"
+        "INT64_MIN"
+        "HUGE_VAL"
+        "fmod"
+    ]
+
+# The modules whose literals name `bool` as the Heroes type in a message or
+# a spelling of one, or in a C comment, never as C's macro.
+constant BOOL_SPOKEN: [str]
+    [
+        "selfhost/emit/ffi_field_told.hero"
+        "selfhost/emit/ffi_result.hero"
+        "selfhost/emit/ffi_typedef_kind.hero"
+        "selfhost/emit/printing.hero"
+    ]
+
+# The modules that list the words themselves.
+constant LISTING: [str]
+    [
+        "selfhost/emit/guarded_names.hero"
+        "selfhost/emit/macro_guard.hero"
+        "selfhost/emit/library_types.hero"
+    ]
+
+# The words of `MEMBERS` and `MACROS` one C text writes: a member after `->`
+# or `.`, a macro as a word; a text holding a backtick is a message, its code
+# spans the language's words, and is passed over.
+function written(text: str, path: str) -> [str]
+    out: [str] @= []
+
+    if strings.holds(text: text, needle: "`")
+        return out
+    words: {str: bool} @= {}
+    c_words.words_into(@words, text: text)
+
+    for member in MEMBERS
+        if !words[member].is_err() && (after(text: text, head: "->" + member) || after(text: text, head: "." + member))
+            out @ out.push(member)
+
+    for name in MACROS
+        if !words[name].is_err() && (name != "bool" || !among(BOOL_SPOKEN, path: path))
+            out @ out.push(name)
+
+    return out
+
+# Whether `head` stands in `text` and no letter, digit or `_` follows it,
+# compared byte by byte, so a literal holding a character of several bytes
+# is read whole.
+function after(text: str, head: str) -> bool
+    from: i64 @= 0
+
+    while from + head.len() <= text.len()
+        k: i64 @= 0
+
+        while k < head.len() && text[from + k] == head[k]
+            k @ k + 1
+
+        if k == head.len()
+            at = from + head.len()
+
+            if at == text.len() || !c_words.in_word(text[at])
+                return true
+        from @ from + 1
+
+    return false
+
+function among(paths: [str], path: str) -> bool
+    for one in paths
+        if one == path
+            return true
+
+    return false
+
+# Each string literal of `text`'s code, its comments and its tests left out,
+# as `c_words.quoted_words` reads them.
+function literals(text: str) -> [str]
+    out: [str] @= []
+    code = c_words.without_tests(text)
+    n = code.len()
+    i: i64 @= 0
+    line_start: bool @= true
+
+    while i < n
+        b = code[i]
+
+        if line_start
+            at: i64 @= i
+
+            while at < n && code[at] == 32
+                at @ at + 1
+
+            if at < n && code[at] == 35
+                while i < n && code[i] != 10
+                    i @ i + 1
+
+                continue
+        line_start @ b == 10
+
+        if b == 34
+            i @ i + 1
+            start = i
+
+            while i < n && code[i] != 34 && code[i] != 10
+                if code[i] == 92
+                    i @ i + 1
+                i @ i + 1
+
+            out @ out.push(code.slice(from: start, to: i))
+        i @ i + 1
+
+    return out
+
+## Tests
+
+# Each is a word the guard holds, and each but `size_t` a type the runtime
+# declares as clang's own before any group's header, so the list is the
+# runtime's, read from it.
+test "the types the unit writes by name are the runtime's own declarations and size_t"
+    header = read_file("runtime/heroes_runtime.h").must()
+    listed: {str: bool} @= {}
+
+    for name in guarded_names.names()
+        listed[name] @ true
+
+    for name in C_TYPES
+        assert !listed[name].is_err()
+
+        if name != "size_t"
+            assert strings.holds(text: header, needle: "_TYPE__ " + name + ";\n")
+
+    assert holds("int64_t")
+    assert !holds("bool")
+    assert !holds("int_fast8_t")
+
+# Every member of `MEMBERS` is one a runtime struct declares, so the list is
+# the header's; and no emitter module writes one by name into C, nor a macro
+# of C's library, the old lines read by the same question so it is not blind.
+test "the unit's own C names no runtime struct's member and no macro of C's library (defect d-lane-macro-members2-1)"
+    header = read_file("runtime/heroes_runtime.h").must()
+
+    for member in MEMBERS
+        assert strings.holds(text: header, needle: " " + member + ";") || strings.holds(text: header, needle: "*" + member + ";") || strings.holds(text: header, needle: "(*" + member + ")")
+
+    stray: [str] @= []
+    files = process.files_under("selfhost/emit").must().push("selfhost/emit.hero")
+
+    for path in files
+        if strings.ends_with(text: path, suffix: ".hero") && !among(LISTING, path: path)
+            for literal in literals(read_file(path).must())
+                for word in written(text: literal, path: path)
+                    stray @ stray.push(path + ": " + word)
+
+    assert stray.join(" ") == ""
+    assert written(text: "(&hero_head->arg, &hero_arg);", path: "x") == ["arg"]
+    assert written(text: ".hero_as.hero_err = {.code = t1, .msg = t2}}", path: "x") == ["code", "msg"]
+    assert written(text: "(t0->elem->size != sizeof(int64_t)", path: "x") == ["size", "elem"]
+    assert written(text: "HERO_TU_LOCAL bool h_eq(", path: "x") == ["bool"]
+    assert written(text: "t1 = INT64_C(5); t2 = NULL;", path: "x") == ["NULL", "INT64_C"]
+    assert written(text: "t1 = HERO_DESC_EQ(d)(a, b); t2.hero_code;", path: "x") == []
+    assert written(text: "`e.code` reads", path: "x") == []

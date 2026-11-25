@@ -483,4 +483,4 @@ test "the dispatcher: a discarded call keeps its effect, a unit store vanishes"
 
     # The second content line under a source claim is written on the
     # first's line, where it took a restore until panel 219's R1.
-    assert got == "#line 2 \"t.hero\"\n    h_t_shout(); t2 = INT64_C(7);\n"
+    assert got == "#line 2 \"t.hero\"\n    h_t_shout(); t2 = ((__INT64_TYPE__)7);\n"

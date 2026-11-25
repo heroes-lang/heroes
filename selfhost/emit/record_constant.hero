@@ -128,7 +128,10 @@ function accessor(@w: writer.Writer, f: containers.Function, c: state.Checked, n
     # into the caller's slot, as every function returning one writes it
     # (`emit/large_value.hero`, panel 236).
     if large_value.is_large(names, ty: f.result)
-        writer.line(@w, text: "    if (" + large_value.OUT + " != NULL) *" + large_value.OUT + " = " + VALUE + ";")
+        writer.line(
+            @w,
+            text: "    if (" + large_value.OUT + " != ((void *)0)) *" + large_value.OUT + " = " + VALUE + ";"
+        )
         writer.line(@w, text: "    return;")
     else
         writer.line(@w, text: "    return " + VALUE + ";")

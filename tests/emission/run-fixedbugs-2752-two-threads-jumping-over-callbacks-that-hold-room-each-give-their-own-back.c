@@ -283,33 +283,33 @@ __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_fr
 #line 284 "fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E0 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E0 *hero_b);
+HERO_TU_LOCAL _Bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E0 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E0 *hero_b);
 HERO_TU_LOCAL uint64_t h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_hash(const void *hero_elem);
-HERO_TU_LOCAL bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E1 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E1 *hero_b);
+HERO_TU_LOCAL _Bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E1 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E1 *hero_b);
 HERO_TU_LOCAL uint64_t h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_hash(const void *hero_elem);
-HERO_TU_LOCAL bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E2 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E2 *hero_b);
+HERO_TU_LOCAL _Bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E2 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E2 *hero_b);
 HERO_TU_LOCAL uint64_t h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_hash(const void *hero_elem);
-HERO_TU_LOCAL bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E3 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E3 *hero_b);
+HERO_TU_LOCAL _Bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E3 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E3 *hero_b);
 HERO_TU_LOCAL uint64_t h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_hash(const void *hero_elem);
-HERO_TU_LOCAL bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *hero_b);
+HERO_TU_LOCAL _Bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *hero_b);
 HERO_TU_LOCAL uint64_t h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_hash(const void *hero_elem);
-HERO_TU_LOCAL bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E5_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E5 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E5 *hero_b);
+HERO_TU_LOCAL _Bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E5_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E5 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E5 *hero_b);
 HERO_TU_LOCAL uint64_t h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E5_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_16d320dd_retain(const h_0opt_16d320dd *hero_v);
 HERO_TU_LOCAL void h_0opt_16d320dd_release(h_0opt_16d320dd *hero_v);
-HERO_TU_LOCAL bool h_0opt_16d320dd_eq(const h_0opt_16d320dd *hero_a, const h_0opt_16d320dd *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_16d320dd_eq(const h_0opt_16d320dd *hero_a, const h_0opt_16d320dd *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_16d320dd_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 typedef struct { HeroThreadBox hero_head; h_0fn_48ac9712 hero_fn; } h_0box_48ac9712;
@@ -346,7 +346,7 @@ __attribute__((__noinline__)) void h_fixedbugs2752twothreadsjumpingovercallbacks
     t3 = h1_v0; t4 = h1_v0; t5 = h1_v0; t6 = h1_v0; t7 = h1_v0; t8 = h1_v0; t9 = h1_v0; t10 = h1_v0; t11 = (h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E1){.f_a = t3, .f_b = t4, .f_c = t5, .f_d = t6, .f_e = t7, .f_f = t8, .f_g = t9, .f_h = t10}; h2_v1 = t11;
     t12 = h2_v1; t13 = h2_v1; t14 = h2_v1; t15 = h2_v1; t16 = h2_v1; t17 = h2_v1; t18 = h2_v1; t19 = h2_v1; t20 = (h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E2){.f_a = t12, .f_b = t13, .f_c = t14, .f_d = t15, .f_e = t16, .f_f = t17, .f_g = t18, .f_h = t19}; h3_v2 = t20;
     t21 = h3_v2; t22 = h3_v2; t23 = h3_v2; t24 = h3_v2; t25 = h3_v2; t26 = h3_v2; t27 = h3_v2; t28 = h3_v2; t29 = (h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E3){.f_a = t21, .f_b = t22, .f_c = t23, .f_d = t24, .f_e = t25, .f_f = t26, .f_g = t27, .f_h = t28}; h4_v3 = t29;
-    t30 = h4_v3; t31 = h4_v3; t32 = h4_v3; t33 = h4_v3; t34 = h4_v3; t35 = h4_v3; t36 = h4_v3; t37 = h4_v3; t38 = *(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *)__builtin_memset(&t38, 0, sizeof t38); t38.f_a = t30; t38.f_b = t31; t38.f_c = t32; t38.f_d = t33; t38.f_e = t34; t38.f_f = t35; t38.f_g = t36; t38.f_h = t37; if (hero_out != NULL) *hero_out = t38; hero_frame_give(hero_big_t38); return;
+    t30 = h4_v3; t31 = h4_v3; t32 = h4_v3; t33 = h4_v3; t34 = h4_v3; t35 = h4_v3; t36 = h4_v3; t37 = h4_v3; t38 = *(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *)__builtin_memset(&t38, 0, sizeof t38); t38.f_a = t30; t38.f_b = t31; t38.f_c = t32; t38.f_d = t33; t38.f_e = t34; t38.f_f = t35; t38.f_g = t36; t38.f_h = t37; if (hero_out != ((void *)0)) *hero_out = t38; hero_frame_give(hero_big_t38); return;
 #line 351 "fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback.c"
 }
 #undef t38
@@ -378,7 +378,7 @@ __attribute__((__noinline__)) void h_fixedbugs2752twothreadsjumpingovercallbacks
 #line 73
     h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *const hero_big_h1_v4 = (h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4)); HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *const hero_big_t2 = (h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4)); HERO_NODEBUG h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *const hero_big_t3 = (h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4)); HERO_NODEBUG h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *const hero_big_t4 = (h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4)); HERO_NODEBUG h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *const hero_big_t5 = (h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4)); HERO_NODEBUG h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *const hero_big_t6 = (h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4)); HERO_NODEBUG h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *const hero_big_t7 = (h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4)); HERO_NODEBUG h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *const hero_big_t8 = (h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4)); HERO_NODEBUG h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *const hero_big_t9 = (h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4)); HERO_NODEBUG h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *const hero_big_t10 = (h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4)); HERO_NODEBUG h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E5 *const hero_big_t11 = (h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E5 *)hero_frame_take(sizeof(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E5)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_e4(&t2, t1); h1_v4 = t2;
-    t3 = h1_v4; t4 = h1_v4; t5 = h1_v4; t6 = h1_v4; t7 = h1_v4; t8 = h1_v4; t9 = h1_v4; t10 = h1_v4; t11 = *(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E5 *)__builtin_memset(&t11, 0, sizeof t11); t11.f_a = t3; t11.f_b = t4; t11.f_c = t5; t11.f_d = t6; t11.f_e = t7; t11.f_f = t8; t11.f_g = t9; t11.f_h = t10; if (hero_out != NULL) *hero_out = t11; hero_frame_give(hero_big_t11); hero_frame_give(hero_big_t10); hero_frame_give(hero_big_t9); hero_frame_give(hero_big_t8); hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t5); hero_frame_give(hero_big_t4); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_v4); return;
+    t3 = h1_v4; t4 = h1_v4; t5 = h1_v4; t6 = h1_v4; t7 = h1_v4; t8 = h1_v4; t9 = h1_v4; t10 = h1_v4; t11 = *(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E5 *)__builtin_memset(&t11, 0, sizeof t11); t11.f_a = t3; t11.f_b = t4; t11.f_c = t5; t11.f_d = t6; t11.f_e = t7; t11.f_f = t8; t11.f_g = t9; t11.f_h = t10; if (hero_out != ((void *)0)) *hero_out = t11; hero_frame_give(hero_big_t11); hero_frame_give(hero_big_t10); hero_frame_give(hero_big_t9); hero_frame_give(hero_big_t8); hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t5); hero_frame_give(hero_big_t4); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_v4); return;
 #line 383 "fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback.c"
 }
 #undef h1_v4
@@ -402,7 +402,7 @@ __attribute__((__noinline__)) int64_t h_fixedbugs2752twothreadsjumpingovercallba
 #line 77
     hero_thread_guard("fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback.body"); h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E5 *const hero_big_h1_v = (h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E5 *)hero_frame_take(sizeof(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E5)); HERO_NODEBUG int64_t t1, t3, t4; HERO_NODEBUG h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E5 *const hero_big_t2 = (h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E5 *)hero_frame_take(sizeof(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E5)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_e5(&t2, t1); h1_v = t2;
-    t3 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero", "fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.body", 79, 5}; (void)lv_throw(t3); }
+    t3 = ((__INT64_TYPE__)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero", "fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.body", 79, 5}; (void)lv_throw(t3); }
     t4 = h1_v.f_a.f_a.f_a.f_a.f_a.f_x; hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_v); return t4;
 #line 408 "fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback.c"
 }
@@ -417,13 +417,13 @@ __attribute__((__noinline__)) int64_t h_0cb_fixedbugs2752twothreadsjumpingoverca
 }
 
 #line 82 "tests/golden/run/fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero"
-int64_t h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_worker(int64_t h0_n) { hero_thread_guard("fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback.worker"); int64_t h1_total; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t4, *t7, *t10, *t24, *t25; HERO_NODEBUG int64_t h3_i0, t1, t2, t3, t5, t6, t8, t11, t12, t13, t15, t16, t17, t18, t19, t20, t21, t22, t23; int64_t h4_i; HERO_NODEBUG bool t9; HERO_NODEBUG h_0fn_48ac9712 t14; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = INT64_C(0); h1_total = t1;
+int64_t h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_worker(int64_t h0_n) { hero_thread_guard("fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback.worker"); int64_t h1_total; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t4, *t7, *t10, *t24, *t25; HERO_NODEBUG int64_t h3_i0, t1, t2, t3, t5, t6, t8, t11, t12, t13, t15, t16, t17, t18, t19, t20, t21, t22, t23; int64_t h4_i; HERO_NODEBUG _Bool t9; HERO_NODEBUG h_0fn_48ac9712 t14; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = ((__INT64_TYPE__)0); h1_total = t1;
 #line 85
-    t2 = INT64_C(0); t3 = INT64_C(1500); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero", "fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.worker", 85, 14}; t4 = h_library_range(t2, t3, &hero_here); } t24 = h5_own5; h5_own5 = t4; hero_array_decref(t24); t25 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t25); t5 = INT64_C(0); h3_i0 = t5; goto hero_bb1; hero_bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto hero_bb2; else goto hero_bb4; hero_bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero", "fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.worker", 85, 9) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_i = t12;
+    t2 = ((__INT64_TYPE__)0); t3 = ((__INT64_TYPE__)1500); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero", "fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.worker", 85, 14}; t4 = h_library_range(t2, t3, &hero_here); } t24 = h5_own5; h5_own5 = t4; hero_array_decref(t24); t25 = h2_xs0; hero_array_incref(t4); h2_xs0 = t4; hero_array_decref(t25); t5 = ((__INT64_TYPE__)0); h3_i0 = t5; goto hero_bb1; hero_bb1: t6 = h3_i0; t7 = h2_xs0; t8 = ((void)(t7 == ((void *)0) ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto hero_bb2; else goto hero_bb4; hero_bb2: t10 = h2_xs0; t11 = h3_i0; t12 = ((void)((t10 == ((void *)0) || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero", "fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.worker", 85, 9) : (void)0), (void)(HERO_ARRAY_ELEM_SIZE(t10) != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h4_i = t12;
     t13 = h1_total; t14 = h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_body; t15 = h4_i; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero", "fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.worker", 86, 25}; t16 = lv_try((h_0fn_48ac9712)hero_callback_of((void (*)(void))t14), t15); } if (__builtin_add_overflow(t13, t16, &t17)) hero_panic_overflow_at("fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero", "fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.worker", 86, 17); h1_total = t17; goto hero_bb3; hero_bb3:
 #line 85
-    t18 = h3_i0; t19 = INT64_C(1); if (__builtin_add_overflow(t18, t19, &t20)) hero_panic_overflow_at("fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero", "fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.worker", 85, 9); h3_i0 = t20; goto hero_bb1; hero_bb4:
+    t18 = h3_i0; t19 = ((__INT64_TYPE__)1); if (__builtin_add_overflow(t18, t19, &t20)) hero_panic_overflow_at("fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero", "fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.worker", 85, 9); h3_i0 = t20; goto hero_bb1; hero_bb4:
 #line 88
     t21 = h1_total; t22 = h0_n; if (__builtin_add_overflow(t21, t22, &t23)) hero_panic_overflow_at("fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero", "fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.worker", 88, 12);
 #line 430 "fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback.c"
@@ -440,9 +440,9 @@ __attribute__((__noinline__)) int64_t h_0cb_fixedbugs2752twothreadsjumpingoverca
 }
 
 #line 90 "tests/golden/run/fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero"
-void h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_main(void) { HERO_NODEBUG h_0opt_16d320dd h0_f0 = {0}, h2_f1 = {0}, h4_own4 = {0}, h5_own5 = {0}, t3, t4, t8, t10, t14, t15, t19, t21, t29, t30, t31, t32; int64_t h1_a; int64_t h3_b; HERO_NODEBUG h_0fn_48ac9712 t1, t12; HERO_NODEBUG int64_t t2, t5, t6, t11, t13, t16, t17, t22, t24, t25, t27, t28; HERO_NODEBUG bool t7, t18; HERO_NODEBUG HeroFailure t9, t20; HERO_NODEBUG HeroStr t23, t26; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_worker; t2 = INT64_C(1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero", "fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.main", 91, 9}; HERO_NODEBUG h_0box_48ac9712 *hero_box = (h_0box_48ac9712 *)hero_thread_box_new((int64_t)sizeof(h_0box_48ac9712)); hero_box->hero_head.run = h_0run_48ac9712; hero_box->hero_head.body = (void (*)(void))t1; hero_box->hero_fn = t1; h_0put_1b9a87(&hero_box->hero_head.arg, &t2); HERO_NODEBUG int64_t hero_why = 0; HERO_NODEBUG int64_t hero_thread = hero_thread_begin(&hero_box->hero_head, INT64_C(0), &hero_why, &hero_here); if (hero_thread >= 0) { t3 = (h_0opt_16d320dd){.hero_tag = INT64_C(0), .hero_as.hero_ok = hero_thread}; } else { hero_thread_box_free(&hero_box->hero_head); t3 = (h_0opt_16d320dd){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_limit(hero_why)}; } } t29 = h4_own4; h4_own4 = t3; h_0opt_16d320dd_release(&t29); t30 = h0_f0; h_0opt_16d320dd_retain(&t3); h0_f0 = t3; h_0opt_16d320dd_release(&t30); t4 = h0_f0; t5 = t4.hero_tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto hero_bb1; else goto hero_bb2; hero_bb1: t10 = h0_f0; t11 = t10.hero_as.hero_ok; h1_a = t11;
-    t12 = h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_worker; t13 = INT64_C(2); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero", "fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.main", 92, 9}; HERO_NODEBUG h_0box_48ac9712 *hero_box = (h_0box_48ac9712 *)hero_thread_box_new((int64_t)sizeof(h_0box_48ac9712)); hero_box->hero_head.run = h_0run_48ac9712; hero_box->hero_head.body = (void (*)(void))t12; hero_box->hero_fn = t12; h_0put_1b9a87(&hero_box->hero_head.arg, &t13); HERO_NODEBUG int64_t hero_why = 0; HERO_NODEBUG int64_t hero_thread = hero_thread_begin(&hero_box->hero_head, INT64_C(0), &hero_why, &hero_here); if (hero_thread >= 0) { t14 = (h_0opt_16d320dd){.hero_tag = INT64_C(0), .hero_as.hero_ok = hero_thread}; } else { hero_thread_box_free(&hero_box->hero_head); t14 = (h_0opt_16d320dd){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_limit(hero_why)}; } } t31 = h5_own5; h5_own5 = t14; h_0opt_16d320dd_release(&t31); t32 = h2_f1; h_0opt_16d320dd_retain(&t14); h2_f1 = t14; h_0opt_16d320dd_release(&t32); t15 = h2_f1; t16 = t15.hero_tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto hero_bb3; else goto hero_bb4; hero_bb2:
+void h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_main(void) { HERO_NODEBUG h_0opt_16d320dd h0_f0 = {0}, h2_f1 = {0}, h4_own4 = {0}, h5_own5 = {0}, t3, t4, t8, t10, t14, t15, t19, t21, t29, t30, t31, t32; int64_t h1_a; int64_t h3_b; HERO_NODEBUG h_0fn_48ac9712 t1, t12; HERO_NODEBUG int64_t t2, t5, t6, t11, t13, t16, t17, t22, t24, t25, t27, t28; HERO_NODEBUG _Bool t7, t18; HERO_NODEBUG HeroFailure t9, t20; HERO_NODEBUG HeroStr t23, t26; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_worker; t2 = ((__INT64_TYPE__)1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero", "fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.main", 91, 9}; HERO_NODEBUG h_0box_48ac9712 *hero_box = (h_0box_48ac9712 *)hero_thread_box_new((int64_t)sizeof(h_0box_48ac9712)); HERO_THREAD_BOX_RUN(&hero_box->hero_head) = h_0run_48ac9712; HERO_THREAD_BOX_BODY(&hero_box->hero_head) = (void (*)(void))t1; hero_box->hero_fn = t1; h_0put_1b9a87(HERO_THREAD_BOX_ARG(&hero_box->hero_head), &t2); HERO_NODEBUG int64_t hero_why = 0; HERO_NODEBUG int64_t hero_thread = hero_thread_begin(&hero_box->hero_head, ((__INT64_TYPE__)0), &hero_why, &hero_here); if (hero_thread >= 0) { t3 = (h_0opt_16d320dd){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = hero_thread}; } else { hero_thread_box_free(&hero_box->hero_head); t3 = (h_0opt_16d320dd){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_limit(hero_why)}; } } t29 = h4_own4; h4_own4 = t3; h_0opt_16d320dd_release(&t29); t30 = h0_f0; h_0opt_16d320dd_retain(&t3); h0_f0 = t3; h_0opt_16d320dd_release(&t30); t4 = h0_f0; t5 = t4.hero_tag; t6 = ((__INT64_TYPE__)0); t7 = t5 == t6; if (t7) goto hero_bb1; else goto hero_bb2; hero_bb1: t10 = h0_f0; t11 = t10.hero_as.hero_ok; h1_a = t11;
+    t12 = h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_worker; t13 = ((__INT64_TYPE__)2); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero", "fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.main", 92, 9}; HERO_NODEBUG h_0box_48ac9712 *hero_box = (h_0box_48ac9712 *)hero_thread_box_new((int64_t)sizeof(h_0box_48ac9712)); HERO_THREAD_BOX_RUN(&hero_box->hero_head) = h_0run_48ac9712; HERO_THREAD_BOX_BODY(&hero_box->hero_head) = (void (*)(void))t12; hero_box->hero_fn = t12; h_0put_1b9a87(HERO_THREAD_BOX_ARG(&hero_box->hero_head), &t13); HERO_NODEBUG int64_t hero_why = 0; HERO_NODEBUG int64_t hero_thread = hero_thread_begin(&hero_box->hero_head, ((__INT64_TYPE__)0), &hero_why, &hero_here); if (hero_thread >= 0) { t14 = (h_0opt_16d320dd){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = hero_thread}; } else { hero_thread_box_free(&hero_box->hero_head); t14 = (h_0opt_16d320dd){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_limit(hero_why)}; } } t31 = h5_own5; h5_own5 = t14; h_0opt_16d320dd_release(&t31); t32 = h2_f1; h_0opt_16d320dd_retain(&t14); h2_f1 = t14; h_0opt_16d320dd_release(&t32); t15 = h2_f1; t16 = t15.hero_tag; t17 = ((__INT64_TYPE__)0); t18 = t16 == t17; if (t18) goto hero_bb3; else goto hero_bb4; hero_bb2:
 #line 91
     t8 = h0_f0; t9 = t8.hero_as.hero_err;
 #line 449 "fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback.c"
@@ -451,7 +451,7 @@ void h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownba
 hero_bb3:
 #line 92 "tests/golden/run/fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero"
     t21 = h2_f1; t22 = t21.hero_as.hero_ok; h3_b = t22;
-    t23 = HERO_STR_LIT(hero_str_7fbc23b3); t24 = h1_a; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero", "fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.main", 93, 23}; HERO_NODEBUG HeroThreadBox *hero_box = hero_thread_end(t24, &hero_here); t25 = *(int64_t *)__builtin_memset(&t25, 0, sizeof t25); h_0take_1b9a87(&hero_box->answer, &t25); hero_thread_box_free(hero_box); } t26 = HERO_STR_LIT(hero_str_20); t27 = h3_b; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero", "fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.main", 93, 38}; HERO_NODEBUG HeroThreadBox *hero_box = hero_thread_end(t27, &hero_here); t28 = *(int64_t *)__builtin_memset(&t28, 0, sizeof t28); h_0take_1b9a87(&hero_box->answer, &t28); hero_thread_box_free(hero_box); } hero_print_str(t23); hero_print_int(t25); hero_print_str(t26); hero_print_int(t28); hero_print_end();
+    t23 = HERO_STR_LIT(hero_str_7fbc23b3); t24 = h1_a; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero", "fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.main", 93, 23}; HERO_NODEBUG HeroThreadBox *hero_box = hero_thread_end(t24, &hero_here); t25 = *(int64_t *)__builtin_memset(&t25, 0, sizeof t25); h_0take_1b9a87(HERO_THREAD_BOX_ANSWER(hero_box), &t25); hero_thread_box_free(hero_box); } t26 = HERO_STR_LIT(hero_str_20); t27 = h3_b; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.hero", "fixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back.main", 93, 38}; HERO_NODEBUG HeroThreadBox *hero_box = hero_thread_end(t27, &hero_here); t28 = *(int64_t *)__builtin_memset(&t28, 0, sizeof t28); h_0take_1b9a87(HERO_THREAD_BOX_ANSWER(hero_box), &t28); hero_thread_box_free(hero_box); } hero_print_str(t23); hero_print_int(t25); hero_print_str(t26); hero_print_int(t28); hero_print_end();
 #line 456 "fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback.c"
     h_0opt_16d320dd_release(hero_slot_escape(&h0_f0));
     h_0opt_16d320dd_release(hero_slot_escape(&h2_f1));
@@ -467,12 +467,12 @@ hero_bb4:
 }
 
 #line 26 "<heroes library>"
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG _Bool t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t13 = h4_own4; h4_own4 = t1; hero_array_decref(t13); t14 = h2_out; hero_array_incref(t1); h2_out = t1; hero_array_decref(t14);
     t2 = h0_from; h3_i = t2; goto hero_bb1; hero_bb1:
     t3 = h3_i; t4 = h1_to; t5 = t3 < t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb2:
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
-    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto hero_bb1; hero_bb3:
+    t9 = h3_i; t10 = ((__INT64_TYPE__)1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(HERO_PLACE_PATH(hero_caller), HERO_PLACE_NAME(hero_caller), HERO_PLACE_LINE(hero_caller), HERO_PLACE_COLUMN(hero_caller)); h3_i = t11; goto hero_bb1; hero_bb3:
     t12 = h2_out;
 #line 478 "fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback.c"
     hero_array_incref(t12);
@@ -484,19 +484,19 @@ __attribute__((__unused__)) HeroArrayHeader * hero_value_h_library_range(int64_t
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.range", 26, 1};
     return h_library_range(h0_from, h1_to, &hero_here);
 }
-HERO_TU_LOCAL bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E0 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E0 *hero_b) {
+HERO_TU_LOCAL _Bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E0 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E0 *hero_b) {
     if (!(hero_a->f_x == hero_b->f_x)) return false;
     return true;
 }
 
 HERO_TU_LOCAL uint64_t h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_hash(const void *hero_elem) {
     const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E0 *hero_v = hero_elem;
-    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
-    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_x)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = ((__UINT64_TYPE__)0xcbf29ce484222325);
+    hero_h = (hero_h ^ HERO_DESC_HASH(&hero_desc_int)(&hero_v->f_x)) * ((__UINT64_TYPE__)0x100000001b3);
     return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E1 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E1 *hero_b) {
+HERO_TU_LOCAL _Bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E1 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E1 *hero_b) {
     if (!(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_eq(&hero_a->f_a, &hero_b->f_a))) return false;
     if (!(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_eq(&hero_a->f_b, &hero_b->f_b))) return false;
     if (!(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_eq(&hero_a->f_c, &hero_b->f_c))) return false;
@@ -510,19 +510,19 @@ HERO_TU_LOCAL bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeach
 
 HERO_TU_LOCAL uint64_t h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_hash(const void *hero_elem) {
     const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E1 *hero_v = hero_elem;
-    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = ((__UINT64_TYPE__)0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_hash(&hero_v->f_a)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_hash(&hero_v->f_b)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_hash(&hero_v->f_c)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_hash(&hero_v->f_d)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_hash(&hero_v->f_e)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_hash(&hero_v->f_f)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_hash(&hero_v->f_g)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E0_hash(&hero_v->f_h)) * ((__UINT64_TYPE__)0x100000001b3);
     return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E2 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E2 *hero_b) {
+HERO_TU_LOCAL _Bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E2 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E2 *hero_b) {
     if (!(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_eq(&hero_a->f_a, &hero_b->f_a))) return false;
     if (!(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_eq(&hero_a->f_b, &hero_b->f_b))) return false;
     if (!(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_eq(&hero_a->f_c, &hero_b->f_c))) return false;
@@ -536,19 +536,19 @@ HERO_TU_LOCAL bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeach
 
 HERO_TU_LOCAL uint64_t h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_hash(const void *hero_elem) {
     const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E2 *hero_v = hero_elem;
-    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = ((__UINT64_TYPE__)0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_hash(&hero_v->f_a)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_hash(&hero_v->f_b)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_hash(&hero_v->f_c)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_hash(&hero_v->f_d)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_hash(&hero_v->f_e)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_hash(&hero_v->f_f)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_hash(&hero_v->f_g)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E1_hash(&hero_v->f_h)) * ((__UINT64_TYPE__)0x100000001b3);
     return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E3 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E3 *hero_b) {
+HERO_TU_LOCAL _Bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E3 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E3 *hero_b) {
     if (!(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_eq(&hero_a->f_a, &hero_b->f_a))) return false;
     if (!(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_eq(&hero_a->f_b, &hero_b->f_b))) return false;
     if (!(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_eq(&hero_a->f_c, &hero_b->f_c))) return false;
@@ -562,19 +562,19 @@ HERO_TU_LOCAL bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeach
 
 HERO_TU_LOCAL uint64_t h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_hash(const void *hero_elem) {
     const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E3 *hero_v = hero_elem;
-    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = ((__UINT64_TYPE__)0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_hash(&hero_v->f_a)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_hash(&hero_v->f_b)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_hash(&hero_v->f_c)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_hash(&hero_v->f_d)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_hash(&hero_v->f_e)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_hash(&hero_v->f_f)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_hash(&hero_v->f_g)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E2_hash(&hero_v->f_h)) * ((__UINT64_TYPE__)0x100000001b3);
     return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *hero_b) {
+HERO_TU_LOCAL _Bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *hero_b) {
     if (!(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_eq(&hero_a->f_a, &hero_b->f_a))) return false;
     if (!(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_eq(&hero_a->f_b, &hero_b->f_b))) return false;
     if (!(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_eq(&hero_a->f_c, &hero_b->f_c))) return false;
@@ -588,19 +588,19 @@ HERO_TU_LOCAL bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeach
 
 HERO_TU_LOCAL uint64_t h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_hash(const void *hero_elem) {
     const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E4 *hero_v = hero_elem;
-    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = ((__UINT64_TYPE__)0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_hash(&hero_v->f_a)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_hash(&hero_v->f_b)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_hash(&hero_v->f_c)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_hash(&hero_v->f_d)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_hash(&hero_v->f_e)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_hash(&hero_v->f_f)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_hash(&hero_v->f_g)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E3_hash(&hero_v->f_h)) * ((__UINT64_TYPE__)0x100000001b3);
     return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E5_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E5 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E5 *hero_b) {
+HERO_TU_LOCAL _Bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E5_eq(const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E5 *hero_a, const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E5 *hero_b) {
     if (!(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_eq(&hero_a->f_a, &hero_b->f_a))) return false;
     if (!(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_eq(&hero_a->f_b, &hero_b->f_b))) return false;
     if (!(h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_eq(&hero_a->f_c, &hero_b->f_c))) return false;
@@ -614,20 +614,20 @@ HERO_TU_LOCAL bool h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeach
 
 HERO_TU_LOCAL uint64_t h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E5_hash(const void *hero_elem) {
     const h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_E5 *hero_v = hero_elem;
-    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = ((__UINT64_TYPE__)0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_hash(&hero_v->f_a)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_hash(&hero_v->f_b)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_hash(&hero_v->f_c)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_hash(&hero_v->f_d)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_hash(&hero_v->f_e)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_hash(&hero_v->f_f)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_hash(&hero_v->f_g)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback_0E4_hash(&hero_v->f_h)) * ((__UINT64_TYPE__)0x100000001b3);
     return hero_h;
 }
 
 HERO_TU_LOCAL void h_0opt_16d320dd_retain(const h_0opt_16d320dd *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -635,31 +635,31 @@ HERO_TU_LOCAL void h_0opt_16d320dd_retain(const h_0opt_16d320dd *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_16d320dd_release(h_0opt_16d320dd *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_16d320dd_eq(const h_0opt_16d320dd *hero_a, const h_0opt_16d320dd *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_16d320dd_eq(const h_0opt_16d320dd *hero_a, const h_0opt_16d320dd *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_thread)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_thread)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_16d320dd_hash(const void *hero_elem) {
     const h_0opt_16d320dd *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_thread)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_thread)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -667,31 +667,31 @@ HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_str)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
     const h_0opt_f87774a *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_str)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -699,31 +699,31 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
     const h_0opt_a8ea2 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
     return hero_h;
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -731,27 +731,27 @@ HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_int)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
     const h_0opt_e201354 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_int)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0put_1b9a87(HeroCross *hero_b, const void *hero_p) {
@@ -765,15 +765,15 @@ HERO_TU_LOCAL void h_0take_1b9a87(HeroCross *hero_b, void *hero_p) {
 HERO_TU_LOCAL void h_0run_48ac9712(HeroThreadBox *hero_head) {
     h_0box_48ac9712 *hero_box = (h_0box_48ac9712 *)(void *)hero_head;
     HERO_NODEBUG int64_t hero_arg;
-    h_0take_1b9a87(&hero_head->arg, &hero_arg);
-    hero_cross_free(&hero_head->arg);
+    h_0take_1b9a87(HERO_THREAD_BOX_ARG(hero_head), &hero_arg);
+    hero_cross_free(HERO_THREAD_BOX_ARG(hero_head));
     HERO_NODEBUG int64_t hero_answer;
     hero_answer = hero_box->hero_fn(hero_arg);
-    h_0put_1b9a87(&hero_head->answer, &hero_answer);
+    h_0put_1b9a87(HERO_THREAD_BOX_ANSWER(hero_head), &hero_answer);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("1fa4818b60036551", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5b3ace77414422ab", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback\tfixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back\n");

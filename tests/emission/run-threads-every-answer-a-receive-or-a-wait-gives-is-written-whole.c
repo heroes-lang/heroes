@@ -78,7 +78,7 @@ typedef struct h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner {
 typedef struct h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer {
     h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner f_inner;
     HeroArrayHeader * f_more;
-    bool f_flag;
+    _Bool f_flag;
 } h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer;
 
 typedef enum h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_tag {
@@ -154,7 +154,7 @@ typedef struct h_0opt_3a69e449 {
 typedef struct h_0opt_473cb9ae {
     int64_t hero_tag;
     union {
-        bool hero_ok;
+        _Bool hero_ok;
         HeroFailure hero_err;
     } hero_as;
 } h_0opt_473cb9ae;
@@ -194,7 +194,7 @@ typedef struct h_0opt_2e0f88f1 {
     } hero_as;
 } h_0opt_2e0f88f1;
 
-typedef bool (*h_0fn_3d242f50)(int64_t);
+typedef _Bool (*h_0fn_3d242f50)(int64_t);
 typedef struct h_0opt_3df2bbad {
     int64_t hero_tag;
     union {
@@ -239,81 +239,81 @@ __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_fr
 
 HERO_TU_LOCAL void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_retain(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Several *hero_v);
 HERO_TU_LOCAL void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_release(h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Several *hero_v);
-HERO_TU_LOCAL bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Several *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Several *hero_b);
+HERO_TU_LOCAL _Bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Several *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Several *hero_b);
 HERO_TU_LOCAL uint64_t h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_retain(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner *hero_v);
 HERO_TU_LOCAL void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_release(h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner *hero_v);
-HERO_TU_LOCAL bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner *hero_b);
+HERO_TU_LOCAL _Bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner *hero_b);
 HERO_TU_LOCAL uint64_t h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_retain(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer *hero_v);
 HERO_TU_LOCAL void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_release(h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer *hero_v);
-HERO_TU_LOCAL bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer *hero_b);
+HERO_TU_LOCAL _Bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer *hero_b);
 HERO_TU_LOCAL uint64_t h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle_retain(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle *hero_v);
 HERO_TU_LOCAL void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle_release(h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle *hero_v);
-HERO_TU_LOCAL bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle *hero_b);
+HERO_TU_LOCAL _Bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle *hero_b);
 HERO_TU_LOCAL uint64_t h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle_hash(const void *hero_elem);
-HERO_TU_LOCAL bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square *hero_b);
+HERO_TU_LOCAL _Bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square *hero_b);
 HERO_TU_LOCAL uint64_t h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_retain(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape *hero_v);
 HERO_TU_LOCAL void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_release(h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape *hero_v);
-HERO_TU_LOCAL bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape *hero_b);
+HERO_TU_LOCAL _Bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape *hero_b);
 HERO_TU_LOCAL uint64_t h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_71688fb1_retain(const h_0opt_71688fb1 *hero_v);
 HERO_TU_LOCAL void h_0opt_71688fb1_release(h_0opt_71688fb1 *hero_v);
-HERO_TU_LOCAL bool h_0opt_71688fb1_eq(const h_0opt_71688fb1 *hero_a, const h_0opt_71688fb1 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_71688fb1_eq(const h_0opt_71688fb1 *hero_a, const h_0opt_71688fb1 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_71688fb1_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_3ca904b0_retain(const h_0opt_3ca904b0 *hero_v);
 HERO_TU_LOCAL void h_0opt_3ca904b0_release(h_0opt_3ca904b0 *hero_v);
-HERO_TU_LOCAL bool h_0opt_3ca904b0_eq(const h_0opt_3ca904b0 *hero_a, const h_0opt_3ca904b0 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_3ca904b0_eq(const h_0opt_3ca904b0 *hero_a, const h_0opt_3ca904b0 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_3ca904b0_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_1fe1460c_retain(const h_0opt_1fe1460c *hero_v);
 HERO_TU_LOCAL void h_0opt_1fe1460c_release(h_0opt_1fe1460c *hero_v);
-HERO_TU_LOCAL bool h_0opt_1fe1460c_eq(const h_0opt_1fe1460c *hero_a, const h_0opt_1fe1460c *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_1fe1460c_eq(const h_0opt_1fe1460c *hero_a, const h_0opt_1fe1460c *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_1fe1460c_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_3a69e449_retain(const h_0opt_3a69e449 *hero_v);
 HERO_TU_LOCAL void h_0opt_3a69e449_release(h_0opt_3a69e449 *hero_v);
-HERO_TU_LOCAL bool h_0opt_3a69e449_eq(const h_0opt_3a69e449 *hero_a, const h_0opt_3a69e449 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_3a69e449_eq(const h_0opt_3a69e449 *hero_a, const h_0opt_3a69e449 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_3a69e449_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_473cb9ae_retain(const h_0opt_473cb9ae *hero_v);
 HERO_TU_LOCAL void h_0opt_473cb9ae_release(h_0opt_473cb9ae *hero_v);
-HERO_TU_LOCAL bool h_0opt_473cb9ae_eq(const h_0opt_473cb9ae *hero_a, const h_0opt_473cb9ae *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_473cb9ae_eq(const h_0opt_473cb9ae *hero_a, const h_0opt_473cb9ae *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_473cb9ae_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_35592ed2_retain(const h_0opt_35592ed2 *hero_v);
 HERO_TU_LOCAL void h_0opt_35592ed2_release(h_0opt_35592ed2 *hero_v);
-HERO_TU_LOCAL bool h_0opt_35592ed2_eq(const h_0opt_35592ed2 *hero_a, const h_0opt_35592ed2 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_35592ed2_eq(const h_0opt_35592ed2 *hero_a, const h_0opt_35592ed2 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_35592ed2_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_428f1a94_retain(const h_0opt_428f1a94 *hero_v);
 HERO_TU_LOCAL void h_0opt_428f1a94_release(h_0opt_428f1a94 *hero_v);
-HERO_TU_LOCAL bool h_0opt_428f1a94_eq(const h_0opt_428f1a94 *hero_a, const h_0opt_428f1a94 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_428f1a94_eq(const h_0opt_428f1a94 *hero_a, const h_0opt_428f1a94 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_428f1a94_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_3fa7b87f_retain(const h_0opt_3fa7b87f *hero_v);
 HERO_TU_LOCAL void h_0opt_3fa7b87f_release(h_0opt_3fa7b87f *hero_v);
-HERO_TU_LOCAL bool h_0opt_3fa7b87f_eq(const h_0opt_3fa7b87f *hero_a, const h_0opt_3fa7b87f *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_3fa7b87f_eq(const h_0opt_3fa7b87f *hero_a, const h_0opt_3fa7b87f *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_3fa7b87f_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_2e0f88f1_retain(const h_0opt_2e0f88f1 *hero_v);
 HERO_TU_LOCAL void h_0opt_2e0f88f1_release(h_0opt_2e0f88f1 *hero_v);
-HERO_TU_LOCAL bool h_0opt_2e0f88f1_eq(const h_0opt_2e0f88f1 *hero_a, const h_0opt_2e0f88f1 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_2e0f88f1_eq(const h_0opt_2e0f88f1 *hero_a, const h_0opt_2e0f88f1 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_2e0f88f1_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_3df2bbad_retain(const h_0opt_3df2bbad *hero_v);
 HERO_TU_LOCAL void h_0opt_3df2bbad_release(h_0opt_3df2bbad *hero_v);
-HERO_TU_LOCAL bool h_0opt_3df2bbad_eq(const h_0opt_3df2bbad *hero_a, const h_0opt_3df2bbad *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_3df2bbad_eq(const h_0opt_3df2bbad *hero_a, const h_0opt_3df2bbad *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_3df2bbad_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_6ea83cb1_retain(const h_0opt_6ea83cb1 *hero_v);
 HERO_TU_LOCAL void h_0opt_6ea83cb1_release(h_0opt_6ea83cb1 *hero_v);
-HERO_TU_LOCAL bool h_0opt_6ea83cb1_eq(const h_0opt_6ea83cb1 *hero_a, const h_0opt_6ea83cb1 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_6ea83cb1_eq(const h_0opt_6ea83cb1 *hero_a, const h_0opt_6ea83cb1 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_6ea83cb1_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
 
 typedef struct { HeroThreadBox hero_head; h_0fn_27093d66 hero_fn; } h_0box_27093d66;
@@ -354,7 +354,7 @@ static void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_desc_c
 static void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_desc_drop(void *hero_elem) {
     h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_release((h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner *)hero_elem);
 }
-static bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_desc_eq(const void *hero_a, const void *hero_b) {
+static _Bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_desc_eq(const void *hero_a, const void *hero_b) {
     return h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_eq((const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner *)hero_a, (const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner *)hero_b);
 }
 HERO_TU_QUIET static const HeroDesc h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_desc = {
@@ -372,7 +372,7 @@ static void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_desc
 static void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_desc_drop(void *hero_elem) {
     h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_release((h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Several *)hero_elem);
 }
-static bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_desc_eq(const void *hero_a, const void *hero_b) {
+static _Bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_desc_eq(const void *hero_a, const void *hero_b) {
     return h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_eq((const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Several *)hero_a, (const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Several *)hero_b);
 }
 HERO_TU_QUIET static const HeroDesc h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_desc = {
@@ -390,7 +390,7 @@ static void h_0opt_e201354_desc_copy(void *hero_dst, const void *hero_src) {
 static void h_0opt_e201354_desc_drop(void *hero_elem) {
     h_0opt_e201354_release((h_0opt_e201354 *)hero_elem);
 }
-static bool h_0opt_e201354_desc_eq(const void *hero_a, const void *hero_b) {
+static _Bool h_0opt_e201354_desc_eq(const void *hero_a, const void *hero_b) {
     return h_0opt_e201354_eq((const h_0opt_e201354 *)hero_a, (const h_0opt_e201354 *)hero_b);
 }
 HERO_TU_QUIET static const HeroDesc h_0opt_e201354_desc = {
@@ -408,7 +408,7 @@ static void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_desc_c
 static void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_desc_drop(void *hero_elem) {
     h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_release((h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer *)hero_elem);
 }
-static bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_desc_eq(const void *hero_a, const void *hero_b) {
+static _Bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_desc_eq(const void *hero_a, const void *hero_b) {
     return h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_eq((const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer *)hero_a, (const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer *)hero_b);
 }
 HERO_TU_QUIET static const HeroDesc h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_desc = {
@@ -426,7 +426,7 @@ static void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_desc_c
 static void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_desc_drop(void *hero_elem) {
     h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_release((h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape *)hero_elem);
 }
-static bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_desc_eq(const void *hero_a, const void *hero_b) {
+static _Bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_desc_eq(const void *hero_a, const void *hero_b) {
     return h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_eq((const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape *)hero_a, (const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape *)hero_b);
 }
 HERO_TU_QUIET static const HeroDesc h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_desc = {
@@ -446,16 +446,16 @@ void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_one_field(void);
 h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_shape_of(int64_t h0_n);
 h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_outer_of(int64_t h0_n);
 h_0opt_e201354 h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_maybe_of(int64_t h0_n);
-bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_flag_of(int64_t h0_n);
+_Bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_flag_of(int64_t h0_n);
 void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_quiet(int64_t h0_n);
 void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_waited(void);
 void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_main(void);
 
 #line 35 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
-void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_several(void) { HeroMail * h0_m = {0}; HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}, h10_own10 = {0}, t11, t12, t16, t61, t62; HERO_NODEBUG h_0opt_71688fb1 h2_f1 = {0}, h5_f3 = {0}, h11_own11 = {0}, h16_own16 = {0}, t22, t23, t27, t29, t51, t52, t63, t64, t71, t72; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Several h3_got = {0}; HERO_NODEBUG h_0opt_e201354 h4_f2 = {0}, h13_own13 = {0}, t38, t39, t43, t45, t67, t68; HERO_NODEBUG HeroMail *h6_own6 = {0}, *t1, *t2, *t20, *t49, *t56, *t57; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t6, *t32, *t58; HERO_NODEBUG HeroMapHeader *h8_own8 = {0}, *t9, *t36, *t59; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Several h9_own9 = {0}, t10, t30, t60, t65; HERO_NODEBUG HeroStr h12_own12 = {0}, h14_own14 = {0}, h15_own15 = {0}, t3, t4, t5, t7, t31, t34, t35, t37, t47, t48, t66, t69, t70; HERO_NODEBUG int64_t t8, t13, t14, t21, t24, t25, t33, t40, t41, t46, t50, t53, t54; HERO_NODEBUG bool t15, t26, t42, t55; HERO_NODEBUG HeroFailure t17, t28, t44; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_several(void) { HeroMail * h0_m = {0}; HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}, h10_own10 = {0}, t11, t12, t16, t61, t62; HERO_NODEBUG h_0opt_71688fb1 h2_f1 = {0}, h5_f3 = {0}, h11_own11 = {0}, h16_own16 = {0}, t22, t23, t27, t29, t51, t52, t63, t64, t71, t72; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Several h3_got = {0}; HERO_NODEBUG h_0opt_e201354 h4_f2 = {0}, h13_own13 = {0}, t38, t39, t43, t45, t67, t68; HERO_NODEBUG HeroMail *h6_own6 = {0}, *t1, *t2, *t20, *t49, *t56, *t57; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t6, *t32, *t58; HERO_NODEBUG HeroMapHeader *h8_own8 = {0}, *t9, *t36, *t59; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Several h9_own9 = {0}, t10, t30, t60, t65; HERO_NODEBUG HeroStr h12_own12 = {0}, h14_own14 = {0}, h15_own15 = {0}, t3, t4, t5, t7, t31, t34, t35, t37, t47, t48, t66, t69, t70; HERO_NODEBUG int64_t t8, t13, t14, t21, t24, t25, t33, t40, t41, t46, t50, t53, t54; HERO_NODEBUG _Bool t15, t26, t42, t55; HERO_NODEBUG HeroFailure t17, t28, t44; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.several", 36, 28}; t1 = hero_mail_new(h_0take_1167d096, &h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_desc, &hero_here); } t56 = h6_own6; h6_own6 = t1; hero_mail_decref(t56); t57 = h0_m; hero_mail_incref(t1); h0_m = t1; hero_mail_decref(t57);
-    t2 = h0_m; t3 = HERO_STR_LIT(hero_str_61); t4 = HERO_STR_LIT(hero_str_78); t5 = HERO_STR_LIT(hero_str_79); t6 = hero_array_new(&hero_desc_str, 2); hero_array_push_owned(&t6, &t4); hero_array_push_owned(&t6, &t5); t58 = h7_own7; h7_own7 = t6; hero_array_decref(t58); t7 = HERO_STR_LIT(hero_str_6b); t8 = INT64_C(3); t9 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.several", 37, 59}; hero_map_put_at(t9, &t7, &t8, &hero_here); } t59 = h8_own8; h8_own8 = t9; hero_map_decref(t59); hero_str_incref(t3); hero_array_incref(t6); hero_map_incref(t9); t10 = (h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Several){.f_name = t3, .f_parts = t6, .f_weights = t9}; t60 = h9_own9; h9_own9 = t10; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_release(&t60); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.several", 37, 5}; HERO_NODEBUG int64_t hero_answer = hero_mail_send(t2, h_0put_1167d096, NULL, (void *)&t10, &hero_here); t11 = hero_answer == 0 ? (h_0opt_a8ea2){.hero_tag = INT64_C(0)} : (h_0opt_a8ea2){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_answer == 2 ? hero_failure_send_closed() : hero_failure_send_stopped()}; } t61 = h10_own10; h10_own10 = t11; h_0opt_a8ea2_release(&t61); t62 = h1_f0; h_0opt_a8ea2_retain(&t11); h1_f0 = t11; h_0opt_a8ea2_release(&t62); t12 = h1_f0; t13 = t12.hero_tag; t14 = INT64_C(0); t15 = t13 == t14; if (t15) goto hero_bb1; else goto hero_bb2; hero_bb1:
-    t20 = h0_m; t21 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.several", 38, 11}; t22 = *(h_0opt_71688fb1 *)__builtin_memset(&t22, 0, sizeof t22); t22.hero_tag = INT64_C(0); HERO_NODEBUG int64_t hero_answer = hero_mail_receive(t20, &t22.hero_as.hero_ok, t21, &hero_here); if (hero_answer != 0) t22 = (h_0opt_71688fb1){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()}; } t63 = h11_own11; h11_own11 = t22; h_0opt_71688fb1_release(&t63); t64 = h2_f1; h_0opt_71688fb1_retain(&t22); h2_f1 = t22; h_0opt_71688fb1_release(&t64); t23 = h2_f1; t24 = t23.hero_tag; t25 = INT64_C(0); t26 = t24 == t25; if (t26) goto hero_bb3; else goto hero_bb4; hero_bb2:
+    t2 = h0_m; t3 = HERO_STR_LIT(hero_str_61); t4 = HERO_STR_LIT(hero_str_78); t5 = HERO_STR_LIT(hero_str_79); t6 = hero_array_new(&hero_desc_str, 2); hero_array_push_owned(&t6, &t4); hero_array_push_owned(&t6, &t5); t58 = h7_own7; h7_own7 = t6; hero_array_decref(t58); t7 = HERO_STR_LIT(hero_str_6b); t8 = ((__INT64_TYPE__)3); t9 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.several", 37, 59}; hero_map_put_at(t9, &t7, &t8, &hero_here); } t59 = h8_own8; h8_own8 = t9; hero_map_decref(t59); hero_str_incref(t3); hero_array_incref(t6); hero_map_incref(t9); t10 = (h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Several){.f_name = t3, .f_parts = t6, .f_weights = t9}; t60 = h9_own9; h9_own9 = t10; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_release(&t60); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.several", 37, 5}; HERO_NODEBUG int64_t hero_answer = hero_mail_send(t2, h_0put_1167d096, ((void *)0), (void *)&t10, &hero_here); t11 = hero_answer == 0 ? (h_0opt_a8ea2){.hero_tag = ((__INT64_TYPE__)0)} : (h_0opt_a8ea2){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_answer == 2 ? hero_failure_send_closed() : hero_failure_send_stopped()}; } t61 = h10_own10; h10_own10 = t11; h_0opt_a8ea2_release(&t61); t62 = h1_f0; h_0opt_a8ea2_retain(&t11); h1_f0 = t11; h_0opt_a8ea2_release(&t62); t12 = h1_f0; t13 = t12.hero_tag; t14 = ((__INT64_TYPE__)0); t15 = t13 == t14; if (t15) goto hero_bb1; else goto hero_bb2; hero_bb1:
+    t20 = h0_m; t21 = ((__INT64_TYPE__)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.several", 38, 11}; t22 = *(h_0opt_71688fb1 *)__builtin_memset(&t22, 0, sizeof t22); t22.hero_tag = ((__INT64_TYPE__)0); HERO_NODEBUG int64_t hero_answer = hero_mail_receive(t20, &t22.hero_as.hero_ok, t21, &hero_here); if (hero_answer != 0) t22 = (h_0opt_71688fb1){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()}; } t63 = h11_own11; h11_own11 = t22; h_0opt_71688fb1_release(&t63); t64 = h2_f1; h_0opt_71688fb1_retain(&t22); h2_f1 = t22; h_0opt_71688fb1_release(&t64); t23 = h2_f1; t24 = t23.hero_tag; t25 = ((__INT64_TYPE__)0); t26 = t24 == t25; if (t26) goto hero_bb3; else goto hero_bb4; hero_bb2:
 #line 37
     t16 = h1_f0; t17 = t16.hero_as.hero_err;
 #line 462 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
@@ -464,7 +464,7 @@ void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_several(void) { Hero
 hero_bb3:
 #line 38 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
     t29 = h2_f1; t30 = t29.hero_as.hero_ok; t65 = h3_got; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_retain(&t30); h3_got = t30; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_release(&t65);
-    t31 = h3_got.f_name; t32 = h3_got.f_parts; t33 = INT64_C(1); t34 = ((void)((t32 == NULL || t33 < 0 || t33 >= t32->len) ? hero_panic_index_at(t32, t33, "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.several", 39, 22) : (void)0), (void)(t32->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t32 + 1))[t33]); t35 = hero_str_concat(t31, t34); t66 = h12_own12; h12_own12 = t35; hero_str_decref(t66); t36 = h3_got.f_weights; t37 = HERO_STR_LIT(hero_str_6b); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.several", 39, 37}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t36, &t37, &hero_here); if (hero_found == NULL) { t38 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t38 = (h_0opt_e201354){.hero_tag = INT64_C(0)}; (&hero_desc_int)->copy(&t38.hero_as.hero_ok, hero_found); } } t67 = h13_own13; h13_own13 = t38; h_0opt_e201354_release(&t67); t68 = h4_f2; h_0opt_e201354_retain(&t38); h4_f2 = t38; h_0opt_e201354_release(&t68); t39 = h4_f2; t40 = t39.hero_tag; t41 = INT64_C(0); t42 = t40 == t41; if (t42) goto hero_bb5; else goto hero_bb6; hero_bb4:
+    t31 = h3_got.f_name; t32 = h3_got.f_parts; t33 = ((__INT64_TYPE__)1); t34 = ((void)((t32 == ((void *)0) || t33 < 0 || t33 >= t32->len) ? hero_panic_index_at(t32, t33, "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.several", 39, 22) : (void)0), (void)(HERO_ARRAY_ELEM_SIZE(t32) != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t32 + 1))[t33]); t35 = hero_str_concat(t31, t34); t66 = h12_own12; h12_own12 = t35; hero_str_decref(t66); t36 = h3_got.f_weights; t37 = HERO_STR_LIT(hero_str_6b); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.several", 39, 37}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t36, &t37, &hero_here); if (hero_found == ((void *)0)) { t38 = (h_0opt_e201354){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t38 = (h_0opt_e201354){.hero_tag = ((__INT64_TYPE__)0)}; HERO_DESC_COPY(&hero_desc_int)(&t38.hero_as.hero_ok, hero_found); } } t67 = h13_own13; h13_own13 = t38; h_0opt_e201354_release(&t67); t68 = h4_f2; h_0opt_e201354_retain(&t38); h4_f2 = t38; h_0opt_e201354_release(&t68); t39 = h4_f2; t40 = t39.hero_tag; t41 = ((__INT64_TYPE__)0); t42 = t40 == t41; if (t42) goto hero_bb5; else goto hero_bb6; hero_bb4:
 #line 38
     t27 = h2_f1; t28 = t27.hero_as.hero_err;
 #line 471 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
@@ -473,7 +473,7 @@ hero_bb3:
 hero_bb5:
 #line 39 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
     t45 = h4_f2; t46 = t45.hero_as.hero_ok; t47 = hero_int_to_str(t46); t69 = h14_own14; h14_own14 = t47; hero_str_decref(t69); t48 = hero_str_concat(t35, t47); t70 = h15_own15; h15_own15 = t48; hero_str_decref(t70); hero_print_str(t48); hero_print_end();
-    t49 = h0_m; t50 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.several", 40, 11}; t51 = *(h_0opt_71688fb1 *)__builtin_memset(&t51, 0, sizeof t51); t51.hero_tag = INT64_C(0); HERO_NODEBUG int64_t hero_answer = hero_mail_receive(t49, &t51.hero_as.hero_ok, t50, &hero_here); if (hero_answer != 0) t51 = (h_0opt_71688fb1){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()}; } t71 = h16_own16; h16_own16 = t51; h_0opt_71688fb1_release(&t71); t72 = h5_f3; h_0opt_71688fb1_retain(&t51); h5_f3 = t51; h_0opt_71688fb1_release(&t72); t52 = h5_f3; t53 = t52.hero_tag; t54 = INT64_C(1); t55 = t53 == t54; hero_print_bool(t55); hero_print_end();
+    t49 = h0_m; t50 = ((__INT64_TYPE__)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.several", 40, 11}; t51 = *(h_0opt_71688fb1 *)__builtin_memset(&t51, 0, sizeof t51); t51.hero_tag = ((__INT64_TYPE__)0); HERO_NODEBUG int64_t hero_answer = hero_mail_receive(t49, &t51.hero_as.hero_ok, t50, &hero_here); if (hero_answer != 0) t51 = (h_0opt_71688fb1){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()}; } t71 = h16_own16; h16_own16 = t51; h_0opt_71688fb1_release(&t71); t72 = h5_f3; h_0opt_71688fb1_retain(&t51); h5_f3 = t51; h_0opt_71688fb1_release(&t72); t52 = h5_f3; t53 = t52.hero_tag; t54 = ((__INT64_TYPE__)1); t55 = t53 == t54; hero_print_bool(t55); hero_print_end();
 #line 478 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
     hero_mail_release_at(&h0_m);
     h_0opt_a8ea2_release(hero_slot_escape(&h1_f0));
@@ -502,10 +502,10 @@ hero_bb6:
 }
 
 #line 42 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
-void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_nested(void) { HeroMail * h0_m = {0}; HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}, h9_own9 = {0}, t12, t13, t17, t52, t53; HERO_NODEBUG h_0opt_3ca904b0 h2_f1 = {0}, h10_own10 = {0}, t23, t24, t28, t30, t54, t55; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer h3_got = {0}; HERO_NODEBUG HeroMail *h4_own4 = {0}, *t1, *t2, *t21, *t46, *t47; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner h5_own5 = {0}, h6_own6 = {0}, t5, t8, t35, t41, t48, t49; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t9, *t33, *t39, *t50; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer h8_own8 = {0}, t11, t31, t51, t56; HERO_NODEBUG HeroStr h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, t3, t6, t32, t36, t37, t44, t45, t57, t58, t59; HERO_NODEBUG int64_t t4, t7, t14, t15, t22, t25, t26, t34, t38, t40, t42, t43; HERO_NODEBUG bool t10, t16, t27; HERO_NODEBUG HeroFailure t18, t29; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_nested(void) { HeroMail * h0_m = {0}; HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}, h9_own9 = {0}, t12, t13, t17, t52, t53; HERO_NODEBUG h_0opt_3ca904b0 h2_f1 = {0}, h10_own10 = {0}, t23, t24, t28, t30, t54, t55; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer h3_got = {0}; HERO_NODEBUG HeroMail *h4_own4 = {0}, *t1, *t2, *t21, *t46, *t47; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner h5_own5 = {0}, h6_own6 = {0}, t5, t8, t35, t41, t48, t49; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t9, *t33, *t39, *t50; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer h8_own8 = {0}, t11, t31, t51, t56; HERO_NODEBUG HeroStr h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, t3, t6, t32, t36, t37, t44, t45, t57, t58, t59; HERO_NODEBUG int64_t t4, t7, t14, t15, t22, t25, t26, t34, t38, t40, t42, t43; HERO_NODEBUG _Bool t10, t16, t27; HERO_NODEBUG HeroFailure t18, t29; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.nested", 43, 26}; t1 = hero_mail_new(h_0take_40344af, &h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_desc, &hero_here); } t46 = h4_own4; h4_own4 = t1; hero_mail_decref(t46); t47 = h0_m; hero_mail_incref(t1); h0_m = t1; hero_mail_decref(t47);
-    t2 = h0_m; t3 = HERO_STR_LIT(hero_str_74); t4 = INT64_C(4); hero_str_incref(t3); t5 = (h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner){.f_tag = t3, .f_n = t4}; t48 = h5_own5; h5_own5 = t5; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_release(&t48); t6 = HERO_STR_LIT(hero_str_75); t7 = INT64_C(5); hero_str_incref(t6); t8 = (h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner){.f_tag = t6, .f_n = t7}; t49 = h6_own6; h6_own6 = t8; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_release(&t49); t9 = hero_array_new(&h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_desc, 1); hero_array_push_owned(&t9, &t8); t50 = h7_own7; h7_own7 = t9; hero_array_decref(t50); t10 = true; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_retain(&t5); hero_array_incref(t9); t11 = (h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer){.f_inner = t5, .f_more = t9, .f_flag = t10}; t51 = h8_own8; h8_own8 = t11; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_release(&t51); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.nested", 44, 5}; HERO_NODEBUG int64_t hero_answer = hero_mail_send(t2, h_0put_40344af, NULL, (void *)&t11, &hero_here); t12 = hero_answer == 0 ? (h_0opt_a8ea2){.hero_tag = INT64_C(0)} : (h_0opt_a8ea2){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_answer == 2 ? hero_failure_send_closed() : hero_failure_send_stopped()}; } t52 = h9_own9; h9_own9 = t12; h_0opt_a8ea2_release(&t52); t53 = h1_f0; h_0opt_a8ea2_retain(&t12); h1_f0 = t12; h_0opt_a8ea2_release(&t53); t13 = h1_f0; t14 = t13.hero_tag; t15 = INT64_C(0); t16 = t14 == t15; if (t16) goto hero_bb1; else goto hero_bb2; hero_bb1:
-    t21 = h0_m; t22 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.nested", 45, 11}; t23 = *(h_0opt_3ca904b0 *)__builtin_memset(&t23, 0, sizeof t23); t23.hero_tag = INT64_C(0); HERO_NODEBUG int64_t hero_answer = hero_mail_receive(t21, &t23.hero_as.hero_ok, t22, &hero_here); if (hero_answer != 0) t23 = (h_0opt_3ca904b0){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()}; } t54 = h10_own10; h10_own10 = t23; h_0opt_3ca904b0_release(&t54); t55 = h2_f1; h_0opt_3ca904b0_retain(&t23); h2_f1 = t23; h_0opt_3ca904b0_release(&t55); t24 = h2_f1; t25 = t24.hero_tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto hero_bb3; else goto hero_bb4; hero_bb2:
+    t2 = h0_m; t3 = HERO_STR_LIT(hero_str_74); t4 = ((__INT64_TYPE__)4); hero_str_incref(t3); t5 = (h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner){.f_tag = t3, .f_n = t4}; t48 = h5_own5; h5_own5 = t5; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_release(&t48); t6 = HERO_STR_LIT(hero_str_75); t7 = ((__INT64_TYPE__)5); hero_str_incref(t6); t8 = (h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner){.f_tag = t6, .f_n = t7}; t49 = h6_own6; h6_own6 = t8; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_release(&t49); t9 = hero_array_new(&h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_desc, 1); hero_array_push_owned(&t9, &t8); t50 = h7_own7; h7_own7 = t9; hero_array_decref(t50); t10 = true; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_retain(&t5); hero_array_incref(t9); t11 = (h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer){.f_inner = t5, .f_more = t9, .f_flag = t10}; t51 = h8_own8; h8_own8 = t11; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_release(&t51); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.nested", 44, 5}; HERO_NODEBUG int64_t hero_answer = hero_mail_send(t2, h_0put_40344af, ((void *)0), (void *)&t11, &hero_here); t12 = hero_answer == 0 ? (h_0opt_a8ea2){.hero_tag = ((__INT64_TYPE__)0)} : (h_0opt_a8ea2){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_answer == 2 ? hero_failure_send_closed() : hero_failure_send_stopped()}; } t52 = h9_own9; h9_own9 = t12; h_0opt_a8ea2_release(&t52); t53 = h1_f0; h_0opt_a8ea2_retain(&t12); h1_f0 = t12; h_0opt_a8ea2_release(&t53); t13 = h1_f0; t14 = t13.hero_tag; t15 = ((__INT64_TYPE__)0); t16 = t14 == t15; if (t16) goto hero_bb1; else goto hero_bb2; hero_bb1:
+    t21 = h0_m; t22 = ((__INT64_TYPE__)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.nested", 45, 11}; t23 = *(h_0opt_3ca904b0 *)__builtin_memset(&t23, 0, sizeof t23); t23.hero_tag = ((__INT64_TYPE__)0); HERO_NODEBUG int64_t hero_answer = hero_mail_receive(t21, &t23.hero_as.hero_ok, t22, &hero_here); if (hero_answer != 0) t23 = (h_0opt_3ca904b0){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()}; } t54 = h10_own10; h10_own10 = t23; h_0opt_3ca904b0_release(&t54); t55 = h2_f1; h_0opt_3ca904b0_retain(&t23); h2_f1 = t23; h_0opt_3ca904b0_release(&t55); t24 = h2_f1; t25 = t24.hero_tag; t26 = ((__INT64_TYPE__)0); t27 = t25 == t26; if (t27) goto hero_bb3; else goto hero_bb4; hero_bb2:
 #line 44
     t17 = h1_f0; t18 = t17.hero_as.hero_err;
 #line 512 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
@@ -514,7 +514,7 @@ void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_nested(void) { HeroM
 hero_bb3:
 #line 45 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
     t30 = h2_f1; t31 = t30.hero_as.hero_ok; t56 = h3_got; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_retain(&t31); h3_got = t31; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_release(&t56);
-    t32 = h3_got.f_inner.f_tag; t33 = h3_got.f_more; t34 = INT64_C(0); t35 = ((void)((t33 == NULL || t34 < 0 || t34 >= t33->len) ? hero_panic_index_at(t33, t34, "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.nested", 46, 27) : (void)0), (void)(t33->elem->size != sizeof(h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner) ? hero_unreachable() : (void)0), ((h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner const *)(const void *)(t33 + 1))[t34]); t36 = t35.f_tag; t37 = hero_str_concat(t32, t36); t57 = h11_own11; h11_own11 = t37; hero_str_decref(t57); t38 = h3_got.f_inner.f_n; t39 = h3_got.f_more; t40 = INT64_C(0); t41 = ((void)((t39 == NULL || t40 < 0 || t40 >= t39->len) ? hero_panic_index_at(t39, t40, "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.nested", 46, 60) : (void)0), (void)(t39->elem->size != sizeof(h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner) ? hero_unreachable() : (void)0), ((h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner const *)(const void *)(t39 + 1))[t40]); t42 = t41.f_n; if (__builtin_add_overflow(t38, t42, &t43)) hero_panic_overflow_at("threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.nested", 46, 46); t44 = hero_int_to_str(t43); t58 = h12_own12; h12_own12 = t44; hero_str_decref(t58); t45 = hero_str_concat(t37, t44); t59 = h13_own13; h13_own13 = t45; hero_str_decref(t59); hero_print_str(t45); hero_print_end();
+    t32 = h3_got.f_inner.f_tag; t33 = h3_got.f_more; t34 = ((__INT64_TYPE__)0); t35 = ((void)((t33 == ((void *)0) || t34 < 0 || t34 >= t33->len) ? hero_panic_index_at(t33, t34, "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.nested", 46, 27) : (void)0), (void)(HERO_ARRAY_ELEM_SIZE(t33) != sizeof(h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner) ? hero_unreachable() : (void)0), ((h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner const *)(const void *)(t33 + 1))[t34]); t36 = t35.f_tag; t37 = hero_str_concat(t32, t36); t57 = h11_own11; h11_own11 = t37; hero_str_decref(t57); t38 = h3_got.f_inner.f_n; t39 = h3_got.f_more; t40 = ((__INT64_TYPE__)0); t41 = ((void)((t39 == ((void *)0) || t40 < 0 || t40 >= t39->len) ? hero_panic_index_at(t39, t40, "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.nested", 46, 60) : (void)0), (void)(HERO_ARRAY_ELEM_SIZE(t39) != sizeof(h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner) ? hero_unreachable() : (void)0), ((h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner const *)(const void *)(t39 + 1))[t40]); t42 = t41.f_n; if (__builtin_add_overflow(t38, t42, &t43)) hero_panic_overflow_at("threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.nested", 46, 46); t44 = hero_int_to_str(t43); t58 = h12_own12; h12_own12 = t44; hero_str_decref(t58); t45 = hero_str_concat(t37, t44); t59 = h13_own13; h13_own13 = t45; hero_str_decref(t59); hero_print_str(t45); hero_print_end();
 #line 519 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
     hero_mail_release_at(&h0_m);
     h_0opt_a8ea2_release(hero_slot_escape(&h1_f0));
@@ -540,10 +540,10 @@ hero_bb4:
 }
 
 #line 48 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
-void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_shaped(void) { HeroMail * h0_m = {0}; HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}, h2_f1 = {0}, h13_own13 = {0}, h15_own15 = {0}, t6, t7, t11, t17, t18, t22, t72, t73, t75, t76; HERO_NODEBUG h_0opt_1fe1460c h3_f2 = {0}, h7_f3 = {0}, h16_own16 = {0}, h17_own17 = {0}, t28, t29, t33, t35, t51, t52, t56, t58, t77, t78, t80, t81; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape h4_s0 = {0}, h8_s1 = {0}, h12_own12 = {0}, h14_own14 = {0}, t5, t16, t36, t37, t39, t45, t59, t60, t62, t65, t71, t74, t79, t85; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle h5_c = {0}; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square h6_s; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle h9_c = {0}; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square h10_s; HERO_NODEBUG HeroMail *h11_own11 = {0}, *t1, *t2, *t15, *t26, *t49, *t69, *t70; HERO_NODEBUG HeroStr h18_own18 = {0}, h19_own19 = {0}, t4, t41, t43, t44, t48, t64, t68, t83, t84; HERO_NODEBUG int64_t t3, t8, t9, t19, t20, t27, t30, t31, t38, t42, t47, t50, t53, t54, t61, t67; HERO_NODEBUG bool t10, t21, t32, t55; HERO_NODEBUG HeroFailure t12, t23, t34, t57; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle t40, t63, t82, t86; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square t46, t66; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_shaped(void) { HeroMail * h0_m = {0}; HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}, h2_f1 = {0}, h13_own13 = {0}, h15_own15 = {0}, t6, t7, t11, t17, t18, t22, t72, t73, t75, t76; HERO_NODEBUG h_0opt_1fe1460c h3_f2 = {0}, h7_f3 = {0}, h16_own16 = {0}, h17_own17 = {0}, t28, t29, t33, t35, t51, t52, t56, t58, t77, t78, t80, t81; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape h4_s0 = {0}, h8_s1 = {0}, h12_own12 = {0}, h14_own14 = {0}, t5, t16, t36, t37, t39, t45, t59, t60, t62, t65, t71, t74, t79, t85; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle h5_c = {0}; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square h6_s; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle h9_c = {0}; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square h10_s; HERO_NODEBUG HeroMail *h11_own11 = {0}, *t1, *t2, *t15, *t26, *t49, *t69, *t70; HERO_NODEBUG HeroStr h18_own18 = {0}, h19_own19 = {0}, t4, t41, t43, t44, t48, t64, t68, t83, t84; HERO_NODEBUG int64_t t3, t8, t9, t19, t20, t27, t30, t31, t38, t42, t47, t50, t53, t54, t61, t67; HERO_NODEBUG _Bool t10, t21, t32, t55; HERO_NODEBUG HeroFailure t12, t23, t34, t57; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle t40, t63, t82, t86; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square t46, t66; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.shaped", 49, 26}; t1 = hero_mail_new(h_0take_8364742, &h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_desc, &hero_here); } t69 = h11_own11; h11_own11 = t1; hero_mail_decref(t69); t70 = h0_m; hero_mail_incref(t1); h0_m = t1; hero_mail_decref(t70);
-    t2 = h0_m; t3 = INT64_C(2); t4 = HERO_STR_LIT(hero_str_63); hero_str_incref(t4); t5 = (h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape){.hero_tag = h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_tag_circle, .hero_as.hero_c_circle = {.f_r = t3, .f_label = t4}}; t71 = h12_own12; h12_own12 = t5; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_release(&t71); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.shaped", 50, 5}; HERO_NODEBUG int64_t hero_answer = hero_mail_send(t2, h_0put_8364742, NULL, (void *)&t5, &hero_here); t6 = hero_answer == 0 ? (h_0opt_a8ea2){.hero_tag = INT64_C(0)} : (h_0opt_a8ea2){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_answer == 2 ? hero_failure_send_closed() : hero_failure_send_stopped()}; } t72 = h13_own13; h13_own13 = t6; h_0opt_a8ea2_release(&t72); t73 = h1_f0; h_0opt_a8ea2_retain(&t6); h1_f0 = t6; h_0opt_a8ea2_release(&t73); t7 = h1_f0; t8 = t7.hero_tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto hero_bb1; else goto hero_bb2; hero_bb1:
-    t15 = h0_m; t16 = (h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape){.hero_tag = h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_tag_none}; t74 = h14_own14; h14_own14 = t16; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_release(&t74); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.shaped", 51, 5}; HERO_NODEBUG int64_t hero_answer = hero_mail_send(t15, h_0put_8364742, NULL, (void *)&t16, &hero_here); t17 = hero_answer == 0 ? (h_0opt_a8ea2){.hero_tag = INT64_C(0)} : (h_0opt_a8ea2){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_answer == 2 ? hero_failure_send_closed() : hero_failure_send_stopped()}; } t75 = h15_own15; h15_own15 = t17; h_0opt_a8ea2_release(&t75); t76 = h2_f1; h_0opt_a8ea2_retain(&t17); h2_f1 = t17; h_0opt_a8ea2_release(&t76); t18 = h2_f1; t19 = t18.hero_tag; t20 = INT64_C(0); t21 = t19 == t20; if (t21) goto hero_bb3; else goto hero_bb4; hero_bb2:
+    t2 = h0_m; t3 = ((__INT64_TYPE__)2); t4 = HERO_STR_LIT(hero_str_63); hero_str_incref(t4); t5 = (h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape){.hero_tag = h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_tag_circle, .hero_as.hero_c_circle = {.f_r = t3, .f_label = t4}}; t71 = h12_own12; h12_own12 = t5; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_release(&t71); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.shaped", 50, 5}; HERO_NODEBUG int64_t hero_answer = hero_mail_send(t2, h_0put_8364742, ((void *)0), (void *)&t5, &hero_here); t6 = hero_answer == 0 ? (h_0opt_a8ea2){.hero_tag = ((__INT64_TYPE__)0)} : (h_0opt_a8ea2){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_answer == 2 ? hero_failure_send_closed() : hero_failure_send_stopped()}; } t72 = h13_own13; h13_own13 = t6; h_0opt_a8ea2_release(&t72); t73 = h1_f0; h_0opt_a8ea2_retain(&t6); h1_f0 = t6; h_0opt_a8ea2_release(&t73); t7 = h1_f0; t8 = t7.hero_tag; t9 = ((__INT64_TYPE__)0); t10 = t8 == t9; if (t10) goto hero_bb1; else goto hero_bb2; hero_bb1:
+    t15 = h0_m; t16 = (h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape){.hero_tag = h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_tag_none}; t74 = h14_own14; h14_own14 = t16; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_release(&t74); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.shaped", 51, 5}; HERO_NODEBUG int64_t hero_answer = hero_mail_send(t15, h_0put_8364742, ((void *)0), (void *)&t16, &hero_here); t17 = hero_answer == 0 ? (h_0opt_a8ea2){.hero_tag = ((__INT64_TYPE__)0)} : (h_0opt_a8ea2){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_answer == 2 ? hero_failure_send_closed() : hero_failure_send_stopped()}; } t75 = h15_own15; h15_own15 = t17; h_0opt_a8ea2_release(&t75); t76 = h2_f1; h_0opt_a8ea2_retain(&t17); h2_f1 = t17; h_0opt_a8ea2_release(&t76); t18 = h2_f1; t19 = t18.hero_tag; t20 = ((__INT64_TYPE__)0); t21 = t19 == t20; if (t21) goto hero_bb3; else goto hero_bb4; hero_bb2:
 #line 50
     t11 = h1_f0; t12 = t11.hero_as.hero_err;
 #line 550 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
@@ -551,7 +551,7 @@ void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_shaped(void) { HeroM
     hero_unreachable();
 hero_bb3:
 #line 53 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
-    t26 = h0_m; t27 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.shaped", 53, 11}; t28 = *(h_0opt_1fe1460c *)__builtin_memset(&t28, 0, sizeof t28); t28.hero_tag = INT64_C(0); HERO_NODEBUG int64_t hero_answer = hero_mail_receive(t26, &t28.hero_as.hero_ok, t27, &hero_here); if (hero_answer != 0) t28 = (h_0opt_1fe1460c){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()}; } t77 = h16_own16; h16_own16 = t28; h_0opt_1fe1460c_release(&t77); t78 = h3_f2; h_0opt_1fe1460c_retain(&t28); h3_f2 = t28; h_0opt_1fe1460c_release(&t78); t29 = h3_f2; t30 = t29.hero_tag; t31 = INT64_C(0); t32 = t30 == t31; if (t32) goto hero_bb5; else goto hero_bb6; hero_bb4:
+    t26 = h0_m; t27 = ((__INT64_TYPE__)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.shaped", 53, 11}; t28 = *(h_0opt_1fe1460c *)__builtin_memset(&t28, 0, sizeof t28); t28.hero_tag = ((__INT64_TYPE__)0); HERO_NODEBUG int64_t hero_answer = hero_mail_receive(t26, &t28.hero_as.hero_ok, t27, &hero_here); if (hero_answer != 0) t28 = (h_0opt_1fe1460c){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()}; } t77 = h16_own16; h16_own16 = t28; h_0opt_1fe1460c_release(&t77); t78 = h3_f2; h_0opt_1fe1460c_retain(&t28); h3_f2 = t28; h_0opt_1fe1460c_release(&t78); t29 = h3_f2; t30 = t29.hero_tag; t31 = ((__INT64_TYPE__)0); t32 = t30 == t31; if (t32) goto hero_bb5; else goto hero_bb6; hero_bb4:
 #line 51
     t22 = h2_f1; t23 = t22.hero_as.hero_err;
 #line 558 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
@@ -565,7 +565,7 @@ hero_bb5:
     hero_unreachable();
 hero_bb7:
 #line 58 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
-    t49 = h0_m; t50 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.shaped", 58, 11}; t51 = *(h_0opt_1fe1460c *)__builtin_memset(&t51, 0, sizeof t51); t51.hero_tag = INT64_C(0); HERO_NODEBUG int64_t hero_answer = hero_mail_receive(t49, &t51.hero_as.hero_ok, t50, &hero_here); if (hero_answer != 0) t51 = (h_0opt_1fe1460c){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()}; } t80 = h17_own17; h17_own17 = t51; h_0opt_1fe1460c_release(&t80); t81 = h7_f3; h_0opt_1fe1460c_retain(&t51); h7_f3 = t51; h_0opt_1fe1460c_release(&t81); t52 = h7_f3; t53 = t52.hero_tag; t54 = INT64_C(0); t55 = t53 == t54; if (t55) goto hero_bb11; else goto hero_bb12; hero_bb8:
+    t49 = h0_m; t50 = ((__INT64_TYPE__)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.shaped", 58, 11}; t51 = *(h_0opt_1fe1460c *)__builtin_memset(&t51, 0, sizeof t51); t51.hero_tag = ((__INT64_TYPE__)0); HERO_NODEBUG int64_t hero_answer = hero_mail_receive(t49, &t51.hero_as.hero_ok, t50, &hero_here); if (hero_answer != 0) t51 = (h_0opt_1fe1460c){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()}; } t80 = h17_own17; h17_own17 = t51; h_0opt_1fe1460c_release(&t80); t81 = h7_f3; h_0opt_1fe1460c_retain(&t51); h7_f3 = t51; h_0opt_1fe1460c_release(&t81); t52 = h7_f3; t53 = t52.hero_tag; t54 = ((__INT64_TYPE__)0); t55 = t53 == t54; if (t55) goto hero_bb11; else goto hero_bb12; hero_bb8:
 #line 54
     t39 = h4_s0; t40 = t39.hero_as.hero_c_circle; t82 = h5_c; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle_retain(&t40); h5_c = t40; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle_release(&t82); t41 = h5_c.f_label; t42 = h5_c.f_r; t43 = hero_int_to_str(t42); t83 = h18_own18; h18_own18 = t43; hero_str_decref(t83); t44 = hero_str_concat(t41, t43); t84 = h19_own19; h19_own19 = t44; hero_str_decref(t84); hero_print_str(t44); hero_print_end(); goto hero_bb7; hero_bb9:
     t45 = h4_s0; t46 = t45.hero_as.hero_c_square; h6_s = t46; t47 = h6_s.f_side; hero_print_int(t47); hero_print_end(); goto hero_bb7; hero_bb10:
@@ -604,10 +604,10 @@ hero_bb14:
 }
 
 #line 63 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
-void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_optional(void) { HeroMail * h0_m = {0}; HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}, h6_own6 = {0}, t5, t6, t10, t36, t37; HERO_NODEBUG h_0opt_3a69e449 h2_f1 = {0}, h7_own7 = {0}, t16, t17, t21, t23, t38, t39; HERO_NODEBUG h_0opt_e201354 h3_f2 = {0}, h5_own5 = {0}, t4, t24, t25, t29, t31, t35, t40; HERO_NODEBUG HeroMail *h4_own4 = {0}, *t1, *t2, *t14, *t33, *t34; HERO_NODEBUG int64_t t3, t7, t8, t15, t18, t19, t26, t27, t32; HERO_NODEBUG bool t9, t20, t28; HERO_NODEBUG HeroFailure t11, t22, t30; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_optional(void) { HeroMail * h0_m = {0}; HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}, h6_own6 = {0}, t5, t6, t10, t36, t37; HERO_NODEBUG h_0opt_3a69e449 h2_f1 = {0}, h7_own7 = {0}, t16, t17, t21, t23, t38, t39; HERO_NODEBUG h_0opt_e201354 h3_f2 = {0}, h5_own5 = {0}, t4, t24, t25, t29, t31, t35, t40; HERO_NODEBUG HeroMail *h4_own4 = {0}, *t1, *t2, *t14, *t33, *t34; HERO_NODEBUG int64_t t3, t7, t8, t15, t18, t19, t26, t27, t32; HERO_NODEBUG _Bool t9, t20, t28; HERO_NODEBUG HeroFailure t11, t22, t30; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.optional", 64, 25}; t1 = hero_mail_new(h_0take_e201354, &h_0opt_e201354_desc, &hero_here); } t33 = h4_own4; h4_own4 = t1; hero_mail_decref(t33); t34 = h0_m; hero_mail_incref(t1); h0_m = t1; hero_mail_decref(t34);
-    t2 = h0_m; t3 = INT64_C(9); t4 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = t3}; t35 = h5_own5; h5_own5 = t4; h_0opt_e201354_release(&t35); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.optional", 65, 5}; HERO_NODEBUG int64_t hero_answer = hero_mail_send(t2, h_0put_e201354, NULL, (void *)&t4, &hero_here); t5 = hero_answer == 0 ? (h_0opt_a8ea2){.hero_tag = INT64_C(0)} : (h_0opt_a8ea2){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_answer == 2 ? hero_failure_send_closed() : hero_failure_send_stopped()}; } t36 = h6_own6; h6_own6 = t5; h_0opt_a8ea2_release(&t36); t37 = h1_f0; h_0opt_a8ea2_retain(&t5); h1_f0 = t5; h_0opt_a8ea2_release(&t37); t6 = h1_f0; t7 = t6.hero_tag; t8 = INT64_C(0); t9 = t7 == t8; if (t9) goto hero_bb1; else goto hero_bb2; hero_bb1:
-    t14 = h0_m; t15 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.optional", 66, 11}; t16 = *(h_0opt_3a69e449 *)__builtin_memset(&t16, 0, sizeof t16); t16.hero_tag = INT64_C(0); HERO_NODEBUG int64_t hero_answer = hero_mail_receive(t14, &t16.hero_as.hero_ok, t15, &hero_here); if (hero_answer != 0) t16 = (h_0opt_3a69e449){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()}; } t38 = h7_own7; h7_own7 = t16; h_0opt_3a69e449_release(&t38); t39 = h2_f1; h_0opt_3a69e449_retain(&t16); h2_f1 = t16; h_0opt_3a69e449_release(&t39); t17 = h2_f1; t18 = t17.hero_tag; t19 = INT64_C(0); t20 = t18 == t19; if (t20) goto hero_bb3; else goto hero_bb4; hero_bb2:
+    t2 = h0_m; t3 = ((__INT64_TYPE__)9); t4 = (h_0opt_e201354){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = t3}; t35 = h5_own5; h5_own5 = t4; h_0opt_e201354_release(&t35); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.optional", 65, 5}; HERO_NODEBUG int64_t hero_answer = hero_mail_send(t2, h_0put_e201354, ((void *)0), (void *)&t4, &hero_here); t5 = hero_answer == 0 ? (h_0opt_a8ea2){.hero_tag = ((__INT64_TYPE__)0)} : (h_0opt_a8ea2){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_answer == 2 ? hero_failure_send_closed() : hero_failure_send_stopped()}; } t36 = h6_own6; h6_own6 = t5; h_0opt_a8ea2_release(&t36); t37 = h1_f0; h_0opt_a8ea2_retain(&t5); h1_f0 = t5; h_0opt_a8ea2_release(&t37); t6 = h1_f0; t7 = t6.hero_tag; t8 = ((__INT64_TYPE__)0); t9 = t7 == t8; if (t9) goto hero_bb1; else goto hero_bb2; hero_bb1:
+    t14 = h0_m; t15 = ((__INT64_TYPE__)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.optional", 66, 11}; t16 = *(h_0opt_3a69e449 *)__builtin_memset(&t16, 0, sizeof t16); t16.hero_tag = ((__INT64_TYPE__)0); HERO_NODEBUG int64_t hero_answer = hero_mail_receive(t14, &t16.hero_as.hero_ok, t15, &hero_here); if (hero_answer != 0) t16 = (h_0opt_3a69e449){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()}; } t38 = h7_own7; h7_own7 = t16; h_0opt_3a69e449_release(&t38); t39 = h2_f1; h_0opt_3a69e449_retain(&t16); h2_f1 = t16; h_0opt_3a69e449_release(&t39); t17 = h2_f1; t18 = t17.hero_tag; t19 = ((__INT64_TYPE__)0); t20 = t18 == t19; if (t20) goto hero_bb3; else goto hero_bb4; hero_bb2:
 #line 65
     t10 = h1_f0; t11 = t10.hero_as.hero_err;
 #line 614 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
@@ -615,7 +615,7 @@ void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_optional(void) { Her
     hero_unreachable();
 hero_bb3:
 #line 66 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
-    t23 = h2_f1; t24 = t23.hero_as.hero_ok; t40 = h3_f2; h_0opt_e201354_retain(&t24); h3_f2 = t24; h_0opt_e201354_release(&t40); t25 = h3_f2; t26 = t25.hero_tag; t27 = INT64_C(0); t28 = t26 == t27; if (t28) goto hero_bb5; else goto hero_bb6; hero_bb4: t21 = h2_f1; t22 = t21.hero_as.hero_err;
+    t23 = h2_f1; t24 = t23.hero_as.hero_ok; t40 = h3_f2; h_0opt_e201354_retain(&t24); h3_f2 = t24; h_0opt_e201354_release(&t40); t25 = h3_f2; t26 = t25.hero_tag; t27 = ((__INT64_TYPE__)0); t28 = t26 == t27; if (t28) goto hero_bb5; else goto hero_bb6; hero_bb4: t21 = h2_f1; t22 = t21.hero_as.hero_err;
 #line 620 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
     hero_panic_must_at(t22, "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.optional", 66, 11);
     hero_unreachable();
@@ -641,10 +641,10 @@ hero_bb6:
 }
 
 #line 68 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
-void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_small(void) { HeroMail * h0_m = {0}; HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}, h5_own5 = {0}, t4, t5, t9, t34, t35; HERO_NODEBUG h_0opt_473cb9ae h2_f1 = {0}, h3_f2 = {0}, h6_own6 = {0}, h7_own7 = {0}, t15, t16, t20, t22, t27, t28, t36, t37, t38, t39; HERO_NODEBUG HeroMail *h4_own4 = {0}, *t1, *t2, *t13, *t24, *t25, *t32, *t33; HERO_NODEBUG bool t3, t8, t19, t23, t31; HERO_NODEBUG int64_t t6, t7, t14, t17, t18, t26, t29, t30; HERO_NODEBUG HeroFailure t10, t21; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_small(void) { HeroMail * h0_m = {0}; HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}, h5_own5 = {0}, t4, t5, t9, t34, t35; HERO_NODEBUG h_0opt_473cb9ae h2_f1 = {0}, h3_f2 = {0}, h6_own6 = {0}, h7_own7 = {0}, t15, t16, t20, t22, t27, t28, t36, t37, t38, t39; HERO_NODEBUG HeroMail *h4_own4 = {0}, *t1, *t2, *t13, *t24, *t25, *t32, *t33; HERO_NODEBUG _Bool t3, t8, t19, t23, t31; HERO_NODEBUG int64_t t6, t7, t14, t17, t18, t26, t29, t30; HERO_NODEBUG HeroFailure t10, t21; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.small", 69, 25}; t1 = hero_mail_new(h_0take_d3eff76, &hero_desc_bool, &hero_here); } t32 = h4_own4; h4_own4 = t1; hero_mail_decref(t32); t33 = h0_m; hero_mail_incref(t1); h0_m = t1; hero_mail_decref(t33);
-    t2 = h0_m; t3 = true; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.small", 70, 5}; HERO_NODEBUG int64_t hero_answer = hero_mail_send(t2, h_0put_d3eff76, NULL, (void *)&t3, &hero_here); t4 = hero_answer == 0 ? (h_0opt_a8ea2){.hero_tag = INT64_C(0)} : (h_0opt_a8ea2){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_answer == 2 ? hero_failure_send_closed() : hero_failure_send_stopped()}; } t34 = h5_own5; h5_own5 = t4; h_0opt_a8ea2_release(&t34); t35 = h1_f0; h_0opt_a8ea2_retain(&t4); h1_f0 = t4; h_0opt_a8ea2_release(&t35); t5 = h1_f0; t6 = t5.hero_tag; t7 = INT64_C(0); t8 = t6 == t7; if (t8) goto hero_bb1; else goto hero_bb2; hero_bb1:
-    t13 = h0_m; t14 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.small", 71, 11}; t15 = *(h_0opt_473cb9ae *)__builtin_memset(&t15, 0, sizeof t15); t15.hero_tag = INT64_C(0); HERO_NODEBUG int64_t hero_answer = hero_mail_receive(t13, &t15.hero_as.hero_ok, t14, &hero_here); if (hero_answer != 0) t15 = (h_0opt_473cb9ae){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()}; } t36 = h6_own6; h6_own6 = t15; h_0opt_473cb9ae_release(&t36); t37 = h2_f1; h_0opt_473cb9ae_retain(&t15); h2_f1 = t15; h_0opt_473cb9ae_release(&t37); t16 = h2_f1; t17 = t16.hero_tag; t18 = INT64_C(0); t19 = t17 == t18; if (t19) goto hero_bb3; else goto hero_bb4; hero_bb2:
+    t2 = h0_m; t3 = true; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.small", 70, 5}; HERO_NODEBUG int64_t hero_answer = hero_mail_send(t2, h_0put_d3eff76, ((void *)0), (void *)&t3, &hero_here); t4 = hero_answer == 0 ? (h_0opt_a8ea2){.hero_tag = ((__INT64_TYPE__)0)} : (h_0opt_a8ea2){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_answer == 2 ? hero_failure_send_closed() : hero_failure_send_stopped()}; } t34 = h5_own5; h5_own5 = t4; h_0opt_a8ea2_release(&t34); t35 = h1_f0; h_0opt_a8ea2_retain(&t4); h1_f0 = t4; h_0opt_a8ea2_release(&t35); t5 = h1_f0; t6 = t5.hero_tag; t7 = ((__INT64_TYPE__)0); t8 = t6 == t7; if (t8) goto hero_bb1; else goto hero_bb2; hero_bb1:
+    t13 = h0_m; t14 = ((__INT64_TYPE__)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.small", 71, 11}; t15 = *(h_0opt_473cb9ae *)__builtin_memset(&t15, 0, sizeof t15); t15.hero_tag = ((__INT64_TYPE__)0); HERO_NODEBUG int64_t hero_answer = hero_mail_receive(t13, &t15.hero_as.hero_ok, t14, &hero_here); if (hero_answer != 0) t15 = (h_0opt_473cb9ae){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()}; } t36 = h6_own6; h6_own6 = t15; h_0opt_473cb9ae_release(&t36); t37 = h2_f1; h_0opt_473cb9ae_retain(&t15); h2_f1 = t15; h_0opt_473cb9ae_release(&t37); t16 = h2_f1; t17 = t16.hero_tag; t18 = ((__INT64_TYPE__)0); t19 = t17 == t18; if (t19) goto hero_bb3; else goto hero_bb4; hero_bb2:
 #line 70
     t9 = h1_f0; t10 = t9.hero_as.hero_err;
 #line 651 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
@@ -654,7 +654,7 @@ hero_bb3:
 #line 71 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
     t22 = h2_f1; t23 = t22.hero_as.hero_ok; hero_print_bool(t23); hero_print_end();
     t24 = h0_m; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.small", 72, 5}; hero_mail_close(t24, &hero_here); }
-    t25 = h0_m; t26 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.small", 73, 11}; t27 = *(h_0opt_473cb9ae *)__builtin_memset(&t27, 0, sizeof t27); t27.hero_tag = INT64_C(0); HERO_NODEBUG int64_t hero_answer = hero_mail_receive(t25, &t27.hero_as.hero_ok, t26, &hero_here); if (hero_answer != 0) t27 = (h_0opt_473cb9ae){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()}; } t38 = h7_own7; h7_own7 = t27; h_0opt_473cb9ae_release(&t38); t39 = h3_f2; h_0opt_473cb9ae_retain(&t27); h3_f2 = t27; h_0opt_473cb9ae_release(&t39); t28 = h3_f2; t29 = t28.hero_tag; t30 = INT64_C(1); t31 = t29 == t30; hero_print_bool(t31); hero_print_end();
+    t25 = h0_m; t26 = ((__INT64_TYPE__)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.small", 73, 11}; t27 = *(h_0opt_473cb9ae *)__builtin_memset(&t27, 0, sizeof t27); t27.hero_tag = ((__INT64_TYPE__)0); HERO_NODEBUG int64_t hero_answer = hero_mail_receive(t25, &t27.hero_as.hero_ok, t26, &hero_here); if (hero_answer != 0) t27 = (h_0opt_473cb9ae){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()}; } t38 = h7_own7; h7_own7 = t27; h_0opt_473cb9ae_release(&t38); t39 = h3_f2; h_0opt_473cb9ae_retain(&t27); h3_f2 = t27; h_0opt_473cb9ae_release(&t39); t28 = h3_f2; t29 = t28.hero_tag; t30 = ((__INT64_TYPE__)1); t31 = t29 == t30; hero_print_bool(t31); hero_print_end();
 #line 659 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
     hero_mail_release_at(&h0_m);
     h_0opt_a8ea2_release(hero_slot_escape(&h1_f0));
@@ -674,10 +674,10 @@ hero_bb4:
 }
 
 #line 75 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
-void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_one_field(void) { HeroMail * h0_m = {0}; HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}, h5_own5 = {0}, t6, t7, t11, t30, t31; HERO_NODEBUG h_0opt_35592ed2 h2_f1 = {0}, h6_own6 = {0}, t17, t18, t22, t24, t32, t33; HERO_NODEBUG HeroMail *h3_own3 = {0}, *t1, *t2, *t15, *t27, *t28; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner h4_own4 = {0}, t5, t25, t29; HERO_NODEBUG HeroStr t3, t26; HERO_NODEBUG int64_t t4, t8, t9, t16, t19, t20; HERO_NODEBUG bool t10, t21; HERO_NODEBUG HeroFailure t12, t23; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_one_field(void) { HeroMail * h0_m = {0}; HERO_NODEBUG h_0opt_a8ea2 h1_f0 = {0}, h5_own5 = {0}, t6, t7, t11, t30, t31; HERO_NODEBUG h_0opt_35592ed2 h2_f1 = {0}, h6_own6 = {0}, t17, t18, t22, t24, t32, t33; HERO_NODEBUG HeroMail *h3_own3 = {0}, *t1, *t2, *t15, *t27, *t28; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner h4_own4 = {0}, t5, t25, t29; HERO_NODEBUG HeroStr t3, t26; HERO_NODEBUG int64_t t4, t8, t9, t16, t19, t20; HERO_NODEBUG _Bool t10, t21; HERO_NODEBUG HeroFailure t12, t23; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.one_field", 76, 26}; t1 = hero_mail_new(h_0take_38caefc9, &h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_desc, &hero_here); } t27 = h3_own3; h3_own3 = t1; hero_mail_decref(t27); t28 = h0_m; hero_mail_incref(t1); h0_m = t1; hero_mail_decref(t28);
-    t2 = h0_m; t3 = HERO_STR_LIT(hero_str_efcabd0); t4 = INT64_C(0); hero_str_incref(t3); t5 = (h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner){.f_tag = t3, .f_n = t4}; t29 = h4_own4; h4_own4 = t5; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_release(&t29); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.one_field", 77, 5}; HERO_NODEBUG int64_t hero_answer = hero_mail_send(t2, h_0put_38caefc9, NULL, (void *)&t5, &hero_here); t6 = hero_answer == 0 ? (h_0opt_a8ea2){.hero_tag = INT64_C(0)} : (h_0opt_a8ea2){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_answer == 2 ? hero_failure_send_closed() : hero_failure_send_stopped()}; } t30 = h5_own5; h5_own5 = t6; h_0opt_a8ea2_release(&t30); t31 = h1_f0; h_0opt_a8ea2_retain(&t6); h1_f0 = t6; h_0opt_a8ea2_release(&t31); t7 = h1_f0; t8 = t7.hero_tag; t9 = INT64_C(0); t10 = t8 == t9; if (t10) goto hero_bb1; else goto hero_bb2; hero_bb1:
-    t15 = h0_m; t16 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.one_field", 78, 11}; t17 = *(h_0opt_35592ed2 *)__builtin_memset(&t17, 0, sizeof t17); t17.hero_tag = INT64_C(0); HERO_NODEBUG int64_t hero_answer = hero_mail_receive(t15, &t17.hero_as.hero_ok, t16, &hero_here); if (hero_answer != 0) t17 = (h_0opt_35592ed2){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()}; } t32 = h6_own6; h6_own6 = t17; h_0opt_35592ed2_release(&t32); t33 = h2_f1; h_0opt_35592ed2_retain(&t17); h2_f1 = t17; h_0opt_35592ed2_release(&t33); t18 = h2_f1; t19 = t18.hero_tag; t20 = INT64_C(0); t21 = t19 == t20; if (t21) goto hero_bb3; else goto hero_bb4; hero_bb2:
+    t2 = h0_m; t3 = HERO_STR_LIT(hero_str_efcabd0); t4 = ((__INT64_TYPE__)0); hero_str_incref(t3); t5 = (h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner){.f_tag = t3, .f_n = t4}; t29 = h4_own4; h4_own4 = t5; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_release(&t29); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.one_field", 77, 5}; HERO_NODEBUG int64_t hero_answer = hero_mail_send(t2, h_0put_38caefc9, ((void *)0), (void *)&t5, &hero_here); t6 = hero_answer == 0 ? (h_0opt_a8ea2){.hero_tag = ((__INT64_TYPE__)0)} : (h_0opt_a8ea2){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_answer == 2 ? hero_failure_send_closed() : hero_failure_send_stopped()}; } t30 = h5_own5; h5_own5 = t6; h_0opt_a8ea2_release(&t30); t31 = h1_f0; h_0opt_a8ea2_retain(&t6); h1_f0 = t6; h_0opt_a8ea2_release(&t31); t7 = h1_f0; t8 = t7.hero_tag; t9 = ((__INT64_TYPE__)0); t10 = t8 == t9; if (t10) goto hero_bb1; else goto hero_bb2; hero_bb1:
+    t15 = h0_m; t16 = ((__INT64_TYPE__)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.one_field", 78, 11}; t17 = *(h_0opt_35592ed2 *)__builtin_memset(&t17, 0, sizeof t17); t17.hero_tag = ((__INT64_TYPE__)0); HERO_NODEBUG int64_t hero_answer = hero_mail_receive(t15, &t17.hero_as.hero_ok, t16, &hero_here); if (hero_answer != 0) t17 = (h_0opt_35592ed2){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()}; } t32 = h6_own6; h6_own6 = t17; h_0opt_35592ed2_release(&t32); t33 = h2_f1; h_0opt_35592ed2_retain(&t17); h2_f1 = t17; h_0opt_35592ed2_release(&t33); t18 = h2_f1; t19 = t18.hero_tag; t20 = ((__INT64_TYPE__)0); t21 = t19 == t20; if (t21) goto hero_bb3; else goto hero_bb4; hero_bb2:
 #line 77
     t11 = h1_f0; t12 = t11.hero_as.hero_err;
 #line 684 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
@@ -704,8 +704,8 @@ hero_bb4:
 }
 
 #line 80 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
-h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_shape_of(int64_t h0_n) { HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t6, t7, t8, t9, t10; HERO_NODEBUG int64_t t1, t2, t4; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = h0_n; t2 = INT64_C(0); t3 = t1 > t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1:
+h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_shape_of(int64_t h0_n) { HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t6, t7, t8, t9, t10; HERO_NODEBUG int64_t t1, t2, t4; HERO_NODEBUG _Bool t3; HERO_NODEBUG HeroStr t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_n; t2 = ((__INT64_TYPE__)0); t3 = t1 > t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 83
     t7 = (h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape){.hero_tag = h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_tag_none}; t9 = h2_own2; h2_own2 = t7; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_release(&t9); h1_ret0 = t7; goto hero_bb4; hero_bb2:
 #line 82
@@ -719,8 +719,8 @@ h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape h_threadseveryanswe
 }
 
 #line 85 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
-h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_outer_of(int64_t h0_n) { HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner h1_own1 = {0}, h2_own2 = {0}, t3, t8, t12, t13; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t9, *t14; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer h4_own4 = {0}, t11, t15; HERO_NODEBUG HeroStr t1, t4; HERO_NODEBUG int64_t t2, t5, t6, t7; HERO_NODEBUG bool t10; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = HERO_STR_LIT(hero_str_6f); t2 = h0_n; hero_str_incref(t1); t3 = (h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner){.f_tag = t1, .f_n = t2}; t12 = h1_own1; h1_own1 = t3; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_release(&t12); t4 = HERO_STR_LIT(hero_str_6d); t5 = h0_n; t6 = INT64_C(1); if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow_at("threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.outer_of", 86, 74); hero_str_incref(t4); t8 = (h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner){.f_tag = t4, .f_n = t7}; t13 = h2_own2; h2_own2 = t8; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_release(&t13); t9 = hero_array_new(&h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_desc, 1); hero_array_push_owned(&t9, &t8); t14 = h3_own3; h3_own3 = t9; hero_array_decref(t14); t10 = true; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_retain(&t3); hero_array_incref(t9); t11 = (h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer){.f_inner = t3, .f_more = t9, .f_flag = t10}; t15 = h4_own4; h4_own4 = t11; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_release(&t15);
+h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_outer_of(int64_t h0_n) { HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner h1_own1 = {0}, h2_own2 = {0}, t3, t8, t12, t13; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t9, *t14; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer h4_own4 = {0}, t11, t15; HERO_NODEBUG HeroStr t1, t4; HERO_NODEBUG int64_t t2, t5, t6, t7; HERO_NODEBUG _Bool t10; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = HERO_STR_LIT(hero_str_6f); t2 = h0_n; hero_str_incref(t1); t3 = (h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner){.f_tag = t1, .f_n = t2}; t12 = h1_own1; h1_own1 = t3; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_release(&t12); t4 = HERO_STR_LIT(hero_str_6d); t5 = h0_n; t6 = ((__INT64_TYPE__)1); if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow_at("threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.outer_of", 86, 74); hero_str_incref(t4); t8 = (h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner){.f_tag = t4, .f_n = t7}; t13 = h2_own2; h2_own2 = t8; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_release(&t13); t9 = hero_array_new(&h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_desc, 1); hero_array_push_owned(&t9, &t8); t14 = h3_own3; h3_own3 = t9; hero_array_decref(t14); t10 = true; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_retain(&t3); hero_array_incref(t9); t11 = (h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer){.f_inner = t3, .f_more = t9, .f_flag = t10}; t15 = h4_own4; h4_own4 = t11; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_release(&t15);
 #line 725 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
     h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_retain(&t11);
     h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_release(hero_slot_escape(&h1_own1));
@@ -731,12 +731,12 @@ h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer h_threadseveryanswe
 }
 
 #line 88 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
-h_0opt_e201354 h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_maybe_of(int64_t h0_n) { HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t7, t10, t11, t12, t13; HERO_NODEBUG int64_t t1, t2, t4, t5, t6; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t8, t9; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = h0_n; t2 = INT64_C(0); t3 = t1 > t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1:
+h_0opt_e201354 h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_maybe_of(int64_t h0_n) { HERO_NODEBUG h_0opt_e201354 h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t7, t10, t11, t12, t13; HERO_NODEBUG int64_t t1, t2, t4, t5, t6; HERO_NODEBUG _Bool t3; HERO_NODEBUG HeroStr t8, t9; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_n; t2 = ((__INT64_TYPE__)0); t3 = t1 > t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 91
-    t8 = HERO_STR_LIT(hero_str_edaa230); t9 = HERO_STR_LIT(hero_str_10e95140); hero_str_incref(t8); hero_str_incref(t9); t10 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t8, .msg = t9}}; t12 = h2_own2; h2_own2 = t10; h_0opt_e201354_release(&t12); h1_ret0 = t10; goto hero_bb4; hero_bb2:
+    t8 = HERO_STR_LIT(hero_str_edaa230); t9 = HERO_STR_LIT(hero_str_10e95140); hero_str_incref(t8); hero_str_incref(t9); t10 = (h_0opt_e201354){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = {.hero_code = t8, .hero_msg = t9}}; t12 = h2_own2; h2_own2 = t10; h_0opt_e201354_release(&t12); h1_ret0 = t10; goto hero_bb4; hero_bb2:
 #line 90
-    t4 = h0_n; t5 = INT64_C(2); if (__builtin_mul_overflow(t4, t5, &t6)) hero_panic_overflow_at("threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.maybe_of", 90, 19); t7 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = t6}; t13 = h3_own3; h3_own3 = t7; h_0opt_e201354_release(&t13); h1_ret0 = t7; goto hero_bb4; hero_bb3: goto hero_bb1; hero_bb4:
+    t4 = h0_n; t5 = ((__INT64_TYPE__)2); if (__builtin_mul_overflow(t4, t5, &t6)) hero_panic_overflow_at("threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.maybe_of", 90, 19); t7 = (h_0opt_e201354){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = t6}; t13 = h3_own3; h3_own3 = t7; h_0opt_e201354_release(&t13); h1_ret0 = t7; goto hero_bb4; hero_bb3: goto hero_bb1; hero_bb4:
 #line 741 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
     t11 = h1_ret0;
     h_0opt_e201354_retain(&t11);
@@ -746,23 +746,23 @@ h_0opt_e201354 h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_maybe_of(i
 }
 
 #line 93 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
-bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_flag_of(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = h0_n; t2 = INT64_C(1); t3 = t1 > t2; return t3;
+_Bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_flag_of(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2; HERO_NODEBUG _Bool t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_n; t2 = ((__INT64_TYPE__)1); t3 = t1 > t2; return t3;
 #line 752 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
 }
 
 #line 96 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
-void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_quiet(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t4; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = h0_n; t2 = INT64_C(100); t3 = t1 > t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1: return; hero_bb2:
+void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_quiet(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t4; HERO_NODEBUG _Bool t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_n; t2 = ((__INT64_TYPE__)100); t3 = t1 > t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1: return; hero_bb2:
     t4 = h0_n; hero_print_int(t4); hero_print_end(); goto hero_bb1; hero_bb3: goto hero_bb1;
 #line 759 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
 }
 
 #line 100 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
-void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_waited(void) { HERO_NODEBUG h_0opt_428f1a94 h0_f0 = {0}, h5_f1 = {0}, h23_own23 = {0}, h25_own25 = {0}, t3, t4, t8, t10, t28, t29, t33, t35, t139, t140, t143, t144; int64_t h1_t; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape h2_s0 = {0}, h7_s1 = {0}, h24_own24 = {0}, h28_own28 = {0}, t13, t14, t16, t22, t38, t39, t41, t44, t141, t142, t148, t149; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle h3_c = {0}; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square h4_s; int64_t h6_u; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle h8_c = {0}; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square h9_s; HERO_NODEBUG h_0opt_3fa7b87f h10_f2 = {0}, h29_own29 = {0}, t50, t51, t55, t57, t150, t151; int64_t h11_w; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer h12_o = {0}; HERO_NODEBUG h_0opt_2e0f88f1 h13_f3 = {0}, h16_f5 = {0}, h34_own34 = {0}, h36_own36 = {0}, t77, t78, t82, t84, t98, t99, t103, t105, t158, t159, t162, t163; int64_t h14_x; HERO_NODEBUG h_0opt_e201354 h15_f4 = {0}, h18_f6 = {0}, h35_own35 = {0}, h37_own37 = {0}, t87, t88, t92, t94, t108, t109, t160, t161, t164, t165; int64_t h17_y; HERO_NODEBUG h_0opt_3df2bbad h19_f7 = {0}, h38_own38 = {0}, t115, t116, t120, t122, t166, t167; int64_t h20_v; HERO_NODEBUG h_0opt_6ea83cb1 h21_f8 = {0}, h39_own39 = {0}, t128, t129, t133, t135, t168, t169; int64_t h22_z; HERO_NODEBUG HeroStr h26_own26 = {0}, h27_own27 = {0}, h31_own31 = {0}, h32_own32 = {0}, h33_own33 = {0}, t18, t20, t21, t25, t43, t47, t61, t65, t66, t73, t74, t138, t146, t147, t155, t156, t157; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer h30_own30 = {0}, t60, t153, t154; HERO_NODEBUG h_0fn_27093d66 t1, t26; HERO_NODEBUG int64_t t2, t5, t6, t11, t12, t15, t19, t24, t27, t30, t31, t36, t37, t40, t46, t49, t52, t53, t58, t59, t63, t67, t69, t71, t72, t76, t79, t80, t85, t86, t89, t90, t95, t97, t100, t101, t106, t107, t110, t111, t114, t117, t118, t123, t124, t127, t130, t131, t136, t137; HERO_NODEBUG bool t7, t32, t54, t81, t91, t102, t112, t119, t125, t132; HERO_NODEBUG HeroFailure t9, t34, t56, t83, t93, t104, t121, t134; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle t17, t42, t145, t152; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square t23, t45; HERO_NODEBUG h_0fn_43d0fc0a t48; HERO_NODEBUG HeroArrayHeader *t62, *t68; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner t64, t70; HERO_NODEBUG h_0fn_305159eb t75, t96; HERO_NODEBUG h_0fn_3d242f50 t113; HERO_NODEBUG h_0fn_47d100e5 t126; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_shape_of; t2 = INT64_C(3); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 101, 9}; HERO_NODEBUG h_0box_27093d66 *hero_box = (h_0box_27093d66 *)hero_thread_box_new((int64_t)sizeof(h_0box_27093d66)); hero_box->hero_head.run = h_0run_27093d66; hero_box->hero_head.body = (void (*)(void))t1; hero_box->hero_fn = t1; h_0put_1b9a87(&hero_box->hero_head.arg, &t2); HERO_NODEBUG int64_t hero_why = 0; HERO_NODEBUG int64_t hero_thread = hero_thread_begin(&hero_box->hero_head, INT64_C(0), &hero_why, &hero_here); if (hero_thread >= 0) { t3 = (h_0opt_428f1a94){.hero_tag = INT64_C(0), .hero_as.hero_ok = hero_thread}; } else { hero_thread_box_free(&hero_box->hero_head); t3 = (h_0opt_428f1a94){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_limit(hero_why)}; } } t139 = h23_own23; h23_own23 = t3; h_0opt_428f1a94_release(&t139); t140 = h0_f0; h_0opt_428f1a94_retain(&t3); h0_f0 = t3; h_0opt_428f1a94_release(&t140); t4 = h0_f0; t5 = t4.hero_tag; t6 = INT64_C(0); t7 = t5 == t6; if (t7) goto hero_bb1; else goto hero_bb2; hero_bb1: t10 = h0_f0; t11 = t10.hero_as.hero_ok; h1_t = t11;
+void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_waited(void) { HERO_NODEBUG h_0opt_428f1a94 h0_f0 = {0}, h5_f1 = {0}, h23_own23 = {0}, h25_own25 = {0}, t3, t4, t8, t10, t28, t29, t33, t35, t139, t140, t143, t144; int64_t h1_t; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape h2_s0 = {0}, h7_s1 = {0}, h24_own24 = {0}, h28_own28 = {0}, t13, t14, t16, t22, t38, t39, t41, t44, t141, t142, t148, t149; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle h3_c = {0}; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square h4_s; int64_t h6_u; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle h8_c = {0}; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square h9_s; HERO_NODEBUG h_0opt_3fa7b87f h10_f2 = {0}, h29_own29 = {0}, t50, t51, t55, t57, t150, t151; int64_t h11_w; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer h12_o = {0}; HERO_NODEBUG h_0opt_2e0f88f1 h13_f3 = {0}, h16_f5 = {0}, h34_own34 = {0}, h36_own36 = {0}, t77, t78, t82, t84, t98, t99, t103, t105, t158, t159, t162, t163; int64_t h14_x; HERO_NODEBUG h_0opt_e201354 h15_f4 = {0}, h18_f6 = {0}, h35_own35 = {0}, h37_own37 = {0}, t87, t88, t92, t94, t108, t109, t160, t161, t164, t165; int64_t h17_y; HERO_NODEBUG h_0opt_3df2bbad h19_f7 = {0}, h38_own38 = {0}, t115, t116, t120, t122, t166, t167; int64_t h20_v; HERO_NODEBUG h_0opt_6ea83cb1 h21_f8 = {0}, h39_own39 = {0}, t128, t129, t133, t135, t168, t169; int64_t h22_z; HERO_NODEBUG HeroStr h26_own26 = {0}, h27_own27 = {0}, h31_own31 = {0}, h32_own32 = {0}, h33_own33 = {0}, t18, t20, t21, t25, t43, t47, t61, t65, t66, t73, t74, t138, t146, t147, t155, t156, t157; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer h30_own30 = {0}, t60, t153, t154; HERO_NODEBUG h_0fn_27093d66 t1, t26; HERO_NODEBUG int64_t t2, t5, t6, t11, t12, t15, t19, t24, t27, t30, t31, t36, t37, t40, t46, t49, t52, t53, t58, t59, t63, t67, t69, t71, t72, t76, t79, t80, t85, t86, t89, t90, t95, t97, t100, t101, t106, t107, t110, t111, t114, t117, t118, t123, t124, t127, t130, t131, t136, t137; HERO_NODEBUG _Bool t7, t32, t54, t81, t91, t102, t112, t119, t125, t132; HERO_NODEBUG HeroFailure t9, t34, t56, t83, t93, t104, t121, t134; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle t17, t42, t145, t152; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square t23, t45; HERO_NODEBUG h_0fn_43d0fc0a t48; HERO_NODEBUG HeroArrayHeader *t62, *t68; HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner t64, t70; HERO_NODEBUG h_0fn_305159eb t75, t96; HERO_NODEBUG h_0fn_3d242f50 t113; HERO_NODEBUG h_0fn_47d100e5 t126; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_shape_of; t2 = ((__INT64_TYPE__)3); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 101, 9}; HERO_NODEBUG h_0box_27093d66 *hero_box = (h_0box_27093d66 *)hero_thread_box_new((int64_t)sizeof(h_0box_27093d66)); HERO_THREAD_BOX_RUN(&hero_box->hero_head) = h_0run_27093d66; HERO_THREAD_BOX_BODY(&hero_box->hero_head) = (void (*)(void))t1; hero_box->hero_fn = t1; h_0put_1b9a87(HERO_THREAD_BOX_ARG(&hero_box->hero_head), &t2); HERO_NODEBUG int64_t hero_why = 0; HERO_NODEBUG int64_t hero_thread = hero_thread_begin(&hero_box->hero_head, ((__INT64_TYPE__)0), &hero_why, &hero_here); if (hero_thread >= 0) { t3 = (h_0opt_428f1a94){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = hero_thread}; } else { hero_thread_box_free(&hero_box->hero_head); t3 = (h_0opt_428f1a94){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_limit(hero_why)}; } } t139 = h23_own23; h23_own23 = t3; h_0opt_428f1a94_release(&t139); t140 = h0_f0; h_0opt_428f1a94_retain(&t3); h0_f0 = t3; h_0opt_428f1a94_release(&t140); t4 = h0_f0; t5 = t4.hero_tag; t6 = ((__INT64_TYPE__)0); t7 = t5 == t6; if (t7) goto hero_bb1; else goto hero_bb2; hero_bb1: t10 = h0_f0; t11 = t10.hero_as.hero_ok; h1_t = t11;
 #line 103
-    t12 = h1_t; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 103, 11}; HERO_NODEBUG HeroThreadBox *hero_box = hero_thread_end(t12, &hero_here); t13 = *(h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape *)__builtin_memset(&t13, 0, sizeof t13); h_0take_8364742(&hero_box->answer, &t13); hero_thread_box_free(hero_box); } t141 = h24_own24; h24_own24 = t13; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_release(&t141); t142 = h2_s0; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_retain(&t13); h2_s0 = t13; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_release(&t142); t14 = h2_s0; t15 = t14.hero_tag; switch (t15) { case 0: goto hero_bb4; case 1: goto hero_bb5; case 2: goto hero_bb6; default: hero_unreachable(); } hero_bb2:
+    t12 = h1_t; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 103, 11}; HERO_NODEBUG HeroThreadBox *hero_box = hero_thread_end(t12, &hero_here); t13 = *(h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape *)__builtin_memset(&t13, 0, sizeof t13); h_0take_8364742(HERO_THREAD_BOX_ANSWER(hero_box), &t13); hero_thread_box_free(hero_box); } t141 = h24_own24; h24_own24 = t13; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_release(&t141); t142 = h2_s0; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_retain(&t13); h2_s0 = t13; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_release(&t142); t14 = h2_s0; t15 = t14.hero_tag; switch (t15) { case 0: goto hero_bb4; case 1: goto hero_bb5; case 2: goto hero_bb6; default: hero_unreachable(); } hero_bb2:
 #line 101
     t8 = h0_f0; t9 = t8.hero_as.hero_err;
 #line 769 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
@@ -770,7 +770,7 @@ void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_waited(void) { HERO_
     hero_unreachable();
 hero_bb3:
 #line 108 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
-    t26 = h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_shape_of; t27 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 108, 9}; HERO_NODEBUG h_0box_27093d66 *hero_box = (h_0box_27093d66 *)hero_thread_box_new((int64_t)sizeof(h_0box_27093d66)); hero_box->hero_head.run = h_0run_27093d66; hero_box->hero_head.body = (void (*)(void))t26; hero_box->hero_fn = t26; h_0put_1b9a87(&hero_box->hero_head.arg, &t27); HERO_NODEBUG int64_t hero_why = 0; HERO_NODEBUG int64_t hero_thread = hero_thread_begin(&hero_box->hero_head, INT64_C(0), &hero_why, &hero_here); if (hero_thread >= 0) { t28 = (h_0opt_428f1a94){.hero_tag = INT64_C(0), .hero_as.hero_ok = hero_thread}; } else { hero_thread_box_free(&hero_box->hero_head); t28 = (h_0opt_428f1a94){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_limit(hero_why)}; } } t143 = h25_own25; h25_own25 = t28; h_0opt_428f1a94_release(&t143); t144 = h5_f1; h_0opt_428f1a94_retain(&t28); h5_f1 = t28; h_0opt_428f1a94_release(&t144); t29 = h5_f1; t30 = t29.hero_tag; t31 = INT64_C(0); t32 = t30 == t31; if (t32) goto hero_bb7; else goto hero_bb8; hero_bb4:
+    t26 = h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_shape_of; t27 = ((__INT64_TYPE__)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 108, 9}; HERO_NODEBUG h_0box_27093d66 *hero_box = (h_0box_27093d66 *)hero_thread_box_new((int64_t)sizeof(h_0box_27093d66)); HERO_THREAD_BOX_RUN(&hero_box->hero_head) = h_0run_27093d66; HERO_THREAD_BOX_BODY(&hero_box->hero_head) = (void (*)(void))t26; hero_box->hero_fn = t26; h_0put_1b9a87(HERO_THREAD_BOX_ARG(&hero_box->hero_head), &t27); HERO_NODEBUG int64_t hero_why = 0; HERO_NODEBUG int64_t hero_thread = hero_thread_begin(&hero_box->hero_head, ((__INT64_TYPE__)0), &hero_why, &hero_here); if (hero_thread >= 0) { t28 = (h_0opt_428f1a94){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = hero_thread}; } else { hero_thread_box_free(&hero_box->hero_head); t28 = (h_0opt_428f1a94){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_limit(hero_why)}; } } t143 = h25_own25; h25_own25 = t28; h_0opt_428f1a94_release(&t143); t144 = h5_f1; h_0opt_428f1a94_retain(&t28); h5_f1 = t28; h_0opt_428f1a94_release(&t144); t29 = h5_f1; t30 = t29.hero_tag; t31 = ((__INT64_TYPE__)0); t32 = t30 == t31; if (t32) goto hero_bb7; else goto hero_bb8; hero_bb4:
 #line 104
     t16 = h2_s0; t17 = t16.hero_as.hero_c_circle; t145 = h3_c; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle_retain(&t17); h3_c = t17; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle_release(&t145); t18 = h3_c.f_label; t19 = h3_c.f_r; t20 = hero_int_to_str(t19); t146 = h26_own26; h26_own26 = t20; hero_str_decref(t146); t21 = hero_str_concat(t18, t20); t147 = h27_own27; h27_own27 = t21; hero_str_decref(t147); hero_print_str(t21); hero_print_end(); goto hero_bb3; hero_bb5:
     t22 = h2_s0; t23 = t22.hero_as.hero_c_square; h4_s = t23; t24 = h4_s.f_side; hero_print_int(t24); hero_print_end(); goto hero_bb3; hero_bb6:
@@ -778,7 +778,7 @@ hero_bb3:
 #line 108
     t35 = h5_f1; t36 = t35.hero_as.hero_ok; h6_u = t36;
 #line 110
-    t37 = h6_u; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 110, 11}; HERO_NODEBUG HeroThreadBox *hero_box = hero_thread_end(t37, &hero_here); t38 = *(h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape *)__builtin_memset(&t38, 0, sizeof t38); h_0take_8364742(&hero_box->answer, &t38); hero_thread_box_free(hero_box); } t148 = h28_own28; h28_own28 = t38; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_release(&t148); t149 = h7_s1; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_retain(&t38); h7_s1 = t38; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_release(&t149); t39 = h7_s1; t40 = t39.hero_tag; switch (t40) { case 0: goto hero_bb10; case 1: goto hero_bb11; case 2: goto hero_bb12; default: hero_unreachable(); } hero_bb8:
+    t37 = h6_u; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 110, 11}; HERO_NODEBUG HeroThreadBox *hero_box = hero_thread_end(t37, &hero_here); t38 = *(h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape *)__builtin_memset(&t38, 0, sizeof t38); h_0take_8364742(HERO_THREAD_BOX_ANSWER(hero_box), &t38); hero_thread_box_free(hero_box); } t148 = h28_own28; h28_own28 = t38; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_release(&t148); t149 = h7_s1; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_retain(&t38); h7_s1 = t38; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_release(&t149); t39 = h7_s1; t40 = t39.hero_tag; switch (t40) { case 0: goto hero_bb10; case 1: goto hero_bb11; case 2: goto hero_bb12; default: hero_unreachable(); } hero_bb8:
 #line 108
     t33 = h5_f1; t34 = t33.hero_as.hero_err;
 #line 785 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
@@ -786,16 +786,16 @@ hero_bb3:
     hero_unreachable();
 hero_bb9:
 #line 115 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
-    t48 = h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_outer_of; t49 = INT64_C(5); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 115, 9}; HERO_NODEBUG h_0box_43d0fc0a *hero_box = (h_0box_43d0fc0a *)hero_thread_box_new((int64_t)sizeof(h_0box_43d0fc0a)); hero_box->hero_head.run = h_0run_43d0fc0a; hero_box->hero_head.body = (void (*)(void))t48; hero_box->hero_fn = t48; h_0put_1b9a87(&hero_box->hero_head.arg, &t49); HERO_NODEBUG int64_t hero_why = 0; HERO_NODEBUG int64_t hero_thread = hero_thread_begin(&hero_box->hero_head, INT64_C(0), &hero_why, &hero_here); if (hero_thread >= 0) { t50 = (h_0opt_3fa7b87f){.hero_tag = INT64_C(0), .hero_as.hero_ok = hero_thread}; } else { hero_thread_box_free(&hero_box->hero_head); t50 = (h_0opt_3fa7b87f){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_limit(hero_why)}; } } t150 = h29_own29; h29_own29 = t50; h_0opt_3fa7b87f_release(&t150); t151 = h10_f2; h_0opt_3fa7b87f_retain(&t50); h10_f2 = t50; h_0opt_3fa7b87f_release(&t151); t51 = h10_f2; t52 = t51.hero_tag; t53 = INT64_C(0); t54 = t52 == t53; if (t54) goto hero_bb13; else goto hero_bb14; hero_bb10:
+    t48 = h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_outer_of; t49 = ((__INT64_TYPE__)5); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 115, 9}; HERO_NODEBUG h_0box_43d0fc0a *hero_box = (h_0box_43d0fc0a *)hero_thread_box_new((int64_t)sizeof(h_0box_43d0fc0a)); HERO_THREAD_BOX_RUN(&hero_box->hero_head) = h_0run_43d0fc0a; HERO_THREAD_BOX_BODY(&hero_box->hero_head) = (void (*)(void))t48; hero_box->hero_fn = t48; h_0put_1b9a87(HERO_THREAD_BOX_ARG(&hero_box->hero_head), &t49); HERO_NODEBUG int64_t hero_why = 0; HERO_NODEBUG int64_t hero_thread = hero_thread_begin(&hero_box->hero_head, ((__INT64_TYPE__)0), &hero_why, &hero_here); if (hero_thread >= 0) { t50 = (h_0opt_3fa7b87f){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = hero_thread}; } else { hero_thread_box_free(&hero_box->hero_head); t50 = (h_0opt_3fa7b87f){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_limit(hero_why)}; } } t150 = h29_own29; h29_own29 = t50; h_0opt_3fa7b87f_release(&t150); t151 = h10_f2; h_0opt_3fa7b87f_retain(&t50); h10_f2 = t50; h_0opt_3fa7b87f_release(&t151); t51 = h10_f2; t52 = t51.hero_tag; t53 = ((__INT64_TYPE__)0); t54 = t52 == t53; if (t54) goto hero_bb13; else goto hero_bb14; hero_bb10:
 #line 111
     t41 = h7_s1; t42 = t41.hero_as.hero_c_circle; t152 = h8_c; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle_retain(&t42); h8_c = t42; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle_release(&t152); t43 = h8_c.f_label; hero_print_str(t43); hero_print_end(); goto hero_bb9; hero_bb11:
     t44 = h7_s1; t45 = t44.hero_as.hero_c_square; h9_s = t45; t46 = h9_s.f_side; hero_print_int(t46); hero_print_end(); goto hero_bb9; hero_bb12:
     t47 = HERO_STR_LIT(hero_str_edaa230); hero_print_str(t47); hero_print_end(); goto hero_bb9; hero_bb13:
 #line 115
     t57 = h10_f2; t58 = t57.hero_as.hero_ok; h11_w = t58;
-    t59 = h11_w; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 116, 9}; HERO_NODEBUG HeroThreadBox *hero_box = hero_thread_end(t59, &hero_here); t60 = *(h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer *)__builtin_memset(&t60, 0, sizeof t60); h_0take_40344af(&hero_box->answer, &t60); hero_thread_box_free(hero_box); } t153 = h30_own30; h30_own30 = t60; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_release(&t153); t154 = h12_o; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_retain(&t60); h12_o = t60; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_release(&t154);
-    t61 = h12_o.f_inner.f_tag; t62 = h12_o.f_more; t63 = INT64_C(0); t64 = ((void)((t62 == NULL || t63 < 0 || t63 >= t62->len) ? hero_panic_index_at(t62, t63, "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 117, 25) : (void)0), (void)(t62->elem->size != sizeof(h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner) ? hero_unreachable() : (void)0), ((h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner const *)(const void *)(t62 + 1))[t63]); t65 = t64.f_tag; t66 = hero_str_concat(t61, t65); t155 = h31_own31; h31_own31 = t66; hero_str_decref(t155); t67 = h12_o.f_inner.f_n; t68 = h12_o.f_more; t69 = INT64_C(0); t70 = ((void)((t68 == NULL || t69 < 0 || t69 >= t68->len) ? hero_panic_index_at(t68, t69, "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 117, 54) : (void)0), (void)(t68->elem->size != sizeof(h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner) ? hero_unreachable() : (void)0), ((h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner const *)(const void *)(t68 + 1))[t69]); t71 = t70.f_n; if (__builtin_add_overflow(t67, t71, &t72)) hero_panic_overflow_at("threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 117, 42); t73 = hero_int_to_str(t72); t156 = h32_own32; h32_own32 = t73; hero_str_decref(t156); t74 = hero_str_concat(t66, t73); t157 = h33_own33; h33_own33 = t74; hero_str_decref(t157); hero_print_str(t74); hero_print_end();
-    t75 = h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_maybe_of; t76 = INT64_C(6); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 118, 9}; HERO_NODEBUG h_0box_305159eb *hero_box = (h_0box_305159eb *)hero_thread_box_new((int64_t)sizeof(h_0box_305159eb)); hero_box->hero_head.run = h_0run_305159eb; hero_box->hero_head.body = (void (*)(void))t75; hero_box->hero_fn = t75; h_0put_1b9a87(&hero_box->hero_head.arg, &t76); HERO_NODEBUG int64_t hero_why = 0; HERO_NODEBUG int64_t hero_thread = hero_thread_begin(&hero_box->hero_head, INT64_C(0), &hero_why, &hero_here); if (hero_thread >= 0) { t77 = (h_0opt_2e0f88f1){.hero_tag = INT64_C(0), .hero_as.hero_ok = hero_thread}; } else { hero_thread_box_free(&hero_box->hero_head); t77 = (h_0opt_2e0f88f1){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_limit(hero_why)}; } } t158 = h34_own34; h34_own34 = t77; h_0opt_2e0f88f1_release(&t158); t159 = h13_f3; h_0opt_2e0f88f1_retain(&t77); h13_f3 = t77; h_0opt_2e0f88f1_release(&t159); t78 = h13_f3; t79 = t78.hero_tag; t80 = INT64_C(0); t81 = t79 == t80; if (t81) goto hero_bb15; else goto hero_bb16; hero_bb14:
+    t59 = h11_w; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 116, 9}; HERO_NODEBUG HeroThreadBox *hero_box = hero_thread_end(t59, &hero_here); t60 = *(h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer *)__builtin_memset(&t60, 0, sizeof t60); h_0take_40344af(HERO_THREAD_BOX_ANSWER(hero_box), &t60); hero_thread_box_free(hero_box); } t153 = h30_own30; h30_own30 = t60; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_release(&t153); t154 = h12_o; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_retain(&t60); h12_o = t60; h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_release(&t154);
+    t61 = h12_o.f_inner.f_tag; t62 = h12_o.f_more; t63 = ((__INT64_TYPE__)0); t64 = ((void)((t62 == ((void *)0) || t63 < 0 || t63 >= t62->len) ? hero_panic_index_at(t62, t63, "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 117, 25) : (void)0), (void)(HERO_ARRAY_ELEM_SIZE(t62) != sizeof(h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner) ? hero_unreachable() : (void)0), ((h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner const *)(const void *)(t62 + 1))[t63]); t65 = t64.f_tag; t66 = hero_str_concat(t61, t65); t155 = h31_own31; h31_own31 = t66; hero_str_decref(t155); t67 = h12_o.f_inner.f_n; t68 = h12_o.f_more; t69 = ((__INT64_TYPE__)0); t70 = ((void)((t68 == ((void *)0) || t69 < 0 || t69 >= t68->len) ? hero_panic_index_at(t68, t69, "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 117, 54) : (void)0), (void)(HERO_ARRAY_ELEM_SIZE(t68) != sizeof(h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner) ? hero_unreachable() : (void)0), ((h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner const *)(const void *)(t68 + 1))[t69]); t71 = t70.f_n; if (__builtin_add_overflow(t67, t71, &t72)) hero_panic_overflow_at("threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 117, 42); t73 = hero_int_to_str(t72); t156 = h32_own32; h32_own32 = t73; hero_str_decref(t156); t74 = hero_str_concat(t66, t73); t157 = h33_own33; h33_own33 = t74; hero_str_decref(t157); hero_print_str(t74); hero_print_end();
+    t75 = h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_maybe_of; t76 = ((__INT64_TYPE__)6); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 118, 9}; HERO_NODEBUG h_0box_305159eb *hero_box = (h_0box_305159eb *)hero_thread_box_new((int64_t)sizeof(h_0box_305159eb)); HERO_THREAD_BOX_RUN(&hero_box->hero_head) = h_0run_305159eb; HERO_THREAD_BOX_BODY(&hero_box->hero_head) = (void (*)(void))t75; hero_box->hero_fn = t75; h_0put_1b9a87(HERO_THREAD_BOX_ARG(&hero_box->hero_head), &t76); HERO_NODEBUG int64_t hero_why = 0; HERO_NODEBUG int64_t hero_thread = hero_thread_begin(&hero_box->hero_head, ((__INT64_TYPE__)0), &hero_why, &hero_here); if (hero_thread >= 0) { t77 = (h_0opt_2e0f88f1){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = hero_thread}; } else { hero_thread_box_free(&hero_box->hero_head); t77 = (h_0opt_2e0f88f1){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_limit(hero_why)}; } } t158 = h34_own34; h34_own34 = t77; h_0opt_2e0f88f1_release(&t158); t159 = h13_f3; h_0opt_2e0f88f1_retain(&t77); h13_f3 = t77; h_0opt_2e0f88f1_release(&t159); t78 = h13_f3; t79 = t78.hero_tag; t80 = ((__INT64_TYPE__)0); t81 = t79 == t80; if (t81) goto hero_bb15; else goto hero_bb16; hero_bb14:
 #line 115
     t55 = h10_f2; t56 = t55.hero_as.hero_err;
 #line 802 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
@@ -804,7 +804,7 @@ hero_bb9:
 hero_bb15:
 #line 118 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
     t84 = h13_f3; t85 = t84.hero_as.hero_ok; h14_x = t85;
-    t86 = h14_x; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 119, 11}; HERO_NODEBUG HeroThreadBox *hero_box = hero_thread_end(t86, &hero_here); t87 = *(h_0opt_e201354 *)__builtin_memset(&t87, 0, sizeof t87); h_0take_e201354(&hero_box->answer, &t87); hero_thread_box_free(hero_box); } t160 = h35_own35; h35_own35 = t87; h_0opt_e201354_release(&t160); t161 = h15_f4; h_0opt_e201354_retain(&t87); h15_f4 = t87; h_0opt_e201354_release(&t161); t88 = h15_f4; t89 = t88.hero_tag; t90 = INT64_C(0); t91 = t89 == t90; if (t91) goto hero_bb17; else goto hero_bb18; hero_bb16:
+    t86 = h14_x; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 119, 11}; HERO_NODEBUG HeroThreadBox *hero_box = hero_thread_end(t86, &hero_here); t87 = *(h_0opt_e201354 *)__builtin_memset(&t87, 0, sizeof t87); h_0take_e201354(HERO_THREAD_BOX_ANSWER(hero_box), &t87); hero_thread_box_free(hero_box); } t160 = h35_own35; h35_own35 = t87; h_0opt_e201354_release(&t160); t161 = h15_f4; h_0opt_e201354_retain(&t87); h15_f4 = t87; h_0opt_e201354_release(&t161); t88 = h15_f4; t89 = t88.hero_tag; t90 = ((__INT64_TYPE__)0); t91 = t89 == t90; if (t91) goto hero_bb17; else goto hero_bb18; hero_bb16:
 #line 118
     t82 = h13_f3; t83 = t82.hero_as.hero_err;
 #line 811 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
@@ -813,7 +813,7 @@ hero_bb15:
 hero_bb17:
 #line 119 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
     t94 = h15_f4; t95 = t94.hero_as.hero_ok; hero_print_int(t95); hero_print_end();
-    t96 = h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_maybe_of; t97 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 120, 9}; HERO_NODEBUG h_0box_305159eb *hero_box = (h_0box_305159eb *)hero_thread_box_new((int64_t)sizeof(h_0box_305159eb)); hero_box->hero_head.run = h_0run_305159eb; hero_box->hero_head.body = (void (*)(void))t96; hero_box->hero_fn = t96; h_0put_1b9a87(&hero_box->hero_head.arg, &t97); HERO_NODEBUG int64_t hero_why = 0; HERO_NODEBUG int64_t hero_thread = hero_thread_begin(&hero_box->hero_head, INT64_C(0), &hero_why, &hero_here); if (hero_thread >= 0) { t98 = (h_0opt_2e0f88f1){.hero_tag = INT64_C(0), .hero_as.hero_ok = hero_thread}; } else { hero_thread_box_free(&hero_box->hero_head); t98 = (h_0opt_2e0f88f1){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_limit(hero_why)}; } } t162 = h36_own36; h36_own36 = t98; h_0opt_2e0f88f1_release(&t162); t163 = h16_f5; h_0opt_2e0f88f1_retain(&t98); h16_f5 = t98; h_0opt_2e0f88f1_release(&t163); t99 = h16_f5; t100 = t99.hero_tag; t101 = INT64_C(0); t102 = t100 == t101; if (t102) goto hero_bb19; else goto hero_bb20; hero_bb18:
+    t96 = h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_maybe_of; t97 = ((__INT64_TYPE__)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 120, 9}; HERO_NODEBUG h_0box_305159eb *hero_box = (h_0box_305159eb *)hero_thread_box_new((int64_t)sizeof(h_0box_305159eb)); HERO_THREAD_BOX_RUN(&hero_box->hero_head) = h_0run_305159eb; HERO_THREAD_BOX_BODY(&hero_box->hero_head) = (void (*)(void))t96; hero_box->hero_fn = t96; h_0put_1b9a87(HERO_THREAD_BOX_ARG(&hero_box->hero_head), &t97); HERO_NODEBUG int64_t hero_why = 0; HERO_NODEBUG int64_t hero_thread = hero_thread_begin(&hero_box->hero_head, ((__INT64_TYPE__)0), &hero_why, &hero_here); if (hero_thread >= 0) { t98 = (h_0opt_2e0f88f1){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = hero_thread}; } else { hero_thread_box_free(&hero_box->hero_head); t98 = (h_0opt_2e0f88f1){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_limit(hero_why)}; } } t162 = h36_own36; h36_own36 = t98; h_0opt_2e0f88f1_release(&t162); t163 = h16_f5; h_0opt_2e0f88f1_retain(&t98); h16_f5 = t98; h_0opt_2e0f88f1_release(&t163); t99 = h16_f5; t100 = t99.hero_tag; t101 = ((__INT64_TYPE__)0); t102 = t100 == t101; if (t102) goto hero_bb19; else goto hero_bb20; hero_bb18:
 #line 119
     t92 = h15_f4; t93 = t92.hero_as.hero_err;
 #line 820 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
@@ -822,8 +822,8 @@ hero_bb17:
 hero_bb19:
 #line 120 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
     t105 = h16_f5; t106 = t105.hero_as.hero_ok; h17_y = t106;
-    t107 = h17_y; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 121, 11}; HERO_NODEBUG HeroThreadBox *hero_box = hero_thread_end(t107, &hero_here); t108 = *(h_0opt_e201354 *)__builtin_memset(&t108, 0, sizeof t108); h_0take_e201354(&hero_box->answer, &t108); hero_thread_box_free(hero_box); } t164 = h37_own37; h37_own37 = t108; h_0opt_e201354_release(&t164); t165 = h18_f6; h_0opt_e201354_retain(&t108); h18_f6 = t108; h_0opt_e201354_release(&t165); t109 = h18_f6; t110 = t109.hero_tag; t111 = INT64_C(1); t112 = t110 == t111; hero_print_bool(t112); hero_print_end();
-    t113 = h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_flag_of; t114 = INT64_C(2); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 122, 9}; HERO_NODEBUG h_0box_3d242f50 *hero_box = (h_0box_3d242f50 *)hero_thread_box_new((int64_t)sizeof(h_0box_3d242f50)); hero_box->hero_head.run = h_0run_3d242f50; hero_box->hero_head.body = (void (*)(void))t113; hero_box->hero_fn = t113; h_0put_1b9a87(&hero_box->hero_head.arg, &t114); HERO_NODEBUG int64_t hero_why = 0; HERO_NODEBUG int64_t hero_thread = hero_thread_begin(&hero_box->hero_head, INT64_C(0), &hero_why, &hero_here); if (hero_thread >= 0) { t115 = (h_0opt_3df2bbad){.hero_tag = INT64_C(0), .hero_as.hero_ok = hero_thread}; } else { hero_thread_box_free(&hero_box->hero_head); t115 = (h_0opt_3df2bbad){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_limit(hero_why)}; } } t166 = h38_own38; h38_own38 = t115; h_0opt_3df2bbad_release(&t166); t167 = h19_f7; h_0opt_3df2bbad_retain(&t115); h19_f7 = t115; h_0opt_3df2bbad_release(&t167); t116 = h19_f7; t117 = t116.hero_tag; t118 = INT64_C(0); t119 = t117 == t118; if (t119) goto hero_bb21; else goto hero_bb22; hero_bb20:
+    t107 = h17_y; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 121, 11}; HERO_NODEBUG HeroThreadBox *hero_box = hero_thread_end(t107, &hero_here); t108 = *(h_0opt_e201354 *)__builtin_memset(&t108, 0, sizeof t108); h_0take_e201354(HERO_THREAD_BOX_ANSWER(hero_box), &t108); hero_thread_box_free(hero_box); } t164 = h37_own37; h37_own37 = t108; h_0opt_e201354_release(&t164); t165 = h18_f6; h_0opt_e201354_retain(&t108); h18_f6 = t108; h_0opt_e201354_release(&t165); t109 = h18_f6; t110 = t109.hero_tag; t111 = ((__INT64_TYPE__)1); t112 = t110 == t111; hero_print_bool(t112); hero_print_end();
+    t113 = h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_flag_of; t114 = ((__INT64_TYPE__)2); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 122, 9}; HERO_NODEBUG h_0box_3d242f50 *hero_box = (h_0box_3d242f50 *)hero_thread_box_new((int64_t)sizeof(h_0box_3d242f50)); HERO_THREAD_BOX_RUN(&hero_box->hero_head) = h_0run_3d242f50; HERO_THREAD_BOX_BODY(&hero_box->hero_head) = (void (*)(void))t113; hero_box->hero_fn = t113; h_0put_1b9a87(HERO_THREAD_BOX_ARG(&hero_box->hero_head), &t114); HERO_NODEBUG int64_t hero_why = 0; HERO_NODEBUG int64_t hero_thread = hero_thread_begin(&hero_box->hero_head, ((__INT64_TYPE__)0), &hero_why, &hero_here); if (hero_thread >= 0) { t115 = (h_0opt_3df2bbad){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = hero_thread}; } else { hero_thread_box_free(&hero_box->hero_head); t115 = (h_0opt_3df2bbad){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_limit(hero_why)}; } } t166 = h38_own38; h38_own38 = t115; h_0opt_3df2bbad_release(&t166); t167 = h19_f7; h_0opt_3df2bbad_retain(&t115); h19_f7 = t115; h_0opt_3df2bbad_release(&t167); t116 = h19_f7; t117 = t116.hero_tag; t118 = ((__INT64_TYPE__)0); t119 = t117 == t118; if (t119) goto hero_bb21; else goto hero_bb22; hero_bb20:
 #line 120
     t103 = h16_f5; t104 = t103.hero_as.hero_err;
 #line 830 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
@@ -832,8 +832,8 @@ hero_bb19:
 hero_bb21:
 #line 122 "tests/golden/run/threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero"
     t122 = h19_f7; t123 = t122.hero_as.hero_ok; h20_v = t123;
-    t124 = h20_v; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 123, 11}; HERO_NODEBUG HeroThreadBox *hero_box = hero_thread_end(t124, &hero_here); t125 = *(bool *)__builtin_memset(&t125, 0, sizeof t125); h_0take_d3eff76(&hero_box->answer, &t125); hero_thread_box_free(hero_box); } hero_print_bool(t125); hero_print_end();
-    t126 = h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_quiet; t127 = INT64_C(1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 124, 9}; HERO_NODEBUG h_0box_47d100e5 *hero_box = (h_0box_47d100e5 *)hero_thread_box_new((int64_t)sizeof(h_0box_47d100e5)); hero_box->hero_head.run = h_0run_47d100e5; hero_box->hero_head.body = (void (*)(void))t126; hero_box->hero_fn = t126; h_0put_1b9a87(&hero_box->hero_head.arg, &t127); HERO_NODEBUG int64_t hero_why = 0; HERO_NODEBUG int64_t hero_thread = hero_thread_begin(&hero_box->hero_head, INT64_C(0), &hero_why, &hero_here); if (hero_thread >= 0) { t128 = (h_0opt_6ea83cb1){.hero_tag = INT64_C(0), .hero_as.hero_ok = hero_thread}; } else { hero_thread_box_free(&hero_box->hero_head); t128 = (h_0opt_6ea83cb1){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_limit(hero_why)}; } } t168 = h39_own39; h39_own39 = t128; h_0opt_6ea83cb1_release(&t168); t169 = h21_f8; h_0opt_6ea83cb1_retain(&t128); h21_f8 = t128; h_0opt_6ea83cb1_release(&t169); t129 = h21_f8; t130 = t129.hero_tag; t131 = INT64_C(0); t132 = t130 == t131; if (t132) goto hero_bb23; else goto hero_bb24; hero_bb22:
+    t124 = h20_v; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 123, 11}; HERO_NODEBUG HeroThreadBox *hero_box = hero_thread_end(t124, &hero_here); t125 = *(_Bool *)__builtin_memset(&t125, 0, sizeof t125); h_0take_d3eff76(HERO_THREAD_BOX_ANSWER(hero_box), &t125); hero_thread_box_free(hero_box); } hero_print_bool(t125); hero_print_end();
+    t126 = h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_quiet; t127 = ((__INT64_TYPE__)1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.hero", "threads-every-answer-a-receive-or-a-wait-gives-is-written-whole.waited", 124, 9}; HERO_NODEBUG h_0box_47d100e5 *hero_box = (h_0box_47d100e5 *)hero_thread_box_new((int64_t)sizeof(h_0box_47d100e5)); HERO_THREAD_BOX_RUN(&hero_box->hero_head) = h_0run_47d100e5; HERO_THREAD_BOX_BODY(&hero_box->hero_head) = (void (*)(void))t126; hero_box->hero_fn = t126; h_0put_1b9a87(HERO_THREAD_BOX_ARG(&hero_box->hero_head), &t127); HERO_NODEBUG int64_t hero_why = 0; HERO_NODEBUG int64_t hero_thread = hero_thread_begin(&hero_box->hero_head, ((__INT64_TYPE__)0), &hero_why, &hero_here); if (hero_thread >= 0) { t128 = (h_0opt_6ea83cb1){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = hero_thread}; } else { hero_thread_box_free(&hero_box->hero_head); t128 = (h_0opt_6ea83cb1){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_limit(hero_why)}; } } t168 = h39_own39; h39_own39 = t128; h_0opt_6ea83cb1_release(&t168); t169 = h21_f8; h_0opt_6ea83cb1_retain(&t128); h21_f8 = t128; h_0opt_6ea83cb1_release(&t169); t129 = h21_f8; t130 = t129.hero_tag; t131 = ((__INT64_TYPE__)0); t132 = t130 == t131; if (t132) goto hero_bb23; else goto hero_bb24; hero_bb22:
 #line 122
     t120 = h19_f7; t121 = t120.hero_as.hero_err;
 #line 840 "threadseveryanswerareceiveorawaitgivesiswrittenwhole.c"
@@ -908,7 +908,7 @@ HERO_TU_LOCAL void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Sever
     hero_map_decref(hero_v->f_weights);
 }
 
-HERO_TU_LOCAL bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Several *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Several *hero_b) {
+HERO_TU_LOCAL _Bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Several *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Several *hero_b) {
     if (!(hero_str_eq(hero_a->f_name, hero_b->f_name))) return false;
     if (!(hero_array_eq(hero_a->f_parts, hero_b->f_parts))) return false;
     if (!(hero_map_eq(hero_a->f_weights, hero_b->f_weights))) return false;
@@ -917,10 +917,10 @@ HERO_TU_LOCAL bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Sever
 
 HERO_TU_LOCAL uint64_t h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_hash(const void *hero_elem) {
     const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Several *hero_v = hero_elem;
-    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
-    hero_h = (hero_h ^ (&hero_desc_str)->hash(&hero_v->f_name)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ (&hero_desc_array)->hash(&hero_v->f_parts)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ (&hero_desc_map)->hash(&hero_v->f_weights)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = ((__UINT64_TYPE__)0xcbf29ce484222325);
+    hero_h = (hero_h ^ HERO_DESC_HASH(&hero_desc_str)(&hero_v->f_name)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ HERO_DESC_HASH(&hero_desc_array)(&hero_v->f_parts)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ HERO_DESC_HASH(&hero_desc_map)(&hero_v->f_weights)) * ((__UINT64_TYPE__)0x100000001b3);
     return hero_h;
 }
 
@@ -932,7 +932,7 @@ HERO_TU_LOCAL void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner
     hero_str_decref(hero_v->f_tag);
 }
 
-HERO_TU_LOCAL bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner *hero_b) {
+HERO_TU_LOCAL _Bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner *hero_b) {
     if (!(hero_str_eq(hero_a->f_tag, hero_b->f_tag))) return false;
     if (!(hero_a->f_n == hero_b->f_n)) return false;
     return true;
@@ -940,9 +940,9 @@ HERO_TU_LOCAL bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner
 
 HERO_TU_LOCAL uint64_t h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_hash(const void *hero_elem) {
     const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Inner *hero_v = hero_elem;
-    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
-    hero_h = (hero_h ^ (&hero_desc_str)->hash(&hero_v->f_tag)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_n)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = ((__UINT64_TYPE__)0xcbf29ce484222325);
+    hero_h = (hero_h ^ HERO_DESC_HASH(&hero_desc_str)(&hero_v->f_tag)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ HERO_DESC_HASH(&hero_desc_int)(&hero_v->f_n)) * ((__UINT64_TYPE__)0x100000001b3);
     return hero_h;
 }
 
@@ -956,7 +956,7 @@ HERO_TU_LOCAL void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer
     hero_array_decref(hero_v->f_more);
 }
 
-HERO_TU_LOCAL bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer *hero_b) {
+HERO_TU_LOCAL _Bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer *hero_b) {
     if (!(h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     if (!(hero_array_eq(hero_a->f_more, hero_b->f_more))) return false;
     if (!(hero_a->f_flag == hero_b->f_flag)) return false;
@@ -965,10 +965,10 @@ HERO_TU_LOCAL bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer
 
 HERO_TU_LOCAL uint64_t h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_hash(const void *hero_elem) {
     const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer *hero_v = hero_elem;
-    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
-    hero_h = (hero_h ^ h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ (&hero_desc_array)->hash(&hero_v->f_more)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ (&hero_desc_bool)->hash(&hero_v->f_flag)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = ((__UINT64_TYPE__)0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_hash(&hero_v->f_inner)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ HERO_DESC_HASH(&hero_desc_array)(&hero_v->f_more)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ HERO_DESC_HASH(&hero_desc_bool)(&hero_v->f_flag)) * ((__UINT64_TYPE__)0x100000001b3);
     return hero_h;
 }
 
@@ -980,7 +980,7 @@ HERO_TU_LOCAL void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape
     hero_str_decref(hero_v->f_label);
 }
 
-HERO_TU_LOCAL bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle *hero_b) {
+HERO_TU_LOCAL _Bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle *hero_b) {
     if (!(hero_a->f_r == hero_b->f_r)) return false;
     if (!(hero_str_eq(hero_a->f_label, hero_b->f_label))) return false;
     return true;
@@ -988,21 +988,21 @@ HERO_TU_LOCAL bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape
 
 HERO_TU_LOCAL uint64_t h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle_hash(const void *hero_elem) {
     const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle *hero_v = hero_elem;
-    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
-    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_r)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ (&hero_desc_str)->hash(&hero_v->f_label)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = ((__UINT64_TYPE__)0xcbf29ce484222325);
+    hero_h = (hero_h ^ HERO_DESC_HASH(&hero_desc_int)(&hero_v->f_r)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ HERO_DESC_HASH(&hero_desc_str)(&hero_v->f_label)) * ((__UINT64_TYPE__)0x100000001b3);
     return hero_h;
 }
 
-HERO_TU_LOCAL bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square *hero_b) {
+HERO_TU_LOCAL _Bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square *hero_b) {
     if (!(hero_a->f_side == hero_b->f_side)) return false;
     return true;
 }
 
 HERO_TU_LOCAL uint64_t h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square_hash(const void *hero_elem) {
     const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square *hero_v = hero_elem;
-    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
-    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_side)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = ((__UINT64_TYPE__)0xcbf29ce484222325);
+    hero_h = (hero_h ^ HERO_DESC_HASH(&hero_desc_int)(&hero_v->f_side)) * ((__UINT64_TYPE__)0x100000001b3);
     return hero_h;
 }
 
@@ -1020,7 +1020,7 @@ HERO_TU_LOCAL void h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape
     }
 }
 
-HERO_TU_LOCAL bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape *hero_b) {
+HERO_TU_LOCAL _Bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_eq(const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape *hero_a, const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
     switch (hero_a->hero_tag) {
         case h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_tag_circle: return h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle_eq(&hero_a->hero_as.hero_c_circle, &hero_b->hero_as.hero_c_circle);
@@ -1032,18 +1032,18 @@ HERO_TU_LOCAL bool h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape
 
 HERO_TU_LOCAL uint64_t h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_hash(const void *hero_elem) {
     const h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
     switch (hero_v->hero_tag) {
-        case h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_tag_circle: return (hero_h ^ h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle_hash(&hero_v->hero_as.hero_c_circle)) * UINT64_C(0x100000001b3);
-        case h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_tag_square: return (hero_h ^ h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square_hash(&hero_v->hero_as.hero_c_square)) * UINT64_C(0x100000001b3);
+        case h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_tag_circle: return (hero_h ^ h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_circle_hash(&hero_v->hero_as.hero_c_circle)) * ((__UINT64_TYPE__)0x100000001b3);
+        case h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_tag_square: return (hero_h ^ h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_c_square_hash(&hero_v->hero_as.hero_c_square)) * ((__UINT64_TYPE__)0x100000001b3);
         case h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_tag_none: return hero_h;
     }
     hero_unreachable();
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -1051,31 +1051,31 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
     const h_0opt_a8ea2 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
     return hero_h;
 }
 
 HERO_TU_LOCAL void h_0opt_71688fb1_retain(const h_0opt_71688fb1 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_retain(&hero_v->hero_as.hero_ok);
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -1083,31 +1083,31 @@ HERO_TU_LOCAL void h_0opt_71688fb1_retain(const h_0opt_71688fb1 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_71688fb1_release(h_0opt_71688fb1 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_release(&hero_v->hero_as.hero_ok);
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_71688fb1_eq(const h_0opt_71688fb1 *hero_a, const h_0opt_71688fb1 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_71688fb1_eq(const h_0opt_71688fb1 *hero_a, const h_0opt_71688fb1 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_desc)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_desc)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_71688fb1_hash(const void *hero_elem) {
     const h_0opt_71688fb1 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_desc)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Several_desc)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -1115,31 +1115,31 @@ HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_int)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
     const h_0opt_e201354 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_int)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_3ca904b0_retain(const h_0opt_3ca904b0 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_retain(&hero_v->hero_as.hero_ok);
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -1147,31 +1147,31 @@ HERO_TU_LOCAL void h_0opt_3ca904b0_retain(const h_0opt_3ca904b0 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_3ca904b0_release(h_0opt_3ca904b0 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_release(&hero_v->hero_as.hero_ok);
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_3ca904b0_eq(const h_0opt_3ca904b0 *hero_a, const h_0opt_3ca904b0 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_3ca904b0_eq(const h_0opt_3ca904b0 *hero_a, const h_0opt_3ca904b0 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_desc)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_desc)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_3ca904b0_hash(const void *hero_elem) {
     const h_0opt_3ca904b0 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_desc)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_desc)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_1fe1460c_retain(const h_0opt_1fe1460c *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_retain(&hero_v->hero_as.hero_ok);
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -1179,31 +1179,31 @@ HERO_TU_LOCAL void h_0opt_1fe1460c_retain(const h_0opt_1fe1460c *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_1fe1460c_release(h_0opt_1fe1460c *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_release(&hero_v->hero_as.hero_ok);
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_1fe1460c_eq(const h_0opt_1fe1460c *hero_a, const h_0opt_1fe1460c *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_1fe1460c_eq(const h_0opt_1fe1460c *hero_a, const h_0opt_1fe1460c *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_desc)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_desc)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_1fe1460c_hash(const void *hero_elem) {
     const h_0opt_1fe1460c *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_desc)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_desc)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_3a69e449_retain(const h_0opt_3a69e449 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         h_0opt_e201354_retain(&hero_v->hero_as.hero_ok);
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -1211,31 +1211,31 @@ HERO_TU_LOCAL void h_0opt_3a69e449_retain(const h_0opt_3a69e449 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_3a69e449_release(h_0opt_3a69e449 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         h_0opt_e201354_release(&hero_v->hero_as.hero_ok);
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_3a69e449_eq(const h_0opt_3a69e449 *hero_a, const h_0opt_3a69e449 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_3a69e449_eq(const h_0opt_3a69e449 *hero_a, const h_0opt_3a69e449 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&h_0opt_e201354_desc)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&h_0opt_e201354_desc)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_3a69e449_hash(const void *hero_elem) {
     const h_0opt_3a69e449 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&h_0opt_e201354_desc)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&h_0opt_e201354_desc)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_473cb9ae_retain(const h_0opt_473cb9ae *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -1243,31 +1243,31 @@ HERO_TU_LOCAL void h_0opt_473cb9ae_retain(const h_0opt_473cb9ae *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_473cb9ae_release(h_0opt_473cb9ae *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_473cb9ae_eq(const h_0opt_473cb9ae *hero_a, const h_0opt_473cb9ae *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_473cb9ae_eq(const h_0opt_473cb9ae *hero_a, const h_0opt_473cb9ae *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_bool)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_bool)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_473cb9ae_hash(const void *hero_elem) {
     const h_0opt_473cb9ae *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_bool)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_bool)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_35592ed2_retain(const h_0opt_35592ed2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_retain(&hero_v->hero_as.hero_ok);
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -1275,31 +1275,31 @@ HERO_TU_LOCAL void h_0opt_35592ed2_retain(const h_0opt_35592ed2 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_35592ed2_release(h_0opt_35592ed2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_release(&hero_v->hero_as.hero_ok);
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_35592ed2_eq(const h_0opt_35592ed2 *hero_a, const h_0opt_35592ed2 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_35592ed2_eq(const h_0opt_35592ed2 *hero_a, const h_0opt_35592ed2 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_desc)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_desc)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_35592ed2_hash(const void *hero_elem) {
     const h_0opt_35592ed2 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_desc)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Inner_desc)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_428f1a94_retain(const h_0opt_428f1a94 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -1307,31 +1307,31 @@ HERO_TU_LOCAL void h_0opt_428f1a94_retain(const h_0opt_428f1a94 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_428f1a94_release(h_0opt_428f1a94 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_428f1a94_eq(const h_0opt_428f1a94 *hero_a, const h_0opt_428f1a94 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_428f1a94_eq(const h_0opt_428f1a94 *hero_a, const h_0opt_428f1a94 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_thread)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_thread)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_428f1a94_hash(const void *hero_elem) {
     const h_0opt_428f1a94 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_thread)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_thread)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_3fa7b87f_retain(const h_0opt_3fa7b87f *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -1339,31 +1339,31 @@ HERO_TU_LOCAL void h_0opt_3fa7b87f_retain(const h_0opt_3fa7b87f *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_3fa7b87f_release(h_0opt_3fa7b87f *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_3fa7b87f_eq(const h_0opt_3fa7b87f *hero_a, const h_0opt_3fa7b87f *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_3fa7b87f_eq(const h_0opt_3fa7b87f *hero_a, const h_0opt_3fa7b87f *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_thread)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_thread)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_3fa7b87f_hash(const void *hero_elem) {
     const h_0opt_3fa7b87f *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_thread)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_thread)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_2e0f88f1_retain(const h_0opt_2e0f88f1 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -1371,31 +1371,31 @@ HERO_TU_LOCAL void h_0opt_2e0f88f1_retain(const h_0opt_2e0f88f1 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_2e0f88f1_release(h_0opt_2e0f88f1 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_2e0f88f1_eq(const h_0opt_2e0f88f1 *hero_a, const h_0opt_2e0f88f1 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_2e0f88f1_eq(const h_0opt_2e0f88f1 *hero_a, const h_0opt_2e0f88f1 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_thread)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_thread)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_2e0f88f1_hash(const void *hero_elem) {
     const h_0opt_2e0f88f1 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_thread)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_thread)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_3df2bbad_retain(const h_0opt_3df2bbad *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -1403,31 +1403,31 @@ HERO_TU_LOCAL void h_0opt_3df2bbad_retain(const h_0opt_3df2bbad *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_3df2bbad_release(h_0opt_3df2bbad *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_3df2bbad_eq(const h_0opt_3df2bbad *hero_a, const h_0opt_3df2bbad *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_3df2bbad_eq(const h_0opt_3df2bbad *hero_a, const h_0opt_3df2bbad *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_thread)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_thread)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_3df2bbad_hash(const void *hero_elem) {
     const h_0opt_3df2bbad *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_thread)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_thread)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_6ea83cb1_retain(const h_0opt_6ea83cb1 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -1435,31 +1435,31 @@ HERO_TU_LOCAL void h_0opt_6ea83cb1_retain(const h_0opt_6ea83cb1 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_6ea83cb1_release(h_0opt_6ea83cb1 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_6ea83cb1_eq(const h_0opt_6ea83cb1 *hero_a, const h_0opt_6ea83cb1 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_6ea83cb1_eq(const h_0opt_6ea83cb1 *hero_a, const h_0opt_6ea83cb1 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_thread)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_thread)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_6ea83cb1_hash(const void *hero_elem) {
     const h_0opt_6ea83cb1 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_thread)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_thread)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -1467,27 +1467,27 @@ HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_str)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
     const h_0opt_f87774a *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_str)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0put_1b9a87(HeroCross *hero_b, const void *hero_p) {
@@ -1495,7 +1495,7 @@ HERO_TU_LOCAL void h_0put_1b9a87(HeroCross *hero_b, const void *hero_p) {
 }
 
 HERO_TU_LOCAL void h_0put_d3eff76(HeroCross *hero_b, const void *hero_p) {
-    hero_cross_put_raw(hero_b, hero_p, (int64_t)sizeof(bool));
+    hero_cross_put_raw(hero_b, hero_p, (int64_t)sizeof(_Bool));
 }
 
 HERO_TU_LOCAL void h_0put_4ce7463f(HeroCross *hero_b, const void *hero_p) {
@@ -1526,7 +1526,7 @@ HERO_TU_LOCAL void h_0put_1167d096(HeroCross *hero_b, const void *hero_p) {
 HERO_TU_LOCAL void h_0put_e201354(HeroCross *hero_b, const void *hero_p) {
     const h_0opt_e201354 *hero_v = hero_p;
     hero_cross_put_raw(hero_b, &hero_v->hero_tag, (int64_t)sizeof(hero_v->hero_tag));
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         h_0put_1b9a87(hero_b, &hero_v->hero_as.hero_ok);
     } else {
         hero_cross_put_failure(hero_b, &hero_v->hero_as.hero_err);
@@ -1563,7 +1563,7 @@ HERO_TU_LOCAL void h_0take_1b9a87(HeroCross *hero_b, void *hero_p) {
 }
 
 HERO_TU_LOCAL void h_0take_d3eff76(HeroCross *hero_b, void *hero_p) {
-    hero_cross_take_raw(hero_b, hero_p, (int64_t)sizeof(bool));
+    hero_cross_take_raw(hero_b, hero_p, (int64_t)sizeof(_Bool));
 }
 
 HERO_TU_LOCAL void h_0take_4ce7463f(HeroCross *hero_b, void *hero_p) {
@@ -1594,7 +1594,7 @@ HERO_TU_LOCAL void h_0take_1167d096(HeroCross *hero_b, void *hero_p) {
 HERO_TU_LOCAL void h_0take_e201354(HeroCross *hero_b, void *hero_p) {
     h_0opt_e201354 *hero_v = hero_p;
     hero_cross_take_raw(hero_b, &hero_v->hero_tag, (int64_t)sizeof(hero_v->hero_tag));
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         h_0take_1b9a87(hero_b, &hero_v->hero_as.hero_ok);
     } else {
         hero_cross_take_failure(hero_b, &hero_v->hero_as.hero_err);
@@ -1629,56 +1629,56 @@ HERO_TU_LOCAL void h_0take_8364742(HeroCross *hero_b, void *hero_p) {
 HERO_TU_LOCAL void h_0run_27093d66(HeroThreadBox *hero_head) {
     h_0box_27093d66 *hero_box = (h_0box_27093d66 *)(void *)hero_head;
     HERO_NODEBUG int64_t hero_arg;
-    h_0take_1b9a87(&hero_head->arg, &hero_arg);
-    hero_cross_free(&hero_head->arg);
+    h_0take_1b9a87(HERO_THREAD_BOX_ARG(hero_head), &hero_arg);
+    hero_cross_free(HERO_THREAD_BOX_ARG(hero_head));
     HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Shape hero_answer;
     hero_answer = hero_box->hero_fn(hero_arg);
-    h_0put_8364742(&hero_head->answer, &hero_answer);
+    h_0put_8364742(HERO_THREAD_BOX_ANSWER(hero_head), &hero_answer);
     h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Shape_release(&hero_answer);
 }
 
 HERO_TU_LOCAL void h_0run_43d0fc0a(HeroThreadBox *hero_head) {
     h_0box_43d0fc0a *hero_box = (h_0box_43d0fc0a *)(void *)hero_head;
     HERO_NODEBUG int64_t hero_arg;
-    h_0take_1b9a87(&hero_head->arg, &hero_arg);
-    hero_cross_free(&hero_head->arg);
+    h_0take_1b9a87(HERO_THREAD_BOX_ARG(hero_head), &hero_arg);
+    hero_cross_free(HERO_THREAD_BOX_ARG(hero_head));
     HERO_NODEBUG h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_Outer hero_answer;
     hero_answer = hero_box->hero_fn(hero_arg);
-    h_0put_40344af(&hero_head->answer, &hero_answer);
+    h_0put_40344af(HERO_THREAD_BOX_ANSWER(hero_head), &hero_answer);
     h_threadseveryanswerareceiveorawaitgivesiswrittenwhole_0Outer_release(&hero_answer);
 }
 
 HERO_TU_LOCAL void h_0run_305159eb(HeroThreadBox *hero_head) {
     h_0box_305159eb *hero_box = (h_0box_305159eb *)(void *)hero_head;
     HERO_NODEBUG int64_t hero_arg;
-    h_0take_1b9a87(&hero_head->arg, &hero_arg);
-    hero_cross_free(&hero_head->arg);
+    h_0take_1b9a87(HERO_THREAD_BOX_ARG(hero_head), &hero_arg);
+    hero_cross_free(HERO_THREAD_BOX_ARG(hero_head));
     HERO_NODEBUG h_0opt_e201354 hero_answer;
     hero_answer = hero_box->hero_fn(hero_arg);
-    h_0put_e201354(&hero_head->answer, &hero_answer);
+    h_0put_e201354(HERO_THREAD_BOX_ANSWER(hero_head), &hero_answer);
     h_0opt_e201354_release(&hero_answer);
 }
 
 HERO_TU_LOCAL void h_0run_3d242f50(HeroThreadBox *hero_head) {
     h_0box_3d242f50 *hero_box = (h_0box_3d242f50 *)(void *)hero_head;
     HERO_NODEBUG int64_t hero_arg;
-    h_0take_1b9a87(&hero_head->arg, &hero_arg);
-    hero_cross_free(&hero_head->arg);
-    HERO_NODEBUG bool hero_answer;
+    h_0take_1b9a87(HERO_THREAD_BOX_ARG(hero_head), &hero_arg);
+    hero_cross_free(HERO_THREAD_BOX_ARG(hero_head));
+    HERO_NODEBUG _Bool hero_answer;
     hero_answer = hero_box->hero_fn(hero_arg);
-    h_0put_d3eff76(&hero_head->answer, &hero_answer);
+    h_0put_d3eff76(HERO_THREAD_BOX_ANSWER(hero_head), &hero_answer);
 }
 
 HERO_TU_LOCAL void h_0run_47d100e5(HeroThreadBox *hero_head) {
     h_0box_47d100e5 *hero_box = (h_0box_47d100e5 *)(void *)hero_head;
     HERO_NODEBUG int64_t hero_arg;
-    h_0take_1b9a87(&hero_head->arg, &hero_arg);
-    hero_cross_free(&hero_head->arg);
+    h_0take_1b9a87(HERO_THREAD_BOX_ARG(hero_head), &hero_arg);
+    hero_cross_free(HERO_THREAD_BOX_ARG(hero_head));
     hero_box->hero_fn(hero_arg);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("31d400a02d1af957", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("04454af1588874cd", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("threadseveryanswerareceiveorawaitgivesiswrittenwhole\tthreads-every-answer-a-receive-or-a-wait-gives-is-written-whole\n");

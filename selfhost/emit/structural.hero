@@ -42,7 +42,7 @@ function equality_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
     writer.at_generated(@w)
     writer.line(
         @w,
-        text: "HERO_TU_LOCAL bool " + at.prefix + "_eq(" + handles.const_pointer(at.c_type) + "hero_a, " + handles.const_pointer(at.c_type) + "hero_b) {"
+        text: "HERO_TU_LOCAL _Bool " + at.prefix + "_eq(" + handles.const_pointer(at.c_type) + "hero_a, " + handles.const_pointer(at.c_type) + "hero_b) {"
     )
 
     # A partial record's _eq is emitted and ABORTS (panel 061): the
@@ -188,7 +188,7 @@ function variant_equality_body(@w: writer.Writer, names: ctype.Names, s: source.
     writer.at_generated(@w)
     writer.line(
         @w,
-        text: "HERO_TU_LOCAL bool " + at.prefix + "_eq(" + handles.const_pointer(at.c_type) + "hero_a, " + handles.const_pointer(at.c_type) + "hero_b) {"
+        text: "HERO_TU_LOCAL _Bool " + at.prefix + "_eq(" + handles.const_pointer(at.c_type) + "hero_a, " + handles.const_pointer(at.c_type) + "hero_b) {"
     )
     writer.line(@w, text: "    if (hero_a->hero_tag != hero_b->hero_tag) return false;")
     writer.line(@w, text: "    switch (hero_a->hero_tag) {")
@@ -236,8 +236,11 @@ function hash_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: s
     # was sound by luck — every hash equal — rather than by construction.
     if at.handle
         writer.line(@w, text: "    " + handles.const_pointer(at.c_type) + "hero_v = hero_elem;")
-        writer.line(@w, text: "    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);")
-        writer.line(@w, text: "    hero_h = (hero_h ^ (uint64_t)(uintptr_t)*hero_v) * UINT64_C(0x100000001b3);")
+        writer.line(@w, text: "    uint64_t hero_h = ((__UINT64_TYPE__)0xcbf29ce484222325);")
+        writer.line(
+            @w,
+            text: "    hero_h = (hero_h ^ (uint64_t)(uintptr_t)*hero_v) * ((__UINT64_TYPE__)0x100000001b3);"
+        )
         writer.line(@w, text: "    return hero_h;")
         writer.line(@w, text: "}")
         writer.blank(@w)
@@ -283,12 +286,12 @@ function hash_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: s
             while i < fixed_count
                 place = "&hero_v->" + member + "[" + i.to_str() + "]"
                 lines @ lines.push(
-                    "    hero_h = (hero_h ^ " + one_hash(c, names, ty: fixed_element, place: place) + ") * UINT64_C(0x100000001b3);"
+                    "    hero_h = (hero_h ^ " + one_hash(c, names, ty: fixed_element, place: place) + ") * ((__UINT64_TYPE__)0x100000001b3);"
                 )
                 i @ i + 1
         else
             lines @ lines.push(
-                "    hero_h = (hero_h ^ " + one_hash(c, names, ty: ty, place: "&hero_v->" + member) + ") * UINT64_C(0x100000001b3);"
+                "    hero_h = (hero_h ^ " + one_hash(c, names, ty: ty, place: "&hero_v->" + member) + ") * ((__UINT64_TYPE__)0x100000001b3);"
             )
 
     reads_the_value: bool @= false
@@ -299,7 +302,7 @@ function hash_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: s
 
     if reads_the_value
         writer.line(@w, text: "    " + handles.const_pointer(at.c_type) + "hero_v = hero_elem;")
-    writer.line(@w, text: "    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);")
+    writer.line(@w, text: "    uint64_t hero_h = ((__UINT64_TYPE__)0xcbf29ce484222325);")
 
     for line in lines
         writer.line(@w, text: line)
@@ -322,7 +325,7 @@ function one_hash(c: state.Checked, names: ctype.Names, ty: i64, place: str) -> 
     found = descriptors.hash_call(c, names, ty: ty, place: place)
 
     if found.is_err()
-        return "(hero_unreachable(), UINT64_C(0))"
+        return "(hero_unreachable(), ((__UINT64_TYPE__)0))"
     return found.must()
 
 # A variant's hash: the tag mixed in, then the live case's payload. The
@@ -334,8 +337,8 @@ function variant_hash_body(@w: writer.Writer, names: ctype.Names, s: source.Sour
     writer.at_generated(@w)
     writer.line(@w, text: "HERO_TU_LOCAL uint64_t " + at.prefix + "_hash(const void *hero_elem) {")
     writer.line(@w, text: "    " + handles.const_pointer(at.c_type) + "hero_v = hero_elem;")
-    writer.line(@w, text: "    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)")
-    writer.line(@w, text: "        * UINT64_C(0x100000001b3);")
+    writer.line(@w, text: "    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)")
+    writer.line(@w, text: "        * ((__UINT64_TYPE__)0x100000001b3);")
     writer.line(@w, text: "    switch (hero_v->hero_tag) {")
     case_at: i64 @= 0
 
@@ -348,7 +351,7 @@ function variant_hash_body(@w: writer.Writer, names: ctype.Names, s: source.Sour
         else
             writer.line(
                 @w,
-                text: "        case " + tag + ": return (hero_h ^ " + ctype.case_of(names, decl: decl, at: case_at) + "_hash(&hero_v->hero_as." + mangle.case_member(case_name) + ")) * UINT64_C(0x100000001b3);"
+                text: "        case " + tag + ": return (hero_h ^ " + ctype.case_of(names, decl: decl, at: case_at) + "_hash(&hero_v->hero_as." + mangle.case_member(case_name) + ")) * ((__UINT64_TYPE__)0x100000001b3);"
             )
         case_at @ case_at + 1
 
@@ -382,11 +385,11 @@ test "eq short-circuits per field and hash mixes the same fields"
     w: writer.Writer @= writer.new_writer("t")
     equality_body(@w, got.c, got.names, got.s, at: at, fields: types.fields_of(got.decls, decl: 0))
     eq_text = writer.finish(w)
-    assert eq_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_0Person_eq(const h_t_Person *hero_a, const h_t_Person *hero_b) {\n    if (!(hero_str_eq(hero_a->f_name, hero_b->f_name))) return false;\n    if (!(hero_a->f_age == hero_b->f_age)) return false;\n    return true;\n}\n\n"
+    assert eq_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL _Bool h_t_0Person_eq(const h_t_Person *hero_a, const h_t_Person *hero_b) {\n    if (!(hero_str_eq(hero_a->f_name, hero_b->f_name))) return false;\n    if (!(hero_a->f_age == hero_b->f_age)) return false;\n    return true;\n}\n\n"
     hw: writer.Writer @= writer.new_writer("t")
     hash_body(@hw, got.c, got.names, got.s, at: at, fields: types.fields_of(got.decls, decl: 0))
     hash_text = writer.finish(hw)
-    assert hash_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL uint64_t h_t_0Person_hash(const void *hero_elem) {\n    const h_t_Person *hero_v = hero_elem;\n    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);\n    hero_h = (hero_h ^ (&hero_desc_str)->hash(&hero_v->f_name)) * UINT64_C(0x100000001b3);\n    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_age)) * UINT64_C(0x100000001b3);\n    return hero_h;\n}\n\n"
+    assert hash_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL uint64_t h_t_0Person_hash(const void *hero_elem) {\n    const h_t_Person *hero_v = hero_elem;\n    uint64_t hero_h = ((__UINT64_TYPE__)0xcbf29ce484222325);\n    hero_h = (hero_h ^ HERO_DESC_HASH(&hero_desc_str)(&hero_v->f_name)) * ((__UINT64_TYPE__)0x100000001b3);\n    hero_h = (hero_h ^ HERO_DESC_HASH(&hero_desc_int)(&hero_v->f_age)) * ((__UINT64_TYPE__)0x100000001b3);\n    return hero_h;\n}\n\n"
 
 test "a variant compares tags first and mixes the tag into the hash"
     got = ready("variant Coin\n    heads\n    tails\n\nfunction main()\n    c: Coin = .heads\n    _ = c\n")
@@ -394,11 +397,11 @@ test "a variant compares tags first and mixes the tag into the hash"
     w: writer.Writer @= writer.new_writer("t")
     variant_equality_body(@w, got.names, got.s, got.decls, decl: 0, at: at)
     eq_text = writer.finish(w)
-    assert eq_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_0Coin_eq(const h_t_Coin *hero_a, const h_t_Coin *hero_b) {\n    if (hero_a->hero_tag != hero_b->hero_tag) return false;\n    switch (hero_a->hero_tag) {\n        case h_t_0Coin_tag_heads: return true;\n        case h_t_0Coin_tag_tails: return true;\n    }\n    hero_unreachable();\n}\n\n"
+    assert eq_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL _Bool h_t_0Coin_eq(const h_t_Coin *hero_a, const h_t_Coin *hero_b) {\n    if (hero_a->hero_tag != hero_b->hero_tag) return false;\n    switch (hero_a->hero_tag) {\n        case h_t_0Coin_tag_heads: return true;\n        case h_t_0Coin_tag_tails: return true;\n    }\n    hero_unreachable();\n}\n\n"
     hw: writer.Writer @= writer.new_writer("t")
     variant_hash_body(@hw, got.names, got.s, got.decls, decl: 0, at: at)
     hash_text = writer.finish(hw)
-    assert hash_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL uint64_t h_t_0Coin_hash(const void *hero_elem) {\n    const h_t_Coin *hero_v = hero_elem;\n    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)\n        * UINT64_C(0x100000001b3);\n    switch (hero_v->hero_tag) {\n        case h_t_0Coin_tag_heads: return hero_h;\n        case h_t_0Coin_tag_tails: return hero_h;\n    }\n    hero_unreachable();\n}\n\n"
+    assert hash_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL uint64_t h_t_0Coin_hash(const void *hero_elem) {\n    const h_t_Coin *hero_v = hero_elem;\n    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)\n        * ((__UINT64_TYPE__)0x100000001b3);\n    switch (hero_v->hero_tag) {\n        case h_t_0Coin_tag_heads: return hero_h;\n        case h_t_0Coin_tag_tails: return hero_h;\n    }\n    hero_unreachable();\n}\n\n"
 
 test "a fixed member unrolls elementwise, and a partial record aborts loudly"
     got = ready(
@@ -408,12 +411,12 @@ test "a fixed member unrolls elementwise, and a partial record aborts loudly"
     w: writer.Writer @= writer.new_writer("t")
     equality_body(@w, got.c, got.names, got.s, at: vec, fields: types.fields_of(got.decls, decl: 0))
     text = writer.finish(w)
-    assert text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_0Vec2_eq(const Vec2 *hero_a, const Vec2 *hero_b) {\n    if (!((hero_a->cells[0] == hero_b->cells[0] && hero_a->cells[1] == hero_b->cells[1]))) return false;\n    return true;\n}\n\n"
+    assert text == "#line 2 \"t.c\"\nHERO_TU_LOCAL _Bool h_t_0Vec2_eq(const Vec2 *hero_a, const Vec2 *hero_b) {\n    if (!((hero_a->cells[0] == hero_b->cells[0] && hero_a->cells[1] == hero_b->cells[1]))) return false;\n    return true;\n}\n\n"
     font = ctype.aggregate(got.names, decl: 1)
     fw: writer.Writer @= writer.new_writer("t")
     equality_body(@fw, got.c, got.names, got.s, at: font, fields: types.fields_of(got.decls, decl: 1))
     font_text = writer.finish(fw)
-    assert font_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL bool h_t_0Font_eq(const Font *hero_a, const Font *hero_b) {\n    hero_panic(\"h_t_0Font_eq: a partial record has no structural equality\");\n}\n\n"
+    assert font_text == "#line 2 \"t.c\"\nHERO_TU_LOCAL _Bool h_t_0Font_eq(const Font *hero_a, const Font *hero_b) {\n    hero_panic(\"h_t_0Font_eq: a partial record has no structural equality\");\n}\n\n"
 
 # Defect 452's case: a line holding characters above ASCII, the needle
 # absent, after them and before them; the slicing search split the first one

@@ -39,7 +39,7 @@ use token
 # handed it, which is the program's call into the library (`in_library`).
 function of(s: source.Source, f: containers.Function, offset: i64) -> str
     if in_library(s, f)
-        return CALLER + "->path, " + CALLER + "->name, " + CALLER + "->line, " + CALLER + "->column"
+        return "HERO_PLACE_PATH(" + CALLER + "), HERO_PLACE_NAME(" + CALLER + "), HERO_PLACE_LINE(" + CALLER + "), HERO_PLACE_COLUMN(" + CALLER + ")"
     return literals(s, f, offset: offset)
 
 # The four as literals, the site's own.
@@ -221,7 +221,7 @@ test "a function of the library hands on its caller's place, and a program's wri
     library = named(name: "exit", kind: .function_kind, start: s.files[2].start)
     assert !in_library(s, mine)
     assert in_library(s, library)
-    assert of(s, library, offset: s.files[2].start) == "hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column"
+    assert of(s, library, offset: s.files[2].start) == "HERO_PLACE_PATH(hero_caller), HERO_PLACE_NAME(hero_caller), HERO_PLACE_LINE(hero_caller), HERO_PLACE_COLUMN(hero_caller)"
     assert literals(s, library, offset: s.files[2].start) == "\"<heroes library>\", \"library.exit\", 1, 1"
     assert passed(s, mine) == "&hero_here"
     assert passed(s, library) == "hero_caller"

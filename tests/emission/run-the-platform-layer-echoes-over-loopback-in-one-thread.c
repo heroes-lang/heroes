@@ -262,27 +262,27 @@ __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_fr
 #line 263 "theplatformlayerechoesoverloopbackinonethread.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_theplatformlayerechoesoverloopbackinonethread_0Socket_eq(hero_net_socket * const *hero_a, hero_net_socket * const *hero_b);
+HERO_TU_LOCAL _Bool h_theplatformlayerechoesoverloopbackinonethread_0Socket_eq(hero_net_socket * const *hero_a, hero_net_socket * const *hero_b);
 HERO_TU_LOCAL uint64_t h_theplatformlayerechoesoverloopbackinonethread_0Socket_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_4d1c207c_retain(const h_0opt_4d1c207c *hero_v);
 HERO_TU_LOCAL void h_0opt_4d1c207c_release(h_0opt_4d1c207c *hero_v);
-HERO_TU_LOCAL bool h_0opt_4d1c207c_eq(const h_0opt_4d1c207c *hero_a, const h_0opt_4d1c207c *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_4d1c207c_eq(const h_0opt_4d1c207c *hero_a, const h_0opt_4d1c207c *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_4d1c207c_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *hero_v);
 HERO_TU_LOCAL void h_0opt_fbbb698_release(h_0opt_fbbb698 *hero_v);
-HERO_TU_LOCAL bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *hero_a, const h_0opt_fbbb698 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *hero_a, const h_0opt_fbbb698 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_fbbb698_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int64_t h_theplatformlayerechoesoverloopbackinonethread_HERO_NET_INVALID(void);
@@ -382,21 +382,21 @@ void h_theplatformlayerechoesoverloopbackinonethread_main(void) { HERO_NODEBUG h
 hero_bb2:
 #line 28 "tests/golden/run/the-platform-layer-echoes-over-loopback-in-one-thread.hero"
     t5 = h0_s0; t6 = t5.hero_as.hero_ok; t25 = h1_said; hero_str_incref(t6); h1_said = t6; hero_str_decref(t25); t7 = HERO_STR_LIT(hero_str_55e95ecf); t8 = h1_said; t9 = hero_str_concat(t7, t8); t26 = h6_own6; h6_own6 = t9; hero_str_decref(t26); hero_print_str(t9); hero_print_end(); goto hero_bb1; hero_bb3:
-    t10 = h0_s0; t11 = t10.hero_as.hero_err; t27 = h2_e; hero_failure_retain(&t11); h2_e = t11; hero_failure_release(&t27); t12 = HERO_STR_LIT(hero_str_afb1c50); t13 = h2_e.code; t14 = hero_str_concat(t12, t13); t28 = h7_own7; h7_own7 = t14; hero_str_decref(t28); t15 = HERO_STR_LIT(hero_str_16a4); t16 = hero_str_concat(t14, t15); t29 = h8_own8; h8_own8 = t16; hero_str_decref(t29); t17 = h2_e.msg; t18 = hero_str_concat(t16, t17); t30 = h9_own9; h9_own9 = t18; hero_str_decref(t30); hero_print_str(t18); hero_print_end(); goto hero_bb1;
+    t10 = h0_s0; t11 = t10.hero_as.hero_err; t27 = h2_e; hero_failure_retain(&t11); h2_e = t11; hero_failure_release(&t27); t12 = HERO_STR_LIT(hero_str_afb1c50); t13 = h2_e.hero_code; t14 = hero_str_concat(t12, t13); t28 = h7_own7; h7_own7 = t14; hero_str_decref(t28); t15 = HERO_STR_LIT(hero_str_16a4); t16 = hero_str_concat(t14, t15); t29 = h8_own8; h8_own8 = t16; hero_str_decref(t29); t17 = h2_e.hero_msg; t18 = hero_str_concat(t16, t17); t30 = h9_own9; h9_own9 = t18; hero_str_decref(t30); hero_print_str(t18); hero_print_end(); goto hero_bb1;
 #line 387 "theplatformlayerechoesoverloopbackinonethread.c"
 }
 
 #line 36 "tests/golden/run/the-platform-layer-echoes-over-loopback-in-one-thread.hero"
-h_0opt_f87774a h_theplatformlayerechoesoverloopbackinonethread_echoed(HeroStr h0_text) { hero_net_socket * h1_listener; h_0opt_f87774a h2_said = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, t10, t13, t16, t17, t18, t19, t21; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t8, t9, t12, t20; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG hero_net_socket *t4, *t5, *t6, *t11, *t14; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = HERO_STR_LIT(hero_str_69fd5e8e); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.echoed", 37, 41}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.echoed", 37, 16}; t4 = hero_net_listen(hero_cstr_nonnull_at(t2, &hero_here), t3); hero_handle_acquired_at(t4, "hero_net_close", &hero_here); } h1_listener = t4;
+h_0opt_f87774a h_theplatformlayerechoesoverloopbackinonethread_echoed(HeroStr h0_text) { hero_net_socket * h1_listener; h_0opt_f87774a h2_said = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, t10, t13, t16, t17, t18, t19, t21; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t8, t9, t12, t20; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t3; HERO_NODEBUG hero_net_socket *t4, *t5, *t6, *t11, *t14; HERO_NODEBUG _Bool t7; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = HERO_STR_LIT(hero_str_69fd5e8e); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.echoed", 37, 41}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = ((__INT64_TYPE__)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.echoed", 37, 16}; t4 = hero_net_listen(hero_cstr_nonnull_at(t2, &hero_here), t3); hero_handle_acquired_at(t4, "hero_net_close", &hero_here); } h1_listener = t4;
 #line 39
     t5 = h1_listener; t6 = ((void *)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.echoed", 39, 8}; t7 = hero_handle_eq_at(t5, t6, &hero_here); } if (t7) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 41
     t11 = h1_listener; t12 = h0_text; t13 = h_theplatformlayerechoesoverloopbackinonethread_through(t11, t12); t18 = h4_own4; h4_own4 = t13; h_0opt_f87774a_release(&t18); t19 = h2_said; h_0opt_f87774a_retain(&t13); h2_said = t13; h_0opt_f87774a_release(&t19);
-    t14 = h1_listener; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.echoed", 42, 9}; { hero_handle_alive_at(t14, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t14, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t14); if (hero_handle_ended(t14, hero_life_0_0) && h1_listener == t14) h1_listener = hero_handle_dead(); } }
+    t14 = h1_listener; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.echoed", 42, 9}; { hero_handle_alive_at(t14, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t14, "hero_net_close", ((void *)0), &hero_here); (void)hero_net_close(t14); if (hero_handle_ended(t14, hero_life_0_0) && h1_listener == t14) h1_listener = hero_handle_dead(); } }
     t16 = h2_said; h3_ret0 = t16; goto hero_bb4; hero_bb2:
 #line 40
-    t8 = HERO_STR_LIT(hero_str_b0ec027); t9 = h_theplatformlayerechoesoverloopbackinonethread_kind(); t20 = h5_own5; h5_own5 = t9; hero_str_decref(t20); hero_str_incref(t8); hero_str_incref(t9); t10 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t8, .msg = t9}}; t21 = h6_own6; h6_own6 = t10; h_0opt_f87774a_release(&t21); h3_ret0 = t10; goto hero_bb4; hero_bb3: goto hero_bb1; hero_bb4:
+    t8 = HERO_STR_LIT(hero_str_b0ec027); t9 = h_theplatformlayerechoesoverloopbackinonethread_kind(); t20 = h5_own5; h5_own5 = t9; hero_str_decref(t20); hero_str_incref(t8); hero_str_incref(t9); t10 = (h_0opt_f87774a){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = {.hero_code = t8, .hero_msg = t9}}; t21 = h6_own6; h6_own6 = t10; h_0opt_f87774a_release(&t21); h3_ret0 = t10; goto hero_bb4; hero_bb3: goto hero_bb1; hero_bb4:
 #line 401 "theplatformlayerechoesoverloopbackinonethread.c"
     t17 = h3_ret0;
     h_0opt_f87774a_retain(&t17);
@@ -408,22 +408,22 @@ h_0opt_f87774a h_theplatformlayerechoesoverloopbackinonethread_echoed(HeroStr h0
 }
 
 #line 45 "tests/golden/run/the-platform-layer-echoes-over-loopback-in-one-thread.hero"
-h_0opt_f87774a h_theplatformlayerechoesoverloopbackinonethread_through(hero_net_socket * h0_listener, HeroStr h1_text) { int64_t h2_port; hero_net_socket * h3_client; h_0opt_f87774a h4_said = {0}; HERO_NODEBUG h_0opt_f87774a h5_ret0 = {0}, h7_own7 = {0}, h8_own8 = {0}, h10_own10 = {0}, t8, t18, t22, t25, t26, t28, t29, t30, t32; HERO_NODEBUG HeroStr h6_own6 = {0}, h9_own9 = {0}, t6, t7, t9, t16, t17, t21, t27, t31; HERO_NODEBUG hero_net_socket *t1, *t12, *t13, *t14, *t19, *t20, *t23; HERO_NODEBUG int64_t t2, t3, t4, t11; HERO_NODEBUG bool t5, t15; HERO_NODEBUG const char *t10; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+h_0opt_f87774a h_theplatformlayerechoesoverloopbackinonethread_through(hero_net_socket * h0_listener, HeroStr h1_text) { int64_t h2_port; hero_net_socket * h3_client; h_0opt_f87774a h4_said = {0}; HERO_NODEBUG h_0opt_f87774a h5_ret0 = {0}, h7_own7 = {0}, h8_own8 = {0}, h10_own10 = {0}, t8, t18, t22, t25, t26, t28, t29, t30, t32; HERO_NODEBUG HeroStr h6_own6 = {0}, h9_own9 = {0}, t6, t7, t9, t16, t17, t21, t27, t31; HERO_NODEBUG hero_net_socket *t1, *t12, *t13, *t14, *t19, *t20, *t23; HERO_NODEBUG int64_t t2, t3, t4, t11; HERO_NODEBUG _Bool t5, t15; HERO_NODEBUG const char *t10; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_listener; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.through", 46, 12}; hero_handle_alive_at(t1, "the argument `s` of `hero_net_port`", &hero_here); t2 = hero_net_port(t1); } h2_port = t2;
 #line 48
-    t3 = h2_port; t4 = INT64_C(0); t5 = t3 <= t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb1:
+    t3 = h2_port; t4 = ((__INT64_TYPE__)0); t5 = t3 <= t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 50
     t9 = HERO_STR_LIT(hero_str_69fd5e8e); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.through", 50, 40}; t10 = hero_str_lend_at(t9, &hero_here); } t11 = h2_port; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.through", 50, 14}; t12 = hero_net_connect(hero_cstr_nonnull_at(t10, &hero_here), t11); hero_handle_acquired_at(t12, "hero_net_close", &hero_here); } h3_client = t12;
 #line 52
     t13 = h3_client; t14 = ((void *)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.through", 52, 8}; t15 = hero_handle_eq_at(t13, t14, &hero_here); } if (t15) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 49
-    t6 = HERO_STR_LIT(hero_str_45d590bd); t7 = h_theplatformlayerechoesoverloopbackinonethread_kind(); t27 = h6_own6; h6_own6 = t7; hero_str_decref(t27); hero_str_incref(t6); hero_str_incref(t7); t8 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t6, .msg = t7}}; t28 = h7_own7; h7_own7 = t8; h_0opt_f87774a_release(&t28); h5_ret0 = t8; goto hero_bb7; hero_bb3: goto hero_bb1; hero_bb4:
+    t6 = HERO_STR_LIT(hero_str_45d590bd); t7 = h_theplatformlayerechoesoverloopbackinonethread_kind(); t27 = h6_own6; h6_own6 = t7; hero_str_decref(t27); hero_str_incref(t6); hero_str_incref(t7); t8 = (h_0opt_f87774a){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = {.hero_code = t6, .hero_msg = t7}}; t28 = h7_own7; h7_own7 = t8; h_0opt_f87774a_release(&t28); h5_ret0 = t8; goto hero_bb7; hero_bb3: goto hero_bb1; hero_bb4:
 #line 54
     t19 = h0_listener; t20 = h3_client; t21 = h1_text; t22 = h_theplatformlayerechoesoverloopbackinonethread_served(t19, t20, t21); t29 = h8_own8; h8_own8 = t22; h_0opt_f87774a_release(&t29); t30 = h4_said; h_0opt_f87774a_retain(&t22); h4_said = t22; h_0opt_f87774a_release(&t30);
-    t23 = h3_client; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.through", 55, 9}; { hero_handle_alive_at(t23, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t23, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t23); if (hero_handle_ended(t23, hero_life_0_0) && h3_client == t23) h3_client = hero_handle_dead(); } }
+    t23 = h3_client; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.through", 55, 9}; { hero_handle_alive_at(t23, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t23, "hero_net_close", ((void *)0), &hero_here); (void)hero_net_close(t23); if (hero_handle_ended(t23, hero_life_0_0) && h3_client == t23) h3_client = hero_handle_dead(); } }
     t25 = h4_said; h5_ret0 = t25; goto hero_bb7; hero_bb5:
 #line 53
-    t16 = HERO_STR_LIT(hero_str_7f399e9); t17 = h_theplatformlayerechoesoverloopbackinonethread_kind(); t31 = h9_own9; h9_own9 = t17; hero_str_decref(t31); hero_str_incref(t16); hero_str_incref(t17); t18 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t16, .msg = t17}}; t32 = h10_own10; h10_own10 = t18; h_0opt_f87774a_release(&t32); h5_ret0 = t18; goto hero_bb7; hero_bb6: goto hero_bb4; hero_bb7:
+    t16 = HERO_STR_LIT(hero_str_7f399e9); t17 = h_theplatformlayerechoesoverloopbackinonethread_kind(); t31 = h9_own9; h9_own9 = t17; hero_str_decref(t31); hero_str_incref(t16); hero_str_incref(t17); t18 = (h_0opt_f87774a){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = {.hero_code = t16, .hero_msg = t17}}; t32 = h10_own10; h10_own10 = t18; h_0opt_f87774a_release(&t32); h5_ret0 = t18; goto hero_bb7; hero_bb6: goto hero_bb4; hero_bb7:
 #line 428 "theplatformlayerechoesoverloopbackinonethread.c"
     t26 = h5_ret0;
     h_0opt_f87774a_retain(&t26);
@@ -437,16 +437,16 @@ h_0opt_f87774a h_theplatformlayerechoesoverloopbackinonethread_through(hero_net_
 }
 
 #line 58 "tests/golden/run/the-platform-layer-echoes-over-loopback-in-one-thread.hero"
-h_0opt_f87774a h_theplatformlayerechoesoverloopbackinonethread_served(hero_net_socket * h0_listener, hero_net_socket * h1_client, HeroStr h2_text) { hero_net_socket * h3_server; h_0opt_f87774a h4_said = {0}; HERO_NODEBUG h_0opt_f87774a h5_ret0 = {0}, h6_own6 = {0}, h8_own8 = {0}, t8, t12, t15, t16, t17, t18, t20; HERO_NODEBUG HeroStr h7_own7 = {0}, t6, t7, t11, t19; HERO_NODEBUG hero_net_socket *t1, *t2, *t3, *t4, *t9, *t10, *t13; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+h_0opt_f87774a h_theplatformlayerechoesoverloopbackinonethread_served(hero_net_socket * h0_listener, hero_net_socket * h1_client, HeroStr h2_text) { hero_net_socket * h3_server; h_0opt_f87774a h4_said = {0}; HERO_NODEBUG h_0opt_f87774a h5_ret0 = {0}, h6_own6 = {0}, h8_own8 = {0}, t8, t12, t15, t16, t17, t18, t20; HERO_NODEBUG HeroStr h7_own7 = {0}, t6, t7, t11, t19; HERO_NODEBUG hero_net_socket *t1, *t2, *t3, *t4, *t9, *t10, *t13; HERO_NODEBUG _Bool t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_listener; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.served", 59, 14}; hero_handle_alive_at(t1, "the argument `listener` of `hero_net_accept`", &hero_here); t2 = hero_net_accept(t1); hero_handle_acquired_at(t2, "hero_net_close", &hero_here); } h3_server = t2;
 #line 61
     t3 = h3_server; t4 = ((void *)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.served", 61, 8}; t5 = hero_handle_eq_at(t3, t4, &hero_here); } if (t5) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 63
     t9 = h3_server; t10 = h1_client; t11 = h2_text; t12 = h_theplatformlayerechoesoverloopbackinonethread_exchanged(t9, t10, t11); t17 = h6_own6; h6_own6 = t12; h_0opt_f87774a_release(&t17); t18 = h4_said; h_0opt_f87774a_retain(&t12); h4_said = t12; h_0opt_f87774a_release(&t18);
-    t13 = h3_server; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.served", 64, 9}; { hero_handle_alive_at(t13, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t13, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t13); if (hero_handle_ended(t13, hero_life_0_0) && h3_server == t13) h3_server = hero_handle_dead(); } }
+    t13 = h3_server; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.served", 64, 9}; { hero_handle_alive_at(t13, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t13, "hero_net_close", ((void *)0), &hero_here); (void)hero_net_close(t13); if (hero_handle_ended(t13, hero_life_0_0) && h3_server == t13) h3_server = hero_handle_dead(); } }
     t15 = h4_said; h5_ret0 = t15; goto hero_bb4; hero_bb2:
 #line 62
-    t6 = HERO_STR_LIT(hero_str_57a7ee73); t7 = h_theplatformlayerechoesoverloopbackinonethread_kind(); t19 = h7_own7; h7_own7 = t7; hero_str_decref(t19); hero_str_incref(t6); hero_str_incref(t7); t8 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t6, .msg = t7}}; t20 = h8_own8; h8_own8 = t8; h_0opt_f87774a_release(&t20); h5_ret0 = t8; goto hero_bb4; hero_bb3: goto hero_bb1; hero_bb4:
+    t6 = HERO_STR_LIT(hero_str_57a7ee73); t7 = h_theplatformlayerechoesoverloopbackinonethread_kind(); t19 = h7_own7; h7_own7 = t7; hero_str_decref(t19); hero_str_incref(t6); hero_str_incref(t7); t8 = (h_0opt_f87774a){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = {.hero_code = t6, .hero_msg = t7}}; t20 = h8_own8; h8_own8 = t8; h_0opt_f87774a_release(&t20); h5_ret0 = t8; goto hero_bb4; hero_bb3: goto hero_bb1; hero_bb4:
 #line 451 "theplatformlayerechoesoverloopbackinonethread.c"
     t16 = h5_ret0;
     h_0opt_f87774a_retain(&t16);
@@ -458,23 +458,23 @@ h_0opt_f87774a h_theplatformlayerechoesoverloopbackinonethread_served(hero_net_s
 }
 
 #line 69 "tests/golden/run/the-platform-layer-echoes-over-loopback-in-one-thread.hero"
-h_0opt_f87774a h_theplatformlayerechoesoverloopbackinonethread_exchanged(hero_net_socket * h0_server, hero_net_socket * h1_client, HeroStr h2_text) { HERO_NODEBUG h_0opt_a8ea2 h3_f0 = {0}, h6_f2 = {0}, h11_own11 = {0}, h14_own14 = {0}, t4, t5, t9, t29, t30, t34, t56, t57, t62, t63; HERO_NODEBUG h_0opt_4d1c207c h4_f1 = {0}, h7_f3 = {0}, h12_own12 = {0}, h16_own16 = {0}, t17, t18, t22, t25, t42, t43, t47, t50, t58, t59, t65, t66; HeroArrayHeader * h5_heard = {0}; HeroArrayHeader * h8_back = {0}; HERO_NODEBUG h_0opt_f87774a h9_ret0 = {0}, h13_own13 = {0}, h15_own15 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, t11, t24, t36, t49, t53, t54, t60, t64, t67, t69, t70; HERO_NODEBUG HeroArrayHeader *h10_own10 = {0}, *t3, *t26, *t28, *t51, *t52, *t55, *t61, *t68; HERO_NODEBUG hero_net_socket *t1, *t14, *t27, *t39; HERO_NODEBUG HeroStr t2, t15, t40; HERO_NODEBUG int64_t t6, t7, t16, t19, t20, t31, t32, t41, t44, t45; HERO_NODEBUG bool t8, t21, t33, t46; HERO_NODEBUG HeroFailure t10, t23, t35, t48; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = h1_client; t2 = h2_text; t3 = h_theplatformlayerechoesoverloopbackinonethread_bytes_of(t2); t55 = h10_own10; h10_own10 = t3; hero_array_decref(t55); t4 = h_theplatformlayerechoesoverloopbackinonethread_sent(t1, t3); t56 = h11_own11; h11_own11 = t4; h_0opt_a8ea2_release(&t56); t57 = h3_f0; h_0opt_a8ea2_retain(&t4); h3_f0 = t4; h_0opt_a8ea2_release(&t57); t5 = h3_f0; t6 = t5.hero_tag; t7 = INT64_C(0); t8 = t6 == t7; if (t8) goto hero_bb1; else goto hero_bb2; hero_bb1:
-    t14 = h0_server; t15 = h2_text; t16 = hero_str_len(t15); t17 = h_theplatformlayerechoesoverloopbackinonethread_received(t14, t16); t58 = h12_own12; h12_own12 = t17; h_0opt_4d1c207c_release(&t58); t59 = h4_f1; h_0opt_4d1c207c_retain(&t17); h4_f1 = t17; h_0opt_4d1c207c_release(&t59); t18 = h4_f1; t19 = t18.hero_tag; t20 = INT64_C(0); t21 = t19 == t20; if (t21) goto hero_bb3; else goto hero_bb4; hero_bb2:
+h_0opt_f87774a h_theplatformlayerechoesoverloopbackinonethread_exchanged(hero_net_socket * h0_server, hero_net_socket * h1_client, HeroStr h2_text) { HERO_NODEBUG h_0opt_a8ea2 h3_f0 = {0}, h6_f2 = {0}, h11_own11 = {0}, h14_own14 = {0}, t4, t5, t9, t29, t30, t34, t56, t57, t62, t63; HERO_NODEBUG h_0opt_4d1c207c h4_f1 = {0}, h7_f3 = {0}, h12_own12 = {0}, h16_own16 = {0}, t17, t18, t22, t25, t42, t43, t47, t50, t58, t59, t65, t66; HeroArrayHeader * h5_heard = {0}; HeroArrayHeader * h8_back = {0}; HERO_NODEBUG h_0opt_f87774a h9_ret0 = {0}, h13_own13 = {0}, h15_own15 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, t11, t24, t36, t49, t53, t54, t60, t64, t67, t69, t70; HERO_NODEBUG HeroArrayHeader *h10_own10 = {0}, *t3, *t26, *t28, *t51, *t52, *t55, *t61, *t68; HERO_NODEBUG hero_net_socket *t1, *t14, *t27, *t39; HERO_NODEBUG HeroStr t2, t15, t40; HERO_NODEBUG int64_t t6, t7, t16, t19, t20, t31, t32, t41, t44, t45; HERO_NODEBUG _Bool t8, t21, t33, t46; HERO_NODEBUG HeroFailure t10, t23, t35, t48; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h1_client; t2 = h2_text; t3 = h_theplatformlayerechoesoverloopbackinonethread_bytes_of(t2); t55 = h10_own10; h10_own10 = t3; hero_array_decref(t55); t4 = h_theplatformlayerechoesoverloopbackinonethread_sent(t1, t3); t56 = h11_own11; h11_own11 = t4; h_0opt_a8ea2_release(&t56); t57 = h3_f0; h_0opt_a8ea2_retain(&t4); h3_f0 = t4; h_0opt_a8ea2_release(&t57); t5 = h3_f0; t6 = t5.hero_tag; t7 = ((__INT64_TYPE__)0); t8 = t6 == t7; if (t8) goto hero_bb1; else goto hero_bb2; hero_bb1:
+    t14 = h0_server; t15 = h2_text; t16 = hero_str_len(t15); t17 = h_theplatformlayerechoesoverloopbackinonethread_received(t14, t16); t58 = h12_own12; h12_own12 = t17; h_0opt_4d1c207c_release(&t58); t59 = h4_f1; h_0opt_4d1c207c_retain(&t17); h4_f1 = t17; h_0opt_4d1c207c_release(&t59); t18 = h4_f1; t19 = t18.hero_tag; t20 = ((__INT64_TYPE__)0); t21 = t19 == t20; if (t21) goto hero_bb3; else goto hero_bb4; hero_bb2:
 #line 70
-    t9 = h3_f0; t10 = t9.hero_as.hero_err; hero_failure_retain(&t10); t11 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = t10}; t60 = h13_own13; h13_own13 = t11; h_0opt_f87774a_release(&t60); h9_ret0 = t11; goto hero_bb9; hero_bb3:
+    t9 = h3_f0; t10 = t9.hero_as.hero_err; hero_failure_retain(&t10); t11 = (h_0opt_f87774a){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = t10}; t60 = h13_own13; h13_own13 = t11; h_0opt_f87774a_release(&t60); h9_ret0 = t11; goto hero_bb9; hero_bb3:
     t25 = h4_f1; t26 = t25.hero_as.hero_ok; t61 = h5_heard; hero_array_incref(t26); h5_heard = t26; hero_array_decref(t61);
-    t27 = h0_server; t28 = h5_heard; t29 = h_theplatformlayerechoesoverloopbackinonethread_sent(t27, t28); t62 = h14_own14; h14_own14 = t29; h_0opt_a8ea2_release(&t62); t63 = h6_f2; h_0opt_a8ea2_retain(&t29); h6_f2 = t29; h_0opt_a8ea2_release(&t63); t30 = h6_f2; t31 = t30.hero_tag; t32 = INT64_C(0); t33 = t31 == t32; if (t33) goto hero_bb5; else goto hero_bb6; hero_bb4:
+    t27 = h0_server; t28 = h5_heard; t29 = h_theplatformlayerechoesoverloopbackinonethread_sent(t27, t28); t62 = h14_own14; h14_own14 = t29; h_0opt_a8ea2_release(&t62); t63 = h6_f2; h_0opt_a8ea2_retain(&t29); h6_f2 = t29; h_0opt_a8ea2_release(&t63); t30 = h6_f2; t31 = t30.hero_tag; t32 = ((__INT64_TYPE__)0); t33 = t31 == t32; if (t33) goto hero_bb5; else goto hero_bb6; hero_bb4:
 #line 71
-    t22 = h4_f1; t23 = t22.hero_as.hero_err; hero_failure_retain(&t23); t24 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = t23}; t64 = h15_own15; h15_own15 = t24; h_0opt_f87774a_release(&t64); h9_ret0 = t24; goto hero_bb9; hero_bb5:
+    t22 = h4_f1; t23 = t22.hero_as.hero_err; hero_failure_retain(&t23); t24 = (h_0opt_f87774a){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = t23}; t64 = h15_own15; h15_own15 = t24; h_0opt_f87774a_release(&t64); h9_ret0 = t24; goto hero_bb9; hero_bb5:
 #line 73
-    t39 = h1_client; t40 = h2_text; t41 = hero_str_len(t40); t42 = h_theplatformlayerechoesoverloopbackinonethread_received(t39, t41); t65 = h16_own16; h16_own16 = t42; h_0opt_4d1c207c_release(&t65); t66 = h7_f3; h_0opt_4d1c207c_retain(&t42); h7_f3 = t42; h_0opt_4d1c207c_release(&t66); t43 = h7_f3; t44 = t43.hero_tag; t45 = INT64_C(0); t46 = t44 == t45; if (t46) goto hero_bb7; else goto hero_bb8; hero_bb6:
+    t39 = h1_client; t40 = h2_text; t41 = hero_str_len(t40); t42 = h_theplatformlayerechoesoverloopbackinonethread_received(t39, t41); t65 = h16_own16; h16_own16 = t42; h_0opt_4d1c207c_release(&t65); t66 = h7_f3; h_0opt_4d1c207c_retain(&t42); h7_f3 = t42; h_0opt_4d1c207c_release(&t66); t43 = h7_f3; t44 = t43.hero_tag; t45 = ((__INT64_TYPE__)0); t46 = t44 == t45; if (t46) goto hero_bb7; else goto hero_bb8; hero_bb6:
 #line 72
-    t34 = h6_f2; t35 = t34.hero_as.hero_err; hero_failure_retain(&t35); t36 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = t35}; t67 = h17_own17; h17_own17 = t36; h_0opt_f87774a_release(&t67); h9_ret0 = t36; goto hero_bb9; hero_bb7:
+    t34 = h6_f2; t35 = t34.hero_as.hero_err; hero_failure_retain(&t35); t36 = (h_0opt_f87774a){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = t35}; t67 = h17_own17; h17_own17 = t36; h_0opt_f87774a_release(&t67); h9_ret0 = t36; goto hero_bb9; hero_bb7:
     t50 = h7_f3; t51 = t50.hero_as.hero_ok; t68 = h8_back; hero_array_incref(t51); h8_back = t51; hero_array_decref(t68);
-    t52 = h8_back; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_array(t52, &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t53 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = hero_vb_text}; } else { t53 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_not_text()}; } } t69 = h18_own18; h18_own18 = t53; h_0opt_f87774a_release(&t69); h9_ret0 = t53; goto hero_bb9; hero_bb8:
+    t52 = h8_back; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_array(t52, &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t53 = (h_0opt_f87774a){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = hero_vb_text}; } else { t53 = (h_0opt_f87774a){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_not_text()}; } } t69 = h18_own18; h18_own18 = t53; h_0opt_f87774a_release(&t69); h9_ret0 = t53; goto hero_bb9; hero_bb8:
 #line 73
-    t47 = h7_f3; t48 = t47.hero_as.hero_err; hero_failure_retain(&t48); t49 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = t48}; t70 = h19_own19; h19_own19 = t49; h_0opt_f87774a_release(&t70); h9_ret0 = t49; goto hero_bb9; hero_bb9:
+    t47 = h7_f3; t48 = t47.hero_as.hero_err; hero_failure_retain(&t48); t49 = (h_0opt_f87774a){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = t48}; t70 = h19_own19; h19_own19 = t49; h_0opt_f87774a_release(&t70); h9_ret0 = t49; goto hero_bb9; hero_bb9:
 #line 479 "theplatformlayerechoesoverloopbackinonethread.c"
     t54 = h9_ret0;
     h_0opt_f87774a_retain(&t54);
@@ -498,17 +498,17 @@ h_0opt_f87774a h_theplatformlayerechoesoverloopbackinonethread_exchanged(hero_ne
 }
 
 #line 77 "tests/golden/run/the-platform-layer-echoes-over-loopback-in-one-thread.hero"
-h_0opt_a8ea2 h_theplatformlayerechoesoverloopbackinonethread_sent(hero_net_socket * h0_s, HeroArrayHeader * h1_bytes) { HeroArrayHeader * h2_left = {0}; HERO_NODEBUG h_0opt_fbbb698 h3_f0 = {0}, h6_own6 = {0}, t9, t10, t14, t16, t33, t34; int64_t h4_n; HERO_NODEBUG h_0opt_a8ea2 h5_ret0 = {0}, h7_own7 = {0}, h10_own10 = {0}, t24, t30, t31, t35, t39; HERO_NODEBUG HeroArrayHeader *h8_own8 = {0}, *t1, *t2, *t7, *t25, *t27, *t29, *t32, *t36, *t37; HERO_NODEBUG HeroStr h9_own9 = {0}, t22, t23, t38; HERO_NODEBUG int64_t t3, t4, t8, t11, t12, t18, t19, t20, t26, t28; HERO_NODEBUG bool t5, t13, t21; HERO_NODEBUG hero_net_socket *t6; HERO_NODEBUG HeroFailure t15; HERO_NODEBUG uint64_t t17; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+h_0opt_a8ea2 h_theplatformlayerechoesoverloopbackinonethread_sent(hero_net_socket * h0_s, HeroArrayHeader * h1_bytes) { HeroArrayHeader * h2_left = {0}; HERO_NODEBUG h_0opt_fbbb698 h3_f0 = {0}, h6_own6 = {0}, t9, t10, t14, t16, t33, t34; int64_t h4_n; HERO_NODEBUG h_0opt_a8ea2 h5_ret0 = {0}, h7_own7 = {0}, h10_own10 = {0}, t24, t30, t31, t35, t39; HERO_NODEBUG HeroArrayHeader *h8_own8 = {0}, *t1, *t2, *t7, *t25, *t27, *t29, *t32, *t36, *t37; HERO_NODEBUG HeroStr h9_own9 = {0}, t22, t23, t38; HERO_NODEBUG int64_t t3, t4, t8, t11, t12, t18, t19, t20, t26, t28; HERO_NODEBUG _Bool t5, t13, t21; HERO_NODEBUG hero_net_socket *t6; HERO_NODEBUG HeroFailure t15; HERO_NODEBUG uint64_t t17; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h1_bytes; t32 = h2_left; hero_array_incref(t1); h2_left = t1; hero_array_decref(t32); goto hero_bb1; hero_bb1:
 #line 80
-    t2 = h2_left; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = INT64_C(0); t5 = t3 > t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb2:
-    t6 = h0_s; t7 = h2_left; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); if (t8 >= 0LL) { t9 = (h_0opt_fbbb698){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint64_t)t8}; } else { t9 = (h_0opt_fbbb698){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t33 = h6_own6; h6_own6 = t9; h_0opt_fbbb698_release(&t33); t34 = h3_f0; h_0opt_fbbb698_retain(&t9); h3_f0 = t9; h_0opt_fbbb698_release(&t34); t10 = h3_f0; t11 = t10.hero_tag; t12 = INT64_C(0); t13 = t11 == t12; if (t13) goto hero_bb4; else goto hero_bb5; hero_bb3:
+    t2 = h2_left; t3 = ((void)(t2 == ((void *)0) ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = ((__INT64_TYPE__)0); t5 = t3 > t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb2:
+    t6 = h0_s; t7 = h2_left; t8 = ((void)(t7 == ((void *)0) ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); if (t8 >= 0LL) { t9 = (h_0opt_fbbb698){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = (uint64_t)t8}; } else { t9 = (h_0opt_fbbb698){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t33 = h6_own6; h6_own6 = t9; h_0opt_fbbb698_release(&t33); t34 = h3_f0; h_0opt_fbbb698_retain(&t9); h3_f0 = t9; h_0opt_fbbb698_release(&t34); t10 = h3_f0; t11 = t10.hero_tag; t12 = ((__INT64_TYPE__)0); t13 = t11 == t12; if (t13) goto hero_bb4; else goto hero_bb5; hero_bb3:
 #line 87
-    t30 = (h_0opt_a8ea2){.hero_tag = INT64_C(0)}; t35 = h7_own7; h7_own7 = t30; h_0opt_a8ea2_release(&t35); h5_ret0 = t30; goto hero_bb9; hero_bb4:
+    t30 = (h_0opt_a8ea2){.hero_tag = ((__INT64_TYPE__)0)}; t35 = h7_own7; h7_own7 = t30; h_0opt_a8ea2_release(&t35); h5_ret0 = t30; goto hero_bb9; hero_bb4:
 #line 81
     t16 = h3_f0; t17 = t16.hero_as.hero_ok; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.sent", 81, 13}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(const void *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(const void *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(const void *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(const void *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(const void *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(const void *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(const void *)0), void), "heroes-ffi-buffer hero_net_send data 1294 1298 u8 const void *"); HERO_NODEBUG int64_t hero_lend_e4_1 = hero_lend_count_u64_at((uint64_t)(t17), "hero_net_send", "data", &hero_here); HERO_NODEBUG void *hero_lend_b4_1 = hero_lend_take_at(h2_left, hero_lend_e4_1, "hero_net_send", "data", &hero_here); hero_handle_alive_at(t6, "the argument `s` of `hero_net_send`", &hero_here); t18 = hero_net_send(t6, (void *)hero_lend_b4_1, t17); h2_left = hero_lend_give_at(h2_left, hero_lend_b4_1, hero_lend_e4_1, &hero_here); } } h4_n = t18;
 #line 83
-    t19 = h4_n; t20 = INT64_C(0); t21 = t19 < t20; if (t21) goto hero_bb7; else goto hero_bb8; hero_bb5:
+    t19 = h4_n; t20 = ((__INT64_TYPE__)0); t21 = t19 < t20; if (t21) goto hero_bb7; else goto hero_bb8; hero_bb5:
 #line 81
     t14 = h3_f0; t15 = t14.hero_as.hero_err;
 #line 515 "theplatformlayerechoesoverloopbackinonethread.c"
@@ -516,9 +516,9 @@ h_0opt_a8ea2 h_theplatformlayerechoesoverloopbackinonethread_sent(hero_net_socke
     hero_unreachable();
 hero_bb6:
 #line 85 "tests/golden/run/the-platform-layer-echoes-over-loopback-in-one-thread.hero"
-    t25 = h2_left; t26 = h4_n; t27 = h2_left; t28 = ((void)(t27 == NULL ? ((void)hero_array_len(t27), hero_unreachable()) : (void)0), t27->len); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.sent", 85, 16}; t29 = hero_array_slice_at(t25, t26, t28, &hero_here); } t36 = h8_own8; h8_own8 = t29; hero_array_decref(t36); t37 = h2_left; hero_array_incref(t29); h2_left = t29; hero_array_decref(t37); goto hero_bb1; hero_bb7:
+    t25 = h2_left; t26 = h4_n; t27 = h2_left; t28 = ((void)(t27 == ((void *)0) ? ((void)hero_array_len(t27), hero_unreachable()) : (void)0), t27->len); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.sent", 85, 16}; t29 = hero_array_slice_at(t25, t26, t28, &hero_here); } t36 = h8_own8; h8_own8 = t29; hero_array_decref(t36); t37 = h2_left; hero_array_incref(t29); h2_left = t29; hero_array_decref(t37); goto hero_bb1; hero_bb7:
 #line 84
-    t22 = HERO_STR_LIT(hero_str_2ea7a6b0); t23 = h_theplatformlayerechoesoverloopbackinonethread_kind(); t38 = h9_own9; h9_own9 = t23; hero_str_decref(t38); hero_str_incref(t22); hero_str_incref(t23); t24 = (h_0opt_a8ea2){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t22, .msg = t23}}; t39 = h10_own10; h10_own10 = t24; h_0opt_a8ea2_release(&t39); h5_ret0 = t24; goto hero_bb9; hero_bb8: goto hero_bb6; hero_bb9:
+    t22 = HERO_STR_LIT(hero_str_2ea7a6b0); t23 = h_theplatformlayerechoesoverloopbackinonethread_kind(); t38 = h9_own9; h9_own9 = t23; hero_str_decref(t38); hero_str_incref(t22); hero_str_incref(t23); t24 = (h_0opt_a8ea2){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = {.hero_code = t22, .hero_msg = t23}}; t39 = h10_own10; h10_own10 = t24; h_0opt_a8ea2_release(&t39); h5_ret0 = t24; goto hero_bb9; hero_bb8: goto hero_bb6; hero_bb9:
 #line 523 "theplatformlayerechoesoverloopbackinonethread.c"
     t31 = h5_ret0;
     h_0opt_a8ea2_retain(&t31);
@@ -533,18 +533,18 @@ hero_bb6:
 }
 
 #line 90 "tests/golden/run/the-platform-layer-echoes-over-loopback-in-one-thread.hero"
-h_0opt_4d1c207c h_theplatformlayerechoesoverloopbackinonethread_received(hero_net_socket * h0_s, int64_t h1_count) { HeroArrayHeader * h2_got = {0}; HeroArrayHeader * h3_buffer = {0}; HERO_NODEBUG h_0opt_fbbb698 h4_f0 = {0}, h12_own12 = {0}, t12, t13, t17, t19, t70, t71; int64_t h5_n; HERO_NODEBUG HeroArrayHeader *h6_xs0 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h16_own16 = {0}, *t1, *t2, *t6, *t9, *t32, *t45, *t48, *t51, *t54, *t63, *t66, *t67, *t68, *t69, *t75, *t76; HERO_NODEBUG int64_t h7_i0, t3, t4, t8, t10, t11, t14, t15, t21, t22, t23, t28, t29, t33, t34, t46, t47, t49, t50, t52, t55, t60, t61, t62; uint8_t h8_b; HERO_NODEBUG h_0opt_4d1c207c h9_ret0 = {0}, h13_own13 = {0}, h15_own15 = {0}, h23_own23 = {0}, t27, t44, t64, t65, t72, t74, t83; HERO_NODEBUG HeroStr h14_own14 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, t25, t26, t31, t35, t36, t37, t38, t39, t40, t41, t42, t43, t73, t77, t78, t79, t80, t81, t82; HERO_NODEBUG bool t5, t16, t24, t30, t53; HERO_NODEBUG hero_net_socket *t7; HERO_NODEBUG HeroFailure t18; HERO_NODEBUG uint64_t t20; HERO_NODEBUG uint8_t t56, t58; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+h_0opt_4d1c207c h_theplatformlayerechoesoverloopbackinonethread_received(hero_net_socket * h0_s, int64_t h1_count) { HeroArrayHeader * h2_got = {0}; HeroArrayHeader * h3_buffer = {0}; HERO_NODEBUG h_0opt_fbbb698 h4_f0 = {0}, h12_own12 = {0}, t12, t13, t17, t19, t70, t71; int64_t h5_n; HERO_NODEBUG HeroArrayHeader *h6_xs0 = {0}, *h10_own10 = {0}, *h11_own11 = {0}, *h16_own16 = {0}, *t1, *t2, *t6, *t9, *t32, *t45, *t48, *t51, *t54, *t63, *t66, *t67, *t68, *t69, *t75, *t76; HERO_NODEBUG int64_t h7_i0, t3, t4, t8, t10, t11, t14, t15, t21, t22, t23, t28, t29, t33, t34, t46, t47, t49, t50, t52, t55, t60, t61, t62; uint8_t h8_b; HERO_NODEBUG h_0opt_4d1c207c h9_ret0 = {0}, h13_own13 = {0}, h15_own15 = {0}, h23_own23 = {0}, t27, t44, t64, t65, t72, t74, t83; HERO_NODEBUG HeroStr h14_own14 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, t25, t26, t31, t35, t36, t37, t38, t39, t40, t41, t42, t43, t73, t77, t78, t79, t80, t81, t82; HERO_NODEBUG _Bool t5, t16, t24, t30, t53; HERO_NODEBUG hero_net_socket *t7; HERO_NODEBUG HeroFailure t18; HERO_NODEBUG uint64_t t20; HERO_NODEBUG uint8_t t56, t58; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_u8, 1); t66 = h10_own10; h10_own10 = t1; hero_array_decref(t66); t67 = h2_got; hero_array_incref(t1); h2_got = t1; hero_array_decref(t67); goto hero_bb1; hero_bb1:
 #line 93
-    t2 = h2_got; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = h1_count; t5 = t3 < t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb2:
+    t2 = h2_got; t3 = ((void)(t2 == ((void *)0) ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = h1_count; t5 = t3 < t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb2:
     t6 = hero_array_new(&hero_desc_u8, 1); t68 = h11_own11; h11_own11 = t6; hero_array_decref(t68); t69 = h3_buffer; hero_array_incref(t6); h3_buffer = t6; hero_array_decref(t69);
-    t7 = h0_s; t8 = h1_count; t9 = h2_got; t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len); if (__builtin_sub_overflow(t8, t10, &t11)) hero_panic_overflow_at("the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.received", 95, 43); if (t11 >= 0LL) { t12 = (h_0opt_fbbb698){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint64_t)t11}; } else { t12 = (h_0opt_fbbb698){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t70 = h12_own12; h12_own12 = t12; h_0opt_fbbb698_release(&t70); t71 = h4_f0; h_0opt_fbbb698_retain(&t12); h4_f0 = t12; h_0opt_fbbb698_release(&t71); t13 = h4_f0; t14 = t13.hero_tag; t15 = INT64_C(0); t16 = t14 == t15; if (t16) goto hero_bb4; else goto hero_bb5; hero_bb3:
+    t7 = h0_s; t8 = h1_count; t9 = h2_got; t10 = ((void)(t9 == ((void *)0) ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len); if (__builtin_sub_overflow(t8, t10, &t11)) hero_panic_overflow_at("the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.received", 95, 43); if (t11 >= 0LL) { t12 = (h_0opt_fbbb698){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = (uint64_t)t11}; } else { t12 = (h_0opt_fbbb698){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t70 = h12_own12; h12_own12 = t12; h_0opt_fbbb698_release(&t70); t71 = h4_f0; h_0opt_fbbb698_retain(&t12); h4_f0 = t12; h_0opt_fbbb698_release(&t71); t13 = h4_f0; t14 = t13.hero_tag; t15 = ((__INT64_TYPE__)0); t16 = t14 == t15; if (t16) goto hero_bb4; else goto hero_bb5; hero_bb3:
 #line 106
-    t63 = h2_got; hero_array_incref(t63); t64 = (h_0opt_4d1c207c){.hero_tag = INT64_C(0), .hero_as.hero_ok = t63}; t72 = h13_own13; h13_own13 = t64; h_0opt_4d1c207c_release(&t72); h9_ret0 = t64; goto hero_bb16; hero_bb4:
+    t63 = h2_got; hero_array_incref(t63); t64 = (h_0opt_4d1c207c){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = t63}; t72 = h13_own13; h13_own13 = t64; h_0opt_4d1c207c_release(&t72); h9_ret0 = t64; goto hero_bb16; hero_bb4:
 #line 95
     t19 = h4_f0; t20 = t19.hero_as.hero_ok; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.received", 95, 13}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(void *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(void *)0), void), "heroes-ffi-buffer hero_net_recv buffer 1378 1384 u8 void *"); HERO_NODEBUG int64_t hero_lend_e4_1 = hero_lend_count_u64_at((uint64_t)(t20), "hero_net_recv", "buffer", &hero_here); HERO_NODEBUG void *hero_lend_b4_1 = hero_lend_take_at(h3_buffer, hero_lend_e4_1, "hero_net_recv", "buffer", &hero_here); hero_handle_alive_at(t7, "the argument `s` of `hero_net_recv`", &hero_here); t21 = hero_net_recv(t7, (void *)hero_lend_b4_1, t20); h3_buffer = hero_lend_give_at(h3_buffer, hero_lend_b4_1, hero_lend_e4_1, &hero_here); } } h5_n = t21;
 #line 97
-    t22 = h5_n; t23 = INT64_C(0); t24 = t22 < t23; if (t24) goto hero_bb7; else goto hero_bb8; hero_bb5:
+    t22 = h5_n; t23 = ((__INT64_TYPE__)0); t24 = t22 < t23; if (t24) goto hero_bb7; else goto hero_bb8; hero_bb5:
 #line 95
     t17 = h4_f0; t18 = t17.hero_as.hero_err;
 #line 551 "theplatformlayerechoesoverloopbackinonethread.c"
@@ -552,18 +552,18 @@ h_0opt_4d1c207c h_theplatformlayerechoesoverloopbackinonethread_received(hero_ne
     hero_unreachable();
 hero_bb6:
 #line 100 "tests/golden/run/the-platform-layer-echoes-over-loopback-in-one-thread.hero"
-    t28 = h5_n; t29 = INT64_C(0); t30 = t28 == t29; if (t30) goto hero_bb10; else goto hero_bb11; hero_bb7:
+    t28 = h5_n; t29 = ((__INT64_TYPE__)0); t30 = t28 == t29; if (t30) goto hero_bb10; else goto hero_bb11; hero_bb7:
 #line 98
-    t25 = HERO_STR_LIT(hero_str_2053a235); t26 = h_theplatformlayerechoesoverloopbackinonethread_kind(); t73 = h14_own14; h14_own14 = t26; hero_str_decref(t73); hero_str_incref(t25); hero_str_incref(t26); t27 = (h_0opt_4d1c207c){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t25, .msg = t26}}; t74 = h15_own15; h15_own15 = t27; h_0opt_4d1c207c_release(&t74); h9_ret0 = t27; goto hero_bb16; hero_bb8: goto hero_bb6; hero_bb9:
+    t25 = HERO_STR_LIT(hero_str_2053a235); t26 = h_theplatformlayerechoesoverloopbackinonethread_kind(); t73 = h14_own14; h14_own14 = t26; hero_str_decref(t73); hero_str_incref(t25); hero_str_incref(t26); t27 = (h_0opt_4d1c207c){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = {.hero_code = t25, .hero_msg = t26}}; t74 = h15_own15; h15_own15 = t27; h_0opt_4d1c207c_release(&t74); h9_ret0 = t27; goto hero_bb16; hero_bb8: goto hero_bb6; hero_bb9:
 #line 103
-    t45 = h3_buffer; t46 = INT64_C(0); t47 = h5_n; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.received", 103, 18}; t48 = hero_array_slice_at(t45, t46, t47, &hero_here); } t75 = h16_own16; h16_own16 = t48; hero_array_decref(t75); t76 = h6_xs0; hero_array_incref(t48); h6_xs0 = t48; hero_array_decref(t76); t49 = INT64_C(0); h7_i0 = t49; goto hero_bb12; hero_bb10:
+    t45 = h3_buffer; t46 = ((__INT64_TYPE__)0); t47 = h5_n; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.received", 103, 18}; t48 = hero_array_slice_at(t45, t46, t47, &hero_here); } t75 = h16_own16; h16_own16 = t48; hero_array_decref(t75); t76 = h6_xs0; hero_array_incref(t48); h6_xs0 = t48; hero_array_decref(t76); t49 = ((__INT64_TYPE__)0); h7_i0 = t49; goto hero_bb12; hero_bb10:
 #line 101
-    t31 = HERO_STR_LIT(hero_str_4f0e9158); t32 = h2_got; t33 = ((void)(t32 == NULL ? ((void)hero_array_len(t32), hero_unreachable()) : (void)0), t32->len); t34 = h1_count; t35 = HERO_STR_LIT(hero_str_318596e7); t36 = hero_int_to_str(t33); t77 = h17_own17; h17_own17 = t36; hero_str_decref(t77); t37 = HERO_STR_LIT(hero_str_466f899); t38 = hero_int_to_str(t34); t78 = h18_own18; h18_own18 = t38; hero_str_decref(t78); t39 = HERO_STR_LIT(hero_str_391e7e27); t40 = hero_str_concat(t35, t36); t79 = h19_own19; h19_own19 = t40; hero_str_decref(t79); t41 = hero_str_concat(t40, t37); t80 = h20_own20; h20_own20 = t41; hero_str_decref(t80); t42 = hero_str_concat(t41, t38); t81 = h21_own21; h21_own21 = t42; hero_str_decref(t81); t43 = hero_str_concat(t42, t39); t82 = h22_own22; h22_own22 = t43; hero_str_decref(t82); hero_str_incref(t31); hero_str_incref(t43); t44 = (h_0opt_4d1c207c){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t31, .msg = t43}}; t83 = h23_own23; h23_own23 = t44; h_0opt_4d1c207c_release(&t83); h9_ret0 = t44; goto hero_bb16; hero_bb11: goto hero_bb9; hero_bb12:
+    t31 = HERO_STR_LIT(hero_str_4f0e9158); t32 = h2_got; t33 = ((void)(t32 == ((void *)0) ? ((void)hero_array_len(t32), hero_unreachable()) : (void)0), t32->len); t34 = h1_count; t35 = HERO_STR_LIT(hero_str_318596e7); t36 = hero_int_to_str(t33); t77 = h17_own17; h17_own17 = t36; hero_str_decref(t77); t37 = HERO_STR_LIT(hero_str_466f899); t38 = hero_int_to_str(t34); t78 = h18_own18; h18_own18 = t38; hero_str_decref(t78); t39 = HERO_STR_LIT(hero_str_391e7e27); t40 = hero_str_concat(t35, t36); t79 = h19_own19; h19_own19 = t40; hero_str_decref(t79); t41 = hero_str_concat(t40, t37); t80 = h20_own20; h20_own20 = t41; hero_str_decref(t80); t42 = hero_str_concat(t41, t38); t81 = h21_own21; h21_own21 = t42; hero_str_decref(t81); t43 = hero_str_concat(t42, t39); t82 = h22_own22; h22_own22 = t43; hero_str_decref(t82); hero_str_incref(t31); hero_str_incref(t43); t44 = (h_0opt_4d1c207c){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = {.hero_code = t31, .hero_msg = t43}}; t83 = h23_own23; h23_own23 = t44; h_0opt_4d1c207c_release(&t83); h9_ret0 = t44; goto hero_bb16; hero_bb11: goto hero_bb9; hero_bb12:
 #line 103
-    t50 = h7_i0; t51 = h6_xs0; t52 = ((void)(t51 == NULL ? ((void)hero_array_len(t51), hero_unreachable()) : (void)0), t51->len); t53 = t50 < t52; if (t53) goto hero_bb13; else goto hero_bb15; hero_bb13: t54 = h6_xs0; t55 = h7_i0; t56 = ((void)((t54 == NULL || t55 < 0 || t55 >= t54->len) ? hero_panic_index_at(t54, t55, "the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.received", 103, 13) : (void)0), (void)(t54->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t54 + 1))[t55]); h8_b = t56;
+    t50 = h7_i0; t51 = h6_xs0; t52 = ((void)(t51 == ((void *)0) ? ((void)hero_array_len(t51), hero_unreachable()) : (void)0), t51->len); t53 = t50 < t52; if (t53) goto hero_bb13; else goto hero_bb15; hero_bb13: t54 = h6_xs0; t55 = h7_i0; t56 = ((void)((t54 == ((void *)0) || t55 < 0 || t55 >= t54->len) ? hero_panic_index_at(t54, t55, "the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.received", 103, 13) : (void)0), (void)(HERO_ARRAY_ELEM_SIZE(t54) != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t54 + 1))[t55]); h8_b = t56;
     t58 = h8_b; hero_array_push_owned(&h2_got, &t58); goto hero_bb14; hero_bb14:
 #line 103
-    t60 = h7_i0; t61 = INT64_C(1); if (__builtin_add_overflow(t60, t61, &t62)) hero_panic_overflow_at("the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.received", 103, 13); h7_i0 = t62; goto hero_bb12; hero_bb15: goto hero_bb1; hero_bb16:
+    t60 = h7_i0; t61 = ((__INT64_TYPE__)1); if (__builtin_add_overflow(t60, t61, &t62)) hero_panic_overflow_at("the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.received", 103, 13); h7_i0 = t62; goto hero_bb12; hero_bb15: goto hero_bb1; hero_bb16:
 #line 568 "theplatformlayerechoesoverloopbackinonethread.c"
     t65 = h9_ret0;
     h_0opt_4d1c207c_retain(&t65);
@@ -589,13 +589,13 @@ hero_bb6:
 }
 
 #line 108 "tests/golden/run/the-platform-layer-echoes-over-loopback-in-one-thread.hero"
-HeroArrayHeader * h_theplatformlayerechoesoverloopbackinonethread_bytes_of(HeroStr h0_text) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *t1, *t5, *t8, *t11, *t22, *t23, *t24, *t25, *t26; HERO_NODEBUG int64_t h3_i0, t2, t4, t6, t7, t9, t12, t13, t16, t19, t20, t21; int64_t h4_at; HERO_NODEBUG HeroStr t3, t15; HERO_NODEBUG bool t10; HERO_NODEBUG uint8_t t17; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+HeroArrayHeader * h_theplatformlayerechoesoverloopbackinonethread_bytes_of(HeroStr h0_text) { HeroArrayHeader * h1_out = {0}; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *h6_own6 = {0}, *t1, *t5, *t8, *t11, *t22, *t23, *t24, *t25, *t26; HERO_NODEBUG int64_t h3_i0, t2, t4, t6, t7, t9, t12, t13, t16, t19, t20, t21; int64_t h4_at; HERO_NODEBUG HeroStr t3, t15; HERO_NODEBUG _Bool t10; HERO_NODEBUG uint8_t t17; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_u8, 1); t23 = h5_own5; h5_own5 = t1; hero_array_decref(t23); t24 = h1_out; hero_array_incref(t1); h1_out = t1; hero_array_decref(t24);
 #line 111
-    t2 = INT64_C(0); t3 = h0_text; t4 = hero_str_len(t3); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.bytes_of", 111, 15}; t5 = h_library_range(t2, t4, &hero_here); } t25 = h6_own6; h6_own6 = t5; hero_array_decref(t25); t26 = h2_xs0; hero_array_incref(t5); h2_xs0 = t5; hero_array_decref(t26); t6 = INT64_C(0); h3_i0 = t6; goto hero_bb1; hero_bb1: t7 = h3_i0; t8 = h2_xs0; t9 = ((void)(t8 == NULL ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len); t10 = t7 < t9; if (t10) goto hero_bb2; else goto hero_bb4; hero_bb2: t11 = h2_xs0; t12 = h3_i0; t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? hero_panic_index_at(t11, t12, "the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.bytes_of", 111, 9) : (void)0), (void)(t11->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]); h4_at = t13;
-    t15 = h0_text; t16 = h4_at; t17 = ((void)((t15.ptr == NULL || t16 < 0 || t16 >= t15.len) ? hero_panic_byte_at(t15, t16, "the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.bytes_of", 112, 24) : (void)0), (int64_t)(unsigned char)t15.ptr[t16]); hero_array_push_owned(&h1_out, &t17); goto hero_bb3; hero_bb3:
+    t2 = ((__INT64_TYPE__)0); t3 = h0_text; t4 = hero_str_len(t3); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.bytes_of", 111, 15}; t5 = h_library_range(t2, t4, &hero_here); } t25 = h6_own6; h6_own6 = t5; hero_array_decref(t25); t26 = h2_xs0; hero_array_incref(t5); h2_xs0 = t5; hero_array_decref(t26); t6 = ((__INT64_TYPE__)0); h3_i0 = t6; goto hero_bb1; hero_bb1: t7 = h3_i0; t8 = h2_xs0; t9 = ((void)(t8 == ((void *)0) ? ((void)hero_array_len(t8), hero_unreachable()) : (void)0), t8->len); t10 = t7 < t9; if (t10) goto hero_bb2; else goto hero_bb4; hero_bb2: t11 = h2_xs0; t12 = h3_i0; t13 = ((void)((t11 == ((void *)0) || t12 < 0 || t12 >= t11->len) ? hero_panic_index_at(t11, t12, "the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.bytes_of", 111, 9) : (void)0), (void)(HERO_ARRAY_ELEM_SIZE(t11) != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t11 + 1))[t12]); h4_at = t13;
+    t15 = h0_text; t16 = h4_at; t17 = ((void)((t15.ptr == ((void *)0) || t16 < 0 || t16 >= t15.len) ? hero_panic_byte_at(t15, t16, "the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.bytes_of", 112, 24) : (void)0), (int64_t)(unsigned char)t15.ptr[t16]); hero_array_push_owned(&h1_out, &t17); goto hero_bb3; hero_bb3:
 #line 111
-    t19 = h3_i0; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.bytes_of", 111, 9); h3_i0 = t21; goto hero_bb1; hero_bb4:
+    t19 = h3_i0; t20 = ((__INT64_TYPE__)1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.bytes_of", 111, 9); h3_i0 = t21; goto hero_bb1; hero_bb4:
 #line 114
     t22 = h1_out;
 #line 602 "theplatformlayerechoesoverloopbackinonethread.c"
@@ -618,20 +618,20 @@ HeroStr h_theplatformlayerechoesoverloopbackinonethread_kind(void) { HERO_NODEBU
 }
 
 #line 120 "tests/golden/run/the-platform-layer-echoes-over-loopback-in-one-thread.hero"
-HeroStr h_theplatformlayerechoesoverloopbackinonethread_refused(void) { hero_net_socket * h0_listener; int64_t h1_port; hero_net_socket * h2_client; HERO_NODEBUG HeroStr h3_ret0 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t1, t8, t9, t10, t15, t25, t26, t27, t30, t31, t32, t33, t34, t35; HERO_NODEBUG const char *t2, *t16; HERO_NODEBUG int64_t t3, t12, t17, t22, t23; HERO_NODEBUG hero_net_socket *t4, *t5, *t6, *t11, *t13, *t18, *t19, *t20, *t28; HERO_NODEBUG bool t7, t21, t24; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = HERO_STR_LIT(hero_str_69fd5e8e); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.refused", 121, 41}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.refused", 121, 16}; t4 = hero_net_listen(hero_cstr_nonnull_at(t2, &hero_here), t3); hero_handle_acquired_at(t4, "hero_net_close", &hero_here); } h0_listener = t4;
+HeroStr h_theplatformlayerechoesoverloopbackinonethread_refused(void) { hero_net_socket * h0_listener; int64_t h1_port; hero_net_socket * h2_client; HERO_NODEBUG HeroStr h3_ret0 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t1, t8, t9, t10, t15, t25, t26, t27, t30, t31, t32, t33, t34, t35; HERO_NODEBUG const char *t2, *t16; HERO_NODEBUG int64_t t3, t12, t17, t22, t23; HERO_NODEBUG hero_net_socket *t4, *t5, *t6, *t11, *t13, *t18, *t19, *t20, *t28; HERO_NODEBUG _Bool t7, t21, t24; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = HERO_STR_LIT(hero_str_69fd5e8e); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.refused", 121, 41}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = ((__INT64_TYPE__)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.refused", 121, 16}; t4 = hero_net_listen(hero_cstr_nonnull_at(t2, &hero_here), t3); hero_handle_acquired_at(t4, "hero_net_close", &hero_here); } h0_listener = t4;
 #line 123
     t5 = h0_listener; t6 = ((void *)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.refused", 123, 8}; t7 = hero_handle_eq_at(t5, t6, &hero_here); } if (t7) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 125
     t11 = h0_listener; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.refused", 125, 12}; hero_handle_alive_at(t11, "the argument `s` of `hero_net_port`", &hero_here); t12 = hero_net_port(t11); } h1_port = t12;
-    t13 = h0_listener; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.refused", 126, 9}; { hero_handle_alive_at(t13, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t13, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t13); if (hero_handle_ended(t13, hero_life_0_0) && h0_listener == t13) h0_listener = hero_handle_dead(); } }
+    t13 = h0_listener; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.refused", 126, 9}; { hero_handle_alive_at(t13, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t13, "hero_net_close", ((void *)0), &hero_here); (void)hero_net_close(t13); if (hero_handle_ended(t13, hero_life_0_0) && h0_listener == t13) h0_listener = hero_handle_dead(); } }
     t15 = HERO_STR_LIT(hero_str_69fd5e8e); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.refused", 127, 40}; t16 = hero_str_lend_at(t15, &hero_here); } t17 = h1_port; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.refused", 127, 14}; t18 = hero_net_connect(hero_cstr_nonnull_at(t16, &hero_here), t17); hero_handle_acquired_at(t18, "hero_net_close", &hero_here); } h2_client = t18;
 #line 129
     t19 = h2_client; t20 = ((void *)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.refused", 129, 8}; t21 = hero_handle_eq_at(t19, t20, &hero_here); } if (t21) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 124
     t8 = HERO_STR_LIT(hero_str_4e176598); t9 = h_theplatformlayerechoesoverloopbackinonethread_kind(); t32 = h4_own4; h4_own4 = t9; hero_str_decref(t32); t10 = hero_str_concat(t8, t9); t33 = h5_own5; h5_own5 = t10; hero_str_decref(t33); h3_ret0 = t10; goto hero_bb7; hero_bb3: goto hero_bb1; hero_bb4:
 #line 131
-    t28 = h2_client; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.refused", 131, 9}; { hero_handle_alive_at(t28, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t28, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t28); if (hero_handle_ended(t28, hero_life_0_0) && h2_client == t28) h2_client = hero_handle_dead(); } }
+    t28 = h2_client; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.refused", 131, 9}; { hero_handle_alive_at(t28, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t28, "hero_net_close", ((void *)0), &hero_here); (void)hero_net_close(t28); if (hero_handle_ended(t28, hero_life_0_0) && h2_client == t28) h2_client = hero_handle_dead(); } }
     t30 = HERO_STR_LIT(hero_str_5e713a0e); h3_ret0 = t30; goto hero_bb7; hero_bb5:
 #line 130
     { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.refused", 130, 51}; t22 = hero_net_last_error(); } t23 = h_theplatformlayerechoesoverloopbackinonethread_HERO_NET_REFUSED(); t24 = t22 == t23; t25 = HERO_STR_LIT(hero_str_43da8edb); t26 = hero_bool_to_str(t24); t34 = h6_own6; h6_own6 = t26; hero_str_decref(t34); t27 = hero_str_concat(t25, t26); t35 = h7_own7; h7_own7 = t27; hero_str_decref(t35); h3_ret0 = t27; goto hero_bb7; hero_bb6: goto hero_bb4; hero_bb7:
@@ -646,10 +646,10 @@ HeroStr h_theplatformlayerechoesoverloopbackinonethread_refused(void) { hero_net
 }
 
 #line 135 "tests/golden/run/the-platform-layer-echoes-over-loopback-in-one-thread.hero"
-HeroStr h_theplatformlayerechoesoverloopbackinonethread_invalid(void) { hero_net_socket * h0_wide; int64_t h1_wide_kind; hero_net_socket * h2_empty; int64_t h3_empty_kind; HERO_NODEBUG bool h4_b0, h5_b1, h6_b2, t13, t16, t17, t20, t21, t24, t25, t31, t36; HeroStr h7_said = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, t1, t6, t26, t27, t28, t39, t40, t41, t42; HERO_NODEBUG const char *t2, *t7; HERO_NODEBUG int64_t t3, t5, t8, t10, t14, t15, t22, t23; HERO_NODEBUG hero_net_socket *t4, *t9, *t11, *t12, *t18, *t19, *t29, *t30, *t32, *t34, *t35, *t37; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = HERO_STR_LIT(hero_str_69fd5e8e); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.invalid", 136, 37}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = INT64_C(70000); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.invalid", 136, 12}; t4 = hero_net_listen(hero_cstr_nonnull_at(t2, &hero_here), t3); hero_handle_acquired_at(t4, "hero_net_close", &hero_here); } h0_wide = t4;
+HeroStr h_theplatformlayerechoesoverloopbackinonethread_invalid(void) { hero_net_socket * h0_wide; int64_t h1_wide_kind; hero_net_socket * h2_empty; int64_t h3_empty_kind; HERO_NODEBUG _Bool h4_b0, h5_b1, h6_b2, t13, t16, t17, t20, t21, t24, t25, t31, t36; HeroStr h7_said = {0}; HERO_NODEBUG HeroStr h8_own8 = {0}, h9_own9 = {0}, t1, t6, t26, t27, t28, t39, t40, t41, t42; HERO_NODEBUG const char *t2, *t7; HERO_NODEBUG int64_t t3, t5, t8, t10, t14, t15, t22, t23; HERO_NODEBUG hero_net_socket *t4, *t9, *t11, *t12, *t18, *t19, *t29, *t30, *t32, *t34, *t35, *t37; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = HERO_STR_LIT(hero_str_69fd5e8e); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.invalid", 136, 37}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = ((__INT64_TYPE__)70000); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.invalid", 136, 12}; t4 = hero_net_listen(hero_cstr_nonnull_at(t2, &hero_here), t3); hero_handle_acquired_at(t4, "hero_net_close", &hero_here); } h0_wide = t4;
     { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.invalid", 137, 17}; t5 = hero_net_last_error(); } h1_wide_kind = t5;
-    t6 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.invalid", 138, 39}; t7 = hero_str_lend_at(t6, &hero_here); } t8 = INT64_C(80); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.invalid", 138, 13}; t9 = hero_net_connect(hero_cstr_nonnull_at(t7, &hero_here), t8); hero_handle_acquired_at(t9, "hero_net_close", &hero_here); } h2_empty = t9;
+    t6 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.invalid", 138, 39}; t7 = hero_str_lend_at(t6, &hero_here); } t8 = ((__INT64_TYPE__)80); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.invalid", 138, 13}; t9 = hero_net_connect(hero_cstr_nonnull_at(t7, &hero_here), t8); hero_handle_acquired_at(t9, "hero_net_close", &hero_here); } h2_empty = t9;
     { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.invalid", 139, 18}; t10 = hero_net_last_error(); } h3_empty_kind = t10;
     t11 = h0_wide; t12 = ((void *)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.invalid", 140, 60}; t13 = hero_handle_eq_at(t11, t12, &hero_here); } h6_b2 = t13; if (t13) goto hero_bb1; else goto hero_bb2; hero_bb1: t14 = h1_wide_kind; t15 = h_theplatformlayerechoesoverloopbackinonethread_HERO_NET_INVALID(); t16 = t14 == t15; h6_b2 = t16; goto hero_bb2; hero_bb2: t17 = h6_b2; h5_b1 = t17; if (t17) goto hero_bb3; else goto hero_bb4; hero_bb3: t18 = h2_empty; t19 = ((void *)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.invalid", 140, 112}; t20 = hero_handle_eq_at(t18, t19, &hero_here); } h5_b1 = t20; goto hero_bb4; hero_bb4: t21 = h5_b1; h4_b0 = t21; if (t21) goto hero_bb5; else goto hero_bb6; hero_bb5: t22 = h3_empty_kind; t23 = h_theplatformlayerechoesoverloopbackinonethread_HERO_NET_INVALID(); t24 = t22 == t23; h4_b0 = t24; goto hero_bb6; hero_bb6: t25 = h4_b0; t26 = HERO_STR_LIT(hero_str_133c75f1); t27 = hero_bool_to_str(t25); t40 = h8_own8; h8_own8 = t27; hero_str_decref(t40); t28 = hero_str_concat(t26, t27); t41 = h9_own9; h9_own9 = t28; hero_str_decref(t41); t42 = h7_said; hero_str_incref(t28); h7_said = t28; hero_str_decref(t42);
 #line 142
@@ -657,7 +657,7 @@ HeroStr h_theplatformlayerechoesoverloopbackinonethread_invalid(void) { hero_net
 #line 145
     t34 = h2_empty; t35 = ((void *)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.invalid", 145, 8}; t36 = !hero_handle_eq_at(t34, t35, &hero_here); } if (t36) goto hero_bb11; else goto hero_bb12; hero_bb8:
 #line 143
-    t32 = h0_wide; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.invalid", 143, 13}; { hero_handle_alive_at(t32, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t32, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t32); if (hero_handle_ended(t32, hero_life_0_0) && h0_wide == t32) h0_wide = hero_handle_dead(); } } goto hero_bb7; hero_bb9: goto hero_bb7; hero_bb10:
+    t32 = h0_wide; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.invalid", 143, 13}; { hero_handle_alive_at(t32, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t32, "hero_net_close", ((void *)0), &hero_here); (void)hero_net_close(t32); if (hero_handle_ended(t32, hero_life_0_0) && h0_wide == t32) h0_wide = hero_handle_dead(); } } goto hero_bb7; hero_bb9: goto hero_bb7; hero_bb10:
 #line 147
     t39 = h7_said;
 #line 664 "theplatformlayerechoesoverloopbackinonethread.c"
@@ -668,17 +668,17 @@ HeroStr h_theplatformlayerechoesoverloopbackinonethread_invalid(void) { hero_net
     return t39;
 hero_bb11:
 #line 146 "tests/golden/run/the-platform-layer-echoes-over-loopback-in-one-thread.hero"
-    t37 = h2_empty; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.invalid", 146, 13}; { hero_handle_alive_at(t37, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t37, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t37); if (hero_handle_ended(t37, hero_life_0_0) && h2_empty == t37) h2_empty = hero_handle_dead(); } } goto hero_bb10; hero_bb12: goto hero_bb10;
+    t37 = h2_empty; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-echoes-over-loopback-in-one-thread.hero", "the-platform-layer-echoes-over-loopback-in-one-thread.invalid", 146, 13}; { hero_handle_alive_at(t37, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t37, "hero_net_close", ((void *)0), &hero_here); (void)hero_net_close(t37); if (hero_handle_ended(t37, hero_life_0_0) && h2_empty == t37) h2_empty = hero_handle_dead(); } } goto hero_bb10; hero_bb12: goto hero_bb10;
 #line 673 "theplatformlayerechoesoverloopbackinonethread.c"
 }
 
 #line 26 "<heroes library>"
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG _Bool t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t13 = h4_own4; h4_own4 = t1; hero_array_decref(t13); t14 = h2_out; hero_array_incref(t1); h2_out = t1; hero_array_decref(t14);
     t2 = h0_from; h3_i = t2; goto hero_bb1; hero_bb1:
     t3 = h3_i; t4 = h1_to; t5 = t3 < t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb2:
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
-    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto hero_bb1; hero_bb3:
+    t9 = h3_i; t10 = ((__INT64_TYPE__)1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(HERO_PLACE_PATH(hero_caller), HERO_PLACE_NAME(hero_caller), HERO_PLACE_LINE(hero_caller), HERO_PLACE_COLUMN(hero_caller)); h3_i = t11; goto hero_bb1; hero_bb3:
     t12 = h2_out;
 #line 684 "theplatformlayerechoesoverloopbackinonethread.c"
     hero_array_incref(t12);
@@ -690,19 +690,19 @@ __attribute__((__unused__)) HeroArrayHeader * hero_value_h_library_range(int64_t
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.range", 26, 1};
     return h_library_range(h0_from, h1_to, &hero_here);
 }
-HERO_TU_LOCAL bool h_theplatformlayerechoesoverloopbackinonethread_0Socket_eq(hero_net_socket * const *hero_a, hero_net_socket * const *hero_b) {
+HERO_TU_LOCAL _Bool h_theplatformlayerechoesoverloopbackinonethread_0Socket_eq(hero_net_socket * const *hero_a, hero_net_socket * const *hero_b) {
     return hero_handle_eq(*hero_a, *hero_b);
 }
 
 HERO_TU_LOCAL uint64_t h_theplatformlayerechoesoverloopbackinonethread_0Socket_hash(const void *hero_elem) {
     hero_net_socket * const *hero_v = hero_elem;
-    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
-    hero_h = (hero_h ^ (uint64_t)(uintptr_t)*hero_v) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = ((__UINT64_TYPE__)0xcbf29ce484222325);
+    hero_h = (hero_h ^ (uint64_t)(uintptr_t)*hero_v) * ((__UINT64_TYPE__)0x100000001b3);
     return hero_h;
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -710,31 +710,31 @@ HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_str)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
     const h_0opt_f87774a *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_str)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -742,31 +742,31 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
     const h_0opt_a8ea2 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
     return hero_h;
 }
 
 HERO_TU_LOCAL void h_0opt_4d1c207c_retain(const h_0opt_4d1c207c *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_array_incref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -774,31 +774,31 @@ HERO_TU_LOCAL void h_0opt_4d1c207c_retain(const h_0opt_4d1c207c *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_4d1c207c_release(h_0opt_4d1c207c *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_array_decref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_4d1c207c_eq(const h_0opt_4d1c207c *hero_a, const h_0opt_4d1c207c *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_4d1c207c_eq(const h_0opt_4d1c207c *hero_a, const h_0opt_4d1c207c *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_array)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_array)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_4d1c207c_hash(const void *hero_elem) {
     const h_0opt_4d1c207c *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_array)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_array)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -806,31 +806,31 @@ HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_fbbb698_release(h_0opt_fbbb698 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *hero_a, const h_0opt_fbbb698 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *hero_a, const h_0opt_fbbb698 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_u64)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_u64)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_fbbb698_hash(const void *hero_elem) {
     const h_0opt_fbbb698 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_u64)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_u64)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -838,31 +838,31 @@ HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_int)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
     const h_0opt_e201354 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_int)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("01f7b99a14c745d4", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("546903ea4034c14a", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("theplatformlayerechoesoverloopbackinonethread\tthe-platform-layer-echoes-over-loopback-in-one-thread\n");

@@ -214,4 +214,4 @@ test "len splits three ways, tag and payload split on the operand"
     payload_read(@w, c, names, s, parsed.decls, f, base: 2, at: 1, ty: str_id, target: ok("t9"))
     string_byte(@w, s, f, base: 0, index: 2, target: ok("t9"), site: 0)
     got = writer.finish(w)
-    assert got == "    t9 = hero_str_len(t0);\n    t9 = t1.hero_tag;\n    t9 = t2.hero_tag;\n    t9 = t1.hero_as.hero_c_word;\n    t9 = t2.hero_as.hero_err;\n    t9 = ((void)((t0.ptr == NULL || t2 < 0 || t2 >= t0.len) ? hero_panic_byte_at(t0, t2, \"t.hero\", \"t.t\", 1, 1) : (void)0), (int64_t)(unsigned char)t0.ptr[t2]);\n"
+    assert got == "    t9 = hero_str_len(t0);\n    t9 = t1.hero_tag;\n    t9 = t2.hero_tag;\n    t9 = t1.hero_as.hero_c_word;\n    t9 = t2.hero_as.hero_err;\n    t9 = ((void)((t0.ptr == ((void *)0) || t2 < 0 || t2 >= t0.len) ? hero_panic_byte_at(t0, t2, \"t.hero\", \"t.t\", 1, 1) : (void)0), (int64_t)(unsigned char)t0.ptr[t2]);\n"

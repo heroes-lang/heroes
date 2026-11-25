@@ -211,8 +211,8 @@ function zero_of(names: ctype.Names, c: state.Checked, ty: i64, mutable: bool) -
             return "(" + widths.float_c_type(fk.kind) + ")0"
         .bool =>
             if mutable
-                return "(bool *)0"
-            return "(bool)0"
+                return "(_Bool *)0"
+            return "(_Bool)0"
         .ptr =>
             # **A BARE ZERO for the mutable case, and the cast was a real
             # warning.** C lets `void *` convert to any object pointer and

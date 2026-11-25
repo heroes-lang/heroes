@@ -107,7 +107,7 @@ function through_pointer(c: state.Checked, names: ctype.Names, ty: i64, place: s
 
     if desc.is_err()
         return fail(code: "none", msg: "no descriptor for this type")
-    return ok("(" + desc.must() + ")->hash(" + place + ")")
+    return ok("HERO_DESC_HASH(" + desc.must() + ")(" + place + ")")
 
 # One static const HeroDesc per element type the program actually uses.
 # Emitted BEFORE the function definitions: an array literal names its
@@ -194,7 +194,7 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, de
         else
             writer.line(@w, text: "    (void)hero_elem;")
         writer.line(@w, text: "}")
-        writer.line(@w, text: "static bool " + prefix + "_desc_eq(const void *hero_a, const void *hero_b) {")
+        writer.line(@w, text: "static _Bool " + prefix + "_desc_eq(const void *hero_a, const void *hero_b) {")
         writer.line(
             @w,
             text: "    return " + prefix + "_eq((" + handles.const_pointer(c_type) + ")hero_a, (" + handles.const_pointer(c_type) + ")hero_b);"
@@ -224,4 +224,4 @@ test "widths get their own descriptors, and an aggregate hashes by its function"
     point = table.lookup(c.types, .named(decl: 0)).must()
     assert pointer(c, names, ty: point).must() == "&h_t_0Point_desc"
     assert hash_call(c, names, ty: point, place: "&hero_v->f_p").must() == "h_t_0Point_hash(&hero_v->f_p)"
-    assert hash_call(c, names, ty: table.int_ty_id(c.types), place: "&hero_v->f_n").must() == "(&hero_desc_int)->hash(&hero_v->f_n)"
+    assert hash_call(c, names, ty: table.int_ty_id(c.types), place: "&hero_v->f_n").must() == "HERO_DESC_HASH(&hero_desc_int)(&hero_v->f_n)"

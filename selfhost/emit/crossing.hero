@@ -67,7 +67,7 @@ function runtime_or_own(c: state.Checked, s: source.Source, decls: [ast.Decl], t
 # cell, as C names it: `NULL` where it holds no C handle and no thread.
 function sent_of(c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64) -> str
     if !handed.holds(c, decls, ty: ty)
-        return "NULL"
+        return "((void *)0)"
 
     match table.get(c.types, ty)
         .thread_ty => return "hero_thread_sent"

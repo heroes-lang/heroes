@@ -137,3 +137,24 @@ function reached(b: bound_names.Bound, to: str, steps: [str], own: str, then: st
         "a `static inline` function in a header of your own that includes `" + b.header + "` and returns what `" + b.name + "` gives, bound in its place, reads it where the header's macros stand"
     )
     return d
+
+# A bound name that is itself a type of C's library the unit's own C writes,
+# which its group's header defines as a macro (`emit/library_types.hero`,
+# defect d-lane-macro-members2-1): `own` what clang reads for it at the
+# groups' end.
+function typed(b: bound_names.Bound, own: str) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_macro_name",
+        message: "`" + b.name + "`, which this group binds from `" + b.header + "`, is a type of C's own library that `" + b.header + "` defines as a macro: the C this compiler writes for every program spells `" + b.name + "` after the groups' headers as C's type, so it cannot mean the header's macro there too",
+        span: b.span
+    )
+    d.notes @ d.notes.push(
+        "where this program's C writes `" + bound_said.asked(b.name, arity: b.arity) + "`, clang reads `" + own + "` after `" + b.header + "`"
+    )
+    d.notes @ d.notes.push(
+        "C's own headers declare `" + b.name + "` with `typedef` and define no macro of it, and C11 7.1.3 reserves the name once a header declaring it is included, as the runtime does before every group's header"
+    )
+    d.notes @ d.notes.push(
+        "a `static inline` function in a header of your own that includes `" + b.header + "` and returns what `" + b.name + "` gives, bound under another name, reads it where the header's macros stand"
+    )
+    return d

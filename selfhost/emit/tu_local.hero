@@ -50,11 +50,15 @@
 
 use emit/writer
 
-# The lines that define the word past the depth, in the order written.
+# The lines that define the word past the depth, in the order written. The
+# feature is asked by the name C reserves, `__undefined_behavior_sanitizer__`,
+# which clang reads as the plain one: a group's header may define the plain
+# word, and these lines stand after the groups (defect
+# d-lane-macro-members2-1, 2026-11-25).
 constant EAGER: [str]
     [
         "#undef HERO_TU_LOCAL"
-        "#if defined(__OPTIMIZE__) && __has_feature(undefined_behavior_sanitizer)"
+        "#if defined(__OPTIMIZE__) && __has_feature(__undefined_behavior_sanitizer__)"
         "#define HERO_TU_LOCAL __attribute__((__unused__, __used__, __nodebug__, __no_sanitize__(\"null\", \"alignment\", \"object-size\"))) static"
         "#else"
         "#define HERO_TU_LOCAL __attribute__((__unused__, __used__, __nodebug__)) static"

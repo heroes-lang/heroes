@@ -52,7 +52,7 @@ function unary(@w: writer.Writer, s: source.Source, f: containers.Function, c: s
                 # that is.
                 writer.line(
                     @w,
-                    text: "    if (__builtin_sub_overflow(INT64_C(0), " + value + ", &" + name + ")) hero_panic_overflow_at(" + stop_place.of(s, f, offset: site) + ");"
+                    text: "    if (__builtin_sub_overflow(((__INT64_TYPE__)0), " + value + ", &" + name + ")) hero_panic_overflow_at(" + stop_place.of(s, f, offset: site) + ");"
                 )
             else
                 writer.line(@w, text: "    " + name + " = -" + value + ";")
@@ -206,7 +206,7 @@ function binary(@w: writer.Writer, s: source.Source, c: state.Checked, names: ct
     # explicitly allows. fmod truncates toward zero, which is the rule
     # the spec already states for / and %.
     if op == .rem
-        writer.line(@w, text: "    " + name + " = fmod(" + l + ", " + r + ");")
+        writer.line(@w, text: "    " + name + " = __builtin_fmod(" + l + ", " + r + ");")
         return
     plain: str @= "+"
 
@@ -338,7 +338,7 @@ test "overflow guards on + - * and negation, the / and % pair, the shifts"
 
     # Every abort names the site, `print` at the second line's fifth column.
     at = "\"t.hero\", \"t.t\", 2, 5"
-    assert text == "    if (__builtin_add_overflow(t1, t2, &t0)) hero_panic_overflow_at(" + at + ");\n    if (t2 == 0) hero_panic_at(\"division by zero\", " + at + ");\n    if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic_at(\"`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64\", " + at + ");\n    t0 = t1 % t2;\n    if (t2 < 0 || t2 > 63) hero_panic_at(\"shift count outside 0..63\", " + at + ");\n    t0 = (int64_t)((uint64_t)t1 << (uint64_t)t2);\n    if (__builtin_sub_overflow(INT64_C(0), t1, &t0)) hero_panic_overflow_at(" + at + ");\n"
+    assert text == "    if (__builtin_add_overflow(t1, t2, &t0)) hero_panic_overflow_at(" + at + ");\n    if (t2 == 0) hero_panic_at(\"division by zero\", " + at + ");\n    if (t1 == (-__INT64_MAX__ - 1) && t2 == ((__INT64_TYPE__)-1)) hero_panic_at(\"`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64\", " + at + ");\n    t0 = t1 % t2;\n    if (t2 < 0 || t2 > 63) hero_panic_at(\"shift count outside 0..63\", " + at + ");\n    t0 = (int64_t)((uint64_t)t1 << (uint64_t)t2);\n    if (__builtin_sub_overflow(((__INT64_TYPE__)0), t1, &t0)) hero_panic_overflow_at(" + at + ");\n"
 
 test "a nan stops an ordering, f64 % is fmod, and str + concatenates"
     got = ready()
@@ -348,4 +348,4 @@ test "a nan stops an ordering, f64 % is fmod, and str + concatenates"
     binary(@w, got.s, got.c, got.names, got.f, op: .add, left: 5, right: 6, target: ok("t0"), site: 17)
     binary(@w, got.s, got.c, got.names, got.f, op: .lt, left: 5, right: 6, target: ok("t0"), site: 17)
     text = writer.finish(w)
-    assert text == "    if (t3 != t3 || t4 != t4) hero_panic_at(\"a nan in `<`: it is neither less nor greater, so both arms would be false\", \"t.hero\", \"t.t\", 2, 5);\n    t0 = t3 < t4;\n    t0 = fmod(t3, t4);\n    t0 = hero_str_concat(t5, t6);\n    t0 = hero_str_cmp(t5, t6) < 0;\n"
+    assert text == "    if (t3 != t3 || t4 != t4) hero_panic_at(\"a nan in `<`: it is neither less nor greater, so both arms would be false\", \"t.hero\", \"t.t\", 2, 5);\n    t0 = t3 < t4;\n    t0 = __builtin_fmod(t3, t4);\n    t0 = hero_str_concat(t5, t6);\n    t0 = hero_str_cmp(t5, t6) < 0;\n"

@@ -62,7 +62,7 @@ function binary(@w: writer.Writer, s: source.Source, c: state.Checked, names: ct
     if call.is_err()
         operator.binary(@w, s, c, names, f, op: op, left: left, right: right, target: target, site: site)
         return
-    statement = "hero_handle_eq_from(&" + stop_place.HERE + "); " + assigned + call.must() + "; hero_handle_eq_from(NULL);"
+    statement = "hero_handle_eq_from(&" + stop_place.HERE + "); " + assigned + call.must() + "; hero_handle_eq_from(((void *)0));"
     writer.line(@w, text: "    " + stop_place.around(s, f, offset: site, statement: statement))
 
 # Whether `op` compares for equality.

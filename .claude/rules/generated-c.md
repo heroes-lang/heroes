@@ -14,9 +14,22 @@ Home of CLAUDE.md § 7 since 2026-09-07. What each rule cost to learn is in
 
 ## The shape of the file
 
-C11. `int64_t`, `double`, `bool`. `#include "heroes_runtime.h"`, so clang
+C11. `int64_t`, `double`, `_Bool`. `#include "heroes_runtime.h"`, so clang
 type-checks every runtime call, and one `_Static_assert` on
 `HERO_RUNTIME_ABI`.
+
+**After its groups the unit writes no word a group's header may define with
+another meaning**, but the names the program binds (defect
+d-lane-macro-members2-1, 2026-11-25; until then `bool`, `NULL`, `INT64_C`
+and a runtime struct's members by name): a runtime struct's member is read
+at its offset, an enumeration constant of `heroes_runtime.h` computed before
+every group's header, by a macro of the runtime's form (`HERO_DESC_EQ`,
+`HERO_THREAD_BOX_ARG`, `HERO_PLACE_PATH`), a
+failure's by `hero_code` and `hero_msg`; a macro of C's library is spelled in
+a form C reserves, `_Bool`, `((void *)0)`, `(-__INT64_MAX__ - 1)`,
+`__builtin_fmod`, `__builtin_huge_val()`; and the integer types keep their
+names, which a debugger shows, a header defining one as a macro refused where
+the program binds it (`emit/library_types.hero`).
 
 **What that stamp catches is a header from another compiler, and not a decoy**
 (CL-007). A decoy `runtime/` that copies the number passes; what protects a
@@ -56,7 +69,9 @@ C never mentions the output path.
 
 Arithmetic aborts via `__builtin_*_overflow`, never C undefined behaviour, and
 `%` is guarded like `/`, because `INT64_MIN % -1` does not trap on arm64.
-`INT64_C(n)` for every `int` literal.
+Every `int` literal is cast to its width's type by clang's own name,
+`((__INT64_TYPE__)n)`, `U` on an unsigned one past the signed top; it was
+`INT64_C(n)` until 2026-11-25 (above).
 
 **A refcounted slot is the one exception to the no-initialisation rule**:
 zero-initialised so cleanup is unconditional, with `ptr == NULL` as the

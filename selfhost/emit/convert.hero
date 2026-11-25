@@ -101,12 +101,12 @@ function width(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: conta
         writer.line(@w, text: "    if (hero_f64_fits_int(" + float_value + ")) {")
         writer.line(
             @w,
-            text: "        " + into + " = (" + union_name + "){.hero_tag = INT64_C(0), .hero_as.hero_ok = hero_f64_to_int(" + float_value + ")};"
+            text: "        " + into + " = (" + union_name + "){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = hero_f64_to_int(" + float_value + ")};"
         )
         writer.line(@w, text: "    } else {")
         writer.line(
             @w,
-            text: "        " + into + " = (" + union_name + "){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()};"
+            text: "        " + into + " = (" + union_name + "){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_does_not_fit()};"
         )
         writer.line(@w, text: "    }")
         return
@@ -157,18 +157,18 @@ function width(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: conta
     if tests.len() == 0
         writer.line(
             @w,
-            text: "    " + into + " = (" + union_name + "){.hero_tag = INT64_C(0), .hero_as.hero_ok = (" + widths.int_c_type(to.must()) + ")" + arguments[0] + "};"
+            text: "    " + into + " = (" + union_name + "){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = (" + widths.int_c_type(to.must()) + ")" + arguments[0] + "};"
         )
         return
     writer.line(@w, text: "    if (" + tests.join(" && ") + ") {")
     writer.line(
         @w,
-        text: "        " + into + " = (" + union_name + "){.hero_tag = INT64_C(0), .hero_as.hero_ok = (" + widths.int_c_type(to.must()) + ")" + value + "};"
+        text: "        " + into + " = (" + union_name + "){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = (" + widths.int_c_type(to.must()) + ")" + value + "};"
     )
     writer.line(@w, text: "    } else {")
     writer.line(
         @w,
-        text: "        " + into + " = (" + union_name + "){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()};"
+        text: "        " + into + " = (" + union_name + "){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_does_not_fit()};"
     )
     writer.line(@w, text: "    }")
 
@@ -235,7 +235,7 @@ test "narrowing tests both bounds, widening emits none, u64 tests only the floor
         .fallible(payload: table.lookup(c.types, .int_ty(kind: .i8)).must())
     ).must()
     i8_union = ctype.option_of(names, ty: i8_opt)
-    assert got == "    if (t0 >= -128LL && t0 <= 127LL) {\n        t7 = (" + i8_union + "){.hero_tag = INT64_C(0), .hero_as.hero_ok = (int8_t)t0};\n    } else {\n        t7 = (" + i8_union + "){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()};\n    }\n"
+    assert got == "    if (t0 >= -128LL && t0 <= 127LL) {\n        t7 = (" + i8_union + "){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = (int8_t)t0};\n    } else {\n        t7 = (" + i8_union + "){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_does_not_fit()};\n    }\n"
 
     # i64 -> u64: only the floor can be crossed.
     uw: writer.Writer @= writer.new_writer("t")
@@ -246,4 +246,4 @@ test "narrowing tests both bounds, widening emits none, u64 tests only the floor
         .fallible(payload: table.lookup(c.types, .int_ty(kind: .u64)).must())
     ).must()
     u64_union = ctype.option_of(names, ty: u64_opt)
-    assert u64_got == "    if (t0 >= 0LL) {\n        t8 = (" + u64_union + "){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint64_t)t0};\n    } else {\n        t8 = (" + u64_union + "){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()};\n    }\n"
+    assert u64_got == "    if (t0 >= 0LL) {\n        t8 = (" + u64_union + "){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = (uint64_t)t0};\n    } else {\n        t8 = (" + u64_union + "){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_does_not_fit()};\n    }\n"

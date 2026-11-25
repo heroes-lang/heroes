@@ -189,12 +189,12 @@ function map_get(c: state.Checked, names: ctype.Names, s: source.Source, f: cont
     lines @ lines.push(
         "  " + nodebug.MARK + "const void *hero_found = hero_map_find_at(" + mangle.value(map_value) + ", &" + mangle.value(key) + ", &" + stop_place.HERE + ");"
     )
-    lines @ lines.push("  if (hero_found == NULL) {")
+    lines @ lines.push("  if (hero_found == ((void *)0)) {")
     lines @ lines.push(
-        "    " + into + " = (" + option + "){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()};"
+        "    " + into + " = (" + option + "){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_missing_key()};"
     )
     lines @ lines.push("  } else {")
-    lines @ lines.push("    " + into + " = (" + option + "){.hero_tag = INT64_C(0)};")
+    lines @ lines.push("    " + into + " = (" + option + "){.hero_tag = ((__INT64_TYPE__)0)};")
 
     # A unit value type has no ok member at all, so the tag is the
     # whole answer.
@@ -203,7 +203,7 @@ function map_get(c: state.Checked, names: ctype.Names, s: source.Source, f: cont
 
         if desc.is_err()
             return fail(code: "none", msg: "a value with no descriptor")
-        lines @ lines.push("    (" + desc.must() + ")->copy(&" + into + ".hero_as.hero_ok, hero_found);")
+        lines @ lines.push("    HERO_DESC_COPY(" + desc.must() + ")(&" + into + ".hero_as.hero_ok, hero_found);")
     lines @ lines.push("  }")
     lines @ lines.push("}")
     return ok(lines)
@@ -248,4 +248,4 @@ test "an array literal is one block and a push in place per element, a read is a
         span: token.Span(start: 0, end: 1)
     )
     read = read_element(got.c, got.s, got.decls, got.names, f, defined.sites_of(f), base: 0, index: 1, where: "P")
-    assert read.must() == "((void)((t0 == NULL || t1 < 0 || t1 >= t0->len) ? hero_panic_index_at(t0, t1, P) : (void)0), (void)(t0->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t0 + 1))[t1])"
+    assert read.must() == "((void)((t0 == ((void *)0) || t1 < 0 || t1 >= t0->len) ? hero_panic_index_at(t0, t1, P) : (void)0), (void)(HERO_ARRAY_ELEM_SIZE(t0) != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t0 + 1))[t1])"

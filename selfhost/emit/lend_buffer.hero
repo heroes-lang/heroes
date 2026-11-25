@@ -100,7 +100,7 @@ function extent_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: c
 
     if !stated.is_err()
         if stated.must().written.len() > 0 && stated.must().written[0] >= '0' && stated.must().written[0] <= '9'
-            return "INT64_C(" + stated.must().c_text + ")"
+            return "((__INT64_TYPE__)" + stated.must().c_text + ")"
         return "hero_lend_count_u64_at((uint64_t)(" + stated.must().c_text + "), " + names + ", &" + stop_place.HERE + ")"
     counted = lend_count.counted_siblings(s, decls, decl: decl)
 

@@ -182,7 +182,7 @@ function consumer(s: source.Source, fd: ast.FunctionDecl, name: str) -> str
         if !p.acquires.is_err()
             return handle_text.quoted(name) + ", " + handle_text.quoted(handles.releasers_c(source.span_text(s, p.acquires.must())))
 
-    return handle_text.quoted(name) + ", NULL"
+    return handle_text.quoted(name) + ", ((void *)0)"
 
 ## Tests
 

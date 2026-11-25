@@ -222,15 +222,15 @@ __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_fr
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int64_t h_fixedbugs2753adirectorylistingheldbyacallbackcjumpsoveristoldwiththejump_HERO_DIR_DIRECTORIES(void);
@@ -265,8 +265,8 @@ int64_t h_fixedbugs2753adirectorylistingheldbyacallbackcjumpsoveristoldwiththeju
 
 #line 22 "tests/golden/run/fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.hero"
 int64_t h_fixedbugs2753adirectorylistingheldbyacallbackcjumpsoveristoldwiththejump_body(int64_t h0_n) { hero_thread_guard("fixedbugs2753adirectorylistingheldbyacallbackcjumpsoveristoldwiththejump.body"); int64_t h1_count; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t3, t4, t5, t6, t7, t8, t9; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = HERO_STR_LIT(hero_str_2f); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.hero", "fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.body", 23, 33}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = h_fixedbugs2753adirectorylistingheldbyacallbackcjumpsoveristoldwiththejump_HERO_DIR_DIRECTORIES(); t4 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.hero", "fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.body", 23, 13}; t5 = hero_dir_scan(hero_cstr_nonnull_at(t2, &hero_here), t3, t4); } h1_count = t5;
-    t6 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.hero", "fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.body", 24, 5}; (void)lv_throw(t6); }
+    t1 = HERO_STR_LIT(hero_str_2f); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.hero", "fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.body", 23, 33}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = h_fixedbugs2753adirectorylistingheldbyacallbackcjumpsoveristoldwiththejump_HERO_DIR_DIRECTORIES(); t4 = ((__INT64_TYPE__)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.hero", "fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.body", 23, 13}; t5 = hero_dir_scan(hero_cstr_nonnull_at(t2, &hero_here), t3, t4); } h1_count = t5;
+    t6 = ((__INT64_TYPE__)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.hero", "fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.body", 24, 5}; (void)lv_throw(t6); }
     { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.hero", "fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.body", 25, 5}; (void)hero_dir_release(); }
     t7 = h1_count; t8 = h0_n; if (__builtin_add_overflow(t7, t8, &t9)) hero_panic_overflow_at("fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.hero", "fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.body", 26, 12); return t9;
 #line 273 "fixedbugs2753adirectorylistingheldbyacallbackcjumpsoveristoldwiththejump.c"
@@ -280,12 +280,12 @@ __attribute__((__noinline__)) int64_t h_0cb_fixedbugs2753adirectorylistingheldby
 }
 
 #line 28 "tests/golden/run/fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.hero"
-void h_fixedbugs2753adirectorylistingheldbyacallbackcjumpsoveristoldwiththejump_main(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG int64_t t3, t4, t5; HERO_NODEBUG bool t6; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = HERO_STR_LIT(hero_str_25322baa); t2 = h_fixedbugs2753adirectorylistingheldbyacallbackcjumpsoveristoldwiththejump_body; t3 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.hero", "fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.main", 29, 22}; t4 = lv_try((h_0fn_48ac9712)hero_callback_of((void (*)(void))t2), t3); } t5 = INT64_C(0); t6 = t4 > t5; hero_print_str(t1); hero_print_bool(t6); hero_print_end(); return;
+void h_fixedbugs2753adirectorylistingheldbyacallbackcjumpsoveristoldwiththejump_main(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG int64_t t3, t4, t5; HERO_NODEBUG _Bool t6; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = HERO_STR_LIT(hero_str_25322baa); t2 = h_fixedbugs2753adirectorylistingheldbyacallbackcjumpsoveristoldwiththejump_body; t3 = ((__INT64_TYPE__)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.hero", "fixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump.main", 29, 22}; t4 = lv_try((h_0fn_48ac9712)hero_callback_of((void (*)(void))t2), t3); } t5 = ((__INT64_TYPE__)0); t6 = t4 > t5; hero_print_str(t1); hero_print_bool(t6); hero_print_end(); return;
 #line 286 "fixedbugs2753adirectorylistingheldbyacallbackcjumpsoveristoldwiththejump.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -293,31 +293,31 @@ HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_str)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
     const h_0opt_f87774a *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_str)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -325,31 +325,31 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
     const h_0opt_a8ea2 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
     return hero_h;
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -357,31 +357,31 @@ HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_int)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
     const h_0opt_e201354 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_int)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3d2982d8226ab1a9", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("78bfcfc403ab6f03", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2753adirectorylistingheldbyacallbackcjumpsoveristoldwiththejump\tfixedbugs-2753-a-directory-listing-held-by-a-callback-c-jumps-over-is-told-with-the-jump\n");

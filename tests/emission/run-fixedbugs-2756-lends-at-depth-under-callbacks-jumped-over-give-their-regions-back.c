@@ -221,15 +221,15 @@ __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_fr
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 
 int64_t h_fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback_lend_buffer(int64_t h0_n);
@@ -260,10 +260,10 @@ __attribute__((__unused__)) static void (*hero_callback_of(void (*hero_f)(void))
 
 
 #line 21 "tests/golden/run/fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero"
-int64_t h_fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback_lend_buffer(int64_t h0_n) { HeroArrayHeader * h1_md = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_own4 = {0}, t5, t6, t10, t12, t18, t19; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t3, *t16, *t17; HERO_NODEBUG int64_t t4, t7, t8, t13, t14, t15; HERO_NODEBUG bool t9; HERO_NODEBUG HeroFailure t11; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+int64_t h_fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback_lend_buffer(int64_t h0_n) { HeroArrayHeader * h1_md = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h4_own4 = {0}, t5, t6, t10, t12, t18, t19; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t1, *t3, *t16, *t17; HERO_NODEBUG int64_t t4, t7, t8, t13, t14, t15; HERO_NODEBUG _Bool t9; HERO_NODEBUG HeroFailure t11; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_u8, 1); t16 = h3_own3; h3_own3 = t1; hero_array_decref(t16); t17 = h1_md; hero_array_incref(t1); h1_md = t1; hero_array_decref(t17);
-    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.lend_buffer", 23, 9}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer lv_fill_throw md 1106 1108 u8 unsigned char *"); HERO_NODEBUG int64_t hero_lend_e0_0 = INT64_C(4096); HERO_NODEBUG void *hero_lend_b0_0 = hero_lend_take_at(h1_md, hero_lend_e0_0, "lv_fill_throw", "md", &hero_here); (void)lv_fill_throw((void *)hero_lend_b0_0); h1_md = hero_lend_give_at(h1_md, hero_lend_b0_0, hero_lend_e0_0, &hero_here); } }
-    t3 = h1_md; t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len); t5 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = (int64_t)t4}; t18 = h4_own4; h4_own4 = t5; h_0opt_e201354_release(&t18); t19 = h2_f0; h_0opt_e201354_retain(&t5); h2_f0 = t5; h_0opt_e201354_release(&t19); t6 = h2_f0; t7 = t6.hero_tag; t8 = INT64_C(0); t9 = t7 == t8; if (t9) goto hero_bb1; else goto hero_bb2; hero_bb1: t12 = h2_f0; t13 = t12.hero_as.hero_ok; t14 = h0_n; if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow_at("fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.lend_buffer", 24, 12);
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.lend_buffer", 23, 9}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer lv_fill_throw md 1106 1108 u8 unsigned char *"); HERO_NODEBUG int64_t hero_lend_e0_0 = ((__INT64_TYPE__)4096); HERO_NODEBUG void *hero_lend_b0_0 = hero_lend_take_at(h1_md, hero_lend_e0_0, "lv_fill_throw", "md", &hero_here); (void)lv_fill_throw((void *)hero_lend_b0_0); h1_md = hero_lend_give_at(h1_md, hero_lend_b0_0, hero_lend_e0_0, &hero_here); } }
+    t3 = h1_md; t4 = ((void)(t3 == ((void *)0) ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len); t5 = (h_0opt_e201354){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = (int64_t)t4}; t18 = h4_own4; h4_own4 = t5; h_0opt_e201354_release(&t18); t19 = h2_f0; h_0opt_e201354_retain(&t5); h2_f0 = t5; h_0opt_e201354_release(&t19); t6 = h2_f0; t7 = t6.hero_tag; t8 = ((__INT64_TYPE__)0); t9 = t7 == t8; if (t9) goto hero_bb1; else goto hero_bb2; hero_bb1: t12 = h2_f0; t13 = t12.hero_as.hero_ok; t14 = h0_n; if (__builtin_add_overflow(t13, t14, &t15)) hero_panic_overflow_at("fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.lend_buffer", 24, 12);
 #line 268 "fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback.c"
     hero_array_release_at(&h1_md);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
@@ -283,10 +283,10 @@ int64_t h_fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback_
 #line 26
 #define h1_x (*hero_lend_h1_x)
 #line 26
-    int32_t *const hero_lend_h1_x = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback.lend_local", "x"); HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_own3 = {0}, t4, t5, t9, t11, t15, t16; HERO_NODEBUG int32_t t1, t3; HERO_NODEBUG int64_t t6, t7, t12, t13, t14; HERO_NODEBUG bool t8; HERO_NODEBUG HeroFailure t10; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = INT64_C(0); h1_x = t1;
+    int32_t *const hero_lend_h1_x = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback.lend_local", "x"); HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_own3 = {0}, t4, t5, t9, t11, t15, t16; HERO_NODEBUG int32_t t1, t3; HERO_NODEBUG int64_t t6, t7, t12, t13, t14; HERO_NODEBUG _Bool t8; HERO_NODEBUG HeroFailure t10; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = ((__INT64_TYPE__)0); h1_x = t1;
     { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.lend_local", 28, 9}; hero_lend_local_name(hero_lend_h1_x, "lv_put_throw", "x"); (void)lv_put_throw((void *)&h1_x); }
-    t3 = h1_x; t4 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = (int64_t)t3}; t15 = h3_own3; h3_own3 = t4; h_0opt_e201354_release(&t15); t16 = h2_f0; h_0opt_e201354_retain(&t4); h2_f0 = t4; h_0opt_e201354_release(&t16); t5 = h2_f0; t6 = t5.hero_tag; t7 = INT64_C(0); t8 = t6 == t7; if (t8) goto hero_bb1; else goto hero_bb2; hero_bb1: t11 = h2_f0; t12 = t11.hero_as.hero_ok; t13 = h0_n; if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow_at("fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.lend_local", 29, 12);
+    t3 = h1_x; t4 = (h_0opt_e201354){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = (int64_t)t3}; t15 = h3_own3; h3_own3 = t4; h_0opt_e201354_release(&t15); t16 = h2_f0; h_0opt_e201354_retain(&t4); h2_f0 = t4; h_0opt_e201354_release(&t16); t5 = h2_f0; t6 = t5.hero_tag; t7 = ((__INT64_TYPE__)0); t8 = t6 == t7; if (t8) goto hero_bb1; else goto hero_bb2; hero_bb1: t11 = h2_f0; t12 = t11.hero_as.hero_ok; t13 = h0_n; if (__builtin_add_overflow(t12, t13, &t14)) hero_panic_overflow_at("fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.lend_local", 29, 12);
 #line 291 "fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
     h_0opt_e201354_release(hero_slot_escape(&h3_own3));
@@ -317,7 +317,7 @@ __attribute__((__noinline__)) int64_t h_0cb_fixedbugs2756lendsatdepthundercallba
 #line 34 "tests/golden/run/fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero"
 int64_t h_fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback_inner(int64_t h0_n) { hero_thread_guard("fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback.inner"); HeroArrayHeader * h1_md = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t4, *t5; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_u8, 1); t4 = h2_own2; h2_own2 = t1; hero_array_decref(t4); t5 = h1_md; hero_array_incref(t1); h1_md = t1; hero_array_decref(t5);
-    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.inner", 36, 9}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer lv_fill_throw md 1106 1108 u8 unsigned char *"); HERO_NODEBUG int64_t hero_lend_e0_0 = INT64_C(4096); HERO_NODEBUG void *hero_lend_b0_0 = hero_lend_take_at(h1_md, hero_lend_e0_0, "lv_fill_throw", "md", &hero_here); (void)lv_fill_throw((void *)hero_lend_b0_0); h1_md = hero_lend_give_at(h1_md, hero_lend_b0_0, hero_lend_e0_0, &hero_here); } }
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.inner", 36, 9}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer lv_fill_throw md 1106 1108 u8 unsigned char *"); HERO_NODEBUG int64_t hero_lend_e0_0 = ((__INT64_TYPE__)4096); HERO_NODEBUG void *hero_lend_b0_0 = hero_lend_take_at(h1_md, hero_lend_e0_0, "lv_fill_throw", "md", &hero_here); (void)lv_fill_throw((void *)hero_lend_b0_0); h1_md = hero_lend_give_at(h1_md, hero_lend_b0_0, hero_lend_e0_0, &hero_here); } }
     t3 = h0_n;
 #line 323 "fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback.c"
     hero_array_release_at(&h1_md);
@@ -333,10 +333,10 @@ __attribute__((__noinline__)) int64_t h_0cb_fixedbugs2756lendsatdepthundercallba
 }
 
 #line 39 "tests/golden/run/fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero"
-int64_t h_fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback_outer(int64_t h0_n) { hero_thread_guard("fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback.outer"); HeroArrayHeader * h1_md = {0}; int64_t h2_got; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h5_own5 = {0}, t9, t10, t14, t16, t21, t22; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t6, *t19, *t20; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG int64_t t3, t4, t5, t7, t11, t12, t17, t18; HERO_NODEBUG uint8_t t8; HERO_NODEBUG bool t13; HERO_NODEBUG HeroFailure t15; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+int64_t h_fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback_outer(int64_t h0_n) { hero_thread_guard("fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback.outer"); HeroArrayHeader * h1_md = {0}; int64_t h2_got; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h5_own5 = {0}, t9, t10, t14, t16, t21, t22; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t6, *t19, *t20; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG int64_t t3, t4, t5, t7, t11, t12, t17, t18; HERO_NODEBUG uint8_t t8; HERO_NODEBUG _Bool t13; HERO_NODEBUG HeroFailure t15; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_u8, 1); t19 = h4_own4; h4_own4 = t1; hero_array_decref(t19); t20 = h1_md; hero_array_incref(t1); h1_md = t1; hero_array_decref(t20);
-    t2 = h_fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback_inner; t3 = h0_n; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.outer", 41, 11}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer lv_fill_then md 1171 1173 u8 unsigned char *"); HERO_NODEBUG int64_t hero_lend_e0_0 = INT64_C(4096); HERO_NODEBUG void *hero_lend_b0_0 = hero_lend_take_at(h1_md, hero_lend_e0_0, "lv_fill_then", "md", &hero_here); t4 = lv_fill_then((void *)hero_lend_b0_0, (h_0fn_48ac9712)hero_callback_of((void (*)(void))t2), t3); h1_md = hero_lend_give_at(h1_md, hero_lend_b0_0, hero_lend_e0_0, &hero_here); } } h2_got = t4;
-    t5 = h2_got; t6 = h1_md; t7 = INT64_C(0); t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? hero_panic_index_at(t6, t7, "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.outer", 42, 18) : (void)0), (void)(t6->elem->size != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t6 + 1))[t7]); t9 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = (int64_t)t8}; t21 = h5_own5; h5_own5 = t9; h_0opt_e201354_release(&t21); t22 = h3_f0; h_0opt_e201354_retain(&t9); h3_f0 = t9; h_0opt_e201354_release(&t22); t10 = h3_f0; t11 = t10.hero_tag; t12 = INT64_C(0); t13 = t11 == t12; if (t13) goto hero_bb1; else goto hero_bb2; hero_bb1: t16 = h3_f0; t17 = t16.hero_as.hero_ok; if (__builtin_add_overflow(t5, t17, &t18)) hero_panic_overflow_at("fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.outer", 42, 12);
+    t2 = h_fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback_inner; t3 = h0_n; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.outer", 41, 11}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer lv_fill_then md 1171 1173 u8 unsigned char *"); HERO_NODEBUG int64_t hero_lend_e0_0 = ((__INT64_TYPE__)4096); HERO_NODEBUG void *hero_lend_b0_0 = hero_lend_take_at(h1_md, hero_lend_e0_0, "lv_fill_then", "md", &hero_here); t4 = lv_fill_then((void *)hero_lend_b0_0, (h_0fn_48ac9712)hero_callback_of((void (*)(void))t2), t3); h1_md = hero_lend_give_at(h1_md, hero_lend_b0_0, hero_lend_e0_0, &hero_here); } } h2_got = t4;
+    t5 = h2_got; t6 = h1_md; t7 = ((__INT64_TYPE__)0); t8 = ((void)((t6 == ((void *)0) || t7 < 0 || t7 >= t6->len) ? hero_panic_index_at(t6, t7, "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.outer", 42, 18) : (void)0), (void)(HERO_ARRAY_ELEM_SIZE(t6) != sizeof(uint8_t) ? hero_unreachable() : (void)0), ((uint8_t const *)(const void *)(t6 + 1))[t7]); t9 = (h_0opt_e201354){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = (int64_t)t8}; t21 = h5_own5; h5_own5 = t9; h_0opt_e201354_release(&t21); t22 = h3_f0; h_0opt_e201354_retain(&t9); h3_f0 = t9; h_0opt_e201354_release(&t22); t10 = h3_f0; t11 = t10.hero_tag; t12 = ((__INT64_TYPE__)0); t13 = t11 == t12; if (t13) goto hero_bb1; else goto hero_bb2; hero_bb1: t16 = h3_f0; t17 = t16.hero_as.hero_ok; if (__builtin_add_overflow(t5, t17, &t18)) hero_panic_overflow_at("fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.outer", 42, 12);
 #line 341 "fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback.c"
     hero_array_release_at(&h1_md);
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
@@ -364,7 +364,7 @@ int64_t h_fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback_
 #define h1_x (*hero_lend_h1_x)
 #line 44
     hero_thread_guard("fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback.local_then"); int32_t *const hero_lend_h1_x = (int32_t *)hero_lend_local(sizeof(int32_t), "fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback.local_then", "x"); HERO_NODEBUG int32_t t1; HERO_NODEBUG int64_t t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = INT64_C(3); h1_x = t1;
+    t1 = ((__INT64_TYPE__)3); h1_x = t1;
     { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.local_then", 46, 9}; hero_lend_local_name(hero_lend_h1_x, "lv_put_throw", "x"); (void)lv_put_throw((void *)&h1_x); }
     t3 = h0_n; hero_lend_local_give(hero_lend_h1_x); return t3;
 #line 371 "fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback.c"
@@ -379,13 +379,13 @@ __attribute__((__noinline__)) int64_t h_0cb_fixedbugs2756lendsatdepthundercallba
 }
 
 #line 49 "tests/golden/run/fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero"
-void h_fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback_main(void) { int64_t h0_total; HERO_NODEBUG HeroArrayHeader *h1_xs0 = {0}, *h4_own4 = {0}, *t4, *t7, *t10, *t31, *t32; HERO_NODEBUG int64_t h2_i0, t1, t2, t3, t5, t6, t8, t11, t12, t13, t15, t16, t17, t19, t20, t21, t23, t24, t25, t26, t27, t28, t30; int64_t h3_i; HERO_NODEBUG bool t9; HERO_NODEBUG h_0fn_48ac9712 t14, t18, t22; HERO_NODEBUG HeroStr t29; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = INT64_C(0); h0_total = t1;
+void h_fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback_main(void) { int64_t h0_total; HERO_NODEBUG HeroArrayHeader *h1_xs0 = {0}, *h4_own4 = {0}, *t4, *t7, *t10, *t31, *t32; HERO_NODEBUG int64_t h2_i0, t1, t2, t3, t5, t6, t8, t11, t12, t13, t15, t16, t17, t19, t20, t21, t23, t24, t25, t26, t27, t28, t30; int64_t h3_i; HERO_NODEBUG _Bool t9; HERO_NODEBUG h_0fn_48ac9712 t14, t18, t22; HERO_NODEBUG HeroStr t29; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = ((__INT64_TYPE__)0); h0_total = t1;
 #line 52
-    t2 = INT64_C(0); t3 = INT64_C(2000); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.main", 52, 14}; t4 = h_library_range(t2, t3, &hero_here); } t31 = h4_own4; h4_own4 = t4; hero_array_decref(t31); t32 = h1_xs0; hero_array_incref(t4); h1_xs0 = t4; hero_array_decref(t32); t5 = INT64_C(0); h2_i0 = t5; goto hero_bb1; hero_bb1: t6 = h2_i0; t7 = h1_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto hero_bb2; else goto hero_bb4; hero_bb2: t10 = h1_xs0; t11 = h2_i0; t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.main", 52, 9) : (void)0), (void)(t10->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h3_i = t12;
+    t2 = ((__INT64_TYPE__)0); t3 = ((__INT64_TYPE__)2000); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.main", 52, 14}; t4 = h_library_range(t2, t3, &hero_here); } t31 = h4_own4; h4_own4 = t4; hero_array_decref(t31); t32 = h1_xs0; hero_array_incref(t4); h1_xs0 = t4; hero_array_decref(t32); t5 = ((__INT64_TYPE__)0); h2_i0 = t5; goto hero_bb1; hero_bb1: t6 = h2_i0; t7 = h1_xs0; t8 = ((void)(t7 == ((void *)0) ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto hero_bb2; else goto hero_bb4; hero_bb2: t10 = h1_xs0; t11 = h2_i0; t12 = ((void)((t10 == ((void *)0) || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.main", 52, 9) : (void)0), (void)(HERO_ARRAY_ELEM_SIZE(t10) != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t10 + 1))[t11]); h3_i = t12;
     t13 = h0_total; t14 = h_fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback_by_helper; t15 = h3_i; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.main", 53, 25}; t16 = lv_try((h_0fn_48ac9712)hero_callback_of((void (*)(void))t14), t15); } if (__builtin_add_overflow(t13, t16, &t17)) hero_panic_overflow_at("fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.main", 53, 17); t18 = h_fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback_outer; t19 = h3_i; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.main", 53, 55}; t20 = lv_try((h_0fn_48ac9712)hero_callback_of((void (*)(void))t18), t19); } if (__builtin_add_overflow(t17, t20, &t21)) hero_panic_overflow_at("fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.main", 53, 17); t22 = h_fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback_local_then; t23 = h3_i; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.main", 53, 81}; t24 = lv_try((h_0fn_48ac9712)hero_callback_of((void (*)(void))t22), t23); } if (__builtin_add_overflow(t21, t24, &t25)) hero_panic_overflow_at("fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.main", 53, 17); h0_total = t25; goto hero_bb3; hero_bb3:
 #line 52
-    t26 = h2_i0; t27 = INT64_C(1); if (__builtin_add_overflow(t26, t27, &t28)) hero_panic_overflow_at("fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.main", 52, 9); h2_i0 = t28; goto hero_bb1; hero_bb4:
+    t26 = h2_i0; t27 = ((__INT64_TYPE__)1); if (__builtin_add_overflow(t26, t27, &t28)) hero_panic_overflow_at("fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.hero", "fixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back.main", 52, 9); h2_i0 = t28; goto hero_bb1; hero_bb4:
 #line 55
     t29 = HERO_STR_LIT(hero_str_6be498c9); t30 = h0_total; hero_print_str(t29); hero_print_int(t30); hero_print_end();
 #line 392 "fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback.c"
@@ -395,12 +395,12 @@ void h_fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback_mai
 }
 
 #line 26 "<heroes library>"
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG _Bool t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t13 = h4_own4; h4_own4 = t1; hero_array_decref(t13); t14 = h2_out; hero_array_incref(t1); h2_out = t1; hero_array_decref(t14);
     t2 = h0_from; h3_i = t2; goto hero_bb1; hero_bb1:
     t3 = h3_i; t4 = h1_to; t5 = t3 < t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb2:
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
-    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto hero_bb1; hero_bb3:
+    t9 = h3_i; t10 = ((__INT64_TYPE__)1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(HERO_PLACE_PATH(hero_caller), HERO_PLACE_NAME(hero_caller), HERO_PLACE_LINE(hero_caller), HERO_PLACE_COLUMN(hero_caller)); h3_i = t11; goto hero_bb1; hero_bb3:
     t12 = h2_out;
 #line 406 "fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback.c"
     hero_array_incref(t12);
@@ -413,7 +413,7 @@ __attribute__((__unused__)) HeroArrayHeader * hero_value_h_library_range(int64_t
     return h_library_range(h0_from, h1_to, &hero_here);
 }
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -421,31 +421,31 @@ HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_int)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
     const h_0opt_e201354 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_int)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -453,31 +453,31 @@ HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_str)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
     const h_0opt_f87774a *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_str)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -485,31 +485,31 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
     const h_0opt_a8ea2 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
     return hero_h;
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("41150d9a06bf49d6", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7cab5a866800072f", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2756lendsatdepthundercallbacksjumpedovergivetheirregionsback\tfixedbugs-2756-lends-at-depth-under-callbacks-jumped-over-give-their-regions-back\n");

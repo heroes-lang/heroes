@@ -66,7 +66,7 @@ HeroFailure hero_failure_does_not_fit(void) {
     /* `sizeof(b) - 1`, never a typed number — the rule the sibling below earned
      * the hard way, and the reason its comment is worth reading before touching
      * either message. */
-    return (HeroFailure){HERO_STR_LIT(code), HERO_STR_LIT(msg)};
+    return (HeroFailure){.code = HERO_STR_LIT(code), .msg = HERO_STR_LIT(msg)};
 }
 
 HeroFailure hero_failure_missing_key(void) {
@@ -77,7 +77,7 @@ HeroFailure hero_failure_missing_key(void) {
      * `str` claiming bytes past its own text, silently, while lengthening it is
      * a clang error — so the two directions failed differently and only one of
      * them loudly (2026-08-12, sweep 001 S12). */
-    return (HeroFailure){HERO_STR_LIT(code), HERO_STR_LIT(msg)};
+    return (HeroFailure){.code = HERO_STR_LIT(code), .msg = HERO_STR_LIT(msg)};
 }
 
 /* **The same failure `read_file` and `validated` already give**, built here so
@@ -105,7 +105,7 @@ HeroFailure hero_failure_missing_key(void) {
 HeroFailure hero_failure_not_text(void) {
     HERO_STR_STATIC(code, "not_text");
     HERO_STR_STATIC(msg, "these bytes are not valid UTF-8");
-    return (HeroFailure){HERO_STR_LIT(code), HERO_STR_LIT(msg)};
+    return (HeroFailure){.code = HERO_STR_LIT(code), .msg = HERO_STR_LIT(msg)};
 }
 
 /* -- the one printer of a failure's report (panel 192's R7, defect 355; panel 230's R3) --

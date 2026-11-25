@@ -35,19 +35,19 @@ function guard(c: state.Checked, ty: i64, l: str, r: str, op: ir.BinaryOp, where
         .array | .fixed | .map | .fallible | .function_ty | .named         => return ""
         .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return ""
 
-    smallest: str @= "INT64_MIN"
-    minus_one: str @= "INT64_C(-1)"
+    smallest: str @= "(-__INT64_MAX__ - 1)"
+    minus_one: str @= "((__INT64_TYPE__)-1)"
 
     match kind
         .i8 =>
-            smallest @ "INT8_MIN"
-            minus_one @ "INT8_C(-1)"
+            smallest @ "(-__INT8_MAX__ - 1)"
+            minus_one @ "((__INT8_TYPE__)-1)"
         .i16 =>
-            smallest @ "INT16_MIN"
-            minus_one @ "INT16_C(-1)"
+            smallest @ "(-__INT16_MAX__ - 1)"
+            minus_one @ "((__INT16_TYPE__)-1)"
         .i32 =>
-            smallest @ "INT32_MIN"
-            minus_one @ "INT32_C(-1)"
+            smallest @ "(-__INT32_MAX__ - 1)"
+            minus_one @ "((__INT32_TYPE__)-1)"
         .i64                     => smallest @ smallest
         .u8 | .u16 | .u32 | .u64 => return ""
 
@@ -73,9 +73,9 @@ test "each signed width is guarded at its own smallest value, and no unsigned on
     i8 = table.intern(@c.types, .int_ty(kind: .i8))
     u8 = table.intern(@c.types, .int_ty(kind: .u8))
     i64 = table.intern(@c.types, .int_ty(kind: .i64))
-    assert guard(c, ty: i8, l: "t1", r: "t2", op: .div, where: "P") == "    if (t1 == INT8_MIN && t2 == INT8_C(-1)) hero_panic_overflow_at(P);"
+    assert guard(c, ty: i8, l: "t1", r: "t2", op: .div, where: "P") == "    if (t1 == (-__INT8_MAX__ - 1) && t2 == ((__INT8_TYPE__)-1)) hero_panic_overflow_at(P);"
     assert guard(c, ty: u8, l: "t1", r: "t2", op: .div, where: "P") == ""
     assert guard(c, ty: u8, l: "t1", r: "t2", op: .rem, where: "P") == ""
-    assert guard(c, ty: i64, l: "t1", r: "t2", op: .div, where: "P") == "    if (t1 == INT64_MIN && t2 == INT64_C(-1)) hero_panic_overflow_at(P);"
+    assert guard(c, ty: i64, l: "t1", r: "t2", op: .div, where: "P") == "    if (t1 == (-__INT64_MAX__ - 1) && t2 == ((__INT64_TYPE__)-1)) hero_panic_overflow_at(P);"
     narrow = guard(c, ty: i8, l: "t1", r: "t2", op: .rem, where: "P")
-    assert narrow == "    if (t1 == INT8_MIN && t2 == INT8_C(-1)) hero_panic_at(\"`%` by -1 at the smallest i8: the remainder is 0, but the quotient it is the rest of has no i8\", P);"
+    assert narrow == "    if (t1 == (-__INT8_MAX__ - 1) && t2 == ((__INT8_TYPE__)-1)) hero_panic_at(\"`%` by -1 at the smallest i8: the remainder is 0, but the quotient it is the rest of has no i8\", P);"

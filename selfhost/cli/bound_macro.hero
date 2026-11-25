@@ -47,6 +47,7 @@ use cli/strings
 use cli/toolchain
 use diag
 use emit/c_text
+use emit/library_types
 use emit/macro_guard
 use source
 
@@ -123,6 +124,13 @@ function judged(t: toolchain.Toolchain, probe: compiling.Probe, s: source.Source
         if steps.len() == 0
             continue
         own = steps[b.place]
+
+        # A type of C's library the unit's own C writes by its name, which
+        # a header made a macro (`emit/library_types.hero`, defect
+        # d-lane-macro-members2-1).
+        if library_types.holds(b.name) && steps[headers.len()] != bound_said.folded(bound_said.asked(b.name, arity: b.arity))
+            out @ out.push(bound_told.typed(b: b, own: steps[headers.len()]))
+            continue
 
         if steps[headers.len()] != own
             later = changed(steps, from: b.place + 1, to: headers.len())

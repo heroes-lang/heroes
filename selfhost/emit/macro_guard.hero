@@ -88,8 +88,12 @@ constant FIRST_LINE: str
 constant STANDARD_LINE: str
     "#include \"heroes_standard.h\""
 
-# The macros the unit's own C writes from `<stdint.h>` and `<math.h>`, each
-# guarded and defined again after the groups by `runtime/heroes_standard.h`.
+# The macros the unit's own C wrote from `<stdint.h>` and `<math.h>` until
+# defect d-lane-macro-members2-1 (2026-11-25), each guarded and defined again
+# after the groups by `runtime/heroes_standard.h`. The unit spells each in a
+# form C reserves since (`emit/library_types.hero`'s test holds it), and the
+# guard and the definitions stay, a group's header that defines one losing it
+# with the region as before.
 constant STANDARD_USED: [str]
     [
         "INT64_C"

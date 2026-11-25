@@ -196,7 +196,7 @@ function side_of(c: state.Checked, f: containers.Function, arg: ir.Arg) -> str
     match arg
         .value_arg v =>
             if containers.value_type(f, v.value) == table.unit_ty(c.types)
-                return "NULL"
+                return "((void *)0)"
             return "&" + mangle.value(v.value)
         .inout_arg => return ""
 
@@ -294,7 +294,7 @@ test "a .must() the library writes stops in the library's words at its caller's 
         if line.len() > 0 && line[0] == ' '
             calls @ calls.push(line)
 
-    assert calls == ["    hero_panic_library_at(t0, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);", "    hero_panic_must_at(t0, \"main.hero\", \"main.main\", 2, 5);"]
+    assert calls == ["    hero_panic_library_at(t0, HERO_PLACE_PATH(hero_caller), HERO_PLACE_NAME(hero_caller), HERO_PLACE_LINE(hero_caller), HERO_PLACE_COLUMN(hero_caller));", "    hero_panic_must_at(t0, \"main.hero\", \"main.main\", 2, 5);"]
 
 # A function whose one argument is the failure a `.must()` stops on, its span at
 # `start`.

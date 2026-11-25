@@ -751,35 +751,35 @@ HeroFailure hero_failure_timeout(void) {
     HERO_STR_STATIC(code, "timeout");
     HERO_STR_STATIC(msg, "no value arrived in the mailbox within the time given; one that arrives later is the "
                          "next receive's");
-    return (HeroFailure){HERO_STR_LIT(code), HERO_STR_LIT(msg)};
+    return (HeroFailure){.code = HERO_STR_LIT(code), .msg = HERO_STR_LIT(msg)};
 }
 
 HeroFailure hero_failure_stopped(void) {
     HERO_STR_STATIC(code, "stopped");
     HERO_STR_STATIC(msg, "the program's stop was asked and the mailbox was found empty, so it answers `stopped` "
                          "from then on");
-    return (HeroFailure){HERO_STR_LIT(code), HERO_STR_LIT(msg)};
+    return (HeroFailure){.code = HERO_STR_LIT(code), .msg = HERO_STR_LIT(msg)};
 }
 
 HeroFailure hero_failure_closed(void) {
     HERO_STR_STATIC(code, "closed");
     HERO_STR_STATIC(msg, "the mailbox was closed: it takes no more values, and every value sent before the "
                          "close has been received");
-    return (HeroFailure){HERO_STR_LIT(code), HERO_STR_LIT(msg)};
+    return (HeroFailure){.code = HERO_STR_LIT(code), .msg = HERO_STR_LIT(msg)};
 }
 
 /* A send's refusal says what a send refused, not what a receive found. */
 HeroFailure hero_failure_send_closed(void) {
     HERO_STR_STATIC(code, "closed");
     HERO_STR_STATIC(msg, "the mailbox was closed, so it takes no more values; the value sent is left as it was");
-    return (HeroFailure){HERO_STR_LIT(code), HERO_STR_LIT(msg)};
+    return (HeroFailure){.code = HERO_STR_LIT(code), .msg = HERO_STR_LIT(msg)};
 }
 
 HeroFailure hero_failure_send_stopped(void) {
     HERO_STR_STATIC(code, "stopped");
     HERO_STR_STATIC(msg, "the mailbox answered `stopped` once the program's stop was asked, so it takes no more "
                          "values; the value sent is left as it was");
-    return (HeroFailure){HERO_STR_LIT(code), HERO_STR_LIT(msg)};
+    return (HeroFailure){.code = HERO_STR_LIT(code), .msg = HERO_STR_LIT(msg)};
 }
 
 /* `spawn`'s refusal, its message saying why: the runtime's table of 256 full,
@@ -795,7 +795,7 @@ HeroFailure hero_failure_limit(int64_t why) {
         snprintf(text, sizeof text, "no thread could be started: the system refused one (error %lld)",
                  (long long)why);
     }
-    return (HeroFailure){hero_str_from_bytes("limit", 5), hero_str_from_bytes(text, (int64_t)strlen(text))};
+    return (HeroFailure){.code = hero_str_from_bytes("limit", 5), .msg = hero_str_from_bytes(text, (int64_t)strlen(text))};
 }
 
 /* -- the language's threads ---------------------------------------------------

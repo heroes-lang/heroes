@@ -30,27 +30,27 @@
 
 constant NAMES: [str]
     [
-        "HEROES_RUNTIME_H HERO_ARRAY_LIT HERO_ARRAY_STATIC"
-        "HERO_ARRAY_STATIC_EMPTY HERO_DIR_DIRECTORIES HERO_DIR_FILES"
+        "HEROES_RUNTIME_H HERO_ARRAY_ELEM_AT HERO_ARRAY_ELEM_SIZE HERO_ARRAY_LIT HERO_ARRAY_STATIC"
+        "HERO_ARRAY_STATIC_EMPTY HERO_DESC_COPY HERO_DESC_COPY_AT HERO_DESC_EQ HERO_DESC_EQ_AT HERO_DESC_HASH HERO_DESC_HASH_AT HERO_DESC_SIZE_AT HERO_DIR_DIRECTORIES HERO_DIR_FILES"
         "HERO_FLT_EVAL_METHOD HERO_FS_ABSENT HERO_FS_DIRECTORY HERO_FS_FILE"
         "HERO_FS_LINK"
         "HERO_FS_OTHER HERO_FS_PATH_MAX HERO_FS_UNKNOWN HERO_HELD_MAGIC"
         "HERO_OS_BAD_NAME HERO_OS_FAILED HERO_OS_H HERO_OS_NOT_FOUND"
-        "HERO_OS_NOT_TEXT HERO_OS_NO_FOLDER HERO_OS_OK HERO_OS_UNSUPPORTED"
+        "HERO_OS_NOT_TEXT HERO_OS_NO_FOLDER HERO_OS_OK HERO_OS_UNSUPPORTED HERO_PLACE_COLUMN HERO_PLACE_COLUMN_AT HERO_PLACE_LINE HERO_PLACE_LINE_AT HERO_PLACE_NAME HERO_PLACE_NAME_AT HERO_PLACE_PATH HERO_PLACE_PATH_AT"
         "HERO_RUNTIME_ABI HERO_SIGNAL_CHILD HERO_SIGNAL_CONTINUE HERO_SIGNAL_HANGUP HERO_SIGNAL_INTERRUPT HERO_SIGNAL_KILL HERO_SIGNAL_QUIT HERO_SIGNAL_STOP HERO_SIGNAL_TERMINAL_INPUT HERO_SIGNAL_TERMINAL_OUTPUT HERO_SIGNAL_TERMINAL_STOP HERO_SIGNAL_TERMINATE HERO_SIGNAL_USER1 HERO_SIGNAL_USER2 HERO_SIGNAL_WINDOW"
         "HERO_STAGE_ATTRIBUTES HERO_STAGE_CREATE HERO_STAGE_DONE"
         "HERO_STAGE_FLAGS HERO_STAGE_FLUSH HERO_STAGE_MODE HERO_STAGE_OWNER"
         "HERO_STAGE_WRITE HERO_STANDARD_AFTER_GROUPS HERO_STATIC_CONSTANTS"
         "HERO_STR_LIT HERO_STR_MAGIC HERO_STR_MAGIC_NUL HERO_STR_NOT_TEXT"
-        "HERO_STR_NULL HERO_STR_OK HERO_STR_STATIC HUGE_VAL HeroArrayHeader HeroCross"
+        "HERO_STR_NULL HERO_STR_OK HERO_STR_STATIC HERO_THREAD_BOX_ANSWER HERO_THREAD_BOX_ANSWER_AT HERO_THREAD_BOX_ARG HERO_THREAD_BOX_ARG_AT HERO_THREAD_BOX_BODY HERO_THREAD_BOX_BODY_AT HERO_THREAD_BOX_RUN HERO_THREAD_BOX_RUN_AT HUGE_VAL HeroArrayHeader HeroCross"
         "HeroDesc HeroFailure HeroHeldHeader HeroMail HeroMapHeader HeroPlace HeroPutFn HeroRefcount HeroSentFn HeroShow HeroShowFn HeroStr"
         "HeroStrHeader HeroTakeFn HeroThreadBox INT16_C INT16_MIN INT32_C INT32_MIN INT64_C INT64_MIN INT8_C"
         "INT8_MIN NULL UINT64_C a acos acosf acosh acoshf"
-        "acoshl acosl address_sanitizer answer arg argc argv asin asinf asinh asinhf"
+        "acoshl acosl address_sanitizer answer arg argc argv array asin asinf asinh asinhf"
         "asinhl asinl at atan atan2 atan2f atan2l atanf atanh atanhf atanhl atanl b"
         "body bool box by bytes cap cbrt cbrtf cbrtl ceil ceilf ceill cell char code column"
         "const copy copysign copysignf copysignl cos cosf cosh coshf coshl cosl"
-        "define desc double double_t drop dst each elem endif ends_here entries eq erf"
+        "define desc double double_t drop dst each elem endif ends_here entries enum eq erf"
         "erfc erfcf erfcl erff erfl err_path existing exp exp2 exp2f exp2l expf"
         "expl expm1 expm1f expm1l extern f fabs fabsf fabsl false fdim fdimf"
         "fdiml float float_t floor floorf floorl fma fmaf fmal fmax fmaxf fmaxl"
@@ -60,7 +60,7 @@ constant NAMES: [str]
         "hero_array_eq hero_array_incref hero_array_len hero_array_new"
         "hero_array_push hero_array_push_owned hero_array_release_at"
         "hero_array_set hero_array_slice hero_array_slice_at hero_array_sort hero_array_sort_at hero_array_unshare"
-        "hero_body hero_bool_to_str hero_callback_entered hero_callback_left hero_cross_free hero_cross_put_array hero_cross_put_failure hero_cross_put_handle hero_cross_put_mail hero_cross_put_map hero_cross_put_raw hero_cross_put_str hero_cross_put_thread hero_cross_sent_array hero_cross_sent_map hero_cross_take_array hero_cross_take_failure hero_cross_take_handle hero_cross_take_mail hero_cross_take_map hero_cross_take_raw hero_cross_take_str hero_cross_take_thread hero_cstr_nonnull hero_cstr_nonnull_at"
+        "hero_body hero_bool_to_str hero_callback_entered hero_callback_left hero_code hero_cross_free hero_cross_put_array hero_cross_put_failure hero_cross_put_handle hero_cross_put_mail hero_cross_put_map hero_cross_put_raw hero_cross_put_str hero_cross_put_thread hero_cross_sent_array hero_cross_sent_map hero_cross_take_array hero_cross_take_failure hero_cross_take_handle hero_cross_take_mail hero_cross_take_map hero_cross_take_raw hero_cross_take_str hero_cross_take_thread hero_cstr_nonnull hero_cstr_nonnull_at"
         "hero_desc_array"
         "hero_desc_bool hero_desc_f32 hero_desc_f64 hero_desc_failure hero_desc_func"
         "hero_desc_i16 hero_desc_i32 hero_desc_i8 hero_desc_int hero_desc_mailbox hero_desc_map"
@@ -88,7 +88,7 @@ constant NAMES: [str]
         "hero_lend_count_u64 hero_lend_count_u64_at hero_lend_give hero_lend_give_at hero_lend_local hero_lend_local_give"
         "hero_lend_local_name hero_lend_take hero_lend_take_at hero_mail_close hero_mail_decref hero_mail_hear_stop hero_mail_incref hero_mail_new hero_mail_number hero_mail_receive hero_mail_release_at hero_mail_send hero_map_decref hero_map_eq"
         "hero_map_find hero_map_find_at hero_map_incref hero_map_keys hero_map_len hero_map_new"
-        "hero_map_put hero_map_put_at hero_map_release_at hero_map_set hero_map_set_at hero_os_pid hero_pad_bits hero_pad_clear hero_pad_fill hero_pad_gaps hero_pad_masks hero_pad_object hero_pad_object_give hero_panic"
+        "hero_map_put hero_map_put_at hero_map_release_at hero_map_set hero_map_set_at hero_msg hero_os_pid hero_pad_bits hero_pad_clear hero_pad_fill hero_pad_gaps hero_pad_masks hero_pad_object hero_pad_object_give hero_panic"
         "hero_panic_assert_at hero_panic_assert_shown_at hero_panic_assert_sides_at"
         "hero_panic_assert_str_sides_at hero_panic_at hero_panic_byte_at"
         "hero_panic_index_at hero_panic_library_at hero_panic_must_at"
@@ -122,7 +122,7 @@ constant NAMES: [str]
         "logb logbf logbl logf logl lrint lrintf lrintl lround lroundf lroundl m"
         "magic main marks max_align_t mode modf modff modfl msg n name nan nanf"
         "nanl nearbyint nearbyintf nearbyintl nextafter nextafterf nextafterl"
-        "nexttoward nexttowardf nexttowardl offsetof out out_path p parts path pays"
+        "nexttoward nexttowardf nexttowardl offsetof out out_path p parts path pays place"
         "pow powf powl program ptr ptrdiff_t put recursive refcount reference"
         "releasers remainder remainderf remainderl remquo remquof remquol right"
         "rint rintf rintl root round roundf roundl run s scalbln scalblnf scalblnl"
@@ -132,7 +132,7 @@ constant NAMES: [str]
         "tgamma tgammaf tgammal thread to true trunc truncf truncl type typedef"
         "uint16_t uint32_t uint64_t uint8_t uint_fast16_t uint_fast32_t"
         "uint_fast64_t uint_fast8_t uint_least16_t uint_least32_t uint_least64_t"
-        "uint_least8_t uintmax_t uintptr_t unsigned v val vals value vd void want wchar_t"
+        "uint_least8_t uintmax_t uintptr_t union unsigned v val vals value vd void want wchar_t"
         "what where why within_ms word"
     ]
 
@@ -158,8 +158,9 @@ constant LEFT_LINES: [str]
         "isunordered math_errhandling signbit"
     ]
 
-# The functions of `<math.h>` (C11 7.12) the list holds but `fmod`, which
-# the unit's own C writes for an `f64` `%` (`emit/operator.hero`): a name the
+# The functions of `<math.h>` (C11 7.12) the list holds, `fmod` among them
+# since the unit's own C writes an `f64` `%` as `__builtin_fmod` (defect
+# d-lane-macro-members2-1, 2026-11-25; `emit/operator.hero`): a name the
 # unit's own C never writes, which the guard keeps for the C library's `<math.h>` read
 # after the groups (defect 568) and which `heroes_standard.h` now reads with
 # each such name a bound macro reaches saved and undefined (defect 2059,
@@ -174,7 +175,7 @@ constant MATH_LINES: [str]
         "cosh coshf coshl cosl erf erfc erfcf erfcl erff erfl exp exp2 exp2f"
         "exp2l expf expl expm1 expm1f expm1l fabs fabsf fabsl fdim fdimf fdiml"
         "floor floorf floorl fma fmaf fmal fmax fmaxf fmaxl fmin fminf fminl"
-        "fmodf fmodl frexp frexpf frexpl hypot hypotf hypotl ilogb ilogbf"
+        "fmod fmodf fmodl frexp frexpf frexpl hypot hypotf hypotl ilogb ilogbf"
         "ilogbl ldexp ldexpf ldexpl lgamma lgammaf lgammal llrint llrintf"
         "llrintl llround llroundf llroundl log log10 log10f log10l log1p log1pf"
         "log1pl log2 log2f log2l logb logbf logbl logf logl lrint lrintf lrintl"
@@ -226,16 +227,16 @@ constant RESERVED_LINES: [str]
         "__INT32_TYPE__ __INT64_C_SUFFIX__ __INT64_MAX__ __INT64_TYPE__"
         "__INT8_C_SUFFIX__ __INT8_MAX__ __INT8_TYPE__ __INTPTR_TYPE__"
         "__LDBL_MANT_DIG__ __LDBL_MAX_EXP__ __LDBL_MIN_EXP__ __OPTIMIZE__"
-        "__SANITIZE_ADDRESS__ __UINT16_TYPE__ __UINT32_TYPE__"
+        "__SANITIZE_ADDRESS__ __SIZE_TYPE__ __UINT16_TYPE__ __UINT32_TYPE__"
         "__UINT64_C_SUFFIX__ __UINT64_TYPE__ __UINT8_TYPE__ __UINTPTR_TYPE__"
-        "__asm__ __atomic_always_lock_free __attribute__ __builtin_add_overflow"
+        "__always_inline__ __asm__ __atomic_always_lock_free __attribute__ __builtin_add_overflow"
         "__builtin_choose_expr __builtin_classify_type __builtin_constant_p"
-        "__builtin_frame_address __builtin_huge_val __builtin_memcpy"
+        "__builtin_fmod __builtin_frame_address __builtin_huge_val __builtin_memcpy"
         "__builtin_memmove __builtin_memset __builtin_mul_overflow"
         "__builtin_offsetof __builtin_return_address __builtin_strlen"
         "__builtin_sub_overflow __builtin_types_compatible_p __cleanup__"
         "__constructor__ __has_feature __no_sanitize__ __nodebug__ __noinline__"
-        "__optnone__ __typeof__ __unused__ __used__ auto break case char const"
+        "__optnone__ __typeof__ __undefined_behavior_sanitizer__ __unused__ __used__ auto break case char const"
         "continue default do double else enum extern float for goto if inline"
         "int long register restrict return short signed sizeof static struct"
         "switch typedef union unsigned void volatile while"

@@ -477,9 +477,21 @@ double hero_int_to_f64(int64_t v);
  * is 48 for a 40-byte record, because past 32 the payload wins). */
 
 typedef struct HeroFailure {
-    HeroStr code;
-    HeroStr msg;
+    union { HeroStr hero_code; HeroStr code; };
+    union { HeroStr hero_msg; HeroStr msg; };
 } HeroFailure;
+/* **Each member has two names, the program's C writing the first** (defect
+ * d-lane-macro-members2-1, 2026-11-25). A failure is a record the program
+ * reads, `e.code` written `.code` in the unit's C, after its groups: a group's
+ * header that defines `code` and a program that binds it made every program
+ * reading or building a failure an internal error at exit 2. So the unit
+ * writes `hero_code` and `hero_msg`, the runtime's own form, and builds one by
+ * those names (`{.hero_code = ..., .hero_msg = ...}`). `code` and `msg`, the
+ * same bytes, stand for the seed's C, emitted before this and compiled with
+ * this header, and the runtime's own C, which no group's header reaches; they
+ * go once the seed is emitted by a compiler that writes the first names. A
+ * failure is built by name, never in order: two names make each member a
+ * union, and `-Wall` asks braces of an initialiser in order. */
 
 void hero_failure_retain(const HeroFailure *v);
 void hero_failure_release(HeroFailure *v);
@@ -521,6 +533,38 @@ typedef struct {
     int64_t line;
     int64_t column;
 } HeroPlace;
+
+/* A RUNTIME STRUCT'S MEMBERS ARE REACHED BY THE PROGRAM'S C THROUGH THEIR
+ * OFFSETS, NEVER BY NAME (defect d-lane-macro-members2-1, 2026-11-25). A
+ * member's name is a word a group's header may define, and a name the program
+ * binds keeps its header's meaning after the groups
+ * (selfhost/emit/macro_guard.hero), so `#define arg 5` bound as a constant made
+ * the unit's `&hero_head->arg` an internal error at exit 2, and so did
+ * `answer`, `body`, `run`, `code`, `msg`, `copy`, `eq`, `hash`, `size` and
+ * `elem`. So each member the unit reaches has its offset here, an enumeration
+ * constant C computes where this header is read, before any group's header,
+ * and a macro of the runtime's own form that reads the member at that offset
+ * as the type its `_Static_assert` holds it to: the macro writes no member's
+ * name, only names of the runtime's and names C reserves, and costs what the
+ * member's read did. Not functions: an inlined body in this header is what
+ * Part 7.13's narrow refcount boundary keeps out of it (`runtime` suite), and a
+ * call not inlined would cost every element read. The members keep their
+ * names: the seed's C, written before this, reads them directly. A place's
+ * below; a descriptor's, an array's and a thread box's after their types. */
+enum {
+    HERO_PLACE_PATH_AT = __builtin_offsetof(HeroPlace, path),
+    HERO_PLACE_NAME_AT = __builtin_offsetof(HeroPlace, name),
+    HERO_PLACE_LINE_AT = __builtin_offsetof(HeroPlace, line),
+    HERO_PLACE_COLUMN_AT = __builtin_offsetof(HeroPlace, column)
+};
+_Static_assert(__builtin_types_compatible_p(__typeof__(((HeroPlace *)0)->path), const char *), "HERO_PLACE_PATH reads a const char *");
+_Static_assert(__builtin_types_compatible_p(__typeof__(((HeroPlace *)0)->name), const char *), "HERO_PLACE_NAME reads a const char *");
+_Static_assert(__builtin_types_compatible_p(__typeof__(((HeroPlace *)0)->line), __INT64_TYPE__), "HERO_PLACE_LINE reads an int64_t");
+_Static_assert(__builtin_types_compatible_p(__typeof__(((HeroPlace *)0)->column), __INT64_TYPE__), "HERO_PLACE_COLUMN reads an int64_t");
+#define HERO_PLACE_PATH(place) (*(const char *const *)((const char *)(place) + HERO_PLACE_PATH_AT))
+#define HERO_PLACE_NAME(place) (*(const char *const *)((const char *)(place) + HERO_PLACE_NAME_AT))
+#define HERO_PLACE_LINE(place) (*(const __INT64_TYPE__ *)((const char *)(place) + HERO_PLACE_LINE_AT))
+#define HERO_PLACE_COLUMN(place) (*(const __INT64_TYPE__ *)((const char *)(place) + HERO_PLACE_COLUMN_AT))
 _Noreturn void hero_panic_overflow_at(const char *, const char *, int64_t, int64_t);
 _Noreturn void hero_panic_byte_at(HeroStr s, int64_t index, const char *, const char *, int64_t, int64_t);
 /* `.must()` on an error (§4.6). Takes the failure, because the useful half of the
@@ -651,6 +695,21 @@ struct HeroDesc {
     uint64_t (*hash)(const void *elem);       /* never null                  */
 };
 
+/* A descriptor's members, for the program's C (`HERO_PLACE_PATH`, above). */
+enum {
+    HERO_DESC_SIZE_AT = __builtin_offsetof(HeroDesc, size),
+    HERO_DESC_COPY_AT = __builtin_offsetof(HeroDesc, copy),
+    HERO_DESC_EQ_AT = __builtin_offsetof(HeroDesc, eq),
+    HERO_DESC_HASH_AT = __builtin_offsetof(HeroDesc, hash)
+};
+_Static_assert(__builtin_types_compatible_p(__typeof__(((HeroDesc *)0)->size), __SIZE_TYPE__), "HERO_ARRAY_ELEM_SIZE reads a size_t");
+_Static_assert(__builtin_types_compatible_p(__typeof__(((HeroDesc *)0)->copy), void (*)(void *, const void *)), "HERO_DESC_COPY reads the copy");
+_Static_assert(__builtin_types_compatible_p(__typeof__(((HeroDesc *)0)->eq), _Bool (*)(const void *, const void *)), "HERO_DESC_EQ reads the eq");
+_Static_assert(__builtin_types_compatible_p(__typeof__(((HeroDesc *)0)->hash), __UINT64_TYPE__ (*)(const void *)), "HERO_DESC_HASH reads the hash");
+#define HERO_DESC_COPY(desc) (*(void (*const *)(void *, const void *))((const char *)(desc) + HERO_DESC_COPY_AT))
+#define HERO_DESC_EQ(desc) (*(_Bool (*const *)(const void *, const void *))((const char *)(desc) + HERO_DESC_EQ_AT))
+#define HERO_DESC_HASH(desc) (*(__UINT64_TYPE__ (*const *)(const void *))((const char *)(desc) + HERO_DESC_HASH_AT))
+
 /* The scalars and `str`, so the compiler never writes a descriptor for a type it
  * did not declare. `str`'s copy increfs; a scalar's is a plain assignment. */
 extern const HeroDesc hero_desc_int;
@@ -698,6 +757,13 @@ typedef struct HeroArrayHeader {
     const HeroDesc *elem;
     /* elements follow in-line: cap * elem->size bytes */
 } HeroArrayHeader;
+
+/* One element's size in bytes, for the program's C (`HERO_PLACE_PATH`): the
+ * array's descriptor, then its size. */
+enum { HERO_ARRAY_ELEM_AT = __builtin_offsetof(HeroArrayHeader, elem) };
+_Static_assert(__builtin_types_compatible_p(__typeof__(((HeroArrayHeader *)0)->elem), const HeroDesc *), "HERO_ARRAY_ELEM_SIZE reads the descriptor");
+#define HERO_ARRAY_ELEM_SIZE(array) \
+    (*(const __SIZE_TYPE__ *)((const char *)*(const HeroDesc *const *)((const char *)(array) + HERO_ARRAY_ELEM_AT) + HERO_DESC_SIZE_AT))
 
 HeroArrayHeader *hero_array_new(const HeroDesc *elem, int64_t cap);
 void hero_array_incref(HeroArrayHeader *a);
@@ -1100,6 +1166,24 @@ struct HeroThreadBox {
     HeroCross arg;
     HeroCross answer;
 };
+
+/* A thread box's members, for the program's C (`HERO_PLACE_PATH`): its runner
+ * and the program's function, set at the start, and the argument's and the
+ * answer's places. */
+enum {
+    HERO_THREAD_BOX_RUN_AT = __builtin_offsetof(HeroThreadBox, run),
+    HERO_THREAD_BOX_BODY_AT = __builtin_offsetof(HeroThreadBox, body),
+    HERO_THREAD_BOX_ARG_AT = __builtin_offsetof(HeroThreadBox, arg),
+    HERO_THREAD_BOX_ANSWER_AT = __builtin_offsetof(HeroThreadBox, answer)
+};
+_Static_assert(__builtin_types_compatible_p(__typeof__(((HeroThreadBox *)0)->run), void (*)(HeroThreadBox *)), "HERO_THREAD_BOX_RUN writes the runner");
+_Static_assert(__builtin_types_compatible_p(__typeof__(((HeroThreadBox *)0)->body), void (*)(void)), "HERO_THREAD_BOX_BODY writes the function");
+_Static_assert(__builtin_types_compatible_p(__typeof__(((HeroThreadBox *)0)->arg), HeroCross), "HERO_THREAD_BOX_ARG reaches a HeroCross");
+_Static_assert(__builtin_types_compatible_p(__typeof__(((HeroThreadBox *)0)->answer), HeroCross), "HERO_THREAD_BOX_ANSWER reaches a HeroCross");
+#define HERO_THREAD_BOX_RUN(box) (*(void (**)(HeroThreadBox *))((char *)(box) + HERO_THREAD_BOX_RUN_AT))
+#define HERO_THREAD_BOX_BODY(box) (*(void (**)(void))((char *)(box) + HERO_THREAD_BOX_BODY_AT))
+#define HERO_THREAD_BOX_ARG(box) ((HeroCross *)((char *)(box) + HERO_THREAD_BOX_ARG_AT))
+#define HERO_THREAD_BOX_ANSWER(box) ((HeroCross *)((char *)(box) + HERO_THREAD_BOX_ANSWER_AT))
 
 void *hero_thread_box_new(int64_t size);
 void hero_thread_box_free(HeroThreadBox *box);

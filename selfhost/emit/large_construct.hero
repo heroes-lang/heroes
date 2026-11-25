@@ -180,7 +180,7 @@ function option_in_place(names: ctype.Names, result: i64, shape: ir.Shape, argum
 
     match shape
         .ok_shape =>
-            out @ out.push(target + ".hero_tag = INT64_C(0);")
+            out @ out.push(target + ".hero_tag = ((__INT64_TYPE__)0);")
 
             # ok(()) — a unit payload has no member at all, so the tag is the
             # whole value.
@@ -193,14 +193,14 @@ function option_in_place(names: ctype.Names, result: i64, shape: ir.Shape, argum
                 return fail(code: "none", msg: "a fail without both sides")
 
             return ok(
-                out.push(target + ".hero_tag = INT64_C(1);").push(target + ".hero_as.hero_err.code = " + arguments[0] + ";").push(target + ".hero_as.hero_err.msg = " + arguments[1] + ";")
+                out.push(target + ".hero_tag = ((__INT64_TYPE__)1);").push(target + ".hero_as.hero_err = (HeroFailure){.hero_code = " + arguments[0] + ", .hero_msg = " + arguments[1] + "};")
             )
         .err_shape =>
             if arguments.len() < 1
                 return fail(code: "none", msg: "an err without its failure")
 
             return ok(
-                out.push(target + ".hero_tag = INT64_C(1);").push(target + ".hero_as.hero_err = " + arguments[0] + ";")
+                out.push(target + ".hero_tag = ((__INT64_TYPE__)1);").push(target + ".hero_as.hero_err = " + arguments[0] + ";")
             )
         .record_shape | .case_shape | .array_shape | .map_shape => return fail(code: "none", msg: "not an option shape")
 

@@ -314,7 +314,7 @@ test "designated construction, a walked place, and the failure's fixed pair"
     spot = place(got.c, got.s, got.decls, f, at: ir.Place(root: 0, path: ir.Run(start: 0, length: 2)), site: 0)
     assert spot == "h0_l.f_start_at.f_x"
     failure_read = field(got.c, got.s, got.decls, owner: table.failure_ty(got.c.types), index: 1)
-    assert failure_read.must().member == "msg"
+    assert failure_read.must().member == "hero_msg"
 
 test "a case writes its tag alone when bare, and the payload member when not"
     got = ready(

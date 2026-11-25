@@ -218,15 +218,15 @@ __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_fr
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int64_t h_fixedbugs2756aclongjmpoutofthecallabufferwaslenttogivesitsregionback_body(int64_t h0_n);
@@ -246,8 +246,8 @@ __attribute__((__unused__)) static void (*hero_callback_of(void (*hero_f)(void))
 #line 19 "tests/golden/run/fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.hero"
 int64_t h_fixedbugs2756aclongjmpoutofthecallabufferwaslenttogivesitsregionback_body(int64_t h0_n) { hero_thread_guard("fixedbugs2756aclongjmpoutofthecallabufferwaslenttogivesitsregionback.body"); HeroArrayHeader * h1_md = {0}; HERO_NODEBUG HeroArrayHeader *h2_own2 = {0}, *t1, *t3, *t7, *t8; HERO_NODEBUG int32_t t2; HERO_NODEBUG int64_t t4, t5, t6; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_u8, 1); t7 = h2_own2; h2_own2 = t1; hero_array_decref(t7); t8 = h1_md; hero_array_incref(t1); h1_md = t1; hero_array_decref(t8);
-    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.hero", "fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.body", 21, 22}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer lv_fill_throw md 1081 1083 u8 unsigned char *"); HERO_NODEBUG int64_t hero_lend_e0_0 = INT64_C(4096); HERO_NODEBUG void *hero_lend_b0_0 = hero_lend_take_at(h1_md, hero_lend_e0_0, "lv_fill_throw", "md", &hero_here); t2 = lv_fill_throw((void *)hero_lend_b0_0); h1_md = hero_lend_give_at(h1_md, hero_lend_b0_0, hero_lend_e0_0, &hero_here); } } h_fixedbugs2756aclongjmpoutofthecallabufferwaslenttogivesitsregionback_print_nothing(t2);
-    t3 = h1_md; t4 = ((void)(t3 == NULL ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len); t5 = h0_n; if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow_at("fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.hero", "fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.body", 22, 12);
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.hero", "fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.body", 21, 22}; { _Static_assert((__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned char) && sizeof(unsigned char) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned short) && sizeof(unsigned short) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned int) && sizeof(unsigned int) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long) && sizeof(unsigned long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), unsigned long long) && sizeof(unsigned long long) == sizeof(uint8_t)) || (__builtin_types_compatible_p(__typeof__(*(unsigned char *)0), char) && (char)-1 > 0) || __builtin_types_compatible_p(__typeof__(*(unsigned char *)0), void), "heroes-ffi-buffer lv_fill_throw md 1081 1083 u8 unsigned char *"); HERO_NODEBUG int64_t hero_lend_e0_0 = ((__INT64_TYPE__)4096); HERO_NODEBUG void *hero_lend_b0_0 = hero_lend_take_at(h1_md, hero_lend_e0_0, "lv_fill_throw", "md", &hero_here); t2 = lv_fill_throw((void *)hero_lend_b0_0); h1_md = hero_lend_give_at(h1_md, hero_lend_b0_0, hero_lend_e0_0, &hero_here); } } h_fixedbugs2756aclongjmpoutofthecallabufferwaslenttogivesitsregionback_print_nothing(t2);
+    t3 = h1_md; t4 = ((void)(t3 == ((void *)0) ? ((void)hero_array_len(t3), hero_unreachable()) : (void)0), t3->len); t5 = h0_n; if (__builtin_add_overflow(t4, t5, &t6)) hero_panic_overflow_at("fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.hero", "fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.body", 22, 12);
 #line 252 "fixedbugs2756aclongjmpoutofthecallabufferwaslenttogivesitsregionback.c"
     hero_array_release_at(&h1_md);
     hero_array_release_at(&h2_own2);
@@ -262,20 +262,20 @@ __attribute__((__noinline__)) int64_t h_0cb_fixedbugs2756aclongjmpoutofthecallab
 }
 
 #line 24 "tests/golden/run/fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.hero"
-void h_fixedbugs2756aclongjmpoutofthecallabufferwaslenttogivesitsregionback_print_nothing(int32_t h0_n) { HERO_NODEBUG int32_t t1, t2; HERO_NODEBUG bool t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = h0_n; t2 = INT64_C(99); t3 = t1 == t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1: return; hero_bb2:
+void h_fixedbugs2756aclongjmpoutofthecallabufferwaslenttogivesitsregionback_print_nothing(int32_t h0_n) { HERO_NODEBUG int32_t t1, t2; HERO_NODEBUG _Bool t3; HERO_NODEBUG HeroStr t4; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_n; t2 = ((__INT64_TYPE__)99); t3 = t1 == t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1: return; hero_bb2:
     t4 = HERO_STR_LIT(hero_str_188c0f4b); hero_print_str(t4); hero_print_end(); goto hero_bb1; hero_bb3: goto hero_bb1;
 #line 269 "fixedbugs2756aclongjmpoutofthecallabufferwaslenttogivesitsregionback.c"
 }
 
 #line 28 "tests/golden/run/fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.hero"
-void h_fixedbugs2756aclongjmpoutofthecallabufferwaslenttogivesitsregionback_main(void) { int64_t h0_total; HERO_NODEBUG HeroArrayHeader *h1_xs0 = {0}, *h3_own3 = {0}, *t4, *t7, *t20, *t21; HERO_NODEBUG int64_t h2_i0, t1, t2, t3, t5, t6, t8, t10, t12, t13, t14, t15, t16, t17, t19; HERO_NODEBUG bool t9; HERO_NODEBUG h_0fn_48ac9712 t11; HERO_NODEBUG HeroStr t18; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = INT64_C(0); h0_total = t1;
+void h_fixedbugs2756aclongjmpoutofthecallabufferwaslenttogivesitsregionback_main(void) { int64_t h0_total; HERO_NODEBUG HeroArrayHeader *h1_xs0 = {0}, *h3_own3 = {0}, *t4, *t7, *t20, *t21; HERO_NODEBUG int64_t h2_i0, t1, t2, t3, t5, t6, t8, t10, t12, t13, t14, t15, t16, t17, t19; HERO_NODEBUG _Bool t9; HERO_NODEBUG h_0fn_48ac9712 t11; HERO_NODEBUG HeroStr t18; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = ((__INT64_TYPE__)0); h0_total = t1;
 #line 31
-    t2 = INT64_C(0); t3 = INT64_C(20000); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.hero", "fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.main", 31, 14}; t4 = h_library_range(t2, t3, &hero_here); } t20 = h3_own3; h3_own3 = t4; hero_array_decref(t20); t21 = h1_xs0; hero_array_incref(t4); h1_xs0 = t4; hero_array_decref(t21); t5 = INT64_C(0); h2_i0 = t5; goto hero_bb1; hero_bb1: t6 = h2_i0; t7 = h1_xs0; t8 = ((void)(t7 == NULL ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto hero_bb2; else goto hero_bb4; hero_bb2:
-    t10 = h0_total; t11 = h_fixedbugs2756aclongjmpoutofthecallabufferwaslenttogivesitsregionback_body; t12 = INT64_C(1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.hero", "fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.main", 32, 25}; t13 = lv_try((h_0fn_48ac9712)hero_callback_of((void (*)(void))t11), t12); } if (__builtin_add_overflow(t10, t13, &t14)) hero_panic_overflow_at("fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.hero", "fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.main", 32, 17); h0_total = t14; goto hero_bb3; hero_bb3:
+    t2 = ((__INT64_TYPE__)0); t3 = ((__INT64_TYPE__)20000); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.hero", "fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.main", 31, 14}; t4 = h_library_range(t2, t3, &hero_here); } t20 = h3_own3; h3_own3 = t4; hero_array_decref(t20); t21 = h1_xs0; hero_array_incref(t4); h1_xs0 = t4; hero_array_decref(t21); t5 = ((__INT64_TYPE__)0); h2_i0 = t5; goto hero_bb1; hero_bb1: t6 = h2_i0; t7 = h1_xs0; t8 = ((void)(t7 == ((void *)0) ? ((void)hero_array_len(t7), hero_unreachable()) : (void)0), t7->len); t9 = t6 < t8; if (t9) goto hero_bb2; else goto hero_bb4; hero_bb2:
+    t10 = h0_total; t11 = h_fixedbugs2756aclongjmpoutofthecallabufferwaslenttogivesitsregionback_body; t12 = ((__INT64_TYPE__)1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.hero", "fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.main", 32, 25}; t13 = lv_try((h_0fn_48ac9712)hero_callback_of((void (*)(void))t11), t12); } if (__builtin_add_overflow(t10, t13, &t14)) hero_panic_overflow_at("fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.hero", "fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.main", 32, 17); h0_total = t14; goto hero_bb3; hero_bb3:
 #line 31
-    t15 = h2_i0; t16 = INT64_C(1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.hero", "fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.main", 31, 9); h2_i0 = t17; goto hero_bb1; hero_bb4:
+    t15 = h2_i0; t16 = ((__INT64_TYPE__)1); if (__builtin_add_overflow(t15, t16, &t17)) hero_panic_overflow_at("fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.hero", "fixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back.main", 31, 9); h2_i0 = t17; goto hero_bb1; hero_bb4:
 #line 34
     t18 = HERO_STR_LIT(hero_str_43c1a33f); t19 = h0_total; hero_print_str(t18); hero_print_int(t19); hero_print_end();
 #line 282 "fixedbugs2756aclongjmpoutofthecallabufferwaslenttogivesitsregionback.c"
@@ -285,12 +285,12 @@ void h_fixedbugs2756aclongjmpoutofthecallabufferwaslenttogivesitsregionback_main
 }
 
 #line 26 "<heroes library>"
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG _Bool t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t13 = h4_own4; h4_own4 = t1; hero_array_decref(t13); t14 = h2_out; hero_array_incref(t1); h2_out = t1; hero_array_decref(t14);
     t2 = h0_from; h3_i = t2; goto hero_bb1; hero_bb1:
     t3 = h3_i; t4 = h1_to; t5 = t3 < t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb2:
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
-    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto hero_bb1; hero_bb3:
+    t9 = h3_i; t10 = ((__INT64_TYPE__)1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(HERO_PLACE_PATH(hero_caller), HERO_PLACE_NAME(hero_caller), HERO_PLACE_LINE(hero_caller), HERO_PLACE_COLUMN(hero_caller)); h3_i = t11; goto hero_bb1; hero_bb3:
     t12 = h2_out;
 #line 296 "fixedbugs2756aclongjmpoutofthecallabufferwaslenttogivesitsregionback.c"
     hero_array_incref(t12);
@@ -303,7 +303,7 @@ __attribute__((__unused__)) HeroArrayHeader * hero_value_h_library_range(int64_t
     return h_library_range(h0_from, h1_to, &hero_here);
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -311,31 +311,31 @@ HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_str)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
     const h_0opt_f87774a *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_str)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -343,31 +343,31 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
     const h_0opt_a8ea2 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
     return hero_h;
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -375,31 +375,31 @@ HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_int)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
     const h_0opt_e201354 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_int)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("38696dde23b68bdf", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("73ffbaca04f74939", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2756aclongjmpoutofthecallabufferwaslenttogivesitsregionback\tfixedbugs-2756-a-c-longjmp-out-of-the-call-a-buffer-was-lent-to-gives-its-region-back\n");

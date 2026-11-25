@@ -276,29 +276,29 @@ __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_fr
 #line 277 "fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E0 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E0 *hero_b);
+HERO_TU_LOCAL _Bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E0 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E0 *hero_b);
 HERO_TU_LOCAL uint64_t h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_hash(const void *hero_elem);
-HERO_TU_LOCAL bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E1 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E1 *hero_b);
+HERO_TU_LOCAL _Bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E1 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E1 *hero_b);
 HERO_TU_LOCAL uint64_t h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_hash(const void *hero_elem);
-HERO_TU_LOCAL bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E2 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E2 *hero_b);
+HERO_TU_LOCAL _Bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E2 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E2 *hero_b);
 HERO_TU_LOCAL uint64_t h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_hash(const void *hero_elem);
-HERO_TU_LOCAL bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E3 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E3 *hero_b);
+HERO_TU_LOCAL _Bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E3 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E3 *hero_b);
 HERO_TU_LOCAL uint64_t h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_hash(const void *hero_elem);
-HERO_TU_LOCAL bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *hero_b);
+HERO_TU_LOCAL _Bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *hero_b);
 HERO_TU_LOCAL uint64_t h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_hash(const void *hero_elem);
-HERO_TU_LOCAL bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E5_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *hero_b);
+HERO_TU_LOCAL _Bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E5_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *hero_b);
 HERO_TU_LOCAL uint64_t h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E5_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 void h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_e4(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *hero_out, int64_t h0_n);
@@ -328,7 +328,7 @@ __attribute__((__noinline__)) void h_fixedbugs2752theroomtakenatthreedepthsunder
     t3 = h1_v0; t4 = h1_v0; t5 = h1_v0; t6 = h1_v0; t7 = h1_v0; t8 = h1_v0; t9 = h1_v0; t10 = h1_v0; t11 = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E1){.f_a = t3, .f_b = t4, .f_c = t5, .f_d = t6, .f_e = t7, .f_f = t8, .f_g = t9, .f_h = t10}; h2_v1 = t11;
     t12 = h2_v1; t13 = h2_v1; t14 = h2_v1; t15 = h2_v1; t16 = h2_v1; t17 = h2_v1; t18 = h2_v1; t19 = h2_v1; t20 = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E2){.f_a = t12, .f_b = t13, .f_c = t14, .f_d = t15, .f_e = t16, .f_f = t17, .f_g = t18, .f_h = t19}; h3_v2 = t20;
     t21 = h3_v2; t22 = h3_v2; t23 = h3_v2; t24 = h3_v2; t25 = h3_v2; t26 = h3_v2; t27 = h3_v2; t28 = h3_v2; t29 = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E3){.f_a = t21, .f_b = t22, .f_c = t23, .f_d = t24, .f_e = t25, .f_f = t26, .f_g = t27, .f_h = t28}; h4_v3 = t29;
-    t30 = h4_v3; t31 = h4_v3; t32 = h4_v3; t33 = h4_v3; t34 = h4_v3; t35 = h4_v3; t36 = h4_v3; t37 = h4_v3; t38 = *(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *)__builtin_memset(&t38, 0, sizeof t38); t38.f_a = t30; t38.f_b = t31; t38.f_c = t32; t38.f_d = t33; t38.f_e = t34; t38.f_f = t35; t38.f_g = t36; t38.f_h = t37; if (hero_out != NULL) *hero_out = t38; hero_frame_give(hero_big_t38); return;
+    t30 = h4_v3; t31 = h4_v3; t32 = h4_v3; t33 = h4_v3; t34 = h4_v3; t35 = h4_v3; t36 = h4_v3; t37 = h4_v3; t38 = *(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *)__builtin_memset(&t38, 0, sizeof t38); t38.f_a = t30; t38.f_b = t31; t38.f_c = t32; t38.f_d = t33; t38.f_e = t34; t38.f_f = t35; t38.f_g = t36; t38.f_h = t37; if (hero_out != ((void *)0)) *hero_out = t38; hero_frame_give(hero_big_t38); return;
 #line 333 "fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback.c"
 }
 #undef t38
@@ -360,7 +360,7 @@ __attribute__((__noinline__)) void h_fixedbugs2752theroomtakenatthreedepthsunder
 #line 75
     h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *const hero_big_h1_v4 = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4)); HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *const hero_big_t2 = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4)); HERO_NODEBUG h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *const hero_big_t3 = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4)); HERO_NODEBUG h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *const hero_big_t4 = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4)); HERO_NODEBUG h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *const hero_big_t5 = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4)); HERO_NODEBUG h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *const hero_big_t6 = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4)); HERO_NODEBUG h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *const hero_big_t7 = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4)); HERO_NODEBUG h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *const hero_big_t8 = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4)); HERO_NODEBUG h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *const hero_big_t9 = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4)); HERO_NODEBUG h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *const hero_big_t10 = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4)); HERO_NODEBUG h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *const hero_big_t11 = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *)hero_frame_take(sizeof(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_e4(&t2, t1); h1_v4 = t2;
-    t3 = h1_v4; t4 = h1_v4; t5 = h1_v4; t6 = h1_v4; t7 = h1_v4; t8 = h1_v4; t9 = h1_v4; t10 = h1_v4; t11 = *(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *)__builtin_memset(&t11, 0, sizeof t11); t11.f_a = t3; t11.f_b = t4; t11.f_c = t5; t11.f_d = t6; t11.f_e = t7; t11.f_f = t8; t11.f_g = t9; t11.f_h = t10; if (hero_out != NULL) *hero_out = t11; hero_frame_give(hero_big_t11); hero_frame_give(hero_big_t10); hero_frame_give(hero_big_t9); hero_frame_give(hero_big_t8); hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t5); hero_frame_give(hero_big_t4); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_v4); return;
+    t3 = h1_v4; t4 = h1_v4; t5 = h1_v4; t6 = h1_v4; t7 = h1_v4; t8 = h1_v4; t9 = h1_v4; t10 = h1_v4; t11 = *(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *)__builtin_memset(&t11, 0, sizeof t11); t11.f_a = t3; t11.f_b = t4; t11.f_c = t5; t11.f_d = t6; t11.f_e = t7; t11.f_f = t8; t11.f_g = t9; t11.f_h = t10; if (hero_out != ((void *)0)) *hero_out = t11; hero_frame_give(hero_big_t11); hero_frame_give(hero_big_t10); hero_frame_give(hero_big_t9); hero_frame_give(hero_big_t8); hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t5); hero_frame_give(hero_big_t4); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_v4); return;
 #line 365 "fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback.c"
 }
 #undef h1_v4
@@ -384,7 +384,7 @@ __attribute__((__noinline__)) int64_t h_fixedbugs2752theroomtakenatthreedepthsun
 #line 79
     h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *const hero_big_h1_v = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *)hero_frame_take(sizeof(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5)); HERO_NODEBUG int64_t t1, t3, t4; HERO_NODEBUG h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *const hero_big_t2 = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *)hero_frame_take(sizeof(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_e5(&t2, t1); h1_v = t2;
-    t3 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.hero", "fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.leaf", 81, 5}; (void)lv_throw(t3); }
+    t3 = ((__INT64_TYPE__)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.hero", "fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.leaf", 81, 5}; (void)lv_throw(t3); }
     t4 = h1_v.f_a.f_a.f_a.f_a.f_a.f_x; hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_v); return t4;
 #line 390 "fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback.c"
 }
@@ -439,16 +439,16 @@ __attribute__((__noinline__)) void h_fixedbugs2752theroomtakenatthreedepthsunder
 #line 92
 #define t24 (*hero_big_t24)
 #line 92
-    h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *const hero_big_h0_w = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4)); int64_t h1_total; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h6_own6 = {0}, *t6, *t9, *t12, *t31, *t32; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t5, t7, t8, t10, t13, t14, t15, t17, t18, t19, t20, t21, t22, t23, t26, t28, t30; int64_t h4_i; h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *const hero_big_h5_after = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *)hero_frame_take(sizeof(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5)); HERO_NODEBUG h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *const hero_big_t2 = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4)); HERO_NODEBUG bool t11; HERO_NODEBUG h_0fn_48ac9712 t16; HERO_NODEBUG h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *const hero_big_t24 = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *)hero_frame_take(sizeof(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5)); HERO_NODEBUG HeroStr t25, t27, t29; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = INT64_C(2); h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_e4(&t2, t1); h0_w = t2;
-    t3 = INT64_C(0); h1_total = t3;
+    h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *const hero_big_h0_w = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4)); int64_t h1_total; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h6_own6 = {0}, *t6, *t9, *t12, *t31, *t32; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t5, t7, t8, t10, t13, t14, t15, t17, t18, t19, t20, t21, t22, t23, t26, t28, t30; int64_t h4_i; h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *const hero_big_h5_after = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *)hero_frame_take(sizeof(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5)); HERO_NODEBUG h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *const hero_big_t2 = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *)hero_frame_take(sizeof(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4)); HERO_NODEBUG _Bool t11; HERO_NODEBUG h_0fn_48ac9712 t16; HERO_NODEBUG h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *const hero_big_t24 = (h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *)hero_frame_take(sizeof(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5)); HERO_NODEBUG HeroStr t25, t27, t29; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = ((__INT64_TYPE__)2); h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_e4(&t2, t1); h0_w = t2;
+    t3 = ((__INT64_TYPE__)0); h1_total = t3;
 #line 96
-    t4 = INT64_C(0); t5 = INT64_C(3000); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.hero", "fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.main", 96, 14}; t6 = h_library_range(t4, t5, &hero_here); } t31 = h6_own6; h6_own6 = t6; hero_array_decref(t31); t32 = h2_xs0; hero_array_incref(t6); h2_xs0 = t6; hero_array_decref(t32); t7 = INT64_C(0); h3_i0 = t7; goto hero_bb1; hero_bb1: t8 = h3_i0; t9 = h2_xs0; t10 = ((void)(t9 == NULL ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len); t11 = t8 < t10; if (t11) goto hero_bb2; else goto hero_bb4; hero_bb2: t12 = h2_xs0; t13 = h3_i0; t14 = ((void)((t12 == NULL || t13 < 0 || t13 >= t12->len) ? hero_panic_index_at(t12, t13, "fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.hero", "fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.main", 96, 9) : (void)0), (void)(t12->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t12 + 1))[t13]); h4_i = t14;
+    t4 = ((__INT64_TYPE__)0); t5 = ((__INT64_TYPE__)3000); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.hero", "fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.main", 96, 14}; t6 = h_library_range(t4, t5, &hero_here); } t31 = h6_own6; h6_own6 = t6; hero_array_decref(t31); t32 = h2_xs0; hero_array_incref(t6); h2_xs0 = t6; hero_array_decref(t32); t7 = ((__INT64_TYPE__)0); h3_i0 = t7; goto hero_bb1; hero_bb1: t8 = h3_i0; t9 = h2_xs0; t10 = ((void)(t9 == ((void *)0) ? ((void)hero_array_len(t9), hero_unreachable()) : (void)0), t9->len); t11 = t8 < t10; if (t11) goto hero_bb2; else goto hero_bb4; hero_bb2: t12 = h2_xs0; t13 = h3_i0; t14 = ((void)((t12 == ((void *)0) || t13 < 0 || t13 >= t12->len) ? hero_panic_index_at(t12, t13, "fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.hero", "fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.main", 96, 9) : (void)0), (void)(HERO_ARRAY_ELEM_SIZE(t12) != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t12 + 1))[t13]); h4_i = t14;
     t15 = h1_total; t16 = h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_body; t17 = h4_i; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.hero", "fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.main", 97, 25}; t18 = lv_try((h_0fn_48ac9712)hero_callback_of((void (*)(void))t16), t17); } if (__builtin_add_overflow(t15, t18, &t19)) hero_panic_overflow_at("fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.hero", "fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.main", 97, 17); h1_total = t19; goto hero_bb3; hero_bb3:
 #line 96
-    t20 = h3_i0; t21 = INT64_C(1); if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow_at("fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.hero", "fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.main", 96, 9); h3_i0 = t22; goto hero_bb1; hero_bb4:
+    t20 = h3_i0; t21 = ((__INT64_TYPE__)1); if (__builtin_add_overflow(t20, t21, &t22)) hero_panic_overflow_at("fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.hero", "fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.main", 96, 9); h3_i0 = t22; goto hero_bb1; hero_bb4:
 #line 99
-    t23 = INT64_C(3); h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_e5(&t24, t23); h5_after = t24;
+    t23 = ((__INT64_TYPE__)3); h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_e5(&t24, t23); h5_after = t24;
     t25 = HERO_STR_LIT(hero_str_43c1a33f); t26 = h1_total; t27 = HERO_STR_LIT(hero_str_757fdd4b); t28 = h0_w.f_a.f_a.f_a.f_a.f_x; t29 = HERO_STR_LIT(hero_str_7191ba41); t30 = h5_after.f_c.f_c.f_c.f_c.f_c.f_x; hero_print_str(t25); hero_print_int(t26); hero_print_str(t27); hero_print_int(t28); hero_print_str(t29); hero_print_int(t30); hero_print_end();
 #line 454 "fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback.c"
     hero_array_release_at(&h2_xs0);
@@ -465,12 +465,12 @@ __attribute__((__noinline__)) void h_fixedbugs2752theroomtakenatthreedepthsunder
 #undef t24
 
 #line 26 "<heroes library>"
-HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG bool t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlace *hero_caller) { HeroArrayHeader * h2_out = {0}; int64_t h3_i; HERO_NODEBUG HeroArrayHeader *h4_own4 = {0}, *t1, *t12, *t13, *t14; HERO_NODEBUG int64_t t2, t3, t4, t7, t9, t10, t11; HERO_NODEBUG _Bool t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_int, 1); t13 = h4_own4; h4_own4 = t1; hero_array_decref(t13); t14 = h2_out; hero_array_incref(t1); h2_out = t1; hero_array_decref(t14);
     t2 = h0_from; h3_i = t2; goto hero_bb1; hero_bb1:
     t3 = h3_i; t4 = h1_to; t5 = t3 < t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb2:
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
-    t9 = h3_i; t10 = INT64_C(1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h3_i = t11; goto hero_bb1; hero_bb3:
+    t9 = h3_i; t10 = ((__INT64_TYPE__)1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(HERO_PLACE_PATH(hero_caller), HERO_PLACE_NAME(hero_caller), HERO_PLACE_LINE(hero_caller), HERO_PLACE_COLUMN(hero_caller)); h3_i = t11; goto hero_bb1; hero_bb3:
     t12 = h2_out;
 #line 476 "fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback.c"
     hero_array_incref(t12);
@@ -482,19 +482,19 @@ __attribute__((__unused__)) HeroArrayHeader * hero_value_h_library_range(int64_t
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.range", 26, 1};
     return h_library_range(h0_from, h1_to, &hero_here);
 }
-HERO_TU_LOCAL bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E0 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E0 *hero_b) {
+HERO_TU_LOCAL _Bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E0 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E0 *hero_b) {
     if (!(hero_a->f_x == hero_b->f_x)) return false;
     return true;
 }
 
 HERO_TU_LOCAL uint64_t h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_hash(const void *hero_elem) {
     const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E0 *hero_v = hero_elem;
-    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
-    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_x)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = ((__UINT64_TYPE__)0xcbf29ce484222325);
+    hero_h = (hero_h ^ HERO_DESC_HASH(&hero_desc_int)(&hero_v->f_x)) * ((__UINT64_TYPE__)0x100000001b3);
     return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E1 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E1 *hero_b) {
+HERO_TU_LOCAL _Bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E1 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E1 *hero_b) {
     if (!(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_eq(&hero_a->f_a, &hero_b->f_a))) return false;
     if (!(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_eq(&hero_a->f_b, &hero_b->f_b))) return false;
     if (!(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_eq(&hero_a->f_c, &hero_b->f_c))) return false;
@@ -508,19 +508,19 @@ HERO_TU_LOCAL bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedo
 
 HERO_TU_LOCAL uint64_t h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_hash(const void *hero_elem) {
     const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E1 *hero_v = hero_elem;
-    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = ((__UINT64_TYPE__)0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_hash(&hero_v->f_a)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_hash(&hero_v->f_b)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_hash(&hero_v->f_c)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_hash(&hero_v->f_d)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_hash(&hero_v->f_e)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_hash(&hero_v->f_f)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_hash(&hero_v->f_g)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E0_hash(&hero_v->f_h)) * ((__UINT64_TYPE__)0x100000001b3);
     return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E2 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E2 *hero_b) {
+HERO_TU_LOCAL _Bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E2 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E2 *hero_b) {
     if (!(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_eq(&hero_a->f_a, &hero_b->f_a))) return false;
     if (!(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_eq(&hero_a->f_b, &hero_b->f_b))) return false;
     if (!(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_eq(&hero_a->f_c, &hero_b->f_c))) return false;
@@ -534,19 +534,19 @@ HERO_TU_LOCAL bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedo
 
 HERO_TU_LOCAL uint64_t h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_hash(const void *hero_elem) {
     const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E2 *hero_v = hero_elem;
-    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = ((__UINT64_TYPE__)0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_hash(&hero_v->f_a)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_hash(&hero_v->f_b)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_hash(&hero_v->f_c)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_hash(&hero_v->f_d)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_hash(&hero_v->f_e)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_hash(&hero_v->f_f)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_hash(&hero_v->f_g)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E1_hash(&hero_v->f_h)) * ((__UINT64_TYPE__)0x100000001b3);
     return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E3 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E3 *hero_b) {
+HERO_TU_LOCAL _Bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E3 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E3 *hero_b) {
     if (!(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_eq(&hero_a->f_a, &hero_b->f_a))) return false;
     if (!(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_eq(&hero_a->f_b, &hero_b->f_b))) return false;
     if (!(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_eq(&hero_a->f_c, &hero_b->f_c))) return false;
@@ -560,19 +560,19 @@ HERO_TU_LOCAL bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedo
 
 HERO_TU_LOCAL uint64_t h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_hash(const void *hero_elem) {
     const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E3 *hero_v = hero_elem;
-    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = ((__UINT64_TYPE__)0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_hash(&hero_v->f_a)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_hash(&hero_v->f_b)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_hash(&hero_v->f_c)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_hash(&hero_v->f_d)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_hash(&hero_v->f_e)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_hash(&hero_v->f_f)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_hash(&hero_v->f_g)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E2_hash(&hero_v->f_h)) * ((__UINT64_TYPE__)0x100000001b3);
     return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *hero_b) {
+HERO_TU_LOCAL _Bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *hero_b) {
     if (!(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_eq(&hero_a->f_a, &hero_b->f_a))) return false;
     if (!(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_eq(&hero_a->f_b, &hero_b->f_b))) return false;
     if (!(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_eq(&hero_a->f_c, &hero_b->f_c))) return false;
@@ -586,19 +586,19 @@ HERO_TU_LOCAL bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedo
 
 HERO_TU_LOCAL uint64_t h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_hash(const void *hero_elem) {
     const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E4 *hero_v = hero_elem;
-    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = ((__UINT64_TYPE__)0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_hash(&hero_v->f_a)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_hash(&hero_v->f_b)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_hash(&hero_v->f_c)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_hash(&hero_v->f_d)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_hash(&hero_v->f_e)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_hash(&hero_v->f_f)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_hash(&hero_v->f_g)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E3_hash(&hero_v->f_h)) * ((__UINT64_TYPE__)0x100000001b3);
     return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E5_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *hero_b) {
+HERO_TU_LOCAL _Bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E5_eq(const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *hero_a, const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *hero_b) {
     if (!(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_eq(&hero_a->f_a, &hero_b->f_a))) return false;
     if (!(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_eq(&hero_a->f_b, &hero_b->f_b))) return false;
     if (!(h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_eq(&hero_a->f_c, &hero_b->f_c))) return false;
@@ -612,20 +612,20 @@ HERO_TU_LOCAL bool h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedo
 
 HERO_TU_LOCAL uint64_t h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E5_hash(const void *hero_elem) {
     const h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_E5 *hero_v = hero_elem;
-    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_hash(&hero_v->f_a)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_hash(&hero_v->f_b)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_hash(&hero_v->f_c)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_hash(&hero_v->f_d)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_hash(&hero_v->f_e)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_hash(&hero_v->f_g)) * UINT64_C(0x100000001b3);
-    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_hash(&hero_v->f_h)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = ((__UINT64_TYPE__)0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_hash(&hero_v->f_a)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_hash(&hero_v->f_b)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_hash(&hero_v->f_c)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_hash(&hero_v->f_d)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_hash(&hero_v->f_e)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_hash(&hero_v->f_f)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_hash(&hero_v->f_g)) * ((__UINT64_TYPE__)0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback_0E4_hash(&hero_v->f_h)) * ((__UINT64_TYPE__)0x100000001b3);
     return hero_h;
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -633,31 +633,31 @@ HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_str)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
     const h_0opt_f87774a *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_str)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -665,31 +665,31 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
     const h_0opt_a8ea2 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
     return hero_h;
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -697,31 +697,31 @@ HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_int)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
     const h_0opt_e201354 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_int)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("35c5f04f4a093187", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("715c3d3b2b49eee1", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2752theroomtakenatthreedepthsunderacallbackjumpedover3000timesisgivenback\tfixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back\n");
