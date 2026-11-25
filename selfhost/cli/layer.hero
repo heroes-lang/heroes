@@ -26,8 +26,9 @@
 # fingerprint, clang's answer for the words, the level's words and the
 # runtime's key, which holds every member's and header's bytes beside
 # `runtime.c`'s files (`runtime_key.each_file`); and what each member's
-# includes reach NOW (`opening.reached`, defect 2289's question, asked of each
-# member at every build). Served only where its record still vouches for
+# includes reach NOW (defect 2289's question, asked of every member at every
+# build by one clang run, `cli/reached_each.hero`; until 2026-11-25 one run a
+# member, `opening.reached`). Served only where its record still vouches for
 # every file the members' compiles read (`deps.vouched`) and its bytes are the
 # ones the archiver wrote (`served`, defect 443).
 #
@@ -54,6 +55,7 @@ use cli/link_flags
 use cli/opening
 use cli/process
 use cli/publish
+use cli/reached_each
 use cli/read_back
 use cli/runtime_key
 use cli/served
@@ -172,34 +174,19 @@ function compiled(t: toolchain.Toolchain, members: [str], swift: [str], words: [
     publish.publish(staged: staged, path: path, keyed: true)?
     return ok(Archived(path: path, listing: listing, covered: covered))
 
-# What every member's includes reach under `words` now, each asked of clang
-# alone (a listing of two inputs keeps only the second's under `-MF`,
-# measured on this Mac), as one record whose first line digests every
-# member's rows, so the key moves with any of them: absent where any member's
-# did not preprocess, so nothing is served warm under it.
+# What every member's includes reach under `words` now, every member asked
+# of ONE clang run (`cli/reached_each.hero`: one process for the 43 members
+# where one each cost every warm build 2.4 s on this Mac, each rule the
+# listing its member's own run writes), as one record whose first line
+# digests every member's rows, so the key moves with any of them: absent
+# where any member's did not preprocess, so nothing is served warm under it.
 function reaches(t: toolchain.Toolchain, members: [str], words: [str], @memo: {str: str}) -> str?
     none: [str] = []
     keyed = runtime_key.made_of(t.runtime).default(none)
     line = strings.with_all(list: strings.with_all(list: ["clang"], more: words), more: ["-I", t.runtime])
-    rows: [str] @= []
-
-    for member in members
-        depfile = publish.private_name(t.build + "/layer-reached.d")
-        reached = opening.reached(line: line, input: member, depfile: depfile, skip: "", keyed: keyed, @memo)?
-        rows @ rows.push(rows_after_digest(reached))
-
+    listing = publish.private_name(t.build + "/layer-reached.d")
+    rows = reached_each.reached_each(line: line, inputs: members, listing: listing, skip: "", keyed: keyed, @memo)?
     return ok(deps.pointer_text(rows.join("\n")))
-
-# A record's rows, its first line, the digest, left out.
-function rows_after_digest(text: str) -> str
-    at: i64 @= 0
-
-    while at < text.len() && text[at] != '\n'
-        at @ at + 1
-
-    if at >= text.len()
-        return ""
-    return text.slice(from: at + 1, to: text.len())
 
 # A member's name without its folder or `.c`: `hero_net`.
 function base_of(member: str) -> str
@@ -499,6 +486,16 @@ test "an archive is one archive byte for byte, and a cache wiped mid-way archive
     gone: toolchain.Toolchain @= t
     gone.runtime @ copy
     assert archive(gone, level: "-O0", sanitize: false, swift: layer_reach.no_members()).must()[0] == a
+
+    # A header written into the members' search after the archive, ahead of
+    # the one they read, moves the reach the one run that asks every member
+    # answers (defect 2289, `cli/reached_each.hero`): the archive is asked of
+    # clang again, which refuses it as a build with no `build/` would; gone
+    # again, the archive is served again.
+    assert !write_file(path: copy + "/stdint.h", text: "#error a stdint.h written after the archive\n").is_err()
+    assert archive(gone, level: "-O0", sanitize: false, swift: layer_reach.no_members()).is_err()
+    assert !process.remove_file(copy + "/stdint.h").is_err()
+    assert archive(gone, level: "-O0", sanitize: false, swift: layer_reach.no_members()).must()[0] == a
     assert !process.remove_tree(copy).is_err()
 
     # Only the archive, its seal, its record and the second name stand:
@@ -564,12 +561,10 @@ test "a runtime with no layer adds nothing to the link, and a member clang refus
 
     assert !process.remove_tree(t.build).is_err()
 
-# A member's name and a record's rows, cut where their bytes say.
-test "a member is named by its file, and a record's rows follow its digest (feature 2295)"
+# A member's name, cut where its bytes say.
+test "a member is named by its file (feature 2295)"
     assert base_of("runtime/platform/hero_net.c") == "hero_net"
     assert base_of("hero_time.c") == "hero_time"
-    assert rows_after_digest("0123456789abcdef\nrow one\nrow two") == "row one\nrow two"
-    assert rows_after_digest("0123456789abcdef") == ""
 
 # Defect 2489: an archive stands beside the record of what each member
 # needs, asked while its object stood, `hero_net` the C library's `socket`
