@@ -287,6 +287,27 @@ warden's `now` arm giving q4 `PRINTS` at least 3 of 5. And the synthesis's falsi
 `aj_carved`, `mj_carved`, `cpu_heap`, `own_carved`, `below`, `one`, `nested`, `own_spawned`, `bfc_host`, `cpo_host`
 printing another frame's bytes under the landed route, on any of the three platforms**, withdraws it.
 
+## The blind reading, run 2026-11-25
+
+Added the same evening, after this sitting's commit (`6da1ff4d7`): the registered reading ran on the author's
+authorisation of 09:25 (ceiling 20.00 USD), its report `259-reports/llm-ergonomist-blind.md`, the sessions' answers
+`259-reports/llm-ergonomist-blind-answers.tar.xz` (text only, 264 files), the runner as adapted, written before any
+session, `259-briefs/blind/registration-runner.md`. **31 sessions, all counted, 10.393155 USD**; no session voided (no
+project rule, contract or memory reached one; every one of the 315 registered files kept its hash). The key ran on this
+Mac and Linux arm64 with no program splitting between them (q4 at `E4`: a wrong value then *compiler bug* under the
+base, right under `rt-e`, on both); x86-64 recorded, never graded. **By the registration's own rules the resolution
+stands on `adopted`**: D1 holds at its edge (4 of 5 `adopted` readers right on q4, 2 of 5 `now`), D2 (0 against 0 on
+q1, q2, q3, q6, q7), D2w (`NOT PROMISED` from 3 to 1 on each of the five) and D3 (design A 4 of 5; no wrong value or
+abort answered for B or C); `rival` holds the four too (q4 5 of 5). Scored predictions: the warden's for `w1` missed
+on D1 and D3, both of which hold; this synthesis's *`now` gives q4 `PRINTS` at least 3 of 5* measured 2 of 5.
+**What it found that it was not built to measure**: 3 of 5 `now` readers of t1 and 4 of 5 of t2 read spec § 13's
+existing handler sentence (*"may abort"*) as covering every switch C makes, and answered `NOT PROMISED` throughout;
+1 of 5 a task under `adopted`, 0 and 1 under `rival`; the verdict session names that sentence as the real ambiguity.
+That is a question for a sitting on § 13's handler sentence, not a change of this resolution. The run's own limits,
+in its report: the `adopted` key is the prototype `rt-e`, the landed build not existing yet; no session could write
+`report.md` under the registered flags (as at panel 257), each answer kept as `result.md`; the scorer knew the arms'
+labels, the grading mechanical and its files archived.
+
 ## Author's verdict
 
 **Pending.** The decision's draft is `docs/panel/259-reports/decision-draft.md`, filed with this sitting as `panel 259`.
