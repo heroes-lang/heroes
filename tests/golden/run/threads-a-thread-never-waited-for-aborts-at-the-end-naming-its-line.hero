@@ -1,11 +1,21 @@
 # A thread nobody waits for aborts when `main` returns, saying how many, and
 # names the line its `spawn` stands on (spec § 13; panel 251's R2; feature
 # 2647).
+#
+# The thread waits on a mailbox nobody sends to, so it is still running when
+# `main` returns, on every platform and at every level. Until 2026-11-25 it
+# answered at once, and whether it had ended by then was a race, which the
+# CI's Windows leg lost at `-O2` (run of fc19cb341: `1 of them still running`
+# where the case said 0). Its end cannot be made certain instead: the runtime
+# marks a thread finished after its function has returned
+# (`runtime/parts/spawn.c`, `hero_spawn_leave`), which nothing a program waits
+# on reaches but the `wait` this case leaves out.
 
-function one(n: i64) -> i64
-    return n
+function idle(inbox: (mailbox i64)) -> i64
+    return inbox.receive(within_ms: -1).default(0)
 
 function main()
-    t = spawn(one, 1).must()
+    inbox: (mailbox i64) = mailbox()
+    t = spawn(idle, inbox).must()
     _ = t
     print("forgot")
