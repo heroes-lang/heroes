@@ -63,7 +63,10 @@
  * 3. WHERE A FAMILY DOES NOT VERIFY, ROUTE A for it: its save points are
  *    rewritten and keep a record (panel 251's route J), whose fingerprint is
  *    read only of a buffer on this thread's stack, the alternate stack it runs
- *    on, or a writable segment of an image loaded before `main`.
+ *    on, or a writable segment of an image loaded before `main`. Rules 4 to 7
+ *    bind it too: a trusted record holds a frame just below the stack pointer
+ *    its save wrote, judged as a decoded target is, and where contexts fall
+ *    to it every range `makecontext` hands out is held (defect 2745).
  *    `hero_signal_jump_route()` says which path stands (bit 1 the setjmp
  *    family decodes, bit 2 contexts; the same accessor and bits as Linux's),
  *    and `HERO_JMP_FORCE_UNCALIBRATED` (1 the setjmp family, 2 contexts, 3

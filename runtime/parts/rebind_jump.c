@@ -9,8 +9,8 @@
 
 /* parts/rebind_jump.c — Darwin's route D-rebind, part of `parts/rebind.c`
  * (read its module doc first): the jumps, the swaps and the save points this
- * runtime's rewritten slots reach (panel 255's R1, defects 2679 and 2702;
- * design.md §1.12, §4.19). Needs the files `rebind.c` names before it. */
+ * runtime's rewritten slots reach (panel 255's R1, defects 2679, 2702 and
+ * 2745; design.md §1.12, §4.19). Needs the files `rebind.c` names before it. */
 
 #if defined(__APPLE__)
 
@@ -41,11 +41,24 @@ static void hero_rebind_reenter_by_record(HeroSignalStack *own, const void *buf)
     if (!hero_rebind_push(own, 0, 0, 0, 2, &serial)) own->lost += 1;
 }
 
+/* A jump to `buf` no trusted record follows: every entry kept, marked unsure
+ * inside a handler; outside every handler, a re-entry where its record names
+ * one. */
+static void hero_rebind_unfollowed(HeroSignalStack *own, const void *buf, bool standing) {
+    if (standing) {
+        hero_rebind_mark_unsure(own);
+    } else {
+        hero_rebind_reenter_by_record(own, buf);
+    }
+}
+
 /* A jump of the setjmp family to `env`: its target decoded at every jump,
  * inside a handler or not (one word of a buffer the C library reads next), so
- * a landing in frames already left is seen wherever it happens. A jump that
- * leaves every handler the thread stood in is asked whether it abandons this
- * runtime's allocator (`parts/sigguard.c`, panel 258's R1). */
+ * a landing in frames already left is seen wherever it happens. Where the
+ * decode did not verify, route A's trusted record gives the target, judged
+ * the same way (defect 2745). A jump that leaves every handler the thread
+ * stood in is asked whether it abandons this runtime's allocator
+ * (`parts/sigguard.c`, panel 258's R1). */
 static void hero_rebind_jump(const void *env) {
     HeroSignalStack *own = hero_rebind_own();
     if (own == NULL || env == NULL) return;
@@ -55,10 +68,16 @@ static void hero_rebind_jump(const void *env) {
         if (standing) hero_rebind_landing(own, t);
         if (standing) hero_rebind_prune_to(own, t, true);
         hero_rebind_reenter(own, t);
-    } else if (standing) {
-        hero_rebind_jump_by_record(own, env);
     } else {
-        hero_rebind_reenter_by_record(own, env);
+        uintptr_t t = 0;
+        bool back = false;
+        if (hero_rebind_target(own, env, &t, &back)) {
+            if (standing) hero_rebind_landing(own, t);
+            if (standing) hero_rebind_prune_to(own, t, true);
+            hero_rebind_landed(own, t, back);
+        } else {
+            hero_rebind_unfollowed(own, env, standing);
+        }
     }
     if (standing && !hero_rebind_standing(own)) hero_signal_jump_checked();
 }
@@ -70,26 +89,36 @@ static void hero_rebind_set(const void *uc) {
     HeroSignalStack *own = hero_rebind_own();
     if (own == NULL || !hero_rebind_ctx_valid(uc)) return;
     bool standing = hero_rebind_standing(own);
-    if (hero_rebind_decoding(HERO_REBIND_CTX)) {
-        uintptr_t t = hero_rebind_ctx_sp(uc);
+    uintptr_t t = 0;
+    bool back = false;
+    bool route_c = hero_rebind_decoding(HERO_REBIND_CTX);
+    if (route_c) {
+        t = hero_rebind_ctx_sp(uc);
         hero_rebind_range_entered(t);
-        if (standing) {
-            hero_rebind_landing(own, t);
-            uintptr_t lo = 0, hi = 0;
-            if (hero_rebind_known_range(t, &lo, &hi)) {
-                hero_rebind_prune_to(own, t, false);
-                for (int i = 0; i < own->depth; i += 1) {
-                    if (!own->entries[i].dead) own->entries[i].held = 1;
-                }
-            } else {
-                hero_rebind_prune_to(own, t, true);
-            }
-        }
-        hero_rebind_reenter(own, t);
-    } else if (standing) {
-        hero_rebind_jump_by_record(own, uc);
     } else {
-        hero_rebind_reenter_by_record(own, uc);
+        hero_rebind_range_switched(uc);
+        if (!hero_rebind_target(own, uc, &t, &back)) {
+            hero_rebind_unfollowed(own, uc, standing);
+            if (standing && !hero_rebind_standing(own)) hero_signal_jump_checked();
+            return;
+        }
+    }
+    if (standing) {
+        hero_rebind_landing(own, t);
+        uintptr_t lo = 0, hi = 0;
+        if (hero_rebind_known_range(t, &lo, &hi)) {
+            hero_rebind_prune_to(own, t, false);
+            for (int i = 0; i < own->depth; i += 1) {
+                if (!own->entries[i].dead) own->entries[i].held = 1;
+            }
+        } else {
+            hero_rebind_prune_to(own, t, true);
+        }
+    }
+    if (route_c) {
+        hero_rebind_reenter(own, t);
+    } else {
+        hero_rebind_landed(own, t, back);
     }
     if (standing && !hero_rebind_standing(own)) hero_signal_jump_checked();
 }
@@ -106,10 +135,17 @@ __attribute__((noinline)) static int hero_rebind_swapcontext(void *from, const v
     int n = 0;
     uintptr_t entered = 0;
     if (own != NULL && from != NULL && hero_rebind_ctx_valid(to)) {
-        if (hero_rebind_decoding(HERO_REBIND_CTX)) {
+        bool field = hero_rebind_decoding(HERO_REBIND_CTX);
+        uintptr_t t = 0;
+        bool back = false;
+        bool known = field || hero_rebind_target(own, to, &t, &back);
+        if (field) {
             entered = hero_rebind_ctx_sp(to);
             hero_rebind_range_entered(entered);
             hero_rebind_landing(own, entered);
+        } else {
+            hero_rebind_range_switched(to);
+            if (known) hero_rebind_landing(own, t);
         }
         for (int i = 0; i < own->depth && n < HERO_SIG_DEPTH; i += 1) {
             HeroRebindEntry *e = &own->entries[i];
@@ -119,14 +155,17 @@ __attribute__((noinline)) static int hero_rebind_swapcontext(void *from, const v
             gens[n] = e->gen;
             n += 1;
         }
-        if (hero_rebind_decoding(HERO_REBIND_CTX)) {
+        if (field) {
             hero_rebind_reenter(own, hero_rebind_ctx_sp(to));
         } else {
-            hero_rebind_note(from);
-            if (hero_rebind_standing(own)) {
-                hero_rebind_jump_by_record(own, to);
+            /* The C library saves into `from` this frame's own stack pointer,
+             * at the call below: `hero_rebind_below` called from here lies
+             * under it. */
+            hero_rebind_note(from, hero_rebind_below());
+            if (known) {
+                hero_rebind_landed(own, t, back);
             } else {
-                hero_rebind_reenter_by_record(own, to);
+                hero_rebind_unfollowed(own, to, hero_rebind_standing(own));
             }
         }
     }
@@ -177,36 +216,41 @@ static int hero_rebind_setcontext(const void *context) {
 }
 
 /* Route A's save points, rewritten only for a family whose decode did not
- * verify: each records, then reaches the C library's own by a tail call, so
- * it saves this function's caller and returns twice into it. */
+ * verify: each records, with a frame below its caller's stack pointer
+ * (`hero_rebind_below`, called here), then reaches the C library's own by a
+ * tail call, so it saves this function's caller and returns twice into it. */
 static int hero_rebind_setjmp(int *env) {
-    hero_rebind_note(env);
+    hero_rebind_note(env, hero_rebind_below());
     __attribute__((musttail)) return atomic_load_explicit(&hero_rebind_real_setjmp, memory_order_relaxed)(env);
 }
 
 static int hero_rebind__setjmp(int *env) {
-    hero_rebind_note(env);
+    hero_rebind_note(env, hero_rebind_below());
     __attribute__((musttail)) return atomic_load_explicit(&hero_rebind_real__setjmp, memory_order_relaxed)(env);
 }
 
 static int hero_rebind_sigsetjmp(int *env, int save) {
-    hero_rebind_note(env);
+    hero_rebind_note(env, hero_rebind_below());
     __attribute__((musttail)) return atomic_load_explicit(&hero_rebind_real_sigsetjmp, memory_order_relaxed)(env, save);
 }
 
 static int hero_rebind_getcontext(void *context) {
-    hero_rebind_note(context);
+    hero_rebind_note(context, hero_rebind_below());
     __attribute__((musttail)) return atomic_load_explicit(&hero_rebind_real_getcontext, memory_order_relaxed)(context);
 }
 
 /* `makecontext` names its context's stack, which becomes a known one (rule
- * 7), and under route A for contexts its record goes. Its arguments are
- * variadic, which `musttail` refuses, so the wrapper is assembly: the argument
- * registers kept, the stack noted, then a branch to the C library's own with
- * the stack as the caller left it. */
+ * 7), and under route A for contexts its record goes and its range is held
+ * (defect 2745). Its arguments are variadic, which `musttail`
+ * refuses, so the wrapper is assembly: the argument registers kept, the stack
+ * noted, then a branch to the C library's own with the stack as the caller
+ * left it. */
 void hero_rebind_made_context(const void *context);
 void hero_rebind_made_context(const void *context) {
-    hero_rebind_known_stack(context);
+    /* Route A reads no switch's target, so it cannot see the range entered or
+     * its coroutine end: the range is held from here on, and a target in it
+     * lies on the coroutine (rule 7, defect 2745). */
+    hero_rebind_known_stack(context, !hero_rebind_decoding(HERO_REBIND_CTX));
     if (!hero_rebind_decoding(HERO_REBIND_CTX)) hero_rebind_forget(context);
 }
 

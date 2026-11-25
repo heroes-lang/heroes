@@ -9,13 +9,26 @@
 
 /* parts/rebind_record.c — Darwin's route D-rebind, part of `parts/rebind.c`
  * (read its module doc first): route A: the records of the save points, for a
- * family whose decode did not verify (panel 255's R1, defects 2679 and 2702;
- * design.md §1.12, §4.19). Needs the files `rebind.c` names before it. */
+ * family whose decode did not verify (panel 255's R1, defects 2679, 2702 and
+ * 2745; design.md §1.12, §4.19). Needs the files `rebind.c` names before it.
+ *
+ * A trusted record's jump is judged by rules 4 to 7 as route C judges a
+ * decoded target (defect 2745), on the frame the save point recorded just
+ * below the stack pointer the C library saved, on the same stack
+ * (`hero_rebind_below`): a bound below the true target leaves no entry the
+ * true target would keep, since the two lie less than a signal frame apart and
+ * a handler's frame between them was delivered above the save point's caller,
+ * whose frame a jump reaches only after it returned. Whether the landing lies
+ * below the jumping frame, which a bound cannot say, is the record naming a
+ * handler no longer standing. Until defect 2745 the serial alone judged it,
+ * every entry pushed after the save left whatever stack the save was made on,
+ * and panel 255's A'' ran the program's function inside the signal. */
 
 #if defined(__APPLE__)
 
 /* A buffer, its thread, the serial of the innermost entry standing at its
- * save (0 for none), and its fingerprint once read. Written and read with no
+ * save (0 for none), the frame below the stack pointer it saved, and its
+ * fingerprint once read. Written and read with no
  * lock: a writer claims a record by moving its buffer word to 1, a reader
  * trusts one only where the buffer word reads the same before and after; any
  * race is a miss, and a miss keeps every entry. A buffer's home is a hash of
@@ -29,6 +42,7 @@ typedef struct {
     _Atomic uintptr_t buf;
     _Atomic uintptr_t thread;
     _Atomic uint64_t entry;
+    _Atomic uintptr_t sp;
     _Atomic uint64_t print;
     _Atomic int printed;
 } HeroRebindRecord;
@@ -63,10 +77,12 @@ __attribute__((no_sanitize("address"))) static uint64_t hero_rebind_fingerprint(
     return h;
 }
 
-static void hero_rebind_write(HeroRebindRecord *r, uintptr_t was, uintptr_t buf, uintptr_t thread, uint64_t entry) {
+static void hero_rebind_write(HeroRebindRecord *r, uintptr_t was, uintptr_t buf, uintptr_t thread, uint64_t entry,
+                              uintptr_t frame) {
     if (!atomic_compare_exchange_strong(&r->buf, &was, (uintptr_t)1)) return;
     atomic_store(&r->thread, thread);
     atomic_store(&r->entry, entry);
+    atomic_store(&r->sp, frame);
     atomic_store(&r->printed, 0);
     atomic_store_explicit(&r->buf, buf, memory_order_release);
 }
@@ -152,9 +168,19 @@ static uint64_t hero_rebind_innermost(void) {
     return 0;
 }
 
-/* A save into `buf`: its record taken back where it has one, else a free
- * record near its home, else the home overwritten. */
-static void hero_rebind_note(const void *buf) {
+/* A frame just below its caller's stack pointer, on the same stack: the
+ * bound route A records of where a save point's jump will land. Never
+ * inlined, so the frame is its own. */
+__attribute__((noinline)) static uintptr_t hero_rebind_below(void) {
+    uintptr_t frame = (uintptr_t)__builtin_frame_address(0);
+    __asm__ volatile("" ::: "memory");
+    return frame;
+}
+
+/* A save into `buf`, `frame` below the stack pointer it saves: its record
+ * taken back where it has one, else a free record near its home, else the
+ * home overwritten. */
+static void hero_rebind_note(const void *buf, uintptr_t frame) {
     if (buf == NULL) return;
     hero_rebind_settle();
     uint64_t entry = hero_rebind_innermost();
@@ -167,7 +193,7 @@ static void hero_rebind_note(const void *buf) {
         HeroRebindRecord *r = hero_rebind_probe(home, i);
         uintptr_t v = atomic_load_explicit(&r->buf, memory_order_acquire);
         if (v == b && atomic_load(&r->thread) == t) {
-            hero_rebind_write(r, b, b, t, entry);
+            hero_rebind_write(r, b, b, t, entry, frame);
             written = 1;
         } else if (v == 0 && free_one == NULL) {
             free_one = r;
@@ -175,11 +201,11 @@ static void hero_rebind_note(const void *buf) {
     }
     if (!written) {
         if (free_one != NULL) {
-            hero_rebind_write(free_one, 0, b, t, entry);
+            hero_rebind_write(free_one, 0, b, t, entry, frame);
         } else {
             HeroRebindRecord *r = hero_rebind_probe(home, 0);
             uintptr_t v = atomic_load(&r->buf);
-            if (v > 1) hero_rebind_write(r, v, b, t, entry);
+            if (v > 1) hero_rebind_write(r, v, b, t, entry, frame);
         }
     }
     if (atomic_load_explicit(&hero_rebind_pending_keyed, memory_order_acquire)) {
@@ -199,36 +225,39 @@ static void hero_rebind_forget(const void *buf) {
     }
 }
 
-/* A jump to `buf` judged by its record (rule 3), rules 5 and 6 obeyed: where
- * the record is trusted, every entry pushed after its save that nothing pins
- * is left; where the entry it names no longer stands, the jump re-enters a
- * handler left earlier, which stands again as an entry, unsure; where no
- * record is trusted, every entry is kept and marked unsure. */
-static void hero_rebind_jump_by_record(HeroSignalStack *own, const void *buf) {
+/* Whether a record naming `entry` names a handler that no longer stands: the
+ * save was made inside a handler the thread has left since, so a jump to it
+ * lands in frames already left (shape R). */
+static bool hero_rebind_left_since(const HeroSignalStack *own, uint64_t entry) {
+    if (entry == 0) return false;
+    for (int i = 0; i < own->depth; i += 1) {
+        if (!own->entries[i].dead && own->entries[i].serial == entry) return false;
+    }
+    return true;
+}
+
+/* Route A's target for a jump to `buf` (rule 3, then rules 4 to 7, defect
+ * 2745): true where the record is trusted, with `*t` the frame it holds and
+ * `*back` whether it names a handler left since. */
+static bool hero_rebind_target(HeroSignalStack *own, const void *buf, uintptr_t *t, bool *back) {
     hero_rebind_settle();
     HeroRebindRecord *r = hero_rebind_record(buf);
     uintptr_t b = (uintptr_t)buf;
     int printed = r != NULL ? atomic_load(&r->printed) : 0;
     bool trusted = r != NULL && printed != 2 && !(printed == 1 && atomic_load(&r->print) != hero_rebind_fingerprint(buf));
     uint64_t entry = trusted ? atomic_load(&r->entry) : 0;
-    if (!trusted || atomic_load_explicit(&r->buf, memory_order_acquire) != b) {
-        hero_rebind_mark_unsure(own);
-        return;
-    }
-    bool named = entry == 0;
-    for (int i = own->depth - 1; i >= 0; i -= 1) {
-        HeroRebindEntry *e = &own->entries[i];
-        if (e->dead) continue;
-        if (e->serial == entry) {
-            named = true;
-            hero_rebind_resumed(e);
-        }
-        if (e->serial > entry && !hero_rebind_pinned(e)) hero_rebind_drop(own, i);
-    }
-    if (!named) {
-        uint64_t serial = 0;
-        if (!hero_rebind_push(own, 0, 0, 0, 2, &serial)) own->lost += 1;
-    }
+    uintptr_t frame = trusted ? atomic_load(&r->sp) : 0;
+    if (!trusted || frame == 0 || atomic_load_explicit(&r->buf, memory_order_acquire) != b) return false;
+    *t = frame;
+    *back = hero_rebind_left_since(own, entry);
+    return true;
+}
+
+/* Route A's landing at `t`, a bound of the target the record trusts: a
+ * re-entry where the record names a handler left since, or the landing lies
+ * on the alternate stack from outside it. */
+static void hero_rebind_landed(HeroSignalStack *own, uintptr_t t, bool back) {
+    hero_rebind_reentered(own, t, back, (uintptr_t)__builtin_frame_address(0));
 }
 
 #endif

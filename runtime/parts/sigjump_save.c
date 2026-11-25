@@ -9,7 +9,7 @@
 
 /* parts/sigjump_save.c — the C library's own save points and jumps, and what
  * each tells `parts/sigentries.c` of the handlers a thread is inside (panel
- * 255's R1 and R3, defects 2679 and 2702; design.md §1.12). Needs
+ * 255's R1 and R3, defects 2679, 2702 and 2745; design.md §1.12). Needs
  * `sigjump_record.c`.
  *
  * The save points are `setjmp`, `_setjmp`, `__sigsetjmp` and `getcontext`; the
@@ -17,7 +17,9 @@
  * one) and `setcontext`; and `swapcontext`, which saves and jumps. A save
  * point records only where route A stands, then reaches the C library's own
  * by a branch. A jump of the setjmp family and a `setcontext` judge their
- * target before they jump (`hero_jmp_jump`, `hero_jmp_set`, rules 4 to 6); a
+ * target before they jump (`hero_jmp_jump`, `hero_jmp_set`, rules 4 to 6),
+ * the decoded stack pointer on route C, the trusted record's frame on route
+ * A, by the same rules (defect 2745); a
  * `swapcontext` suspends every standing entry until it returns in its own
  * frame (`hero_jmp_swap`, rule 5). `makecontext`'s wrapper, which learns the
  * known stacks, is `sigjump_make.c`. */
@@ -39,9 +41,10 @@ static _Noreturn void hero_jmp_go(hero_jmp_jump_fn real, struct __jmp_buf_tag *e
 /* A jump of the setjmp family to `env`: its target decoded at every jump,
  * inside a handler or not (one word of a buffer the C library reads next), so
  * a landing in frames already left is seen wherever it happens. Where the
- * decode did not verify, route A's record judges it. A jump that leaves every
- * handler the thread stood in is asked whether it abandons this runtime's
- * allocator (`parts/sigguard.c`, panel 258's R1). */
+ * decode did not verify, route A's trusted record gives the target, judged
+ * the same way (defect 2745). A jump that leaves every handler the thread
+ * stood in is asked whether it abandons this runtime's allocator
+ * (`parts/sigguard.c`, panel 258's R1). */
 static void hero_jmp_jump(const void *env) {
     HeroSignalStack *own = hero_sig_own();
     if (own == NULL || env == NULL) return;
@@ -53,10 +56,16 @@ static void hero_jmp_jump(const void *env) {
             hero_sig_prune_to(own, t, true);
         }
         hero_sig_reenter(own, t);
-    } else if (standing) {
-        hero_jmp_by_record(own, env);
     } else {
-        hero_jmp_reenter_by_record(own, env);
+        uintptr_t t = 0;
+        bool back = false;
+        if (hero_jmp_recorded(own, env, standing, &t, &back)) {
+            if (standing) {
+                hero_sig_landing(own, t);
+                hero_sig_prune_to(own, t, true);
+            }
+            hero_jmp_landed(own, t, back);
+        }
     }
     if (standing && !hero_sig_standing(own)) hero_signal_jump_checked();
 }
@@ -69,37 +78,48 @@ static void hero_jmp_set(const ucontext_t *ucp) {
     HeroSignalStack *own = hero_sig_own();
     if (own == NULL || ucp == NULL) return;
     bool standing = hero_sig_standing(own);
-    if (!hero_ctx_recording()) {
-        uintptr_t t = hero_jmp_context_sp(ucp);
+    uintptr_t t = 0;
+    bool back = false;
+    bool route_c = !hero_ctx_recording();
+    if (route_c) {
+        t = hero_jmp_context_sp(ucp);
         hero_sig_range_entered(t);
-        if (standing) {
-            hero_sig_landing(own, t);
-            uintptr_t lo = 0, hi = 0;
-            if (hero_sig_known_range(t, &lo, &hi)) {
-                hero_sig_prune_to(own, t, false);
-                for (int i = 0; i < own->depth; i += 1) {
-                    if (!own->entries[i].dead) own->entries[i].held = 1;
-                }
-            } else {
-                hero_sig_prune_to(own, t, true);
-            }
-        }
-        hero_sig_reenter(own, t);
-    } else if (standing) {
-        hero_jmp_by_record(own, ucp);
     } else {
-        hero_jmp_reenter_by_record(own, ucp);
+        hero_sig_range_switched(ucp);
+        if (!hero_jmp_recorded(own, ucp, standing, &t, &back)) {
+            if (standing && !hero_sig_standing(own)) hero_signal_jump_checked();
+            return;
+        }
+    }
+    if (standing) {
+        hero_sig_landing(own, t);
+        uintptr_t lo = 0, hi = 0;
+        if (hero_sig_known_range(t, &lo, &hi)) {
+            hero_sig_prune_to(own, t, false);
+            for (int i = 0; i < own->depth; i += 1) {
+                if (!own->entries[i].dead) own->entries[i].held = 1;
+            }
+        } else {
+            hero_sig_prune_to(own, t, true);
+        }
+    }
+    if (route_c) {
+        hero_sig_reenter(own, t);
+    } else {
+        hero_jmp_landed(own, t, back);
     }
     if (standing && !hero_sig_standing(own)) hero_signal_jump_checked();
 }
 
-/* THE SAVE POINTS: under A the frame noted, then the C library's own reached
+/* THE SAVE POINTS: under A the buffer noted with a frame below this one's
+ * caller (`hero_jmp_below`, called here, so its frame lies under the stack
+ * pointer the C library saves, the caller's), then the C library's own reached
  * by a branch; under C the branch alone. The names are parenthesised so
  * glibc's macros of them stay out. */
 int(setjmp)(struct __jmp_buf_tag env[1]) {
     hero_jmp_find();
     if (hero_jmp_recording()) {
-        hero_jmp_note(env, (uint32_t)sizeof(struct __jmp_buf_tag));
+        hero_jmp_note(env, (uint32_t)sizeof(struct __jmp_buf_tag), hero_jmp_below());
     }
     hero_jmp_save_fn real = atomic_load_explicit(&hero_jmp_real_setjmp, memory_order_relaxed);
     __attribute__((musttail)) return real(env);
@@ -108,7 +128,7 @@ int(setjmp)(struct __jmp_buf_tag env[1]) {
 int(_setjmp)(struct __jmp_buf_tag env[1]) {
     hero_jmp_find();
     if (hero_jmp_recording()) {
-        hero_jmp_note(env, (uint32_t)sizeof(struct __jmp_buf_tag));
+        hero_jmp_note(env, (uint32_t)sizeof(struct __jmp_buf_tag), hero_jmp_below());
     }
     hero_jmp_save_fn real = atomic_load_explicit(&hero_jmp_real__setjmp, memory_order_relaxed);
     __attribute__((musttail)) return real(env);
@@ -117,7 +137,7 @@ int(_setjmp)(struct __jmp_buf_tag env[1]) {
 int(__sigsetjmp)(struct __jmp_buf_tag env[1], int savemask) {
     hero_jmp_find();
     if (hero_jmp_recording()) {
-        hero_jmp_note(env, (uint32_t)sizeof(struct __jmp_buf_tag));
+        hero_jmp_note(env, (uint32_t)sizeof(struct __jmp_buf_tag), hero_jmp_below());
     }
     hero_jmp_sigsave_fn real = atomic_load_explicit(&hero_jmp_real_sigsetjmp, memory_order_relaxed);
     __attribute__((musttail)) return real(env, savemask);
@@ -125,7 +145,7 @@ int(__sigsetjmp)(struct __jmp_buf_tag env[1], int savemask) {
 
 int(getcontext)(ucontext_t *ucp) {
     hero_jmp_find();
-    if (hero_ctx_recording()) hero_jmp_note(ucp, HERO_JMP_CONTEXT_BYTES);
+    if (hero_ctx_recording()) hero_jmp_note(ucp, HERO_JMP_CONTEXT_BYTES, hero_jmp_below());
     hero_ctx_get_fn real = atomic_load_explicit(&hero_ctx_real_get, memory_order_relaxed);
     __attribute__((musttail)) return real(ucp);
 }
@@ -178,11 +198,15 @@ __attribute__((noinline, no_sanitize("address"))) int(swapcontext)(ucontext_t *r
     if (own != NULL && oucp != NULL && ucp != NULL) {
         bool field = !hero_ctx_recording();
         uintptr_t t = field ? hero_jmp_context_sp(ucp) : 0;
+        bool back = false;
+        bool known = field || hero_jmp_target(own, ucp, &t, &back);
         if (field) {
             hero_sig_range_entered(t);
             entered = t;
+        } else {
+            hero_sig_range_switched(ucp);
         }
-        if (field) hero_sig_landing(own, t);
+        if (known) hero_sig_landing(own, t);
         for (int i = 0; i < own->depth && n < HERO_SIG_DEPTH; i += 1) {
             HeroSigEntry *e = &own->entries[i];
             if (e->dead) continue;
@@ -194,11 +218,14 @@ __attribute__((noinline, no_sanitize("address"))) int(swapcontext)(ucontext_t *r
         if (field) {
             hero_sig_reenter(own, t);
         } else {
-            hero_jmp_note(oucp, HERO_JMP_CONTEXT_BYTES);
-            if (hero_sig_standing(own)) {
-                hero_jmp_by_record(own, ucp);
+            /* The C library saves into `oucp` this frame's own stack pointer,
+             * at the call below: `hero_jmp_below` called from here lies under
+             * it. */
+            hero_jmp_note(oucp, HERO_JMP_CONTEXT_BYTES, hero_jmp_below());
+            if (known) {
+                hero_jmp_landed(own, t, back);
             } else {
-                hero_jmp_reenter_by_record(own, ucp);
+                hero_jmp_unfollowed(own, ucp, hero_sig_standing(own));
             }
         }
     }

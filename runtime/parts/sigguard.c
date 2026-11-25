@@ -367,9 +367,10 @@ void hero_signal_learn(void) {
  * (rule 5); whether a `setcontext` into a coroutine's stack holds it until it
  * ends (rule 6); `unsure`, 1 where a jump this runtime could not follow passed
  * over it, 2 where the entry is itself a re-entry (a jump landed in frames
- * the thread had left) and 3 where a jump onto a coroutine's stack passed over
- * it and did not leave it (defect 2705); and whether it is gone, one store, so a nested signal
- * never sees an entry half moved. */
+ * the thread had left), 3 where a jump onto a coroutine's stack passed over
+ * it and did not leave it (defect 2705) and 4 the same onto a stack route A
+ * holds a coroutine's with no switch into it seen (defect 2745); and whether it
+ * is gone, one store, so a nested signal never sees an entry half moved. */
 typedef struct {
     uintptr_t at;
     uint64_t serial;
@@ -403,12 +404,15 @@ typedef struct {
     /* J, route A only: which buffer each save point filled, the serial of the
      * innermost entry standing at the save (0 for none), the buffer's bytes
      * as the C library left them (0 until read at this thread's next save
-     * point or jump or at a handler's begin), and how many bytes it holds;
-     * `jump_next` is the pair a full record overwrites next. */
+     * point or jump or at a handler's begin), how many bytes it holds, and a
+     * frame just below the stack pointer the save wrote, on the stack it
+     * wrote it on (defect 2745); `jump_next` is the pair a full record
+     * overwrites next. */
     uintptr_t jump_buf[HERO_SIG_JUMPS];
     uint64_t jump_entry[HERO_SIG_JUMPS];
     uint64_t jump_print[HERO_SIG_JUMPS];
     uint32_t jump_size[HERO_SIG_JUMPS];
+    uintptr_t jump_sp[HERO_SIG_JUMPS];
     unsigned jump_next;
 #elif defined(HERO_SIG_REBIND)
     /* Darwin's route: the handlers this thread is inside, innermost
@@ -431,13 +435,16 @@ static _Thread_local HeroSignalStack hero_signal_stack;
  * jump it could not follow passed over, which may have left it; or one stands
  * that switched to another context and has not been seen to switch back or
  * to end (both routes count the switches); or one stands that a jump landed
- * back into, in frames the thread had left (both routes push such an entry). */
+ * back into, in frames the thread had left (both routes push such an entry);
+ * or one stands that a jump onto a coroutine's stack passed over, a stack a
+ * switch entered (ONSTACK) or one route A holds with no switch seen (HELD). */
 #define HERO_SIG_OUTSIDE 0
 #define HERO_SIG_INSIDE 1
 #define HERO_SIG_UNSURE 2
 #define HERO_SIG_SWITCHED 3
 #define HERO_SIG_REENTERED 4
 #define HERO_SIG_ONSTACK 5
+#define HERO_SIG_HELD 6
 
 #if defined(HERO_SIG_WRAPS)
 /* `parts/sigentries.c`, below: is this thread inside a wrapped handler? */
@@ -494,6 +501,7 @@ static void hero_signal_measure(void) {
 #define HERO_SIGNAL_SWITCHED 4
 #define HERO_SIGNAL_REENTERED 5
 #define HERO_SIGNAL_ONSTACK 6
+#define HERO_SIGNAL_HELD 7
 
 /* EVERY REFUSAL THE FOURTH QUESTION MAKES SAYS WHAT THE RUNTIME KNOWS, never
  * more (the author's ruling B of 2026-11-20 on defect 2522's rows 1 and 2).
@@ -546,6 +554,15 @@ static void hero_signal_measure(void) {
  * exception, a jump inside a system library)*, named three causes the program
  * has none of.
  *
+ * HERO_SIGNAL_HELD: the same jump onto a stack `makecontext` was given, where
+ * this system's contexts fall to route A (defect 2745): the runtime cannot
+ * read where a context switch lands, so it holds every such stack to be a
+ * coroutine's for as long as it stands, and saw no switch into this one.
+ * ONSTACK's words, *a stack a context switch had entered*, were false of a
+ * stack no switch was seen to enter (`fixedbugs-2706`'s program whose stack
+ * `makecontext` was given and never switched to, built with
+ * `HERO_JMP_FORCE_UNCALIBRATED` 2 on this Mac, lane-d2745).
+ *
  * HERO_SIGNAL_UNFOLLOWED: C jumped, while the handler ran, to a buffer this
  * runtime holds no trusted record of (panel 251's R1: such a jump keeps every
  * entry), so whether the jump left the handler or landed inside it is not
@@ -587,6 +604,12 @@ static _Noreturn void hero_signal_refuse(const char *what, int how) {
               "`makecontext`'s), where it cannot tell that jump from one onto frames the handler itself "
               "switched to, so whether the jump left the handler is not known: a handler not seen to end is "
               "held to be running, where neither this runtime's memory nor the C library's is safe to use. "
+        : how == HERO_SIGNAL_HELD
+            ? " was called after C, inside a signal handler, jumped (`longjmp`, `siglongjmp` or `_longjmp`) "
+              "onto a stack `makecontext` was given, which this runtime holds may still be a coroutine's, "
+              "since on this system it cannot read where a context switch lands or see a coroutine end, so "
+              "whether the jump left the handler is not known: a handler not seen to end is held to be "
+              "running, where neither this runtime's memory nor the C library's is safe to use. "
         : how == HERO_SIGNAL_UNFOLLOWED
             ? " was called after C, inside a signal handler, jumped to a buffer this runtime holds no "
               "record of as it now stands (copied with `memcpy`, refilled where the runtime does not "
@@ -643,6 +666,7 @@ static void hero_callback_asked(const char *what, void *ret, void *frame) {
                                  : inside == HERO_SIG_SWITCHED   ? HERO_SIGNAL_SWITCHED
                                  : inside == HERO_SIG_REENTERED  ? HERO_SIGNAL_REENTERED
                                  : inside == HERO_SIG_ONSTACK    ? HERO_SIGNAL_ONSTACK
+                                 : inside == HERO_SIG_HELD       ? HERO_SIGNAL_HELD
                                                                  : HERO_SIGNAL_STANDING);
     }
     if (plain == 0 || own == NULL) return;
