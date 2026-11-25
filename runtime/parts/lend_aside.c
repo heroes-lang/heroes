@@ -7,27 +7,32 @@
  * `WITH` in the tag above, because that operator takes an exception from
  * SPDX's own registry and this one is not in it. */
 
-/* parts/lend_aside.c — a buffer or a local lent to C from a frame on a stack
- * that is not the thread's own: a coroutine's, an alternate stack's, a fiber's
- * (the defect lane panel258-r1 found beside defect 2752; design.md §1.12,
- * §4.19). Needs `parts/lend.c` and `parts/stack_lane.c`.
+/* parts/lend_aside.c — the records of the regions a buffer or a local is lent
+ * to C from, each region aside from every stack's frames (the defect lane
+ * panel258-r1 found beside defect 2752; panel 259's R1, provisional, author
+ * ratification pending; design.md §1.12, §4.19). Needs `parts/lend.c` and
+ * `parts/frame.c`.
  *
- * A REGION OF ITS OWN, GIVEN BACK IN ANY ORDER. The thread's regions are one
- * stack, a depth each, given back in the order of the thread's frames
- * (`parts/lend.c`); frames of two coroutines on one thread interleave, and a
- * local one coroutine lent in place for its function's life stood below the
- * other's at its give, which said *a buffer lent to C was given back at an
- * address its region does not hold*, of a correct program. Here each lend is
- * a region of the same shape, guard page and watches alike, held in a record
- * of its own, and its give finds the record by the address it lent, whichever
- * regions stand beside it and on whichever thread resumed the coroutine.
+ * A REGION OF ITS OWN, GIVEN BACK IN ANY ORDER. Each lend is a region of
+ * `parts/lend.c`'s shape, guard page and watches alike, held in a record of
+ * its own, and its give finds the record by the address it lent, whichever
+ * regions stand beside it and on whichever thread gives it back: frames of two
+ * coroutines on one thread interleave, and one stack of regions a thread gave
+ * back in the order of its frames said *a buffer lent to C was given back at
+ * an address its region does not hold* of a correct program. NO RECORD IS EVER
+ * JUDGED GIVEN BACK BY ITS FRAME'S ADDRESS (panel 259's R1, route E; the head
+ * of `parts/frame.c` says why), so a lend C leaves without its give (a jump
+ * out of the call it was lent to, or over the callback that lent it) stays
+ * lent until the program ends, and its mapped bytes are held against the
+ * room's gibibyte from its lend to its give (`hero_frame_room_hold`), so a
+ * loop of such leaving ends at that bound's told abort.
  *
- * A REGION GIVEN BACK IS WATCHED UNTIL A LEND TAKES IT AGAIN, as a depth's is
- * (`parts/lend.c`'s three watches): summed, or sealed above a mebibyte, or
- * under the sanitizer handed to the thread's quarantine; the next lend aside
- * takes the smallest given back that holds its bytes, auditing it first, and
- * maps one only where none does. So the regions kept are at most as many as
- * were ever lent at once, and their memory as the thread's regions keep it.
+ * A REGION GIVEN BACK IS WATCHED UNTIL A LEND TAKES IT AGAIN (`parts/lend.c`'s
+ * three watches): summed, or sealed above a mebibyte, or under the sanitizer
+ * handed to the giving thread's quarantine; the next lend takes the smallest
+ * given back that holds its bytes, auditing it first, and maps one only where
+ * none does. So the regions kept are at most as many as were ever lent at
+ * once.
  *
  * THE RECORDS ARE IN SLABS NEVER GIVEN BACK, linked from one atomic head, so a
  * record's address holds from its take to its give while other threads lend,
@@ -36,11 +41,9 @@
  * Everything else here runs under one lock, inside the calling thread's own
  * bracket (`parts/lend.c`'s THE TABLE IS BRACKETED), so a signal handler that
  * lends while its thread is in here stops by name before the lock is asked.
- *
- * AND HEALED ON ITS OWN STACK, as `parts/frame_aside.c` is: a lend, a give and
- * a thunk's entry on a stack `parts/stack_lane.c` names first give back that
- * stack's regions of frames below their own; a stack nobody names is never
- * judged. */
+ * What a lend costs here, said: the lock and a walk of every record, about 907
+ * instructions more a lend at `-O2` than the thread's own stack of regions
+ * before panel 259 (+33%, the synthesis's `cost_lend`). */
 
 #define HERO_LEND_ASIDE_SLAB 64
 
@@ -50,9 +53,11 @@
 #define HERO_LEND_ASIDE_LENT 1
 #define HERO_LEND_ASIDE_GIVEN 2
 
+/* `held` is what a lent region holds against the room's bound, its mapped
+ * bytes when it was lent, given back with it. */
 typedef struct {
     HeroLendRegion r;
-    uintptr_t stack;
+    size_t held;
     int state;
 } HeroLendAside;
 
@@ -74,35 +79,23 @@ static HeroLendAside *hero_lend_aside_slab(void) {
     return &slab->at[0];
 }
 
-/* Under the lock: a lent region given back and watched, as a depth's is. */
+/* Under the lock: a lent region given back and watched, its bytes no longer
+ * held against the bound. */
 static void hero_lend_aside_retire(HeroLendAside *a) {
+    hero_frame_room_free(a->held);
+    a->held = 0;
     hero_lend_retire(&a->r);
     a->state = a->r.base != NULL ? HERO_LEND_ASIDE_GIVEN : HERO_LEND_ASIDE_FREE;
-    hero_callback_held(-1);
 }
 
-/* Under the lock: every region lent from `stack`'s frames below `frame`, but
- * `keep`, given back: those frames are gone, left by a C jump. */
-static void hero_lend_aside_gone(uintptr_t stack, uintptr_t frame, const HeroLendAside *keep) {
-    for (HeroLendSlab *s = atomic_load_explicit(&hero_lend_slabs, memory_order_relaxed); s != NULL; s = s->next) {
-        for (int i = 0; i < HERO_LEND_ASIDE_SLAB; i += 1) {
-            HeroLendAside *a = &s->at[i];
-            if (a != keep && a->state == HERO_LEND_ASIDE_LENT && a->stack == stack && a->r.frame < frame) {
-                hero_lend_aside_retire(a);
-            }
-        }
-    }
-}
-
-/* A lend of the function whose frame is `frame`, on `stack`, a LOCAL's where
- * `local` says so (`parts/lend.c`'s `hero_lend_place`): that stack's regions
- * of frames below it given back first, then the smallest region given back
- * that holds `bytes`, else a record with none, else a new slab's; every field
- * written under the lock, which the other threads' searches read under. */
+/* A lend of `bytes`, a LOCAL's where `local` says so (`parts/lend.c`'s
+ * `hero_lend_local`): the smallest region given back that holds them, else a
+ * record with none, else a new slab's; every field written under the lock,
+ * which the other threads' searches read under, and the region's mapped bytes
+ * held against the bound, `caller` the function named where it stops. */
 static HeroLendRegion *hero_lend_aside_push(size_t bytes, const char *callee, const char *param, int64_t extent,
-                                            const HeroPlace *where, uintptr_t frame, uintptr_t stack, int local) {
+                                            const HeroPlace *where, int local, void *caller) {
     hero_aside_take(&hero_lend_aside_lock);
-    if (stack != 0) hero_lend_aside_gone(stack, frame, NULL);
     HeroLendAside *fits = NULL;
     HeroLendAside *empty = NULL;
     HeroLendAside *given = NULL;
@@ -118,20 +111,18 @@ static HeroLendRegion *hero_lend_aside_push(size_t bytes, const char *callee, co
         }
     }
     HeroLendAside *a = fits != NULL ? fits : empty != NULL ? empty : given != NULL ? given : hero_lend_aside_slab();
+    hero_lend_ready(&a->r, bytes, callee, param, extent, where, "found when the next lend took its memory");
     a->state = HERO_LEND_ASIDE_LENT;
-    a->stack = stack;
-    hero_lend_ready(&a->r, bytes, callee, param, extent, where, frame, "found when the next lend took its memory");
+    a->held = a->r.room + a->r.guard;
+    hero_frame_room_hold(a->held, caller);
     if (local) hero_lend_label_local(&a->r, callee, param);
     hero_aside_drop(&hero_lend_aside_lock);
-    hero_callback_held(1);
     return &a->r;
 }
 
-/* The region aside lending `what`, a local's or a buffer's, its stack's
- * regions newer of frames below its own given back first (its lender is
- * giving it back at its exit, so is the deepest frame alive there); NULL where
- * no region aside lends it. The record stays lent until
- * `hero_lend_aside_release`, so no other lend takes it between. */
+/* The region lending `what`, a local's or a buffer's; NULL where none does.
+ * The record stays lent until `hero_lend_aside_release`, so no other lend
+ * takes it between. */
 static HeroLendRegion *hero_lend_aside_find(const char *what, int local) {
     if (atomic_load_explicit(&hero_lend_slabs, memory_order_acquire) == NULL) return NULL;
     hero_aside_take(&hero_lend_aside_lock);
@@ -146,7 +137,6 @@ static HeroLendRegion *hero_lend_aside_find(const char *what, int local) {
             }
         }
     }
-    if (found != NULL && found->stack != 0) hero_lend_aside_gone(found->stack, found->r.frame, found);
     hero_aside_drop(&hero_lend_aside_lock);
     return found != NULL ? &found->r : NULL;
 }
@@ -158,7 +148,7 @@ static void hero_lend_aside_release(HeroLendRegion *r) {
     hero_aside_drop(&hero_lend_aside_lock);
 }
 
-/* `parts/lend.c`'s `hero_lend_local_name` for a local lent aside. */
+/* `parts/lend.c`'s `hero_lend_local_name`: the call lending a local now. */
 static void hero_lend_aside_name(const void *local, const char *callee, const char *param) {
     if (atomic_load_explicit(&hero_lend_slabs, memory_order_acquire) == NULL) return;
     hero_aside_take(&hero_lend_aside_lock);
@@ -175,22 +165,24 @@ static void hero_lend_aside_name(const void *local, const char *callee, const ch
     hero_aside_drop(&hero_lend_aside_lock);
 }
 
-/* The fault handler's question of the regions aside, with no lock and no call
+/* The fault handler's question of the regions, with no lock and no call
  * (`parts/lend.c`'s `hero_lend_fault_at`): a slab is never given back, so a
- * read here may see a record mid-change and never memory unmapped. */
+ * read here may see a record mid-change and never memory unmapped. A lent
+ * region first, wherever it stands in the slabs, then one given back. */
 static int hero_lend_aside_fault_at(uintptr_t addr, HeroLendFault *out) {
-    for (HeroLendSlab *s = atomic_load_explicit(&hero_lend_slabs, memory_order_acquire); s != NULL; s = s->next) {
-        for (int i = 0; i < HERO_LEND_ASIDE_SLAB; i += 1) {
-            const HeroLendAside *a = &s->at[i];
-            if (a->state == HERO_LEND_ASIDE_FREE) continue;
-            if (hero_lend_fault_in(&a->r, addr, a->state == HERO_LEND_ASIDE_GIVEN, out)) return 1;
+    for (int lent = 1; lent >= 0; lent -= 1) {
+        for (HeroLendSlab *s = atomic_load_explicit(&hero_lend_slabs, memory_order_acquire); s != NULL; s = s->next) {
+            for (int i = 0; i < HERO_LEND_ASIDE_SLAB; i += 1) {
+                const HeroLendAside *a = &s->at[i];
+                if (a->state != (lent ? HERO_LEND_ASIDE_LENT : HERO_LEND_ASIDE_GIVEN)) continue;
+                if (hero_lend_fault_in(&a->r, addr, !lent, out)) return 1;
+            }
         }
     }
     return 0;
 }
 
-/* The regions aside given back, audited (`parts/lend.c`'s
- * `hero_lend_audit_given`). */
+/* The regions given back, audited (`parts/lend.c`'s `hero_lend_audit_given`). */
 static void hero_lend_aside_audit(const char *when) {
     if (atomic_load_explicit(&hero_lend_slabs, memory_order_acquire) == NULL) return;
     hero_aside_take(&hero_lend_aside_lock);
@@ -200,15 +192,4 @@ static void hero_lend_aside_audit(const char *when) {
         }
     }
     hero_aside_drop(&hero_lend_aside_lock);
-}
-
-/* A thunk entered at `frame` on `stack` (`parts/callback.c`): that stack's
- * regions of frames at or below it given back, in a bracket of its own. */
-static void hero_lend_aside_heal(uintptr_t stack, uintptr_t frame) {
-    if (stack == 0 || atomic_load_explicit(&hero_lend_slabs, memory_order_acquire) == NULL) return;
-    volatile sig_atomic_t *inside = hero_lend_enter();
-    hero_aside_take(&hero_lend_aside_lock);
-    hero_lend_aside_gone(stack, frame, NULL);
-    hero_aside_drop(&hero_lend_aside_lock);
-    hero_lend_leave(inside);
 }

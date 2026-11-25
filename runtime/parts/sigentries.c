@@ -169,7 +169,6 @@ void hero_sig_known_stack(const void *context, bool held) {
     atomic_store(&hero_sig_stack_ctx[at], (uintptr_t)context);
     hero_sig_stack_put((int)at, lo, hi);
     atomic_store_explicit(&hero_sig_stack_any, 1, memory_order_release);
-    atomic_fetch_add_explicit(&hero_stacks_made, 1, memory_order_release);
     atomic_store(&hero_sig_stack_writing, 0);
 }
 
@@ -182,29 +181,6 @@ static void hero_sig_range_switched(const void *context) {
             atomic_fetch_or_explicit(&hero_sig_stack_state[i], HERO_SIG_RANGE_ENTERED, memory_order_relaxed);
         }
     }
-}
-
-/* The known ranges that overlap `[lo, hi)`, the first `room` of them into
- * `los` and `his`; how many there are (`parts/stack_lane.c`, the ranges
- * carved from a thread's own stack). A slot read while written is skipped,
- * and its writer counts `hero_stacks_made` after it, so the thread reads
- * again. */
-static int hero_sig_ranges_inside(uintptr_t lo, uintptr_t hi, uintptr_t *los, uintptr_t *his, int room) {
-    if (!atomic_load_explicit(&hero_sig_stack_any, memory_order_acquire)) return 0;
-    int found = 0;
-    for (int i = 0; i < HERO_SIG_STACKS; i += 1) {
-        unsigned before = atomic_load(&hero_sig_stack_seq[i]);
-        uintptr_t l = atomic_load(&hero_sig_stack_lo[i]), h = atomic_load(&hero_sig_stack_hi[i]);
-        if ((before & 1) != 0 || atomic_load(&hero_sig_stack_seq[i]) != before) continue;
-        if (h > l && l < hi && lo < h) {
-            if (found < room) {
-                los[found] = l;
-                his[found] = h;
-            }
-            found += 1;
-        }
-    }
-    return found;
 }
 
 /* The slot of the known range holding `at`, -1 where none does. */
