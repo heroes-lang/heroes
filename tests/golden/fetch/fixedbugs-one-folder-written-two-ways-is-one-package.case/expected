@@ -1,0 +1,37 @@
+$ cd <work> && heroes add -C app --path ../local/lib
+exit 0
+stdout:
+added lib ../local/lib
+wrote app/heroes.toml
+stderr:
+$ cd <work> && heroes add -C app --path <work>/local/lib --as other
+exit 1
+stdout:
+stderr:
+error[catalogue_refused]: the catalogue's entry `lib` already names the folder `../local/lib`, and a program holds each package under one name, so `--as other` would name it twice: a `use <lib>/` reaches it as it is, or rename it by hand, `[dependencies.lib]` to `[dependencies.other]` in `app/heroes.toml` and each `use <lib>/` to `use <other>/`
+$ cd <work> && heroes add -C app --path ../llink --as two
+exit 1
+stdout:
+stderr:
+error[catalogue_refused]: the catalogue's entry `lib` already names the folder `../local/lib`, and a program holds each package under one name, so `--as two` would name it twice: a `use <lib>/` reaches it as it is, or rename it by hand, `[dependencies.lib]` to `[dependencies.two]` in `app/heroes.toml` and each `use <lib>/` to `use <two>/`
+$ cd <work> && heroes check app/main.hero
+exit 0
+stdout:
+stderr:
+note: the package `lib` is read from the folder `app/../local/lib/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+note: the package `lib`, read from the folder `app/../local/lib/`, names the local folder `../dep` for `dep` in its own catalogue: read here, both folders being the author's own, and refused where `lib` is fetched by its `version` or `git`
+note: the package `dep` is read from the folder `app/../dlink/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+$ cd <work> && heroes add -C app --path <work>/local/lib
+exit 0
+stdout:
+changed lib ../local/lib -> <work>/local/lib
+wrote app/heroes.toml
+stderr:
+heroes.toml:
+[dependencies.dep]
+path = "../dlink"
+
+[dependencies.lib]
+path = "<work>/local/lib"
+heroes.packages:
+(none)

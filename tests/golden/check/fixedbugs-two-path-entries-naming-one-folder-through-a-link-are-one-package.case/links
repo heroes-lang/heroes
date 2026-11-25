@@ -1,0 +1,2 @@
+# `vlink` made a link to `vendor/json` in the case's copy.
+vlink vendor/json

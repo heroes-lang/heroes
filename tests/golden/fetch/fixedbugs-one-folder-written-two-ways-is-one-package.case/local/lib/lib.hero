@@ -1,0 +1,4 @@
+use <dep>/dep
+
+function x() -> i64
+    return dep.y()

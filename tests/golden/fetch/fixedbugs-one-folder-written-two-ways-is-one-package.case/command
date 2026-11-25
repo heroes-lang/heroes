@@ -1,0 +1,5 @@
+cd <work> && add -C app --path ../local/lib
+cd <work> && add -C app --path <work>/local/lib --as other
+cd <work> && add -C app --path ../llink --as two
+cd <work> && check app/main.hero
+cd <work> && add -C app --path <work>/local/lib
