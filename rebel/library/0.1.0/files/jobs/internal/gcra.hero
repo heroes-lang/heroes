@@ -525,18 +525,11 @@ function sometimes_for(first: i64, every: i64, interval_ms: i64) -> jobs.Sometim
 # - `row`: the six numbers, and any after them.
 function reshaped(row: [i64]) -> jobs.Bucket?
     limit @= make(every: time.nanoseconds(row[0]), burst: row[1], at: origin()).must()
-    left @= row[2]
 
-    while left > 0
-        n = if left < row[1]
-            left
-        else
-            row[1]
+    for n in change_reservations(row).must()
         limit @ reserve(limit: limit, at: origin(), n: n).must().bucket
-        left @ left - n
 
-    t = time.add(t: origin(), d: time.nanoseconds(row[3])).must()
-    return reshape(limit: limit, at: t, every: time.nanoseconds(row[4]), burst: row[5])
+    return reshape(limit: limit, at: change_at(row).must(), every: time.nanoseconds(row[4]), burst: row[5])
 
 # A row of a test of `reshape`, as `reshaped` reads it: its six numbers and
 # the instant the change leaves the bucket empty at, in nanoseconds after the
@@ -544,8 +537,53 @@ function reshaped(row: [i64]) -> jobs.Bucket?
 #
 # - `row`: the six numbers, and any after them.
 function changed(row: [i64]) -> [i64]
-    after = reshaped(row).must()
-    return row.slice(from: 0, to: 6).push(time.between(from: origin(), to: after.empty_at).must().nanoseconds)
+    return change_answer(row, after: reshaped(row).must()).must()
+
+# The reservations a row of `change_rows` makes at the origin, in the order
+# made: `row[2]` tokens, a burst, `row[1]`, at a time and the rest last. The
+# one copy of a row's takings, which `reshaped` and both stores' `changed`
+# make.
+#
+# - `row`: the six numbers, and any after them.
+#
+# Empty where `row[2]` is 0 or below. Fails `invalid` where `row[1]` is
+# below 1, a burst no bucket has.
+function change_reservations(row: [i64]) -> [i64]?
+    if row[1] < 1
+        return fail(code: INVALID, msg: f"the burst is {row[1]}: a bucket holds at least one token")
+
+    out: [i64] @= []
+    left @= row[2]
+
+    while left > 0
+        n = if left < row[1]
+            left
+        else
+            row[1]
+        out @ out.push(n)
+        left @ left - n
+
+    return ok(out)
+
+# The instant a row of `change_rows` changes its bucket at: `row[3]`
+# nanoseconds after the origin.
+#
+# - `row`: the six numbers, and any after them.
+#
+# Fails `does_not_fit` where it is outside an `Instant`.
+function change_at(row: [i64]) -> time.Instant?
+    return time.add(t: origin(), d: time.nanoseconds(row[3]))
+
+# A row of `change_rows` as a bucket its change left answers it: the row's
+# six numbers and the instant `after` is empty at, in nanoseconds after the
+# origin. The one copy of what `changed` and both stores' `changed` answer.
+#
+# - `row`: the six numbers, and any after them.
+# - `after`: the bucket the change left.
+#
+# Fails `does_not_fit` where that span is outside a `Duration`.
+function change_answer(row: [i64], after: jobs.Bucket) -> [i64]?
+    return ok(row.slice(from: 0, to: 6).push(time.between(from: origin(), to: after.empty_at)?.nanoseconds))
 
 # The rows the tests of a change of rate share, `jobs.with_rate`'s here and
 # both stores': each a bucket's every and burst in nanoseconds, the tokens

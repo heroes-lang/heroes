@@ -277,26 +277,21 @@ function allowed_code(r: jobs.Allowed?) -> str
 # origin, `row[2]` tokens reserved there, changed `row[3]` nanoseconds later
 # to a token every `row[4]` nanoseconds and a burst of `row[5]`; answers the
 # row's six numbers and the instant the store leaves the limit empty at, in
-# nanoseconds after the origin.
+# nanoseconds after the origin. What the row reserves, when it changes and
+# what it answers are `gcra`'s, one copy with `gcra.reshaped`, the bucket
+# kept in memory; the calls are this store's own.
 #
 # - `c`: the client.
 # - `name`: the limit's name, one no other row takes.
 # - `row`: the six numbers, and any after them.
 function changed(@c: redis.Client, name: str, row: [i64]) -> [i64]?
     _ = set(@c, name: name, every: time.nanoseconds(row[0]), burst: row[1], clock: at_ms(0))?
-    left @= row[2]
 
-    while left > 0
-        n = if left < row[1]
-            left
-        else
-            row[1]
+    for n in gcra.change_reservations(row)?
         _ = reserve_at(@c, name: name, n: n, ms: 0)?
-        left @ left - n
 
-    at = time.add(t: gcra.origin(), d: time.nanoseconds(row[3]))?
-    after = set(@c, name: name, every: time.nanoseconds(row[4]), burst: row[5], clock: .scripted(at: at))?
-    return ok(row.slice(from: 0, to: 6).push(time.between(from: gcra.origin(), to: after.empty_at)?.nanoseconds))
+    after = set(@c, name: name, every: time.nanoseconds(row[4]), burst: row[5], clock: .scripted(at: gcra.change_at(row)?))?
+    return gcra.change_answer(row, after: after)
 
 # The code `r` failed with, or `ok`.
 #

@@ -9,40 +9,25 @@
 # calls this but the tests of `jobs/redis_store`. A taker closes its
 # connection on every path, its failures included, so no run ends holding
 # a socket nobody gives back.
+# What both stores' takers share, the child started and waited for and the
+# tally of a taker's takings, is `jobs/internal/takers`'s, written `common`
+# here.
 
-use jobs/internal/taking
+use jobs/internal/takers as common
 use jobs/redis_store/internal/buckets
 use jobs/redis_store/internal/live
 use numbers
-use os
-use process
 use redis
 use strings
 use threads
-use time
 
 # The argument that makes a run a child of a test.
 constant ROLE: str
     "jobs-redis-limit-takers"
 
-# The longest a child runs before the system ends it, in nanoseconds, so a
-# test that fails before it waits for its child leaves none running.
-constant CHILD_LIMIT_NS: i64
-    120_000_000_000
-
-# The program's arguments as text, one that is not UTF-8 read as the empty
-# text: no word of a child's role is empty, so such a run is no child.
-function given() -> [str]
-    out: [str] @= []
-
-    for one in args_checked()
-        out @ out.push(one.default(""))
-
-    return out
-
 # Whether this run of the program is a child a test started.
 function is_child() -> bool
-    a = given()
+    a = common.given()
     return a.len() >= 6 && a[1] == ROLE
 
 # The work of every taker: `times` takings of one token of the limit
@@ -84,42 +69,14 @@ function dispatch(work: str) -> str
     words = strings.split(s: work, sep: " ")
 
     if words[0] == "child"
-        return run_child(words)
+        return common.run_child(role: ROLE, words: words)
     return take_all(words)
-
-# A child of `each` takers started with `words` and waited for; its takers'
-# answers separated by `;`, or one `error: ` answer.
-#
-# - `words`: `child`, the limit, the mode, the times and how many takers.
-function run_child(words: [str]) -> str
-    program = match os.executable_path()
-        .ok p  => p
-        .err e => return f"error: {e.code}: {e.msg}"
-
-    arguments @= [given()[0], ROLE]
-
-    for w in words.slice(from: 1, to: words.len())
-        arguments @ arguments.push(w)
-
-    c = process.with_output(
-        process.with_time_limit(process.command(program, arguments: arguments), limit: time.nanoseconds(CHILD_LIMIT_NS)),
-        to: .pipe
-    )
-
-    match process.run(c)
-        .err e => return f"error: {e.code}: {e.msg}"
-        .ok done =>
-            said = strings.trim(done.output.validated_bytes().default("the child wrote bytes that are not UTF-8"))
-
-            if !process.is_success(done.status)
-                return f"error: the child ended with a failure: {said}"
-            return said
 
 # The child's part: its takers run on threads, their answers written on one
 # line separated by `;`. Answers 0 where every taker answered, 1 where one
 # failed.
 function child() -> i64
-    a = given()
+    a = common.given()
     each = numbers.parse_int(a[5]).default(0)
     values: [str] @= []
 
@@ -165,22 +122,12 @@ function take_all(words: [str]) -> str
 # - `mode`: `allow` or `reserve`.
 # - `times`: how many.
 function takings(@c: redis.Client, limit: str, mode: str, times: i64) -> str?
-    granted: i64 @= 0
-    ready: [str] @= []
-    none = time.Duration(nanoseconds: 0)
-    forever = time.max_duration()
+    t @= common.tally(mode)
 
     for _ in range(from: 0, to: times)
-        if mode == "allow"
-            if taking.allowed(buckets.take(@c, name: limit, n: 1, longest: none, clock: .server)?)?.granted
-                granted @ granted + 1
-        else
-            r = taking.reserved(buckets.take(@c, name: limit, n: 1, longest: forever, clock: .server)?, within: forever)?
-            ready @ ready.push(to_str(r.ready.unix_nanoseconds))
+        common.count(@t, taken: buckets.take(@c, name: limit, n: 1, longest: common.longest(mode), clock: .server)?)?
 
-    if mode == "allow"
-        return ok(to_str(granted))
-    return ok(ready.join(","))
+    return ok(common.answer(t))
 
 test "take_all live: a limit that is not there answers its failure, and the taker's connection is closed"
     match live.connect()
