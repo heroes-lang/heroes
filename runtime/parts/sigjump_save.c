@@ -30,6 +30,38 @@
 static bool hero_jmp_recording(void) { return atomic_load_explicit(&hero_jmp_decoding, memory_order_acquire) == 0; }
 static bool hero_ctx_recording(void) { return atomic_load_explicit(&hero_ctx_decoding, memory_order_acquire) == 0; }
 
+#if defined(HERO_JMP_DECODES) && !defined(HERO_JMP_MAKES)
+#error the placement below is route A's: where `makecontext` is not wrapped, neither family decodes
+#endif
+
+/* WHERE `makecontext` IS NOT WRAPPED (glibc's architectures other than aarch64
+ * and x86-64; defect d-lane-d2745-2) no stack `makecontext` hands out is known,
+ * so a coroutine carved from the thread's own stack is that stack to rule 4,
+ * and a handler's jump into it was judged to leave the handler, which a
+ * target above it on that stack does: the program's function then ran inside
+ * the signal (three rows of 2702 and 2705, simulated by `HERO_JMP_NO_DECODE`
+ * with `HERO_JMP_NO_MAKE` on Linux arm64). What this runtime does see is its
+ * own `swapcontext`: from the switch until it returns in its frame, the
+ * thread runs on the stack the swap entered, a coroutine's, and only that
+ * frame's return brings it back where it was (`elsewhere`). A save made there
+ * names a target on a stack a context switch entered and this runtime never
+ * sees end, so a jump to it from a handler leaves no entry but by leaving the
+ * alternate stack the entry was pushed on, and every entry it keeps is told
+ * as ONSTACK, as route C tells a jump onto a coroutine's stack. */
+#if !defined(HERO_JMP_MAKES)
+static void hero_jmp_prune_away(HeroSignalStack *own, uintptr_t t) {
+    for (int i = own->depth - 1; i >= 0; i -= 1) {
+        HeroSigEntry *e = &own->entries[i];
+        if (e->dead || hero_sig_pinned(e)) continue;
+        if (e->alt_hi > e->alt_lo && !hero_sig_holds(e->alt_lo, e->alt_hi, t)) {
+            hero_sig_drop(own, i);
+        } else if (e->unsure == 0) {
+            e->unsure = 3;
+        }
+    }
+}
+#endif
+
 static _Noreturn void hero_jmp_go(hero_jmp_jump_fn real, struct __jmp_buf_tag *env, int val) {
 #if defined(HERO_JMP_ASAN)
     __asan_handle_no_return();
@@ -60,6 +92,17 @@ static void hero_jmp_jump(const void *env) {
         uintptr_t t = 0;
         bool back = false;
         if (hero_jmp_recorded(own, env, standing, &t, &back)) {
+#if !defined(HERO_JMP_MAKES)
+            /* The jump lands where its save was made, so the thread runs
+             * there: inside a swap of its own, or back where it was. */
+            own->elsewhere = hero_jmp_saved_away(own, env) ? 1 : 0;
+            if (own->elsewhere != 0) {
+                if (standing) hero_jmp_prune_away(own, t);
+                hero_jmp_landed(own, t, back);
+                if (standing && !hero_sig_standing(own)) hero_signal_jump_checked();
+                return;
+            }
+#endif
             if (standing) {
                 hero_sig_landing(own, t);
                 hero_sig_prune_to(own, t, true);
@@ -240,7 +283,16 @@ __attribute__((noinline, no_sanitize("address"))) int(swapcontext)(ucontext_t *r
             }
         }
     }
+#if !defined(HERO_JMP_MAKES)
+    /* The thread runs on the stack the swap enters until this frame returns
+     * (the placement above). */
+    int away = own != NULL ? own->elsewhere : 0;
+    if (own != NULL) own->elsewhere = 1;
+#endif
     int r = atomic_load_explicit(&hero_ctx_real_swap, memory_order_relaxed)(oucp, ucp);
+#if !defined(HERO_JMP_MAKES)
+    if (own != NULL) own->elsewhere = away;
+#endif
     /* Back in this frame: where no switch was made from the range entered
      * and the context did not move, its coroutine returned through `uc_link`
      * and the range holds no frames of it any more (defect 2706,
