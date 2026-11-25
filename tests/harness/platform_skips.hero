@@ -140,6 +140,9 @@ constant O_CLOEXEC_ON_WINDOWS: str
 constant FLOCKFILE_ON_WINDOWS: str
     "`flockfile` is POSIX's, and the Windows target's C declares none, its C library's being `_lock_file` (mingw-w64's `stdio.h:1312`, as zig carries it), so the case's header, whose thread keeps stderr's lock, is refused at `flockfile`, a call to an undeclared function (`zig cc` 0.15.2 for x86_64-windows-gnu and aarch64-windows-gnu on this Mac, 2026-11-25, each case's unit as the compiler emits it, under `-I runtime` and the case's folder; MSVC's headers, the CI's Windows target, unrun), and it is built nowhere there (defect 2606; defect 2811)"
 
+constant SYSV_SWITCH_ON_WINDOWS: str
+    "the case's header switches stacks by AArch64 and x86-64 System V assembly of its own, and Windows x64 keeps other registers across a call (`rdi`, `rsi` and `xmm6` to `xmm15` besides), so the header stops itself there with `#error` rather than build a switch that loses them; refused so by `zig cc` 0.15.2 for both Windows targets on 2026-11-25, unrun on the box (lane coroutine-room)"
+
 # The cases and rows whose shape Windows cannot hold, by the name the report
 # gives them: each builds there, or is refused there in other words, so only
 # the forms that judge what it does skip it (every `run` case here was built,
@@ -305,6 +308,14 @@ function unbuildable_on_windows() -> [Skip]
         Skip(name: "tests/golden/run/fixedbugs-2606-main-returning-with-a-thread-unjoined-ends-while-it-is-blocked-writing-stderr.hero", why: PIPE_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2582-two-threads-printing-at-once-each-write-whole-lines.hero", why: O_CLOEXEC_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2606-a-runtime-panic-is-said-while-a-thread-keeps-stderrs-lock.hero", why: FLOCKFILE_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-coroutines-holding-large-values-resumed-in-either-order-each-give-their-own-room-back.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-three-coroutines-holding-large-values-resumed-in-every-order-each-give-their-own-room-back.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-coroutines-lending-a-local-and-a-buffer-to-c-across-switches-each-give-their-own-region-back.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-coroutines-on-stacks-carved-from-the-threads-own-leave-its-large-value-alone.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-coroutines-on-a-thread-spawn-started-each-give-their-own-room-back.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-a-coroutine-left-for-good-holding-a-large-value-has-its-room-given-back-on-its-stack.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-a-c-longjmp-over-a-callback-inside-a-coroutine-gives-its-room-back.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-coroutines-switched-by-a-librarys-own-switch-each-give-their-own-room-back.hero", why: SYSV_SWITCH_ON_WINDOWS)
     ]
 
 # Why the program at `source` is not built on this machine: one of
@@ -549,7 +560,12 @@ test "every program Windows cannot build is a file that exists, skipped there al
     # targets on 2026-11-25, and these refused by their own headers, POSIX's
     # `sigjmp_buf`, `struct sigaction`, `siginfo_t`, `pipe`, `O_CLOEXEC` or
     # `flockfile`, or `dlfcn.h`, `sys/wait.h` or `sys/syscall.h` not found.
-    assert unbuildable_on_windows().len() == 125
+    # Then 8 of the coroutine defect lane panel258-r1 found beside 2752 (lane
+    # coroutine-room), their two coroutine headers compiled alone by `zig cc`
+    # 0.15.2 for both Windows targets on 2026-11-25: the seven cases of one
+    # refused at `ucontext.h` not found, the eighth's at its own `#error`, a
+    # System V switch (`SYSV_SWITCH_ON_WINDOWS`).
+    assert unbuildable_on_windows().len() == 133
 
     for one in unbuildable_on_windows()
         assert strings.has_prefix(s: one.name, prefix: "tests/golden/run/")
