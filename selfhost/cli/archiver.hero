@@ -34,6 +34,7 @@
 
 use cli/clang_asked
 use cli/link_flags
+use cli/os_reason
 use cli/process
 use cli/publish
 use cli/read_back
@@ -68,7 +69,7 @@ function archived(t: toolchain.Toolchain, staged: str, objects: [str], err_path:
     if !ran.started
         return fail(
             code: "no_archiver",
-            msg: "the platform layer could not be archived: `" + tool.program + "` could not be started, the operating system's reason " + ran.why.to_str() + ".\n  clang names no archiver beside it (`clang -print-prog-name=llvm-ar`, `ar` and `llvm-lib`), and none is on PATH; install LLVM's `llvm-ar`, or the platform's `ar`, where clang is"
+            msg: "the platform layer could not be archived: `" + tool.program + "` could not be started: " + os_reason.told(ran.why) + ".\n  clang names no archiver beside it (`clang -print-prog-name=llvm-ar`, `ar` and `llvm-lib`), and none is on PATH; install LLVM's `llvm-ar`, or the platform's `ar`, where clang is"
         )
 
     if ran.code != 0 || !process.path_exists(staged)

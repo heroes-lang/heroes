@@ -1,0 +1,6 @@
+# Defect d-lane-blocking-small2-1's class (2026-11-25): `heroes add` and
+# `heroes fetch`, the program's `heroes.packages` being a link to itself,
+# said *a link to nothing stands* there, the questions that follow a link
+# failing on a loop and read as nothing: it is told by what its chain names.
+function main()
+    print(1)

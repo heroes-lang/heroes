@@ -12,6 +12,7 @@
 # past §11's 300 lines: `process` is how the compiler reaches the machine in
 # general, and this is the one question with a part of the runtime of its own.
 
+use cli/os_reason
 use cli/process
 
 # `lent` on every path: each call reads it while it runs and keeps nothing
@@ -57,7 +58,7 @@ extern "hero_os.h"
 
 # What is at a path, the link itself where it is one: `other` is what is
 # neither a file, a directory nor a link (a device, a FIFO, `NUL`), and
-# `unknown` a path the question itself failed on, `process.because()` saying
+# `unknown` a path the question itself failed on, `os_reason.because()` saying
 # why.
 variant Entry
     absent
@@ -161,7 +162,7 @@ function landing(path: str) -> str?
     found = hero_fs_landing(path: path.cstr())
 
     if found.len() == 0
-        return fail(code: "no_landing", msg: process.because())
+        return fail(code: "no_landing", msg: os_reason.because())
     return ok(found)
 
 # The place `path` names as the filesystem resolves it (defect 2474): whole,
@@ -181,7 +182,7 @@ function resolved(path: str) -> str?
 
     if status == HERO_OS_NOT_TEXT
         return ok(process.written_value(answer: found, marks: marks))
-    return fail(code: "unresolved", msg: process.because())
+    return fail(code: "unresolved", msg: os_reason.because())
 
 # How many names the file at `path` has, following a link; -1 where it
 # cannot be asked.
@@ -192,7 +193,7 @@ function names_of(path: str) -> i64
 # it, without emptying it. The failure's message is the reason alone.
 function writable(path: str) -> ()?
     if hero_fs_writable(path: path.cstr()) != 1
-        return fail(code: "not_writable", msg: process.because())
+        return fail(code: "not_writable", msg: os_reason.because())
     return ok()
 
 # `text` into a NEW file at `staged`, flushed to the device, and given the
@@ -205,7 +206,7 @@ function stage(staged: str, text: str, like: str) -> ()?
 
     if step == HERO_STAGE_DONE
         return ok()
-    why = process.because()
+    why = os_reason.because()
 
     # A step the header names and this does not is said by its number, never
     # passed off as one of these.
@@ -237,7 +238,7 @@ function stage(staged: str, text: str, like: str) -> ()?
 # The failure's message is the reason alone.
 function replace(staged: str, path: str) -> ()?
     if hero_fs_replace(staged: staged.cstr(), path: path.cstr()) != HERO_OS_OK
-        return fail(code: "not_replaced", msg: process.because())
+        return fail(code: "not_replaced", msg: os_reason.because())
     return ok()
 
 # A file another process wrote, flushed to the device before it is renamed
@@ -245,7 +246,7 @@ function replace(staged: str, path: str) -> ()?
 # `hero_fs_flush`). The failure's message is the reason alone.
 function flush(path: str) -> ()?
     if hero_fs_flush(path: path.cstr()) != HERO_OS_OK
-        return fail(code: "not_flushed", msg: process.because())
+        return fail(code: "not_flushed", msg: os_reason.because())
     return ok()
 
 # A staged file that could not take its place, removed even where it carries
@@ -253,7 +254,7 @@ function flush(path: str) -> ()?
 # the author's file). The failure's message is the reason alone.
 function unstage(staged: str) -> ()?
     if hero_file_unstage(staged: staged.cstr()) != HERO_OS_OK
-        return fail(code: "not_removed", msg: process.because())
+        return fail(code: "not_removed", msg: os_reason.because())
     return ok()
 
 # The permission bits of the file at `path`, following a link, -1 where there
@@ -264,17 +265,17 @@ function mode_of(path: str) -> i64
 
 function set_mode(path: str, mode: i64) -> ()?
     if hero_fs_set_mode(path: path.cstr(), mode: mode) != HERO_OS_OK
-        return fail(code: "chmod_failed", msg: "could not change the mode of " + path + process.because())
+        return fail(code: "chmod_failed", msg: "could not change the mode of " + path + os_reason.because())
     return ok()
 
 function second_name(existing: str, name: str) -> ()?
     if hero_fs_link(existing: existing.cstr(), name: name.cstr()) != HERO_OS_OK
-        return fail(code: "link_failed", msg: "could not name " + existing + " also " + name + process.because())
+        return fail(code: "link_failed", msg: "could not name " + existing + " also " + name + os_reason.because())
     return ok()
 
 function symbolic_link(target: str, name: str) -> ()?
     if hero_fs_symlink(target: target.cstr(), name: name.cstr()) != HERO_OS_OK
-        return fail(code: "link_failed", msg: "could not make " + name + " a link to " + target + process.because())
+        return fail(code: "link_failed", msg: "could not make " + name + " a link to " + target + os_reason.because())
     return ok()
 
 # Two shapes only some platforms have, for the cases, each `ok(false)` where
@@ -297,7 +298,7 @@ function made(answer: i64, what: str) -> bool?
         return ok(false)
 
     if answer != HERO_OS_OK
-        return fail(code: "not_made", msg: "could not " + what + process.because())
+        return fail(code: "not_made", msg: "could not " + what + os_reason.because())
     return ok(true)
 
 # Defect 2350: a read-only entry goes with its tree, as `rm -rf` removes it on

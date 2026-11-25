@@ -8,6 +8,7 @@
 # `cli/link_warning.hero` asks the link through it with stdout read.
 
 use cli/clang_died
+use cli/os_reason
 use cli/process
 use cli/read_back
 use cli/strings
@@ -102,7 +103,7 @@ function answered(program: str, words: [str], what: str, err_path: str, out_path
     if !ran.started
         return fail(
             code: "not_started",
-            msg: "clang could not be started, so " + what + " did not run; the operating system's own reason is " + ran.why.to_str() + ".\n  If it is 2 the program is not on this machine's PATH and `heroes doctor` says what is; any other number is the machine refusing for its own reason"
+            msg: "clang could not be started, so " + what + " did not run; " + os_reason.told(ran.why) + ".\n  If it is 2 the program is not on this machine's PATH and `heroes doctor` says what is; any other number is the machine refusing for its own reason"
         )
 
     if ran.code == 0

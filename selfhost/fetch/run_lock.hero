@@ -19,6 +19,7 @@
 # to that: a block nobody gave back is told when the run ends, never a lock
 # held in silence.
 
+use cli/os_reason
 use cli/process
 
 # `lent`: the take reads the path while it runs, and keeps its own copy.
@@ -80,7 +81,7 @@ function took(path: str, fresh: bool) -> Taken
 
     if status == HERO_OS_NOT_FOUND
         return Taken(lock: lock, answer: .absent, said: "")
-    return Taken(lock: lock, answer: .failed, said: process.because())
+    return Taken(lock: lock, answer: .failed, said: os_reason.because())
 
 # The lock `t` given back. Where it holds one, its file is removed first,
 # while still held, unless `keep` asks for the file to stay: a folder that

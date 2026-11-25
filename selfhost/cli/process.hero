@@ -34,6 +34,7 @@
 # callable across a module boundary, so these are the route every other
 # module takes.
 
+use cli/os_reason
 use cli/stands
 use cli/strings
 use not_text
@@ -57,7 +58,6 @@ extern "hero_os.h"
     function hero_fs_mkdir_all(path: cstr lent) -> i64
     function hero_fs_remove(path: cstr lent) -> i64
     function hero_fs_rename(from: cstr lent, to: cstr lent) -> i64
-    function hero_fs_why() -> i64
     function hero_dir_remove_tree(path: cstr lent) -> i64
     function hero_os_pid() -> i64
     function hero_run_serial() -> i64
@@ -168,7 +168,8 @@ function exe_suffix() -> str
 # runtime's C explains why `mkdir` cannot be trusted to say which of those
 # it is looking at. **A refusal carries the operating system's own number**
 # (defect 134): `could not move` alone was one silence for a full disk, a
-# read-only directory and a file another process holds open.
+# read-only directory and a file another process holds open. It is read on
+# the line after the call that failed (`cli/os_reason`).
 #
 # **And where a part of the path is something other than a folder, what it
 # is** (defect 2572): `build` a FIFO, a file or a link to a device was told
@@ -176,43 +177,26 @@ function exe_suffix() -> str
 # see. The reason is read first, before any question about the path moves it,
 # and said first, as defect 346 has it said.
 function mkdir_all(path: str) -> ()?
+    match made_dir(path)
+        .ok _  => return ok()
+        .err e => return fail(code: e.code, msg: "could not create the directory " + path + e.msg)
+
+# `mkdir_all` for a caller that names the directory its own way: the
+# failure's message is the reason and what stands in the way alone. The
+# reason travels in it, since asked again after `stands.blocker` it was 0
+# (defect d-lane-blocking-small2-1).
+function made_dir(path: str) -> ()?
     if hero_fs_mkdir_all(path: path.cstr()) != RUN_OK
-        why = because()
-        blocked = blocker(path)
+        why = os_reason.because()
+        blocked = stands.blocker(path)
 
         if blocked.len() > 0
             return fail(
                 code: "mkdir_failed",
-                msg: "could not create the directory " + path + why + "; " + stands.said(blocked) + " stands at `" + blocked + "`, where a folder is made: rename it to keep it, or remove it"
+                msg: why + "; " + stands.said(blocked) + " stands at `" + blocked + "`, where a folder is made: rename it to keep it, or remove it"
             )
-        return fail(code: "mkdir_failed", msg: "could not create the directory " + path + why)
+        return fail(code: "mkdir_failed", msg: why)
     return ok()
-
-# The first part of `path`, from its root down, where something stands that
-# is no folder and no link to one, so no folder can be made below it; ""
-# where none is.
-function blocker(path: str) -> str
-    at: i64 @= 1
-
-    while at <= path.len()
-        if at == path.len() || path[at] == '/'
-            part = path.slice(from: 0, to: at)
-
-            if stands.said(part) != "nothing" && !is_directory(path: part)
-                return part
-        at @ at + 1
-
-    return ""
-
-# The clause a refusal here ends with, from this thread's last failed
-# filesystem call (`hero_os.h`, `hero_fs_why`): the system's own number, or
-# below zero the runtime's, told as the system's until defect 346.
-function because() -> str
-    why = hero_fs_why()
-
-    if why < 0
-        return ": the runtime refused it before the system was asked, for the reason the system numbers " + (0 - why).to_str()
-    return ": the operating system's own reason is " + why.to_str()
 
 function path_exists(path: str) -> bool
     return hero_fs_exists(path: path.cstr()) == 1
@@ -222,7 +206,7 @@ function is_directory(path: str) -> bool
 
 function remove_file(path: str) -> ()?
     if hero_fs_remove(path: path.cstr()) != RUN_OK
-        return fail(code: "remove_failed", msg: "could not remove " + path + because())
+        return fail(code: "remove_failed", msg: "could not remove " + path + os_reason.because())
     return ok()
 
 # A directory and everything under it, and one that is not there is
@@ -238,7 +222,7 @@ function remove_tree(path: str) -> ()?
 # the whole of one or the whole of the other (`cli/publish.hero`).
 function rename_over(from: str, to: str) -> ()?
     if hero_fs_rename(from: from.cstr(), to: to.cstr()) != RUN_OK
-        return fail(code: "rename_failed", msg: "could not move " + from + " to " + to + because())
+        return fail(code: "rename_failed", msg: "could not move " + from + " to " + to + os_reason.because())
     return ok()
 
 # What a walk found under a directory: every file whose name is UTF-8, as a
@@ -504,3 +488,12 @@ test "a refusal the runtime makes itself is told as its own, never as the operat
 test "a value that is not UTF-8 is quoted with each such byte written by its value"
     assert written_value(answer: "E9/nowhere/rt�", marks: 2) == "/nowhere/rt<0xE9>"
     assert written_value(answer: "/plain", marks: 0) == "/plain"
+
+# A run the runtime refuses before it asks the system, a command line of no
+# word, carries its own reason, never a 0 a caller would tell as the system's
+# (found beside defect d-lane-blocking-small2-1: `clang could not be started
+# ...; the operating system's own reason is 0`). EINVAL is 22 on every system.
+test "a run the runtime refuses itself carries its reason, never 0"
+    ran = run(program: "clang", words: [], out: discard(), err: discard())
+    assert !ran.started && ran.why == -22
+    assert os_reason.told(ran.why) == "the runtime refused it before the system was asked, for the reason the system numbers 22"

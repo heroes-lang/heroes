@@ -1,0 +1,15 @@
+$ cd <work> && heroes fetch -C app
+exit 1
+stdout:
+stderr:
+error[sum_mismatch]: the program's packages would be placed in `app/heroes.packages`, where a link to a chain of links the system cannot follow stands; it is yours, so nothing was placed there: move it out of the program's folder to keep it, or remove it to have the packages placed
+$ cd <work> && heroes add -C app --path ../local/two
+exit 1
+stdout:
+stderr:
+error[sum_mismatch]: the program's packages would be placed in `app/heroes.packages`, where a link to a chain of links the system cannot follow stands; it is yours, so nothing was placed there: move it out of the program's folder to keep it, or remove it to have the packages placed
+heroes.toml:
+[dependencies.lib]
+path = "../local/lib"
+heroes.packages:
+(none)

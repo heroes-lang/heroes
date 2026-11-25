@@ -12,7 +12,17 @@
 #
 # Its own module, below `cli/process` and `cli/files`, because the first is
 # what makes a folder and says why it could not (`process.mkdir_all`), and
-# both are below every reader: it asks the runtime itself and uses nothing.
+# both are below every reader: it asks the runtime itself and uses only the
+# words of a reason (`cli/os_reason`).
+#
+# **A name the system will not look at is told as that, with its reason**
+# (defect d-lane-blocking-small2-1's class): a path too long, under a file
+# or through a folder that cannot be searched was told *a name the system
+# cannot say what it is stands there*, to be renamed or removed, where
+# nothing may stand at all; and it is never what blocks a folder, whose
+# own `mkdir` gave the reason.
+
+use cli/os_reason
 
 # `lent` on every path: each call reads it while it runs and keeps nothing.
 extern "hero_os.h"
@@ -23,6 +33,7 @@ extern "hero_os.h"
     constant HERO_FS_DIRECTORY: i64
     constant HERO_FS_LINK: i64
     constant HERO_FS_OTHER: i64
+    constant HERO_FS_UNKNOWN: i64
 
 # The compiler's own question (`runtime/parts/replace.c`): what a name that
 # is neither a file, a folder nor a link is, asked of the name itself.
@@ -97,7 +108,38 @@ function kind_said(path: str, kind: i64) -> str
 
     if kind == HERO_FS_OTHER
         return special(path)
-    return "a name the system cannot say what it is"
+    return "a name the system will not look at, " + os_reason.told(os_reason.last())
+
+# The first part of `path`, from its root down, where something stands that
+# is no folder and no link to one, so no folder can be made below it; ""
+# where none is. A part the system will not look at is none: nothing is
+# known to stand there, and the failed `mkdir`'s reason says why.
+function blocker(path: str) -> str
+    at: i64 @= 1
+
+    while at <= path.len()
+        if at == path.len() || path[at] == '/'
+            part = path.slice(from: 0, to: at)
+
+            if in_the_way(part)
+                return part
+        at @ at + 1
+
+    return ""
+
+# Whether what stands at `path` keeps a folder from being made there or
+# below it: a file, a FIFO, a socket, a device, or a link whose chain names
+# none of a folder.
+function in_the_way(path: str) -> bool
+    kind = hero_fs_kind(path: path.cstr())
+
+    if kind == HERO_FS_FILE || kind == HERO_FS_OTHER
+        return true
+
+    if kind != HERO_FS_LINK
+        return false
+    target = hero_fs_landing(path: path.cstr())
+    return target.len() == 0 || hero_fs_kind(path: target.cstr()) != HERO_FS_DIRECTORY
 
 # What a name that is neither a file, a folder nor a link is.
 function special(path: str) -> str
@@ -116,6 +158,8 @@ function special(path: str) -> str
 # Why the file at `path` would not read: what stands there where that is
 # something other than a file, else the system's refusal.
 function refused(path: str) -> str
+    if hero_fs_kind(path: path.cstr()) == HERO_FS_UNKNOWN
+        return "could not read " + path + ": the system will not look at it" + os_reason.because()
     stood = said(path)
 
     if is_file(path) || stood == "nothing"
@@ -127,6 +171,34 @@ function refused(path: str) -> str
 # and the name, and what stands there where that is no file, so a FIFO, a
 # socket, a device, a folder or a link to nothing is named for what it is.
 function unread_said(opened: str, named: str) -> str
+    if hero_fs_kind(path: opened.cstr()) == HERO_FS_UNKNOWN
+        return "cannot read `" + named + "`: the system will not look at it" + os_reason.because()
+
     if is_file(opened)
         return "cannot read `" + named + "`"
     return "cannot read `" + named + "`: " + said(opened) + " stands there, where a source is a file: rename it to keep it, or remove it and put the file there"
+
+## Tests
+
+# Defect d-lane-blocking-small2-1's class: a name past a name's length is one
+# the system will not look at, told with the reason it gave, never as a name
+# that stands there to be renamed, and never what blocks a folder (`fmt
+# --in-place` under such a folder was told *a name the system cannot say
+# what it is stands there*). The number is the system's own, 63 on this Mac
+# and 36 on Linux, so its words are asked and not its digits.
+test "a name the system will not look at is told with its reason, and stands nowhere (defect d-lane-blocking-small2-1)"
+    long = "build/" + "x".repeat(300) + "/x.hero"
+
+    # Windows may answer such a name as no path at all (unrun there).
+    if hero_fs_kind(path: long.cstr()) != HERO_FS_UNKNOWN
+        return
+    told = unread_said(opened: long, named: "x.hero")
+    opening = "cannot read `x.hero`: the system will not look at it: the operating system's own reason is "
+    assert told.slice(from: 0, to: opening.len()) == opening && told.len() > opening.len()
+    refusal = refused(long)
+    head = "could not read " + long + ": the system will not look at it: the operating system's own reason is "
+    assert refusal.slice(from: 0, to: head.len()) == head
+    assert blocker(long) == "" && !in_the_way("build/" + "x".repeat(300))
+    looked = said("build/" + "x".repeat(300))
+    asked = "a name the system will not look at, the operating system's own reason is "
+    assert looked.slice(from: 0, to: asked.len()) == asked

@@ -60,6 +60,7 @@
 # private name beside the file, whole or cut, and the file as it was.
 
 use cli/files
+use cli/os_reason
 use cli/process
 use cli/strings
 use module/reading as file_reading
@@ -164,7 +165,7 @@ function same_bytes(one: str, other: str) -> bool
 # platform's number for its refusal. A directory there is no artifact. The
 # reason is read before the throwing away, which asks the system again.
 function not_published(staged: str, path: str, keyed: bool) -> ()?
-    why = process.because()
+    why = os_reason.because()
     discard(staged)
 
     if keyed && process.path_exists(path) && !process.is_directory(path)
@@ -192,11 +193,11 @@ function rewrite(path: str, text: str) -> ()?
         .file   => return carried_over(path: path, at: at, text: text)
         .other =>
             if write_file(path: at, text: text).is_err()
-                return fail(code: "not_written", msg: "cannot write " + path + process.because())
+                return fail(code: "not_written", msg: "cannot write " + path + os_reason.because())
             return ok()
         .directory => return untouched(path: path, what: "a directory is there")
         .link      => return untouched(path: path, what: "it is still a link once its links are followed")
-        .unknown   => return untouched(path: path, what: "it cannot be looked at" + process.because())
+        .unknown   => return untouched(path: path, what: "it cannot be looked at" + os_reason.because())
 
 # Where a write to the author's `path` lands, an `-o` of any kind or the
 # source an in-place verb rewrites: the file its links finally name.
@@ -252,7 +253,7 @@ function carried_over(path: str, at: str, text: str) -> ()?
     names = files.names_of(at)
 
     if names < 1
-        return untouched(path: path, what: "its names cannot be counted" + process.because())
+        return untouched(path: path, what: "its names cannot be counted" + os_reason.because())
 
     if names > 1
         return untouched(
@@ -719,3 +720,43 @@ test "a private name keeps one part of a path within 244 bytes, cut at a charact
     wide = private_name("build/" + "é".repeat(150))
     assert wide.slice(from: 6, to: 206) == "é".repeat(100)
     assert strings.holds(text: private_name("build/x.o"), needle: "build/x.o." + process.pid().to_str() + "-")
+
+# Defect d-lane-blocking-small2-1: a folder that cannot be made is told by the
+# reason its own `mkdir` gave, read on the line after it and carried in its
+# failure, never by a question asked since (the link told `-o
+# app/main.hero/b` *the operating system's own reason is 0*): under a file, a
+# FIFO and a link that loops, a name taken (17 on every system); past the
+# length of a name, the system's own number and nothing said to stand; and in
+# a folder this user may not write, 13, where the system refuses it (root
+# writes one, and Windows keeps no read-only folder). The shapes git cannot
+# hold; the fetch form holds the link's words for a file and a loop.
+test "a folder that cannot be made is told by the reason its own mkdir gave (defect d-lane-blocking-small2-1)"
+    dir = "build/selftest-made-dir"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/file", text: "x\n").is_err()
+    taken = ": " + os_reason.told(17) + "; "
+    assert message_of(process.made_dir(dir + "/file/b")) == taken + "a file stands at `" + dir + "/file`, where a folder is made: rename it to keep it, or remove it"
+    fifo = process.run(
+        program: "mkfifo",
+        words: ["mkfifo", dir + "/fifo"],
+        out: process.discard(),
+        err: process.discard()
+    )
+
+    if fifo.started && fifo.code == 0
+        assert message_of(process.made_dir(dir + "/fifo/b")) == taken + "a FIFO stands at `" + dir + "/fifo`, where a folder is made: rename it to keep it, or remove it"
+
+    if !files.symbolic_link(target: "loop", name: dir + "/loop").is_err()
+        assert message_of(process.made_dir(dir + "/loop/b")) == taken + "a link to a chain of links the system cannot follow stands at `" + dir + "/loop`, where a folder is made: rename it to keep it, or remove it"
+    long = message_of(process.made_dir(dir + "/" + "x".repeat(300) + "/b"))
+    assert strings.starts_with(text: long, prefix: ": the operating system's own reason is ")
+    assert long != ": " + os_reason.told(0) && !strings.holds(text: long, needle: "stands")
+    assert !process.mkdir_all(dir + "/shut").is_err()
+    assert !files.set_mode(path: dir + "/shut", mode: 0o555).is_err()
+    shut = process.made_dir(dir + "/shut/b")
+
+    if shut.is_err()
+        assert message_of(shut) == ": " + os_reason.told(13)
+    assert !files.set_mode(path: dir + "/shut", mode: 0o755).is_err()
+    assert !process.remove_tree(dir).is_err()

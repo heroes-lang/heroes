@@ -58,6 +58,7 @@ use cli/deps
 use cli/files
 use cli/flags
 use cli/link_flags
+use cli/os_reason
 use cli/process
 use cli/publish
 use cli/read_back
@@ -246,7 +247,7 @@ function swift(line: [str], folder: str, what: str) -> ()?
     if !ran.started
         return fail(
             code: "failed",
-            msg: "xcrun could not be started, so " + what + " did not run; the operating system's own reason is " + ran.why.to_str()
+            msg: "xcrun could not be started, so " + what + " did not run; " + os_reason.told(ran.why)
         )
 
     if ran.code != 0

@@ -1,0 +1,19 @@
+$ cd <work> && heroes build app/main.hero -o app/main.hero/b
+exit 2
+stdout:
+stderr:
+error: cannot write app/main.hero/b: no directory could be made beside it for the linker's output: the operating system's own reason is 17; a file stands at `app/main.hero`, where a folder is made: rename it to keep it, or remove it; app/main.hero/b is untouched
+$ cd <work> && heroes build app/main.hero -o loop/b
+exit 2
+stdout:
+stderr:
+error: cannot write loop/b: no directory could be made beside it for the linker's output: the operating system's own reason is 17; a link to a chain of links the system cannot follow stands at `loop`, where a folder is made: rename it to keep it, or remove it; loop/b is untouched
+$ cd <work> && heroes add -C app --path ../local/lib
+exit 1
+stdout:
+stderr:
+error[catalogue_refused]: `app/heroes.toml` is a link to a chain of links the system cannot follow, where a catalogue is a file: make it name one, or remove it and `heroes add` writes one
+heroes.toml:
+(none)
+heroes.packages:
+(none)

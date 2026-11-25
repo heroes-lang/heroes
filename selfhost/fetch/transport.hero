@@ -36,6 +36,7 @@
 
 use cli/environment
 use cli/files
+use cli/os_reason
 use cli/process
 use cli/read_back
 use cli/stands
@@ -128,10 +129,9 @@ function local_said(path: str, shown: str) -> str
         .directory => return "`" + shown + "` is a folder, where a file was asked for"
         .link      => return "`" + shown + "` is a link, and an index's file is read through no link"
         .other     => return "`" + shown + "` is " + stands.said(path) + ", where a file was asked for"
-        .unknown   => return "`" + shown + "` could not be asked what it is" + process.because()
+        .unknown   => return "`" + shown + "` could not be asked what it is" + os_reason.because()
 
-# git's settings for every command it runs here, before the command's own
-# words.
+# git's settings for every command it runs here, before its own words.
 function settings(tools: Tools) -> [str]
     return [
         tools.git

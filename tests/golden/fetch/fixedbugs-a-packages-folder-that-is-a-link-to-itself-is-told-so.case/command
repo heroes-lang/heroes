@@ -1,0 +1,2 @@
+cd <work> && fetch -C app
+cd <work> && add -C app --path ../local/two

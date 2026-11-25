@@ -69,13 +69,16 @@ function read_through(s: Standing) -> bool
 # `cli/stands.hero`), the name asked again for those alone. Until then all
 # three were *a name that is neither a folder, a file nor a link*, and a link
 # to one *a link to a file*, which a link to `/dev/zero` at `heroes.packages`
-# was told as.
+# was told as. A link whose name is not followed to a folder or a file is
+# told by what its chain names: one that loops was *a link to nothing*
+# (defect d-lane-blocking-small2-1's class, `add` with `heroes.toml` a link
+# to itself).
 function said(stood: Standing, path: str) -> str
     match stood
         .nothing     => return "nothing"
         .tree        => return "a folder"
         .linked_tree => return "a link to a folder"
-        .dangling    => return "a link to nothing"
+        .dangling    => return "a link to " + stands.landed(path)
         .file        => return "a file"
         .linked_file => return "a link to " + stands.landed(path)
         .other       => return stands.special(path)
@@ -108,7 +111,7 @@ function unread_said(path: str, named: str, code: str) -> str
     # every reader took it for no catalogue, and `heroes add` wrote the
     # catalogue at the place the link names, at exit 0.
     if stood == .dangling
-        return "`" + named + "` is a link to nothing, where a catalogue is a file: make it name one, or remove it and `heroes add` writes one"
+        return "`" + named + "` is " + said(stood, path: path) + ", where a catalogue is a file: make it name one, or remove it and `heroes add` writes one"
 
     # A link to a FIFO, a device or a socket (defect 2572): what it names is
     # asked, since the link itself reads as one to a file.
@@ -269,4 +272,25 @@ test "a link to nothing at the catalogue's name is told so, and a link to a file
         assert !write_file(path: dir + "/real.toml", text: "index = \"file://../idx\"\n").is_err()
         assert !files.symbolic_link(target: "real.toml", name: dir + "/linked.toml").is_err()
         assert catalogue_text(path: dir + "/linked.toml", named: "linked.toml").must() == "index = \"file://../idx\"\n"
+    assert !process.remove_tree(dir).is_err()
+
+# A link to itself at the catalogue's name or at `heroes.packages` is told
+# by what its chain names: the questions that follow a link fail on a loop,
+# and were read as *a link to nothing* (found beside defect
+# d-lane-blocking-small2-1, `heroes add` with either a link to itself).
+test "a link that loops is told as one, never as a link to nothing"
+    dir = SCRATCH + "-loop"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+
+    if !files.symbolic_link(target: "heroes.toml", name: dir + "/heroes.toml").is_err()
+        loop = "a link to a chain of links the system cannot follow"
+        assert at(dir + "/heroes.toml") == .dangling && said(.dangling, path: dir + "/heroes.toml") == loop
+
+        match catalogue_text(path: dir + "/heroes.toml", named: "app/heroes.toml")
+            .ok _  => assert false
+            .err e => assert e.msg == "`app/heroes.toml` is " + loop + ", where a catalogue is a file: make it name one, or remove it and `heroes add` writes one"
+
+        assert !files.symbolic_link(target: "nowhere", name: dir + "/gone").is_err()
+        assert said(at(dir + "/gone"), path: dir + "/gone") == "a link to nothing"
     assert !process.remove_tree(dir).is_err()
