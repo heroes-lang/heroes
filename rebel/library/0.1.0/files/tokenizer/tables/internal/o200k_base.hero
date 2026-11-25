@@ -3,7 +3,7 @@
 # special tokens, as tiktoken 0.14.0 reads them.
 #
 # Generated, never edited by hand: the Heroes program
-# `generators/tokenizer_tables/` read the file OpenAI serves,
+# `rebel/generators/tokenizer_tables/` read the file OpenAI serves,
 # https://openaipublic.blob.core.windows.net/encodings/o200k_base.tiktoken
 # (SHA-256 446a9538cb6c348e3516120d7c08b09f57c36495e2acfffe59a5bf8b0cfb1a2d,
 # the one tiktoken 0.14.0 expects), each line's token at the rank the line

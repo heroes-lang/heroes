@@ -3,7 +3,7 @@
 # rule read of a code point: its combining class, its script, its joining
 # type and its bidirectional class.
 #
-# Generated, never edited by hand: the Heroes program `generators/json_idna/`
+# Generated, never edited by hand: the Heroes program `rebel/generators/json_idna/`
 # applied RFC 5892's derivation (its section 3) to the Unicode Character
 # Database 17.0.0, each file held to its SHA-256, with Rebel's
 # `unicode/normalize` and `strings` for the NFKC and the case folding its

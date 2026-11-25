@@ -3,7 +3,7 @@
 # `o200k_base`'s, and its 1091 special tokens are these.
 #
 # Generated, never edited by hand: the Heroes program
-# `generators/tokenizer_tables/` held them, and that the encoding takes
+# `rebel/generators/tokenizer_tables/` held them, and that the encoding takes
 # `o200k_base`'s pattern and ordinary tokens, to tiktoken 0.14.0's
 # `tiktoken_ext/openai_public.py` (SHA-256
 # 954392738e60d0fb6dca1dad80872efc47c8e2733babecbbf0a23970ed66c2cb,

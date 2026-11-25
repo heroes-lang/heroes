@@ -7,7 +7,7 @@
 #
 # A block's fields are separated by U+0001 and a list's entries by U+0002.
 #
-# Generated, never edited by hand: the Heroes program `generators/i18n_numbers/`
+# Generated, never edited by hand: the Heroes program `rebel/generators/i18n_numbers/`
 # read CLDR 49's JSON, `cldr-49.0.0-json-full.zip` of
 # https://github.com/unicode-org/cldr-json/releases/download/49.0.0/
 # (SHA-256

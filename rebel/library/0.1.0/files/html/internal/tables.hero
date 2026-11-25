@@ -4,7 +4,7 @@
 # written in mixed case (13.2.6.5).
 #
 # Generated, never edited by hand: the Heroes program
-# `generators/html_tables/` read them from the standard's source, the file
+# `rebel/generators/html_tables/` read them from the standard's source, the file
 # `source` of github.com/whatwg/html at commit
 # efcc0bcdec596651e2cb316ab076c0bdc7c4d120
 # (SHA-256 3ce0e875a92394f6d3194373a45a291ef43ac9764eb161538227fc6689731d13),
