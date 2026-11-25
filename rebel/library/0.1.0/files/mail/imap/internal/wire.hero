@@ -94,10 +94,40 @@ function set_deadline(s: Session lent, deadline: time.Duration) -> ()?
         return fail(code: CLOSED, msg: "the IMAP connection is closed")
     return tls.set_deadline(s.reader.stream, deadline: deadline)
 
-# Begins the answer to a command: its deadline set and its budget whole.
+# Begins the answer to a command: what the server has sent already taken
+# into the session (`take_waiting`), its deadline set and its budget whole.
 function begin(@s: Session) -> ()?
+    take_waiting(@s)?
     s.left @ s.max_bytes
     return set_deadline(s, deadline: s.deadline)
+
+# Takes into the reader what the server has sent and the client has not
+# read, waiting for nothing: what the system holds of the connection,
+# until a read would wait, the stream ends or the reader holds `max_bytes`,
+# its end with it where it came. Nothing is parsed and nothing counts
+# against the budget: the command reads the same bytes in the same order.
+# A server that said BYE and closed answers the client's next write with a
+# reset, and on Windows a reset throws away what the system still held,
+# the BYE with it, where Linux and macOS give it out first; held by the
+# session before the write, it is read on every system. A failure of a
+# read here stops the taking and is left to the command's own reads,
+# which meet it again and tell it in their words. It leaves the deadline
+# at zero, which `begin` sets again.
+#
+# Fails `closed` where the session is closed.
+function take_waiting(@s: Session) -> ()?
+    set_deadline(s, deadline: time.nanoseconds(0))?
+
+    while unread(s) < s.max_bytes
+        held = unread(s)
+
+        match io.peek(@s.reader, n: held + 1)
+            .ok got =>
+                if got.len() <= held
+                    return ok()
+            .err _ => return ok()
+
+    return ok()
 
 # The next tag, `A` and four digits or more: `A0001`.
 function next_tag(@s: Session) -> str
@@ -292,3 +322,24 @@ test "set_deadline: an answer that never comes ends by its deadline, then a clos
     close(@s).must()
     assert set_deadline(s, deadline: time.milliseconds(10).must()).is_err() && write(s, data: [65]).is_err() && next_line(@s).is_err()
     io.close(@server).must()
+
+test "begin: what the server sent and its end held by the session before a write, none of it counted"
+    two = net.pair(deadline_ms: 5000).must()
+    s @= over(two.first.stream, link: .plain, deadline: time.seconds(5).must(), max_bytes: 100)
+    server @= two.second.stream
+    begin(@s).must()
+    assert unread(s) == 0
+    io.write_text(server, text: "* BYE going\r\n").must()
+    io.close(@server).must()
+    time.sleep(time.milliseconds(50).must())
+    begin(@s).must()
+    assert unread(s) == 13 && s.left == 100
+    write(s, data: bytes.from_text("A0001 NOOP\r\n")).must()
+    next_line(@s).must()
+    assert s.line == bytes.from_text("* BYE going") && s.left == 100 - 13
+
+    match next_line(@s)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    close(@s).must()
