@@ -70,7 +70,7 @@ function unread(@w: writer.Writer)
 # A `T?` by its tag: `ok(v)`, `ok()` for a `()?`, or `fail` and its failure.
 function option_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], ty: i64, payload: i64)
     writer.line(@w, text: "    const " + ctype.option_of(names, ty: ty) + " *hero_v = hero_p;")
-    writer.line(@w, text: "    if (hero_v->hero_tag == INT64_C(0)) {")
+    writer.line(@w, text: "    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {")
 
     if ctype.c_type(names, c: c, ty: payload).is_err()
         writer.line(@w, text: "        hero_show_text(hero_o, \"ok()\");")
@@ -175,7 +175,7 @@ function members(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: sou
 function member(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], ty: i64, place: str) -> str
     match table.get(c.types, ty)
         .fixed fx =>
-            return "hero_show_fixed(hero_o, " + place + ", INT64_C(" + fx.length.to_str() + "), sizeof " + place + "[0], " + sides.renderer(c, names, s, decls, ty: fx.element) + ");"
+            return "hero_show_fixed(hero_o, " + place + ", ((__INT64_TYPE__)" + fx.length.to_str() + "), sizeof " + place + "[0], " + sides.renderer(c, names, s, decls, ty: fx.element) + ");"
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty => return value_member(
             c,
             names,

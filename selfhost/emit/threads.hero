@@ -63,7 +63,7 @@ function call(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source
         # Only a place is handed over and emptied: a value is a copy the
         # caller's cell does not see, and the receive takes its handles over
         # all the same (`runtime/parts/mail.c`, R3).
-        sent: str @= "NULL"
+        sent: str @= "((void *)0)"
 
         if places[1]
             sent @ crossing.sent_of(c, s, decls, ty: element)
@@ -74,7 +74,7 @@ function call(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source
         if !target.is_err()
             option_c = ctype.option_of(names, ty: result)
             statements @ statements.push(
-                target.must() + " = hero_answer == 0 ? (" + option_c + "){.hero_tag = INT64_C(0)} : (" + option_c + "){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_answer == 2 ? hero_failure_send_closed() : hero_failure_send_stopped()};"
+                target.must() + " = hero_answer == 0 ? (" + option_c + "){.hero_tag = ((__INT64_TYPE__)0)} : (" + option_c + "){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_answer == 2 ? hero_failure_send_closed() : hero_failure_send_stopped()};"
             )
     else if name == "close"
         statements @ statements.push("hero_mail_close(" + arguments[0] + ", &" + stop_place.HERE + ");")
@@ -91,12 +91,12 @@ function call(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source
         into = target.must()
         option_c = ctype.option_of(names, ty: result)
         statements @ statements.push(zeroed_whole(into: into, c_type: option_c))
-        statements @ statements.push(into + ".hero_tag = INT64_C(0);")
+        statements @ statements.push(into + ".hero_tag = ((__INT64_TYPE__)0);")
         statements @ statements.push(
             nodebug.MARK + "int64_t hero_answer = hero_mail_receive(" + arguments[0] + ", &" + into + ".hero_as.hero_ok, " + arguments[1] + ", &" + stop_place.HERE + ");"
         )
         statements @ statements.push(
-            "if (hero_answer != 0) " + into + " = (" + option_c + "){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()};"
+            "if (hero_answer != 0) " + into + " = (" + option_c + "){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped()};"
         )
     else if name == "wait"
         statements @ statements.push(
@@ -110,10 +110,10 @@ function call(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source
                 zeroed_whole(into: target.must(), c_type: ctype.c_type(names, c: c, ty: result).must())
             )
             statements @ statements.push(
-                crossing.take_of(c, s, decls, ty: result) + "(&hero_box->answer, &" + target.must() + ");"
+                crossing.take_of(c, s, decls, ty: result) + "(HERO_THREAD_BOX_ANSWER(hero_box), &" + target.must() + ");"
             )
         else if crossing.answers(c, names, ty: result)
-            for line in dropped(c, names, s, decls, ty: result, from: "hero_box->answer")
+            for line in dropped(c, names, s, decls, ty: result, at: "HERO_THREAD_BOX_ANSWER(hero_box)")
                 statements @ statements.push(line)
         statements @ statements.push("hero_thread_box_free(hero_box);")
     else
@@ -134,7 +134,7 @@ function started(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
     param = crossing.parameter_of(c, fn_ty)
     box = crossing.box_of(c, s, decls, fn_ty: fn_ty)
     option_c = ctype.option_of(names, ty: result)
-    bytes: str @= "INT64_C(0)"
+    bytes: str @= "((__INT64_TYPE__)0)"
 
     if arguments.len() > 2
         bytes @ arguments[2]
@@ -142,10 +142,12 @@ function started(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
     out @ out.push(
         nodebug.MARK + box + " *hero_box = (" + box + " *)hero_thread_box_new((int64_t)sizeof(" + box + "));"
     )
-    out @ out.push("hero_box->hero_head.run = " + crossing.runner_of(c, s, decls, fn_ty: fn_ty) + ";")
-    out @ out.push("hero_box->hero_head.body = (void (*)(void))" + arguments[0] + ";")
+    out @ out.push("HERO_THREAD_BOX_RUN(&hero_box->hero_head) = " + crossing.runner_of(c, s, decls, fn_ty: fn_ty) + ";")
+    out @ out.push("HERO_THREAD_BOX_BODY(&hero_box->hero_head) = (void (*)(void))" + arguments[0] + ";")
     out @ out.push("hero_box->hero_fn = " + arguments[0] + ";")
-    out @ out.push(crossing.put_of(c, s, decls, ty: param) + "(&hero_box->hero_head.arg, &" + arguments[1] + ");")
+    out @ out.push(
+        crossing.put_of(c, s, decls, ty: param) + "(HERO_THREAD_BOX_ARG(&hero_box->hero_head), &" + arguments[1] + ");"
+    )
     out @ out.push(nodebug.MARK + "int64_t hero_why = 0;")
     out @ out.push(
         nodebug.MARK + "int64_t hero_thread = hero_thread_begin(&hero_box->hero_head, " + bytes + ", &hero_why, &" + stop_place.HERE + ");"
@@ -155,26 +157,28 @@ function started(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
     if !target.is_err()
         into @ target.must()
     out @ out.push(
-        "if (hero_thread >= 0) { " + into + " = (" + option_c + "){.hero_tag = INT64_C(0), .hero_as.hero_ok = hero_thread}; } else {"
+        "if (hero_thread >= 0) { " + into + " = (" + option_c + "){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = hero_thread}; } else {"
     )
 
-    for line in dropped(c, names, s, decls, ty: param, from: "hero_box->hero_head.arg")
+    for line in dropped(c, names, s, decls, ty: param, at: "HERO_THREAD_BOX_ARG(&hero_box->hero_head)")
         out @ out.push(line)
 
     out @ out.push("hero_thread_box_free(&hero_box->hero_head);")
     out @ out.push(
-        into + " = (" + option_c + "){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_limit(hero_why)}; }"
+        into + " = (" + option_c + "){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_limit(hero_why)}; }"
     )
     return out
 
 # A crossing nobody receives, given back: rebuilt into a value of its own and
 # released, so a mailbox's count it carried is given back too. Nothing where
-# the value is its bytes alone.
-function dropped(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], ty: i64, from: str) -> [str]
+# the value is its bytes alone. `at` is the crossing's place, a runtime
+# accessor's answer: the unit names no member of the runtime's box, a word a
+# group's header may define (`runtime/heroes_runtime.h`, `HERO_PLACE_PATH`).
+function dropped(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], ty: i64, at: str) -> [str]
     if crossing.plain(c, decls, ty: ty)
         return []
     out: [str] @= ["{ " + nodebug.MARK + ctype.c_type(names, c: c, ty: ty).must() + " hero_left;"]
-    out @ out.push(crossing.take_of(c, s, decls, ty: ty) + "(&" + from + ", &hero_left);")
+    out @ out.push(crossing.take_of(c, s, decls, ty: ty) + "(" + at + ", &hero_left);")
 
     if layout.is_refcounted(c, ty)
         given_back = counted.reference_line(c, names, ty: ty, place: "hero_left", keep: false)

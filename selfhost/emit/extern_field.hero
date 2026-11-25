@@ -292,7 +292,7 @@ function c_spelling(c: state.Checked, names: ctype.Names, ty: i64) -> str?
     match table.get(c.types, ty)
         .int_ty ik   => return ok(widths.int_c_type(ik.kind))
         .float_ty fk => return ok(widths.float_c_type(fk.kind))
-        .bool        => return ok("bool")
+        .bool        => return ok("_Bool")
         .ptr         => return ok("void *")
         .cstr        => return ok("const char *")
         .named n     => return ok(ctype.of(names, decl: n.decl))

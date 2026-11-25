@@ -708,14 +708,14 @@ def quoted(data, cut):
 
 def render_failure(proc, value, budget, depth):
     value = unwrap(value, FAILURE)
-    return "(code: %s, msg: %s)" % (show(member(value, "code"), budget, depth + 1), show(member(value, "msg"), budget, depth + 1))
+    return "(code: %s, msg: %s)" % (show(member(value, "hero_code"), budget, depth + 1), show(member(value, "hero_msg"), budget, depth + 1))
 
 
 def render_option(proc, value, budget, depth):
     arm, part = option_arm(value)
     if arm == "ok":
         return "ok()" if part is None else "ok(%s)" % show(part, budget, depth + 1)
-    return "fail(code: %s, msg: %s)" % (show(member(part, "code"), budget, depth + 1), show(member(part, "msg"), budget, depth + 1))
+    return "fail(code: %s, msg: %s)" % (show(member(part, "hero_code"), budget, depth + 1), show(member(part, "hero_msg"), budget, depth + 1))
 
 
 def option_arm(value):
@@ -1092,7 +1092,7 @@ class Children(object):
             if arm == "ok":
                 self.kids = [] if part is None else [renamed(plain, "ok", part)]
             else:
-                self.kids = [renamed(plain, "code", member(part, "code")), renamed(plain, "msg", member(part, "msg"))]
+                self.kids = [renamed(plain, "code", member(part, "hero_code")), renamed(plain, "msg", member(part, "hero_msg"))]
         else:
             raise Unread("kind")
         self.count = len(self.kids)

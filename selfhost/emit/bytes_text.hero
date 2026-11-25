@@ -103,7 +103,7 @@ function emit(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast
         if place.is_err()
             writer.line(@w, text: "    hero_unreachable(); /* a fixed run with no rendering */")
             return
-        call @ "hero_str_try_from_bytes((const char *)(" + place.must() + "), INT64_C(" + fixed_length.to_str() + "), &hero_vb_status)"
+        call @ "hero_str_try_from_bytes((const char *)(" + place.must() + "), ((__INT64_TYPE__)" + fixed_length.to_str() + "), &hero_vb_status)"
 
     # A BLOCK, so the status word is a fresh local at every call site rather
     # than a name hoisted into the prologue. The emitter hoists every local it
@@ -115,12 +115,12 @@ function emit(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast
     writer.line(@w, text: "        if (hero_vb_status == HERO_STR_OK) {")
     writer.line(
         @w,
-        text: "            " + into + " = (" + union_name + "){.hero_tag = INT64_C(0), .hero_as.hero_ok = hero_vb_text};"
+        text: "            " + into + " = (" + union_name + "){.hero_tag = ((__INT64_TYPE__)0), .hero_as.hero_ok = hero_vb_text};"
     )
     writer.line(@w, text: "        } else {")
     writer.line(
         @w,
-        text: "            " + into + " = (" + union_name + "){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_not_text()};"
+        text: "            " + into + " = (" + union_name + "){.hero_tag = ((__INT64_TYPE__)1), .hero_as.hero_err = hero_failure_not_text()};"
     )
     writer.line(@w, text: "        }")
     writer.line(@w, text: "    }")

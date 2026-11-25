@@ -1,0 +1,21 @@
+# Fixed 2026-11-25, lane macro-members3 (found by lane macro-members2 beside
+# its repair of the names the runtime's macros write).
+# Symptom: a group's header holding `#define int64_t 5`, the program binding
+# it as `constant int64_t: i64`, was refused with a false `ffi_field_type` on
+# a group record's `i64` field, and `uint64_t`, `size_t`, `int32_t` and the
+# other integer types the unit writes failed with *internal error: compiling
+# the generated C failed* at exit 2: a name the program binds keeps its
+# header's meaning after the groups, where the unit spells every integer
+# variable's type.
+# Repair: the unit keeps those names, which a debugger shows (`(int64_t) h0_n
+# = 2`), and a header defining one as a macro is told where the program binds
+# it, before any unit compiles (`cli/bound_macro.hero`,
+# `emit/library_types.hero`): C's own headers declare each with `typedef`,
+# and C11 7.1.3 reserves it.
+
+extern "fixedbugs-a-header-s-macro-over-a-c-type-the-program-binds-is-told.h"
+    function told_seven() -> i64
+    constant int64_t: i64  #~ ffi_macro_name
+
+function main()
+    print(told_seven() + int64_t)

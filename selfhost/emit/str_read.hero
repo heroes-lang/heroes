@@ -23,10 +23,10 @@
 # `s[i]`: `base` and `index` are the two temporaries, `where` the place's four
 # arguments.
 function byte(base: str, index: str, where: str) -> str
-    checked = "(" + base + ".ptr == NULL || " + index + " < 0 || " + index + " >= " + base + ".len)"
+    checked = "(" + base + ".ptr == ((void *)0) || " + index + " < 0 || " + index + " >= " + base + ".len)"
     return "((void)(" + checked + " ? hero_panic_byte_at(" + base + ", " + index + ", " + where + ") : (void)0), (int64_t)(unsigned char)" + base + ".ptr[" + index + "])"
 
 ## Tests
 
 test "a byte is read in place, every failing read handed to the runtime with its place (defect 491)"
-    assert byte(base: "t0", index: "t1", where: "P") == "((void)((t0.ptr == NULL || t1 < 0 || t1 >= t0.len) ? hero_panic_byte_at(t0, t1, P) : (void)0), (int64_t)(unsigned char)t0.ptr[t1])"
+    assert byte(base: "t0", index: "t1", where: "P") == "((void)((t0.ptr == ((void *)0) || t1 < 0 || t1 >= t0.len) ? hero_panic_byte_at(t0, t1, P) : (void)0), (int64_t)(unsigned char)t0.ptr[t1])"

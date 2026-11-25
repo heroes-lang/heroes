@@ -1,0 +1,8 @@
+error[ffi_macro_name]: `int64_t`, which this group binds from `fixedbugs-a-header-s-macro-over-a-c-type-the-program-binds-is-told.h`, is a type of C's own library that `fixedbugs-a-header-s-macro-over-a-c-type-the-program-binds-is-told.h` defines as a macro: the C this compiler writes for every program spells `int64_t` after the groups' headers as C's type, so it cannot mean the header's macro there too
+  at tests/golden/unsupported/fixedbugs-a-header-s-macro-over-a-c-type-the-program-binds-is-told.hero:18:14
+     |
+  18 |     constant int64_t: i64  #~ ffi_macro_name
+     |              ^^^^^^^
+  note: where this program's C writes `(int64_t);`, clang reads `(5);` after `fixedbugs-a-header-s-macro-over-a-c-type-the-program-binds-is-told.h`
+  note: C's own headers declare `int64_t` with `typedef` and define no macro of it, and C11 7.1.3 reserves the name once a header declaring it is included, as the runtime does before every group's header
+  note: a `static inline` function in a header of your own that includes `fixedbugs-a-header-s-macro-over-a-c-type-the-program-binds-is-told.h` and returns what `int64_t` gives, bound under another name, reads it where the header's macros stand

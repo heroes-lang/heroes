@@ -188,7 +188,7 @@ function set(lvalue: str, index: str, value: str, where: str) -> [str]
     return [
         "{"
         "  " + nodebug.MARK + "HeroArrayHeader **hero_slot = &(" + lvalue + ");"
-        "  if (*hero_slot == NULL || " + index + " < 0 || " + index + " >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, " + index + ", " + where + ");"
+        "  if (*hero_slot == ((void *)0) || " + index + " < 0 || " + index + " >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, " + index + ", " + where + ");"
         "  hero_array_set(hero_slot, " + index + ", &" + value + ");"
         "}"
     ]
@@ -255,7 +255,7 @@ test "the session's own fixedbug: a trailing field behind an index releases then
     # The element step's base is a slot, which holds no call, so the place is
     # read in place, its failing branch naming the store's place (defect 491,
     # `emit/array_read.hero`; panel 230's R1).
-    place = "(*((void)((h0_rows == NULL || t1 < 0 || t1 >= h0_rows->len) ? hero_panic_index_at(h0_rows, t1, \"t.hero\", \"t.t\", 1, 1) : (void)0), (void)(h0_rows->elem->size != sizeof(h_t_Row) ? hero_unreachable() : (void)0), (h_t_Row *)(void *)(h0_rows + 1) + t1))"
+    place = "(*((void)((h0_rows == ((void *)0) || t1 < 0 || t1 >= h0_rows->len) ? hero_panic_index_at(h0_rows, t1, \"t.hero\", \"t.t\", 1, 1) : (void)0), (void)(HERO_ARRAY_ELEM_SIZE(h0_rows) != sizeof(h_t_Row) ? hero_unreachable() : (void)0), (h_t_Row *)(void *)(h0_rows + 1) + t1))"
     assert lines.must()[1] == "hero_str_decref(" + place + ".f_label);"
     assert lines.must()[2] == place + ".f_label = t2;"
 
@@ -302,9 +302,9 @@ test "a place three array steps deep reads its first step in place and asks the 
         site: 20
     )
     at = "\"t.hero\", \"t.t\", 2, 5"
-    first = "(*((void)((h0_g == NULL || t1 < 0 || t1 >= h0_g->len) ? hero_panic_index_at(h0_g, t1, " + at + ") : (void)0), (void)(h0_g->elem->size != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h0_g + 1) + t1))"
+    first = "(*((void)((h0_g == ((void *)0) || t1 < 0 || t1 >= h0_g->len) ? hero_panic_index_at(h0_g, t1, " + at + ") : (void)0), (void)(HERO_ARRAY_ELEM_SIZE(h0_g) != sizeof(HeroArrayHeader *) ? hero_unreachable() : (void)0), (HeroArrayHeader * *)(void *)(h0_g + 1) + t1))"
     second = "(*(HeroArrayHeader * *)hero_array_at_mut_at(" + first + ", t2, " + at + "))"
-    assert lines.must() == ["hero_array_unshare(&(h0_g));", "hero_array_unshare(&(" + first + "));", "{", "  HERO_NODEBUG HeroArrayHeader **hero_slot = &(" + second + ");", "  if (*hero_slot == NULL || t3 < 0 || t3 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t3, " + at + ");", "  hero_array_set(hero_slot, t3, &t4);", "}"]
+    assert lines.must() == ["hero_array_unshare(&(h0_g));", "hero_array_unshare(&(" + first + "));", "{", "  HERO_NODEBUG HeroArrayHeader **hero_slot = &(" + second + ");", "  if (*hero_slot == ((void *)0) || t3 < 0 || t3 >= (*hero_slot)->len) hero_panic_index_at(*hero_slot, t3, " + at + ");", "  hero_array_set(hero_slot, t3, &t4);", "}"]
 
 test "defect 097: a fixed-array element is written in place, through the read's own guard"
     got = ready(
@@ -351,7 +351,7 @@ test "defect 097: a fixed-array element is written in place, through the read's 
     )
     guard = read.must().slice(from: 2, to: read.must().len())
     assert read.must() == "t0" + guard
-    assert guard == "[((uint64_t)(t1) >= UINT64_C(3) ? (hero_panic_at(\"index out of range for a fixed array\", \"t.hero\", \"t.t\", 1, 1), (int64_t)0) : (t1))]"
+    assert guard == "[((uint64_t)(t1) >= ((__UINT64_TYPE__)3) ? (hero_panic_at(\"index out of range for a fixed array\", \"t.hero\", \"t.t\", 1, 1), (int64_t)0) : (t1))]"
 
     # `h.xs[i].v @ t2`: no unshare, because an inline array is no indirection,
     # and one assignment where the element lies.

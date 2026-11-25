@@ -360,7 +360,7 @@ function c_type(names: Names, c: state.Checked, ty: i64) -> str?
         .fixed       => return fail(code: "none", msg: "C has no assignable array")
         .int_ty ik   => return ok(widths.int_c_type(ik.kind))
         .float_ty fk => return ok(widths.float_c_type(fk.kind))
-        .bool        => return ok("bool")
+        .bool        => return ok("_Bool")
         # A fat pointer, passed BY VALUE (§4.20): written as a pointer,
         # the wrong str->cstr conversion compiles clean with an explicit
         # cast and hands a refcount word to sqlite3_open; written by

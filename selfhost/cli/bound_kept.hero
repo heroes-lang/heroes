@@ -237,8 +237,9 @@ test "the unit's own C writes no function of <math.h> the guard holds (defect 20
 
     assert written.join(" ") == ""
 
-    # And the one the emitter does write is not in the list: an `f64` `%`.
-    assert called_words(read_file("selfhost/emit/operator.hero").must())["fmod"].must()
+    # And an `f64` `%` is the builtin, a name C reserves, so `fmod` is in the
+    # list with the rest since defect d-lane-macro-members2-1.
+    assert called_words(read_file("selfhost/emit/operator.hero").must())["__builtin_fmod"].must()
 
 # Every identifier a string literal of `text`'s code writes as a call, its
 # name then `(`, its comments and its `test` blocks left out: a C call an

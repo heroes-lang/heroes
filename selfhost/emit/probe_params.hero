@@ -107,7 +107,7 @@ function c_type_of(names: ctype.Names, c: state.Checked, ty: i64) -> str?
         .named n                                            => return ok(ctype.of(names, decl: n.decl))
         .int_ty ik                                          => return ok(widths.int_c_type(ik.kind))
         .float_ty fk                                        => return ok(widths.float_c_type(fk.kind))
-        .bool                                               => return ok("bool")
+        .bool                                               => return ok("_Bool")
         .str                                                => return ok("HeroStr")
         .cstr                                               => return ok("const char *")
         .ptr                                                => return ok("void *")

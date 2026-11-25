@@ -100,15 +100,15 @@ __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_fr
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 HeroArrayHeader * h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_STEPS(void);
@@ -142,7 +142,7 @@ HeroArrayHeader * h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_STEPS(vo
 
 #line 16 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
 int64_t h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_twice(int64_t h0_n) { hero_thread_guard("fixedbugs382aconstantoffunctionskeepsitsthreadguard.twice"); HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = h0_n; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero", "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.twice", 17, 12); return t3;
+    t1 = h0_n; t2 = ((__INT64_TYPE__)2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero", "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.twice", 17, 12); return t3;
 #line 147 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
 }
 
@@ -155,7 +155,7 @@ __attribute__((__noinline__)) int64_t h_0cb_fixedbugs382aconstantoffunctionskeep
 
 #line 19 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
 int64_t h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_thrice(int64_t h0_n) { hero_thread_guard("fixedbugs382aconstantoffunctionskeepsitsthreadguard.thrice"); HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = h0_n; t2 = INT64_C(3); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero", "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.thrice", 20, 12); return t3;
+    t1 = h0_n; t2 = ((__INT64_TYPE__)3); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero", "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.thrice", 20, 12); return t3;
 #line 160 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
 }
 
@@ -167,13 +167,13 @@ __attribute__((__noinline__)) int64_t h_0cb_fixedbugs382aconstantoffunctionskeep
 }
 
 #line 22 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
-int64_t h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_worker(int64_t h0_n) { hero_thread_guard("fixedbugs382aconstantoffunctionskeepsitsthreadguard.worker"); int64_t h1_total; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t2, *t5, *t8, *t20, *t21; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t6, t9, t11, t13, t14, t15, t16, t17, t18, t19; h_0fn_48ac9712 h4_f; HERO_NODEBUG bool t7; HERO_NODEBUG h_0fn_48ac9712 t10, t12; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = INT64_C(0); h1_total = t1;
+int64_t h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_worker(int64_t h0_n) { hero_thread_guard("fixedbugs382aconstantoffunctionskeepsitsthreadguard.worker"); int64_t h1_total; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *h5_own5 = {0}, *t2, *t5, *t8, *t20, *t21; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t6, t9, t11, t13, t14, t15, t16, t17, t18, t19; h_0fn_48ac9712 h4_f; HERO_NODEBUG _Bool t7; HERO_NODEBUG h_0fn_48ac9712 t10, t12; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = ((__INT64_TYPE__)0); h1_total = t1;
 #line 25
-    t2 = h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_STEPS(); t20 = h5_own5; h5_own5 = t2; hero_array_decref(t20); t21 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t21); t3 = INT64_C(0); h3_i0 = t3; goto hero_bb1; hero_bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto hero_bb2; else goto hero_bb4; hero_bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero", "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.worker", 25, 9) : (void)0), (void)(t8->elem->size != sizeof(h_0fn_48ac9712) ? hero_unreachable() : (void)0), ((h_0fn_48ac9712 const *)(const void *)(t8 + 1))[t9]); h4_f = t10;
+    t2 = h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_STEPS(); t20 = h5_own5; h5_own5 = t2; hero_array_decref(t20); t21 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t21); t3 = ((__INT64_TYPE__)0); h3_i0 = t3; goto hero_bb1; hero_bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == ((void *)0) ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto hero_bb2; else goto hero_bb4; hero_bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == ((void *)0) || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero", "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.worker", 25, 9) : (void)0), (void)(HERO_ARRAY_ELEM_SIZE(t8) != sizeof(h_0fn_48ac9712) ? hero_unreachable() : (void)0), ((h_0fn_48ac9712 const *)(const void *)(t8 + 1))[t9]); h4_f = t10;
     t11 = h1_total; t12 = h4_f; t13 = h0_n; t14 = t12(t13); if (__builtin_add_overflow(t11, t14, &t15)) hero_panic_overflow_at("fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero", "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.worker", 26, 17); h1_total = t15; goto hero_bb3; hero_bb3:
 #line 25
-    t16 = h3_i0; t17 = INT64_C(1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at("fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero", "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.worker", 25, 9); h3_i0 = t18; goto hero_bb1; hero_bb4:
+    t16 = h3_i0; t17 = ((__INT64_TYPE__)1); if (__builtin_add_overflow(t16, t17, &t18)) hero_panic_overflow_at("fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero", "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.worker", 25, 9); h3_i0 = t18; goto hero_bb1; hero_bb4:
 #line 28
     t19 = h1_total;
 #line 180 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
@@ -191,15 +191,15 @@ __attribute__((__noinline__)) int64_t h_0cb_fixedbugs382aconstantoffunctionskeep
 
 #line 30 "tests/golden/run/fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero"
 void h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_main(void) { int64_t h0_spawned; HERO_NODEBUG HeroArrayHeader *h1_own1 = {0}, *h2_own2 = {0}, *t10, *t16, *t18, *t19; HERO_NODEBUG h_0fn_48ac9712 t1, t12; HERO_NODEBUG int64_t t2, t3, t4, t5, t7, t8, t11, t13, t14, t17; HERO_NODEBUG HeroStr t6, t9, t15; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_worker; t2 = INT64_C(5); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero", "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.main", 31, 15}; t3 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t1), t2); } h0_spawned = t3;
-    t4 = INT64_C(7); t5 = h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_worker(t4); t6 = HERO_STR_LIT(hero_str_20); t7 = h0_spawned; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero", "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.main", 32, 27}; t8 = hero_thread_join(t7); } t9 = HERO_STR_LIT(hero_str_20); t10 = h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_STEPS(); t18 = h1_own1; h1_own1 = t10; hero_array_decref(t18); t11 = INT64_C(1); t12 = ((void)((t10 == NULL || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero", "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.main", 32, 67) : (void)0), (void)(t10->elem->size != sizeof(h_0fn_48ac9712) ? hero_unreachable() : (void)0), ((h_0fn_48ac9712 const *)(const void *)(t10 + 1))[t11]); t13 = INT64_C(4); t14 = t12(t13); t15 = HERO_STR_LIT(hero_str_20); t16 = h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_STEPS(); t19 = h2_own2; h2_own2 = t16; hero_array_decref(t19); t17 = ((void)(t16 == NULL ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len); hero_print_int(t5); hero_print_str(t6); hero_print_int(t8); hero_print_str(t9); hero_print_int(t14); hero_print_str(t15); hero_print_int(t17); hero_print_end();
+    t1 = h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_worker; t2 = ((__INT64_TYPE__)5); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero", "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.main", 31, 15}; t3 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t1), t2); } h0_spawned = t3;
+    t4 = ((__INT64_TYPE__)7); t5 = h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_worker(t4); t6 = HERO_STR_LIT(hero_str_20); t7 = h0_spawned; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero", "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.main", 32, 27}; t8 = hero_thread_join(t7); } t9 = HERO_STR_LIT(hero_str_20); t10 = h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_STEPS(); t18 = h1_own1; h1_own1 = t10; hero_array_decref(t18); t11 = ((__INT64_TYPE__)1); t12 = ((void)((t10 == ((void *)0) || t11 < 0 || t11 >= t10->len) ? hero_panic_index_at(t10, t11, "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.hero", "fixedbugs-382-a-constant-of-functions-keeps-its-thread-guard.main", 32, 67) : (void)0), (void)(HERO_ARRAY_ELEM_SIZE(t10) != sizeof(h_0fn_48ac9712) ? hero_unreachable() : (void)0), ((h_0fn_48ac9712 const *)(const void *)(t10 + 1))[t11]); t13 = ((__INT64_TYPE__)4); t14 = t12(t13); t15 = HERO_STR_LIT(hero_str_20); t16 = h_fixedbugs382aconstantoffunctionskeepsitsthreadguard_STEPS(); t19 = h2_own2; h2_own2 = t16; hero_array_decref(t19); t17 = ((void)(t16 == ((void *)0) ? ((void)hero_array_len(t16), hero_unreachable()) : (void)0), t16->len); hero_print_int(t5); hero_print_str(t6); hero_print_int(t8); hero_print_str(t9); hero_print_int(t14); hero_print_str(t15); hero_print_int(t17); hero_print_end();
 #line 197 "fixedbugs382aconstantoffunctionskeepsitsthreadguard.c"
     hero_array_release_at(&h1_own1);
     hero_array_release_at(&h2_own2);
     return;
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -207,31 +207,31 @@ HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_str)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
     const h_0opt_f87774a *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_str)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -239,31 +239,31 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
     const h_0opt_a8ea2 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
     return hero_h;
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -271,31 +271,31 @@ HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_int)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
     const h_0opt_e201354 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_int)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("3a4d88f52792b935", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0cbed346530034ab", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs382aconstantoffunctionskeepsitsthreadguard\tfixedbugs-382-a-constant-of-functions-keeps-its-thread-guard\n");

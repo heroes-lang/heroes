@@ -34,15 +34,15 @@
 # `const {spelling} *`: the two differ exactly when the element is itself a
 # pointer.
 function element(spelling: str, base: str, index: str, where: str) -> str
-    checked = "(" + base + " == NULL || " + index + " < 0 || " + index + " >= " + base + "->len)"
-    sized = "(" + base + "->elem->size != sizeof(" + spelling + ") ? hero_unreachable() : (void)0)"
+    checked = "(" + base + " == ((void *)0) || " + index + " < 0 || " + index + " >= " + base + "->len)"
+    sized = "(HERO_ARRAY_ELEM_SIZE(" + base + ") != sizeof(" + spelling + ") ? hero_unreachable() : (void)0)"
     read = "((" + spelling + " const *)(const void *)(" + base + " + 1))[" + index + "]"
     return "((void)(" + checked + " ? hero_panic_index_at(" + base + ", " + index + ", " + where + ") : (void)0), (void)" + sized + ", " + read + ")"
 
 # `xs.len()`, `len(xs)` and the length a `for` reads at every step, where
 # a value is wanted; `value` is a temporary.
 function length(value: str) -> str
-    return "((void)(" + value + " == NULL ? ((void)hero_array_len(" + value + "), hero_unreachable()) : (void)0), " + value + "->len)"
+    return "((void)(" + value + " == ((void *)0) ? ((void)hero_array_len(" + value + "), hero_unreachable()) : (void)0), " + value + "->len)"
 
 # An element's own PLACE after its array was unshared, the lvalue a step of
 # a nested place descends through (panel 196's R1; defect 491, 2026-10-08):
@@ -68,20 +68,20 @@ function length(value: str) -> str
 function place(spelling: str, base: str, index: str, pure: bool, where: str) -> str
     if !pure
         return "(*(" + spelling + " *)hero_array_at_mut_at(" + base + ", " + index + ", " + where + "))"
-    checked = "(" + base + " == NULL || " + index + " < 0 || " + index + " >= " + base + "->len)"
-    sized = "(" + base + "->elem->size != sizeof(" + spelling + ") ? hero_unreachable() : (void)0)"
+    checked = "(" + base + " == ((void *)0) || " + index + " < 0 || " + index + " >= " + base + "->len)"
+    sized = "(HERO_ARRAY_ELEM_SIZE(" + base + ") != sizeof(" + spelling + ") ? hero_unreachable() : (void)0)"
     return "(*((void)(" + checked + " ? hero_panic_index_at(" + base + ", " + index + ", " + where + ") : (void)0), (void)" + sized + ", (" + spelling + " *)(void *)(" + base + " + 1) + " + index + "))"
 
 ## Tests
 
 test "an element and a length are read in place, every failing read handed to the runtime with its place"
-    assert element(spelling: "int64_t", base: "t0", index: "t1", where: "P") == "((void)((t0 == NULL || t1 < 0 || t1 >= t0->len) ? hero_panic_index_at(t0, t1, P) : (void)0), (void)(t0->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t0 + 1))[t1])"
-    assert element(spelling: "char *", base: "t2", index: "t3", where: "P") == "((void)((t2 == NULL || t3 < 0 || t3 >= t2->len) ? hero_panic_index_at(t2, t3, P) : (void)0), (void)(t2->elem->size != sizeof(char *) ? hero_unreachable() : (void)0), ((char * const *)(const void *)(t2 + 1))[t3])"
-    assert length("t4") == "((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len)"
+    assert element(spelling: "int64_t", base: "t0", index: "t1", where: "P") == "((void)((t0 == ((void *)0) || t1 < 0 || t1 >= t0->len) ? hero_panic_index_at(t0, t1, P) : (void)0), (void)(HERO_ARRAY_ELEM_SIZE(t0) != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t0 + 1))[t1])"
+    assert element(spelling: "char *", base: "t2", index: "t3", where: "P") == "((void)((t2 == ((void *)0) || t3 < 0 || t3 >= t2->len) ? hero_panic_index_at(t2, t3, P) : (void)0), (void)(HERO_ARRAY_ELEM_SIZE(t2) != sizeof(char *) ? hero_unreachable() : (void)0), ((char * const *)(const void *)(t2 + 1))[t3])"
+    assert length("t4") == "((void)(t4 == ((void *)0) ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len)"
 
 # Defect 491's spelling: an element's place in place where the base holds no
 # call, the runtime's call, as it was, where it does.
 test "an element's place is read in place over a call-free base, and by the runtime's call otherwise (defect 491)"
-    assert place(spelling: "int64_t", base: "h0_xs", index: "t1", pure: true, where: "P") == "(*((void)((h0_xs == NULL || t1 < 0 || t1 >= h0_xs->len) ? hero_panic_index_at(h0_xs, t1, P) : (void)0), (void)(h0_xs->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h0_xs + 1) + t1))"
-    assert place(spelling: "h_t_Row", base: "(*ph0_s).f_rows", index: "t2", pure: true, where: "P") == "(*((void)(((*ph0_s).f_rows == NULL || t2 < 0 || t2 >= (*ph0_s).f_rows->len) ? hero_panic_index_at((*ph0_s).f_rows, t2, P) : (void)0), (void)((*ph0_s).f_rows->elem->size != sizeof(h_t_Row) ? hero_unreachable() : (void)0), (h_t_Row *)(void *)((*ph0_s).f_rows + 1) + t2))"
+    assert place(spelling: "int64_t", base: "h0_xs", index: "t1", pure: true, where: "P") == "(*((void)((h0_xs == ((void *)0) || t1 < 0 || t1 >= h0_xs->len) ? hero_panic_index_at(h0_xs, t1, P) : (void)0), (void)(HERO_ARRAY_ELEM_SIZE(h0_xs) != sizeof(int64_t) ? hero_unreachable() : (void)0), (int64_t *)(void *)(h0_xs + 1) + t1))"
+    assert place(spelling: "h_t_Row", base: "(*ph0_s).f_rows", index: "t2", pure: true, where: "P") == "(*((void)(((*ph0_s).f_rows == ((void *)0) || t2 < 0 || t2 >= (*ph0_s).f_rows->len) ? hero_panic_index_at((*ph0_s).f_rows, t2, P) : (void)0), (void)(HERO_ARRAY_ELEM_SIZE((*ph0_s).f_rows) != sizeof(h_t_Row) ? hero_unreachable() : (void)0), (h_t_Row *)(void *)((*ph0_s).f_rows + 1) + t2))"
     assert place(spelling: "h_t_Row", base: "h0_xs", index: "t3", pure: false, where: "P") == "(*(h_t_Row *)hero_array_at_mut_at(h0_xs, t3, P))"

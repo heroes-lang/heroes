@@ -246,7 +246,7 @@ function option_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s:
         writer.line(@w, text: "    hero_cross_put_raw(hero_b, &hero_v->hero_tag, (int64_t)sizeof(hero_v->hero_tag));")
     else if verb == "take"
         writer.line(@w, text: "    hero_cross_take_raw(hero_b, &hero_v->hero_tag, (int64_t)sizeof(hero_v->hero_tag));")
-    writer.line(@w, text: "    if (hero_v->hero_tag == INT64_C(0)) {")
+    writer.line(@w, text: "    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {")
 
     if crossing.answers(c, names, ty: payload)
         writer.line(@w, text: "    " + one(c, s, decls, ty: payload, member: "&hero_v->hero_as.hero_ok", verb: verb))
@@ -272,7 +272,7 @@ function desc(c: state.Checked, names: ctype.Names, ty: i64) -> str
     found = descriptors.pointer(c, names, ty: ty)
 
     if found.is_err()
-        return "NULL"
+        return "((void *)0)"
     return found.must()
 
 # The new thread's function: the argument rebuilt on this thread, the
@@ -291,8 +291,11 @@ function runner(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: sour
     )
     writer.line(@w, text: "    " + box + " *hero_box = (" + box + " *)(void *)hero_head;")
     writer.line(@w, text: "    " + nodebug.MARK + ctype.c_type(names, c: c, ty: param).must() + " hero_arg;")
-    writer.line(@w, text: "    " + crossing.take_of(c, s, decls, ty: param) + "(&hero_head->arg, &hero_arg);")
-    writer.line(@w, text: "    hero_cross_free(&hero_head->arg);")
+    writer.line(
+        @w,
+        text: "    " + crossing.take_of(c, s, decls, ty: param) + "(HERO_THREAD_BOX_ARG(hero_head), &hero_arg);"
+    )
+    writer.line(@w, text: "    hero_cross_free(HERO_THREAD_BOX_ARG(hero_head));")
     argument: str @= "hero_arg"
 
     if large_value.value_large(names, ty: param)
@@ -307,7 +310,10 @@ function runner(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: sour
             writer.line(@w, text: "    hero_box->hero_fn(&hero_answer, " + argument + ");")
         else
             writer.line(@w, text: "    hero_answer = hero_box->hero_fn(" + argument + ");")
-        writer.line(@w, text: "    " + crossing.put_of(c, s, decls, ty: result) + "(&hero_head->answer, &hero_answer);")
+        writer.line(
+            @w,
+            text: "    " + crossing.put_of(c, s, decls, ty: result) + "(HERO_THREAD_BOX_ANSWER(hero_head), &hero_answer);"
+        )
 
         if handed.holds(c, decls, ty: result)
             writer.line(@w, text: "    " + crossing.sent_of(c, s, decls, ty: result) + "(&hero_answer);")

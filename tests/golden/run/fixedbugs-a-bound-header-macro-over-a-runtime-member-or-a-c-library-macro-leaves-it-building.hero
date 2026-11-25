@@ -1,0 +1,87 @@
+# Fixed 2026-11-25, lane macro-members3 (found by lane macro-members2 beside
+# its repair of the names the runtime's macros write).
+# Symptom: a group's header holding `#define arg 5`, the program binding it as
+# `constant arg: i64`, made every program calling `spawn` with an argument
+# fail with *internal error: compiling the generated C failed* at exit 2,
+# clang's `expected identifier` at the unit's `&hero_head->arg`; and the same
+# for `answer`, `body`, `run`, `code`, `msg`, `copy`, `eq`, `hash`, `size` and
+# `elem`, and for `NULL`, `bool`, `INT64_C`, `UINT64_C`, `INT8_C`, `INT16_C`,
+# `INT32_C` and `fmod`; `INT8_MIN` to `INT64_MIN` built and changed the
+# division's overflow guard.
+# Cause: a name the program binds keeps its header's meaning after the
+# groups (`emit/macro_guard.hero`), and the unit's own C wrote those words
+# after them, the runtime's structs' members by name and C's library's macros,
+# meaning the runtime's and C's.
+# Repair: the unit reads a runtime struct's member through a function of
+# `heroes_runtime.h`, read before every group's header, a failure's by its
+# runtime-form names `hero_code` and `hero_msg`, and spells each macro of C's
+# library in a form C reserves: `_Bool`, `((void *)0)`, a literal cast to
+# `__INT64_TYPE__`, `(-__INT64_MAX__ - 1)`, `__builtin_fmod`. The program
+# below writes each: a thread with an argument and an answer, a failure built
+# and read, a map of records, an array of them, a division at each signed
+# width, an unsigned literal, the lowest `i64`, an `f64` remainder and a
+# comparison's `bool`, beside the constants it binds.
+
+extern "fixedbugs-a-bound-header-macro-over-a-runtime-member-or-a-c-library-macro-leaves-it-building.h"
+    function bound_seven() -> i64
+    constant arg: i64
+    constant answer: i64
+    constant body: i64
+    constant run: i64
+    constant code: i64
+    constant msg: i64
+    constant copy: i64
+    constant eq: i64
+    constant hash: i64
+    constant size: i64
+    constant elem: i64
+    constant NULL: i64
+    constant bool: i64
+    constant INT64_C: i64
+    constant UINT64_C: i64
+    constant INT8_C: i64
+    constant INT16_C: i64
+    constant INT32_C: i64
+    constant INT8_MIN: i64
+    constant INT16_MIN: i64
+    constant INT32_MIN: i64
+    constant INT64_MIN: i64
+    constant fmod: i64
+
+record Point
+    x: i64
+    y: i64
+
+function twice(x: i64) -> i64
+    return x * 2
+
+function half(x: i64) -> i64?
+    if x % 2 != 0
+        return fail(code: "odd", msg: "an odd number has no half")
+    return ok(x / 2)
+
+function main()
+    doubled = spawn(twice, bound_seven()).must()
+    print(doubled.wait())
+
+    match half(7)
+        .ok v  => print(v)
+        .err e => print(e.code, " ", e.msg)
+
+    points = {"one": Point(x: 1, y: 2)}
+    print(points["one"].default(Point(x: 0, y: 0)).y, " ", points == points)
+    rows = [Point(x: 3, y: 4), Point(x: 5, y: 6)]
+    print(rows[1].x)
+    a8: i8 = 100
+    b8: i8 = -3
+    a16: i16 = 1000
+    b16: i16 = -7
+    a32: i32 = 100000
+    b32: i32 = -9
+    print(a8 / b8, " ", a16 / b16, " ", a32 / b32)
+    top: u64 = 18446744073709551615
+    lowest: i64 = -9223372036854775808
+    print(top, " ", lowest)
+    print(7.5 % 2.0)
+    print(arg + answer + body + run + code + msg + copy + eq + hash + size + elem + NULL + bool)
+    print(INT64_C + UINT64_C + INT8_C + INT16_C + INT32_C + INT8_MIN + INT16_MIN + INT32_MIN + INT64_MIN + fmod)

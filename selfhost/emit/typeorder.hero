@@ -356,7 +356,7 @@ test "past 32 structs held by value clang is handed the chain from its bottom, a
 # Since defect 622 the definition leaves three UBSan checks out of them where
 # clang optimises under UBSan, and is what it was in the `#else`.
 test "past 32 structs held by value the per-type functions are emitted where they are defined, and at 32 they are not (defect 468)"
-    eager_line = "#undef HERO_TU_LOCAL\n#if defined(__OPTIMIZE__) && __has_feature(undefined_behavior_sanitizer)\n#define HERO_TU_LOCAL __attribute__((__unused__, __used__, __nodebug__, __no_sanitize__(\"null\", \"alignment\", \"object-size\"))) static\n#else\n#define HERO_TU_LOCAL __attribute__((__unused__, __used__, __nodebug__)) static\n#endif\n"
+    eager_line = "#undef HERO_TU_LOCAL\n#if defined(__OPTIMIZE__) && __has_feature(__undefined_behavior_sanitizer__)\n#define HERO_TU_LOCAL __attribute__((__unused__, __used__, __nodebug__, __no_sanitize__(\"null\", \"alignment\", \"object-size\"))) static\n#else\n#define HERO_TU_LOCAL __attribute__((__unused__, __used__, __nodebug__)) static\n#endif\n"
     assert ffi_lookup.char_index_of(text: chain_text(n: 32), needle: eager_line).is_err()
     past = chain_text(n: 33)
     eager_at = ffi_lookup.char_index_of(text: past, needle: eager_line)

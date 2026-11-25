@@ -237,15 +237,15 @@ __attribute__((__unused__)) static void hero_value_fresh_on_signal(int32_t hero_
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int32_t h_fixedbugs2496asignalsentasathreadstartswaitsuntilthethreadistheprogramsown_SIGUSR1(void);
@@ -291,15 +291,15 @@ int32_t h_fixedbugs2496asignalsentasathreadstartswaitsuntilthethreadistheprogram
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 46 "tests/golden/run/fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.hero"
-int64_t h_fixedbugs2496asignalsentasathreadstartswaitsuntilthethreadistheprogramsown_awaits(int64_t h0_round) { hero_thread_guard("fixedbugs2496asignalsentasathreadstartswaitsuntilthethreadistheprogramsown.awaits"); int64_t h1_heard; HERO_NODEBUG bool h2_b0, t9, t12, t13; HERO_NODEBUG int64_t h3_ret0, t1, t2, t3, t4, t5, t6, t7, t8, t10, t11, t14, t15, t16; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
-    t1 = h0_round; t2 = INT64_C(1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.hero", "fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.awaits", 47, 36); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.hero", "fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.awaits", 47, 13}; t4 = fresh_wait_heard(t3); } t5 = h0_round; if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow_at("fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.hero", "fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.awaits", 47, 13); h1_heard = t6;
+int64_t h_fixedbugs2496asignalsentasathreadstartswaitsuntilthethreadistheprogramsown_awaits(int64_t h0_round) { hero_thread_guard("fixedbugs2496asignalsentasathreadstartswaitsuntilthethreadistheprogramsown.awaits"); int64_t h1_heard; HERO_NODEBUG _Bool h2_b0, t9, t12, t13; HERO_NODEBUG int64_t h3_ret0, t1, t2, t3, t4, t5, t6, t7, t8, t10, t11, t14, t15, t16; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_round; t2 = ((__INT64_TYPE__)1); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.hero", "fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.awaits", 47, 36); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.hero", "fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.awaits", 47, 13}; t4 = fresh_wait_heard(t3); } t5 = h0_round; if (__builtin_sub_overflow(t4, t5, &t6)) hero_panic_overflow_at("fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.hero", "fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.awaits", 47, 13); h1_heard = t6;
 #line 49
-    t7 = h1_heard; t8 = INT64_C(1); t9 = t7 == t8; h2_b0 = t9; if (t9) goto hero_bb2; else goto hero_bb3; hero_bb1:
+    t7 = h1_heard; t8 = ((__INT64_TYPE__)1); t9 = t7 == t8; h2_b0 = t9; if (t9) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 51
-    t15 = INT64_C(0); h3_ret0 = t15; goto hero_bb6; hero_bb2:
+    t15 = ((__INT64_TYPE__)0); h3_ret0 = t15; goto hero_bb6; hero_bb2:
 #line 49
-    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.hero", "fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.awaits", 49, 22}; t10 = fresh_here(); } t11 = INT64_C(1); t12 = t10 == t11; h2_b0 = t12; goto hero_bb3; hero_bb3: t13 = h2_b0; if (t13) goto hero_bb4; else goto hero_bb5; hero_bb4:
-    t14 = INT64_C(1); h3_ret0 = t14; goto hero_bb6; hero_bb5: goto hero_bb1; hero_bb6:
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.hero", "fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.awaits", 49, 22}; t10 = fresh_here(); } t11 = ((__INT64_TYPE__)1); t12 = t10 == t11; h2_b0 = t12; goto hero_bb3; hero_bb3: t13 = h2_b0; if (t13) goto hero_bb4; else goto hero_bb5; hero_bb4:
+    t14 = ((__INT64_TYPE__)1); h3_ret0 = t14; goto hero_bb6; hero_bb5: goto hero_bb1; hero_bb6:
 #line 304 "fixedbugs2496asignalsentasathreadstartswaitsuntilthethreadistheprogramsown.c"
     t16 = h3_ret0;
     return t16;
@@ -313,24 +313,24 @@ __attribute__((__noinline__)) int64_t h_0cb_fixedbugs2496asignalsentasathreadsta
 }
 
 #line 53 "tests/golden/run/fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.hero"
-void h_fixedbugs2496asignalsentasathreadstartswaitsuntilthethreadistheprogramsown_main(void) { int64_t h0_rounds; int64_t h1_seen; int64_t h2_worker; HERO_NODEBUG int32_t t1; HERO_NODEBUG h_0fn_634dc79f t2; HERO_NODEBUG int64_t t4, t5, t6, t7, t10, t11, t14, t15, t16, t17, t19, t20, t21, t22, t24; HERO_NODEBUG bool t8; HERO_NODEBUG h_0fn_48ac9712 t9; HERO_NODEBUG HeroStr t23, t25; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+void h_fixedbugs2496asignalsentasathreadstartswaitsuntilthethreadistheprogramsown_main(void) { int64_t h0_rounds; int64_t h1_seen; int64_t h2_worker; HERO_NODEBUG int32_t t1; HERO_NODEBUG h_0fn_634dc79f t2; HERO_NODEBUG int64_t t4, t5, t6, t7, t10, t11, t14, t15, t16, t17, t19, t20, t21, t22, t24; HERO_NODEBUG _Bool t8; HERO_NODEBUG h_0fn_48ac9712 t9; HERO_NODEBUG HeroStr t23, t25; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h_fixedbugs2496asignalsentasathreadstartswaitsuntilthethreadistheprogramsown_SIGUSR1(); t2 = __builtin_choose_expr(__builtin_types_compatible_p(__typeof__(t2), __typeof__(&fresh_on_signal)), fresh_on_signal, hero_value_fresh_on_signal); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.hero", "fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.main", 54, 9}; (void)signal(t1, (h_0fn_71885b7d)hero_callback_of((void (*)(void))t2)); }
-    t4 = INT64_C(0); h0_rounds = t4;
-    t5 = INT64_C(0); h1_seen = t5; goto hero_bb1; hero_bb1:
+    t4 = ((__INT64_TYPE__)0); h0_rounds = t4;
+    t5 = ((__INT64_TYPE__)0); h1_seen = t5; goto hero_bb1; hero_bb1:
 #line 58
-    t6 = h0_rounds; t7 = INT64_C(200); t8 = t6 < t7; if (t8) goto hero_bb2; else goto hero_bb3; hero_bb2:
+    t6 = h0_rounds; t7 = ((__INT64_TYPE__)200); t8 = t6 < t7; if (t8) goto hero_bb2; else goto hero_bb3; hero_bb2:
     t9 = h_fixedbugs2496asignalsentasathreadstartswaitsuntilthethreadistheprogramsown_awaits; t10 = h0_rounds; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.hero", "fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.main", 59, 18}; t11 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t9), t10); } h2_worker = t11;
     { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.hero", "fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.main", 60, 13}; (void)fresh_hold(); }
     { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.hero", "fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.main", 61, 13}; (void)fresh_send(); }
     t14 = h1_seen; t15 = h2_worker; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.hero", "fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.main", 62, 23}; t16 = hero_thread_join(t15); } if (__builtin_add_overflow(t14, t16, &t17)) hero_panic_overflow_at("fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.hero", "fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.main", 62, 16); h1_seen = t17;
     { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.hero", "fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.main", 63, 13}; (void)fresh_free(); }
-    t19 = h0_rounds; t20 = INT64_C(1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.hero", "fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.main", 64, 18); h0_rounds = t21; goto hero_bb1; hero_bb3:
+    t19 = h0_rounds; t20 = ((__INT64_TYPE__)1); if (__builtin_add_overflow(t19, t20, &t21)) hero_panic_overflow_at("fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.hero", "fixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own.main", 64, 18); h0_rounds = t21; goto hero_bb1; hero_bb3:
 #line 66
     t22 = h0_rounds; t23 = HERO_STR_LIT(hero_str_1ed9a28); t24 = h1_seen; t25 = HERO_STR_LIT(hero_str_98ec32f); hero_print_int(t22); hero_print_str(t23); hero_print_int(t24); hero_print_str(t25); hero_print_end(); return;
 #line 331 "fixedbugs2496asignalsentasathreadstartswaitsuntilthethreadistheprogramsown.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -338,31 +338,31 @@ HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_str)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
     const h_0opt_f87774a *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_str)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -370,31 +370,31 @@ HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
     const h_0opt_a8ea2 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
     return hero_h;
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_retain(&hero_v->hero_as.hero_err);
@@ -402,31 +402,31 @@ HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
 }
 
 HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
-    if (hero_v->hero_tag == INT64_C(0)) {
+    if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
         return;
     } else {
         hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+HERO_TU_LOCAL _Bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
     if (hero_a->hero_tag != hero_b->hero_tag) return false;
-    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
-    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
+    if (hero_a->hero_tag != ((__INT64_TYPE__)0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return HERO_DESC_EQ(&hero_desc_int)(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
 HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
     const h_0opt_e201354 *hero_v = hero_elem;
-    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
-        * UINT64_C(0x100000001b3);
-    if (hero_v->hero_tag != INT64_C(0)) {
-        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
+    uint64_t hero_h = (((__UINT64_TYPE__)0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
+        * ((__UINT64_TYPE__)0x100000001b3);
+    if (hero_v->hero_tag != ((__INT64_TYPE__)0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * ((__UINT64_TYPE__)0x100000001b3);
     }
-    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ HERO_DESC_HASH(&hero_desc_int)(&hero_v->hero_as.hero_ok)) * ((__UINT64_TYPE__)0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("02033190465346fe", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("54747be071c0c274", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2496asignalsentasathreadstartswaitsuntilthethreadistheprogramsown\tfixedbugs-2496-a-signal-sent-as-a-thread-starts-waits-until-the-thread-is-the-programs-own\n");

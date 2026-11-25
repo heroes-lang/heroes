@@ -321,7 +321,7 @@ test "literals are laid out, the inner block first, and the read is the address"
     got = laid_text("constant K: [[i64]]\n    [[1, 2], []]\n\nfunction main()\n    print(K[0][1])\n")
     assert !got.is_err()
     assert got.must().blocks.len() == 3
-    assert got.must().blocks[0] == "HERO_ARRAY_STATIC(hero_constant_b_3, int64_t, &hero_desc_int, 2, INT64_C(1), INT64_C(2));"
+    assert got.must().blocks[0] == "HERO_ARRAY_STATIC(hero_constant_b_3, int64_t, &hero_desc_int, 2, ((__INT64_TYPE__)1), ((__INT64_TYPE__)2));"
     assert got.must().blocks[1] == "HERO_ARRAY_STATIC_EMPTY(hero_constant_b_4, &hero_desc_int);"
     assert got.must().returned == "HERO_ARRAY_LIT(hero_constant_b_5)"
 

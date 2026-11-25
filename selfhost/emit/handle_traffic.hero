@@ -139,7 +139,7 @@ function after_call(@w: writer.Writer, c: state.Checked, s: source.Source, decls
                     entry: "hero_handle_ended",
                     which: "consumes"
                 )
-                writer.line(@w, text: "    if (" + target.must() + " != NULL) {")
+                writer.line(@w, text: "    if (" + target.must() + " != ((void *)0)) {")
                 handle_ends.ends(
                     @w,
                     c,
