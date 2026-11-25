@@ -103,6 +103,14 @@ function walks() -> Walks
 # and every gallery program at two levels. The skip ratio is asked of the
 # programs walked, as `run` asks it of a filter's cases. A filter's programs
 # are not the tree, so it asks no floor (`cases.asks_floor`).
+#
+# **And a shard, `<i>/<n>`, since 2026-11-25**: each list, the golden cases
+# (`cases.selected`), the examples and the gallery (`cases.dealt`), dealt
+# round by its order with the same shard, so the `n` shards together judge
+# every program once; a shard asks each list's floor of its whole count and
+# the skip ratio of its own programs. Until then the suite took no shard, and
+# on the CI's Windows leg of run 45493660465 it had not ended after 268.0
+# minutes, in a part GitHub cancelled at six hours.
 function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     return walk(scratch: scratch, compiler: compiler, lists: walks(), only: only)
 
@@ -119,7 +127,7 @@ function walk(scratch: str, compiler: str, lists: Walks, only: str) -> report.Re
         whole = cases.collect(scratch: scratch, dir: walked.dir)?
         floored(@r, walked: walked, found: whole.len(), what: "cases in " + walked.dir, only: only)
 
-        for item in cases.matching(found: whole, only: only)
+        for item in cases.selected(found: whole, only: only)
             judge(@r, @skipped, scratch: scratch, compiler: compiler, label: "warnings/" + item.name, main: item.source)
             judged @ judged + 1
 
@@ -132,10 +140,11 @@ function walk(scratch: str, compiler: str, lists: Walks, only: str) -> report.Re
         only: only
     )
 
-    for dir in examples
+    for index in range(from: 0, to: examples.len())
+        dir = examples[index]
         main = dir + "/main.hero"
 
-        if !kept_by_word(name: strings.base_name(path: dir), only: only)
+        if !cases.dealt(index: index, only: only) || !kept_by_word(name: strings.base_name(path: dir), only: only)
             continue
         judge(
             @r,
@@ -156,8 +165,10 @@ function walk(scratch: str, compiler: str, lists: Walks, only: str) -> report.Re
     lessons = gallery.programs_in(scratch: scratch, dir: lists.gallery.dir)?
     floored(@r, walked: lists.gallery, found: lessons.len(), what: "programs in " + lists.gallery.dir, only: only)
 
-    for path in lessons
-        if !kept_by_word(name: gallery.name_of(path), only: only)
+    for index in range(from: 0, to: lessons.len())
+        path = lessons[index]
+
+        if !cases.dealt(index: index, only: only) || !kept_by_word(name: gallery.name_of(path), only: only)
             continue
         said = gallery.checked(scratch: scratch, compiler: compiler, path: path)
 
@@ -204,10 +215,11 @@ function example_programs(scratch: str, dir: str) -> [str]?
     return ok(out)
 
 # Whether the third word keeps the program whose label names it `name`: every
-# program where the word is empty, else the ones whose name holds it, as
+# program where the word is empty or a shard, whose programs `cases.dealt`
+# chooses by their place in the list, else the ones whose name holds it, as
 # `cases.matching` reads a case's.
 function kept_by_word(name: str, only: str) -> bool
-    return only == "" || strings.contains(s: name, substr: only)
+    return only == "" || cases.is_shard(only) || strings.contains(s: name, substr: only)
 
 # A machine that skipped a third of the programs for libraries it lacks: the
 # floor `run`, `lines` and the golden forms hold.
@@ -534,6 +546,10 @@ test "fixedbugs: the third word narrows the walk to the programs whose name hold
     assert kept_by_word(name: "anything", only: "")
     assert kept_by_word(name: "gallery/hello", only: "gallery/")
     assert !kept_by_word(name: "curl", only: "gallery/")
+
+    # A shard keeps every name, its programs chosen by their place in the
+    # list (`cases.dealt`, 2026-11-25).
+    assert kept_by_word(name: "curl", only: "2/3")
     assert !shell.remove_tree(scratch).is_err()
 
 # DEFECT 2534, held as a test (2026-11-15): the suite held no floor, so run
@@ -571,6 +587,14 @@ test "fixedbugs: a walk that finds nothing in a list fails by that list's floor,
     filtered = walk(scratch: scratch, compiler: compiler, lists: empty, only: "fixedbugs-2534").must()
     assert filtered.passed == 0
     assert filtered.failed == 0
+
+    # A shard asks each list's floor of its whole count, as the whole suite
+    # does (2026-11-25), so every one of the `n` parts holding it fails.
+    for word in ["1/3", "3/3"]
+        sharded = walk(scratch: scratch, compiler: compiler, lists: empty, only: word).must()
+        assert sharded.passed == 0
+        assert sharded.failed == 4
+
     unset = floors.Walked(dir: tree + "/run", least: 0)
     none: [floors.Walked] = []
     met = walk(

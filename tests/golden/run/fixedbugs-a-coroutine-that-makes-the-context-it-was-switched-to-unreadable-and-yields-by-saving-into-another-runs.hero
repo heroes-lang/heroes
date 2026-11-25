@@ -1,0 +1,18 @@
+# Fixed 2026-11-25, defect d-lane-d2745-1, lane-ctx-after: a coroutine makes the page holding the
+# context the runner switched to it with unreadable (`mprotect`), then yields by a `swapcontext`
+# that saves into another context; the runner unmaps the page once the switch returns.
+# Correct C: nothing reads the context again.
+# Symptom: before, the program died of a Bus error inside the runtime on this Mac (exit 138,
+# `hero_rebind_swapcontext`) (and SIGSEGV on Linux arm64 (exit 139), both reading the context once
+# the switch had returned).
+# Cause: to learn whether the coroutine had ended, the runtime compared the stack pointer in the
+# context switched to with the one it held before the switch, reading a buffer the program may
+# have given back by then.
+# Fix: the context is read after the switch only where it provably lives, and by the kernel; a
+# coroutine is judged ended where its swap returns, no `swapcontext` or `setcontext` was made from
+# its stack since the swap began, and that context did not move.
+extern "fixedbugs-a-coroutine-gives-back-the-context-it-was-switched-to.h"
+    function gb_run(ends: i32, how: i32) -> i64
+
+function main()
+    print("gb_0_2: ", gb_run(ends: 0, how: 2))

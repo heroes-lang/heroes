@@ -103,13 +103,50 @@ static bool hero_jmp_lives(const HeroSignalStack *own, uintptr_t at, uint32_t si
     return false;
 }
 
+/* Whether the context a `swapcontext` switched to names, once the switch has
+ * returned, another stack pointer than `entered`, the one it named at the
+ * switch: a coroutine that yields saves itself there, by a save this runtime
+ * may never see (a switch written in assembly, or found by walking an
+ * image's symbol table by hand), so the word is one witness of its life
+ * beside the switches made from its range
+ * (`sigentries.c`). Read only where the context provably lives, and by the
+ * kernel, so a page made unreadable since is an answer and never a fault;
+ * where it does not provably live (a heap block, a mapping: a coroutine may
+ * give it back before it ends, defect d-lane-d2745-1) nothing is read and the
+ * answer is false, the switches then deciding alone. */
+static bool hero_jmp_context_moved(HeroSignalStack *own, const ucontext_t *ucp, uintptr_t entered) {
+    uintptr_t at = hero_jmp_context_sp_at(ucp);
+    uintptr_t word = 0;
+    if (own == NULL || hero_sig_own() != own || at == 0 || !hero_jmp_lives(own, at, (uint32_t)sizeof word)) {
+        return false;
+    }
+    struct iovec into = {&word, sizeof word};
+    struct iovec from = {(void *)at, sizeof word};
+    if (process_vm_readv(getpid(), &into, 1, &from, 1, 0) != (ssize_t)sizeof word) return false;
+    return word != entered;
+}
+
 /* FNV-1a over the buffer's bytes, odd, so 0 can mean not yet read and
- * `HERO_JMP_UNREAD` a buffer that could not be read. */
+ * `HERO_JMP_UNREAD` a buffer that could not be read. The bytes are copied by
+ * the kernel (`process_vm_readv` of this process), never loaded by this
+ * thread: memory that provably lives may still have been made unreadable by
+ * the program since the save (a static page `mprotect`ed to none, or the
+ * registered alternate stack unmapped: a SIGSEGV here at the next save point,
+ * measured on Linux arm64 with `HERO_JMP_FORCE_UNCALIBRATED` 3, defect
+ * d-lane-d2745-1's class), and a copy the kernel refuses is an answer,
+ * UNREAD, never a fault.
+ * A system refusing the call itself (a seccomp filter) reads every buffer as
+ * UNREAD: a told refusal at its jump. */
 #define HERO_JMP_UNREAD 2
+#define HERO_JMP_PRINT_MAX 512
 static uint64_t hero_jmp_fingerprint(uintptr_t buf, uint32_t size) {
-    const unsigned char *p = (const unsigned char *)buf;
+    unsigned char copy[HERO_JMP_PRINT_MAX];
+    if (size > sizeof copy) return HERO_JMP_UNREAD;
+    struct iovec into = {copy, size};
+    struct iovec from = {(void *)buf, size};
+    if (process_vm_readv(getpid(), &into, 1, &from, 1, 0) != (ssize_t)size) return HERO_JMP_UNREAD;
     uint64_t h = UINT64_C(0xcbf29ce484222325);
-    for (uint32_t i = 0; i < size; i += 1) h = (h ^ p[i]) * UINT64_C(0x100000001b3);
+    for (uint32_t i = 0; i < size; i += 1) h = (h ^ copy[i]) * UINT64_C(0x100000001b3);
     return h | 1;
 }
 
@@ -167,11 +204,25 @@ static void hero_jmp_note(const void *buf, uint32_t size, uintptr_t frame) {
     own->jump_print[slot] = 0;
     own->jump_size[slot] = size;
     own->jump_sp[slot] = frame;
+    own->jump_away[slot] = (unsigned char)(own->elsewhere != 0);
     atomic_signal_fence(memory_order_seq_cst);
     own->jump_buf[slot] = key;
 }
 
-/* `buf`'s record dropped, its context now naming another stack. */
+/* Whether the record of `buf` was saved while the thread ran inside a
+ * `swapcontext` of its own whose switch had not returned: where `makecontext`
+ * is not wrapped, on a stack this runtime cannot place (`sigjump_save.c`). */
+__attribute__((unused)) static bool hero_jmp_saved_away(const HeroSignalStack *own, const void *buf) {
+    uintptr_t key = (uintptr_t)buf;
+    for (int i = 0; i < HERO_SIG_JUMPS; i += 1) {
+        if (own->jump_buf[i] == key) return own->jump_away[i] != 0;
+    }
+    return false;
+}
+
+/* `buf`'s record dropped, its context now naming another stack (called by
+ * `makecontext`'s wrapper, which only `HERO_JMP_MAKES` builds). */
+#if defined(HERO_JMP_MAKES)
 static void hero_jmp_forget(const void *buf) {
     HeroSignalStack *own = hero_sig_own();
     if (own == NULL) return;
@@ -180,6 +231,7 @@ static void hero_jmp_forget(const void *buf) {
         if (own->jump_buf[i] == key) own->jump_buf[i] = 0;
     }
 }
+#endif
 
 /* Under route A at a handler's begin (`parts/siginstall.c`'s wrapper): every
  * pending buffer read where it provably lives, so a refill inside the handler

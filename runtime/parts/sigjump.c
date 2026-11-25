@@ -71,7 +71,10 @@
  * ruling C of 2026-11-20 and defect d-p259-clerk-1);
  * a handler left by a switch or a jump this file never sees (an inline
  * `__builtin_longjmp`, hand-written assembly, a C++ exception or
- * `_Unwind_*`), which keeps its entry and is told in words that name it; and
+ * `_Unwind_*`), which keeps its entry and is told in words that name it; a
+ * coroutine left by such a switch, where the context it was switched to does
+ * not provably live (a heap block, a mapping), which is judged ended
+ * (`sigentries.c`, the life of a range; defect d-lane-d2745-1); and
  * the one residue panel 255's R3 leaves by design, `rr_2`, a handler left by a
  * jump and landed in again from a coroutine on another range (no range's
  * bottom is recorded where the thread leaves it). A program library defining
@@ -82,6 +85,7 @@
 #include <link.h>
 #include <setjmp.h>
 #include <sys/mman.h>
+#include <sys/uio.h>
 #include <ucontext.h>
 
 typedef int (*hero_jmp_save_fn)(struct __jmp_buf_tag *);
@@ -104,6 +108,15 @@ void __asan_init(void);
  * assembly are known for glibc's two architectures alone. */
 #if !defined(HERO_JMP_NO_DECODE) && (defined(__aarch64__) || defined(__x86_64__))
 #define HERO_JMP_DECODES 1
+#endif
+
+/* Whether `makecontext` is wrapped, so the stacks it hands out are known
+ * (rule 7, `sigjump_make.c`): its wrapper is assembly, written for those two
+ * architectures alone, and `HERO_JMP_NO_MAKE` compiles it out, as glibc's
+ * other architectures build (the simulation of defect d-lane-d2745-2, with
+ * `HERO_JMP_NO_DECODE`). Where it is not, see `sigjump_save.c`'s placement. */
+#if !defined(HERO_JMP_NO_MAKE) && (defined(__aarch64__) || defined(__x86_64__))
+#define HERO_JMP_MAKES 1
 #endif
 
 /* How many bytes of a context the fingerprint reads (route A): its saved
