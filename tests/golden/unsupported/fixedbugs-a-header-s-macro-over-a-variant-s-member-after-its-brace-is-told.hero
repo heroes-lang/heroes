@@ -1,0 +1,28 @@
+# fixedbugs, lane macro-members2, 2026-11-24 (found by lane macro-members).
+#
+# SYMPTOM: a header defining `#define hero_as 1`, the member the C this
+# compiler writes gives a variant's union of payloads, was *internal error*
+# at exit 2 in a program holding no `T?`: clang's first error, *expected ';'
+# after union*, stands at the end of the `}` of `} hero_as;` under no note,
+# and the macro's expansion is the note of the next error at the same row.
+#
+# FIX: panel 214's R3 reads the macro from a later error's note where the
+# first error's own line writes it (`cli/own_names.hero`, `explaining`), so
+# the header is told at exit 1.
+
+extern "fixedbugs-a-header-s-macro-over-a-variant-s-member-after-its-brace-is-told.h"  #~ ffi_header_refused
+    function seven() -> i64
+
+variant Shape
+    circle
+        r: i64
+    square
+        side: i64
+
+function area(s: Shape) -> i64
+    return match s
+        .circle c => c.r * c.r * 3
+        .square q => q.side * q.side
+
+function main()
+    print(area(.circle(r: seven())) + area(.square(side: 2)))

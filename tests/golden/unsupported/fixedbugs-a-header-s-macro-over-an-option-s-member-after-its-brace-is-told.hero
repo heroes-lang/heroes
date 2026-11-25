@@ -1,0 +1,21 @@
+# fixedbugs, lane macro-members2, 2026-11-24 (found by lane macro-members).
+#
+# SYMPTOM: a header defining `#define hero_as 1`, the member the C this
+# compiler writes gives a `T?`'s union, was *internal error* at exit 2,
+# while every other member of the compiler's form `hero_` was told as the
+# header's: clang's first error, *expected ';' after union*, stands at the
+# end of the `}` of `} hero_as;` under no note, and the macro's expansion is
+# the note of the next error at the same row.
+#
+# FIX: panel 214's R3 reads the macro from a later error's note where the
+# first error's own line writes it (`cli/own_names.hero`, `explaining`), so
+# the header is told at exit 1.
+
+extern "fixedbugs-a-header-s-macro-over-an-option-s-member-after-its-brace-is-told.h"  #~ ffi_header_refused
+    function seven() -> i64
+
+function half(x: i64) -> i64?
+    return ok(x / 2)
+
+function main()
+    print(half(seven() + 1).default(0))

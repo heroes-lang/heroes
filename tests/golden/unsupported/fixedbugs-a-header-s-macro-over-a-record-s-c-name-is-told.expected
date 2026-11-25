@@ -1,0 +1,9 @@
+error[ffi_header_refused]: `fixedbugs-a-header-s-macro-over-a-record-s-c-name-is-told.h`, the header this group names, does not compile in this program's unit: its line 3 defines `h_fixedbugsaheadersmacrooverarecordscnameistold_Point` as a macro, a name the C this compiler writes keeps to itself, and clang refuses that C where the macro rewrites it: declaration of anonymous struct must be a definition
+  at tests/golden/unsupported/fixedbugs-a-header-s-macro-over-a-record-s-c-name-is-told.hero:16:8
+     |
+  16 | extern "fixedbugs-a-header-s-macro-over-a-record-s-c-name-is-told.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-a-header-s-macro-over-a-record-s-c-name-is-told.h` line 3 reads `#define h_fixedbugsaheadersmacrooverarecordscnameistold_Point 1`
+  note: this compiler's `h_fixedbugsaheadersmacrooverarecordscnameistold_Point` is a name the C it writes for every program declares, of the forms it keeps to itself: `h_`, `hero_`, `Hero`, `HERO_`, `HEROES_` and `main`
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
+  fix (guess): rename `h_fixedbugsaheadersmacrooverarecordscnameistold_Point` in `fixedbugs-a-header-s-macro-over-a-record-s-c-name-is-told.h`, a name this compiler keeps to itself
