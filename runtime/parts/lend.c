@@ -417,6 +417,7 @@ static void hero_lend_retire(HeroLendRegion *r);
 static void hero_lend_heal_inside(uintptr_t frame) {
     while (hero_lend_depth > 0 && hero_frame_is_below(hero_lend_regions[hero_lend_depth - 1].frame, frame)) {
         hero_lend_depth -= 1;
+        hero_callback_held(-1);
         hero_lend_retire(&hero_lend_regions[hero_lend_depth]);
     }
 }
@@ -450,6 +451,7 @@ static void hero_lend_heal_to(const char *what, int local) {
     }
     while (hero_lend_depth > at + 1) {
         hero_lend_depth -= 1;
+        hero_callback_held(-1);
         hero_lend_retire(&hero_lend_regions[hero_lend_depth]);
     }
 }
@@ -494,6 +496,7 @@ static HeroLendRegion *hero_lend_push(size_t bytes, const char *callee, const ch
     r->name = NULL;
     r->frame = frame;
     hero_lend_depth += 1;
+    hero_callback_held(1);
     return r;
 }
 
@@ -602,6 +605,7 @@ HeroArrayHeader *hero_lend_give_at(HeroArrayHeader *a, const void *buffer, int64
     if (extent != r->extent || (const char *)buffer != r->base + r->room - bytes) hero_lend_misplaced("a buffer", where);
     if (bytes > 0) memcpy(hero_array_data(fresh), buffer, bytes);
     hero_lend_depth -= 1;
+    hero_callback_held(-1);
     hero_lend_retire(r);
     hero_lend_leave(inside);
     fresh->len = extent;
@@ -904,6 +908,7 @@ void hero_lend_local_give(void *local) {
      * here would be the function's, which the message's owner already names. */
     if (!r->local || r->base + r->room - r->bytes != (char *)local) hero_lend_misplaced("a local", NULL);
     hero_lend_depth -= 1;
+    hero_callback_held(-1);
     hero_lend_retire(r);
     hero_lend_leave(inside);
 }
@@ -1052,6 +1057,7 @@ static void hero_lend_thread_leave(void) {
     }
     hero_lend_regions = NULL;
     hero_lend_cap = 0;
+    hero_callback_held(-hero_lend_depth);
     hero_lend_depth = 0;
 #if defined(HERO_LEND_QUARANTINE)
     if (hero_lend_retired != NULL) {

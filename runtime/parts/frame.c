@@ -165,6 +165,7 @@ static void hero_frame_give_raw(void *p) {
 /* The newest take given back, its mark with it. */
 static void hero_frame_pop(void) {
     hero_frame_marked -= 1;
+    hero_callback_held(-1);
     hero_frame_give_raw(hero_frame_marks[hero_frame_marked].at);
 }
 
@@ -194,6 +195,7 @@ __attribute__((noinline)) void *hero_frame_take(size_t bytes) {
     hero_frame_marks[hero_frame_marked].at = at;
     hero_frame_marks[hero_frame_marked].frame = own;
     hero_frame_marked += 1;
+    hero_callback_held(1);
     return at;
 }
 
@@ -243,6 +245,7 @@ static void hero_frame_thread_leave(void) {
     hero_frame_spare = NULL;
     hero_free_raw(hero_frame_marks);
     hero_frame_marks = NULL;
+    hero_callback_held(-(int64_t)hero_frame_marked);
     hero_frame_marked = 0;
     hero_frame_mark_cap = 0;
 }
