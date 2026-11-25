@@ -1,2 +1,2 @@
 forgot
-!panic: 1 thread(s) never waited for when `main` returned, 0 of them still running
+!panic: 1 thread(s) never waited for when `main` returned, 1 of them still running
