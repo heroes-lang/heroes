@@ -63,6 +63,7 @@ use cli/deps
 use cli/digest
 use cli/flags
 use cli/header_stands
+use cli/include_stands
 use cli/named_folders
 use cli/order_trial
 use cli/package_reads
@@ -112,8 +113,11 @@ function checked(t: toolchain.Toolchain, options: compile.Options, site: settled
     under = settled.compiled_under(t, options, site)
     groups = order_trial.theirs(emit_externs.headers(art.program, s, art.decls))
 
-    # Before the first clang opens one (defect 2572, `cli/header_stands.hero`).
+    # Before the first clang opens one (defect 2572, `cli/header_stands.hero`),
+    # and every file it reaches (defect d-lane-blocking-small-2,
+    # `cli/include_stands.hero`).
     header_stands.stopped(under, headers: groups, s, decls: art.decls, permissive: options.permissive)?
+    include_stands.stopped(t, under: under, groups: groups, s, decls: art.decls, permissive: options.permissive)?
     stop = compile.stage(
         told(t, under: under, groups: groups, pkgconfigs: site.pkgconfig_words, places: {}),
         s,

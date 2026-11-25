@@ -1,0 +1,212 @@
+# The names a C file asks clang's search for, read from its text alone
+# (design.md §4.19, §1.12; defect d-lane-blocking-small-2, 2026-11-25): what
+# `cli/include_stands.hero` walks before any clang opens one.
+#
+# **Every directive that opens a file at a name clang's search finds**:
+# `#include`, `#include_next`, `#import` and `#embed`, a name in quotes or in
+# angle brackets; `__has_include`, `__has_include_next` and `__has_embed` on
+# a `#if` or `#elif` line, which open what they find as an include does
+# (measured on this Mac, Apple clang 21: `#if __has_include("y.h")` with
+# `y.h` a FIFO waited as `#include "y.h"` did); and an include whose name is
+# a macro, `#include Y`, read through the file's `#define Y "y.h"` or
+# `<y.h>` where one is written.
+#
+# **Read as lines, not preprocessed.** A directive is a line whose first
+# token is `#`; a block under `#if 0` is passed over to its `#else`, `#elif`
+# or `#endif`, nested blocks counted; every other condition is taken as
+# true, so a name an inactive branch writes is asked as well. What this
+# cannot read, said: a macro defined by another macro or by a flag, a
+# directive inside a block comment or continued past a line's `\`.
+
+# One name a file asks the search for: as written, quoted or angled, from
+# the folder after the one that found the file (`next`), whether it is data
+# rather than a header (`embed`), and whether a `__has_` question asks it
+# rather than a directive (`question`).
+record Asked
+    name: str
+    angled: bool
+    next: bool
+    embed: bool
+    question: bool
+
+# What a file's text asks: each name, and each macro an include names that
+# no `#define` of the file above it spells (`macros`), with the defines it
+# spells as a name (`defines`, `<name>` or `"name"` written whole).
+record Read
+    asked: [Asked]
+    macros: [str]
+    defines: {str: Asked}
+
+function new_read() -> Read
+    return Read(asked: [], macros: [], defines: {})
+
+# What `text` asks, line by line.
+function read(text: str) -> Read
+    out: Read @= new_read()
+    at: i64 @= 0
+    skipping: i64 @= 0
+
+    while at < text.len()
+        first = blank_after(text, at: at)
+
+        if first < text.len() && text[first] == '#'
+            word_at = blank_after(text, at: first + 1)
+            word = word_of(text, at: word_at)
+            rest = blank_after(text, at: word_at + word.len())
+
+            if skipping > 0
+                skipping @ skipped(skipping, word: word)
+            else if word == "if" && zero(text, at: rest)
+                skipping @ 1
+            else
+                line(@out, text: text, word: word, at: rest)
+        at @ line_end(text, at: first) + 1
+
+    return out
+
+# How deep a block passed over still is after the directive `word`.
+function skipped(depth: i64, word: str) -> i64
+    if word == "if" || word == "ifdef" || word == "ifndef"
+        return depth + 1
+
+    if word == "endif"
+        return depth - 1
+
+    if depth == 1 && (word == "else" || word == "elif" || word == "elifdef" || word == "elifndef")
+        return 0
+    return depth
+
+# One directive `word`, its operand from `at`, read into `out`.
+function line(@out: Read, text: str, word: str, at: i64)
+    if word == "include" || word == "import" || word == "include_next" || word == "embed"
+        one = operand(text, at: at, next: word == "include_next", embed: word == "embed")
+
+        if !one.is_err()
+            out.asked @ out.asked.push(one.must())
+        else
+            macro = word_of(text, at: at)
+
+            if macro.len() > 0
+                spelled = out.defines[macro]
+
+                if spelled.is_err()
+                    out.macros @ out.macros.push(macro)
+                else
+                    named: Asked @= spelled.must()
+                    named.next @ word == "include_next"
+                    named.embed @ word == "embed"
+                    out.asked @ out.asked.push(named)
+    else if word == "define"
+        name = word_of(text, at: at)
+        value = operand(text, at: blank_after(text, at: at + name.len()), next: false, embed: false)
+
+        if name.len() > 0 && !value.is_err()
+            out.defines[name] @ value.must()
+    else if word == "if" || word == "elif"
+        for one in questions(text, at: at)
+            out.asked @ out.asked.push(one)
+
+# The name in quotes or angle brackets at `at`, on its line.
+function operand(text: str, at: i64, next: bool, embed: bool) -> Asked?
+    if at >= text.len() || text[at] != '"' && text[at] != '<'
+        return fail(code: "none", msg: "no quoted or angled name")
+    close: u8 @= '"'
+
+    if text[at] == '<'
+        close @ '>'
+    end: i64 @= at + 1
+
+    while end < text.len() && text[end] != close && text[end] != '\n'
+        end @ end + 1
+
+    if end >= text.len() || text[end] != close || end == at + 1
+        return fail(code: "none", msg: "the name is not closed")
+    return ok(
+        Asked(name: text.slice(from: at + 1, to: end), angled: close == '>', next: next, embed: embed, question: false)
+    )
+
+# The names `__has_include`, `__has_include_next` and `__has_embed` ask
+# after on the line from `at`.
+function questions(text: str, at: i64) -> [Asked]
+    out: [Asked] @= []
+    end = line_end(text, at: at)
+    from: i64 @= at
+
+    while from < end
+        if text[from] == '_' && (from == 0 || !word_byte(text[from - 1]))
+            word = word_of(text, at: from)
+
+            if word == "__has_include" || word == "__has_include_next" || word == "__has_embed"
+                open = blank_after(text, at: from + word.len())
+
+                if open < end && text[open] == '('
+                    one = operand(
+                        text,
+                        at: blank_after(text, at: open + 1),
+                        next: word == "__has_include_next",
+                        embed: word == "__has_embed"
+                    )
+
+                    if !one.is_err()
+                        asked: Asked @= one.must()
+                        asked.question @ true
+                        out @ out.push(asked)
+            from @ from + word.len()
+        else
+            from @ from + 1
+
+    return out
+
+# Whether the condition at `at` is the literal `0` alone.
+function zero(text: str, at: i64) -> bool
+    return at < text.len() && text[at] == '0' && (at + 1 >= text.len() || !word_byte(text[at + 1]))
+
+# The first byte at or after `at` that is no space or tab.
+function blank_after(text: str, at: i64) -> i64
+    end: i64 @= at
+
+    while end < text.len() && (text[end] == ' ' || text[end] == '\t')
+        end @ end + 1
+
+    return end
+
+# The `\n` ending the line `at` stands on, or the text's length.
+function line_end(text: str, at: i64) -> i64
+    end: i64 @= at
+
+    while end < text.len() && text[end] != '\n'
+        end @ end + 1
+
+    return end
+
+# The identifier at `at`, "" where none starts there.
+function word_of(text: str, at: i64) -> str
+    end: i64 @= at
+
+    while end < text.len() && word_byte(text[end])
+        end @ end + 1
+
+    return text.slice(from: at, to: end)
+
+function word_byte(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_'
+
+## Tests
+
+test "every directive that opens a file by a searched name is read, as written (defect d-lane-blocking-small-2)"
+    text = "#include \"y.h\"\n  #  include <sys/types.h>\n#include_next <x.h>\n#import \"o.h\"\nstatic const char b[] = {\n#embed \"data.bin\"\n};\n#if __has_include(\"q.h\") && defined(X) || __has_include_next(<r.h>)\n#endif\n#elif __has_embed (\"e.bin\")\nint x_one(void);\n"
+    got = read(text).asked
+    assert got.len() == 8
+    assert got[0].name == "y.h" && !got[0].angled && !got[0].next
+    assert got[1].name == "sys/types.h" && got[1].angled
+    assert got[2].name == "x.h" && got[2].angled && got[2].next
+    assert got[3].name == "o.h" && got[4].name == "data.bin" && got[4].embed
+    assert got[5].name == "q.h" && got[6].name == "r.h" && got[6].next && got[6].angled
+    assert got[7].name == "e.bin" && got[7].embed
+
+test "a block under `#if 0` is passed over, an include a macro names is read through its define (defect d-lane-blocking-small-2)"
+    text = "#if 0\n#include \"dead.h\"\n#if X\n#include \"deeper.h\"\n#endif\n#else\n#include \"live.h\"\n#endif\n#define Y \"y.h\"\n#include Y\n#include Z\n#include \"\"\n#if 01\n#include \"kept.h\"\n#endif\n"
+    r = read(text)
+    assert r.asked.len() == 3
+    assert r.asked[0].name == "live.h" && r.asked[1].name == "y.h" && r.asked[2].name == "kept.h"
+    assert r.macros == ["Z"]

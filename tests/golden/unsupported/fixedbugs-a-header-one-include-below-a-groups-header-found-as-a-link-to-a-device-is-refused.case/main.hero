@@ -1,0 +1,15 @@
+# fixedbugs, defect d-lane-blocking-small-2 (2026-11-24): the header a group
+# names is a file, and the header it includes, `y.h`, is a link to a device,
+# `/dev/null` (made in the case's copy, `links`). Defect 2572 refused a
+# group's own header found so; one include below it, a FIFO hung `heroes
+# build` in clang's first listing until it was killed, and a device was read
+# as an empty header. Every file the opening and the groups' headers reach is
+# now walked before any clang starts, and the group is refused with what
+# stands where. A FIFO cannot be tracked by git, so the compiler's own tests
+# hold that one (`cli/include_stands.hero`).
+
+extern "x.h"  #~ ffi_header_refused
+    function x_one() -> i32
+
+function main()
+    print(x_one().to_str())
