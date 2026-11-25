@@ -6,6 +6,7 @@
 # told by what it is, and where the same source has an address this command
 # reads, the message writes it; the verb never writes it into the catalogue.
 
+use cli/given_path
 use cli/strings
 use fetch/url_bytes
 
@@ -42,11 +43,20 @@ function other(written: str) -> str
     if at > 0
         colon = colon_after(written, from: at)
         return "`" + shown + "` is an ssh address, which this command does not read: the same repository over https is often `https://" + written.slice(from: at + 1, to: colon) + "/" + written.slice(from: colon + 1, to: written.len()) + "`"
-    as_file: str @= "file://./" + shown
 
-    if strings.starts_with(text: written, prefix: "/") || strings.starts_with(text: written, prefix: "./") || strings.starts_with(text: written, prefix: "../")
-        as_file @ "file://" + shown
-    return "`" + shown + "` is a path and no address: a repository inside the program's own is `file://` and its path, `" + as_file + "` here, and a package's folder while it is developed is its entry's `path`"
+    # A relative `file://` path is read from the program's folder, which is
+    # not the folder a command line's own path is read from where `-C`
+    # names another: the address offered says so (defect
+    # d-lane-blocking-small-1), and a rooted path is offered as itself.
+    as_file: str @= "`file://./" + shown + "` here, read from the program's folder"
+
+    if strings.starts_with(text: written, prefix: "/")
+        as_file @ "`file://" + shown + "` here"
+    else if given_path.rooted(written) && given_path.drive_first(written)
+        as_file @ "`file:///" + shown + "` here"
+    else if strings.starts_with(text: written, prefix: "./") || strings.starts_with(text: written, prefix: "../")
+        as_file @ "`file://" + shown + "` here, read from the program's folder"
+    return "`" + shown + "` is a path and no address: a repository inside the program's own is `file://` and its path, " + as_file + ", and a package's folder while it is developed is its entry's `path`"
 
 # An address of a scheme this command reads, or of `http`, written with fewer
 # than two slashes after its `:`, its scheme in any case (defect 2543):
@@ -153,8 +163,9 @@ test "an address of another scheme is told what it looks like, and the address t
     assert other("ssh://git@github.com/acme/json") == "`ssh://git@github.com/acme/json` is fetched over `ssh://`, which this command does not read: " + SHAPES
     assert other("git+https://github.com/acme/json") == "`git+https://github.com/acme/json` is fetched over `git+https://`, which this command does not read: " + SHAPES
     assert other("ext::sh -c touch% /tmp/x") == "`ext::sh -c touch% /tmp/x` names one of git's remote helpers, which runs a program to fetch: " + SHAPES
-    assert other("../json") == "`../json` is a path and no address: a repository inside the program's own is `file://` and its path, `file://../json` here, and a package's folder while it is developed is its entry's `path`"
-    assert other("vendor/json") == "`vendor/json` is a path and no address: a repository inside the program's own is `file://` and its path, `file://./vendor/json` here, and a package's folder while it is developed is its entry's `path`"
+    assert other("../json") == "`../json` is a path and no address: a repository inside the program's own is `file://` and its path, `file://../json` here, read from the program's folder, and a package's folder while it is developed is its entry's `path`"
+    assert other("vendor/json") == "`vendor/json` is a path and no address: a repository inside the program's own is `file://` and its path, `file://./vendor/json` here, read from the program's folder, and a package's folder while it is developed is its entry's `path`"
+    assert other("/abs/json") == "`/abs/json` is a path and no address: a repository inside the program's own is `file://` and its path, `file:///abs/json` here, and a package's folder while it is developed is its entry's `path`"
 
     # Defect 2543: a slash missing after the scheme is told as the address
     # meant, never as a path; a drive stays a path.

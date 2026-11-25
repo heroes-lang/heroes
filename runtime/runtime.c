@@ -268,13 +268,20 @@
 /* The buffer C fills, lent off the stack in a guarded region of the calling
  * thread (panel 196's R4). After `array.c`, whose layout it copies in and out
  * of; `stack.c`'s handler and `spawn.c`'s thread end call into it through the
- * declarations they carry, this being one translation unit. */
+ * declarations they carry, this being one translation unit. Before it, which
+ * stack a frame is on, after the known ranges `sigentries.c` and
+ * `rebind_entries.c` keep; after it, the regions of frames on another stack
+ * than the thread's own. */
+#include "parts/stack_lane.c"
 #include "parts/lend.c"
+#include "parts/lend_aside.c"
 
 /* The room of a large value, off its function's frame (defect 2278). After
  * `alloc.c`, whose `hero_malloc_raw` it takes its chunks from; `spawn.c`'s
- * thread end calls into it through the declaration it carries. */
+ * thread end calls into it through the declaration it carries; after it, the
+ * room of frames on another stack than the thread's own. */
 #include "parts/frame.c"
+#include "parts/frame_aside.c"
 
 /* `sort`, which needs the array's layout helpers and the scalar descriptors it
  * dispatches on by pointer identity. */

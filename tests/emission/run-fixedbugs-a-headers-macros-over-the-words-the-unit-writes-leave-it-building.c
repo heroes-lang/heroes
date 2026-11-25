@@ -428,7 +428,7 @@ int64_t h_fixedbugsaheadersmacrosoverthewordstheunitwritesleaveitbuilding_twice(
 #line 429 "fixedbugsaheadersmacrosoverthewordstheunitwritesleaveitbuilding.c"
 }
 
-int64_t h_0cb_fixedbugsaheadersmacrosoverthewordstheunitwritesleaveitbuilding_twice(int64_t h0_x) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugsaheadersmacrosoverthewordstheunitwritesleaveitbuilding_twice(int64_t h0_x) {
     hero_callback_entered("fixedbugsaheadersmacrosoverthewordstheunitwritesleaveitbuilding.twice", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugsaheadersmacrosoverthewordstheunitwritesleaveitbuilding_twice(h0_x);
     hero_callback_left();
@@ -444,7 +444,7 @@ HeroStr h_fixedbugsaheadersmacrosoverthewordstheunitwritesleaveitbuilding_shout(
     return t3;
 }
 
-HeroStr h_0cb_fixedbugsaheadersmacrosoverthewordstheunitwritesleaveitbuilding_shout(HeroStr h0_word) {
+__attribute__((__noinline__)) HeroStr h_0cb_fixedbugsaheadersmacrosoverthewordstheunitwritesleaveitbuilding_shout(HeroStr h0_word) {
     hero_callback_entered("fixedbugsaheadersmacrosoverthewordstheunitwritesleaveitbuilding.shout", __builtin_return_address(0), __builtin_frame_address(0));
     HeroStr hero_result = h_fixedbugsaheadersmacrosoverthewordstheunitwritesleaveitbuilding_shout(h0_word);
     hero_callback_left();
@@ -477,7 +477,7 @@ hero_bb4:
     hero_unreachable();
 }
 
-int64_t h_0cb_fixedbugsaheadersmacrosoverthewordstheunitwritesleaveitbuilding_fill(HeroMail * h0_m) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugsaheadersmacrosoverthewordstheunitwritesleaveitbuilding_fill(HeroMail * h0_m) {
     hero_callback_entered("fixedbugsaheadersmacrosoverthewordstheunitwritesleaveitbuilding.fill", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugsaheadersmacrosoverthewordstheunitwritesleaveitbuilding_fill(h0_m);
     hero_callback_left();

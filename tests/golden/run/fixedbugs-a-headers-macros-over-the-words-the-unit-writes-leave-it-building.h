@@ -4,7 +4,19 @@
  * a `T?`'s and a variant's members, a thread's box, a case's member, a
  * block's label, a probe's parameters, a renderer's, a map lookup's local,
  * the attributes the unit spells, C's keywords, and the words of the pragmas
- * that give a header's state back after the groups. */
+ * that give a header's state back after the groups.
+ *
+ * It reads the C library's two headers the unit reads after its groups
+ * (`runtime/heroes_standard.h`) before it defines a word, as a header that
+ * defines such words must in any C program: a word the library's own headers
+ * use breaks them when they are read after it, a true `ffi_header_refused`.
+ * Measured 2026-11-25: `#define a1 1` broke mingw-w64's `math.h:164`, where
+ * `a1` is a parameter (zig 0.15.2's headers), and the CI's MSVC `<stdint.h>`
+ * read after these words left its `#pragma pack` changed (run of fc19cb341).
+ * Read here first, each is read once, before any word below. */
+#include <stdint.h>
+#include <math.h>
+
 struct macro_pair { long long left; long long right; };
 
 #define MACRO_LIMIT 99

@@ -1,0 +1,4 @@
+coroutine 1 lent 1 2
+coroutine 2 lent 2 3
+coroutine 0 lent 0 1
+lent across switches: 3 104 205

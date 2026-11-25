@@ -31,6 +31,7 @@
 # 2026-11-08). What only the repository answers, a path outside it or
 # through a link, is the verb's alone: the build reads no repository.
 
+use cli/given_path
 use fetch/address
 use fetch/address_form
 use module/listing
@@ -129,7 +130,10 @@ function source_of(e: Entry, index: str, folder: str) -> str
 
     if e.git.len() > 0
         return "git " + address_form.canonical(e.git)
-    return "path " + sums.folded(folder + e.path)
+
+    # A rooted `path` is its own place, never one under `folder`
+    # (`cli/given_path`).
+    return "path " + sums.folded(given_path.read_from(folder: folder, path: e.path))
 
 # An entry's source as a message names it.
 function said_source(e: Entry) -> str

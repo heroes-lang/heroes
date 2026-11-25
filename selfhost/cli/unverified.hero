@@ -80,7 +80,7 @@ test "a package read from a `path` entry is told, once, and one read from its pl
         alias: "toml",
         root: "gone/",
         opened: "gone/",
-        problem: "the folder `gone/` its `path` names is not there",
+        problem: "its `path` names the folder `gone`, and nothing is there",
         code: "",
         unverified: true
     )
