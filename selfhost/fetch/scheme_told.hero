@@ -7,6 +7,7 @@
 # reads, the message writes it; the verb never writes it into the catalogue.
 
 use cli/given_path
+use cli/process
 use cli/strings
 use fetch/url_bytes
 
@@ -178,7 +179,16 @@ test "an address of another scheme is told what it looks like, and the address t
     assert other("file:../json") == "`file:../json` writes no slash after `file:`, where an address writes two: a path from the program's folder is `file://../json`"
     assert other("https:/") == "`https:/` writes one slash after `https:`, and names nothing after it: " + SHAPES
     assert slashes_missing("C:/json") == ""
-    assert other("C:/json") == "`C:/json` is a path and no address: a repository inside the program's own is `file://` and its path, `file://./C:/json` here, and a package's folder while it is developed is its entry's `path`"
+
+    # A drive is a root on Windows alone (`cli/given_path`, defect
+    # d-lane-blocking-small-1): there `C:/json` is offered as the absolute
+    # address `file:///C:/json`, which `address.absolute_of` reads back with
+    # its drive; elsewhere it is a folder named `C:` under the program's, and
+    # its address is read from the program's folder, as every relative one's.
+    if process.exe_suffix() == ".exe"
+        assert other("C:/json") == "`C:/json` is a path and no address: a repository inside the program's own is `file://` and its path, `file:///C:/json` here, and a package's folder while it is developed is its entry's `path`"
+    else
+        assert other("C:/json") == "`C:/json` is a path and no address: a repository inside the program's own is `file://` and its path, `file://./C:/json` here, read from the program's folder, and a package's folder while it is developed is its entry's `path`"
 
     # `user@host` with no path after the `:` is no ssh address, and a `/`
     # before the `@` makes it a path.
