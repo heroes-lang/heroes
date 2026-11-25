@@ -97,6 +97,14 @@ function doc_walk() -> floors.Walked
 # ratio is asked of the cases walked, as `run` asks it of a filter's; a word
 # that selects nothing is `main`'s to refuse, as it is for every suite. A
 # filter's cases are not the tree, so it asks no floor (`cases.asks_floor`).
+#
+# **And a shard, `<i>/<n>`, since 2026-11-25** (`cases.selected`): each
+# directory's cases dealt round by their sorted index, the same shard in each,
+# so the `n` shards together walk every case of every directory once. A shard
+# asks each directory's floor of its whole count, as `run`'s shards do, and the
+# skip ratio of its own cases. Until then the suite took no shard, and on the
+# CI's Windows leg of run 45493660465 it had not ended after 351.8 minutes, so
+# no part holding it could end under GitHub's six hours.
 function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     return walk(scratch: scratch, compiler: compiler, ir: ir_walk(), c: c_walks(), doc: doc_walk(), only: only)
 
@@ -113,7 +121,7 @@ function walk(scratch: str, compiler: str, ir: floors.Walked, c: [floors.Walked]
     ir_cases = cases.collect(scratch: scratch, dir: ir.dir)?
     floored(@r, walked: ir, found: ir_cases.len(), only: only)
 
-    for item in cases.matching(found: ir_cases, only: only)
+    for item in cases.selected(found: ir_cases, only: only)
         total @ total + 1
         first = dumped(scratch: scratch, compiler: compiler, item: item, flag: "--dump-ir", into: "")
         second = dumped(scratch: scratch, compiler: compiler, item: item, flag: "--dump-ir", into: "")
@@ -137,14 +145,14 @@ function walk(scratch: str, compiler: str, ir: floors.Walked, c: [floors.Walked]
         whole = cases.collect(scratch: scratch, dir: walked.dir)?
         floored(@r, walked: walked, found: whole.len(), only: only)
 
-        for item in cases.matching(found: whole, only: only)
+        for item in cases.selected(found: whole, only: only)
             total @ total + 1
             c_case(@r, @skipped, scratch: scratch, compiler: compiler, written: written, item: item)
 
     doc_cases = cases.collect(scratch: scratch, dir: doc.dir)?
     floored(@r, walked: doc, found: doc_cases.len(), only: only)
 
-    for item in cases.matching(found: doc_cases, only: only)
+    for item in cases.selected(found: doc_cases, only: only)
         total @ total + 1
         doc_case(@r, scratch: scratch, compiler: compiler, item: item)
 
@@ -558,6 +566,14 @@ test "fixedbugs: a walk that finds nothing in a directory fails by that director
     filtered = walk(scratch: scratch, compiler: compiler, ir: ir, c: c, doc: doc, only: "fixedbugs-2534").must()
     assert filtered.passed == 0
     assert filtered.failed == 0
+
+    # A shard asks each directory's floor of its whole count, as the whole
+    # suite does (2026-11-25), so every one of the `n` parts holding it fails.
+    for word in ["1/3", "3/3"]
+        sharded = walk(scratch: scratch, compiler: compiler, ir: ir, c: c, doc: doc, only: word).must()
+        assert sharded.passed == 0
+        assert sharded.failed == 4
+
     none: [floors.Walked] = []
     met = walk(
         scratch: scratch,

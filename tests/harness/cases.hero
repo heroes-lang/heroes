@@ -261,6 +261,21 @@ function selected(found: [Case], only: str) -> [Case]
         return none
     return matching(found: found, only: only)
 
+# **Whether the item at `index` of a list, from 0 in the order the list is
+# walked, is among a shard's**, for a list whose items are no `Case`: an
+# example's folder, a gallery program, a blessed program (2026-11-25). Shard
+# `i` of `n` deals the list round by index as `sharded` deals cases, so a
+# suite walking several lists deals each of them by the same shard and the
+# `n` shards together walk every item of every list once. A word that is no
+# shard keeps every item, its filter being the caller's to read by name; a
+# word in the shape and out of range keeps none, as `selected` keeps none.
+function dealt(index: i64, only: str) -> bool
+    shard = shard_of(only)
+
+    if !shard.is_err()
+        return index % shard.must().count == shard.must().index - 1
+    return !shard_shaped(only)
+
 # Whether the word asks for a shard, which asks the floor of the whole
 # directory and the skip ratio of its own cases (`asks_floor`,
 # `starved_words`).
@@ -382,6 +397,51 @@ test "the shards of any n are disjoint, their union is the suite, and none holds
                 assert !seen[item.name].is_err()
 
             n @ n + 1
+
+# A list that is no `Case`'s is dealt as cases are (2026-11-25): the index
+# `dealt` keeps for shard `i` of `n` is the one `selected` keeps, so a suite
+# dealing three lists by one shard walks each item of each once over the `n`
+# shards, and a word that is no shard keeps every item for the caller's filter.
+test "an item of any list is dealt by its index as a case is, and a word that is no shard keeps it"
+    found: [Case] @= []
+    k: i64 @= 0
+
+    while k < 13
+        name = "c" + k.to_str()
+        found @ found.push(Case(source: "x/" + name + ".hero", expected: "x/" + name + ".expected", name: name))
+        k @ k + 1
+
+    for n in [1, 2, 3, 4, 8, 13, 20]
+        walked: [i64] @= []
+
+        for _ in range(from: 0, to: 13)
+            walked @ walked.push(0)
+
+        for i in range(from: 1, to: n + 1)
+            word = i.to_str() + "/" + n.to_str()
+            kept = selected(found: found, only: word)
+            by_index: [str] @= []
+
+            for index in range(from: 0, to: 13)
+                if dealt(index: index, only: word)
+                    by_index @ by_index.push(found[index].name)
+                    walked[index] @ walked[index] + 1
+
+            assert by_index.len() == kept.len()
+
+            for at in range(from: 0, to: kept.len())
+                assert by_index[at] == kept[at].name
+
+        for count in walked
+            assert count == 1
+
+    for word in ["", "c1", "fixedbugs-2504", "run/loop"]
+        assert dealt(index: 0, only: word)
+        assert dealt(index: 12, only: word)
+
+    for word in ["0/4", "5/4", "1/0"]
+        assert !dealt(index: 0, only: word)
+        assert !dealt(index: 3, only: word)
 
 # TASK 2505, held as a test (2026-11-14): the whole suite and a shard ask the
 # suite's floor, a filter does not, and a shard's own cases are named as its.
