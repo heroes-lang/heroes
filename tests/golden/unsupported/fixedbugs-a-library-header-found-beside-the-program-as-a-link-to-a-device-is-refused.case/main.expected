@@ -1,0 +1,5 @@
+error[shadowed_header]: `<stdint.h>`, which the runtime's `heroes_runtime.h` includes, is found first at `tests/golden/unsupported/fixedbugs-a-library-header-found-beside-the-program-as-a-link-to-a-device-is-refused.case/stdint.h`, in a folder this build names, where a link to a device stands, and clang opens the first place its search finds, where only a file can be read: rename it to keep it, or remove it
+  at tests/golden/unsupported/fixedbugs-a-library-header-found-beside-the-program-as-a-link-to-a-device-is-refused.case/main.hero:1:1
+    |
+  1 | #~ shadowed_header
+    | ^
