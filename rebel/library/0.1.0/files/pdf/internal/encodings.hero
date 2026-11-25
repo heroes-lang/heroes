@@ -12,7 +12,7 @@
 # PDFDocEncoding, for text strings, is written by hand in `text_strings` and
 # checked there.
 #
-# Generated, never edited by hand: the Heroes program `generators/pdf_tables/`
+# Generated, never edited by hand: the Heroes program `rebel/generators/pdf_tables/`
 # read code page 1252 and Mac OS Roman as unicode.org's mapping files
 # `CP1252.TXT` and `ROMAN.TXT` give them, the three AFM files and the glyph
 # lists, each held to its SHA-256, and wrote this module whole; its `check`

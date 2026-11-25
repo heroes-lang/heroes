@@ -6,7 +6,7 @@
 # every line.
 #
 # Generated, never edited by hand: the Heroes program
-# `generators/unicode_cases/` read the file, fetched 2026-11-22, and wrote
+# `rebel/generators/unicode_cases/` read the file, fetched 2026-11-22, and wrote
 # this module whole; its `check` command says whether this module is still
 # what it writes. Only a test build reads the cases.
 

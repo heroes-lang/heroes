@@ -3,7 +3,7 @@
 # transform its prefix, a zero, its kind, its suffix, a zero) and as bytes,
 # all in hexadecimal.
 #
-# Generated, never edited by hand: the Heroes program `generators/brotli/`
+# Generated, never edited by hand: the Heroes program `rebel/generators/brotli/`
 # read the RFC's text (https://www.rfc-editor.org/rfc/rfc7932.txt, SHA-256
 # 394abd1879e016f4eac89512c2acaf92f7b2d67feb8ab58b6b118c213be07146,
 # fetched 2026-11-22), held
