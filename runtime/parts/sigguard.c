@@ -414,6 +414,11 @@ typedef struct {
     uint32_t jump_size[HERO_SIG_JUMPS];
     uintptr_t jump_sp[HERO_SIG_JUMPS];
     unsigned jump_next;
+    /* Where `makecontext` is not wrapped (defect d-lane-d2745-2): whether
+     * the thread runs inside a `swapcontext` it made, whose switch has not
+     * returned (`elsewhere`), and whether each pair's save was made so. */
+    int elsewhere;
+    unsigned char jump_away[HERO_SIG_JUMPS];
 #elif defined(HERO_SIG_REBIND)
     /* Darwin's route: the handlers this thread is inside, innermost
      * last, `depth` past the last one not gone; how many run with no entry

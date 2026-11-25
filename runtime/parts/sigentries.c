@@ -49,7 +49,10 @@
  *    else), and nothing tells this route one has ended: a stale range is
  *    never asked about an entry, only about a target, where it costs a told
  *    refusal. Where contexts fall to route A no switch's target is read, so
- *    a range is held from its `makecontext` on (defect 2745).
+ *    a range is held from its `makecontext` on (defect 2745). Where
+ *    `makecontext` is not wrapped no range is known, and a save made inside
+ *    a `swapcontext` the thread made, before it returned, names a target on a
+ *    coroutine's stack (`sigjump_save.c`'s placement, defect d-lane-d2745-2).
  * Route A obeys the same rules (defect 2745): its trusted record holds a
  * frame just below the target's stack pointer, on the target's stack, and
  * that bound is judged here as route C's decoded target is, but for whether

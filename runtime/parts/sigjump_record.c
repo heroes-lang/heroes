@@ -204,11 +204,25 @@ static void hero_jmp_note(const void *buf, uint32_t size, uintptr_t frame) {
     own->jump_print[slot] = 0;
     own->jump_size[slot] = size;
     own->jump_sp[slot] = frame;
+    own->jump_away[slot] = (unsigned char)(own->elsewhere != 0);
     atomic_signal_fence(memory_order_seq_cst);
     own->jump_buf[slot] = key;
 }
 
-/* `buf`'s record dropped, its context now naming another stack. */
+/* Whether the record of `buf` was saved while the thread ran inside a
+ * `swapcontext` of its own whose switch had not returned: where `makecontext`
+ * is not wrapped, on a stack this runtime cannot place (`sigjump_save.c`). */
+__attribute__((unused)) static bool hero_jmp_saved_away(const HeroSignalStack *own, const void *buf) {
+    uintptr_t key = (uintptr_t)buf;
+    for (int i = 0; i < HERO_SIG_JUMPS; i += 1) {
+        if (own->jump_buf[i] == key) return own->jump_away[i] != 0;
+    }
+    return false;
+}
+
+/* `buf`'s record dropped, its context now naming another stack (called by
+ * `makecontext`'s wrapper, which only `HERO_JMP_MAKES` builds). */
+#if defined(HERO_JMP_MAKES)
 static void hero_jmp_forget(const void *buf) {
     HeroSignalStack *own = hero_sig_own();
     if (own == NULL) return;
@@ -217,6 +231,7 @@ static void hero_jmp_forget(const void *buf) {
         if (own->jump_buf[i] == key) own->jump_buf[i] = 0;
     }
 }
+#endif
 
 /* Under route A at a handler's begin (`parts/siginstall.c`'s wrapper): every
  * pending buffer read where it provably lives, so a refill inside the handler

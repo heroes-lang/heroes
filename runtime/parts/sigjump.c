@@ -110,6 +110,15 @@ void __asan_init(void);
 #define HERO_JMP_DECODES 1
 #endif
 
+/* Whether `makecontext` is wrapped, so the stacks it hands out are known
+ * (rule 7, `sigjump_make.c`): its wrapper is assembly, written for those two
+ * architectures alone, and `HERO_JMP_NO_MAKE` compiles it out, as glibc's
+ * other architectures build (the simulation of defect d-lane-d2745-2, with
+ * `HERO_JMP_NO_DECODE`). Where it is not, see `sigjump_save.c`'s placement. */
+#if !defined(HERO_JMP_NO_MAKE) && (defined(__aarch64__) || defined(__x86_64__))
+#define HERO_JMP_MAKES 1
+#endif
+
 /* How many bytes of a context the fingerprint reads (route A): its saved
  * registers lie in the first of them on both Linux architectures. */
 #define HERO_JMP_CONTEXT_BYTES 256

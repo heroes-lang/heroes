@@ -19,10 +19,16 @@
  * the context's own field does not decode (route A for contexts) its record
  * goes, the context now naming another stack, and its range is held
  * (defect 2745). On glibc's other architectures
- * no wrapper is defined: no context stack is known there, and a coroutine's
- * frames are of unknown extent, which proves no handler left (a told refusal). */
+ * no wrapper is defined (`HERO_JMP_MAKES`, `sigjump.c`) and no context stack
+ * is known there. This file said until defect d-lane-d2745-2 that a
+ * coroutine's frames are then of unknown extent, which proves no handler
+ * left: false of a coroutine carved from the thread's own stack, which rule 4
+ * judged as that stack, so a handler's jump into it ran the program's function
+ * inside the signal. What a save made while the thread runs inside a
+ * `swapcontext` of its own tells a jump instead is `sigjump_save.c`'s
+ * placement. */
 
-#if !defined(_WIN32) && !defined(__APPLE__) && (defined(__aarch64__) || defined(__x86_64__))
+#if !defined(_WIN32) && !defined(__APPLE__) && defined(HERO_JMP_MAKES)
 
 __attribute__((used, visibility("hidden"))) void hero_sig_made_context(const void *context);
 __attribute__((used, visibility("hidden"))) void hero_sig_made_context(const void *context) {
