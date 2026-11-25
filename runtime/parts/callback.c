@@ -64,6 +64,20 @@
 #include <windows.h>
 #endif
 
+/* The thread's own stack, measured once, and the ranges `makecontext` was
+ * given that lie inside it, read again whenever one was given since
+ * (`parts/stack_lane.c`, which reads and writes the rest). */
+#define HERO_LANE_CARVED 4
+typedef struct {
+    uintptr_t lo;
+    uintptr_t hi;
+    int measured;
+    unsigned seen;
+    int carved;
+    uintptr_t carved_lo[HERO_LANE_CARVED];
+    uintptr_t carved_hi[HERO_LANE_CARVED];
+} HeroStackOwn;
+
 /* The thread's count of callbacks entered and not left, and beside it how
  * many entries of the large-value room and the lend regions the thread holds
  * (panel 258's R1, below), in one thread-local, so that a thunk's entry,
@@ -80,6 +94,7 @@ typedef struct {
 } HeroCallbackThread;
 
 static _Thread_local HeroCallbackThread hero_callback_thread = {0, 0};
+static _Thread_local HeroStackOwn hero_stack_own = {0};
 static _Atomic int64_t hero_callbacks_unfinished_by_ended = 0;
 
 static void hero_callback_in(void) { hero_callback_thread.inside += 1; }
@@ -164,16 +179,22 @@ static int64_t hero_callbacks_unfinished(void) {
  * its own, above or below this one, and its frames are no deeper than this
  * one's for being at lower addresses: an entry or a frame outside the thread's
  * own stack, measured once (Windows asks the thread's block, which a fiber's
- * switch changes), is never judged gone, and its entries keep the order they
- * had before this repair.
+ * switch changes), is never judged gone. Since the room and the regions hold
+ * only what the thread's own stack took (`parts/stack_lane.c`, the defect
+ * lane panel258-r1 found beside 2752),
+ * an entry of a coroutine's stack stands aside, judged among its own stack's
+ * entries alone (`parts/frame_aside.c`, `parts/lend_aside.c`).
  *
  * WHAT IT DOES NOT DO, said: nothing here releases a value a frame held (a
  * `str`, an array, a handle); those stay leaked, the heap-block audit forgiven
  * as above (panel 258's R2 is the release, pending a spec sentence). */
+
+/* How many ranges `makecontext` was given in this process, counted after each
+ * is written (`parts/sigentries.c`, `parts/rebind_entries.c`): a thread whose
+ * count is behind reads again which of them lie inside its own stack. Windows
+ * has no such range: a fiber's switch changes the thread's block instead. */
 #if !defined(_WIN32)
-static _Thread_local uintptr_t hero_heal_lo = 0;
-static _Thread_local uintptr_t hero_heal_hi = 0;
-static _Thread_local int hero_heal_measured = 0;
+static _Atomic unsigned hero_stacks_made = 0;
 #endif
 
 /* The mark of the frame that called the runtime function this is written in,
@@ -196,20 +217,28 @@ static bool hero_frame_is_below(uintptr_t deeper, uintptr_t frame) {
     uintptr_t lo = (uintptr_t)tib->StackLimit;
     uintptr_t hi = (uintptr_t)tib->StackBase;
 #else
-    if (!hero_heal_measured) {
-        hero_stack_measure(&hero_heal_lo, &hero_heal_hi);
-        hero_heal_measured = 1;
+    HeroStackOwn *own = &hero_stack_own;
+    if (!own->measured) {
+        hero_stack_measure(&own->lo, &own->hi);
+        own->measured = 1;
     }
-    uintptr_t lo = hero_heal_lo;
-    uintptr_t hi = hero_heal_hi;
+    uintptr_t lo = own->lo;
+    uintptr_t hi = own->hi;
 #endif
     return deeper >= lo && frame < hi;
 }
 
 /* `parts/frame.c` and `parts/lend.c`, later in this unit: each gives back the
- * entries of frames below `frame`. */
+ * entries of frames below `frame`; and their asides, the entries of `stack`'s
+ * frames below `frame` (`parts/frame_aside.c`, `parts/lend_aside.c`). */
 static void hero_frame_heal_below(uintptr_t frame);
 static void hero_lend_heal_below(uintptr_t frame);
+static void hero_frame_aside_heal(uintptr_t stack, uintptr_t frame);
+static void hero_lend_aside_heal(uintptr_t stack, uintptr_t frame);
+
+/* `parts/stack_lane.c`: whether `at` is on the thread's own stack, and where
+ * it is not, the stack it is on (0 for one nobody can name). */
+static inline __attribute__((always_inline)) int hero_stack_lane(uintptr_t at, uintptr_t *stack);
 
 /* A thunk is entered at `frame`: nothing of this thread's stack below it is
  * alive (`sigguard.c`'s `hero_callback_entered`, after its question), and
@@ -222,12 +251,20 @@ static void hero_lend_heal_below(uintptr_t frame);
  * on the thunk being a frame of its own, which `emit/callback_thunk.hero`'s
  * `OWN_FRAME` makes it: a thunk inlined into the function a header's inline C
  * was inlined into named that function's frame, and this line then gave back
- * the room that function still held (defect 2286's case at `-O2`, run). */
+ * the room that function still held (defect 2286's case at `-O2`, run). A
+ * thunk entered on a coroutine's stack judges that stack's entries alone, and
+ * one on a stack nobody can name judges nothing (`parts/stack_lane.c`). */
 static void hero_callback_heal(void *frame) {
     if (hero_callback_thread.held == 0) return;
     uintptr_t above = (uintptr_t)frame + 1;
-    hero_frame_heal_below(above);
-    hero_lend_heal_below(above);
+    uintptr_t stack = 0;
+    if (hero_stack_lane((uintptr_t)frame, &stack)) {
+        hero_frame_heal_below(above);
+        hero_lend_heal_below(above);
+    } else if (stack != 0) {
+        hero_frame_aside_heal(stack, above);
+        hero_lend_aside_heal(stack, above);
+    }
 }
 
 #if defined(__linux__) && defined(__has_feature)

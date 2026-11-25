@@ -52,6 +52,14 @@
  * newest region first give back the regions of frames below their own,
  * watched as any region given back is (below).
  *
+ * AND ONLY THE THREAD'S OWN STACK LENDS FROM THIS TABLE (the defect lane
+ * panel258-r1 found beside 2752; `parts/stack_lane.c`). Two coroutines on one
+ * thread interleave their frames, so a local one lent in place for its
+ * function's life stood below the other's at its give, which said *a buffer
+ * lent to C was given back at an address its region does not hold* of a
+ * correct program; a frame on any other stack lends from a region of its own
+ * (`parts/lend_aside.c`), and a give this table does not hold looks there.
+ *
  * A REGION GIVEN BACK IS WATCHED UNTIL IT IS TAKEN AGAIN (defect 451,
  * 2026-10-08). That word is C's, and a C library that breaks it was seen by
  * nothing: the region stayed readable and writable, so C reading or writing
@@ -157,6 +165,19 @@ typedef struct HeroLendRegion {
 static _Thread_local HeroLendRegion *hero_lend_regions = NULL;
 static _Thread_local int64_t hero_lend_cap = 0;
 static _Thread_local int64_t hero_lend_depth = 0;
+
+/* `parts/lend_aside.c`, later in this unit: a region of a frame on another
+ * stack than the thread's own, taken; the region aside lending `what`, found
+ * and given back with its stack's regions of frames below it, or NULL where
+ * none lends it; and the asides named, faulted on and audited. Each is called
+ * inside this file's bracket. */
+static HeroLendRegion *hero_lend_aside_push(size_t bytes, const char *callee, const char *param, int64_t extent,
+                                            const HeroPlace *where, uintptr_t frame, uintptr_t stack, int local);
+static HeroLendRegion *hero_lend_aside_find(const char *what, int local);
+static void hero_lend_aside_release(HeroLendRegion *r);
+static void hero_lend_aside_name(const void *local, const char *callee, const char *param);
+static int hero_lend_aside_fault_at(uintptr_t addr, HeroLendFault *out);
+static void hero_lend_aside_audit(const char *when);
 
 /* A region above this many bytes has its pages released and its room sealed
  * when it is given back; one of this many or fewer is summed. */
@@ -406,6 +427,7 @@ static void hero_lend_audit(HeroLendRegion *r, const char *when) {
 static void hero_lend_audit_given(const char *when) {
     volatile sig_atomic_t *inside = hero_lend_enter();
     for (int64_t i = hero_lend_depth; i < hero_lend_cap; i++) hero_lend_audit(&hero_lend_regions[i], when);
+    hero_lend_aside_audit(when);
     hero_lend_leave(inside);
 }
 
@@ -456,15 +478,14 @@ static void hero_lend_heal_to(const char *what, int local) {
     }
 }
 
-/* The region at the next depth, holding at least `bytes` before its guard,
- * taken by the function whose frame is `frame`: the regions of frames below
- * it are given back first. */
-static HeroLendRegion *hero_lend_push(size_t bytes, const char *callee, const char *param, int64_t extent,
-                                      const HeroPlace *where, uintptr_t frame) {
-    hero_lend_heal_inside(frame);
-    if (hero_lend_depth >= hero_lend_cap) hero_lend_grow_table();
-    HeroLendRegion *r = &hero_lend_regions[hero_lend_depth];
-    hero_lend_audit(r, "found when the next lend at its depth took its memory");
+/* `r` made ready to hold at least `bytes` before its guard, for the function
+ * whose frame is `frame`: what was there before audited (`when` says by which
+ * lend), its memory mapped, grown, or opened again, its labels the lend's. */
+static inline __attribute__((always_inline)) void hero_lend_ready(HeroLendRegion *r, size_t bytes, const char *callee,
+                                                                  const char *param, int64_t extent,
+                                                                  const HeroPlace *where, uintptr_t frame,
+                                                                  const char *when) {
+    hero_lend_audit(r, when);
     if (r->base == NULL || r->room < bytes) {
         size_t page = hero_lend_page();
         size_t room = (bytes + page - 1) / page * page;
@@ -495,8 +516,47 @@ static HeroLendRegion *hero_lend_push(size_t bytes, const char *callee, const ch
     r->owner = NULL;
     r->name = NULL;
     r->frame = frame;
+}
+
+/* The region at the next depth, holding at least `bytes` before its guard,
+ * taken by the function whose frame is `frame`: the regions of frames below
+ * it are given back first. */
+static HeroLendRegion *hero_lend_push(size_t bytes, const char *callee, const char *param, int64_t extent,
+                                      const HeroPlace *where, uintptr_t frame) {
+    hero_lend_heal_inside(frame);
+    if (hero_lend_depth >= hero_lend_cap) hero_lend_grow_table();
+    HeroLendRegion *r = &hero_lend_regions[hero_lend_depth];
+    hero_lend_ready(r, bytes, callee, param, extent, where, frame,
+                    "found when the next lend at its depth took its memory");
     hero_lend_depth += 1;
     hero_callback_held(1);
+    return r;
+}
+
+/* A LOCAL's labels (panel 196's R7): the Heroes function and the binding,
+ * and no call lending it yet. */
+static void hero_lend_label_local(HeroLendRegion *r, const char *owner, const char *name) {
+    r->local = 1;
+    r->owner = owner;
+    r->name = name;
+    r->callee = NULL;
+    r->param = NULL;
+}
+
+/* A region for the function whose frame is `frame`, a buffer's (`callee` and
+ * `param` naming the call) or a LOCAL's (`callee` and `param` naming the
+ * function and the binding): the thread's next depth where that frame is on
+ * the thread's own stack, a region aside elsewhere (`parts/stack_lane.c`). */
+static inline __attribute__((always_inline)) HeroLendRegion *hero_lend_place(size_t bytes, const char *callee,
+                                                                              const char *param, int64_t extent,
+                                                                              const HeroPlace *where, uintptr_t frame,
+                                                                              int local) {
+    uintptr_t stack = 0;
+    if (!hero_stack_lane(frame, &stack)) {
+        return hero_lend_aside_push(bytes, callee, param, extent, where, frame, stack, local);
+    }
+    HeroLendRegion *r = hero_lend_push(bytes, callee, param, extent, where, frame);
+    if (local) hero_lend_label_local(r, callee, param);
     return r;
 }
 
@@ -571,7 +631,7 @@ static void *hero_lend_take_from(const HeroArrayHeader *from, int64_t extent, co
         hero_lend_refuse(callee, param, "that many bytes cannot be mapped", extent, where);
     }
     volatile sig_atomic_t *inside = hero_lend_enter();
-    HeroLendRegion *r = hero_lend_push(bytes, callee, param, extent, where, frame);
+    HeroLendRegion *r = hero_lend_place(bytes, callee, param, extent, where, frame, 0);
     char *buffer = r->base + r->room - bytes;
     int64_t kept = from->len < extent ? from->len : extent;
     size_t copied = (size_t)kept * size;
@@ -600,13 +660,22 @@ HeroArrayHeader *hero_lend_give_at(HeroArrayHeader *a, const void *buffer, int64
     HeroArrayHeader *fresh = hero_array_new(a->elem, extent);
     volatile sig_atomic_t *inside = hero_lend_enter();
     hero_lend_heal_to((const char *)buffer, 0);
-    if (hero_lend_depth < 1) hero_panic("a buffer lent to C was given back twice — this is a compiler bug, please report it");
-    HeroLendRegion *r = &hero_lend_regions[hero_lend_depth - 1];
+    HeroLendRegion *aside = NULL;
+    HeroLendRegion *r = hero_lend_depth > 0 ? &hero_lend_regions[hero_lend_depth - 1] : NULL;
+    if (r == NULL || r->local || (const char *)buffer != r->base + r->room - r->bytes) {
+        aside = hero_lend_aside_find((const char *)buffer, 0);
+        if (aside != NULL) r = aside;
+    }
+    if (r == NULL) hero_panic("a buffer lent to C was given back twice — this is a compiler bug, please report it");
     if (extent != r->extent || (const char *)buffer != r->base + r->room - bytes) hero_lend_misplaced("a buffer", where);
     if (bytes > 0) memcpy(hero_array_data(fresh), buffer, bytes);
-    hero_lend_depth -= 1;
-    hero_callback_held(-1);
-    hero_lend_retire(r);
+    if (aside != NULL) {
+        hero_lend_aside_release(aside);
+    } else {
+        hero_lend_depth -= 1;
+        hero_callback_held(-1);
+        hero_lend_retire(r);
+    }
     hero_lend_leave(inside);
     fresh->len = extent;
     hero_array_decref(a);
@@ -629,14 +698,9 @@ HeroArrayHeader *hero_lend_give(HeroArrayHeader *a, const void *buffer, int64_t 
 __attribute__((noinline)) void *hero_lend_local(size_t size, const char *owner, const char *name) {
     uintptr_t frame = HERO_CALLER_FRAME();
     volatile sig_atomic_t *inside = hero_lend_enter();
-    HeroLendRegion *r = hero_lend_push(size, owner, name, 1, NULL, frame);
+    HeroLendRegion *r = hero_lend_place(size, owner, name, 1, NULL, frame, 1);
     char *local = r->base + r->room - size;
     memset(local, 0, size);
-    r->local = 1;
-    r->owner = owner;
-    r->name = name;
-    r->callee = NULL;
-    r->param = NULL;
     hero_lend_leave(inside);
     return local;
 }
@@ -654,9 +718,11 @@ void hero_lend_local_name(void *local, const char *callee, const char *param) {
         if (r->local && r->base + r->room - r->bytes == (char *)local) {
             r->callee = callee;
             r->param = param;
-            break;
+            hero_lend_leave(inside);
+            return;
         }
     }
+    hero_lend_aside_name(local, callee, param);
     hero_lend_leave(inside);
 }
 
@@ -902,14 +968,23 @@ void hero_pad_clear(void *p, size_t size, size_t count, const size_t *masks, siz
 void hero_lend_local_give(void *local) {
     volatile sig_atomic_t *inside = hero_lend_enter();
     hero_lend_heal_to((const char *)local, 1);
-    if (hero_lend_depth < 1) hero_panic("a local lent to C was given back twice — this is a compiler bug, please report it");
-    HeroLendRegion *r = &hero_lend_regions[hero_lend_depth - 1];
+    HeroLendRegion *aside = NULL;
+    HeroLendRegion *r = hero_lend_depth > 0 ? &hero_lend_regions[hero_lend_depth - 1] : NULL;
+    if (r == NULL || !r->local || r->base + r->room - r->bytes != (char *)local) {
+        aside = hero_lend_aside_find((const char *)local, 1);
+        if (aside != NULL) r = aside;
+    }
+    if (r == NULL) hero_panic("a local lent to C was given back twice — this is a compiler bug, please report it");
     /* At the function's one exit, where no call of the program stands: a place
      * here would be the function's, which the message's owner already names. */
     if (!r->local || r->base + r->room - r->bytes != (char *)local) hero_lend_misplaced("a local", NULL);
-    hero_lend_depth -= 1;
-    hero_callback_held(-1);
-    hero_lend_retire(r);
+    if (aside != NULL) {
+        hero_lend_aside_release(aside);
+    } else {
+        hero_lend_depth -= 1;
+        hero_callback_held(-1);
+        hero_lend_retire(r);
+    }
     hero_lend_leave(inside);
 }
 
@@ -950,7 +1025,7 @@ __attribute__((unused)) static int hero_lend_fault_at(uintptr_t addr, HeroLendFa
         }
     }
 #endif
-    return 0;
+    return hero_lend_aside_fault_at(addr, out);
 }
 
 /* A count in decimal with no call at all, for the handler's message. */

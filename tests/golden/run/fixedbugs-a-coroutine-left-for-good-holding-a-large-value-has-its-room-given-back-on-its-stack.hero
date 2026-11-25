@@ -1,0 +1,115 @@
+# Fixed 2026-11-25, the defect lane panel258-r1 found beside defect 2752,
+# lane-coroutine-room: a `makecontext` coroutine takes a 256 KB record and is
+# left for good by `setcontext`, before a yield and after one, 5,000 times
+# each on the stack it is started on again, while `main` takes and gives
+# records of its own beside it. A correct program.
+# Symptom: the program aborted with `panic: stack exhausted in e5: the room
+# large values take off the stack is full, 1 GiB for the whole program`, 3
+# runs of 3: the coroutines' takes stood on the thread's room for good.
+# Cause: the room was one stack per thread, and no frame of the thread's own
+# stack judged a coroutine's take gone.
+# Fix: a coroutine's take stands aside, tagged with its stack's range
+# (`runtime/parts/stack_lane.c`); the next coroutine's thunk entered on that
+# stack, above where the abandoned frames took, gives them back
+# (`runtime/parts/frame_aside.c`), and `main`'s room never held them.
+extern "fixedbugs-coroutines-switched-by-hand.h"
+    function cr_start(k: i64, f: (function(i64) -> i64))
+    function cr_yield()
+    function cr_resume(k: i64) -> i64
+    function cr_quit()
+
+record E0
+    x: i64
+
+record E1
+    a: E0
+    b: E0
+    c: E0
+    d: E0
+    e: E0
+    f: E0
+    g: E0
+    h: E0
+
+record E2
+    a: E1
+    b: E1
+    c: E1
+    d: E1
+    e: E1
+    f: E1
+    g: E1
+    h: E1
+
+record E3
+    a: E2
+    b: E2
+    c: E2
+    d: E2
+    e: E2
+    f: E2
+    g: E2
+    h: E2
+
+record E4
+    a: E3
+    b: E3
+    c: E3
+    d: E3
+    e: E3
+    f: E3
+    g: E3
+    h: E3
+
+record E5
+    a: E4
+    b: E4
+    c: E4
+    d: E4
+    e: E4
+    f: E4
+    g: E4
+    h: E4
+
+function e4(n: i64) -> E4
+    v0 = E0(x: n)
+    v1 = E1(a: v0, b: v0, c: v0, d: v0, e: v0, f: v0, g: v0, h: v0)
+    v2 = E2(a: v1, b: v1, c: v1, d: v1, e: v1, f: v1, g: v1, h: v1)
+    v3 = E3(a: v2, b: v2, c: v2, d: v2, e: v2, f: v2, g: v2, h: v2)
+    return E4(a: v3, b: v3, c: v3, d: v3, e: v3, f: v3, g: v3, h: v3)
+
+function e5(n: i64) -> E5
+    v4 = e4(n)
+    return E5(a: v4, b: v4, c: v4, d: v4, e: v4, f: v4, g: v4, h: v4)
+
+function before(k: i64) -> i64
+    v = e5(k + 10)
+    cr_quit()
+    return v.a.a.a.a.a.x
+
+function after(k: i64) -> i64
+    v = e5(k + 10)
+    cr_yield()
+    cr_quit()
+    return v.a.a.a.a.a.x
+
+function hold(n: i64) -> i64
+    m = e5(n)
+    return m.h.h.h.h.h.x
+
+function main()
+    total: i64 @= 0
+    big = e4(3)
+
+    for i in range(from: 0, to: 5000)
+        cr_start(k: 0, f: before)
+        total @ total + hold(i % 7)
+
+    print("left before a yield, 5000 times: ", total, " ", big.a.a.a.a.x)
+
+    for i in range(from: 0, to: 5000)
+        cr_start(k: 1, f: after)
+        _ = cr_resume(k: 1)
+        total @ total + hold(i % 5)
+
+    print("left after a yield, 5000 times: ", total, " ", big.b.b.b.b.x)
