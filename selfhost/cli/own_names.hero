@@ -23,7 +23,14 @@
 #   note it is does not matter (defect 2389): `#define t1 t2` makes clang's
 #   error *redefinition of 't2'* at the real `t2`, its first note *previous
 #   definition is here* and only its second the macro's, and `#define f_left
-#   f_right` the same with *duplicate member*.
+#   f_right` the same with *duplicate member*. Nor which error carries it,
+#   where the first error's own line writes the macro (defect
+#   d-lane-macro-members-2): `#define hero_as 1` makes clang's first error
+#   *expected ';' after union* at the end of the `}` of `} hero_as;`, under
+#   no note, the macro's note under the next error at that row, and
+#   `#define h_t_Point 1` its first *declaration of anonymous struct must be
+#   a definition* at `typedef struct h_t_Point {`, the note under an error
+#   at another row; each an internal error at exit 2 until then.
 #
 # A name of no such form stays the compiler's at exit 2, so an emitter that
 # wrote a name outside its own is never told as a header's; a name of them
@@ -48,6 +55,7 @@ use cli/strings
 use cli/toolchain
 use diag
 use emit
+use emit/c_words
 use emit/clang_place
 use emit/ffi_lookup
 use emit/guarded_names
@@ -102,7 +110,9 @@ function kept(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str, @a
 # forms, or one of the emitter's own (`emitted_form`), which the C this
 # compiler writes uses where clang refuses it, or none. The macro is the one
 # the first note of an expansion under the error names, wherever that note
-# stands among the others, so the name under the caret is never asked: it
+# stands among the others, or, where the error carries none, under a later
+# error, where the first error's own line writes that macro (`explaining`,
+# defect d-lane-macro-members-2), so the name under the caret is never asked: it
 # is the macro's own where the macro's value is no name (`#define t1 0`), and
 # the name the macro wrote where it is (`#define t1 t2`). Only a macro the C
 # this compiler writes spelled is expanded in that C, and a name of those
@@ -116,7 +126,7 @@ function met(stderr: str, s: source.Source, decls: [ast.Decl], runtime: str) -> 
     if !in_programs_c(steps, s: s, decls: decls)
         return fail(code: "none", msg: "no name this compiler keeps to itself")
 
-    for note in clang_first.attached(rows, after: first.row)
+    for note in explaining(rows, first: first)
         expanded = macro_of(note.text)
 
         if expanded.is_err()
@@ -222,6 +232,39 @@ function held(name: str) -> str
 function bound(name: str, s: source.Source, decls: [ast.Decl]) -> bool
     return shadowed.binds(s, decls, name: name)
 
+# The notes under the first error, then every note of a macro's expansion
+# under a later error whose macro the first error's own line writes, in
+# order (defect d-lane-macro-members-2). Clang puts `expected ';' after
+# union` at the end of the `}` of `} hero_as;` under no note, the macro's
+# expansion the note of the next error at that row; and `declaration of
+# anonymous struct must be a definition` at the `struct` of `typedef struct
+# h_t_Point {`, under none either, the macro's expansion the note of an
+# error at another row that writes the name again. A macro the first error's
+# line does not write explains nothing there, and where clang quoted no line
+# under the first error none is read.
+function explaining(rows: [str], first: clang_first.First) -> [clang_first.Attached]
+    out: [clang_first.Attached] @= clang_first.attached(rows, after: first.row)
+    quoted = clang_excerpt.of(rows, after: first.row)
+
+    if quoted.is_err()
+        return out
+    written: {str: bool} @= {}
+    c_words.words_into(@written, text: quoted.must())
+    index: i64 @= first.row + 1
+
+    while index < rows.len()
+        line = clang_place.without_return(rows[index])
+
+        if line.len() > 0 && line[0] != ' ' && clang_place.included(line).is_err() && clang_first.severity_of(line) == clang_first.ERROR
+            for note in clang_first.attached(rows, after: index)
+                expanded = macro_of(note.text)
+
+                if !expanded.is_err() && !written[expanded.must()].is_err()
+                    out @ out.push(note)
+        index @ index + 1
+
+    return out
+
 ## Tests
 
 constant TEXT: str
@@ -283,6 +326,30 @@ test "a header's macro meeting a compiler's name is told whichever note expands 
     assert held("h12_count") == "count"
     assert macro_of("expanded from macro 'h0_p'").must() == "h0_p"
     assert macro_of("previous definition is here").is_err()
+
+# DEFECT d-lane-macro-members-2: clang's first error at the union's member
+# `} hero_as;` stands at the end of the `}`, under no note, and the macro's
+# expansion is the note of the next error at the same row; at a record's
+# `typedef struct h_femit_Point {` it stands at `struct`, under no note
+# either, and the macro's expansion is the note of an error at another row;
+# as Apple clang 21 wrote them on 2026-11-24 for `#define hero_as 1` and
+# `#define h_probe_Point 1`. A note of a macro the first error's line does
+# not write explains nothing there, and the error stays the compiler's.
+test "a header's macro over a name a line writes is told from a later error's note (defect d-lane-macro-members-2)"
+    s = source.new_source(name: "f_emit.hero", text: TEXT)
+    decls = parse.parse(TEXT).decls
+    first = "femit.c:146:6: error: expected ';' after union\n  146 |     } hero_as;\n      |      ^\n      |      ;\n"
+    next = "femit.c:146:7: error: type name requires a specifier or qualifier\n  146 |     } hero_as;\n      |       ^\nIn file included from build/tu-1/femit.c:28:\n./f_emit.h:1:17: note: expanded from macro 'hero_as'\n    1 | #define hero_as 1\n      |                 ^\n"
+    d = met(stderr: first + next, s: s, decls: decls, runtime: "runtime").must()
+    assert d.code == "ffi_header_refused"
+    assert d.message == "`f_emit.h`, the header this group names, does not compile in this program's unit: its line 1 defines `hero_as` as a macro, a name the C this compiler writes keeps to itself, and clang refuses that C where the macro rewrites it: expected ';' after union"
+    assert d.notes[0] == "`f_emit.h` line 1 reads `#define hero_as 1`"
+    struct_line = "femit.c:173:9: error: declaration of anonymous struct must be a definition\n  173 | typedef struct h_femit_Point {\n      |         ^\nfemit.c:173:1: error: typedef requires a name [-Werror,-Wmissing-declarations]\n  173 | typedef struct h_femit_Point {\n      | ^~~~~~~\n"
+    used = "femit.c:238:9: error: type name requires a specifier or qualifier\n  238 |         h_femit_Point hero_ok;\n      |         ^\nIn file included from build/tu-1/femit.c:28:\n./f_emit.h:2:23: note: expanded from macro 'h_femit_Point'\n    2 | #define h_femit_Point 1\n      |                       ^\n"
+    by_line = met(stderr: struct_line + used, s: s, decls: decls, runtime: "runtime").must()
+    assert by_line.message == "`f_emit.h`, the header this group names, does not compile in this program's unit: its line 2 defines `h_femit_Point` as a macro, a name the C this compiler writes keeps to itself, and clang refuses that C where the macro rewrites it: declaration of anonymous struct must be a definition"
+    other = "femit.c:238:9: error: type name requires a specifier or qualifier\n  238 |         hero_tag x;\n      |         ^\nIn file included from build/tu-1/femit.c:28:\n./f_emit.h:1:17: note: expanded from macro 'hero_tag'\n    1 | #define hero_tag 1\n      |                 ^\n"
+    assert met(stderr: first + other, s: s, decls: decls, runtime: "runtime").is_err()
 
 # **Panel 214's R4: the runtime's names held to those forms**, the one false
 # blame every route shares (the compiler-engineer's NC1): a runtime that

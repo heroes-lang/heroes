@@ -1,0 +1,25 @@
+# fixedbugs, lane macro-members2, 2026-11-24 (found beside the repair of the
+# member after a union's brace).
+#
+# SYMPTOM: a header defining as a macro the C name this compiler writes for
+# a record of the program, `h_<module>_Point`, was *internal error* at exit
+# 2: clang's first error, *declaration of anonymous struct must be a
+# definition*, stands at the `struct` of `typedef struct h_..._Point {` under
+# no note, and the macro's expansion is the note of an error at another row
+# that writes the name again. A variant's, a case's and a `T?`'s C names
+# were the same.
+#
+# FIX: panel 214's R3 reads the macro from a later error's note where the
+# first error's own line writes it (`cli/own_names.hero`, `explaining`), so
+# the header is told at exit 1.
+
+extern "fixedbugs-a-header-s-macro-over-a-record-s-c-name-is-told.h"  #~ ffi_header_refused
+    function seven() -> i64
+
+record Point
+    x: i64
+    y: i64
+
+function main()
+    p = Point(x: seven(), y: 2)
+    print(p.x + p.y)

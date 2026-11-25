@@ -1,0 +1,9 @@
+error[ffi_header_refused]: `fixedbugs-a-header-s-macro-over-an-option-s-member-after-its-brace-is-told.h`, the header this group names, does not compile in this program's unit: its line 3 defines `hero_as` as a macro, a name the C this compiler writes keeps to itself, and clang refuses that C where the macro rewrites it: expected ';' after union
+  at tests/golden/unsupported/fixedbugs-a-header-s-macro-over-an-option-s-member-after-its-brace-is-told.hero:14:8
+     |
+  14 | extern "fixedbugs-a-header-s-macro-over-an-option-s-member-after-its-brace-is-told.h"  #~ ffi_header_refused
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: `fixedbugs-a-header-s-macro-over-an-option-s-member-after-its-brace-is-told.h` line 3 reads `#define hero_as 1`
+  note: this compiler's `hero_as` is a name the C it writes for every program declares, of the forms it keeps to itself: `h_`, `hero_`, `Hero`, `HERO_`, `HEROES_` and `main`
+  note: a group's header is compiled as this program's own C includes it, before any declaration of the group is checked against it: repair the header, or name the one that declares this group's C
+  fix (guess): rename `hero_as` in `fixedbugs-a-header-s-macro-over-an-option-s-member-after-its-brace-is-told.h`, a name this compiler keeps to itself
