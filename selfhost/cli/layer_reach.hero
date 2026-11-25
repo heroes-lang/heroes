@@ -26,6 +26,7 @@ use ast
 use cli/io
 use cli/layer
 use cli/layer_swift
+use cli/process
 use cli/runtime_key
 use cli/toolchain
 use emit/externs as emit_externs
@@ -38,7 +39,18 @@ use token
 # the runtime object's is (`cli/produce.hero`, defect 134): a member clang
 # refused is the compiler's, *internal error* with clang's words; any other
 # failure is the machine's, said as itself by the caller.
-function for_build(t: toolchain.Toolchain, level: str, sanitize: bool, s: source.Source, decls: [ast.Decl]) -> [str]?
+#
+# **None where the build `links` nothing** (`--emit-c`): the archive is a
+# word of the link line alone (`assemble.linked_round`), so a build that
+# writes C and links nothing asks the layer nothing. Measured on this Mac on
+# 2026-11-25 (load 8 to 9): asking the 43 members what they reach, one clang
+# each, cost every warm build 2.4 s, and every emission paid it for a link it
+# never makes.
+function for_build(t: toolchain.Toolchain, level: str, sanitize: bool, s: source.Source, decls: [ast.Decl], links: bool) -> [str]?
+    unlinked: [str] = []
+
+    if !links
+        return ok(unlinked)
     swift = reached(t, named: headers_of(s, decls))?
     made = layer.archive(t, level: level, sanitize: sanitize, swift: swift)
 
@@ -217,6 +229,21 @@ function has_part(text: str, part: str) -> bool
     return false
 
 ## Tests
+
+# **A build that links nothing asks the layer nothing** (`--emit-c`): no
+# word for a link it never makes, and no member asked or compiled, so its
+# `build/` is never even made; a build that links is every other test's.
+test "a build that links nothing asks the platform layer nothing"
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-layer-unlinked"
+    assert !process.remove_tree(t.build).is_err()
+    none: [ast.Decl] = []
+    s = source.new_source(
+        name: "main.hero",
+        text: "extern \"hero_time.h\"\n    function hero_time_monotonic_ns() -> i64\n"
+    )
+    assert for_build(t, level: "-O0", sanitize: false, s: s, decls: none, links: false).must().len() == 0
+    assert !process.path_exists(t.build)
 
 test "a program reaches a member written in Swift only through the C member that includes its header (defect 2625)"
     t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
