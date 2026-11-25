@@ -21,6 +21,15 @@ constant INVALID: str
 
 ## Nodes
 
+# The permission bits every link is recorded with, whatever the system
+# gave it. A link's own bits are not what a backup keeps: the system makes
+# them, 0o777 on Linux and what the umask leaves on macOS (0o755 under
+# 022), Linux has no call that sets them, and a restore leaves them as the
+# system makes them. Recorded as given, they would make the same folder's
+# tree, and so its snapshot's name, differ by the system that read it.
+constant LINK_MODE: i64
+    0o777
+
 # What a node is.
 variant Kind
     # A file of bytes.
@@ -36,7 +45,7 @@ record Node
     name: str
     # What it is.
     kind: Kind
-    # Its permission bits, 0 to 0o7777.
+    # Its permission bits, 0 to 0o7777; `LINK_MODE` for a link.
     mode: i64
     # When its content was last written, in nanoseconds since 1970.
     modified: i64

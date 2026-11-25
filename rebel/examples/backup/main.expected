@@ -4,31 +4,31 @@ docs/guide.md sha256 74a40f2d0eb21eb2, docs/guide-copy.md the same bytes
 == a repository made in build/backup-demo/repo
 chunks of 256 to 4096 bytes, 2^10 past the least on average; packs of 32.0 KiB; Zstandard level 3
 == run 1, 2026-03-01T09:00:00Z
-snapshot 332a014c saved: 10 files, 4 folders, 1 link, 71.8 KiB
+snapshot 3e5b1552 saved: 10 files, 4 folders, 1 link, 71.8 KiB
   files read: 10, no parent snapshot
   chunks: 77, new 67: 63.9 KiB plain, 27.8 KiB stored, 6 kept uncompressed
   lookups: 77, new by the summary alone 67, held already 10, false maybes 0; index read 0 times
   written: 1 pack, 4 trees
 == the folder edited: a paragraph inserted into docs/guide.md, ten records of data/telemetry.bin rewritten, docs/draft.txt added
 == run 2, 2026-03-02T09:00:00Z
-snapshot 486efa1b saved: 11 files, 4 folders, 1 link, 74.9 KiB
-  files read: 3, 8 unchanged since 332a014c
+snapshot b245878c saved: 11 files, 4 folders, 1 link, 74.9 KiB
+  files read: 3, 8 unchanged since 3e5b1552
   chunks: 82, new 7: 5.6 KiB plain, 2.9 KiB stored, 0 kept uncompressed
   lookups: 60, new by the summary alone 7, held already 53, false maybes 0; index read 1 time
   written: 1 pack, 3 trees
 == the folder edited: docs/draft.txt removed, a paragraph appended to docs/notes.txt, bin/sync.sh made 0700
 == run 3, 2026-03-02T18:00:00Z
-snapshot 9fd5594b saved: 10 files, 4 folders, 1 link, 72.4 KiB
-  files read: 2, 8 unchanged since 486efa1b
+snapshot e2a7a6ec saved: 10 files, 4 folders, 1 link, 72.4 KiB
+  files read: 2, 8 unchanged since b245878c
   chunks: 78, new 1: 915 B plain, 520 B stored, 0 kept uncompressed
   lookups: 4, new by the summary alone 1, held already 3, false maybes 0; index read 1 time
   written: 1 pack, 3 trees
 == the snapshots
 id        time (UTC)           host       folder                    files  size
 --------  -------------------  ---------  ------------------------  -----  --------
-9fd5594b  2026-03-02 18:00:00  demo-host  build/backup-demo/source     10  72.4 KiB
-486efa1b  2026-03-02 09:00:00  demo-host  build/backup-demo/source     11  74.9 KiB
-332a014c  2026-03-01 09:00:00  demo-host  build/backup-demo/source     10  71.8 KiB
+e2a7a6ec  2026-03-02 18:00:00  demo-host  build/backup-demo/source     10  72.4 KiB
+b245878c  2026-03-02 09:00:00  demo-host  build/backup-demo/source     11  74.9 KiB
+3e5b1552  2026-03-01 09:00:00  demo-host  build/backup-demo/source     10  71.8 KiB
 
 the snapshots hold 219.1 KiB, the packs 39.6 KiB: deduplicated and compressed 5.54x
 the repository holds 3 packs, 10 trees, 3 index files, 3 snapshots, 1 key file
@@ -42,9 +42,9 @@ restored 1 file, 0 folders, 0 links, 7.9 KiB
 sha256 74a40f2d0eb21eb2: the bytes docs/guide.md held before the first run
 == forget, keeping the newest snapshot of each of the two newest days
 policy: daily 2
-  keep   9fd5594b 2026-03-02 18:00:00 (daily)
-  forget 486efa1b 2026-03-02 09:00:00
-  keep   332a014c 2026-03-01 09:00:00 (daily)
+  keep   e2a7a6ec 2026-03-02 18:00:00 (daily)
+  forget b245878c 2026-03-02 09:00:00
+  keep   3e5b1552 2026-03-01 09:00:00 (daily)
 == prune
 pruned: 2 snapshots walked, 8 trees kept, 2 trees removed
   chunks: 71 kept, 4 removed, 0 missing
@@ -56,7 +56,7 @@ the repository holds 3 packs, 8 trees, 1 index file, 2 snapshots, 1 key file
 checked 71 chunks in 3 packs: 0 damaged
 == the newest snapshot exported as a tar archive
 exported 10 files, 3 folders, 1 link, 72.4 KiB
-latest.tar: 85504 bytes, sha256 04ca98af03fa5360
+latest.tar: 85504 bytes, sha256 56500cc9c5e1eb6c
 read back by archive: 14 entries; extracted and compared with the folder: 0 differences of content
 == an S3 service started on loopback: the demo's stand-in
 s3: ready on loopback, checking every request's Signature Version 4
@@ -67,8 +67,8 @@ copied 0 objects, 0 B; 17 there already
 == the repository opened from the bucket with the same password
 id        time (UTC)           host       folder                    files  size
 --------  -------------------  ---------  ------------------------  -----  --------
-9fd5594b  2026-03-02 18:00:00  demo-host  build/backup-demo/source     10  72.4 KiB
-332a014c  2026-03-01 09:00:00  demo-host  build/backup-demo/source     10  71.8 KiB
+e2a7a6ec  2026-03-02 18:00:00  demo-host  build/backup-demo/source     10  72.4 KiB
+3e5b1552  2026-03-01 09:00:00  demo-host  build/backup-demo/source     10  71.8 KiB
 
 restored 10 files, 4 folders, 1 link, 72.4 KiB
   chunks checked: 78, packs read: 3
@@ -77,7 +77,7 @@ compared with the folder: 0 differences
 == a client signing with another secret
 refused (permission): SignatureDoesNotMatch
 == what the S3 service saw
-s3: 17 objects, 51568 bytes in backups; 19 puts, 16 gets, 5 listings, 0 deletes; 3 refused on purpose, 1 refused for their signature
+s3: 17 objects, 51575 bytes in backups; 19 puts, 16 gets, 5 listings, 0 deletes; 3 refused on purpose, 1 refused for their signature
 == one byte of a pack changed on the storage, then the check run again
 checked 71 chunks in 3 packs: 1 damaged
   chunk d98467ee8bdc in pack 013b6d901e97
