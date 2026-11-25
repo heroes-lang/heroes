@@ -422,11 +422,14 @@ test "every other TOML form is refused with its line, and a refused line names n
     json = Entry(name: "json", version: "1.4.2", git: "", tag: "", commit: "", path: "", sum: sum)
     assert source_of(json, index: "file://../idx", folder: "") == source_of(json, index: "file://./../idx", folder: "")
     assert source_of(json, index: "file://../idx", folder: "") != source_of(json, index: "file://../other", folder: "")
-    spelt = parsed(
-        file: "h",
-        text: "[dependencies.a]\ngit = \"https://Git.Example.org/ana/yaml\"\ntag = \"v1\"\ncommit = \"" + "b".repeat(40.to_u64().must()) + "\"\nsum = \"" + sum + "\"\n\n[dependencies.b]\ngit = \"https://git.example.org:443/ana/./yaml\"\ntag = \"v1\"\ncommit = \"" + "b".repeat(40.to_u64().must()) + "\"\nsum = \"" + sum + "\"\n"
+
+    # Asked by `read`, from the folder the catalogue stands in (defect
+    # d-lane-blocking-small2-2), and naming both sources.
+    spelt = one_package_each(
+        parsed(file: "h", text: "[dependencies.a]\ngit = \"https://Git.Example.org/ana/yaml\"\ntag = \"v1\"\ncommit = \"" + "b".repeat(40.to_u64().must()) + "\"\nsum = \"" + sum + "\"\n\n[dependencies.b]\ngit = \"https://git.example.org:443/ana/./yaml\"\ntag = \"v1\"\ncommit = \"" + "b".repeat(40.to_u64().must()) + "\"\nsum = \"" + sum + "\"\n"),
+        folder: ""
     )
-    assert spelt.problem == "h: the entries `a` and `b` name one package, and a program holds one version of each package under one name"
+    assert spelt.problem == "h: the entries `a` and `b` name one package, `https://Git.Example.org/ana/yaml` and `https://git.example.org:443/ana/./yaml`, and a program holds one version of each package under one name"
 
     # The lines read before the refused one are never used (R5).
     broken = parsed(file: "h", text: "[dependencies.rebel]\npath = \"../rebel\"\nversion = 1\n")
