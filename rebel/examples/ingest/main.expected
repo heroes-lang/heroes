@@ -75,4 +75,4 @@ pipeline_writes_replayed_total 1
 kafka: 19 records in 4 batches appended, 0 refused
 kafka: group events-archiver at generation 1, Empty, offsets clicks/0=7 orders/0=1 orders/1=10
 s3: 14 objects, 3067 bytes in events-archive; 14 puts taken, 3 refused on purpose, 0 refused for their signature; 6 objects read, 3 listings
-postgres: 1 logins taken, 0 refused; rows by table: applied_migrations 3, batches 14, rebel_jobs 1, rebel_jobs_periodic 0, rebel_jobs_queues 0, window_aggregates 9
+postgres: 1 logins taken, 0 refused; rows by table: applied_migrations 3, batches 14, rebel_jobs 1, rebel_jobs_limits 0, rebel_jobs_periodic 0, rebel_jobs_queues 0, window_aggregates 9
