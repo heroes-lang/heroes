@@ -428,7 +428,7 @@ HERO_TU_LOCAL void h_0run_48ac9712(HeroThreadBox *hero_head) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7ad5db6e353e00c5", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("54795ea7731bff5a", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2754athreadcendsbeforeitsfunctionreturnsistoldatitswait\tfixedbugs-2754-a-thread-c-ends-before-its-function-returns-is-told-at-its-wait\n");

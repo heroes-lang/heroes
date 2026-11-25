@@ -64,25 +64,44 @@
 #include <windows.h>
 #endif
 
-static _Thread_local int64_t hero_callbacks_inside = 0;
+/* The thread's count of callbacks entered and not left, and beside it how
+ * many entries of the large-value room and the lend regions the thread holds
+ * (panel 258's R1, below), in one thread-local, so that a thunk's entry,
+ * which writes the first, reads the second where the address is already in
+ * hand: on Darwin each thread-local is reached through a call of its own,
+ * and the healing's question at every thunk's entry, asked of the room's and
+ * the regions' own counts, cost 46 instructions a callback at `-O2` and 65 at
+ * `-O0` (20 million callbacks, instructions retired, `cost_cb`). `held` is a
+ * hint and never a judgement: a count too high asks the room and the regions
+ * for nothing, and every entry those find is judged by its frame. */
+typedef struct {
+    int64_t inside;
+    int64_t held;
+} HeroCallbackThread;
+
+static _Thread_local HeroCallbackThread hero_callback_thread = {0, 0};
 static _Atomic int64_t hero_callbacks_unfinished_by_ended = 0;
 
-static void hero_callback_in(void) { hero_callbacks_inside += 1; }
+static void hero_callback_in(void) { hero_callback_thread.inside += 1; }
 
-void hero_callback_left(void) { hero_callbacks_inside -= 1; }
+void hero_callback_left(void) { hero_callback_thread.inside -= 1; }
+
+/* An entry of the room or of the lend regions taken (`by` 1) or given back
+ * (`by` -1, or minus all of them as a thread ends). */
+static void hero_callback_held(int64_t by) { hero_callback_thread.held += by; }
 
 /* A thread the program started ends: what it still holds joins the sum. */
 static void hero_callback_thread_ends(void) {
-    int64_t held = hero_callbacks_inside;
+    int64_t held = hero_callback_thread.inside;
     if (held != 0) atomic_fetch_add_explicit(&hero_callbacks_unfinished_by_ended, held, memory_order_relaxed);
-    hero_callbacks_inside = 0;
+    hero_callback_thread.inside = 0;
 }
 
 /* Callbacks entered and not left, at the end of the program: the main
  * thread's own, and every ended thread's. Positive says a frame never
  * finished. */
 static int64_t hero_callbacks_unfinished(void) {
-    return hero_callbacks_inside + atomic_load_explicit(&hero_callbacks_unfinished_by_ended, memory_order_relaxed);
+    return hero_callback_thread.inside + atomic_load_explicit(&hero_callbacks_unfinished_by_ended, memory_order_relaxed);
 }
 
 /* THE GATES' WORDS WHERE A CALLBACK NEVER RETURNED (panel 258's R1,
@@ -111,18 +130,35 @@ static int64_t hero_callbacks_unfinished(void) {
  * and the regions climbed one depth a jump (`lendjump`, 334.7 MB resident
  * after 20,000 jumps against 3.0 MB where C returns).
  *
- * So each entry remembers the frame that took it, the taking function's own
- * `__builtin_frame_address(0)`, which `heroes_runtime.h`'s macros hand in
- * from the program's own C (the emitted calls are written as before), and the
- * two stacks HEAL: where a function takes an entry, or a thunk is entered,
- * every entry of a frame deeper than the one asking, on this thread's stack,
- * belongs to a frame that is gone, since the one asking is the deepest alive;
- * it is given back first. A frame's address is the same for its whole call
- * and lower than every caller's, wherever its function was inlined, on every
- * platform: the builtin makes the function keep a frame pointer. The thunk's
- * entry is what catches a frame jumped over and then called again at the same
- * address (the loop of `lendjump`), which no take of the new frame can tell
- * from its own.
+ * So each entry remembers the frame that took it, read by the take itself
+ * from where it was called (HERO_CALLER_FRAME, below), and the two stacks
+ * HEAL: where a function takes an entry, or a thunk is entered, every entry of
+ * a frame deeper than the one asking, on this thread's stack, belongs to a
+ * frame that is gone, since the one asking is the deepest alive; it is given
+ * back first. A frame's mark is the same for its whole call and lower than
+ * every caller's, wherever its function was inlined. The thunk's entry is what
+ * catches a frame jumped over and then called again at the same address (the
+ * loop of `lendjump`), which no take of the new frame can tell from its own.
+ *
+ * THE MARK IS THE CALLER'S FRAME, ASKED BY THE TAKE, so the program's C calls
+ * the takes as it always has and the unit's headers gain no macro (panel 214's
+ * R4 holds the runtime's macros to `HERO_`; a first form of this repair, the
+ * three takes as macros handing in `__builtin_frame_address(0)`, broke it,
+ * the compiler's own test told it). Each take is never inlined and reads:
+ *
+ *   - on POSIX, its caller's frame record, `__builtin_frame_address(1)`. Every
+ *     unit keeps one in each function that calls another, the word
+ *     `-fno-omit-frame-pointer` on x86-64 and AArch64's own default
+ *     (`selfhost/cli/flags.hero`'s `frame_words`, which an abort's walk of
+ *     its calls needs too, panel 253's R5), and a function that calls a take
+ *     calls another;
+ *   - on Windows x86-64, which keeps no frame record there, the address its
+ *     return address was pushed at, `_AddressOfReturnAddress()`: the caller's
+ *     stack pointer at the call, which the Windows x64 calling convention
+ *     keeps still outside a function's prologue and epilogue for every
+ *     function with no dynamic allocation, and the program's C allocates
+ *     none on the stack. Unrun on Windows on the day it was written (the box
+ *     was off; the CI's Windows leg is the first to run it).
  *
  * ON THIS THREAD'S OWN STACK, AND ONLY THERE. A coroutine runs on a stack of
  * its own, above or below this one, and its frames are no deeper than this
@@ -138,6 +174,17 @@ static int64_t hero_callbacks_unfinished(void) {
 static _Thread_local uintptr_t hero_heal_lo = 0;
 static _Thread_local uintptr_t hero_heal_hi = 0;
 static _Thread_local int hero_heal_measured = 0;
+#endif
+
+/* The mark of the frame that called the runtime function this is written in,
+ * which must be `noinline` (the head's THE MARK IS THE CALLER'S FRAME). */
+#if defined(_WIN32) && defined(__x86_64__)
+#include <intrin.h>
+#define HERO_CALLER_FRAME() ((uintptr_t)_AddressOfReturnAddress())
+#else
+#define HERO_CALLER_FRAME()                                                                              \
+    (_Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wframe-address\"")(uintptr_t) \
+         __builtin_frame_address(1) _Pragma("clang diagnostic pop"))
 #endif
 
 /* Whether `deeper` is the address of a frame below `frame`, both on this
@@ -177,6 +224,7 @@ static void hero_lend_heal_below(uintptr_t frame);
  * was inlined into named that function's frame, and this line then gave back
  * the room that function still held (defect 2286's case at `-O2`, run). */
 static void hero_callback_heal(void *frame) {
+    if (hero_callback_thread.held == 0) return;
     uintptr_t above = (uintptr_t)frame + 1;
     hero_frame_heal_below(above);
     hero_lend_heal_below(above);

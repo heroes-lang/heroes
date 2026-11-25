@@ -9,6 +9,7 @@
 # `add.hero` what the verb does with it.
 
 use cli/argv
+use cli/given_path
 use cli/process
 use cli/stands
 use fetch/address
@@ -53,7 +54,7 @@ function folder_entry(inv: argv.Invocation, program: str, folder: str, c: catalo
             code: "bad_usage",
             msg: "`--path` names the package's folder, so `add` takes no package, `--tag` or `--index` beside it"
         )
-    name = argv.value_of(inv, spelling: "--as").default(last_part(folder))
+    name = argv.value_of(inv, spelling: "--as").default(given_path.last_part(folder))
 
     if entry_name.refused(name).len() > 0
         return fail(
@@ -66,15 +67,19 @@ function folder_entry(inv: argv.Invocation, program: str, folder: str, c: catalo
 
     # Where something other than a folder stands there, what it is (defect
     # 2572): a FIFO, a socket, a device or a link to nothing was told as no
-    # folder at all.
-    if !process.is_directory(program + folder)
-        stood = stands.said(program + folder)
+    # folder at all. The folder is asked where the build reads it, a rooted
+    # path as written, and told as the author wrote it (`cli/given_path`):
+    # `/abs/lib` was looked for at `app//abs/lib`.
+    at = given_path.read_from(folder: program, path: folder)
+
+    if !process.is_directory(at)
+        stood = stands.said(at)
 
         if stood == "nothing"
-            return fail(code: "absent", msg: "there is no folder `" + program + folder + "`")
+            return fail(code: "absent", msg: "there is no folder " + given_path.said(folder: program, path: folder))
         return fail(
             code: "absent",
-            msg: "`" + program + folder + "` is " + stood + ", where `--path` names a package's folder"
+            msg: given_path.said(folder: program, path: folder) + " is " + stood + ", where `--path` names a package's folder"
         )
     return ok(e)
 
@@ -286,16 +291,3 @@ function looks_addressed(asked: str) -> bool
             return true
 
     return false
-
-function last_part(folder: str) -> str
-    end: i64 @= folder.len()
-
-    while end > 0 && folder[end - 1] == '/'
-        end @ end - 1
-
-    at: i64 @= end
-
-    while at > 0 && folder[at - 1] != '/'
-        at @ at - 1
-
-    return folder.slice(from: at, to: end)

@@ -23,6 +23,7 @@
 
 use cli/argv
 use cli/files
+use cli/given_path
 use cli/process
 use cli/publish
 use cli/strings
@@ -93,8 +94,7 @@ function listed_in_folder(program: str, e: catalogue.Entry, inside: str, wanted:
     if folder[folder.len() - 1] != '/'
         folder @ folder + "/"
 
-    if folder[0] != '/'
-        folder @ program + folder
+    folder @ given_path.read_from(folder: program, path: folder)
 
     if !files.is_file(folder + inside + ".hero")
         return [

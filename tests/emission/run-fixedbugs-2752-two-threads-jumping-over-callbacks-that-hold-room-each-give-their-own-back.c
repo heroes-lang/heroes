@@ -773,7 +773,7 @@ HERO_TU_LOCAL void h_0run_48ac9712(HeroThreadBox *hero_head) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("01974b3f03662416", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5b3ace77414422ab", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2752twothreadsjumpingovercallbacksthatholdroomeachgivetheirownback\tfixedbugs-2752-two-threads-jumping-over-callbacks-that-hold-room-each-give-their-own-back\n");

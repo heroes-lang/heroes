@@ -417,6 +417,7 @@ static void hero_lend_retire(HeroLendRegion *r);
 static void hero_lend_heal_inside(uintptr_t frame) {
     while (hero_lend_depth > 0 && hero_frame_is_below(hero_lend_regions[hero_lend_depth - 1].frame, frame)) {
         hero_lend_depth -= 1;
+        hero_callback_held(-1);
         hero_lend_retire(&hero_lend_regions[hero_lend_depth]);
     }
 }
@@ -450,6 +451,7 @@ static void hero_lend_heal_to(const char *what, int local) {
     }
     while (hero_lend_depth > at + 1) {
         hero_lend_depth -= 1;
+        hero_callback_held(-1);
         hero_lend_retire(&hero_lend_regions[hero_lend_depth]);
     }
 }
@@ -494,6 +496,7 @@ static HeroLendRegion *hero_lend_push(size_t bytes, const char *callee, const ch
     r->name = NULL;
     r->frame = frame;
     hero_lend_depth += 1;
+    hero_callback_held(1);
     return r;
 }
 
@@ -550,13 +553,14 @@ int64_t hero_lend_count_u64(uint64_t n, const char *callee, const char *param) {
     return hero_lend_count_u64_at(n, callee, param, NULL);
 }
 
-/* The give and the count hold their bodies in the `_at` twins, which the
- * program's C hands its call's record (panel 230's R1, kind 2); the old names
- * hand them NULL, which names no place. The take is `hero_lend_take_in`, which
- * both of `heroes_runtime.h`'s take macros reach with the lending function's
- * own frame (panel 258's R1). */
-__attribute__((noinline)) void *hero_lend_take_in(const HeroArrayHeader *from, int64_t extent, const char *callee,
-                                                  const char *param, const HeroPlace *where, void *frame) {
+/* The take, the give and the count hold their bodies in the `_at` twins, which
+ * the program's C hands its call's record (panel 230's R1, kind 2); the old
+ * names hand them NULL, which names no place. The take's body is
+ * `hero_lend_take_from`, which both takes reach with the lending function's
+ * frame, each read from where it was called and so neither inlined (panel
+ * 258's R1, `parts/callback.c`'s HERO_CALLER_FRAME). */
+static void *hero_lend_take_from(const HeroArrayHeader *from, int64_t extent, const char *callee, const char *param,
+                                 const HeroPlace *where, uintptr_t frame) {
     hero_array_require(from);
     if (extent < 0) {
         hero_lend_refuse(callee, param, "an extent is a number of elements, never below zero", extent, where);
@@ -567,7 +571,7 @@ __attribute__((noinline)) void *hero_lend_take_in(const HeroArrayHeader *from, i
         hero_lend_refuse(callee, param, "that many bytes cannot be mapped", extent, where);
     }
     volatile sig_atomic_t *inside = hero_lend_enter();
-    HeroLendRegion *r = hero_lend_push(bytes, callee, param, extent, where, (uintptr_t)frame);
+    HeroLendRegion *r = hero_lend_push(bytes, callee, param, extent, where, frame);
     char *buffer = r->base + r->room - bytes;
     int64_t kept = from->len < extent ? from->len : extent;
     size_t copied = (size_t)kept * size;
@@ -575,6 +579,16 @@ __attribute__((noinline)) void *hero_lend_take_in(const HeroArrayHeader *from, i
     memset(buffer + copied, 0, bytes - copied);
     hero_lend_leave(inside);
     return buffer;
+}
+
+__attribute__((noinline)) void *hero_lend_take_at(const HeroArrayHeader *from, int64_t extent, const char *callee,
+                                                  const char *param, const HeroPlace *where) {
+    return hero_lend_take_from(from, extent, callee, param, where, HERO_CALLER_FRAME());
+}
+
+__attribute__((noinline)) void *hero_lend_take(const HeroArrayHeader *from, int64_t extent, const char *callee,
+                                               const char *param) {
+    return hero_lend_take_from(from, extent, callee, param, NULL, HERO_CALLER_FRAME());
 }
 
 /* The array the buffer becomes is allocated before the bracket and the one it
@@ -591,6 +605,7 @@ HeroArrayHeader *hero_lend_give_at(HeroArrayHeader *a, const void *buffer, int64
     if (extent != r->extent || (const char *)buffer != r->base + r->room - bytes) hero_lend_misplaced("a buffer", where);
     if (bytes > 0) memcpy(hero_array_data(fresh), buffer, bytes);
     hero_lend_depth -= 1;
+    hero_callback_held(-1);
     hero_lend_retire(r);
     hero_lend_leave(inside);
     fresh->len = extent;
@@ -611,9 +626,10 @@ HeroArrayHeader *hero_lend_give(HeroArrayHeader *a, const void *buffer, int64_t 
  * is handed the local itself, never a copy, and one byte past it is the guard
  * page. Zeroed, which is the value a refcounted slot starts at and the one the
  * frame would not have given any other. */
-__attribute__((noinline)) void *hero_lend_local_in(size_t size, const char *owner, const char *name, void *frame) {
+__attribute__((noinline)) void *hero_lend_local(size_t size, const char *owner, const char *name) {
+    uintptr_t frame = HERO_CALLER_FRAME();
     volatile sig_atomic_t *inside = hero_lend_enter();
-    HeroLendRegion *r = hero_lend_push(size, owner, name, 1, NULL, (uintptr_t)frame);
+    HeroLendRegion *r = hero_lend_push(size, owner, name, 1, NULL, frame);
     char *local = r->base + r->room - size;
     memset(local, 0, size);
     r->local = 1;
@@ -892,6 +908,7 @@ void hero_lend_local_give(void *local) {
      * here would be the function's, which the message's owner already names. */
     if (!r->local || r->base + r->room - r->bytes != (char *)local) hero_lend_misplaced("a local", NULL);
     hero_lend_depth -= 1;
+    hero_callback_held(-1);
     hero_lend_retire(r);
     hero_lend_leave(inside);
 }
@@ -1040,6 +1057,7 @@ static void hero_lend_thread_leave(void) {
     }
     hero_lend_regions = NULL;
     hero_lend_cap = 0;
+    hero_callback_held(-hero_lend_depth);
     hero_lend_depth = 0;
 #if defined(HERO_LEND_QUARANTINE)
     if (hero_lend_retired != NULL) {

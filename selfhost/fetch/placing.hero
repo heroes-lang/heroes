@@ -17,6 +17,7 @@
 # part, placed for another line or whole before the line was written, is
 # placed anew, every file of it being the version's (`fetch/staging.hero`).
 
+use cli/given_path
 use cli/process
 use fetch/address
 use fetch/closure
@@ -38,8 +39,11 @@ record Placed
 # `packages` line, empty for the whole version; a tree fetched is written into
 # the run's `ledger`.
 function placed_tree(@ledger: staging.Ledger, tools: transport.Tools, e: catalogue.Entry, program: str, root: address.Root, index: str, listed: [str]) -> Placed?
+    # A rooted `path` is read as written (`cli/given_path`): joined under
+    # the program's folder, its own catalogue was read from a place nobody
+    # named, and the requirements it names were dropped in silence.
     if e.path.len() > 0
-        return ok(Placed(folder: program + e.path, fetched: false))
+        return ok(Placed(folder: given_path.read_from(folder: program, path: e.path), fetched: false))
     at = program + "heroes.packages/" + placed.key(e, index: index)
 
     if process.is_directory(at) && fingerprint.of(at).default("") == e.sum && closure.holds_exactly(at, listed: listed)
