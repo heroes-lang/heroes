@@ -19,7 +19,11 @@
 # Lane rebel-suite3b (2026-11-24) kept four twins of the faces merged that
 # day, each one word for two things: `copy` of an access list and of
 # extended attributes, `is_name` of a log's name and of an object of `ipc`,
-# `read` and `remove` of an extended attribute and of a secret.
+# `read` and `remove` of an extended attribute and of a secret. Lane
+# jobs-twins (2026-11-25) made one copy of what `jobs`'s two stores wrote
+# twice for their tests, a child started, a taker's tally and a change of
+# rate's arithmetic, in `jobs/internal/takers` and `jobs/internal/gcra`, and
+# kept the steps of `changed`, each store's own calls.
 
 # A finding the review keeps: the instrument's check, the key it is kept
 # under (what the readout prints after `under`), and the reason.
@@ -135,6 +139,10 @@ constant SPANS_TO_DOORS: str
 # A maker the author's answer A made of a copy.
 constant MAKER_SINCE_THE_SPLIT: str
     "since the author's answer A of 2026-11-21 split `net.Address` into `Host` and `Address` (step 88i), `with_port` makes an `Address` of a `Host` and a port, a maker and no copy; README § A3 names a maker by its type's noun, `address`, a rename of `net`'s face, which another lane held when this row was written (step 86g): the next lane's"
+
+# One test's steps, each store making them with its own calls.
+constant EACH_STORE_ITS_CALLS: str
+    "the same steps over each store's own functions of one name, `set` and `reserve_at` of `jobs/postgres_store`'s buckets and of `jobs/redis_store`'s, which the two stores keep alike so that their tests read alike: what the steps reserve, when the rate changes and what they answer is one copy in `jobs/internal/gcra`, which both use; the calls stay in each store, since a function with an `@` parameter is no value (spec § 9), so no module both may use can make them"
 
 # Every finding kept, in the order the readout prints them.
 function kept() -> [Kept]
@@ -270,6 +278,7 @@ function kept() -> [Kept]
         Kept(check: "bodies", key: "http/internal/socks.has_zero, keyring/internal/names.has_zero, os/internal/codes.has_zero, serial/internal/calls.holds_zero, sql/mysql/internal/wire.has_zero, sql/postgres/internal/wire.has_zero, tls/internal/text.has_zero", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "ical/internal/tree.open_one, openapi/internal/shape.push_item, url/internal/paths.put", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "image/png/internal/samples.format_named, image/tiff/internal/expect.format_named", why: TEST_FIXTURES)
+        Kept(check: "bodies", key: "jobs/postgres_store/internal/buckets.changed, jobs/redis_store/internal/buckets.changed", why: EACH_STORE_ITS_CALLS)
         Kept(check: "bodies", key: "json.format_indented, xml.format_indented", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "json/internal/scan.position, yaml/internal/source.position", why: NO_PUBLIC_HOME)
         Kept(check: "bodies", key: "json/jq/internal/dates.month_names, time/internal/forms.month_names", why: NO_PUBLIC_HOME)
@@ -322,6 +331,7 @@ function kept() -> [Kept]
         Kept(check: "one-layer", key: "http2 & ldap", why: TEST_FIXTURES)
         Kept(check: "one-layer", key: "http2 & mail/smtp", why: TEST_FIXTURES)
         Kept(check: "one-layer", key: "http2 & sql/postgres", why: TEST_FIXTURES)
+        Kept(check: "one-layer", key: "jobs/postgres_store & jobs/redis_store", why: EACH_STORE_ITS_CALLS)
         Kept(check: "one-layer", key: "json & xml", why: ONE_LAYER)
         Kept(check: "one-layer", key: "json/jq & time", why: ONE_LAYER)
         Kept(check: "one-layer", key: "jsonrpc & llm/anthropic", why: TEST_FIXTURES)
