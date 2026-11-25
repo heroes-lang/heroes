@@ -1,0 +1,12 @@
+TRACE thunk unseencarved.body frame=0xffffdbd64b30
+TRACE swapcontext field=1 t=0xffffdbda4b60 wrapper-frame=0xffffdbd64900 known=1 back=0
+TRACE rule6 reenter t=0xffffdbda4b60 here=0xffffdbd647d0 range=[0xffffdb665000,0xffffdbe65000) below=0
+TRACE thunk unseencarved.run frame=0xffffdbda4b30
+TRACE swapcontext field=1 t=0xffffdbd647e0 wrapper-frame=0xffffdbda4a30 known=1 back=0
+TRACE rule6 reenter t=0xffffdbd647e0 here=0xffffdbda4900 range=[0xffffdb665000,0xffffdbe65000) below=1
+TRACE push unsure=2 t=0xffffdbd647e0 here=0xffffdbda4900 below=1 into_alt=0
+TRACE swapcontext field=1 t=0xffffdbde4b60 wrapper-frame=0xffffdbd64900 known=1 back=0
+TRACE rule6 reenter t=0xffffdbde4b60 here=0xffffdbd647d0 range=[0xffffdb665000,0xffffdbe65000) below=0
+TRACE thunk unseencarved.run frame=0xffffdbde4b30
+panic: unseencarved.run was called after C jumped into stack frames the thread had already left (a handler left by a jump and jumped back into, or frames only a signal's delivery puts on the alternate stack): the handler is held to be running again, and the function to be called from inside it, where neither this runtime's memory nor the C library's is safe to use. No function of the program is a signal handler: after `hero_net_catch_stop() -> i64` (`hero_net.h`), Ctrl-C, SIGTERM and `hero_net_ask_stop() -> ()` only make `hero_net_stop_asked() -> i64` answer 1 and a waiting call of that layer, or a mailbox's `receive` that finds it empty, answer stopped; `hero_signal_watch(sig: i32) -> i64` (`hero_os.h`) counts any other signal, and `hero_signal_take(sig: i32) -> i64` gives the count since its last call
+Aborted

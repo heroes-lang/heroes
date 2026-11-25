@@ -1,0 +1,7 @@
+cost_cb -O2 a 4066702524
+cost_cb -O2 b 4065907572
+cost_lend -O2 a 5538143741
+cost_lend -O2 b 5546288777
+cost_room -O2 a 5429758095
+cost_room -O2 b 5423968110
+exit 0

@@ -1,0 +1,4 @@
+body holds 11
+body holds 11
+panic: internal error: a large value's room was given back out of order (compiler bug)
+  called from 0x10002f70f, in own_carved.run

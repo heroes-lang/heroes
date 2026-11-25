@@ -1,0 +1,194 @@
+== coroutine
+2745 OPEN Defect 2745: With the setjmp family forced onto route A, panel 255's four own-stack A'' programs run the Heroe
+2707 CLOSED Defect 2707: A correct jump between two stacks the program made is refused on Linux by which stack lies lower
+2702 CLOSED Defect 2702: A Heroes function runs inside a signal handler that switches contexts: a coroutine on the thread'
+2706 CLOSED Defect 2706: A correct `siglongjmp` out of a handler is refused on Darwin by where the signal was raised, when
+2705 CLOSED Defect 2705: The words a refusal prints name causes the program does not have, and one program is told K on Li
+370 CLOSED panel 039 / process
+159 CLOSED author draft 2026-08-10
+896 CLOSED Panel 030 R6's cfront rider is answered, and the answer is yes: the C11 backend can express Part 7.13's concur
+2674 CLOSED Panel 254: Values cross threads whole through a mailbox: `(thread T)` and `(mailbox T)` enter the language, a 
+125 CLOSED Part 7.13 gets its shape — isolated per-thread heaps, a mailbox per thread, and any Heroes value as a message 
+== stack switch
+2702 CLOSED Defect 2702: A Heroes function runs inside a signal handler that switches contexts: a coroutine on the thread'
+2706 CLOSED Defect 2706: A correct `siglongjmp` out of a handler is refused on Darwin by where the signal was raised, when
+2701 CLOSED Panel 255: Defect 2679: a jump out of a handler reads only its own target, so no buffer a program gave back is
+2705 CLOSED Defect 2705: The words a refusal prints name causes the program does not have, and one program is told K on Li
+2703 CLOSED Panel 257: The sentence the spec owes the refusals of a jump out of a handler (the author's answer to panel 25
+2679 CLOSED Defect 2679: The runtime's `setjmp` reads a buffer an earlier save point recorded after its owner freed it: a 
+896 CLOSED Panel 030 R6's cfront rider is answered, and the answer is yes: the C11 backend can express Part 7.13's concur
+1466 CLOSED Defect 192 closed: the compiler built from its seed on Windows, by the seed's own documented command, gets thr
+1312 CLOSED Defects 080, 081, 082 and 089 closed: the lease line listens first, says under, hears every trap, and leaves a
+898 CLOSED Panel 111 refuses the proposal it was convened to adopt, and M-isolated-threads is re-scoped around what the t
+159 CLOSED author draft 2026-08-10
+959 CLOSED Defect 015: a `certain` fix machine-applies into a program that does not compile
+== makecontext
+2706 CLOSED Defect 2706: A correct `siglongjmp` out of a handler is refused on Darwin by where the signal was raised, when
+2702 CLOSED Defect 2702: A Heroes function runs inside a signal handler that switches contexts: a coroutine on the thread'
+2703 CLOSED Panel 257: The sentence the spec owes the refusals of a jump out of a handler (the author's answer to panel 25
+2705 CLOSED Defect 2705: The words a refusal prints name causes the program does not have, and one program is told K on Li
+== unseen switch
+1926 CLOSED Defect 568: a feature-test macro cannot reach a header behind the compiler's own prefix, so a GNU function is 
+2021 CLOSED Defect 674: CodeQL's default setup spends six hours on the generated C and never finishes, so code scanning st
+1952 CLOSED Defect 586: a unit's compile line carries every package's compile words whole, and about forty-five large pack
+1713 CLOSED Defect 382: a constant of an array or map is built again at every read
+1681 CLOSED Defect 357: a cache file a power cut left as zeros is read back as clang's refusal, an internal error at exit 
+== fiber
+== carved
+566 CLOSED `_ = v` stops making the generated C warn (defect, no panel — the emitter not saying in C what the author said
+== own switch
+2701 CLOSED Panel 255: Defect 2679: a jump out of a handler reads only its own target, so no buffer a program gave back is
+1951 CLOSED Defect 585: a name hidden by the program's own stricter switch is told *declares no* without naming the switch
+2702 CLOSED Defect 2702: A Heroes function runs inside a signal handler that switches contexts: a coroutine on the thread'
+2805 CLOSED Defect 2805: `web/proxy.serve_stream` ends a switched connection at once for a client that came over TLS
+2705 CLOSED Defect 2705: The words a refusal prints name causes the program does not have, and one program is told K on Li
+2706 CLOSED Defect 2706: A correct `siglongjmp` out of a handler is refused on Darwin by where the signal was raised, when
+2324 CLOSED Defect 2324: A folder named by `--include` is searched before the runtime's headers, so a `heroes_standard.h` 
+2771 CLOSED `web`: a reverse proxy, bodies streamed both ways, upstreams balanced, WebSockets passed through
+2502 CLOSED Defect 2502: A call of the platform layer that waits costs CPU while it waits, woken twenty times a second
+2333 CLOSED Defect 2333: A `stdint.h` beside `main.hero` or in an `--include` folder, or the header a group binds, can def
+2429 CLOSED Defect 2429: A function a group's named header does not declare builds when another group's header declares it
+1934 CLOSED Panel 205 sat: a library's own header code is judged as clang judges a system header, the checks raised again 
+2104 CLOSED Defect 2104: A pragma in a header constant's value switches off the check that refuses an undefined value
+2589 CLOSED Defect 2589: A blind seat's paid sessions are handed the runner's standard input and the main checkout's git s
+2679 CLOSED Defect 2679: The runtime's `setjmp` reads a buffer an earlier save point recorded after its owner freed it: a 
+2803 CLOSED Defect 2803: `web/proxy.serve_stream` tells the upstream `proto=http` for a client that came over TLS
+2703 CLOSED Panel 257: The sentence the spec owes the refusals of a jump out of a handler (the author's answer to panel 25
+1926 CLOSED Defect 568: a feature-test macro cannot reach a header behind the compiler's own prefix, so a GNU function is 
+1933 CLOSED Panel 205: ratify, amend or overturn R1 to R5 (570: every warning an FFI check rests on raised again after the
+2510 CLOSED Defect 2510: On Windows the platform layer's record of what its members need holds no `hero_net` row, and defe
+2342 CLOSED The sitting owed by two refusals defect 2333 landed on robustness, `shadowed_header` and a package's `-D` or `
+2021 CLOSED Defect 674: CodeQL's default setup spends six hours on the generated C and never finishes, so code scanning st
+1862 CLOSED Defect 514: the commit guard does not watch the git commands that discard staged work
+2750 CLOSED Defect 2750: On Windows `ui.set_focus` of an editable combo box or a spin answers `invalid`, so the native key
+2527 CLOSED Panel 248: The C library's installers wait for a census, the layer's waits end on one poller, a child gets its
+1952 CLOSED Defect 586: a unit's compile line carries every package's compile words whole, and about forty-five large pack
+1931 CLOSED Defect 571: a header's `deprecated` attribute fires clang's raw warning at the compiler's own probe line on a 
+1932 CLOSED Defect 572: a package's `-D` reaches every module's unit, so another module's package decides a module's verdi
+316 CLOSED panel 022
+1846 CLOSED Defect 500: fourteen readers still build the table of built-ins where defect 264 left a constant
+== fcontext
+== Boost
+2159 CLOSED Panel 226: Metrics 2 and 4 measured by one instrument, three arms forked from one generation, the control arm 
+== stack copying
+2288 CLOSED Defect 2288: The compiler's own work grows toward the square of a construction's fields: one record of 8,192 `
+2283 CLOSED Defect 2278 stands between `m-latency-ceiling` and its tag: convene the soundness lane on its cost, or carry i
+1277 CLOSED Defect 066: a `ptr` lend has no lifetime rule, so C may keep the address past the frame
+391 CLOSED Defect 001: The post-M8a sweep: twenty defects, and the three shapes they came in
+== switch_fiber
+== jump_fcontext
+== thread block
+2811 OPEN Defect 2811: Forty-two run cases added since the CI's last Windows leg bind POSIX headers the Windows target l
+2592 OPEN probe whether the stack guard, which falls back to `dladdr` inside its signal handler on Linux for an address 
+2754 OPEN Defect 2754: A thread started by `spawn` that C ends with `pthread_exit` makes `wait` read through a null poin
+2752 OPEN Defect 2752: A C jump over a Heroes callback that holds values past 4 KiB leaves the large-value room out of o
+2587 CLOSED Defect 2587: A runtime panic never says its line while another thread is blocked writing stdout
+2606 CLOSED Defect 2606: a runtime panic hangs while another thread is blocked writing stderr into a pipe nobody reads
+2600 CLOSED Defect 2600: `exit(code: 0)` hangs while another thread is blocked writing stdout into a pipe nobody reads
+925 OPEN copy-on-write's `refcount == 1` is a test and then a mutate, and nobody could race it
+2755 OPEN Defect 2755: A C signal handler that `siglongjmp`s out of a Heroes callback ends the program with a message ac
+2552 CLOSED Defect 2552: a thread still running when main returns is told as a compiler bug
+2668 CLOSED `threads` cannot say which of several threads has ended, so a pool of workers refills a slot only when the old
+2634 CLOSED Defect 2634: `heroes doc` prints no comment for the first member of an `extern` group whose comment is written
+2496 CLOSED Defect 2496: A signal that reaches a thread `hero_thread_spawn` started, before that thread claims itself, is 
+2738 CLOSED Defect 2738: `runtime/platform/hero_ui_win32.c` keeps a `static wchar_t none[1]` that is neither thread-local,
+2605 CLOSED Defect 2605: a thread that prints through `hero_print_str` alone ends holding stdout's lock, and `exit` waits 
+2699 CLOSED The dialogs of the user interface answer through the event queue and never block the program (catalogue row DG
+2693 CLOSED panel 254 put `(mailbox T)` in the language and left "a mailbox in a `poll` set (chat's and notes' loops)" unp
+2588 CLOSED Defect 2588: The `runtime` suite is red on the platform layer M-rebel-library adds
+2521 CLOSED One `str` crosses into a thread and back, copied for the thread, through a door beside `hero_thread_spawn`, an
+2499 CLOSED Defect 2499: A close of a platform-layer socket does not end a call another thread waits in on it: an `accept`
+2798 CLOSED Defect 2798: The `runtime` suite red on `main` c926940f1 on defect 2713's own findings, seen again at moved li
+2704 CLOSED Defect 2704: A C jump over the frame of a Heroes callback ends the program with a false *compiler bug* abort a
+2673 CLOSED Defect 2673: A lock's holder is compared by `pthread_t` after its thread ended, so a new thread that inherits 
+2692 CLOSED Defect 2692: A record or variant of another module that holds a C handle crosses a thread unhanded: `spawn(f, 
+2607 CLOSED Defect 2607: a thread that writes through `hero_print_str` alone and keeps running holds stdout's lock, and `m
+2590 CLOSED Panel 251: A jump out of a signal handler is judged by a validated record, a thread left running ends main as 
+2695 CLOSED Defect 2695: A send inside a generic function is judged on its type parameter, which holds nothing: `m.send(v)
+2497 CLOSED Panel 246: A killed run is recovered under a lock beside its folder, an edit in a placed tree is never dropped
+2706 CLOSED Defect 2706: A correct `siglongjmp` out of a handler is refused on Darwin by where the signal was raised, when
+2498 CLOSED Panel 246: Whether the thread rung widens from one `i64` to one `str`, copied for the thread or shared by its 
+== stack_lane
+== heal
+2758 OPEN Panel 258: A C jump over a callback heals the runtime's stacks and tells its gates now, and the values it aban
+== large value room
+2752 OPEN Defect 2752: A C jump over a Heroes callback that holds values past 4 KiB leaves the large-value room out of o
+2758 OPEN Panel 258: A C jump over a callback heals the runtime's stacks and tells its gates now, and the values it aban
+2278 CLOSED Defect 2278: A record of records some megabytes deep keeps clang at `-O2` past ten minutes, so `heroes run` of
+2285 CLOSED Panel 233: A record past 4,096 bytes lives off the frame, is returned into its caller's slot and built in plac
+2346 CLOSED Defect 2346: A 1 MiB group record of named halves costs its run 637 billion instructions before `main`, in the
+== frame address
+2702 CLOSED Defect 2702: A Heroes function runs inside a signal handler that switches contexts: a coroutine on the thread'
+2121 CLOSED Defect 2121: A record constant whose header value holds a compound literal's address returns a pointer into it
+1277 CLOSED Defect 066: a `ptr` lend has no lifetime rule, so C may keep the address past the frame
+2517 CLOSED Panel 247: A Heroes function a signal reaches is refused at its thunk's first line, the allocator's guard stay
+2253 CLOSED Defect 2253: A function whose frame is larger than the stack guard's window dies at 139 with nothing on stderr
+1293 CLOSED Defect 068: a record rewritten under C's held address, which no sanitizer can see
+1855 CLOSED Defect 509: on the CI's Windows leg ASan's report at `--sanitize` names no frame, so defect 322's case is red
+817 CLOSED The frame is the exit sweep's own temporaries, not the slots — and the sitting convened to share slots vetoed 
+843 CLOSED Defect 007: `heroes check` exits 139 without a word on a legal program
+1366 CLOSED Defect 115 closed: on Windows the runtime says where in the dead region C read, as it does on Linux and the Ma
+1239 CLOSED Defect 047: defect 045's blame line is measured on one platform and fails on the other two
+1866 CLOSED Defect 518: a Windows binary run by hand at `-O0` gets llvm-symbolizer's `.c` line in a sanitiser's report
+2037 CLOSED Panel 213: How a stopped Heroes program shows Heroes values: the emitter keeps what it invented out of the deb
+1764 CLOSED Panel 196: ratify, amend or overturn R1 to R9 (an `@` argument reaches C as its own place, never a copy, throu
+835 CLOSED `/decide` 2026-09-03 (author instruction as above, choosing (a) in its complete form)
+1312 CLOSED Defects 080, 081, 082 and 089 closed: the lease line listens first, says under, hears every trap, and leaves a
+1330 CLOSED Defect 090 closed: a read near zero says what it saw and names both things that put a null there
+1271 CLOSED Clang already knew
+2494 CLOSED Defect 2494: A Heroes function given to C's `signal` that allocates kills its program when a signal lands whil
+497 CLOSED CLOSED 2026-08-15 by `docs/panel/058`. The flag plus a fifth exit-1 class is adopted under five conditions; un
+1186 CLOSED A handle is a pointer with a name, defect 029 is closed, and the form is a quarter of what it was priced at (M
+1185 CLOSED The handle form narrows before it lands, and the false clause that nearly reached the specification was the co
+707 CLOSED ANSWERED 2026-08-25 by panel 092, and the answer was option (a) — now, as its own step. The item asked *when* 
+1229 CLOSED Defect 045: a null handle handed to a C function that reads through it SEGFAULTS, which §1.12 forbids outright
+1278 CLOSED Nobody checks the callee
+1521 CLOSED Panel 184's R5 landed: every command runs on a thread whose stack the compiler chooses
+809 CLOSED Deep recursion stops with a word: a guard-page handler that names the function, and no depth counter (`docs/pa
+2527 CLOSED Panel 248: The C library's installers wait for a census, the layer's waits end on one poller, a child gets its
+1275 CLOSED Defect 063 closes, and the number is C's three ways
+== deepest frame
+1423 CLOSED Defect 148 closed: a claim that rests on a jump already refused is the jump's shadow, and is not told
+1424 CLOSED Defect 149 closed: a value block is told at the line that ends it, and a constant at the statement it leaves b
+843 CLOSED Defect 007: `heroes check` exits 139 without a word on a legal program
+870 CLOSED The number cannot be made uniform on any of these platforms; the abort can — panel 107 refuses all three mecha
+881 CLOSED Defect 008: On Windows the documented way in builds a compiler that cannot compile a medium program
+== dlsym makecontext
+2702 CLOSED Defect 2702: A Heroes function runs inside a signal handler that switches contexts: a coroutine on the thread'
+== pthread_attr_setstack
+== sigaltstack
+888 CLOSED panel 107, full panel 2026-09-04; the finding is the two compiling seats' independently, and neither the sitti
+587 CLOSED ANSWERED 2026-08-16 by panel 076: refused as that sitting's answer, kept alive with its conditions written dow
+835 CLOSED `/decide` 2026-09-03 (author instruction as above, choosing (a) in its complete form)
+771 CLOSED A Heroes program that recurses deeply enough dies at exit 139 with no message, and §1.12 makes that a goal's f
+== green thread
+2521 CLOSED One `str` crosses into a thread and back, copied for the thread, through a door beside `hero_thread_spawn`, an
+2492 CLOSED Defect 2492: The run-time panic for a Heroes function called back on a thread C made cites design.md and names
+2524 CLOSED Defect 2524: The CI's Linux arm64 leg reads defect 2494's case on a thread C made red under `--sanitize`: its 
+2496 CLOSED Defect 2496: A signal that reaches a thread `hero_thread_spawn` started, before that thread claims itself, is 
+2287 CLOSED Defect 2287: Threads that exhaust their stacks at once write their messages into one another, so stderr reads 
+2531 CLOSED Defect 2531: a child the runtime forks calls getrlimit, setrlimit and execvp, which POSIX does not list as asy
+2526 CLOSED Defect 2526: net's card says nothing of a connection number's size, and a program that computes with one abort
+2502 CLOSED Defect 2502: A call of the platform layer that waits costs CPU while it waits, woken twenty times a second
+2494 CLOSED Defect 2494: A Heroes function given to C's `signal` that allocates kills its program when a signal lands whil
+2295 CLOSED The platform layer: one C file per capability beside the runtime, archived as one library the compiler puts on
+2554 CLOSED Defect 2554: on Windows a connect reaches a listener's port after the layer closed it
+2679 CLOSED Defect 2679: The runtime's `setjmp` reads a buffer an earlier save point recorded after its owner freed it: a 
+2320 CLOSED Defect 2320: A group record of fixed-array fields costs `heroes build` 27.88 then 87.76 billion instructions a
+2519 CLOSED Defect 2519: A bound C function passed as a function value stops the build with `internal error` where its hea
+2705 CLOSED Defect 2705: The words a refusal prints name causes the program does not have, and one program is told K on Li
+896 CLOSED Panel 030 R6's cfront rider is answered, and the answer is yes: the C11 backend can express Part 7.13's concur
+2504 CLOSED Defect 2504: The leak report's first sentence names the mark that began a life, and a socket's life given up f
+1526 CLOSED Defect 217 closed: under `ulimit -s unlimited` on Linux, a program that starts a thread panics at its first sp
+924 CLOSED `docs/panel/111`, 2026-09-05; the finding is the historian's and both compiling seats measured it
+1462 CLOSED Defect 169 closed: `check` aborts on a correct program of 300 additions
+889 CLOSED defect 008, repaired 2026-09-04 by panel 106's repair rather than by anything aimed at it (`docs/work/DONE.md`
+926 CLOSED The refcount is atomic, and the ABI stamp stays at 21 because the skew case was RUN rather than reasoned about
+1347 CLOSED Defect 098 closed: an end names the life it was announced for, so two threads over one allocator give back the
+2286 CLOSED Defect 2286: Group records past panel 233's route: a chain of them nested by copy keeps clang at `-O2` past fo
+539 CLOSED Panel 070: a deep value SEGFAULTED on release, silently, and the release path is iterative now (provisional — 
+159 CLOSED author draft 2026-08-10
+1177 CLOSED panel 138
+958 CLOSED Defect 014: a `[T]` or `{K: V}` crosses the FFI boundary inside a callback signature, and nothing says a word
+1817 CLOSED Defect 472: `step` into a Heroes function lands on the generated C
+1778 CLOSED Defect 437: a `heroes` ended by SIGKILL still leaves its program running

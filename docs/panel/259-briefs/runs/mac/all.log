@@ -1,0 +1,87 @@
+Wed Nov 25 06:45:39 UTC 2026
+Wed Nov 25 06:45:39 UTC 2026
+build own_carved plain 0
+build own_carved san 0
+build unseen_carved plain 0
+build unseen_carved san 0
+mac/all.sh: line 15: 94117 Abort trap: 6           timeout 120 ./bin-$b > out-$b-$r.txt 2>&1
+run own_carved 1 exit 134 bytes      160
+mac/all.sh: line 15: 94138 Abort trap: 6           timeout 120 ./bin-$b > out-$b-$r.txt 2>&1
+run own_carved 2 exit 134 bytes      160
+mac/all.sh: line 15: 94152 Abort trap: 6           timeout 120 ./bin-$b > out-$b-$r.txt 2>&1
+run own_carved 3 exit 134 bytes      160
+mac/all.sh: line 15: 94163 Abort trap: 6           timeout 120 ./bin-$b > out-$b-$r.txt 2>&1
+run own_carved-san 1 exit 134 bytes     3393
+mac/all.sh: line 15: 94465 Abort trap: 6           timeout 120 ./bin-$b > out-$b-$r.txt 2>&1
+run own_carved-san 2 exit 134 bytes     3393
+mac/all.sh: line 15: 94832 Abort trap: 6           timeout 120 ./bin-$b > out-$b-$r.txt 2>&1
+run own_carved-san 3 exit 134 bytes     3393
+run unseen_carved 1 exit 0 bytes       66
+run unseen_carved 2 exit 0 bytes       66
+run unseen_carved 3 exit 0 bytes       66
+run unseen_carved-san 1 exit 0 bytes       66
+run unseen_carved-san 2 exit 0 bytes       66
+run unseen_carved-san 3 exit 0 bytes       66
+build below plain 0
+build below san 0
+mac/all.sh: line 21: 98385 Abort trap: 6           timeout 120 ./bin-$b > out-$b-$r.txt 2>&1
+run below 1 exit 134 bytes      127
+mac/all.sh: line 21: 98410 Abort trap: 6           timeout 120 ./bin-$b > out-$b-$r.txt 2>&1
+run below 2 exit 134 bytes      127
+mac/all.sh: line 21: 98419 Abort trap: 6           timeout 120 ./bin-$b > out-$b-$r.txt 2>&1
+run below 3 exit 134 bytes      127
+mac/all.sh: line 21: 98431 Abort trap: 6           timeout 120 ./bin-$b > out-$b-$r.txt 2>&1
+run below-san 1 exit 134 bytes     3245
+mac/all.sh: line 21: 98571 Abort trap: 6           timeout 120 ./bin-$b > out-$b-$r.txt 2>&1
+run below-san 2 exit 134 bytes     3245
+mac/all.sh: line 21: 98896 Abort trap: 6           timeout 120 ./bin-$b > out-$b-$r.txt 2>&1
+run below-san 3 exit 134 bytes     3245
+Wed Nov 25 06:47:35 UTC 2026
+q1 1 exit 0 bytes       34
+q1 2 exit 0 bytes       34
+q1 3 exit 0 bytes       34
+q2 1 exit 0 bytes       66
+q2 2 exit 0 bytes       66
+q2 3 exit 0 bytes       66
+q3 1 exit 0 bytes       34
+q3 2 exit 0 bytes       34
+q3 3 exit 0 bytes       34
+mac/all.sh: line 27:  3125 Abort trap: 6           timeout 120 ./bin-$q > out-$q-$r.txt 2>&1
+q4 1 exit 134 bytes      152
+mac/all.sh: line 27:  3149 Abort trap: 6           timeout 120 ./bin-$q > out-$q-$r.txt 2>&1
+q4 2 exit 134 bytes      152
+mac/all.sh: line 27:  3161 Abort trap: 6           timeout 120 ./bin-$q > out-$q-$r.txt 2>&1
+q4 3 exit 134 bytes      152
+mac/all.sh: line 27:  3170 Abort trap: 6           timeout 120 ./bin-$q > out-$q-$r.txt 2>&1
+q5 1 exit 134 bytes      111
+mac/all.sh: line 27:  3618 Abort trap: 6           timeout 120 ./bin-$q > out-$q-$r.txt 2>&1
+q5 2 exit 134 bytes      111
+mac/all.sh: line 27:  4125 Abort trap: 6           timeout 120 ./bin-$q > out-$q-$r.txt 2>&1
+q5 3 exit 134 bytes      111
+q6 1 exit 0 bytes       36
+q6 2 exit 0 bytes       36
+q6 3 exit 0 bytes       36
+q7 1 exit 0 bytes       66
+q7 2 exit 0 bytes       66
+q7 3 exit 0 bytes       66
+q3m 1 exit 0 bytes       34
+q3m 2 exit 0 bytes       34
+q3m 3 exit 0 bytes       34
+dlh exit 0: state 1111|
+Wed Nov 25 06:49:16 UTC 2026
+carved exit 0: body holds 7|body holds 7|body holds 7 coroutines 30 32|carved: 7|
+own_heap exit 0: order 0 1: 30 32|order 1 0: 30 32|
+two exit 0: order 0 1: 30 32|order 1 0: 30 32|
+three exit 0: order 0 1 2: 66 60 63|order 0 2 1: 63 60 66|order 1 0 2: 66 63 60|order 1 2 0: 60 63 66|order 2 0 1: 63 66 60|order 2 1 0: 60 66 63|
+lend exit 0: coroutine 1 lent 1 2|coroutine 2 lent 2 3|coroutine 0 lent 0 1|lent across switches: 3 104 205|
+spawn exit 0: thread: 30039 main: 5|
+migrate exit 0: migrated: 30 32 3|
+quit exit 0: quit before a yield, 5000 times: 14995 3|quit after a yield, 5000 times: 24995 3|
+mac/all.sh: line 36: 11958 Abort trap: 6           timeout 120 ./bin-$s > out-$s.txt 2>&1
+quit_fresh exit 134: panic: stack exhausted in quit_fresh.e5: the room large values take off the stack is full, 1 GiB for the whole program|
+jumpco exit 0: jumped inside a coroutine: 10 35021|
+unseen exit 0: order 0 1: 30 32|order 1 0: 30 32|
+ph exit 0: state 11|
+Wed Nov 25 06:50:17 UTC 2026
+ALL-DONE
+mac exit 0

@@ -1,0 +1,1 @@
+C that switches stacks by code of its own tells the program before it runs a callback there, by `hero_stack_entered(low: ptr, bytes: i64) -> ()` (`hero_os.h`); a callback C runs, inside the stack of the thread that called C, on a stack the program was not told of may abort, saying so.

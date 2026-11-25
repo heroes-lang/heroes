@@ -1,0 +1,2 @@
+quit before a yield, 5000 times: 14995 3
+quit after a yield, 5000 times: 24995 3

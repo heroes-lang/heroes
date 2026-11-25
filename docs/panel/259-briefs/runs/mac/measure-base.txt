@@ -1,0 +1,9 @@
+spec/heroes-spec.md
+  claude-legacy      9877   (64995 ranks)
+  cl100k_base       10054   (100256 ranks)
+  maximum           10054   a lower bound, not the reader's tokeniser
+  spread              177   between the two vendored tables (1%) — the gap between two REAL tokeniser generations was 967
+  real              13185   claude-opus-5, 2026-11-23 — the binding number
+
+An addition needs a named removal or a pre-registered falsifiable
+prediction (panel 012). Headroom: 3199 against the 16384 ceiling — but the FFI floor mortgages 60 of it (panel 030 R3), so what is measured against the ceiling is 13245 and the check goes red at 16384.

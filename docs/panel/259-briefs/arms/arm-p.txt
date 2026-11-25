@@ -1,0 +1,1 @@
+A value a function holds keeps it across every switch of stacks C makes, by `swapcontext` or by code of its own, wherever the stack lies.

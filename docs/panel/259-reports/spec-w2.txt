@@ -1,0 +1,1 @@
+A callback C runs on a stack C carved from the thread's own, an array in a C function's frame say, and switched to by code of its own, not by `swapcontext` onto a stack given to `makecontext`, aborts, saying the switch was not seen, if a function of the program then holds a value of more than 4,096 bytes.

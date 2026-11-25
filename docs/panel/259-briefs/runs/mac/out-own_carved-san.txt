@@ -1,0 +1,68 @@
+=================================================================
+==94165==ERROR: AddressSanitizer: heap-use-after-free on address 0x000108108820 at pc 0x000100857c2c bp 0x00016f579d70 sp 0x00016f579d68
+READ of size 8 at 0x000108108820 thread T0
+    #0 0x000100857c28 in h_owncarved_body own_carved.hero:81
+    #1 0x000100858414 in h_0cb_owncarved_body owncarved.c:385
+    #2 0x000100854ebc in ow_host own.h:77
+    #3 0x00010085848c in h_owncarved_main own_carved.hero:89
+    #4 0x000100858528 in main owncarved.c:542
+    #5 0x00018e29cd78 in start+0x19f8 (dyld:arm64e+0x31d78)
+
+0x000108108820 is located 32 bytes inside of 1048608-byte region [0x000108108800,0x000108208820)
+freed by thread T0 here:
+    #0 0x000101325368 in free+0x7c (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x41368)
+    #1 0x0001007aa074 in hero_free_raw alloc.c:722
+    #2 0x00010083f504 in hero_frame_give_raw frame.c:168
+    #3 0x0001007c2f28 in hero_frame_pop frame.c:176
+    #4 0x0001007c1694 in hero_frame_heal_below frame.c:183
+    #5 0x0001007873ec in hero_callback_heal callback.c:262
+    #6 0x0001007862b8 in hero_callback_entered sigguard.c:641
+    #7 0x000100857900 in h_0cb_owncarved_run owncarved.c:355
+    #8 0x000100858a88 in ow_entry own.h:52
+    #9 0x000100858c9c in ow_boot own.h:26
+
+previously allocated by thread T0 here:
+    #0 0x000101325274 in malloc+0x78 (libclang_rt.asan_osx_dynamic.dylib:arm64e+0x41274)
+    #1 0x0001007c17d8 in hero_malloc_raw alloc.c:707
+    #2 0x0001007c1ecc in hero_frame_take_raw frame.c:139
+    #3 0x0001007c074c in hero_frame_take frame.c:208
+    #4 0x00010085795c in h_owncarved_body own_carved.hero:77
+    #5 0x000100858414 in h_0cb_owncarved_body owncarved.c:385
+    #6 0x000100854ebc in ow_host own.h:77
+    #7 0x00010085848c in h_owncarved_main own_carved.hero:89
+    #8 0x000100858528 in main owncarved.c:542
+    #9 0x00018e29cd78 in start+0x19f8 (dyld:arm64e+0x31d78)
+
+SUMMARY: AddressSanitizer: heap-use-after-free own_carved.hero:81 in h_owncarved_body
+Shadow bytes around the buggy address:
+  0x000108108580: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x000108108600: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x000108108680: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x000108108700: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0x000108108780: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+=>0x000108108800: fd fd fd fd[fd]fd fd fd fd fd fd fd fd fd fd fd
+  0x000108108880: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x000108108900: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x000108108980: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x000108108a00: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0x000108108a80: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==94165==ABORTING

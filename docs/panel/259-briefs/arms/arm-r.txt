@@ -1,0 +1,1 @@
+A callback C runs on a stack C switched to by code of its own, not by `swapcontext` or `setcontext`, inside the stack of the thread that called C, may abort, saying the switch was not seen; a stack from `malloc` or `mmap`, or one given to `makecontext`, is followed.

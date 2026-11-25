@@ -1,0 +1,84 @@
+Wed Nov 25 06:37:58 UTC 2026
+seed exit 0
+stage2 exit 0
+heroes 0.6.0
+sources 05186f2b38e77a97
+heroes 0.6.0
+sources 117362877b136f67
+aarch64
+ldd (Debian GLIBC 2.41-12+deb13u3) 2.41
+Debian clang version 22.1.8 (1~deb13u4)
+Wed Nov 25 06:54:10 UTC 2026
+build own_carved plain 0
+build own_carved san 0
+build unseen_carved plain 0
+build unseen_carved san 0
+run own_carved 1 exit 139 bytes 19
+run own_carved 2 exit 139 bytes 19
+run own_carved 3 exit 139 bytes 19
+run own_carved-san 1 exit 1 bytes 4474
+run own_carved-san 2 exit 1 bytes 4474
+run own_carved-san 3 exit 1 bytes 4474
+run unseen_carved 1 exit 134 bytes 823
+run unseen_carved 2 exit 134 bytes 823
+run unseen_carved 3 exit 134 bytes 823
+run unseen_carved-san 1 exit 134 bytes 823
+run unseen_carved-san 2 exit 134 bytes 823
+run unseen_carved-san 3 exit 134 bytes 823
+build below plain 0
+build below san 0
+run below 1 exit 139 bytes 19
+run below 2 exit 139 bytes 19
+run below 3 exit 139 bytes 19
+run below-san 1 exit 1 bytes 17517
+run below-san 2 exit 1 bytes 17517
+run below-san 3 exit 1 bytes 17517
+Wed Nov 25 07:09:10 UTC 2026
+q1 1 exit 0 bytes 34
+q1 2 exit 0 bytes 34
+q1 3 exit 0 bytes 34
+q2 1 exit 0 bytes 66
+q2 2 exit 0 bytes 66
+q2 3 exit 0 bytes 66
+q3 1 exit 0 bytes 34
+q3 2 exit 0 bytes 34
+q3 3 exit 0 bytes 34
+q4 1 exit 139 bytes 19
+q4 2 exit 139 bytes 19
+q4 3 exit 139 bytes 19
+q5 1 exit 134 bytes 119
+q5 2 exit 134 bytes 119
+q5 3 exit 134 bytes 119
+q6 1 exit 0 bytes 36
+q6 2 exit 0 bytes 36
+q6 3 exit 0 bytes 36
+q7 1 exit 0 bytes 66
+q7 2 exit 0 bytes 66
+q7 3 exit 0 bytes 66
+q3m 1 exit 0 bytes 34
+q3m 2 exit 0 bytes 34
+q3m 3 exit 0 bytes 34
+dlh exit 0: state 1011|
+dlh2 exit 0: state 1|
+0000000000008788 T makecontext
+000000000000b1c4 T swapcontext
+Wed Nov 25 07:12:48 UTC 2026
+carved exit 0: body holds 7|body holds 7|body holds 7 coroutines 30 32|carved: 7|
+own_heap exit 0: order 0 1: 30 32|order 1 0: 30 32|
+two exit 0: order 0 1: 30 32|order 1 0: 30 32|
+three exit 0: order 0 1 2: 66 60 63|order 0 2 1: 63 60 66|order 1 0 2: 66 63 60|order 1 2 0: 60 63 66|order 2 0 1: 63 66 60|order 2 1 0: 60 66 63|
+lend exit 0: coroutine 1 lent 1 2|coroutine 2 lent 2 3|coroutine 0 lent 0 1|lent across switches: 3 104 205|
+spawn exit 0: thread: 30039 main: 5|
+migrate exit 0: migrated: 30 32 3|
+quit exit 0: quit before a yield, 5000 times: 14995 3|quit after a yield, 5000 times: 24995 3|
+quit_fresh exit 134: panic: stack exhausted in quit_fresh.e5: the room large values take off the stack is full, 1 GiB for the whole program|Aborted|
+jumpco exit 0: jumped inside a coroutine: 10 35021|
+unseen exit 0: order 0 1: 30 32|order 1 0: 30 32|
+ph exit 0: state 10|
+build unseen_carved trace 0
+run unseen_carved trace exit 134
+build own_carved trace 0
+run own_carved trace exit 139
+Wed Nov 25 07:15:51 UTC 2026
+ALL-DONE
+arm docker exit 0

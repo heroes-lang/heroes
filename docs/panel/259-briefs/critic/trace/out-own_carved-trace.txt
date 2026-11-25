@@ -1,0 +1,4 @@
+TRACE thunk owncarved.body frame=0xffffca136c70
+TRACE thunk owncarved.run frame=0xffffca176c70
+TRACE thunk owncarved.run frame=0xffffca1b6c70
+Segmentation fault

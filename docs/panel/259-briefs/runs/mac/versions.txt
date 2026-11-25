@@ -1,0 +1,5 @@
+heroes 0.6.0
+sources 05186f2b38e77a97
+heroes 0.6.0
+sources 117362877b136f67
+Wed Nov 25 07:44:55 CET 2026

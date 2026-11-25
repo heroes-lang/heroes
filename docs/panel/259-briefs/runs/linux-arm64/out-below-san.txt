@@ -1,0 +1,309 @@
+=================================================================
+==2711==ERROR: AddressSanitizer: heap-use-after-free on address 0xfbffb8ea5820 at pc 0xaaaae0f65104 bp 0xffffe020a2a0 sp 0xffffe0209a90
+WRITE of size 262144 at 0xfbffb8ea5820 thread T0
+    #0 0xaaaae0f65100 in __asan_memcpy (/w/mine/bin-below-san+0x135100) (BuildId: 8b7f7d7525bacbf3fc2c91ffe093b6ec4fe319ca)
+    #1 0xaaaae107a9b0 in h_below_e5 /w/mine/below.hero:67:316
+    #2 0xaaaae107ab78 in h_below_run /w/mine/below.hero:72:143
+    #3 0xaaaae107b004 in h_0cb_below_run /w/mine/below.c:343:27
+    #4 0xaaaae107c410 in ow_entry /w/mine/./own.h:52:17
+    #5 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #6 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #7 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #8 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #9 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #10 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #11 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #12 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #13 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #14 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #15 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #16 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #17 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #18 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #19 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #20 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #21 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #22 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #23 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #24 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #25 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #26 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #27 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #28 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #29 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #30 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #31 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #32 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #33 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #34 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #35 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #36 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #37 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #38 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #39 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #40 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #41 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #42 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #43 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #44 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #45 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #46 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #47 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #48 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #49 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #50 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #51 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #52 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #53 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #54 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #55 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #56 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #57 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #58 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #59 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #60 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #61 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #62 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #63 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #64 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #65 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #66 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #67 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #68 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #69 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #70 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #71 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #72 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #73 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #74 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #75 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #76 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #77 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #78 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #79 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #80 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #81 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #82 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #83 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #84 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #85 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #86 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #87 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #88 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #89 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #90 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #91 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #92 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #93 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #94 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #95 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #96 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #97 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #98 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #99 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #100 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #101 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #102 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #103 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #104 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #105 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #106 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #107 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #108 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #109 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #110 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #111 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #112 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #113 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #114 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #115 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #116 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #117 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #118 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #119 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #120 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #121 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #122 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #123 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #124 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #125 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #126 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #127 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #128 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #129 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #130 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #131 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #132 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #133 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #134 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #135 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #136 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #137 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #138 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #139 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #140 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #141 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #142 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #143 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #144 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #145 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #146 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #147 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #148 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #149 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #150 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #151 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #152 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #153 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #154 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #155 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #156 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #157 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #158 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #159 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #160 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #161 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #162 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #163 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #164 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #165 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #166 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #167 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #168 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #169 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #170 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #171 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #172 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #173 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #174 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #175 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #176 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #177 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #178 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #179 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #180 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #181 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #182 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #183 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #184 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #185 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #186 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #187 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #188 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #189 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #190 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #191 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #192 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #193 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #194 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #195 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #196 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #197 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #198 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #199 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #200 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #201 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #202 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #203 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #204 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #205 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #206 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #207 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #208 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #209 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #210 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #211 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #212 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #213 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #214 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #215 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #216 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #217 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #218 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #219 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #220 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #221 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #222 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #223 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #224 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #225 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #226 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #227 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #228 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #229 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #230 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #231 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #232 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #233 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #234 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #235 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #236 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #237 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #238 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #239 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #240 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #241 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #242 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #243 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #244 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #245 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #246 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #247 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+    #248 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+
+0xfbffb8ea5820 is located 786464 bytes inside of 1048608-byte region [0xfbffb8de5800,0xfbffb8ee5820)
+freed by thread T0 here:
+    #0 0xaaaae0f673c4 in free (/w/mine/bin-below-san+0x1373c4) (BuildId: 8b7f7d7525bacbf3fc2c91ffe093b6ec4fe319ca)
+    #1 0xaaaae0fd5530 in hero_free_raw /w/tree/runtime/parts/alloc.c:722:5
+    #2 0xaaaae1065cd4 in hero_frame_give_raw /w/tree/runtime/parts/frame.c:168:9
+    #3 0xaaaae0fed200 in hero_frame_pop /w/tree/runtime/parts/frame.c:176:5
+    #4 0xaaaae0febb20 in hero_frame_heal_below /w/tree/runtime/parts/frame.c:183:9
+    #5 0xaaaae0fad2b4 in hero_callback_heal /w/tree/runtime/parts/callback.c:262:9
+    #6 0xaaaae0fac224 in hero_callback_entered /w/tree/runtime/parts/sigguard.c:641:5
+    #7 0xaaaae107affc in h_0cb_below_run /w/mine/below.c:342:5
+    #8 0xaaaae107c410 in ow_entry /w/mine/./own.h:52:17
+    #9 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+
+previously allocated by thread T0 here:
+    #0 0xaaaae0f67650 in malloc (/w/mine/bin-below-san+0x137650) (BuildId: 8b7f7d7525bacbf3fc2c91ffe093b6ec4fe319ca)
+    #1 0xaaaae0febc40 in hero_malloc_raw /w/tree/runtime/parts/alloc.c:707:15
+    #2 0xaaaae0fec2b8 in hero_frame_take_raw /w/tree/runtime/parts/frame.c:139:39
+    #3 0xaaaae0feacd4 in hero_frame_take /w/tree/runtime/parts/frame.c:208:16
+    #4 0xaaaae107aa48 in h_below_run /w/mine/below.hero:69:85
+    #5 0xaaaae107b004 in h_0cb_below_run /w/mine/below.c:343:27
+    #6 0xaaaae107c410 in ow_entry /w/mine/./own.h:52:17
+    #7 0xaaaae107c684 in ow_boot /w/mine/./own.h:26:62
+
+SUMMARY: AddressSanitizer: heap-use-after-free (/w/mine/bin-below-san+0x135100) (BuildId: 8b7f7d7525bacbf3fc2c91ffe093b6ec4fe319ca) in __asan_memcpy
+Shadow bytes around the buggy address:
+  0xfbffb8ea5580: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0xfbffb8ea5600: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0xfbffb8ea5680: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0xfbffb8ea5700: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0xfbffb8ea5780: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+=>0xfbffb8ea5800: fd fd fd fd[fd]fd fd fd fd fd fd fd fd fd fd fd
+  0xfbffb8ea5880: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0xfbffb8ea5900: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0xfbffb8ea5980: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0xfbffb8ea5a00: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+  0xfbffb8ea5a80: fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==2711==ABORTING

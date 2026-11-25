@@ -1,0 +1,1 @@
+A switch of stacks C makes changes no value a function holds, wherever the stacks lie.
