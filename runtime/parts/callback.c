@@ -111,18 +111,35 @@ static int64_t hero_callbacks_unfinished(void) {
  * and the regions climbed one depth a jump (`lendjump`, 334.7 MB resident
  * after 20,000 jumps against 3.0 MB where C returns).
  *
- * So each entry remembers the frame that took it, the taking function's own
- * `__builtin_frame_address(0)`, which `heroes_runtime.h`'s macros hand in
- * from the program's own C (the emitted calls are written as before), and the
- * two stacks HEAL: where a function takes an entry, or a thunk is entered,
- * every entry of a frame deeper than the one asking, on this thread's stack,
- * belongs to a frame that is gone, since the one asking is the deepest alive;
- * it is given back first. A frame's address is the same for its whole call
- * and lower than every caller's, wherever its function was inlined, on every
- * platform: the builtin makes the function keep a frame pointer. The thunk's
- * entry is what catches a frame jumped over and then called again at the same
- * address (the loop of `lendjump`), which no take of the new frame can tell
- * from its own.
+ * So each entry remembers the frame that took it, read by the take itself
+ * from where it was called (HERO_CALLER_FRAME, below), and the two stacks
+ * HEAL: where a function takes an entry, or a thunk is entered, every entry of
+ * a frame deeper than the one asking, on this thread's stack, belongs to a
+ * frame that is gone, since the one asking is the deepest alive; it is given
+ * back first. A frame's mark is the same for its whole call and lower than
+ * every caller's, wherever its function was inlined. The thunk's entry is what
+ * catches a frame jumped over and then called again at the same address (the
+ * loop of `lendjump`), which no take of the new frame can tell from its own.
+ *
+ * THE MARK IS THE CALLER'S FRAME, ASKED BY THE TAKE, so the program's C calls
+ * the takes as it always has and the unit's headers gain no macro (panel 214's
+ * R4 holds the runtime's macros to `HERO_`; a first form of this repair, the
+ * three takes as macros handing in `__builtin_frame_address(0)`, broke it,
+ * the compiler's own test told it). Each take is never inlined and reads:
+ *
+ *   - on POSIX, its caller's frame record, `__builtin_frame_address(1)`. Every
+ *     unit keeps one in each function that calls another, the word
+ *     `-fno-omit-frame-pointer` on x86-64 and AArch64's own default
+ *     (`selfhost/cli/flags.hero`'s `frame_words`, which an abort's walk of
+ *     its calls needs too, panel 253's R5), and a function that calls a take
+ *     calls another;
+ *   - on Windows x86-64, which keeps no frame record there, the address its
+ *     return address was pushed at, `_AddressOfReturnAddress()`: the caller's
+ *     stack pointer at the call, which the Windows x64 calling convention
+ *     keeps still outside a function's prologue and epilogue for every
+ *     function with no dynamic allocation, and the program's C allocates
+ *     none on the stack. Unrun on Windows on the day it was written (the box
+ *     was off; the CI's Windows leg is the first to run it).
  *
  * ON THIS THREAD'S OWN STACK, AND ONLY THERE. A coroutine runs on a stack of
  * its own, above or below this one, and its frames are no deeper than this
@@ -138,6 +155,17 @@ static int64_t hero_callbacks_unfinished(void) {
 static _Thread_local uintptr_t hero_heal_lo = 0;
 static _Thread_local uintptr_t hero_heal_hi = 0;
 static _Thread_local int hero_heal_measured = 0;
+#endif
+
+/* The mark of the frame that called the runtime function this is written in,
+ * which must be `noinline` (the head's THE MARK IS THE CALLER'S FRAME). */
+#if defined(_WIN32) && defined(__x86_64__)
+#include <intrin.h>
+#define HERO_CALLER_FRAME() ((uintptr_t)_AddressOfReturnAddress())
+#else
+#define HERO_CALLER_FRAME()                                                                              \
+    (_Pragma("clang diagnostic push") _Pragma("clang diagnostic ignored \"-Wframe-address\"")(uintptr_t) \
+         __builtin_frame_address(1) _Pragma("clang diagnostic pop"))
 #endif
 
 /* Whether `deeper` is the address of a frame below `frame`, both on this

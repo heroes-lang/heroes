@@ -176,11 +176,11 @@ static void hero_frame_heal_below(uintptr_t frame) {
     }
 }
 
-/* `frame` is the taking function's own frame, which `heroes_runtime.h`'s
- * `hero_frame_take` hands in; the caller named where the room runs out is
- * this function's own, the taking function's code. */
-__attribute__((noinline)) void *hero_frame_take_in(size_t bytes, void *frame) {
-    uintptr_t own = (uintptr_t)frame;
+/* The taking function's frame is read from where this was called
+ * (`parts/callback.c`'s HERO_CALLER_FRAME), so this is never inlined; the
+ * caller named where the room runs out is the taking function's code. */
+__attribute__((noinline)) void *hero_frame_take(size_t bytes) {
+    uintptr_t own = HERO_CALLER_FRAME();
     hero_frame_heal_below(own);
     if (hero_frame_marked == hero_frame_mark_cap) {
         size_t cap = hero_frame_mark_cap == 0 ? 64 : hero_frame_mark_cap * 2;
