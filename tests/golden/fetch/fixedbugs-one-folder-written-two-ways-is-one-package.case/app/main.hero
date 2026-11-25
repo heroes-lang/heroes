@@ -1,0 +1,12 @@
+# Defect d-lane-blocking-small2-2 (2026-11-25): one folder written once
+# absolute and once relative, or through a link, was two packages: `heroes
+# add --path <abs> --as other` beside the entry naming it `../local/lib`
+# wrote a second entry at exit 0, and a package whose own catalogue names its
+# neighbour `../dep` was refused where the program named that folder through
+# a link; and the same folder added under its own name by another spelling
+# was refused as another package, to be named with `--as`. A `path` is now
+# the folder on its device, never its spelling.
+use <lib>/lib
+
+function main()
+    print(lib.x().to_str())

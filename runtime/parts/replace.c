@@ -411,6 +411,57 @@ HeroStr hero_fs_resolved_shown(const char *path, int64_t *status, int64_t *marks
  * HERO_FS_OTHER is what is neither a file, a directory nor a link: a device, a
  * FIFO, a socket, on Windows `NUL`. HERO_FS_UNKNOWN when the question itself
  * failed, with `hero_fs_why` saying why. */
+/* WHAT A NAME IS ON ITS DEVICE, WHATEVER IT IS CALLED (defect
+ * d-lane-blocking-small2-2): the device and the file's number on it, every
+ * link followed, as text; "" where the system will not say, `hero_fs_why`
+ * saying why. A program's catalogue naming one folder twice, `../lib` and
+ * `/abs/lib`, through a link, in another case on a volume that folds case,
+ * or through macOS's `/System/Volumes/Data` firmlink, which `realpath`
+ * answers as another place (measured on this Mac), names one folder by this
+ * answer and by no spelling; a bind mount on Linux answers its source's
+ * pair (read, unrun). Windows opens the name as `hero_fs_kind` does and asks
+ * the volume's serial and the file's 128-bit id, `FileIdInfo`, which ReFS
+ * needs, and the 64-bit index where the volume answers none (unrun there). */
+HeroStr hero_fs_identity(const char *path) {
+    hero_fs_why_code = 0;
+    char text[96];
+    int written = -1;
+#if defined(_WIN32)
+    HANDLE h = CreateFileA(path, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                           OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    if (h == INVALID_HANDLE_VALUE) {
+        hero_fs_why_code = (int64_t)GetLastError();
+        return hero_str_from_bytes("", 0);
+    }
+    FILE_ID_INFO id;
+    BY_HANDLE_FILE_INFORMATION info;
+    if (GetFileInformationByHandleEx(h, FileIdInfo, &id, sizeof id)) {
+        written = snprintf(text, sizeof text, "%016llx:", (unsigned long long)id.VolumeSerialNumber);
+        for (int i = 15; i >= 0; i -= 1) {
+            written += snprintf(text + written, sizeof text - (size_t)written, "%02x", (unsigned)id.FileId.Identifier[i]);
+        }
+    } else if (GetFileInformationByHandle(h, &info)) {
+        written = snprintf(text, sizeof text, "%08lx:%08lx%08lx", (unsigned long)info.dwVolumeSerialNumber,
+                           (unsigned long)info.nFileIndexHigh, (unsigned long)info.nFileIndexLow);
+    }
+    /* Read before `CloseHandle`, which may set the last error itself. */
+    DWORD why = written < 0 ? GetLastError() : 0;
+    CloseHandle(h);
+    if (written < 0) {
+        hero_fs_why_code = (int64_t)why;
+        return hero_str_from_bytes("", 0);
+    }
+#else
+    struct stat info;
+    if (stat(path, &info) != 0) {
+        hero_fs_why_code = (int64_t)errno;
+        return hero_str_from_bytes("", 0);
+    }
+    written = snprintf(text, sizeof text, "%llx:%llx", (unsigned long long)info.st_dev, (unsigned long long)info.st_ino);
+#endif
+    return hero_str_from_bytes(text, (int64_t)written);
+}
+
 int64_t hero_fs_kind(const char *path) {
     hero_fs_why_code = 0;
 #if defined(_WIN32)

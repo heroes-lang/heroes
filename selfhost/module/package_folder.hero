@@ -1,0 +1,86 @@
+# What folder a `path` entry names, whatever the catalogue calls it (spec
+# § 1, panel 235's R3; defect d-lane-blocking-small2-2, 2026-11-25).
+#
+# **A folder is one package however it is written.** A program holds each
+# package under one name (R3), and the catalogue's reader refused two entries
+# naming one folder only where their spellings folded alike, `../lib` and
+# `../lib/`: `../lib` beside `/abs/lib`, a link to it, `../LIB` on a volume
+# that folds case and the folder through macOS's `/System/Volumes/Data` were
+# read as two packages at exit 0 and each compiled, `heroes add --path
+# /abs/lib --as other` wrote the second beside the first, and a package whose
+# own catalogue named its neighbour by another spelling than the program's
+# was refused as one the program does not list.
+#
+# **What identifies it is the folder on its device, never a path to it**,
+# measured on this Mac (APFS, which folds case): `realpath` answers a link,
+# `..`, a trailing `/` and the case alike, and the same folder through the
+# `/System/Volumes/Data` firmlink as another place, where the device and the
+# folder's number on it (`stat`'s `st_dev` and `st_ino`) are one; a bind
+# mount on Linux answers the same pair as its source, and Windows the
+# volume's serial and the file's id (`runtime/parts/replace.c`,
+# `hero_fs_identity`; both read, unrun). A copy, two folders holding the same
+# bytes, is two packages, as each changes alone.
+#
+# **A place where no folder stands is asked where it would be**: the part of
+# it that stands resolved and the rest as written (`files.resolved`), so two
+# spellings of one absent folder are still one, which the build then tells
+# absent; a place the system will not resolve, by its spelling, `.` and `..`
+# taken out, as the reader read every place until then.
+
+use cli/files
+use cli/process
+use module/sums
+
+# `lent`: the call reads the path while it runs and keeps nothing.
+extern "hero_os.h"
+    function hero_fs_identity(path: cstr lent) -> str
+
+# What `place` names, a `path` entry's folder read from where its catalogue
+# stands: one text for every name of one folder.
+function identity(place: str) -> str
+    found = hero_fs_identity(path: place.cstr())
+
+    if found.len() > 0
+        return "on " + found
+
+    match files.resolved(place)
+        .ok whole => return "at " + whole
+        .err _    => return "as " + sums.folded(place)
+
+## Tests
+
+constant SCRATCH: str
+    "build/selftest-package-folder"
+
+# Defect d-lane-blocking-small2-2: every name of one folder is one identity,
+# measured on this Mac's APFS, and two folders are two, a copy among them.
+# The shapes a system lacks are asked where it has them: a link where it
+# makes one, the other case where the volume folds it, the firmlink where
+# macOS's data volume stands.
+test "every name of one folder is one package, and a copy is another (defect d-lane-blocking-small2-2)"
+    assert !process.remove_tree(SCRATCH).is_err()
+    assert !process.mkdir_all(SCRATCH + "/app").is_err() && !process.mkdir_all(SCRATCH + "/lib").is_err()
+    assert !process.mkdir_all(SCRATCH + "/copy").is_err()
+    assert !write_file(path: SCRATCH + "/lib/lib.hero", text: "x\n").is_err()
+    assert !write_file(path: SCRATCH + "/copy/lib.hero", text: "x\n").is_err()
+    one = identity(SCRATCH + "/app/../lib")
+    whole = files.resolved(SCRATCH + "/lib").must()
+    assert identity(SCRATCH + "/lib") == one && identity(SCRATCH + "/lib/") == one && identity(SCRATCH + "/./lib") == one
+    assert identity(whole) == one && identity(whole + "/") == one
+    assert identity(SCRATCH + "/copy") != one
+
+    if !files.symbolic_link(target: "lib", name: SCRATCH + "/ln").is_err()
+        assert identity(SCRATCH + "/ln") == one && identity(SCRATCH + "/ln/") == one
+
+    if files.entry(SCRATCH + "/LIB") == .directory
+        assert identity(SCRATCH + "/LIB") == one
+    firm = "/System/Volumes/Data" + whole
+
+    if files.entry(firm) == .directory
+        assert identity(firm) == one
+
+    # Where no folder stands, its place: two spellings of it are one, and
+    # neither is the folder that stands.
+    gone = identity(SCRATCH + "/none")
+    assert gone == identity(SCRATCH + "/app/../none/") && gone != one
+    assert !process.remove_tree(SCRATCH).is_err()

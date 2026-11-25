@@ -261,6 +261,12 @@ int64_t hero_fs_kind(const char *path);
 /* How many names the file at `path` has; -1 when it cannot be asked. */
 int64_t hero_fs_links(const char *path);
 
+/* What `path` names on its device, every link followed, as text: two names
+ * of one file or folder answer alike whatever their spelling, and "" where
+ * the system will not say, `hero_fs_why` saying why (defect
+ * d-lane-blocking-small2-2). `parts/replace.c` says how. */
+HeroStr hero_fs_identity(const char *path);
+
 /* 1 when `path` could be opened for writing, as `fopen` would ask, else 0. */
 int64_t hero_fs_writable(const char *path);
 

@@ -35,6 +35,7 @@ use cli/given_path
 use fetch/address
 use fetch/address_form
 use module/listing
+use module/package_folder
 use module/reached
 use module/standing
 use module/sums
@@ -98,7 +99,7 @@ function read(opened: str, named: str) -> Catalogue
     file = named + FILE
 
     match standing.catalogue_text(path: opened + FILE, named: file)
-        .ok text => return parsed(file: file, text: text)
+        .ok text => return one_package_each(parsed(file: file, text: text), folder: opened)
         .err e =>
             if e.code == "file_not_found"
                 return empty()
@@ -119,21 +120,18 @@ function entry(c: Catalogue, name: str) -> Entry?
 ## What an entry is
 
 # The package an entry names, whatever the catalogue calls it (R3): the
-# index's address and the package's name there, a git address, or a folder
-# read from `folder`, the directory the catalogue stands in, its `.` and `..`
-# taken out. Two entries naming one package give one text: each address in
-# its one form (`fetch/address_form.hero`, M-package-manager step 3b), so one
-# index or one repository written two ways is one.
+# index's address and the package's name there, or a git address, each in
+# its one form (`fetch/address_form.hero`), so one written two ways is one;
+# or the folder a `path` names read from `folder`, where the catalogue
+# stands, a rooted one as written, by the folder on its device and never by
+# its spelling (`module/package_folder`, defect d-lane-blocking-small2-2).
 function source_of(e: Entry, index: str, folder: str) -> str
     if e.version.len() > 0
         return "index " + address_form.canonical(index) + " " + e.name
 
     if e.git.len() > 0
         return "git " + address_form.canonical(e.git)
-
-    # A rooted `path` is its own place, never one under `folder`
-    # (`cli/given_path`).
-    return "path " + sums.folded(given_path.read_from(folder: folder, path: e.path))
+    return "path " + package_folder.identity(given_path.read_from(folder: folder, path: e.path))
 
 # An entry's source as a message names it.
 function said_source(e: Entry) -> str
@@ -163,10 +161,6 @@ function parsed(file: str, text: str) -> Catalogue
         if wrong.len() > 0
             return refused(c, code: "catalogue_refused", at: file, said: "the entry `" + e.name + "` " + wrong)
 
-    twice = one_package_twice(c.entries)
-
-    if twice.len() > 0
-        return refused(c, code: "catalogue_refused", at: file, said: twice)
     return c
 
 # A catalogue that does not read: the problem, its code and place, and no
@@ -341,25 +335,25 @@ function incomplete(e: Entry) -> str
         return "wants its `sum`, `sha256-` then 64 lowercase hexadecimal digits, which `heroes add` writes"
     return ""
 
-# Two entries for one package within one catalogue, refused (R3): two
-# aliases of one package would compile it twice.
-function one_package_twice(entries: [Entry]) -> str
-    at: i64 @= 0
+# A catalogue that read, refused where two entries name one package (R3),
+# which it would compile twice; a `path` is asked from `folder` as a folder
+# on its device, where `../lib` and `/abs/lib` were two (defect
+# d-lane-blocking-small2-2).
+function one_package_each(c: Catalogue, folder: str) -> Catalogue
+    ids: [str] @= []
 
-    while at < entries.len()
-        earlier: i64 @= 0
+    for e in c.entries
+        ids @ ids.push(source_of(e, index: "", folder: folder))
 
-        while earlier < at
-            a = entries[earlier]
-            b = entries[at]
+    for at in range(from: 0, to: ids.len())
+        for earlier in range(from: 0, to: at)
+            if ids[earlier] == ids[at]
+                a = c.entries[earlier]
+                b = c.entries[at]
+                twice = "the entries `" + a.name + "` and `" + b.name + "` name one package, " + said_source(a) + " and " + said_source(b) + ", and a program holds one version of each package under one name"
+                return refused(c, code: "catalogue_refused", at: c.file, said: twice)
 
-            if a.version.len() == 0 && b.version.len() == 0 && source_of(a, index: "", folder: "") == source_of(b, index: "", folder: "")
-                return "the entries `" + a.name + "` and `" + b.name + "` name one package, and a program holds one version of each package under one name"
-            earlier @ earlier + 1
-
-        at @ at + 1
-
-    return ""
+    return c
 
 ## Tests
 
@@ -468,8 +462,11 @@ test "an entry holds one source and what that source needs, and nothing else"
     assert scheme.at == "h:2" && scheme.code == "source_refused"
 
     # One package under two names is refused (panel 235's R3).
-    twice = parsed(file: "h", text: "[dependencies.a]\npath = \"../json\"\n\n[dependencies.b]\npath = \"../json\"\n")
-    assert twice.problem == "h: the entries `a` and `b` name one package, and a program holds one version of each package under one name"
+    twice = one_package_each(
+        parsed(file: "h", text: "[dependencies.a]\npath = \"../json\"\n\n[dependencies.b]\npath = \"../json\"\n"),
+        folder: ""
+    )
+    assert twice.problem == "h: the entries `a` and `b` name one package, the folder `../json` and the folder `../json`, and a program holds one version of each package under one name"
 
 # The specification's own example (spec § 1), byte for byte as its fence
 # holds it and as `tests/harness/suite_spec.hero`'s `fragments` pins it: an

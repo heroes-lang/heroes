@@ -86,14 +86,14 @@ function folder_entry(inv: argv.Invocation, program: str, folder: str, c: catalo
 # A name `--as` gives a package an entry of the catalogue already holds under
 # another name, refused (defect 2620): a program holds each package under one
 # name (panel 235's R3, which the catalogue's reader holds,
-# `catalogue.one_package_twice`), so the entry cannot be written beside the
+# `catalogue.one_package_each`), so the entry cannot be written beside the
 # one that holds it. Until then the walk of the build list took the entry
 # that held it for the one asked (`fetch/build_list.hero`, `chosen`), the
 # name given was dropped, and `add` said `wrote` at exit 0 with no entry of
 # that name written. Without `--as` that entry is the one `add` moves, under
 # its own name, a line saying so where anything of it moved. Asked of the
-# catalogue's text and the command line alone, before a folder is read or a
-# source asked.
+# catalogue and the command line, a `path` by the folder it names on its
+# device (defect d-lane-blocking-small2-2), before a source is asked.
 function held_under_another(inv: argv.Invocation, e: catalogue.Entry, program: str, c: catalogue.Catalogue) -> ()?
     if !argv.has(inv, spelling: "--as")
         return ok()
@@ -115,8 +115,8 @@ function held_under_another(inv: argv.Invocation, e: catalogue.Entry, program: s
 # (`fetch/build_list.hero`, `chosen`), after the source was asked, and told
 # it `bad_usage` at exit 2, *name the new one with `--as`*, to a command that
 # had named it with `--as` already, and to an index package, which takes no
-# `--as`. Asked of the catalogue's text and the command line alone, before a
-# folder is read or a source asked; `held_under_another` is asked first.
+# `--as`. Asked as `held_under_another` asks, and after it, before a source
+# is asked.
 function name_held(inv: argv.Invocation, e: catalogue.Entry, program: str, c: catalogue.Catalogue) -> ()?
     held = catalogue.entry(c, name: e.name)
 

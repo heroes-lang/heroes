@@ -1,0 +1,10 @@
+# Defect d-lane-blocking-small2-2 (2026-11-25): two `path` entries naming one
+# folder, one through a link to it, were read as two packages at exit 0 and
+# both compiled, where a program holds each package under one name (panel
+# 235's R3); the reader compared their spellings, and refused only two that
+# fold alike. A folder is now one package by what it is on its device, so the
+# catalogue does not read and the `use` that reaches through it is refused.
+use <json>/parse  #~ catalogue_refused
+
+function main()
+    print(parse.x().to_str())
