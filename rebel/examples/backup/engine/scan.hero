@@ -30,7 +30,8 @@ record Found
     rel: str
     # What it is.
     kind: tree.Kind
-    # Its permission bits.
+    # Its permission bits; `tree.LINK_MODE` for a link, whatever the
+    # system gave it.
     mode: i64
     # When its content was last written, in nanoseconds since 1970.
     modified: i64
@@ -75,7 +76,7 @@ function scan(root: str) -> Scan?
                 Found(rel: rel, kind: .directory, mode: facts.permission, modified: facts.written.unix_nanoseconds, size: 0, target: "")
             )
             .link      => found @ found.push(
-                Found(rel: rel, kind: .symlink, mode: facts.permission, modified: facts.written.unix_nanoseconds, size: 0, target: fs.read_link(full)?)
+                Found(rel: rel, kind: .symlink, mode: tree.LINK_MODE, modified: facts.written.unix_nanoseconds, size: 0, target: fs.read_link(full)?)
             )
             .other     => skipped @ skipped.push(rel)
 
@@ -128,6 +129,17 @@ test "scan: the root first, then depth first, an ignored folder never entered"
 
     assert rels == ["", IGNORE_FILE, "a.txt", "b", "b/c.txt"]
     assert s.found[4].size == 2 && s.found[3].kind == .directory
+    fs.remove_all(root).must()
+
+test "scan: a link recorded with `tree.LINK_MODE`, whatever bits the system gave it"
+    root = "build/backup-tests/scan-link"
+    _ = fs.remove_all(root).is_err()
+    fs.make_dir_all(root).must()
+    write_file(path: root + "/a.txt", text: "a").must()
+    fs.symlink(target: "a.txt", name: root + "/l").must()
+    s = scan(root).must()
+    assert s.found.len() == 3 && s.found[2].rel == "l" && s.found[2].kind == .symlink
+    assert s.found[2].mode == tree.LINK_MODE && s.found[2].target == "a.txt"
     fs.remove_all(root).must()
 
 test "parent_of: of a nested path, of a top one; name_of the last part"
