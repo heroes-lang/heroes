@@ -1,0 +1,252 @@
+# What each of several inputs' includes reach NOW, asked of ONE clang run
+# (design.md §4.19, §1.12; defect 2289's question, `cli/opening.hero`, asked
+# of the platform layer's members at every build, `cli/layer.hero`).
+#
+# **Why one run.** The layer's archive is keyed by what every member's
+# includes reach now, and each member asked alone was a clang process of its
+# own: 43 of them on this Mac on 2026-11-25, 2.4 s of every warm build (load
+# 8 to 9), where a build of `print(1)` had cost 0.25 s before the layer grew.
+# One `clang -M` given every member writes one rule per input on its standard
+# output, each opening with the target `-MT dep` names, in the inputs' order
+# (under `-MF` a listing of two inputs keeps only the second's, measured on
+# this Mac): 1.4 s for the 43, measured in the same minutes.
+#
+# **The same question, byte for byte.** Each input is a job of its own of the
+# driver, with its own preprocessor, so a header one member includes is no
+# answer for another; measured on this Mac with Apple clang 21 over the 43
+# members, each rule was byte for byte the listing that member's own `-MF` run
+# wrote, so the record made of them, and the key it goes into, is the one 43
+# runs made. **That premise is asked of every run, not written here alone**: a
+# listing that does not hold one rule per input, each naming its own input
+# among its paths, is no answer, so nothing is served warm under it and the
+# archive compiles again, the loud side.
+
+use cli/deps
+use cli/opening
+use cli/process
+use cli/publish
+use cli/strings
+use module/reading as file_reading
+
+# What clang's preprocessor opens of each of `inputs` under `line` (`clang`
+# and its words), the rows of each as `opening.reached` writes them after
+# their digest, in the inputs' order; `listing` the file its standard output
+# goes to, removed before this answers; `skip` and `keyed` as
+# `opening.reached` takes them. None where there is no input; absent where
+# clang did not start, an input did not preprocess, or its listing is not one
+# rule per input.
+function reached_each(line: [str], inputs: [str], listing: str, skip: str, keyed: [str], @memo: {str: str}) -> [str]?
+    none: [str] = []
+
+    if inputs.len() == 0
+        return ok(none)
+    words = strings.with_all(list: strings.with_all(list: line, more: ["-M", "-MT", "dep"]), more: inputs)
+    ran = process.run(program: "clang", words: words, out: listing, err: process.discard())
+
+    if !ran.started || ran.code != 0
+        publish.discard(listing)
+        return fail(code: opening.UNREAD, msg: "the includes did not preprocess")
+    rules = rules_keyed(listing: listing, inputs: inputs, skip: skip, keyed: keyed, @memo)
+    publish.discard(listing)
+    return rules
+
+# The rows of each rule of `listing`, in the inputs' order; absent where the
+# listing cannot be read, or does not hold one rule per input, each naming its
+# own input among its paths: a listing read otherwise is never a record.
+#
+# **Each rule is read by `deps.rows_keyed`, the one reader of a listing**,
+# from a file of its own beside `listing`, removed once read: that reader
+# says what a row is (a path the key already holds, a file that cannot be
+# read, a name that is not UTF-8), and a second reader here would be a second
+# place where that rule lives (`deps.hero` stands at its ceiling, so the
+# reader is not split there to take a text).
+function rules_keyed(listing: str, inputs: [str], skip: str, keyed: [str], @memo: {str: str}) -> [str]?
+    read = file_reading.text_of(listing)
+
+    if read.is_err()
+        return fail(code: opening.UNREAD, msg: "clang wrote no dependency listing at " + listing)
+    rules = rules_of(read.must())
+
+    if rules.len() != inputs.len()
+        return fail(
+            code: opening.UNREAD,
+            msg: "clang listed " + rules.len().to_str() + " rules for " + inputs.len().to_str() + " inputs"
+        )
+    out: [str] @= []
+    at: i64 @= 0
+
+    for rule in rules
+        if !lists(paths: deps.paths_of(rule), path: inputs[at])
+            return fail(code: opening.UNREAD, msg: "the listing's rule " + at.to_str() + " does not name " + inputs[at])
+        one = publish.private_name(listing + "-rule")
+        written = publish.write_whole(path: one, text: rule, keyed: false)
+        rows = deps.rows_keyed(depfile: one, skip: skip, keyed: keyed, @memo)
+        publish.discard(one)
+        written?
+        out @ out.push(rows?)
+        at @ at + 1
+
+    return ok(out)
+
+# A listing's rules, each from a line opening with the target `dep:` to the
+# next such line: a rule's paths go on in lines that open with blanks, so the
+# target opens a line only where a rule starts.
+function rules_of(text: str) -> [str]
+    out: [str] @= []
+    head = "dep:"
+    start: i64 @= -1
+    at: i64 @= 0
+
+    while at < text.len()
+        if (at == 0 || text[at - 1] == '\n') && at + head.len() <= text.len() && text.slice(from: at, to: at + head.len()) == head
+            if start >= 0
+                out @ out.push(text.slice(from: start, to: at))
+            start @ at
+        at @ at + 1
+
+    if start >= 0
+        out @ out.push(text.slice(from: start, to: text.len()))
+    return out
+
+# Whether `paths` holds `path`, byte for byte but the separators, which clang
+# writes as `\` on Windows whatever the words said (`deps.under`).
+function lists(paths: [str], path: str) -> bool
+    for one in paths
+        if one.len() == path.len() && deps.under(path: one, prefix: path, either: true)
+            return true
+
+    return false
+
+## Tests
+
+# Two inputs of one tree, each including its own header and one they share,
+# under a search of two folders.
+function each_tree(root: str) -> [str]
+    assert !process.remove_tree(root).is_err()
+
+    for dir in [root + "/inc", root + "/src", root + "/at"]
+        assert !process.mkdir_all(dir).is_err()
+
+    assert !write_file(path: root + "/inc/shared.h", text: "#if __has_include(<probe.h>)\n#define HERO_PROBED 1\n#endif\n").is_err()
+    assert !write_file(path: root + "/inc/one.h", text: "#include <shared.h>\n").is_err()
+    assert !write_file(path: root + "/inc/two.h", text: "#include <shared.h>\n#include <stddef.h>\n").is_err()
+    assert !write_file(path: root + "/at/one.c", text: "#include <one.h>\n").is_err()
+    assert !write_file(path: root + "/at/two.c", text: "#include <two.h>\n").is_err()
+    return [root + "/at/one.c", root + "/at/two.c"]
+
+# What each input reaches asked alone, as `opening.reached` asks it, its rows
+# after their digest.
+function alone(line: [str], inputs: [str], dir: str) -> [str]
+    none: [str] = []
+    out: [str] @= []
+
+    for input in inputs
+        memo: {str: str} @= {}
+        one = opening.reached(
+            line: line,
+            input: input,
+            depfile: dir + "/alone.d",
+            skip: dir + "/",
+            keyed: none,
+            @memo
+        ).must()
+        out @ out.push(one.slice(from: 17, to: one.len()))
+
+    return out
+
+# **One run says what each input's own run says** (defect 2289's question,
+# asked of many inputs at once): each input's rows are the ones it gives
+# asked alone, in the inputs' order, and they move as an input's own move:
+# a file only a `__has_include` finds, a header ahead of the one read, each
+# moves the rows of every input that reaches it, as a build with no
+# `build/` would compile it.
+test "one clang run says what each input's own run says, and moves as each would (defect 2289)"
+    root = "build/selftest-reached-each"
+    inputs = each_tree(root)
+    line = ["clang", "-I", root + "/src", "-I", root + "/inc"]
+    none: [str] = []
+    first: {str: str} @= {}
+    before = reached_each(
+        line: line,
+        inputs: inputs,
+        listing: root + "/each.d",
+        skip: root + "/at/",
+        keyed: none,
+        @first
+    ).must()
+    assert before == alone(line: line, inputs: inputs, dir: root + "/at")
+    assert opening.names(text: before[0], path: root + "/inc/one.h")
+    assert !opening.names(text: before[0], path: root + "/inc/two.h")
+    assert opening.names(text: before[1], path: root + "/inc/two.h")
+    assert !process.path_exists(root + "/each.d")
+
+    # A file only `__has_include` finds is in both inputs' rows.
+    assert !write_file(path: root + "/inc/probe.h", text: "\n").is_err()
+    second: {str: str} @= {}
+    probed = reached_each(
+        line: line,
+        inputs: inputs,
+        listing: root + "/each.d",
+        skip: root + "/at/",
+        keyed: none,
+        @second
+    ).must()
+    assert opening.names(text: probed[0], path: root + "/inc/probe.h")
+    assert opening.names(text: probed[1], path: root + "/inc/probe.h")
+    assert probed == alone(line: line, inputs: inputs, dir: root + "/at")
+
+    # A header ahead of the one the second input read moves its rows alone.
+    assert !write_file(path: root + "/src/two.h", text: "\n").is_err()
+    third: {str: str} @= {}
+    ahead = reached_each(
+        line: line,
+        inputs: inputs,
+        listing: root + "/each.d",
+        skip: root + "/at/",
+        keyed: none,
+        @third
+    ).must()
+    assert ahead[0] == probed[0]
+    assert opening.names(text: ahead[1], path: root + "/src/two.h")
+    assert ahead == alone(line: line, inputs: inputs, dir: root + "/at")
+
+    # One input that does not preprocess is no answer for any, and leaves
+    # no listing behind.
+    assert !write_file(path: root + "/src/two.h", text: "#error a decoy\n").is_err()
+    fourth: {str: str} @= {}
+    assert reached_each(
+        line: line,
+        inputs: inputs,
+        listing: root + "/each.d",
+        skip: root + "/at/",
+        keyed: none,
+        @fourth
+    ).is_err()
+    assert !process.path_exists(root + "/each.d")
+
+    # No input asks clang nothing.
+    assert reached_each(line: ["heroes-no-such-clang"], inputs: none, listing: root + "/each.d", skip: "", keyed: none, @fourth).must().len() == 0
+    assert !process.remove_tree(root).is_err()
+
+# A listing is read as one rule per input or not at all: a rule opens a
+# line with its target, a target inside a path opens none, and a listing
+# of fewer rules than inputs, or one whose rule names another input, is no
+# answer.
+test "a listing of several inputs is one rule per input, each naming its own, or no answer"
+    assert rules_of("dep: \\\n  a.c a.h\ndep: b.c \\\n  dep:x.h\n") == ["dep: \\\n  a.c a.h\n", "dep: b.c \\\n  dep:x.h\n"]
+    assert rules_of("").len() == 0
+    assert rules_of("no rule here\n").len() == 0
+    dir = "build/selftest-reached-each-rules"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    none: [str] = []
+    memo: {str: str} @= {}
+    listing = dir + "/listing.d"
+    assert !write_file(path: listing, text: "dep: \\\n  " + dir + "/a.c\ndep: \\\n  " + dir + "/b.c\n").is_err()
+    assert rules_keyed(listing: listing, inputs: [dir + "/a.c", dir + "/b.c"], skip: "", keyed: none, @memo).must() == ["absent " + dir + "/a.c", "absent " + dir + "/b.c"]
+    assert rules_keyed(listing: listing, inputs: [dir + "/a.c"], skip: "", keyed: none, @memo).is_err()
+    assert rules_keyed(listing: listing, inputs: [dir + "/b.c", dir + "/a.c"], skip: "", keyed: none, @memo).is_err()
+    assert rules_keyed(listing: dir + "/none.d", inputs: none, skip: "", keyed: none, @memo).is_err()
+    assert lists(paths: ["c:\\x\\a.c"], path: "c:/x/a.c")
+    assert !lists(paths: ["x/ab.c"], path: "x/a.c")
+    assert !process.remove_tree(dir).is_err()
