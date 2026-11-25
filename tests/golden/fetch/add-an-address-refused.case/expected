@@ -17,7 +17,7 @@ $ heroes add ../yaml --tag v1 -C <work>/app
 exit 1
 stdout:
 stderr:
-error[source_refused]: `../yaml` is a path and no address: a repository inside the program's own is `file://` and its path, `file://../yaml` here, and a package's folder while it is developed is its entry's `path`
+error[source_refused]: `../yaml` is a path and no address: a repository inside the program's own is `file://` and its path, `file://../yaml` here, read from the program's folder, and a package's folder while it is developed is its entry's `path`
 $ heroes add https://ana:secret@git.example.invalid/ana/yaml --tag v1 -C <work>/app
 exit 1
 stdout:

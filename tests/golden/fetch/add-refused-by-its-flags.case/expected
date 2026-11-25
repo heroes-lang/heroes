@@ -17,7 +17,7 @@ $ heroes add --path ../local/nothere -C <work>/app
 exit 1
 stdout:
 stderr:
-error[absent]: there is no folder `<work>/app/../local/nothere`
+error[absent]: there is no folder `../local/nothere` from the program's folder `<work>/app/`
 $ heroes add --path ../local/other --as yaml -C <work>/app
 exit 1
 stdout:

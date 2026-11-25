@@ -1,0 +1,27 @@
+$ cd <work> && heroes add -C app --path <work>/local/lib
+exit 0
+stdout:
+added dep <work>/local/dep for lib
+added lib <work>/local/lib
+wrote app/heroes.toml
+stderr:
+$ cd <work> && heroes check app/main.hero
+exit 0
+stdout:
+stderr:
+note: the package `lib` is read from the folder `<work>/local/lib/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+note: the package `lib`, read from the folder `<work>/local/lib/`, names the local folder `../dep` for `dep` in its own catalogue: read here, both folders being the author's own, and refused where `lib` is fetched by its `version` or `git`
+note: the package `dep` is read from the folder `<work>/local/dep/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+$ cd <work> && heroes add -C app --path <work>/local/none
+exit 1
+stdout:
+stderr:
+error[absent]: there is no folder `<work>/local/none`
+heroes.toml:
+[dependencies.dep]
+path = "<work>/local/dep"
+
+[dependencies.lib]
+path = "<work>/local/lib"
+heroes.packages:
+(none)

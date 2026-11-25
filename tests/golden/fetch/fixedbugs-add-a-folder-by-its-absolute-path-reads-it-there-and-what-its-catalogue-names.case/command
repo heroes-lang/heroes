@@ -1,0 +1,3 @@
+cd <work> && add -C app --path <work>/local/lib
+cd <work> && check app/main.hero
+cd <work> && add -C app --path <work>/local/none

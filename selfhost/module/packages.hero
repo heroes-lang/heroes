@@ -28,6 +28,7 @@
 # it names, a folder of the author's own, and told as unverified (R6).
 
 use cli/files
+use cli/given_path
 use cli/process
 use cli/strings
 use fetch/leftover
@@ -143,7 +144,7 @@ function rooted(b: Book, e: catalogue.Entry) -> reached.Package
     if e.path.len() > 0
         folder = with_slash(e.path)
 
-        if folder[0] == '/'
+        if given_path.rooted(folder)
             return reached.Package(alias: e.name, root: folder, opened: folder, problem: "", code: "", unverified: true)
         return reached.Package(
             alias: e.name,
@@ -169,7 +170,7 @@ function rooted(b: Book, e: catalogue.Entry) -> reached.Package
 function problem_of(@b: Book, @code: str, package: reached.Package, e: catalogue.Entry) -> str
     if package.unverified
         if !process.is_directory(path: package.opened)
-            return "the folder `" + package.root + "` its `path` names is not there"
+            return path_absent(named: b.named, e: e, opened: package.opened)
     else
         home = home_said(opened: b.opened, named: b.named)
 
@@ -307,6 +308,21 @@ function program_entry(program: catalogue.Catalogue, wanted: str, opened: str) -
             return e.name
 
     return ""
+
+# Why a `path` entry's folder cannot be read where no folder stands at the
+# place it is `opened` from: the path as the catalogue writes it and the
+# program's folder it is read from, `named` as the command named it, never
+# the two joined (defect d-lane-blocking-small-1), and what stands there
+# where something does (defect 2572's question): a file stood there and was
+# told as nothing.
+function path_absent(named: str, e: catalogue.Entry, opened: str) -> str
+    written = given_path.said(folder: named, path: e.path)
+    place = standing.unslashed(opened)
+    stood = standing.at(place)
+
+    if stood == .nothing
+        return "its `path` names the folder " + written + ", and nothing is there"
+    return "its `path` names the folder " + written + ", and " + standing.said(stood, path: place) + " stands there, where a package's folder is read"
 
 function with_slash(folder: str) -> str
     if folder.len() > 0 && folder[folder.len() - 1] == '/'
