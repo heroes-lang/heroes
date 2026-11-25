@@ -10,6 +10,7 @@
 
 use cli/argv
 use cli/process
+use cli/stands
 use fetch/address
 use fetch/closure
 use fetch/git_source
@@ -63,8 +64,18 @@ function folder_entry(inv: argv.Invocation, program: str, folder: str, c: catalo
     held_under_another(inv, e: e, program: program, c: c)?
     name_held(inv, e: e, program: program, c: c)?
 
+    # Where something other than a folder stands there, what it is (defect
+    # 2572): a FIFO, a socket, a device or a link to nothing was told as no
+    # folder at all.
     if !process.is_directory(program + folder)
-        return fail(code: "absent", msg: "there is no folder `" + program + folder + "`")
+        stood = stands.said(program + folder)
+
+        if stood == "nothing"
+            return fail(code: "absent", msg: "there is no folder `" + program + folder + "`")
+        return fail(
+            code: "absent",
+            msg: "`" + program + folder + "` is " + stood + ", where `--path` names a package's folder"
+        )
     return ok(e)
 
 # A name `--as` gives a package an entry of the catalogue already holds under

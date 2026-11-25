@@ -10,6 +10,7 @@
 # pair's messages where the run kept them, the arm's records, and as the
 # record says otherwise.
 
+use module/reading
 use mutate/hunks
 use mutate/json_fields
 use mutate/json_read
@@ -36,14 +37,14 @@ function read_run(dir: str) -> Run?
         by_pair[json_fields.text_field(row, name: "key")?] @ row
 
     digests: [str] @= []
-    meta = read_file(dir + "/run.json")
+    meta = reading.text_of(dir + "/run.json")
 
     if !meta.is_err()
         digests @ json_fields.texts_field(json_read.read_json(meta.must())?, name: "plan_digests")?
     return ok(Run(singles: by_single, pairs: by_pair, corpus: own.read_corpus(dir)?, plan_digests: digests))
 
 function text_at(path: str) -> str?
-    got = read_file(path)
+    got = reading.text_of(path)
 
     if got.is_err()
         return fail(code: "no_run", msg: "cannot read " + path)

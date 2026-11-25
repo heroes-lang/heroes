@@ -78,6 +78,7 @@ use emit/clang_place
 use emit/ffi_build
 use emit/ffi_lookup
 use emit/region_note
+use module/reading
 use parse
 use resolve
 use source
@@ -580,7 +581,7 @@ test "a note at a runtime name the header's line calls or misspells is the runti
 
 # The row of the runtime's header that reads `line`, found by its text.
 function runtime_row(line: str) -> i64
-    rows = ffi_lookup.lines(text: read_file("runtime/heroes_runtime.h").must())
+    rows = ffi_lookup.lines(text: reading.text_of("runtime/heroes_runtime.h").must())
 
     for at in range(from: 0, to: rows.len())
         if rows[at] == line

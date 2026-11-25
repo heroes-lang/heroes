@@ -52,6 +52,7 @@ use fetch/verb_place
 use module/catalogue
 use module/fingerprint
 use module/placed
+use module/reading
 
 # The command: what changed and the file written on stdout, or the refusal
 # on stderr, its exit its code's (`fetch/told.hero`).
@@ -141,7 +142,7 @@ function placed_and_written(@ledger: staging.Ledger, inv: argv.Invocation, tools
     if c.index.len() == 0
         written @ line
     file = program + catalogue.FILE
-    text = catalogue_edit.edited(text: read_file(file).default(""), entries: entries_of(built), index: written)
+    text = catalogue_edit.edited(text: reading.text_of(file).default(""), entries: entries_of(built), index: written)
     published = publish.rewrite(path: file, text: text)
 
     if published.is_err()

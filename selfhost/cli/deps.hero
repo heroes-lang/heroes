@@ -262,7 +262,7 @@ function pointer_text(rows: str) -> str
 # (`kept.record_rows`, defect 357), or one whose files no longer say what
 # they said.
 function vouched(record_path: str, @memo: {str: str}) -> str?
-    read = read_file(record_path)
+    read = file_reading.text_of(record_path)
 
     if read.is_err()
         return fail(code: "none", msg: "no record at " + record_path)

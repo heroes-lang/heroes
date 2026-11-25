@@ -37,6 +37,7 @@ use cli/caret_bytes
 use cli/standard_name
 use emit/clang_place
 use emit/ffi_lookup
+use module/reading
 
 constant NOTE: str
     ": note: "
@@ -290,7 +291,7 @@ function clang_rows(at: str, line: str, caret: str, note: str) -> [str]
 
 # The row of a runtime file that reads `line`, found by its text.
 function row_of(path: str, line: str) -> i64
-    rows = ffi_lookup.lines(text: read_file(path).must())
+    rows = ffi_lookup.lines(text: reading.text_of(path).must())
 
     for at in range(from: 0, to: rows.len())
         if rows[at] == line

@@ -16,6 +16,7 @@ use cli/environment
 use cli/process
 use cli/publish
 use cli/read_back
+use module/reading
 
 # Where the answers go where the build's cache may not be written: the
 # system's folder for temporary files, as its own variables name it. On
@@ -149,7 +150,7 @@ function linked_and_ran(dir: str, source: str) -> str?
     if built.code != 0
         return fail(code: "none", msg: "clang could not link a C program: " + first_said(path: said, code: built.code))
     ran = process.run(program: binary, words: [binary], out: said, err: process.discard())
-    answered = read_file(said)
+    answered = reading.text_of(said)
 
     if !ran.started || ran.code != 0 || answered.is_err() || answered.must() != "linked"
         return fail(code: "none", msg: "clang linked a C program, and it did not run to its end")

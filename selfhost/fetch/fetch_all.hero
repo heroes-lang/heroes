@@ -33,6 +33,7 @@ use module/fingerprint
 use module/listing
 use module/path_entries
 use module/placed
+use module/reading
 
 # The command: one line on stdout for each entry placed, kept or read where
 # it stands, and each refusal on stderr at the catalogue's line.
@@ -70,7 +71,7 @@ function outcome(inv: argv.Invocation, tools: transport.Tools) -> [told.Said]
     if root.is_err()
         staging.ended(@ledger)
         return [told.refused(failure: verb_place.unit_of(root), at: "")]
-    text = read_file(c.file).default("")
+    text = reading.text_of(c.file).default("")
     out: [told.Said] @= []
 
     for e in c.entries

@@ -1,0 +1,2 @@
+# `x.h` made a link to a device in the case's copy, where the group finds its header.
+x.h /dev/null

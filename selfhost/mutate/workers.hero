@@ -16,6 +16,7 @@
 # there, exit 2: a run with a hole is not a run two compilers can compare.
 
 use cli/process
+use module/reading
 use mutate/json_fields
 use mutate/json_read
 use mutate/judged
@@ -53,7 +54,7 @@ function write_job(job: Job) -> ()?
     return ok()
 
 function read_job() -> Job?
-    text = read_file(job_path())
+    text = reading.text_of(job_path())
 
     if text.is_err()
         return fail(code: "no_job", msg: "cannot read " + job_path())
@@ -144,7 +145,7 @@ function original(at: judged.Place, file: str, @texts: {str: str}) -> str?
 
     if !held.is_err()
         return held
-    got = read_file(at.mirror + "/" + file)
+    got = reading.text_of(at.mirror + "/" + file)
 
     if got.is_err()
         return fail(code: "no_corpus", msg: "cannot read " + at.mirror + "/" + file)
@@ -164,7 +165,7 @@ function written(path: str, lines: [str]) -> ()?
 # Every single's codes alone, by key, the normal arm's first.
 function read_alone(out: str) -> {str: [[str]]}?
     got: {str: [[str]]} @= {}
-    text = read_file(out + "/work/alone.jsonl")
+    text = reading.text_of(out + "/work/alone.jsonl")
 
     if text.is_err()
         return fail(code: "no_alone", msg: "cannot read " + out + "/work/alone.jsonl")

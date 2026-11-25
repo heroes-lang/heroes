@@ -1,0 +1,14 @@
+# fixedbugs, defect 2572: the header a group names is found first beside the
+# program as a link to a device, `/dev/null` (made in the case's copy,
+# `links`). A link to a device there was read by clang as an empty header
+# and told *`x.h` declares no `x_one`*, and a FIFO there hung `heroes build`
+# in clang's first listing until it was killed: the search is now walked
+# before any clang starts, and the group is refused with what stands there.
+# A FIFO cannot be tracked by git, so the compiler's own tests hold that one
+# (`cli/header_stands.hero`, `module/reading.hero`).
+
+extern "x.h"  #~ ffi_header_refused
+    function x_one() -> i32
+
+function main()
+    print(x_one().to_str())

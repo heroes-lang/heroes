@@ -27,6 +27,7 @@
 # a plan pinned in the tree is its other files.
 
 use cli/process
+use module/reading
 use mutate/ascii_json
 use mutate/child
 use mutate/cut_corpus
@@ -236,9 +237,9 @@ function modelled(out: str, mirror: str, kept: [str]) -> [model.Program]?
 
     for index in range(from: 0, to: kept.len())
         rel = kept[index]
-        text = read_file(mirror + "/" + rel)?
+        text = reading.text_of(mirror + "/" + rel)?
         dump_at = cut_workers.dump_path(out, task: index)
-        dump = read_file(dump_at)?
+        dump = reading.text_of(dump_at)?
         read = tokens.read_dump(dump, lines: model.split_lines(text))?
 
         if read.misplaced.len() > 0
@@ -309,7 +310,7 @@ function phase(out: str, which: i64, tasks: [str]) -> [str]?
     for index in range(from: 0, to: cut_workers.JOBS)
         path = cut_workers.records_path(out, phase: which, index: index)
 
-        for line in judged.told_lines(read_file(path)?)
+        for line in judged.told_lines(reading.text_of(path)?)
             tab = first_tab(line)
             task = json_fields.whole_of(.number(written: line.slice(from: 0, to: tab.default(0))))
 
@@ -335,7 +336,7 @@ function failures(out: str, which: i64) -> str
     said: [str] @= []
 
     for index in range(from: 0, to: cut_workers.JOBS)
-        got = read_file(cut_workers.failure_path(out, phase: which, index: index))
+        got = reading.text_of(cut_workers.failure_path(out, phase: which, index: index))
 
         if !got.is_err()
             said @ said.push("worker " + index.to_str() + ": " + got.must())

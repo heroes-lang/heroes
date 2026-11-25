@@ -108,7 +108,7 @@ function refusal(at: str, what: str, stands: standing.Standing, changes: [str]) 
 
     if stands == .linked_tree
         return what + " would be placed at `" + at + "`, where a link to a folder stands, and that folder is not the tree: " + listed(changes) + "; it is yours, so nothing was placed over it: move it out of `heroes.packages/` to keep it, or remove it to have the tree placed"
-    return what + " would be placed at `" + at + "`, where " + standing.said(stands) + " stands; it is yours, so nothing was placed over it: move it out of `heroes.packages/` to keep it, or remove it to have the tree placed"
+    return what + " would be placed at `" + at + "`, where " + standing.said(stands, path: at) + " stands; it is yours, so nothing was placed over it: move it out of `heroes.packages/` to keep it, or remove it to have the tree placed"
 
 # The changes in one phrase, the first `NAMED` of them and how many more.
 function listed(changes: [str]) -> str

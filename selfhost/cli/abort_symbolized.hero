@@ -36,6 +36,7 @@ use bytes
 use cli/process
 use cli/strings
 use module/listing
+use module/reading
 
 # The PDB's reader, the compiler's own door (`runtime/hero_compiler.h`).
 # `lent`: the call reads both while it runs and keeps neither.
@@ -97,7 +98,7 @@ function resolved(binary: str, addresses: [str], scratch: str) -> [[Level]]?
 # away, since what it says there is not the program's.
 function asked(words: [str], scratch: str) -> str?
     ran = process.run(program: words[0], words: words, out: scratch, err: process.discard())
-    text = read_file(scratch)
+    text = reading.text_of(scratch)
     _ = process.remove_file(scratch).is_err()
 
     if !ran.started || ran.code != 0

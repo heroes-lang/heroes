@@ -1,0 +1,134 @@
+# A group's header that the build's search finds first as something clang
+# cannot read as a file (design.md §4.19, §1.12; defect 2572, 2026-11-24):
+# a FIFO, a socket, a device, or a link whose chain names one, where the
+# program's folder, a folder `--include` names or a package's `pkg-config`
+# folder holds the header's name.
+#
+# **clang opens the first file of that name its search meets, and a FIFO's
+# open waits for a writer that never comes.** Measured on this Mac with a
+# FIFO at `x.h` beside a program whose group names `x.h`: `heroes check`
+# answered at exit 0, as it reads no header, and `heroes build` hung in the
+# first clang it started, the `-M` listing of the unit's opening
+# (`cli/shadowed.hero`), until `timeout -s KILL 10` killed it, a link to the
+# FIFO the same; a link to `/dev/zero` or `/dev/null` there was told as a
+# header that declares no `x_one`, *clang read the header and could not find
+# it*, a device read for a header. So the search is walked here, in the order
+# clang walks it, before any clang starts, and such a name is refused on its
+# group, `ffi_header_refused`, with what stands there. A folder or a link to
+# nothing at the name is passed over, as clang's search passes over it, so a
+# header found after it is still found.
+#
+# What stays, said: a header the group's header includes is found by clang
+# alone, and a FIFO there still waits (coord's draft of 2026-11-24 beside
+# this defect). The search's last places, clang's own folders and the
+# platform's, are the toolchain's, which no program names.
+
+use ast
+use cli/compile
+use cli/compiling
+use cli/group_file
+use cli/stands
+use diag
+use source
+
+# One refusal per group whose header the search finds first as no file, on
+# the group's string as every refusal of its header is, none where every
+# header is a file or found nowhere the program names.
+function told(under: compiling.Compiling, headers: [str], s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+    folders = searched(compiling.search_words(under))
+
+    for header in headers
+        found = first_found(header: header, folders: folders)
+
+        if found.len() > 0 && stands.is_special(found)
+            group = group_file.group_of(s, decls, path: header)
+
+            if !group.is_err()
+                why = "`" + header + "`, the header this group names, is found first at `" + found + "`, where " + stands.said(found) + " stands, and clang reads a header only from a file: rename it to keep it, or remove it"
+                out @ out.push(diag.new_diagnostic(code: "ffi_header_refused", message: why, span: group.must().span))
+
+    return out
+
+# The build stopped, its refusals told, where `told` refuses a group's header;
+# `ok()` where it refuses none.
+function stopped(under: compiling.Compiling, headers: [str], s: source.Source, decls: [ast.Decl], permissive: bool) -> ()?
+    stop = compile.stage(told(under, headers: headers, s, decls: decls), s, permissive: permissive)
+
+    if stop.is_err()
+        return ok()
+    _ = compile.leave(stop.must(), stage_name: "the groups' headers")?
+    return ok()
+
+# The first place of `folders` where a file or something no file stands at
+# `header`'s name, `header` itself where it is absolute; "" where none is.
+function first_found(header: str, folders: [str]) -> str
+    if header.len() > 0 && header[0] == '/'
+        if stands.is_file(header) || stands.is_special(header)
+            return header
+        return ""
+
+    for folder in folders
+        at = unslashed(folder) + "/" + header
+
+        if stands.is_file(at) || stands.is_special(at)
+            return at
+
+    return ""
+
+# The folders a quoted `#include` searches under `words`, in clang's order:
+# `-iquote`'s, then `-I`'s, then `-isystem`'s, then `-idirafter`'s, each in
+# the order the line gives them, a flag's folder joined to it or the next
+# word.
+function searched(words: [str]) -> [str]
+    quoted = folders_of(words, flag: "-iquote")
+    plain = folders_of(words, flag: "-I")
+    system = folders_of(words, flag: "-isystem")
+    after = folders_of(words, flag: "-idirafter")
+    return joined(list: joined(list: joined(list: quoted, more: plain), more: system), more: after)
+
+function folders_of(words: [str], flag: str) -> [str]
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at < words.len()
+        word = words[at]
+
+        if word == flag && at + 1 < words.len()
+            out @ out.push(words[at + 1])
+            at @ at + 2
+            continue
+
+        if word.len() > flag.len() && word.slice(from: 0, to: flag.len()) == flag
+            out @ out.push(word.slice(from: flag.len(), to: word.len()))
+        at @ at + 1
+
+    return out
+
+# `folder` without the `/` it may end with, so a place joined to it is
+# written with one: the program's own folder is given as `app/`.
+function unslashed(folder: str) -> str
+    if folder.len() > 1 && folder[folder.len() - 1] == '/'
+        return folder.slice(from: 0, to: folder.len() - 1)
+    return folder
+
+function joined(list: [str], more: [str]) -> [str]
+    out: [str] @= list
+
+    for one in more
+        out @ out.push(one)
+
+    return out
+
+## Tests
+
+test "the folders a quoted include searches are clang's, in its order (defect 2572)"
+    words = ["-O0", "-I", "rt", "-Iinc", "-isystem", "sys", "-iquote", "q", "-idirafter", "late", "-I", "src", "-DX=1"]
+    assert searched(words) == ["q", "rt", "inc", "src", "sys", "late"]
+    assert searched(["-I"]) == []
+    assert unslashed("app/") == "app" && unslashed("/") == "/" && unslashed("app") == "app"
+
+test "a header found first as no file is the place it stands, a folder or a link to nothing passed over (defect 2572)"
+    dir = "build/selftest-header-stands"
+    assert first_found(header: "x.h", folders: [dir + "/none"]) == ""
+    assert first_found(header: "/no/such/header.h", folders: []) == ""

@@ -124,4 +124,16 @@ int64_t hero_lock_drop(hero_lock *lock, int64_t keep);
  * one it names. */
 HeroStr hero_pdb_symbolized(const char *binary, const char *addresses, int64_t *status);
 
+/* What a name that is neither a file, a directory nor a link is, the name
+ * itself asked and no link followed, as `hero_fs_kind` asks (defect 2572,
+ * `parts/replace.c`, bound by `selfhost/cli/stands.hero`): HERO_FS_FIFO,
+ * HERO_FS_SOCKET, HERO_FS_DEVICE for a character or a block device, Windows'
+ * `NUL` and `CON` among them, and HERO_FS_OTHER for anything else, a name that
+ * is none of these or that the question failed on included. Nothing is opened
+ * for reading, so a FIFO is asked without waiting for a writer. */
+#define HERO_FS_FIFO 5
+#define HERO_FS_SOCKET 6
+#define HERO_FS_DEVICE 7
+int64_t hero_fs_special(const char *path);
+
 #endif

@@ -51,6 +51,7 @@ use cli/argv
 use cli/files
 use cli/io
 use cli/process
+use cli/stands
 use cli/table as cli_table
 use fetch/verb_place
 use module/entry_name
@@ -159,8 +160,8 @@ function free(folder: str) -> ()?
         .absent    => return ok()
         .file      => return taken(folder: folder, what: "a file")
         .directory => return taken(folder: folder, what: "a folder")
-        .link      => return taken(folder: folder, what: "a symbolic link")
-        .other     => return taken(folder: folder, what: "neither a file nor a folder")
+        .link      => return taken(folder: folder, what: stands.said(folder))
+        .other     => return taken(folder: folder, what: stands.said(folder))
         .unknown =>
             return fail(
                 code: "bad_usage",
@@ -386,7 +387,7 @@ test "a name that makes no one folder, a package no use names, a -C naming no fo
     # A link naming nothing stands there all the same, where the platform
     # makes one.
     if files.entry(SCRATCH + "/dangling") == .link
-        assert refusal(["new", "dangling", "-C", SCRATCH]) == "bad_usage: `" + SCRATCH + "/dangling` is already there, a symbolic link, and `heroes new` writes only into a folder it makes: nothing was written; choose another name"
+        assert refusal(["new", "dangling", "-C", SCRATCH]) == "bad_usage: `" + SCRATCH + "/dangling` is already there, a link to nothing, and `heroes new` writes only into a folder it makes: nothing was written; choose another name"
     assert read_file(SCRATCH + "/afile").must() == "mine\n"
     assert process.walk(SCRATCH + "/taken").must().files.len() == 0
 

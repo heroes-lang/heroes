@@ -224,7 +224,7 @@ function placed_said(package: reached.Package, e: catalogue.Entry, index: str) -
         return "the package `" + e.name + "` is in the catalogue and not placed: `heroes fetch` places it at `" + package.root + "`" + placed_beside.fetch_from(e, index: index) + while_served(e, index: index)
 
     if !standing.read_through(stands)
-        return standing.said(stands) + " stands at `" + place + "`, where the package's tree is placed, and `heroes fetch` places nothing over it — " + STANDING_ADVICE
+        return standing.said(stands, path: standing.unslashed(package.opened)) + " stands at `" + place + "`, where the package's tree is placed, and `heroes fetch` places nothing over it — " + STANDING_ADVICE
     tree = fingerprint.of(package.opened)
 
     if tree.is_err()
@@ -248,7 +248,7 @@ function home_said(opened: str, named: str) -> str
 
     if blocked == .nothing
         return ""
-    return standing.said(blocked) + " stands at `" + named + PLACED + "`, where the program's packages are placed, and `heroes fetch` places nothing there — move it out of the program's folder to keep it, or remove it, and `heroes fetch` places the packages"
+    return standing.said(blocked, path: opened + PLACED) + " stands at `" + named + PLACED + "`, where the program's packages are placed, and `heroes fetch` places nothing there — move it out of the program's folder to keep it, or remove it, and `heroes fetch` places the packages"
 
 # What to do with a name that stands where a package's tree is placed and is
 # not that tree, in `heroes fetch`'s own words (`fetch/edited.hero`).

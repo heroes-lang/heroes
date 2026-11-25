@@ -36,6 +36,7 @@ use fetch/versions as version_order
 use module/catalogue
 use module/fingerprint
 use module/placed
+use module/reading
 use module/sums
 
 extern "hero_compiler.h"
@@ -85,7 +86,7 @@ function versions(tools: transport.Tools, index: address.Address, name: str, scr
                 msg: "the index `" + index.written + "` lists no package `" + name + "`: " + why(asked)
             )
         return fail(code: code_of(asked), msg: why(asked))
-    text = read_file(into)
+    text = reading.text_of(into)
 
     if text.is_err()
         return fail(code: "index_refused", msg: "the index's `" + name + "/versions` is not text")
@@ -208,7 +209,7 @@ function written(tools: transport.Tools, index: address.Address, name: str, vers
                 msg: unserved(tools, index: index, name: name, version: version, sum: sum, scratch: s.folder, was: why(asked))
             )
         return fail(code: code_of(asked), msg: why(asked))
-    text = read_file(listed)
+    text = reading.text_of(listed)
 
     if text.is_err()
         return fail(

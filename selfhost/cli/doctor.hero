@@ -21,6 +21,7 @@ use cli/runtime_key
 use cli/runtime_places
 use cli/table as cli_table
 use emit/runtime_abi
+use module/reading
 
 record Check
     name: str
@@ -90,7 +91,7 @@ function checks(build_dir: str, runtime_hint: str?, aside: str?) -> [Check]
     if !made.is_err()
         probe = publish.private_name(build_dir + "/.doctor-probe")
 
-        if !write_file(path: probe, text: "ok").is_err() && !read_file(probe).is_err()
+        if !write_file(path: probe, text: "ok").is_err() && !reading.text_of(probe).is_err()
             cache_ok @ true
         publish.discard(probe)
     detail: str @= "cannot write to " + build_dir + "/"

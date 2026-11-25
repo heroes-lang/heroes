@@ -205,7 +205,7 @@ function run_test(path: str, s: source.Source, inv: argv.Invocation, t: toolchai
             given: given
         )
         abort_calls.tell(file: calls, binary: made.must().binary, root: path)
-        outcome = test_outcome.of(ended_at_zero: one.started && one.code == 0, told: read_file(told))
+        outcome = test_outcome.of(ended_at_zero: one.started && one.code == 0, told: file_reading.text_of(told))
         print(test_outcome.line(outcome, title: title))
 
         match outcome

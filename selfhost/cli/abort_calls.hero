@@ -40,6 +40,7 @@ use cli/process
 use cli/strings
 use module/listing
 use module/paths
+use module/reading
 
 constant VARIABLE: str
     "HEROES_CALLS"
@@ -81,7 +82,7 @@ function clear(file: str)
 # stderr after its report, the file gone; `root` is the program's root file
 # as the build was handed it, whose folder a resolved file is named from.
 function tell(file: str, binary: str, root: str)
-    text = read_file(file)
+    text = reading.text_of(file)
     clear(file)
 
     if text.is_err()

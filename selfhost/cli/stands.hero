@@ -1,0 +1,132 @@
+# What stands at a name, as a message names it: nothing, a file, a folder,
+# a FIFO, a socket, a device, or a link and what its chain of links names
+# (design.md §1.12, §4.17; defect 2572, 2026-11-24).
+#
+# **Every reader of the compiler opens a file through its door alone**
+# (`module/reading.hero`), which opens a regular file and nothing else and
+# never waits to open one, so a read that fails where something stands is
+# told by what stands there, and *could not read* is left for a file the
+# system refused. Until then the doors' callers said a FIFO, a socket and a
+# device alike were *a name that is neither a folder, a file nor a link*, and
+# a link to one *a link to a file*, which no author could look for.
+#
+# Its own module, below `cli/process` and `cli/files`, because the first is
+# what makes a folder and says why it could not (`process.mkdir_all`), and
+# both are below every reader: it asks the runtime itself and uses nothing.
+
+# `lent` on every path: each call reads it while it runs and keeps nothing.
+extern "hero_os.h"
+    function hero_fs_kind(path: cstr lent) -> i64
+    function hero_fs_landing(path: cstr lent) -> str
+    constant HERO_FS_ABSENT: i64
+    constant HERO_FS_FILE: i64
+    constant HERO_FS_DIRECTORY: i64
+    constant HERO_FS_LINK: i64
+    constant HERO_FS_OTHER: i64
+
+# The compiler's own question (`runtime/parts/replace.c`): what a name that
+# is neither a file, a folder nor a link is, asked of the name itself.
+extern "hero_compiler.h"
+    function hero_fs_special(path: cstr lent) -> i64
+    constant HERO_FS_FIFO: i64
+    constant HERO_FS_SOCKET: i64
+    constant HERO_FS_DEVICE: i64
+
+# What stands at `path`, the name itself asked, a link told with what its
+# chain finally names.
+function said(path: str) -> str
+    kind = hero_fs_kind(path: path.cstr())
+
+    if kind == HERO_FS_LINK
+        return "a link to " + landed(path)
+    return kind_said(path: path, kind: kind)
+
+# What the chain of links at `path` finally names; `path` itself where it is
+# no link.
+function landed(path: str) -> str
+    target = hero_fs_landing(path: path.cstr())
+
+    if target.len() == 0
+        return "a chain of links the system cannot follow"
+    kind = hero_fs_kind(path: target.cstr())
+
+    if kind == HERO_FS_LINK
+        return "a chain of links the system cannot follow"
+    return kind_said(path: target, kind: kind)
+
+# Whether a read of `path` reads a file: a file stands there, or a link
+# whose chain names one. Nothing there, a folder, a FIFO, a socket, a device
+# or a link to one of those is no file to read.
+function is_file(path: str) -> bool
+    kind = hero_fs_kind(path: path.cstr())
+
+    if kind == HERO_FS_FILE
+        return true
+
+    if kind != HERO_FS_LINK
+        return false
+    target = hero_fs_landing(path: path.cstr())
+    return target.len() > 0 && hero_fs_kind(path: target.cstr()) == HERO_FS_FILE
+
+# Whether what stands at `path` would be opened as a file and is none: a
+# FIFO, whose open waits for a writer, a socket, a device, which is read
+# without end or answers nothing, or a link whose chain names one of them.
+# Nothing, a file, a folder and a link to nothing or to a folder are not.
+function is_special(path: str) -> bool
+    kind = hero_fs_kind(path: path.cstr())
+
+    if kind == HERO_FS_OTHER
+        return true
+
+    if kind != HERO_FS_LINK
+        return false
+    target = hero_fs_landing(path: path.cstr())
+    return target.len() > 0 && hero_fs_kind(path: target.cstr()) == HERO_FS_OTHER
+
+# What `kind`, `hero_fs_kind`'s answer for `path`, names, `path` asked again
+# where it is neither a file, a folder nor a link.
+function kind_said(path: str, kind: i64) -> str
+    if kind == HERO_FS_ABSENT
+        return "nothing"
+
+    if kind == HERO_FS_FILE
+        return "a file"
+
+    if kind == HERO_FS_DIRECTORY
+        return "a folder"
+
+    if kind == HERO_FS_OTHER
+        return special(path)
+    return "a name the system cannot say what it is"
+
+# What a name that is neither a file, a folder nor a link is.
+function special(path: str) -> str
+    kind = hero_fs_special(path: path.cstr())
+
+    if kind == HERO_FS_FIFO
+        return "a FIFO"
+
+    if kind == HERO_FS_SOCKET
+        return "a socket"
+
+    if kind == HERO_FS_DEVICE
+        return "a device"
+    return "a name that is neither a folder, a file nor a link"
+
+# Why the file at `path` would not read: what stands there where that is
+# something other than a file, else the system's refusal.
+function refused(path: str) -> str
+    stood = said(path)
+
+    if is_file(path) || stood == "nothing"
+        return "could not read " + path
+    return "`" + path + "` is " + stood + ", where a file is read"
+
+# What a source that is there and does not read is told (defect 2572),
+# `opened` as it is opened and `named` as the author names it: `cannot read`
+# and the name, and what stands there where that is no file, so a FIFO, a
+# socket, a device, a folder or a link to nothing is named for what it is.
+function unread_said(opened: str, named: str) -> str
+    if is_file(opened)
+        return "cannot read `" + named + "`"
+    return "cannot read `" + named + "`: " + said(opened) + " stands there, where a source is a file: rename it to keep it, or remove it and put the file there"

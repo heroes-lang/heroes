@@ -22,6 +22,7 @@ use emit/ffi_constant_value
 use emit/ffi_lookup
 use emit/ffi_value
 use emit/value_probe
+use module/reading
 use source
 
 # One finding's diagnostics: a trapped accessor's constant told on its own
@@ -205,7 +206,7 @@ function tabbed(line: str) -> [str]
 
 # Line `row` of the header at `path`, as the file holds it, where it reads.
 function header_line(path: str, row: i64) -> str?
-    text = read_file(path)?
+    text = reading.text_of(path)?
     rows = ffi_lookup.lines(text: text)
 
     if row < 1 || row > rows.len()

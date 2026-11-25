@@ -20,6 +20,7 @@
 # words of which name no place, for the program's.
 
 use bytes
+use module/reading
 use mutate/hunks
 use mutate/json_fields
 use mutate/json_read
@@ -33,7 +34,7 @@ function read_corpus(run: str) -> {str: json_read.Json}?
 # The same record at `path`, the one pinned with the plan among them.
 function read_corpus_at(path: str) -> {str: json_read.Json}?
     out: {str: json_read.Json} @= {}
-    text = read_file(path)
+    text = reading.text_of(path)
 
     if text.is_err()
         return ok(out)

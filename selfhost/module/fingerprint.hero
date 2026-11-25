@@ -31,6 +31,8 @@
 use cli/files
 use cli/process
 use cli/sha256
+use cli/stands
+use module/reading
 
 extern "hero_compiler.h"
     function hero_file_sha256(path: cstr lent, @status: i64) -> str
@@ -62,10 +64,10 @@ function kept_listing(root: str) -> str?
 
     if files.entry(path) == .absent
         return ok("")
-    text = read_file(path)
+    text = reading.text_of(path)
 
     if text.is_err()
-        return fail(code: "unreadable", msg: "`" + path + "` cannot be read")
+        return fail(code: "unreadable", msg: unread(path))
     return ok(text.must())
 
 # The sum of a tree that keeps the listing `kept`, its own `lines` as they
@@ -117,10 +119,18 @@ function listed_lines(root: str) -> [str]?
         sum = hero_file_sha256(path: (base + "/" + name).cstr(), status: @status)
 
         if status != HERO_OS_OK
-            return fail(code: "unreadable", msg: "`" + base + "/" + name + "` cannot be read")
+            return fail(code: "unreadable", msg: unread(base + "/" + name))
         lines @ lines.push(sum + "  " + name + "\n")
 
     return ok(lines)
+
+# What a file of a tree that did not read is told: what stands there where
+# that is no file (defect 2572), a FIFO a tree's sum met told as one and
+# never only as a file that cannot be read.
+function unread(path: str) -> str
+    if stands.is_file(path)
+        return "`" + path + "` cannot be read"
+    return "`" + path + "` is " + stands.said(path) + ", where a tree holds files"
 
 function without_slash(root: str) -> str
     if root.len() > 1 && root[root.len() - 1] == '/'
@@ -387,6 +397,6 @@ test "a FIFO in a tree fails its fingerprint at once (defect 2572)"
     else
         match of(dir)
             .ok _  => assert false
-            .err e => assert e.code == "unreadable" && e.msg == "`" + dir + "/pipe` cannot be read"
+            .err e => assert e.code == "unreadable" && e.msg == "`" + dir + "/pipe` is a FIFO, where a tree holds files"
 
     assert !process.remove_tree(dir).is_err()

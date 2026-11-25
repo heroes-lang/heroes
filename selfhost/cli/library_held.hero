@@ -46,6 +46,7 @@ use cli/process
 use cli/refused_files
 use cli/strings
 use emit/ffi_lookup
+use module/reading
 
 # What a library file holds, as a linker reads it: a definition the
 # linker's own words judge (an object, an archive, a shared library, a
@@ -159,7 +160,7 @@ function joined(folder: str, base: str) -> str
 # file that does not read as text is an object, an archive or a library
 # for the linker's own words to judge, and so is one that cannot be read.
 function holding(path: str) -> Held
-    text = read_file(path)
+    text = reading.text_of(path)
 
     if text.is_err()
         return Held(kind: .readable, wrong: "")

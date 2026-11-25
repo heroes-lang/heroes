@@ -17,6 +17,7 @@
 # both arms; the halves, the singles a pair's fallback added, judged so.
 
 use cli/process
+use module/reading as file_reading
 use mutate/brief
 use mutate/child
 use mutate/json_fields
@@ -58,7 +59,7 @@ function write_job(job: Job) -> ()?
     return ok()
 
 function read_job() -> Job?
-    text = read_file(job_path())
+    text = file_reading.text_of(job_path())
 
     if text.is_err()
         return fail(code: "no_job", msg: "cannot read " + job_path())
@@ -96,7 +97,7 @@ function work(arg: i64) -> i64
             return 0
 
 function share(job: Job, phase: i64, index: i64) -> ()?
-    text = read_file(tasks_path(job.out, phase: phase))
+    text = file_reading.text_of(tasks_path(job.out, phase: phase))
 
     if text.is_err()
         return fail(code: "no_tasks", msg: "cannot read " + tasks_path(job.out, phase: phase))
@@ -165,7 +166,7 @@ function has(words: [str], word: str) -> bool
 # Each accepted program checked again under a name of its own beside
 # itself: the pipeline that judges a mutant judges its base.
 function baseline(job: Job, mirror: str, rel: str, task: i64, capture: str) -> str?
-    text = read_file(mirror + "/" + rel)
+    text = file_reading.text_of(mirror + "/" + rel)
 
     if text.is_err()
         return fail(code: "no_corpus", msg: "cannot read " + mirror + "/" + rel)
@@ -257,7 +258,7 @@ function text_of(mirror: str, file: str, @texts: {str: str}) -> str?
 
     if !held.is_err()
         return held
-    got = read_file(mirror + "/" + file)
+    got = file_reading.text_of(mirror + "/" + file)
 
     if got.is_err()
         return fail(code: "no_corpus", msg: "cannot read " + mirror + "/" + file)

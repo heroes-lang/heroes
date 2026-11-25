@@ -34,6 +34,7 @@ use cli/strings
 use cli/supplied_judged
 use cli/supplied_names
 use cli/toolchain
+use module/reading
 
 # `found` without the refusal of each lone binding that both orders took
 # from one shared file, which the platform alone answers from another shared
@@ -96,7 +97,7 @@ function symbols(t: toolchain.Toolchain, file: str) -> str
     out = base + ".out.txt"
     err = base + ".err.txt"
     ran = process.run(program: "nm", words: ["nm", "-D", "--with-symbol-versions", file], out: out, err: err)
-    listing = read_file(out).default("")
+    listing = reading.text_of(out).default("")
     publish.discard(out)
     publish.discard(err)
 

@@ -24,6 +24,7 @@
 
 use cli/files
 use cli/process
+use cli/stands
 use module/reading
 
 # What stands at a key: no name; a folder; a link naming a folder; a link
@@ -62,16 +63,22 @@ function read_through(s: Standing) -> bool
         .tree | .linked_tree                                 => return true
         .nothing | .dangling | .linked_file | .file | .other => return false
 
-# What stands, as a message names it.
-function said(s: Standing) -> str
-    match s
+# What stands, `stood` as the caller asked it at `path`, as a message names
+# it: a FIFO, a socket and a device for what each is, and a link to a name
+# that is no folder with what its chain names (defect 2572,
+# `cli/stands.hero`), the name asked again for those alone. Until then all
+# three were *a name that is neither a folder, a file nor a link*, and a link
+# to one *a link to a file*, which a link to `/dev/zero` at `heroes.packages`
+# was told as.
+function said(stood: Standing, path: str) -> str
+    match stood
         .nothing     => return "nothing"
         .tree        => return "a folder"
         .linked_tree => return "a link to a folder"
         .dangling    => return "a link to nothing"
-        .linked_file => return "a link to a file"
         .file        => return "a file"
-        .other       => return "a name that is neither a folder, a file nor a link"
+        .linked_file => return "a link to " + stands.landed(path)
+        .other       => return stands.special(path)
 
 # What stands at `heroes.packages` that no tree can be placed under (defect
 # 2538): a file, a link to a file or to nothing, or a name the system says is
@@ -79,11 +86,11 @@ function said(s: Standing) -> str
 # one stands, where nothing does, which a verb makes a folder, and where the
 # system cannot answer for the name, whose own failure is then the one told.
 function home_blocked(path: str) -> Standing
-    stands = at(path)
+    stood = at(path)
 
-    if read_through(stands) || stands == .other && files.entry(path) == .unknown
+    if read_through(stood) || stood == .other && files.entry(path) == .unknown
         return .nothing
-    return stands
+    return stood
 
 # What a catalogue that did not read is told, `path` as it is opened, `named`
 # as a message names it and `code` the read's failure (defect 2544): by what
@@ -92,21 +99,21 @@ function home_blocked(path: str) -> Standing
 # Until then a folder was told *`app/heroes.toml` cannot be read: could not
 # read app/heroes.toml*, the file named twice and the folder never.
 function unread_said(path: str, named: str, code: str) -> str
-    stands = at(path)
+    stood = at(path)
 
-    if stands == .tree || stands == .linked_tree || stands == .other && files.entry(path) == .other
-        return "`" + named + "` is " + said(stands) + ", where a catalogue is a file: rename it to keep it, or remove it"
+    if stood == .tree || stood == .linked_tree || stood == .other && files.entry(path) == .other
+        return "`" + named + "` is " + said(stood, path: path) + ", where a catalogue is a file: rename it to keep it, or remove it"
 
     # A link to nothing (defect 2573): told as the link it is. Until then
     # every reader took it for no catalogue, and `heroes add` wrote the
     # catalogue at the place the link names, at exit 0.
-    if stands == .dangling
+    if stood == .dangling
         return "`" + named + "` is a link to nothing, where a catalogue is a file: make it name one, or remove it and `heroes add` writes one"
 
     # A link to a FIFO, a device or a socket (defect 2572): what it names is
     # asked, since the link itself reads as one to a file.
-    if stands == .linked_file && named_kind(path) == .other
-        return "`" + named + "` is a link to " + said(.other) + ", where a catalogue is a file: rename it to keep it, or remove it"
+    if stood == .linked_file && named_kind(path) == .other
+        return "`" + named + "` is " + said(stood, path: path) + ", where a catalogue is a file: rename it to keep it, or remove it"
 
     if code == "not_text"
         return "`" + named + "` is not UTF-8, and a catalogue is text: write it again in UTF-8"
@@ -175,7 +182,7 @@ test "what stands at a key is asked of its own name, a link's kind told apart (d
         assert at(SCRATCH + "/to-nothing") == .dangling
         assert at(SCRATCH + "/to-file") == .linked_file
         assert read_through(at(SCRATCH + "/to-tree")) && !read_through(at(SCRATCH + "/to-nothing"))
-        assert said(at(SCRATCH + "/to-nothing")) == "a link to nothing"
+        assert said(at(SCRATCH + "/to-nothing"), path: SCRATCH + "/to-nothing") == "a link to nothing"
         assert home_blocked(SCRATCH + "/to-nothing") == .dangling
         assert home_blocked(SCRATCH + "/to-file") == .linked_file
         assert home_blocked(SCRATCH + "/to-tree") == .nothing
@@ -224,7 +231,7 @@ test "a FIFO at the catalogue's name is told what it is, and no reader waits on 
     else
         match catalogue_text(path: dir + "/heroes.toml", named: "app/heroes.toml")
             .ok _  => assert false
-            .err e => assert e.msg == "`app/heroes.toml` is a name that is neither a folder, a file nor a link, where a catalogue is a file: rename it to keep it, or remove it"
+            .err e => assert e.msg == "`app/heroes.toml` is a FIFO, where a catalogue is a file: rename it to keep it, or remove it"
 
         assert reading.source_text(dir + "/heroes.toml").is_err()
         assert reading.key_of(dir + "/heroes.toml").is_err()
@@ -232,7 +239,7 @@ test "a FIFO at the catalogue's name is told what it is, and no reader waits on 
         if !files.symbolic_link(target: "heroes.toml", name: dir + "/linked.toml").is_err()
             match catalogue_text(path: dir + "/linked.toml", named: "app/heroes.toml")
                 .ok _  => assert false
-                .err e => assert e.msg == "`app/heroes.toml` is a link to a name that is neither a folder, a file nor a link, where a catalogue is a file: rename it to keep it, or remove it"
+                .err e => assert e.msg == "`app/heroes.toml` is a link to a FIFO, where a catalogue is a file: rename it to keep it, or remove it"
 
     # A file of text reads as it is, and a name where nothing stands is
     # absent, as the build reads a program with no catalogue.

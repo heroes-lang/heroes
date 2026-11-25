@@ -36,6 +36,7 @@ use diag
 use emit/clang_place
 use emit/ffi_lookup
 use emit/mangle
+use module/reading
 use parse
 use source
 
@@ -292,7 +293,7 @@ function drawn_told(stderr: str, s: source.Source, decls: [ast.Decl]) -> diag.Di
 
 # The row of the runtime's `heroes_standard.h` that reads `line`.
 function standard_row(line: str) -> i64
-    rows = ffi_lookup.lines(text: read_file("runtime/heroes_standard.h").must())
+    rows = ffi_lookup.lines(text: reading.text_of("runtime/heroes_standard.h").must())
 
     for at in range(from: 0, to: rows.len())
         if rows[at] == line

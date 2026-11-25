@@ -92,7 +92,7 @@ function copy_made(runtime: str, copy: str) -> ()?
             cut @ cut - 1
 
         process.mkdir_all(copy + "/" + name.slice(from: 0, to: cut))?
-        write_file(path: copy + "/" + name, text: read_file(path)?)?
+        write_file(path: copy + "/" + name, text: reading.text_of(path)?)?
 
     return ok()
 
