@@ -91,6 +91,48 @@ function of(text: str) -> str
         end @ n
     return text.slice(from: 0, to: end)
 
+# A unit's opening and, at once after it, the lines that give back what was
+# saved around its last include: the unit saves every name its program binds
+# around `heroes_standard.h` and gives each back after it
+# (`emit/macro_guard.read_after`, defect d-lane-macro-members3-1), so `of`
+# cuts the opening with those names undefined, and a question asked after it
+# of a bound name read none (`cli/constant_dump.hero`: *use of undeclared
+# identifier*). What a compile reaches is `of`'s question, and no give-back
+# opens a file.
+function given_back(text: str) -> str
+    n = text.len()
+    end: i64 @= of(text).len()
+    start: i64 @= end
+
+    while start < n
+        stop: i64 @= start
+
+        while stop < n && (text[stop] != '\n' || folded(text, at: stop))
+            stop @ stop + 1
+
+        if !gives_back_at(text, from: start, to: stop)
+            return text.slice(from: 0, to: end)
+        end @ stop + 1
+        start @ stop + 1
+
+    if end > n
+        end @ n
+    return text.slice(from: 0, to: end)
+
+# Whether a line is `#pragma pop_macro(`, whatever blanks stand around the
+# hash and between the two words.
+function gives_back_at(text: str, from: i64, to: i64) -> bool
+    at: i64 @= blanks(text, from: from, to: to)
+
+    if at >= to || text[at] != '#'
+        return false
+    at @ blanks(text, from: at + 1, to: to)
+
+    if to - at < 6 || text.slice(from: at, to: at + 6) != "pragma"
+        return false
+    at @ blanks(text, from: at + 6, to: to)
+    return to - at >= 10 && text.slice(from: at, to: at + 10) == "pop_macro("
+
 # A unit's opening as a build keeps it: `of` is asked once of each unit's
 # text, and its answer kept under `build/openings/`, named by `named`, the
 # digest the unit's key takes of its text and words, and by this compiler's
@@ -283,6 +325,17 @@ test "a unit's opening ends at its last line that opens or probes a file"
     # A directive folded over two lines is one, at either line end.
     assert of("#include \\\n<a.h>\nint v;\n") == "#include \\\n<a.h>\n"
     assert of("#if X && \\\r\n__has_include(<a.h>)\r\n#endif\r\n") == "#if X && \\\r\n__has_include(<a.h>)\r\n"
+
+# DEFECT d-lane-macro-members3-1: the opening a question about a bound name
+# is asked after holds the give-back of every name saved around the
+# library's headers, and nothing after it; an opening with none is `of`'s.
+test "a unit's opening with what it gives back after its last include (defect d-lane-macro-members3-1)"
+    unit = "#include \"heroes_unit.h\"\n#pragma push_macro(\"K\")\n#undef K\n#include \"heroes_standard.h\"\n#pragma pop_macro(\"K\")\n  #  pragma  pop_macro(\"L\")\n\n_Static_assert(1, \"x\");\n"
+    assert given_back(unit) == "#include \"heroes_unit.h\"\n#pragma push_macro(\"K\")\n#undef K\n#include \"heroes_standard.h\"\n#pragma pop_macro(\"K\")\n  #  pragma  pop_macro(\"L\")\n"
+    assert of(unit) == "#include \"heroes_unit.h\"\n#pragma push_macro(\"K\")\n#undef K\n#include \"heroes_standard.h\"\n"
+    assert given_back("#include <a.h>\nint x;\n") == "#include <a.h>\n"
+    assert given_back("#include <a.h>\n#pragma pop_macro(\"K\")") == "#include <a.h>\n#pragma pop_macro(\"K\")"
+    assert given_back("") == ""
 
 # **An opening is cut once and kept by the digest the unit's key takes of its
 # text** (defect 2289): asked again under that name, the kept answer is read

@@ -26,8 +26,9 @@
 # a binding of `sqrt` from a header that makes it a macro. A program that binds
 # no header but the compiler's own (`emit/externs.hero`'s `is_own`) has no
 # guard at all, and a unit's text grows by its two includes.
-# Such a name is saved and undefined around `heroes_standard.h` too
-# (`read_after`, defect 2056), and whose macro it is, its own header's or
+# Every bound name, the list's or not, is saved around `heroes_standard.h`
+# too, and undefined there unless C reserves it (`read_after`, defects 2056
+# and d-lane-macro-members3-1), and whose macro it is, its own header's or
 # another group's, is asked of clang before a unit compiles (`cli/bound_macro`).
 #
 # **What it does not hold, and why**: a name the unit defines itself, a
@@ -145,25 +146,38 @@ function around(lines: [str], bound: {str: bool}) -> [str]
 
     return out
 
-# `heroes_standard.h` read with each name of the list the program binds saved
-# and undefined, given back after (defect 2056): bound as `sqrt`, `#define sqrt
-# my_sqrt` over a `float my_sqrt(float)` rewrote `<math.h>`'s, at exit 2.
+# `heroes_standard.h` read with every name the program binds saved, and
+# undefined unless C reserves it, given back after, so a bound name means
+# where the unit's C stands what its header made it, whatever the C library
+# defines there (spec § 13). Until defect 2056 no name was saved: bound as
+# `sqrt`, `#define sqrt my_sqrt` over a `float my_sqrt(float)` rewrote
+# `<math.h>`'s, at exit 2. Until defect d-lane-macro-members3-1 (2026-11-25)
+# only the list's names were: `#define INT64_MAX 5` bound as a constant
+# printed `<stdint.h>`'s `9223372036854775807` at exit 0, `#define y1 5` was
+# `<math.h>`'s declaration of `y1` refused, and a record's field `NAN` read
+# `<math.h>`'s macro, at exit 2.
+#
+# A name C reserves (C11 7.1.3) is saved and given back, never undefined: the
+# library's headers read such a name as clang predefines it, and measured
+# undefined around them on this Mac, `__arm64__` was `sys/cdefs.h`'s `#error
+# Unsupported architecture`, `__GNUC__` its `#warning`, and `__STDC__` and
+# `__LINE__` clang's *undefining builtin macro*. Saved, a reserved name a
+# group's header defines is read by the library as C reads it after that
+# header, and keeps the header's meaning after.
 function read_after(bound: {str: bool}) -> [str]
-    kept: [str] @= []
-
-    for name in guarded_names.names()
-        if !bound[name].is_err()
-            kept @ kept.push(name)
-
+    # ORDER: by bytes, as `sort` orders a `str`, so the unit is one text.
+    names = sort(keys(bound))
     out: [str] @= []
 
-    for name in kept
+    for name in names
         out @ out.push("#pragma push_macro(\"" + name + "\")")
-        out @ out.push("#undef " + name)
+
+        if !c_words.is_reserved(name)
+            out @ out.push("#undef " + name)
 
     out @ out.push(STANDARD_LINE)
 
-    for name in kept
+    for name in names
         out @ out.push("#pragma pop_macro(\"" + name + "\")")
 
     return out
@@ -333,7 +347,10 @@ test "the headers read before the groups are clang's own two, and the library's 
 # when defect 568 was repaired, defect 567's division guard six more) are
 # the ten the guard keeps and `heroes_standard.h` defines again; any other
 # macro of `<stdint.h>` or `<math.h>` an emitter module writes is named here,
-# owed its guard and its definition after the groups.
+# owed its guard and its definition after the groups. A module's code is
+# read, its `test` blocks left out: a test's C is a probe's, never the
+# unit's (this module's own test of defect d-lane-macro-members3-1 writes
+# `INT64_MAX` and `NAN` into the C it asks clang about).
 test "the unit's own C writes ten macros of the library's standard headers, each guarded and defined again"
     listed: {str: bool} @= {}
 
@@ -354,7 +371,7 @@ test "the unit's own C writes ten macros of the library's standard headers, each
 
     for path in files
         if strings.ends_with(text: path, suffix: ".hero") && !strings.ends_with(text: path, suffix: "guarded_names.hero")
-            quoted = c_words.quoted_words(read_file(path).must())
+            quoted = c_words.quoted_words(c_words.without_tests(read_file(path).must()))
 
             for name in guarded_names.left()
                 if !quoted[name].is_err()
@@ -485,6 +502,73 @@ test "a group header's macro over a builtin or a keyword the unit writes is give
     for pair in [[guarded, "true"], [bare, "false"]]
         unit = dir + "/unit-" + pair[1] + ".c"
         assert !write_file(path: unit, text: pair[0]).is_err()
+        said = process.run(
+            program: "clang",
+            words: ["clang", "-std=gnu11", "-Werror", "-fsyntax-only", "-I", "runtime", "-I", dir, unit],
+            out: process.discard(),
+            err: process.discard()
+        )
+        assert said.started
+        assert said.code == 0 == (pair[1] == "true")
+
+    assert !process.remove_tree(dir).is_err()
+
+# DEFECT d-lane-macro-members3-1: every name the program binds is saved around
+# `heroes_standard.h` and given back after it, in the order of its bytes, the
+# list's or not; undefined there unless C reserves it, so the library reads a
+# reserved one as clang predefined it.
+test "every bound name is saved around the library's headers, undefined unless C reserves it (defect d-lane-macro-members3-1)"
+    bound: {str: bool} @= {}
+    bound["sqrt"] @ true
+    bound["__STDC__"] @ true
+    bound["INT64_MAX"] @ true
+    got = read_after(bound)
+    assert got == ["#pragma push_macro(\"INT64_MAX\")", "#undef INT64_MAX", "#pragma push_macro(\"__STDC__\")", "#pragma push_macro(\"sqrt\")", "#undef sqrt", STANDARD_LINE, "#pragma pop_macro(\"INT64_MAX\")", "#pragma pop_macro(\"__STDC__\")", "#pragma pop_macro(\"sqrt\")"]
+    none: {str: bool} = {}
+    assert read_after(none) == [STANDARD_LINE]
+
+# DEFECT d-lane-macro-members3-1, asked of clang: a group's header defines
+# `INT64_MAX`, a macro of `<stdint.h>` the list leaves to the library, and
+# `y1`, a function `<math.h>` declares on Darwin and in glibc, and holds a
+# record whose field is `NAN`, a macro of `<math.h>`; each bound, and
+# `__STDC__`, which no header defines, bound too. Where the unit's C stands
+# each means what the header made it and the library compiles beside them,
+# warnings refused; with the list's names alone saved, as until this repair,
+# the same unit is refused, and with `__STDC__` undefined too, so the test is
+# not blind.
+test "a bound name keeps its header's meaning whatever the library read after the groups defines (defect d-lane-macro-members3-1)"
+    dir = "build/selftest-bound-after"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    planted = "#define INT64_MAX 5\n#define y1 6\nstruct hero_after_word { long long NAN; };\n"
+    assert !write_file(path: dir + "/planted.h", text: planted).is_err()
+    body = "_Static_assert(INT64_MAX == 5, \"the header's value\");\n_Static_assert(y1 == 6, \"the header's value\");\nstatic long long hero_after_field(struct hero_after_word w) { return w.NAN; }\nlong long hero_after_probe(void) { struct hero_after_word w = {__STDC__}; return hero_after_field(w); }\n"
+    bound: {str: bool} @= {}
+
+    for name in ["INT64_MAX", "y1", "NAN", "__STDC__", "hero_after_word"]
+        bound[name] @ true
+
+    # The same lines with `__STDC__` undefined after it is saved.
+    stdc: [str] @= []
+
+    for line in read_after(bound)
+        stdc @ stdc.push(line)
+
+        if line == "#pragma push_macro(\"__STDC__\")"
+            stdc @ stdc.push("#undef __STDC__")
+
+    opened = strings.with_all(list: [FIRST_LINE], more: around(["#include <planted.h>"], bound: bound))
+    units = [
+        [strings.with_all(list: opened, more: read_after(bound)).join("\n"), "true"]
+        [strings.with_all(list: opened, more: [STANDARD_LINE]).join("\n"), "false"]
+        [strings.with_all(list: opened, more: stdc).join("\n"), "false"]
+    ]
+    at: i64 @= 0
+
+    for pair in units
+        unit = dir + "/unit-" + at.to_str() + ".c"
+        at @ at + 1
+        assert !write_file(path: unit, text: pair[0] + "\n" + body).is_err()
         said = process.run(
             program: "clang",
             words: ["clang", "-std=gnu11", "-Werror", "-fsyntax-only", "-I", "runtime", "-I", dir, unit],

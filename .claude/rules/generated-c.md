@@ -29,7 +29,14 @@ failure's by `hero_code` and `hero_msg`; a macro of C's library is spelled in
 a form C reserves, `_Bool`, `((void *)0)`, `(-__INT64_MAX__ - 1)`,
 `__builtin_fmod`, `__builtin_huge_val()`; and the integer types keep their
 names, which a debugger shows, a header defining one as a macro refused where
-the program binds it (`emit/library_types.hero`).
+the program binds it (`emit/library_types.hero`). **And a name the program
+binds means there what its header made it, whatever the C library read after
+the groups defines** (defect d-lane-macro-members3-1, 2026-11-25; until then
+only the guard's list was): every bound name is saved around
+`heroes_standard.h` and given back after it, undefined there unless C
+reserves it, which the library reads as clang predefined it
+(`macro_guard.read_after`), and so is every name a bound macro reaches that
+the guard's close leaves (`cli/bound_kept.hero`).
 
 **What that stamp catches is a header from another compiler, and not a decoy**
 (CL-007). A decoy `runtime/` that copies the number passes; what protects a

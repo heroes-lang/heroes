@@ -101,15 +101,15 @@ function trapped_note(name: str) -> str
     return "an operation C leaves undefined gives no value: wherever C computes it, a program reading `" + name + "` reads whatever the machine held. A group's `constant` is the value C computes from the header (§ 13): correct the value there, or bind a constant whose value C defines"
 
 # The diagnostic on a constant, the header's line read from the preprocessed
-# unit where it holds the constant's last `#define`.
+# unit where it holds the constant's `#define` in force where the unit's C
+# reads it (`bound_said.in_force`: the unit saves every bound name around the
+# library after its groups, defect d-lane-macro-members3-1).
 function diagnostic(one: value_probe.Accessor, words: str, note: str, preprocessed: str?, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> diag.Diagnostic?
     name = source.span_text(s, decls[one.decl].name)
     spelled: ffi_value.Spelled? @= fail(code: "none", msg: "the header's line was not read")
 
     if !preprocessed.is_err()
-        asked: {str: bool} @= {}
-        asked[name] @ true
-        found = bound_said.directives(preprocessed.must(), names: asked).found["0 " + name]
+        found = bound_said.in_force(said: preprocessed.must(), name: name)
 
         if !found.is_err() && strings.starts_with(text: found.must().text, prefix: "#define ")
             spelled @ ok(

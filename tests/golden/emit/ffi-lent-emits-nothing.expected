@@ -107,7 +107,10 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
 #pragma clang diagnostic ignored "-Wattribute-warning"
+#pragma push_macro("strlen")
+#undef strlen
 #include "heroes_standard.h"
+#pragma pop_macro("strlen")
 
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
@@ -157,7 +160,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 
 HERO_STR_STATIC(hero_str_2f372e9c, "hello");
 
-#line 161 "ffilentemitsnothing.c"
+#line 164 "ffilentemitsnothing.c"
 typedef struct h_0opt_f87774a {
     int64_t hero_tag;
     union {
@@ -209,7 +212,7 @@ __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(i
 __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
 __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
-#line 213 "ffilentemitsnothing.c"
+#line 216 "ffilentemitsnothing.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
@@ -230,7 +233,7 @@ void h_ffilentemitsnothing_main(void);
 #line 14 "tests/golden/emit/ffi-lent-emits-nothing.hero"
 void h_ffilentemitsnothing_main(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG uint64_t t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_2f372e9c); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-lent-emits-nothing.hero", "ffi-lent-emits-nothing.main", 15, 21}; t2 = hero_str_lend_at(t1, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-lent-emits-nothing.hero", "ffi-lent-emits-nothing.main", 15, 11}; t3 = strlen(hero_cstr_nonnull_at(t2, &hero_here)); } hero_print_uint(t3); hero_print_end(); return;
-#line 234 "ffilentemitsnothing.c"
+#line 237 "ffilentemitsnothing.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
     if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {

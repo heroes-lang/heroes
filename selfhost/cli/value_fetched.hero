@@ -61,7 +61,7 @@ function refusals(t: toolchain.Toolchain, one: value_run.Unit, accessors: [value
             why @ why.push("it is " + kind + ", which no enumerator holds")
 
     if asked.len() > 0
-        read = constant_dump.values(build: t.build, words: one.words, opening: opening.of(one.text), asked: asked)?
+        read = constant_dump.values(build: t.build, words: one.words, opening: opening.given_back(one.text), asked: asked)?
         at: i64 @= 0
 
         for index in range(from: 0, to: why.len())
