@@ -64,25 +64,44 @@
 #include <windows.h>
 #endif
 
-static _Thread_local int64_t hero_callbacks_inside = 0;
+/* The thread's count of callbacks entered and not left, and beside it how
+ * many entries of the large-value room and the lend regions the thread holds
+ * (panel 258's R1, below), in one thread-local, so that a thunk's entry,
+ * which writes the first, reads the second where the address is already in
+ * hand: on Darwin each thread-local is reached through a call of its own,
+ * and the healing's question at every thunk's entry, asked of the room's and
+ * the regions' own counts, cost 46 instructions a callback at `-O2` and 65 at
+ * `-O0` (20 million callbacks, instructions retired, `cost_cb`). `held` is a
+ * hint and never a judgement: a count too high asks the room and the regions
+ * for nothing, and every entry those find is judged by its frame. */
+typedef struct {
+    int64_t inside;
+    int64_t held;
+} HeroCallbackThread;
+
+static _Thread_local HeroCallbackThread hero_callback_thread = {0, 0};
 static _Atomic int64_t hero_callbacks_unfinished_by_ended = 0;
 
-static void hero_callback_in(void) { hero_callbacks_inside += 1; }
+static void hero_callback_in(void) { hero_callback_thread.inside += 1; }
 
-void hero_callback_left(void) { hero_callbacks_inside -= 1; }
+void hero_callback_left(void) { hero_callback_thread.inside -= 1; }
+
+/* An entry of the room or of the lend regions taken (`by` 1) or given back
+ * (`by` -1, or minus all of them as a thread ends). */
+static void hero_callback_held(int64_t by) { hero_callback_thread.held += by; }
 
 /* A thread the program started ends: what it still holds joins the sum. */
 static void hero_callback_thread_ends(void) {
-    int64_t held = hero_callbacks_inside;
+    int64_t held = hero_callback_thread.inside;
     if (held != 0) atomic_fetch_add_explicit(&hero_callbacks_unfinished_by_ended, held, memory_order_relaxed);
-    hero_callbacks_inside = 0;
+    hero_callback_thread.inside = 0;
 }
 
 /* Callbacks entered and not left, at the end of the program: the main
  * thread's own, and every ended thread's. Positive says a frame never
  * finished. */
 static int64_t hero_callbacks_unfinished(void) {
-    return hero_callbacks_inside + atomic_load_explicit(&hero_callbacks_unfinished_by_ended, memory_order_relaxed);
+    return hero_callback_thread.inside + atomic_load_explicit(&hero_callbacks_unfinished_by_ended, memory_order_relaxed);
 }
 
 /* THE GATES' WORDS WHERE A CALLBACK NEVER RETURNED (panel 258's R1,
@@ -205,6 +224,7 @@ static void hero_lend_heal_below(uintptr_t frame);
  * was inlined into named that function's frame, and this line then gave back
  * the room that function still held (defect 2286's case at `-O2`, run). */
 static void hero_callback_heal(void *frame) {
+    if (hero_callback_thread.held == 0) return;
     uintptr_t above = (uintptr_t)frame + 1;
     hero_frame_heal_below(above);
     hero_lend_heal_below(above);
