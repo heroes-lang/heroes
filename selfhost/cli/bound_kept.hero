@@ -28,8 +28,13 @@
 #   mean both the header's macro and C's own in one unit, and the C this
 #   compiler writes needs C's: `#define bool int` beside a bound
 #   `#define BOOL_SIZE sizeof(bool)` printed `1` where the header means `4`.
-#   The ten macros the unit writes from `<stdint.h>` and `<math.h>` are not
-#   such a change: `heroes_standard.h` defines them again as C does.
+#
+# **And those the close leaves, which the library read after it changes**
+# (defect d-lane-macro-members3-1, 2026-11-25): a name the guard does not
+# hold, `INT64_MAX` or `NAN`, or one of the ten macros `heroes_standard.h`
+# defines again, which the unit's own C no longer writes, is **kept** beside
+# the names above: saved around the library and given back after it
+# (`left_to_the_library`), as every bound name is.
 
 use cli/bound_ask
 use cli/bound_names
@@ -85,8 +90,12 @@ function judged(t: toolchain.Toolchain, probe: compiling.Probe, headers: [str], 
     for b in changed
         parents = reached(table, from: b.name)
         restored = restored_of(parents: parents, table: table, was: was, bound: bound)
+        tail = left_to_the_library(parents: parents, bound: bound)
 
         if restored.len() == 0
+            for name in tail
+                kept[name] @ true
+
             continue
         refused: str @= ""
 
@@ -99,7 +108,7 @@ function judged(t: toolchain.Toolchain, probe: compiling.Probe, headers: [str], 
         else
             keeping @ keeping.push(b)
 
-            for name in restored
+            for name in strings.with_all(list: restored, more: tail)
                 kept[name] @ true
 
     if keeping.len() == 0
@@ -177,6 +186,34 @@ function restored_of(parents: {str: str}, table: {str: bound_said.Define}, was: 
 
     return out
 
+# ORDER: by name, as `sort` orders a `str`. The names reached that the guard's
+# close leaves as the groups' headers left them, which the C library
+# `heroes_standard.h` reads after the close may define again (defect
+# d-lane-macro-members3-1): held by no guard, or one of the ten that header
+# defines again; and not bound, a bound name being saved around the library
+# already (`emit/macro_guard.read_after`). Each is kept, saved around the
+# library and given back after it, so the bound macro reaching it means what
+# its header made it: `#define WORD_NEST INT64_MAX` beside the header's own
+# `#define INT64_MAX 5`, `WORD_NEST` bound, printed `<stdint.h>`'s
+# `9223372036854775807` at exit 0 until then. The unit's own C writes none of
+# them (`emit/macro_guard`'s and `emit/library_types`'s tests).
+function left_to_the_library(parents: {str: str}, bound: {str: bool}) -> [str]
+    guarded: {str: bool} @= {}
+
+    for name in guarded_names.names()
+        guarded[name] @ true
+
+    for name in macro_guard.STANDARD_USED
+        guarded[name] @ false
+
+    out: [str] @= []
+
+    for name in sort(keys(parents))
+        if !guarded[name].default(false) && bound[name].is_err()
+            out @ out.push(name)
+
+    return out
+
 # The refusal, the chain from the bound name to `to` written out.
 function told(b: bound_names.Bound, parents: {str: str}, table: {str: bound_said.Define}, to: str, said: {str: str}, count: i64) -> diag.Diagnostic
     path: [str] @= [to]
@@ -240,6 +277,23 @@ test "the unit's own C writes no function of <math.h> the guard holds (defect 20
     # And an `f64` `%` is the builtin, a name C reserves, so `fmod` is in the
     # list with the rest since defect d-lane-macro-members2-1.
     assert called_words(read_file("selfhost/emit/operator.hero").must())["__builtin_fmod"].must()
+
+# DEFECT d-lane-macro-members3-1: a bound macro reaching a name the guard does
+# not hold, or one of the ten `heroes_standard.h` defines again, keeps it for
+# the library's headers; a function of `<math.h>` the guard holds is the
+# close's question, and a bound name is saved already.
+test "the names a bound macro reaches that the close leaves are kept for the library (defect d-lane-macro-members3-1)"
+    parents: {str: str} @= {}
+    parents["INT64_MAX"] @ "WORD_NEST"
+    parents["fabs"] @ "WORD_NEST"
+    parents["INT64_C"] @ "INT64_MAX"
+    parents["LIMIT"] @ "WORD_NEST"
+    parents["NAN"] @ "LIMIT"
+    bound: {str: bool} @= {}
+    bound["LIMIT"] @ true
+    assert left_to_the_library(parents: parents, bound: bound) == ["INT64_C", "INT64_MAX", "NAN"]
+    none: {str: str} = {}
+    assert left_to_the_library(parents: none, bound: bound).len() == 0
 
 # Every identifier a string literal of `text`'s code writes as a call, its
 # name then `(`, its comments and its `test` blocks left out: a C call an

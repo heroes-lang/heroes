@@ -190,6 +190,39 @@ function directives(said: str, names: {str: bool}) -> Directives
 
     return Directives(found: found, entered: entered)
 
+# The directive of `name` in force where a whole unit's own C stands, read from
+# its `-dD` text: the last one naming it, but that the unit saves every name
+# its program binds around `heroes_standard.h` and gives it back after it
+# (`emit/macro_guard.read_after`), and `-dD` prints the save's `#undef`, in
+# the unit's own file, and the library's lines after it, never the
+# `#pragma pop_macro` that gives the name back. So a `#undef` of it written
+# in the unit's own file, the file of the text's first marker, leaves the
+# directive before it in force (defect d-lane-macro-members3-1: until then
+# every bound name was saved so, and a trapped constant's header line was read
+# as that `#undef`, its refusal told with no line).
+function in_force(said: str, name: str) -> Directive?
+    out: Directive? @= fail(code: "none", msg: "no directive names it")
+    own: str @= ""
+    file: str @= ""
+    row: i64 @= 0
+
+    for line in rows(said)
+        if marker(line)
+            row @ marker_row(line)
+            file @ marker_file(line)
+
+            if own == ""
+                own @ file
+            continue
+
+        if directive_name(line) == name
+            if file == own && bytes.bytes_at(text: line, at: 0, needle: "#undef ")
+                return out
+            out @ ok(Directive(file: file, line: row, text: line))
+        row @ row + 1
+
+    return out
+
 # The name a directive line names: `#define N`, `#define N(`, `#undef N`, and
 # `#pragma pop_macro("N")`, which gives one back; else nothing.
 function directive_name(line: str) -> str
@@ -382,6 +415,22 @@ test "a directive is the last one naming the name in its header's stretch"
     assert directive_name("#define fabs(x) my_fabs(x)") == "fabs"
     assert directive_name("int fabs;") == ""
     assert folded("  a \t b\n c  ") == "a b c"
+
+# DEFECT d-lane-macro-members3-1: the unit's own `#undef` of a bound name,
+# its save around the library, leaves in force the directive before it, and
+# what the library writes after it is given back; a header's `#undef` is the
+# header's, in force until another directive.
+test "the directive in force is the one before the unit's own save of the name (defect d-lane-macro-members3-1)"
+    said = "# 1 \"unit.c\"\n# 1 \"./k.h\" 1\n#define K (1 / 0)\n# 3 \"unit.c\" 2\n#undef K\n# 1 \"/usr/include/stdint.h\" 1\n#define K 9\n# 5 \"unit.c\" 2\nint x;\n"
+    held = in_force(said: said, name: "K").must()
+    assert held.file == "./k.h"
+    assert held.line == 1
+    assert held.text == "#define K (1 / 0)"
+    headers = "# 1 \"unit.c\"\n# 1 \"./k.h\" 1\n#define K 1\n#undef K\n# 1 \"./l.h\" 1\n#define K 2\n# 3 \"unit.c\" 2\nint x;\n"
+    assert in_force(said: headers, name: "K").must().file == "./l.h"
+    undone = "# 1 \"unit.c\"\n# 1 \"./k.h\" 1\n#define K 1\n#undef K\n# 3 \"unit.c\" 2\nint x;\n"
+    assert in_force(said: undone, name: "K").must().text == "#undef K"
+    assert in_force(said: said, name: "L").is_err()
 
 # A `-dM` table's macros by name, a function-like one's parameters apart
 # from its body.

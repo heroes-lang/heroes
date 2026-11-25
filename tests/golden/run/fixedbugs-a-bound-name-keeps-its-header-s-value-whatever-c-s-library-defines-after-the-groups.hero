@@ -1,0 +1,57 @@
+# Fixed 2026-11-25, lane macro-members4 (found by lane macro-members3 beside
+# its repair of the words the unit's C writes after its groups).
+# Symptom: a group's header holding `#define INT64_MAX 1`, `#define INT32_MAX
+# 2` and `#define UINT8_MAX 3`, the program binding each as a constant and
+# printing it, built and printed `<stdint.h>`'s `9223372036854775807`,
+# `2147483647` and `255` at exit 0; `SIZE_MAX`, `INFINITY` and `NAN` bound the
+# same way were refused with a false `ffi_constant_type` (*`SIZE_MAX` is `int`
+# in* the header), `y1` and `j0` with `ffi_header_refused` at `<math.h>`'s
+# declarations of them; `WIDEST` and `TINIEST`, macros reaching the header's
+# own `INT16_MAX` and `INT8_MIN`, printed `32767 -128`; and a group record
+# whose fields are `M_E`, `UINT16_MAX`, `HUGE_VALL` and `FP_ZERO` was an
+# internal error at exit 2.
+# Cause: a name the program binds keeps its header's meaning after the
+# groups (`emit/macro_guard.hero`), and the unit reads `<stdint.h>` and
+# `<math.h>` after them (`runtime/heroes_standard.h`) with only the bound
+# names the guard's list holds saved and undefined, so the library defined or
+# declared every other one there, and a bound macro reaching one read it so.
+# Repair: every name the program binds is saved around the library's headers
+# and given back after them, undefined there unless C reserves it
+# (`macro_guard.read_after`), and every name a bound macro reaches that the
+# guard's close leaves is kept the same way (`cli/bound_kept.hero`). The
+# program below binds a macro of each kind, two macros reaching one, and a
+# record whose fields are named as the library's macros, beside a function of
+# its own, and prints what the header made each.
+
+extern "fixedbugs-a-bound-name-keeps-its-header-s-value-whatever-c-s-library-defines-after-the-groups.h"
+    function after_seven() -> i64
+    constant INT64_MAX: i64
+    constant INT32_MAX: i64
+    constant UINT8_MAX: i64
+    constant SIZE_MAX: i64
+    constant INTMAX_MAX: i64
+    constant NAN: i64
+    constant INFINITY: i64
+    constant HUGE_VALF: i64
+    constant FP_NAN: i64
+    constant M_PI: i64
+    constant isnan: i64
+    constant y1: i64
+    constant j0: i64
+    constant OVERFLOW: i64
+    constant WIDEST: i64
+    constant TINIEST: i64
+    record AfterWord tag after_word
+        M_E: i64
+        UINT16_MAX: i64
+        HUGE_VALL: i64
+        FP_ZERO: i64
+
+function main()
+    print(INT64_MAX, " ", INT32_MAX, " ", UINT8_MAX, " ", SIZE_MAX, " ", INTMAX_MAX)
+    print(NAN, " ", INFINITY, " ", HUGE_VALF, " ", FP_NAN, " ", M_PI, " ", isnan)
+    print(y1, " ", j0, " ", OVERFLOW)
+    print(WIDEST, " ", TINIEST)
+    word = AfterWord(M_E: 17, UINT16_MAX: 18, HUGE_VALL: 19, FP_ZERO: 20)
+    print(word.M_E, " ", word.UINT16_MAX, " ", word.HUGE_VALL, " ", word.FP_ZERO)
+    print(after_seven())
