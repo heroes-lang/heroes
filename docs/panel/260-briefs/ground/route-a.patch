@@ -1,0 +1,105 @@
+diff --git a/selfhost/cli/layer.hero b/selfhost/cli/layer.hero
+index fd14e90fa..35ecd74e1 100644
+--- a/selfhost/cli/layer.hero
++++ b/selfhost/cli/layer.hero
+@@ -69,7 +69,10 @@ use cli/toolchain
+ # the runtime has no layer. Compiled once per key, which names those Swift
+ # members, then served. A build asks it through `layer_reach.for_build`.
+ function archive(t: toolchain.Toolchain, level: str, sanitize: bool, swift: [str]) -> [str]?
+-    members = runtime_key.layer_members(t.runtime)?
++    return archive_of(t, level: level, sanitize: sanitize, swift: swift, members: runtime_key.layer_members(t.runtime)?)
++
++# Route (a), a prototype: the archive of the C members `members` alone.
++function archive_of(t: toolchain.Toolchain, level: str, sanitize: bool, swift: [str], members: [str]) -> [str]?
+     none: [str] = []
+ 
+     if members.len() == 0
+@@ -84,7 +87,7 @@ function archive(t: toolchain.Toolchain, level: str, sanitize: bool, swift: [str
+     process.mkdir_all(t.build)?
+     reach = reaches(t, members: members, words: words, @memo)
+     key = digest.digest(
+-        t.fingerprint + "|" + t.compiler_key + "|" + toolchain.build_words(level: level, sanitize: sanitize) + "|" + t.runtime_key + "|layer|reaches:" + opening.key_text(reach) + layer_swift.key_text(swift, level: level, sanitize: sanitize)
++        t.fingerprint + "|" + t.compiler_key + "|" + toolchain.build_words(level: level, sanitize: sanitize) + "|" + t.runtime_key + "|layer|members:" + members.join(",") + "|reaches:" + opening.key_text(reach) + layer_swift.key_text(swift, level: level, sanitize: sanitize)
+     )
+     stem = t.build + "/layer-" + key
+     listed = stem + ".deps.txt"
+diff --git a/selfhost/cli/layer_reach.hero b/selfhost/cli/layer_reach.hero
+index 1c49c64d0..af88a4bab 100644
+--- a/selfhost/cli/layer_reach.hero
++++ b/selfhost/cli/layer_reach.hero
+@@ -51,8 +51,9 @@ function for_build(t: toolchain.Toolchain, level: str, sanitize: bool, s: source
+ 
+     if !links
+         return ok(unlinked)
+-    swift = reached(t, named: headers_of(s, decls))?
+-    made = layer.archive(t, level: level, sanitize: sanitize, swift: swift)
++    named = headers_of(s, decls)
++    swift = reached(t, named: named)?
++    made = layer.archive_of(t, level: level, sanitize: sanitize, swift: swift, members: reached_c(t, named: named)?)
+ 
+     match made
+         .ok words => return ok(words)
+@@ -100,6 +101,35 @@ function reached(t: toolchain.Toolchain, named: [str]) -> [str]?
+ 
+     if members.len() == 0
+         return ok(none)
++    reach = closure(t, named: named)?
++    out: [str] @= []
++
++    for member in members
++        if has(reach, name: layer_swift.name_of(member) + ".h")
++            out @ out.push(member)
++
++    return ok(out)
++
++# Route (a), a prototype: the C members of `t`'s layer whose own header the
++# headers `named` reach, in the layer's order.
++function reached_c(t: toolchain.Toolchain, named: [str]) -> [str]?
++    members = runtime_key.layer_members(t.runtime)?
++    none: [str] = []
++
++    if members.len() == 0
++        return ok(none)
++    reach = closure(t, named: named)?
++    out: [str] @= []
++
++    for member in members
++        if has(reach, name: layer.base_of(member) + ".h")
++            out @ out.push(member)
++
++    return ok(out)
++
++# The base names of the headers `named` reach, closed over the runtime's
++# files as the module's opening says.
++function closure(t: toolchain.Toolchain, named: [str]) -> [str]?
+     files = runtime_key.made_of(t.runtime)?
+     reach: [str] @= []
+ 
+@@ -126,13 +156,7 @@ function reached(t: toolchain.Toolchain, named: [str]) -> [str]?
+                     reach @ once(reach, name: base_of(name))
+             at @ at + 1
+ 
+-    out: [str] @= []
+-
+-    for member in members
+-        if has(reach, name: layer_swift.name_of(member) + ".h")
+-            out @ out.push(member)
+-
+-    return ok(out)
++    return ok(reach)
+ 
+ # Whether the runtime's `file` is reached: a header that is, or a C member of
+ # the layer whose own header is.
+diff --git a/selfhost/cli/value_run.hero b/selfhost/cli/value_run.hero
+index 01d638368..b373b7009 100644
+--- a/selfhost/cli/value_run.hero
++++ b/selfhost/cli/value_run.hero
+@@ -191,7 +191,7 @@ function linked_and_run(t: toolchain.Toolchain, dir: str, object: str, total: i6
+ 
+     # The members written in Swift the probed unit's headers reach, as a
+     # build's link holds them (`cli/layer_reach.hero`, defect 2625).
+-    layer_words = layer.archive(t, level: level, sanitize: false, swift: layer_reach.reached(t, named: layer_reach.includes(unit))?)?
++    layer_words = layer.archive_of(t, level: level, sanitize: false, swift: layer_reach.reached(t, named: layer_reach.includes(unit))?, members: layer_reach.reached_c(t, named: layer_reach.includes(unit))?)?
+     binary = publish.private_name(dir + "/probe") + process.exe_suffix()
+     line: [str] @= strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: false))
+     line @ strings.with_all(list: line, more: link_flags.target_words(t.target))

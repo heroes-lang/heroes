@@ -1,0 +1,9 @@
+.067 0 -### -std=gnu11 -D_USE_MATH_DEFINES -D_CRT_SECURE_ ... el260-repair-scratch/main-o2/runtime/runtime.c -o identity.o
+.097 0 -std=gnu11 -D_USE_MATH_DEFINES -D_CRT_SECURE_NO_WA ... /worktrees/panel260-repair-scratch/main-o2/runtime/runtime.c
+1.586 0 -std=gnu11 -D_USE_MATH_DEFINES -D_CRT_SECURE_NO_WA ... /panel260-repair-scratch/main-o2/runtime/platform/hero_scm.c
+.051 0 --rsp-quoting=posix @build/package-reads/words-5e9 ... reads/words-5e98308104c614c0.rsp build/package-reads/empty.c
+.053 0 --rsp-quoting=posix @build/shadowed/words-485b10a1 ... ing.d.47234-93.tmp build/shadowed/opening-73695b1e1bdaca98.c
+.051 0 --rsp-quoting=posix @build/reads/words-1bc75b3470a ... ds/reads.d.47234-96.tmp build/reads/reads-3eff8cdb1cd4c5b8.c
+.058 0 --rsp-quoting=posix @build/reads/words-0add55c1005 ... ds/reads.d.47234-98.tmp build/reads/reads-15a0b7db0d2ec084.c
+.049 0 --rsp-quoting=posix @build/reads/words-0add55c1005 ... s/reads.d.47234-100.tmp build/reads/reads-513c5ae6469d07df.c
+.091 0 --rsp-quoting=posix @build/2fcf30a4150b13e5/link-w ... d/2fcf30a4150b13e5/link-words.rsp -o bin.47234-102.tmp/clock

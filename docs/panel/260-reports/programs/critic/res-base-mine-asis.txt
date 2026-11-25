@@ -1,0 +1,8 @@
+# base-mine asis /Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/260-critic/heroes-next levels[plain] 17:36:28 load  7.56 7.37 8.52 
+casefold/main.hero plain exit=1 | error[ffi_header_refused]: `Hero_Time.h`, the header this group names, does not compile in this program's unit: the unit's opening compiles without it and is refused with it, where clang refuses the C this compiler writes for this program at line 27: non-porta | ran:  | members: none
+mixedown/main.hero plain exit=0 |  | ran: 1|6.3659874347e-314|6.3659874347e-314| | members: time 5, 
+ownnamed/main.hero plain exit=0 |  | ran: 42| | members: none
+casefold/main.hero check exit=0 |  || emit-c exit=1 | error[ffi_header_refused]: `Hero_Time.h`, the header this group names, does not compile in this program's unit: the unit's opening compiles without it and is refused with it, where clang refuses the C
+mixedown/main.hero check exit=0 |  || emit-c exit=0 | 
+ownnamed/main.hero check exit=0 |  || emit-c exit=0 | 
+# layer archives under this variant: 3; done 17:37:07

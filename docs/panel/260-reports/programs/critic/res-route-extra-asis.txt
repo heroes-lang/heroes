@@ -1,0 +1,6 @@
+# route-extra asis /Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/260-critic-scratch/r2/route/heroes-route levels[plain] 17:53:27 load  32.80 28.53 24.42 
+dlsymboth1/main.hero plain exit=0 |  | ran: true|1| | members: time 5, 
+linklibfix/main.hero plain exit=1 | error[ffi_unknown_name]: `hero_time.h` declares no `lib_now` — clang read the header and could not find it | ran:  | members: none
+dlsymboth1/main.hero check exit=0 |  || emit-c exit=0 | 
+linklibfix/main.hero check exit=0 |  || emit-c exit=1 | error[ffi_unknown_name]: `hero_time.h` declares no `lib_now` — clang read the header and could not find it
+# layer archives under this variant: 2; done 17:54:32

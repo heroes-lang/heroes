@@ -1,0 +1,7 @@
+# build 2026-11-25 16:52:06 aarch64 2.67 2.23 1.22 nproc=8 Debian clang version 22.1.8 (1~deb13u4)
+built old: real 700.96 user 683.30 sys 10.00   heroes 0.6.0 sources 5aae00294f7cd6fa 
+built base: real 837.85 user 749.37 sys 12.26   heroes 0.6.0 sources 41f32a8f4b745c0c 
+built mine: real 853.41 user 757.80 sys 13.26   heroes 0.6.0 sources 2ac05d2a50ea1fb7 
+# build done 2026-11-25 17:06:20 4.56 5.48 4.09
+# critic-linux 2026-11-25 17:10:27 phases[mine doors calls touch] aarch64 4.30 4.67 4.06 Debian clang version 22.1.8 (1~deb13u4)
+# critic-linux done 2026-11-25 17:25:33 2.58 2.63 3.22

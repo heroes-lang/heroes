@@ -1,0 +1,4 @@
+# base-mine3 asis /Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/260-critic/heroes-next levels[plain] 17:41:44 load  67.54 27.06 15.93 
+vendorinc/main.hero plain exit=0 |  | ran: true| | members: none
+vendorinc/main.hero check exit=0 |  || emit-c exit=0 | 
+# layer archives under this variant: 1; done 17:42:01

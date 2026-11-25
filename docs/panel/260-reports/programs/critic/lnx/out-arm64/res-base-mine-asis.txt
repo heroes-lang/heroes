@@ -1,0 +1,12 @@
+# base-mine asis /x/base/heroes levels[plain] 17:10:27 load 4.30 4.67 4.06
+casefold/main.hero plain exit=1 | error[ffi_missing_header]: `Hero_Time.h` is not on this machine's include path — clang looked and did not find it | ran:  | members: none
+mixedown/main.hero plain exit=0 |  | ran: 1|9.532824124368238e-130|2.902536355108114e-57| | members: time 5, 
+ownnamed/main.hero plain exit=0 |  | ran: 42| | members: none
+swiftentry/main.hero plain exit=1 | error[ffi_missing_link]: the linker cannot find `hero_ui_appkit_here`, and no group in this program says which library has it | ran:  | members: none
+vendorinc/main.hero plain exit=0 |  | ran: true| | members: none
+casefold/main.hero check exit=0 |  || emit-c exit=1 | error[ffi_missing_header]: `Hero_Time.h` is not on this machine's include path — clang looked and did not find it
+mixedown/main.hero check exit=0 |  || emit-c exit=0 | 
+ownnamed/main.hero check exit=0 |  || emit-c exit=0 | 
+swiftentry/main.hero check exit=0 |  || emit-c exit=0 | 
+vendorinc/main.hero check exit=0 |  || emit-c exit=0 | 
+# layer archives under this variant: 5; done 17:11:35

@@ -1,0 +1,12 @@
+# route-mined asis /Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/260-critic-scratch/r2/route/heroes-route levels[plain] 17:43:16 load  71.20 41.45 22.77 
+casefold/main.hero plain exit=1 | error[ffi_layer_redeclared]: `hero_time_monotonic_ns` is the platform layer's, declared by its `hero_time.h`, and this group binds it through `Hero_Time.h`, which includes none of the layer's headers: name `hero_time.h` in the group, or include it in `Hero_Tim | ran:  | members: none
+mixedown/main.hero plain exit=0 |  | ran: 1|6.3659874347e-314|6.3659874347e-314| | members: time 5, 
+ownnamed/main.hero plain exit=0 |  | ran: 42| | members: none
+swiftentry/main.hero plain exit=0 |  | ran: 1| | members: ui 58, 
+vendorinc/main.hero plain exit=0 |  | ran: true| | members: none
+casefold/main.hero check exit=0 |  || emit-c exit=1 | error[ffi_layer_redeclared]: `hero_time_monotonic_ns` is the platform layer's, declared by its `hero_time.h`, and this group binds it through `Hero_Time.h`, which includes none of the layer's headers:
+mixedown/main.hero check exit=0 |  || emit-c exit=0 | 
+ownnamed/main.hero check exit=0 |  || emit-c exit=0 | 
+swiftentry/main.hero check exit=0 |  || emit-c exit=0 | 
+vendorinc/main.hero check exit=0 |  || emit-c exit=0 | 
+# layer archives under this variant: 5; done 17:44:51

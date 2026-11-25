@@ -1,0 +1,42 @@
+## tracked C files outside runtime/ and seed/ reaching a member header, with depth
+1 tests/emission/examples-server-main.c
+1 tests/emission/run-fixedbugs-2504-a-marks-life-and-a-doors-are-told-together.c
+1 tests/emission/run-fixedbugs-2504-a-number-never-taken-back-is-told-as-a-life-a-door-began.c
+1 tests/emission/run-fixedbugs-2504-a-number-taken-back-and-never-closed-is-told-as-a-marks-life.c
+1 tests/emission/run-the-platform-layer-clock-never-goes-back.c
+1 tests/emission/run-the-platform-layer-echoes-over-loopback-in-one-thread.c
+1 tests/emission/run-the-platform-layer-ends-at-a-second-interrupt-after-the-program-asked-its-stop.c
+1 tests/emission/run-the-platform-layer-ends-at-a-second-request-to-end.c
+1 tests/emission/run-the-platform-layer-hands-a-connection-to-a-thread-as-a-number.c
+1 tests/emission/run-the-platform-layer-is-reached-from-a-fetched-packages-group.c
+1 tests/emission/run-the-platform-layer-runs-the-leak-check-after-a-stop.c
+1 tests/emission/run-the-platform-layer-stops-a-server-on-a-request-to-end.c
+1 tests/emission/run-the-platform-layer-stops-a-server-on-an-interrupt.c
+1 tests/emission/run-the-platform-layer-stops-every-waiting-call-when-the-program-asks.c
+1 tests/emission/run-the-platform-layer-tells-a-number-never-taken-back.c
+1 tests/emission/run-the-platform-layer-tells-a-socket-it-does-not-hold.c
+1 tests/golden/run/fixedbugs-2502-waiters.h
+1 tests/golden/run/fixedbugs-2554-a-closed-listener-lets-its-port-go.h
+1 tests/golden/run/fixedbugs-2667-ready.h
+1 tests/golden/run/fixedbugs-2673-holders.h
+1 tests/golden/run/fixedbugs-2696-strangers.h
+1 tests/golden/run/poll-a-sets-descriptor-shown.h
+2 tests/golden/run/the-platform-layer-ask-stop.h
+2 tests/golden/run/the-platform-layer-deadline.h
+1 tests/golden/run/the-platform-layer-ends-a-call-its-socket-closes.h
+1 tests/golden/run/the-platform-layer-hands-a-connection-to-a-thread-as-a-number.h
+1 tests/golden/run/the-platform-layer-stop.h
+1 tests/golden/run/the-platform-layer-tells-a-socket-it-does-not-hold.h
+1 tests/golden/run/the-signal-door.h
+## include spellings of a member header other than its bare name
+## tracked .hero whose groups name no member header and a file above
+1 tests/golden/run/fixedbugs-2502-a-close-wakes-a-waiting-call-at-once.hero fixedbugs-2502-waiters.h
+1 tests/golden/run/fixedbugs-2502-one-poller-tells-many-waiting-calls.hero fixedbugs-2502-waiters.h
+1 tests/golden/run/fixedbugs-2554-a-closed-listener-lets-its-port-go.hero fixedbugs-2554-a-closed-listener-lets-its-port-go.h
+1 tests/golden/run/fixedbugs-2667-a-port-a-pseudo-terminal-and-a-channel-join-a-poll-set.hero fixedbugs-2667-ready.h
+1 tests/golden/run/fixedbugs-2673-a-lock-is-not-released-by-the-thread-after-its-holder.hero fixedbugs-2673-holders.h
+1 tests/golden/run/fixedbugs-2696-a-strangers-datagram-never-stops-a-wait.hero fixedbugs-2696-strangers.h
+1 tests/golden/run/poll-a-sets-descriptor-is-readable-while-a-mailbox-holds-a-value.hero poll-a-sets-descriptor-shown.h
+1 tests/golden/run/the-platform-layer-ends-a-call-its-socket-closes.hero the-platform-layer-ends-a-call-its-socket-closes.h
+2 tests/golden/run/the-platform-layer-ends-a-wait-at-its-sockets-deadline.hero the-platform-layer-deadline.h
+1 tests/golden/run/the-signal-door-wakes-a-readiness-set-and-a-wait-for-a-child.hero the-signal-door.h

@@ -1,0 +1,9 @@
+# 2026-11-25 10:13:50 Apple clang version 21.0.0 (clang-2100.4.1.1) load { 179.36 144.69 114.22 }
+members 43, did not compile 0
+closure exit 0
+NOT REACHED hero_audio hero_audio_coreaudio hero_audio_arm_system
+members 49 edges unreached 9
+hero_time.h -> ['hero_time']
+hero_ui.h -> ['hero_net', 'hero_poll', 'hero_stream', 'hero_stream_net', 'hero_ui', 'hero_ui_appkit', 'hero_ui_appkit_dialogs', 'hero_ui_appkit_print', 'hero_ui_appkit_system', 'hero_ui_appkit_windows', 'hero_ui_web_gtk', 'hero_ui_web_win32']
+hero_net.h -> ['hero_net']
+hero_audio.h -> ['hero_audio', 'hero_net', 'hero_stream']

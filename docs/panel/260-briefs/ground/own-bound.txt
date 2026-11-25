@@ -1,0 +1,9 @@
+fixedbugs-2502-a-close-wakes-a-waiting-call-at-once: binds 1 (close_wakes_at_once ), of them hero_* 0
+fixedbugs-2502-one-poller-tells-many-waiting-calls: binds 2 (both_ways_on_one_socket many_waiters_each_get_their_byte ), of them hero_* 0
+fixedbugs-2554-a-closed-listener-lets-its-port-go: binds 2 (port_after_timed_out_accept port_after_waiting_accept ), of them hero_* 0
+fixedbugs-2667-a-port-a-pseudo-terminal-and-a-channel-join-a-poll-set: binds 2 (channel_ends_join_a_set pseudo_sides_join_a_set ), of them hero_* 0
+fixedbugs-2673-a-lock-is-not-released-by-the-thread-after-its-holder: binds 2 (acquire_after_the_holder_ended release_after_the_holder_ended ), of them hero_* 0
+fixedbugs-2696-a-strangers-datagram-never-stops-a-wait: binds 1 (strangers_leave_the_wait ), of them hero_* 0
+poll-a-sets-descriptor-is-readable-while-a-mailbox-holds-a-value: binds 4 (shown_closed shown_made shown_readable shown_told ), of them hero_* 0
+the-platform-layer-ends-a-call-its-socket-closes: binds 4 (close_ends_accept close_ends_recv close_ends_send close_ends_two_waits ), of them hero_* 0
+the-signal-door-wakes-a-readiness-set-and-a-wait-for-a-child: binds 3 (door_begin door_child door_set ), of them hero_* 0

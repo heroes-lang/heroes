@@ -1,0 +1,3 @@
+calls old print warm exit=0 clang calls 5, naming platform/ 0, with -M 3, seconds 0.311, layer archives 0, members in bin 0
+calls mine print warm exit=0 clang calls 6, naming platform/ 0, with -M 3, seconds 0.559, layer archives 0, members in bin 0
+calls base print warm exit=0 clang calls 7, naming platform/ 1, with -M 4, seconds 2.982, layer archives 4, members in bin 0

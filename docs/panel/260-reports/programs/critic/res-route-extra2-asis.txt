@@ -1,0 +1,4 @@
+# route-extra2 asis /Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/260-critic-scratch/r2/route/heroes-route levels[plain] 18:30:39 load  160.86 133.60 95.05 
+linkmixed/main.hero plain exit=0 |  | ran: 1|true| | members: time 5, 
+linkmixed/main.hero check exit=0 |  || emit-c exit=0 | 
+# layer archives under this variant: 1; done 18:31:24

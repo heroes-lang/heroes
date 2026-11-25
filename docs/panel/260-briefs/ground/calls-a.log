@@ -1,0 +1,5 @@
+.052 0 -### -std=gnu11 -D_USE_MATH_DEFINES -D_CRT_SECURE_ ... e-layer-speed-scratch/seed-a/runtime/runtime.c -o identity.o
+.130 0 -std=gnu11 -D_USE_MATH_DEFINES -D_CRT_SECURE_NO_WA ... /worktrees/lane-layer-speed-scratch/seed-a/runtime/runtime.c
+.088 0 --rsp-quoting=posix @build/shadowed/words-27d05532 ... ning.d.91037-4.tmp build/shadowed/opening-663dc2161c7f8e8c.c
+.075 0 --rsp-quoting=posix @build/reads/words-54ac1c030e7 ... ads/reads.d.91037-7.tmp build/reads/reads-6a2c16605d479d0b.c
+.115 0 --rsp-quoting=posix @build/0b885de31ebaa1d1/link-w ... ild/0b885de31ebaa1d1/link-words.rsp -o bin.91037-9.tmp/print

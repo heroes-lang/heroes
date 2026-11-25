@@ -1,0 +1,6 @@
+# spec-w1n-group-mark-native: the replacement text(s), each the whole of what it puts in place of its anchor
+
+Anything beyond this document comes from packages or C libraries; processes and files from the language's `hero_os.h`, and sockets, clocks and the rest from its platform layer: `hero_net.h`, `hero_time.h` and every other `hero_` header it provides but the compiler's `hero_compiler.h`. A group whose header is one of these or includes one at any depth, or that binds a name one declares, must say `native` after its header, and no other group may; a build links the layer only where a module it compiles holds such a group. A group names its header
+
+    Extern = "extern" string [ "native" ] [ ( "link" | "pkgconfig" ) string ] NEWLINE
+

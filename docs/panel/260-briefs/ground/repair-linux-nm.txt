@@ -1,0 +1,9 @@
+# 2026-11-25 10:23:27 Debian clang version 22.1.8 (1~deb13u4) nproc=8 load 4.53 4.15 3.84
+members 43, did not compile 0
+closure exit 0
+NOT REACHED hero_ui hero_ui_gtk hero_ui_arm_windows_words
+members 49 edges unreached 107
+hero_time.h -> ['hero_time']
+hero_ui.h -> ['hero_net', 'hero_poll', 'hero_stream', 'hero_stream_net', 'hero_ui', 'hero_ui_appkit', 'hero_ui_appkit_dialogs', 'hero_ui_appkit_print', 'hero_ui_appkit_system', 'hero_ui_appkit_windows', 'hero_ui_web_gtk', 'hero_ui_web_win32']
+hero_net.h -> ['hero_net']
+hero_audio.h -> ['hero_audio', 'hero_net', 'hero_stream']

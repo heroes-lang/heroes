@@ -1,0 +1,90 @@
+# route-ffi declared /x/mine/heroes levels[plain] 17:16:18 load 2.91 3.77 3.90
+armhdr/main.hero plain exit=2 | internal error: linking failed: | ran:  | members: none
+dlsym/main.hero plain exit=1 | error[ffi_layer_unreached]: this group says `layer`, and `dl.h` is none of the platform layer's headers and includes none of them, so nothing it binds is the layer's: take the word out, or name the layer's header that declares what this group binds | ran:  | members: none
+dlsymboth/main.hero plain exit=1 | error[ffi_layer_unreached]: this group says `layer`, and `dl.h` is none of the platform layer's headers and includes none of them, so nothing it binds is the layer's: take the word out, or name the layer's header that declares what this group binds | ran:  | members: none
+fnptr/main.hero plain exit=0 |  | ran: true| | members: time 5, 
+fnvalue/main.hero plain exit=0 |  | ran: true| | members: time 5, 
+ifnever/main.hero plain exit=0 |  | ran: 42| | members: none
+ifplatform/main.hero plain exit=0 |  | ran: true| | members: time 5, 
+linklib/main.hero plain exit=1 | error[ffi_layer_unreached]: this group says `layer`, and `libnow.h` is none of the platform layer's headers and includes none of them, so nothing it binds is the layer's: take the word out, or name the layer's header that declares what this group binds | ran:  | members: none
+linklibhdr/main.hero plain exit=0 |  | ran: true|true| | members: time 5, 
+macro/main.hero plain exit=0 |  | ran: true| | members: time 5, 
+macrodecl/main.hero plain exit=1 | error[ffi_layer_unreached]: this group says `layer`, and `now.h` is none of the platform layer's headers and includes none of them, so nothing it binds is the layer's: take the word out, or name the layer's header that declares what this group binds | ran:  | members: none
+owndeclswift/main.hero plain exit=1 | error[ffi_layer_redeclared]: `hero_crypto_last_error` is the platform layer's, declared by its `hero_crypto.h`, and this group binds it through `mycrypto.h`, which includes none of the layer's headers: name `hero_crypto.h` in the group, or include it in `mycry | ran:  | members: none
+owndeclwrong/main.hero plain exit=1 | error[ffi_layer_redeclared]: `hero_time_monotonic_ns` is the platform layer's, declared by its `hero_time.h`, and this group binds it through `myclock.h`, which includes none of the layer's headers: name `hero_time.h` in the group, or include it in `myclock.h` | ran:  | members: none
+families/acl.hero plain exit=0 |  | ran: acl: 0| | members: acl 6, 
+families/activation.hero plain exit=0 |  | ran: activation: 0| | members: activation 16, ipc 34, net 36, stream 23, 
+families/audio.hero plain exit=2 | internal error: linking failed: | ran:  | members: none
+families/crypto.hero plain exit=0 |  | ran: crypto: 0| | members: crypto 27, 
+families/disk.hero plain exit=0 |  | ran: disk: 0| | members: disk 35, stream 23, 
+families/ipc.hero plain exit=0 |  | ran: ipc: 0| | members: ipc 34, net 36, stream 23, 
+families/keyring.hero plain exit=0 |  | ran: keyring: 0| | members: keyring 9, 
+families/locale.hero plain exit=0 |  | ran: locale: 4294967296| | members: locale 1, 
+families/net.hero plain exit=0 |  | ran: net: 0| | members: net 36, 
+families/odbc.hero plain exit=0 |  | ran: odbc: 0| | members: odbc 44, 
+families/poll.hero plain exit=0 |  | ran: poll: 0| | members: net 36, poll 17, stream 29, 
+families/printing.hero plain exit=0 |  | ran: printing: 0| | members: printing 11, 
+families/proc.hero plain exit=0 |  | ran: proc: 0| | members: proc 17, stream 23, 
+families/procs.hero plain exit=0 |  | ran: procs: 0| | members: procs 3, 
+families/proxy.hero plain exit=0 |  | ran: proxy: 4294967296| | members: proxy 1, 
+families/scm.hero plain exit=0 |  | ran: scm: 0| | members: scm 9, 
+families/serial.hero plain exit=0 |  | ran: serial: 0| | members: net 36, serial 17, stream 23, 
+families/service.hero plain exit=0 |  | ran: service: 0| | members: service 12, 
+families/stream.hero plain exit=0 |  | ran: stream: 0| | members: stream 23, 
+families/stream_net.hero plain exit=0 |  | ran: stream_net: linked| | members: net 36, stream 29, 
+families/sys.hero plain exit=0 |  | ran: sys: 14252| | members: sys 32, 
+families/syslog.hero plain exit=0 |  | ran: syslog: 0| | members: syslog 9, 
+families/term.hero plain exit=0 |  | ran: term: 0| | members: stream 23, term 7, 
+families/time.hero plain exit=0 |  | ran: time: 2564480420750| | members: time 5, 
+families/tls.hero plain exit=0 |  | ran: tls: 0| | members: net 36, stream 29, time 5, tls 19, 
+families/ui.hero plain exit=2 | internal error: linking failed: | ran:  | members: none
+families/users.hero plain exit=0 |  | ran: users: 0| | members: users 8, 
+families/volumes.hero plain exit=0 |  | ran: volumes: 0| | members: volumes 3, 
+families/watch.hero plain exit=0 |  | ran: watch: 0| | members: net 36, stream 23, watch 8, 
+families/xattr.hero plain exit=0 |  | ran: xattr: 0| | members: xattr 6, 
+families/zall.hero plain exit=2 | internal error: linking failed: | ran:  | members: none
+armhdr/main.hero check exit=0 |  || emit-c exit=0 | 
+dlsym/main.hero check exit=0 |  || emit-c exit=1 | error[ffi_layer_unreached]: this group says `layer`, and `dl.h` is none of the platform layer's headers and includes none of them, so nothing it binds is the layer's: take the word out, or name the la
+dlsymboth/main.hero check exit=0 |  || emit-c exit=1 | error[ffi_layer_unreached]: this group says `layer`, and `dl.h` is none of the platform layer's headers and includes none of them, so nothing it binds is the layer's: take the word out, or name the la
+fnptr/main.hero check exit=0 |  || emit-c exit=0 | 
+fnvalue/main.hero check exit=0 |  || emit-c exit=0 | 
+ifnever/main.hero check exit=0 |  || emit-c exit=0 | 
+ifplatform/main.hero check exit=0 |  || emit-c exit=0 | 
+linklib/main.hero check exit=0 |  || emit-c exit=1 | error[ffi_layer_unreached]: this group says `layer`, and `libnow.h` is none of the platform layer's headers and includes none of them, so nothing it binds is the layer's: take the word out, or name th
+linklibhdr/main.hero check exit=0 |  || emit-c exit=0 | 
+macro/main.hero check exit=0 |  || emit-c exit=0 | 
+macrodecl/main.hero check exit=0 |  || emit-c exit=1 | error[ffi_layer_unreached]: this group says `layer`, and `now.h` is none of the platform layer's headers and includes none of them, so nothing it binds is the layer's: take the word out, or name the l
+owndeclswift/main.hero check exit=0 |  || emit-c exit=1 | error[ffi_layer_redeclared]: `hero_crypto_last_error` is the platform layer's, declared by its `hero_crypto.h`, and this group binds it through `mycrypto.h`, which includes none of the layer's headers
+owndeclwrong/main.hero check exit=0 |  || emit-c exit=1 | error[ffi_layer_redeclared]: `hero_time_monotonic_ns` is the platform layer's, declared by its `hero_time.h`, and this group binds it through `myclock.h`, which includes none of the layer's headers: n
+families/acl.hero check exit=0 |  || emit-c exit=0 | 
+families/activation.hero check exit=0 |  || emit-c exit=0 | 
+families/audio.hero check exit=0 |  || emit-c exit=0 | 
+families/crypto.hero check exit=0 |  || emit-c exit=0 | 
+families/disk.hero check exit=0 |  || emit-c exit=0 | 
+families/ipc.hero check exit=0 |  || emit-c exit=0 | 
+families/keyring.hero check exit=0 |  || emit-c exit=0 | 
+families/locale.hero check exit=0 |  || emit-c exit=0 | 
+families/net.hero check exit=0 |  || emit-c exit=0 | 
+families/odbc.hero check exit=0 |  || emit-c exit=0 | 
+families/poll.hero check exit=0 |  || emit-c exit=0 | 
+families/printing.hero check exit=0 |  || emit-c exit=0 | 
+families/proc.hero check exit=0 |  || emit-c exit=0 | 
+families/procs.hero check exit=0 |  || emit-c exit=0 | 
+families/proxy.hero check exit=0 |  || emit-c exit=0 | 
+families/scm.hero check exit=0 |  || emit-c exit=0 | 
+families/serial.hero check exit=0 |  || emit-c exit=0 | 
+families/service.hero check exit=0 |  || emit-c exit=0 | 
+families/stream.hero check exit=0 |  || emit-c exit=0 | 
+families/stream_net.hero check exit=0 |  || emit-c exit=0 | 
+families/sys.hero check exit=0 |  || emit-c exit=0 | 
+families/syslog.hero check exit=0 |  || emit-c exit=0 | 
+families/term.hero check exit=0 |  || emit-c exit=0 | 
+families/time.hero check exit=0 |  || emit-c exit=0 | 
+families/tls.hero check exit=0 |  || emit-c exit=0 | 
+families/ui.hero check exit=0 |  || emit-c exit=0 | 
+families/users.hero check exit=0 |  || emit-c exit=0 | 
+families/volumes.hero check exit=0 |  || emit-c exit=0 | 
+families/watch.hero check exit=0 |  || emit-c exit=0 | 
+families/xattr.hero check exit=0 |  || emit-c exit=0 | 
+families/zall.hero check exit=0 |  || emit-c exit=0 | 
+# layer archives under this variant: 14; done 17:23:39

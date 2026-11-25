@@ -1,0 +1,9 @@
+## build.err
+error[ffi_missing_link]: the library `now` needs `hero_time_monotonic_ns`, and nothing on the link line defines it
+  at main.hero:7:24
+    |
+  7 | extern "libnow.h" link "now"
+    |                        ^^^^^
+  note: `libnow.a` refers to `hero_time_monotonic_ns` without defining it, and a library is linked only where a group names it: give this program a group for the library that defines it as well, `extern "<its header>" link "<library>"`, holding a function its header declares
+## link words
+"build/runtime-0d372da619ff5978-24ccb7f11c9d9b28.o" "build/tu-43dcb87817e65c6b/main-4c5775272eeb7241.o" "build/tu-766992cc7ccc307b/library-3f1f7d51270e363b.o" "build/layer-003065180a280819-7ee86660507d7361.a" "-Wl,--start-group" "-lnow" "-Wl,--end-group" "-Wl,--trace-symbol=posix_spawnattr_setpgroup" "-Wl,--trace-symbol=getgroups" "-Wl,--trace-symbol=getgrouplist" "-Wl,--trace-symbol=initgroups" 

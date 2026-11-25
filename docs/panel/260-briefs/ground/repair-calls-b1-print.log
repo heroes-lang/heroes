@@ -1,0 +1,7 @@
+.052 0 -### -std=gnu11 -D_USE_MATH_DEFINES -D_CRT_SECURE_ ... el260-repair-scratch/main-o2/runtime/runtime.c -o identity.o
+.077 0 -std=gnu11 -D_USE_MATH_DEFINES -D_CRT_SECURE_NO_WA ... /worktrees/panel260-repair-scratch/main-o2/runtime/runtime.c
+1.400 0 -std=gnu11 -D_USE_MATH_DEFINES -D_CRT_SECURE_NO_WA ... /panel260-repair-scratch/main-o2/runtime/platform/hero_scm.c
+.047 0 --rsp-quoting=posix @build/package-reads/words-5e9 ... reads/words-5e98308104c614c0.rsp build/package-reads/empty.c
+.055 0 --rsp-quoting=posix @build/shadowed/words-1fcec325 ... ing.d.43863-93.tmp build/shadowed/opening-663dc2161c7f8e8c.c
+.055 0 --rsp-quoting=posix @build/reads/words-0add55c1005 ... ds/reads.d.43863-96.tmp build/reads/reads-7a742ded5e3eafa7.c
+.100 0 --rsp-quoting=posix @build/3dfd65e41271b230/link-w ... ld/3dfd65e41271b230/link-words.rsp -o bin.43863-98.tmp/print

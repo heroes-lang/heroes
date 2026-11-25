@@ -1,0 +1,22 @@
+## tracked headers outside runtime/ including a layer header
+tests/golden/run/fixedbugs-2502-waiters.h
+tests/golden/run/fixedbugs-2554-a-closed-listener-lets-its-port-go.h
+tests/golden/run/fixedbugs-2667-ready.h
+tests/golden/run/fixedbugs-2673-holders.h
+tests/golden/run/fixedbugs-2696-strangers.h
+tests/golden/run/poll-a-sets-descriptor-shown.h
+tests/golden/run/the-platform-layer-ends-a-call-its-socket-closes.h
+tests/golden/run/the-platform-layer-hands-a-connection-to-a-thread-as-a-number.h
+tests/golden/run/the-platform-layer-stop.h
+tests/golden/run/the-platform-layer-tells-a-socket-it-does-not-hold.h
+tests/golden/run/the-signal-door.h
+## tracked run goldens binding the layer only through one of them
+tests/golden/run/fixedbugs-2502-a-close-wakes-a-waiting-call-at-once.hero
+tests/golden/run/fixedbugs-2502-one-poller-tells-many-waiting-calls.hero
+tests/golden/run/fixedbugs-2554-a-closed-listener-lets-its-port-go.hero
+tests/golden/run/fixedbugs-2667-a-port-a-pseudo-terminal-and-a-channel-join-a-poll-set.hero
+tests/golden/run/fixedbugs-2673-a-lock-is-not-released-by-the-thread-after-its-holder.hero
+tests/golden/run/fixedbugs-2696-a-strangers-datagram-never-stops-a-wait.hero
+tests/golden/run/poll-a-sets-descriptor-is-readable-while-a-mailbox-holds-a-value.hero
+tests/golden/run/the-platform-layer-ends-a-call-its-socket-closes.hero
+tests/golden/run/the-signal-door-wakes-a-readiness-set-and-a-wait-for-a-child.hero

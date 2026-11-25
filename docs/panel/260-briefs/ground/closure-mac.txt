@@ -1,0 +1,14 @@
+NOT REACHED hero_audio hero_audio_coreaudio hero_audio_arm_beep
+NOT REACHED hero_audio hero_audio_coreaudio hero_audio_arm_close
+NOT REACHED hero_audio hero_audio_coreaudio hero_audio_arm_devices
+NOT REACHED hero_audio hero_audio_coreaudio hero_audio_arm_open
+NOT REACHED hero_audio hero_audio_coreaudio hero_audio_arm_pause
+NOT REACHED hero_audio hero_audio_coreaudio hero_audio_arm_permission
+NOT REACHED hero_audio hero_audio_coreaudio hero_audio_arm_resume
+NOT REACHED hero_audio hero_audio_coreaudio hero_audio_arm_stop
+NOT REACHED hero_audio hero_audio_coreaudio hero_audio_arm_system
+members 49 edges unreached 9
+hero_time.h -> ['hero_time']
+hero_ui.h -> ['hero_net', 'hero_poll', 'hero_stream', 'hero_stream_net', 'hero_ui', 'hero_ui_appkit', 'hero_ui_appkit_dialogs', 'hero_ui_appkit_print', 'hero_ui_appkit_system', 'hero_ui_appkit_windows', 'hero_ui_web_gtk', 'hero_ui_web_win32']
+hero_net.h -> ['hero_net']
+hero_audio.h -> ['hero_audio', 'hero_net', 'hero_stream']

@@ -1,0 +1,4 @@
+# base-mine2 asis /Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/260-critic/heroes-next levels[plain] 17:37:44 load  12.32 8.87 8.99 
+swiftentry/main.hero plain exit=0 |  | ran: 1| | members: ui 58, 
+swiftentry/main.hero check exit=0 |  || emit-c exit=0 | 
+# layer archives under this variant: 1; done 17:38:12

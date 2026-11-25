@@ -1,0 +1,3 @@
+Anything beyond this document comes from packages or C libraries; processes and files from the language's `hero_os.h`, and sockets, clocks and the rest from its platform layer: `hero_net.h`, `hero_time.h` and every other `hero_` header it provides but the compiler's `hero_compiler.h`. A group whose header is one of these or includes a file of the layer at any depth, or whose library calls the layer, must say `layer` after its header, and no other group may; a name one of these declares is bound only by a group whose header is or includes it, and a build links the layer only where a module it compiles holds a group saying `layer`. A group names its header
+
+    Extern = "extern" string [ "layer" ] [ ( "link" | "pkgconfig" ) string ] NEWLINE

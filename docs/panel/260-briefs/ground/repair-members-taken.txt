@@ -1,0 +1,21 @@
+# members taken, nm of each binary, 11:50:05 load { 22.57 35.94 57.36 }
+constonly-main:
+platformhdr-main: net 36 audio 39 stream 23
+twofam-main: time 5 net 36
+testonly-main: time 5
+face-main: time 5 net 36 disk 35 stream 23 procs 3 sys 32 users 8
+print:
+clock: time 5
+audio: net 36 audio 39 stream 23
+ui: net 36 ui 301 stream 29 poll 17
+usemod-main: time 5
+ownhdr-main: time 5
+owndecl-main: time 5
+the-platform-layer-ends-a-wait-at-its-sockets-deadline: net 36
+# runs, each under timeout 20, stdout cut at 4 KiB
+constonly-main run exit=0 1 
+platformhdr-main run exit=0 linked 
+twofam-main run exit=0 true 0 
+testonly-main run exit=0 42 
+face-main run exit=0 true 
+testonly heroes test clockmod.hero exit=0 1 test, all passed 

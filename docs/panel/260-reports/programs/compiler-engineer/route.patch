@@ -1,0 +1,2558 @@
+diff --git a/examples/server/net.hero b/examples/server/net.hero
+index 36b06dc8a..2474ef60a 100644
+--- a/examples/server/net.hero
++++ b/examples/server/net.hero
+@@ -15,7 +15,7 @@
+ # the ones `hero_net.h` names for the two calls, so a connection never ended
+ # and a number never taken back are told when `main` returns.
+ 
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     record Socket tag hero_net_socket
+     constant HERO_NET_OK: i64
+     function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+diff --git a/rebel/library/0.1.0/files/audio/hero_audio.hero b/rebel/library/0.1.0/files/audio/hero_audio.hero
+index cb9438c29..d5c759b08 100644
+--- a/rebel/library/0.1.0/files/audio/hero_audio.hero
++++ b/rebel/library/0.1.0/files/audio/hero_audio.hero
+@@ -14,7 +14,7 @@ use io/hero_stream
+ use math
+ use net/hero_net
+ 
+-extern "hero_audio.h"
++extern "hero_audio.h" layer
+     # A stream the layer holds open. It is a handle the layer issues and
+     # checks: one closed already, `nullptr`, or one it never issued is
+     # `HERO_AUDIO_NOT_OPEN`, never a read of freed memory.
+diff --git a/rebel/library/0.1.0/files/crypto/hero_crypto.hero b/rebel/library/0.1.0/files/crypto/hero_crypto.hero
+index 81780cee0..9989bf83e 100644
+--- a/rebel/library/0.1.0/files/crypto/hero_crypto.hero
++++ b/rebel/library/0.1.0/files/crypto/hero_crypto.hero
+@@ -25,7 +25,7 @@
+ 
+ use bytes
+ 
+-extern "hero_crypto.h"
++extern "hero_crypto.h" layer
+     # A key, secret, private or public. It is a handle the layer issues and
+     # checks: one closed already, `nullptr`, or one it never issued is
+     # `HERO_CRYPTO_NOT_OPEN`, never a read of freed memory.
+diff --git a/rebel/library/0.1.0/files/fs/acl/hero_acl.hero b/rebel/library/0.1.0/files/fs/acl/hero_acl.hero
+index a81ef2ed7..de03ccc42 100644
+--- a/rebel/library/0.1.0/files/fs/acl/hero_acl.hero
++++ b/rebel/library/0.1.0/files/fs/acl/hero_acl.hero
+@@ -11,7 +11,7 @@
+ # asks again with that many. A list is fields of text, each followed by a zero
+ # byte, in the form the header gives.
+ 
+-extern "hero_acl.h"
++extern "hero_acl.h" layer
+     # The kinds of failure `last_error` answers, the same numbers on every
+     # platform; the header says what each means.
+     constant HERO_ACL_OK: i64
+diff --git a/rebel/library/0.1.0/files/fs/hero_disk.hero b/rebel/library/0.1.0/files/fs/hero_disk.hero
+index 277a4abb9..9c8987456 100644
+--- a/rebel/library/0.1.0/files/fs/hero_disk.hero
++++ b/rebel/library/0.1.0/files/fs/hero_disk.hero
+@@ -9,7 +9,7 @@
+ use io/hero_stream
+ use os/hero_disk as os_disk
+ 
+-extern "hero_disk.h"
++extern "hero_disk.h" layer
+     # The two locks `lock` asks for.
+     constant HERO_DISK_LOCK_SHARED: i64
+     constant HERO_DISK_LOCK_EXCLUSIVE: i64
+diff --git a/rebel/library/0.1.0/files/fs/hero_volumes.hero b/rebel/library/0.1.0/files/fs/hero_volumes.hero
+index 33ba97588..df79c7413 100644
+--- a/rebel/library/0.1.0/files/fs/hero_volumes.hero
++++ b/rebel/library/0.1.0/files/fs/hero_volumes.hero
+@@ -12,7 +12,7 @@
+ # An entry is `FIELDS` fields, each followed by one zero byte, and the header
+ # says what each holds.
+ 
+-extern "hero_volumes.h"
++extern "hero_volumes.h" layer
+     # The kinds of failure `last_error` answers. They are the same numbers on
+     # every platform, and `HERO_VOLUMES_UNSUPPORTED` a POSIX system neither
+     # Darwin nor Linux, or a Linux with no `/proc`.
+diff --git a/rebel/library/0.1.0/files/fs/watch/hero_watch.hero b/rebel/library/0.1.0/files/fs/watch/hero_watch.hero
+index c8bacb8fc..cd281a0d7 100644
+--- a/rebel/library/0.1.0/files/fs/watch/hero_watch.hero
++++ b/rebel/library/0.1.0/files/fs/watch/hero_watch.hero
+@@ -16,7 +16,7 @@ use net/hero_net
+ use path as paths
+ use time
+ 
+-extern "hero_watch.h"
++extern "hero_watch.h" layer
+     # A watch the layer holds open. It is a handle the layer issues and checks:
+     # one closed already, `nullptr`, or one it never issued is
+     # `HERO_WATCH_NOT_OPEN`, never a read of freed memory.
+diff --git a/rebel/library/0.1.0/files/fs/xattr/hero_xattr.hero b/rebel/library/0.1.0/files/fs/xattr/hero_xattr.hero
+index 2a7d460ec..b95d2b93a 100644
+--- a/rebel/library/0.1.0/files/fs/xattr/hero_xattr.hero
++++ b/rebel/library/0.1.0/files/fs/xattr/hero_xattr.hero
+@@ -10,7 +10,7 @@
+ # is above `n` the buffer was too short and holds nothing to read, and the
+ # caller asks again with that many.
+ 
+-extern "hero_xattr.h"
++extern "hero_xattr.h" layer
+     # The kinds of failure `last_error` answers, the same numbers on every
+     # platform; the header says what each means.
+     constant HERO_XATTR_OK: i64
+diff --git a/rebel/library/0.1.0/files/http/hero_proxy.hero b/rebel/library/0.1.0/files/http/hero_proxy.hero
+index 41f3bd46b..e0928d78e 100644
+--- a/rebel/library/0.1.0/files/http/hero_proxy.hero
++++ b/rebel/library/0.1.0/files/http/hero_proxy.hero
+@@ -10,7 +10,7 @@
+ # call, and everywhere else it answers `HERO_PROXY_UNSUPPORTED`, so the same
+ # line binds it on every platform.
+ 
+-extern "hero_proxy.h"
++extern "hero_proxy.h" layer
+     # The kinds of result, the high 32 bits of what `settings` answers, the
+     # same numbers on every platform.
+     constant HERO_PROXY_OK: i64
+diff --git a/rebel/library/0.1.0/files/i18n/hero_locale.hero b/rebel/library/0.1.0/files/i18n/hero_locale.hero
+index da71a26b6..efebba6cf 100644
+--- a/rebel/library/0.1.0/files/i18n/hero_locale.hero
++++ b/rebel/library/0.1.0/files/i18n/hero_locale.hero
+@@ -11,7 +11,7 @@
+ # answers `HERO_LOCALE_UNSUPPORTED`, so the same line binds it on every
+ # platform.
+ 
+-extern "hero_locale.h"
++extern "hero_locale.h" layer
+     # The kinds of result, the high 32 bits of what `settings` answers, the
+     # same numbers on every platform.
+     constant HERO_LOCALE_OK: i64
+diff --git a/rebel/library/0.1.0/files/io/hero_stream.hero b/rebel/library/0.1.0/files/io/hero_stream.hero
+index 201717b13..5ed907dd9 100644
+--- a/rebel/library/0.1.0/files/io/hero_stream.hero
++++ b/rebel/library/0.1.0/files/io/hero_stream.hero
+@@ -16,7 +16,7 @@
+ # table of operations and a stream's descriptor, is bound by no group: a
+ # Heroes program cannot be trusted with either.
+ 
+-extern "hero_stream.h"
++extern "hero_stream.h" layer
+     # A stream the layer holds open. It is a handle the layer issues and
+     # checks: one closed already, `nullptr`, or one it never issued is
+     # `HERO_STREAM_NOT_OPEN`, never a read of freed memory.
+diff --git a/rebel/library/0.1.0/files/ipc/hero_ipc.hero b/rebel/library/0.1.0/files/ipc/hero_ipc.hero
+index 2e316a3d3..b23131395 100644
+--- a/rebel/library/0.1.0/files/ipc/hero_ipc.hero
++++ b/rebel/library/0.1.0/files/ipc/hero_ipc.hero
+@@ -15,7 +15,7 @@
+ use io/hero_stream
+ use threads/hero_os as threads_floor
+ 
+-extern "hero_ipc.h"
++extern "hero_ipc.h" layer
+     # A listening channel the layer holds open. Each of the four is a handle
+     # the layer issues and checks: one closed already, `nullptr`, or one it
+     # never issued is `HERO_IPC_NOT_OPEN`, never a read of freed memory.
+diff --git a/rebel/library/0.1.0/files/keyring/hero_keyring.hero b/rebel/library/0.1.0/files/keyring/hero_keyring.hero
+index cb25c15b3..d31f7ce8d 100644
+--- a/rebel/library/0.1.0/files/keyring/hero_keyring.hero
++++ b/rebel/library/0.1.0/files/keyring/hero_keyring.hero
+@@ -17,7 +17,7 @@
+ use bytes
+ use os
+ 
+-extern "hero_keyring.h"
++extern "hero_keyring.h" layer
+     # The kinds of failure `last_error` answers, the same numbers on every
+     # platform.
+     constant HERO_KEYRING_OK: i64
+diff --git a/rebel/library/0.1.0/files/net/hero_net.hero b/rebel/library/0.1.0/files/net/hero_net.hero
+index 5b1240202..f88c00ff6 100644
+--- a/rebel/library/0.1.0/files/net/hero_net.hero
++++ b/rebel/library/0.1.0/files/net/hero_net.hero
+@@ -15,7 +15,7 @@
+ 
+ use threads/hero_os as threads_floor
+ 
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     # A socket the layer holds open. It is a handle the layer issues and
+     # checks: one closed already, `nullptr`, or one it never issued is
+     # `HERO_NET_NOT_OPEN`, never a read of freed memory.
+diff --git a/rebel/library/0.1.0/files/net/hero_stream_net.hero b/rebel/library/0.1.0/files/net/hero_stream_net.hero
+index f1734dbb3..44e758c3d 100644
+--- a/rebel/library/0.1.0/files/net/hero_stream_net.hero
++++ b/rebel/library/0.1.0/files/net/hero_stream_net.hero
+@@ -17,7 +17,7 @@ use io/hero_stream
+ use net/hero_net
+ use threads/hero_os as threads_floor
+ 
+-extern "hero_stream_net.h"
++extern "hero_stream_net.h" layer
+     # The two calls the marks below name, the one that ends a socket's life
+     # and the one that ends a stream's: a mark names a releaser this group
+     # declares, and the header, which includes `hero_net.h` and
+@@ -99,14 +99,14 @@ function option_of(s: hero_stream.Stream, option: i64) -> i64
+ # For the tests of the handle tag alone (2026-11-16): doors of the three
+ # tables bound with `ptr`, so a test can hand one table's handle to
+ # another's, which no typed binding lets a program do.
+-extern "hero_stream.h"
++extern "hero_stream.h" layer
+     constant HERO_STREAM_STD_OUT: i64
+     function hero_stream_std(which: i64) -> ptr
+ 
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     function hero_net_port(s: ptr) -> i64
+ 
+-extern "hero_proc.h"
++extern "hero_proc.h" layer
+     constant HERO_PROC_NOT_OPEN: i64
+     function hero_proc_id(p: ptr) -> i64
+     function hero_proc_last_error() -> i64
+diff --git a/rebel/library/0.1.0/files/os/hero_disk.hero b/rebel/library/0.1.0/files/os/hero_disk.hero
+index e8b116fac..dc87c82ec 100644
+--- a/rebel/library/0.1.0/files/os/hero_disk.hero
++++ b/rebel/library/0.1.0/files/os/hero_disk.hero
+@@ -19,7 +19,7 @@
+ # name it, which are text wherever the system holds text: the face asks
+ # `validated_bytes` of them.
+ 
+-extern "hero_disk.h"
++extern "hero_disk.h" layer
+     # The kinds of failure `last_error` answers. They are the same numbers on
+     # every platform; `HERO_DISK_NOT_TEXT` is Windows' alone, and
+     # `HERO_DISK_UNSUPPORTED` what it answers for an owner.
+diff --git a/rebel/library/0.1.0/files/os/hero_procs.hero b/rebel/library/0.1.0/files/os/hero_procs.hero
+index ba9b7a58e..5e0fdceb9 100644
+--- a/rebel/library/0.1.0/files/os/hero_procs.hero
++++ b/rebel/library/0.1.0/files/os/hero_procs.hero
+@@ -14,7 +14,7 @@
+ 
+ use os/hero_os
+ 
+-extern "hero_procs.h"
++extern "hero_procs.h" layer
+     # The kinds of failure `last_error` answers. They are the same numbers on
+     # every platform, and `HERO_PROCS_UNSUPPORTED` a POSIX system neither
+     # Darwin nor Linux.
+diff --git a/rebel/library/0.1.0/files/os/hero_stop.hero b/rebel/library/0.1.0/files/os/hero_stop.hero
+index 05b4de2e9..fd47b77b5 100644
+--- a/rebel/library/0.1.0/files/os/hero_stop.hero
++++ b/rebel/library/0.1.0/files/os/hero_stop.hero
+@@ -17,7 +17,7 @@
+ 
+ use os/hero_os
+ 
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     constant HERO_NET_INVALID: i64
+     constant HERO_NET_UNSUPPORTED: i64
+     function hero_net_catch_stop() -> i64
+diff --git a/rebel/library/0.1.0/files/os/hero_sys.hero b/rebel/library/0.1.0/files/os/hero_sys.hero
+index 52fecff3f..034c827fd 100644
+--- a/rebel/library/0.1.0/files/os/hero_sys.hero
++++ b/rebel/library/0.1.0/files/os/hero_sys.hero
+@@ -13,7 +13,7 @@
+ 
+ use os/hero_os
+ 
+-extern "hero_sys.h"
++extern "hero_sys.h" layer
+     # The kinds of failure `last_error` answers. They are the same numbers on
+     # every platform, `HERO_SYS_UNSUPPORTED` where a platform has no such
+     # thing, a user id on Windows.
+diff --git a/rebel/library/0.1.0/files/os/hero_users.hero b/rebel/library/0.1.0/files/os/hero_users.hero
+index 3d7d1c7c8..f662e89f5 100644
+--- a/rebel/library/0.1.0/files/os/hero_users.hero
++++ b/rebel/library/0.1.0/files/os/hero_users.hero
+@@ -15,7 +15,7 @@
+ 
+ use os/hero_os
+ 
+-extern "hero_users.h"
++extern "hero_users.h" layer
+     # The kinds of failure `last_error` answers. They are the same numbers on
+     # every platform, and `HERO_USERS_UNSUPPORTED` a process of Windows asked
+     # to take another user's rights.
+diff --git a/rebel/library/0.1.0/files/poll/hero_poll.hero b/rebel/library/0.1.0/files/poll/hero_poll.hero
+index a137771ca..507a057e0 100644
+--- a/rebel/library/0.1.0/files/poll/hero_poll.hero
++++ b/rebel/library/0.1.0/files/poll/hero_poll.hero
+@@ -17,7 +17,7 @@ use os/hero_sys
+ use threads/hero_os as threads_floor
+ use time/hero_time
+ 
+-extern "hero_poll.h"
++extern "hero_poll.h" layer
+     # A set the layer holds open. It is a handle the layer issues and checks:
+     # one closed already, `nullptr`, or one it never issued is
+     # `HERO_POLL_NOT_OPEN`, never a read of freed memory.
+diff --git a/rebel/library/0.1.0/files/printing/hero_printing.hero b/rebel/library/0.1.0/files/printing/hero_printing.hero
+index f9b2a3936..e7dc7a2dd 100644
+--- a/rebel/library/0.1.0/files/printing/hero_printing.hero
++++ b/rebel/library/0.1.0/files/printing/hero_printing.hero
+@@ -14,7 +14,7 @@
+ # A name and a title cross as `cstr`, so one holding a zero byte aborts at
+ # `.cstr()` before C runs: the face refuses one first, `invalid`.
+ 
+-extern "hero_printing.h"
++extern "hero_printing.h" layer
+     # The kinds of failure `last_error` answers, the same numbers on every
+     # platform.
+     constant HERO_PRINTING_OK: i64
+diff --git a/rebel/library/0.1.0/files/process/hero_proc.hero b/rebel/library/0.1.0/files/process/hero_proc.hero
+index 8b82d9f6a..5d60dbfe6 100644
+--- a/rebel/library/0.1.0/files/process/hero_proc.hero
++++ b/rebel/library/0.1.0/files/process/hero_proc.hero
+@@ -19,7 +19,7 @@ use io/hero_stream
+ use os/hero_os
+ use process/internal/fixture
+ 
+-extern "hero_proc.h"
++extern "hero_proc.h" layer
+     # A process the layer started and the program holds. It is a handle the
+     # layer issues and checks: one released already, `nullptr`, or one it
+     # never issued is `HERO_PROC_NOT_OPEN`, never a read of freed memory and
+@@ -319,11 +319,11 @@ function last_os_error() -> i64
+ #
+ # - `address`: a number to bind to, or "" for every address of the machine.
+ # - `port`: 0 to 65535, 0 asking the system for a free one.
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     function hero_net_udp(address: cstr lent, port: i64) -> ptr
+     function hero_net_close(s: ptr) -> i64
+ 
+-extern "hero_stream.h"
++extern "hero_stream.h" layer
+     constant HERO_STREAM_NOT_OPEN: i64
+     function hero_stream_kind(s: ptr) -> i64
+     function hero_stream_last_error() -> i64
+diff --git a/rebel/library/0.1.0/files/serial/hero_serial.hero b/rebel/library/0.1.0/files/serial/hero_serial.hero
+index e89138e92..bb714033f 100644
+--- a/rebel/library/0.1.0/files/serial/hero_serial.hero
++++ b/rebel/library/0.1.0/files/serial/hero_serial.hero
+@@ -13,7 +13,7 @@
+ 
+ use io/hero_stream
+ 
+-extern "hero_serial.h"
++extern "hero_serial.h" layer
+     # The kinds of failure `last_error` answers, the same numbers on every
+     # platform and the stream's numbers where `hero_stream.h` has the kind.
+     constant HERO_SERIAL_OK: i64
+diff --git a/rebel/library/0.1.0/files/service/hero_activation.hero b/rebel/library/0.1.0/files/service/hero_activation.hero
+index 322d7d39a..2858dc032 100644
+--- a/rebel/library/0.1.0/files/service/hero_activation.hero
++++ b/rebel/library/0.1.0/files/service/hero_activation.hero
+@@ -23,7 +23,7 @@ use ipc/hero_ipc
+ use os
+ use time
+ 
+-extern "hero_activation.h"
++extern "hero_activation.h" layer
+     # The kinds of failure `last_error` answers, the same numbers on every
+     # platform.
+     constant HERO_ACTIVATION_OK: i64
+diff --git a/rebel/library/0.1.0/files/service/hero_service.hero b/rebel/library/0.1.0/files/service/hero_service.hero
+index fb5643e65..59d6ad3bb 100644
+--- a/rebel/library/0.1.0/files/service/hero_service.hero
++++ b/rebel/library/0.1.0/files/service/hero_service.hero
+@@ -16,7 +16,7 @@
+ use net/hero_net
+ use os
+ 
+-extern "hero_service.h"
++extern "hero_service.h" layer
+     # The kinds of failure `last_error` answers, the same numbers on every
+     # platform.
+     constant HERO_SERVICE_OK: i64
+diff --git a/rebel/library/0.1.0/files/service/manage/hero_scm.hero b/rebel/library/0.1.0/files/service/manage/hero_scm.hero
+index 48d9b7dd8..6000f7557 100644
+--- a/rebel/library/0.1.0/files/service/manage/hero_scm.hero
++++ b/rebel/library/0.1.0/files/service/manage/hero_scm.hero
+@@ -14,7 +14,7 @@
+ 
+ use os
+ 
+-extern "hero_scm.h"
++extern "hero_scm.h" layer
+     # The kinds of failure `last_error` answers, the same numbers on every
+     # platform.
+     constant HERO_SCM_OK: i64
+diff --git a/rebel/library/0.1.0/files/sql/odbc/hero_odbc.hero b/rebel/library/0.1.0/files/sql/odbc/hero_odbc.hero
+index e8fd65b9b..a5be24bdd 100644
+--- a/rebel/library/0.1.0/files/sql/odbc/hero_odbc.hero
++++ b/rebel/library/0.1.0/files/sql/odbc/hero_odbc.hero
+@@ -19,7 +19,7 @@
+ # A text handed to C as a `cstr` aborts on a zero byte (spec § 13), so the
+ # face refuses one before it calls.
+ 
+-extern "hero_odbc.h"
++extern "hero_odbc.h" layer
+     # A connection to a data source, a handle the layer issues and checks:
+     # one closed already, `nullptr`, or one it never issued is
+     # `HERO_ODBC_NOT_OPEN`, never a read of freed memory.
+diff --git a/rebel/library/0.1.0/files/syslog/hero_syslog.hero b/rebel/library/0.1.0/files/syslog/hero_syslog.hero
+index 652999536..4868442fd 100644
+--- a/rebel/library/0.1.0/files/syslog/hero_syslog.hero
++++ b/rebel/library/0.1.0/files/syslog/hero_syslog.hero
+@@ -12,7 +12,7 @@
+ # macOS and the Event Log on Windows; every other call answers
+ # `HERO_SYSLOG_UNSUPPORTED`.
+ 
+-extern "hero_syslog.h"
++extern "hero_syslog.h" layer
+     # The kinds of failure `last_error` answers, the same numbers on every
+     # platform.
+     constant HERO_SYSLOG_OK: i64
+diff --git a/rebel/library/0.1.0/files/term/hero_term.hero b/rebel/library/0.1.0/files/term/hero_term.hero
+index dd2d34981..9c60a2dd4 100644
+--- a/rebel/library/0.1.0/files/term/hero_term.hero
++++ b/rebel/library/0.1.0/files/term/hero_term.hero
+@@ -10,7 +10,7 @@
+ 
+ use io/hero_stream
+ 
+-extern "hero_term.h"
++extern "hero_term.h" layer
+     # The kinds of failure `last_error` answers, the same numbers on every
+     # platform.
+     constant HERO_TERM_OK: i64
+diff --git a/rebel/library/0.1.0/files/time/hero_time.hero b/rebel/library/0.1.0/files/time/hero_time.hero
+index 3593f74ea..30f1296a4 100644
+--- a/rebel/library/0.1.0/files/time/hero_time.hero
++++ b/rebel/library/0.1.0/files/time/hero_time.hero
+@@ -8,7 +8,7 @@
+ # its header and no `link`, and the same lines bind it on every platform. UTC
+ # only: no function here knows a time zone.
+ 
+-extern "hero_time.h"
++extern "hero_time.h" layer
+     # The kinds of failure `last_error` answers for the wall clock and the
+     # sleep. They are the same numbers on every platform.
+     constant HERO_TIME_OK: i64
+diff --git a/rebel/library/0.1.0/files/tls/hero_tls.hero b/rebel/library/0.1.0/files/tls/hero_tls.hero
+index fc75fae17..32b200dc1 100644
+--- a/rebel/library/0.1.0/files/tls/hero_tls.hero
++++ b/rebel/library/0.1.0/files/tls/hero_tls.hero
+@@ -25,7 +25,7 @@ use threads/hero_os as threads_floor
+ use time/hero_time
+ use tls/internal/fixture
+ 
+-extern "hero_tls.h"
++extern "hero_tls.h" layer
+     # A socket listening for TLS connections. It is a handle the layer issues
+     # and checks: one closed already, `nullptr`, or one it never issued is
+     # `HERO_TLS_NOT_OPEN`, never a read of freed memory.
+diff --git a/rebel/library/0.1.0/files/ui/hero_ui.hero b/rebel/library/0.1.0/files/ui/hero_ui.hero
+index 2695b00ac..22f8fba7f 100644
+--- a/rebel/library/0.1.0/files/ui/hero_ui.hero
++++ b/rebel/library/0.1.0/files/ui/hero_ui.hero
+@@ -18,7 +18,7 @@
+ 
+ use poll/hero_poll
+ 
+-extern "hero_ui.h"
++extern "hero_ui.h" layer
+     # An app open on the layer. It is a handle the layer issues and checks:
+     # one closed already, `nullptr`, or one it never issued is
+     # `HERO_UI_NOT_OPEN`, never a read of freed memory.
+diff --git a/selfhost/ast.hero b/selfhost/ast.hero
+index 856188624..6e166c6d5 100644
+--- a/selfhost/ast.hero
++++ b/selfhost/ast.hero
+@@ -495,6 +495,11 @@ record FunctionDecl
+     # nowhere else, so a declaration's index stays function identity.
+     header: token.Span?
+     library: Library?
++    # `layer` after the header (panel 260): the group says its header is, or
++    # reaches, the platform layer's, so a build of the program links the
++    # layer. The word's span, which a refusal of a group that reaches none of
++    # the layer points at; absent where the head line does not say it.
++    layer: token.Span?
+     # `-> cstr owned sqlite3_free` — the C function that frees the string this
+     # one hands back, named by the declaration itself (§4.19, panel 109).
+     # A SPAN and not a name, because a diagnostic about the freer has to point
+@@ -532,6 +537,7 @@ variant DeclKind
+         body: Block?
+         header: token.Span?
+         library: Library?
++        layer: token.Span?
+     function_decl
+         value: FunctionDecl
+     # `record Point` + fields — or, in a group, a struct the HEADER declares
+@@ -542,6 +548,7 @@ variant DeclKind
+         fields: [Field]
+         header: token.Span?
+         library: Library?
++        layer: token.Span?
+         partial: bool
+         tag: token.Span?
+     variant_decl
+@@ -662,6 +669,7 @@ test "a declaration owns its members directly, no arena"
+         is_extern: true,
+         header: ok(zero),
+         library: fail(code: "absent", msg: "none"),
++        layer: fail(code: "absent", msg: "no layer"),
+         owned_result: fail(code: "none", msg: "nothing to free"),
+         acquires_result: fail(code: "none", msg: "nothing to give back"),
+         retains_result: fail(code: "none", msg: "nothing to give back"),
+@@ -686,6 +694,7 @@ test "a group's record carries what the head line said"
+         fields: fields,
+         header: ok(zero),
+         library: ok(.link(name: zero)),
++        layer: ok(zero),
+         partial: true,
+         tag: fail(code: "absent", msg: "no tag")
+     )
+diff --git a/selfhost/checker.hero b/selfhost/checker.hero
+index e563210d6..3d96b6c1d 100644
+--- a/selfhost/checker.hero
++++ b/selfhost/checker.hero
+@@ -34,6 +34,7 @@ use check/fixed_judged
+ use check/freer_marks
+ use check/generic_calls
+ use check/kept_cells
++use check/layer_header
+ use check/leasing
+ use check/lending
+ use check/map_keys
+@@ -92,6 +93,9 @@ function check(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
+     # Panel 232's R6 (defect 2256): a group naming the runtime's own header.
+     runtime_header.refused(@c, s, decls)
+ 
++    # Panel 260: a group naming the platform layer's header says `layer`.
++    layer_header.refused(@c, s, decls)
++
+     # One C function, one contract: two modules declaring one C name must say
+     # the same thing at every position they share (M-agreed-retention's
+     # second item, panel 171's completeness critic). Program-wide like
+diff --git a/selfhost/cli/include_stands.hero b/selfhost/cli/include_stands.hero
+index 8372ea9e0..ea0ef2777 100644
+--- a/selfhost/cli/include_stands.hero
++++ b/selfhost/cli/include_stands.hero
+@@ -47,6 +47,7 @@ use cli/group_file
+ use cli/header_stands
+ use cli/include_lines
+ use cli/include_told
++use cli/layer_bound
+ use cli/named_folders
+ use cli/order_trial
+ use cli/package_reads
+@@ -75,13 +76,19 @@ record Place
+     at: i64
+     special: bool
+ 
+-# What the walk holds while it reads.
++# What the walk holds while it reads; and, for what a group binds of the
++# platform layer (panel 260, `cli/layer_bound.hero`), every file each file
++# read was found to ask, read lexically, and the file each group's header was
++# found at, so a group is judged by what its own header reaches, whichever
++# group's walk read a file first.
+ record Walk
+     search: [str]
+     seen: {str: bool}
+     pending: [Visit]
+     defines: {str: include_lines.Asked}
+     out: [include_told.Stop]
++    edges: {str: [str]}
++    roots: {i64: str}
+ 
+ # The build stopped, its refusals told, where a name the build's first clang
+ # would open stands as no file; `ok()` where none does. Each group's header is
+@@ -140,10 +147,23 @@ function owned_under(under: compiling.Compiling, place: package_units.Place) ->
+ # runtime's or the toolchain's.
+ function told(t: toolchain.Toolchain, under: compiling.Compiling, headers: [str], s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]?
+     search = search_of(t, under: under)
+-    stops = walked(opening: order_trial.opening(headers, question: ""), groups: headers, search: search)
++    w = walk_of(opening: order_trial.opening(headers, question: ""), groups: headers, search: search)
++    stops = w.out
+     folders = named_folders.named_folders(under)
+     out: [diag.Diagnostic] @= []
+ 
++    # What each group's header reaches of the platform layer, judged against
++    # the word its head line says (panel 260).
++    reached: [str] @= []
++
++    for at in range(from: 0, to: headers.len())
++        reached @ reached.push(
++            layer_bound.first_reached(edges: w.edges, root: w.roots[at].default(""), runtime: t.runtime)
++        )
++
++    for d in layer_bound.told(s, decls: decls, headers: headers, reached: reached, runtime: t.runtime)
++        out @ out.push(d)
++
+     for one in stops
+         includer = include_told.file_said(path: one.includer, runtime: under.runtime, named: folders, search: search)
+ 
+@@ -186,7 +206,11 @@ function search_of(t: toolchain.Toolchain, under: compiling.Compiling) -> [str]
+ # file, each place told once, by the first walk that reaches it: the
+ # opening's lines in their order, the runtime's before the groups'.
+ function walked(opening: str, groups: [str], search: [str]) -> [include_told.Stop]
+-    w: Walk @= Walk(search: search, seen: {}, pending: [], defines: {}, out: [])
++    return walk_of(opening: opening, groups: groups, search: search).out
++
++# The walk `walked` makes, whole: its stops, its edges and its roots.
++function walk_of(opening: str, groups: [str], search: [str]) -> Walk
++    w: Walk @= Walk(search: search, seen: {}, pending: [], defines: {}, out: [], edges: {}, roots: {})
+ 
+     for asked in include_lines.read(opening).asked
+         entered(@w, asked: asked, from: Visit(path: "", at: -1, group: index_of(groups, name: asked.name), depth: 0))
+@@ -196,7 +220,7 @@ function walked(opening: str, groups: [str], search: [str]) -> [include_told.Sto
+             w.pending @ w.pending.slice(from: 0, to: w.pending.len() - 1)
+             read(@w, visit: visit)
+ 
+-    return w.out
++    return w
+ 
+ # Each name `visit`'s file asks, entered.
+ function read(@w: Walk, visit: Visit)
+@@ -237,6 +261,14 @@ function entered(@w: Walk, asked: include_lines.Asked, from: Visit)
+             )
+         return
+ 
++    if !asked.embed
++        if from.path.len() == 0
++            if from.group >= 0
++                w.roots[from.group] @ key
++        else
++            includer = package_reads.lexical(from.path)
++            w.edges[includer] @ w.edges[includer].default([]).push(key)
++
+     if asked.embed || !w.seen[key].is_err()
+         return
+     w.seen[key] @ true
+diff --git a/selfhost/cli/layer.hero b/selfhost/cli/layer.hero
+index fd14e90fa..109e8d1fa 100644
+--- a/selfhost/cli/layer.hero
++++ b/selfhost/cli/layer.hero
+@@ -321,13 +321,15 @@ function fresh_toolchain(build: str) -> toolchain.Toolchain
+     return t
+ 
+ # **The linker takes only the members a program calls** (panel 234's R6, the
+-# critic's G2, built): every program's link carries the archive, and `print(1)`'s
+-# shape takes no member, a program calling the clock takes the clock alone, one
++# critic's G2, built): a link that carries the archive, a program's one of
++# whose groups says `layer` since panel 260 (a program that says it nowhere
++# carries none, `cli/layer_reach.hero`'s test), and `print(1)`'s shape takes no
++# member, a program calling the clock takes the clock alone, one
+ # that names both headers and calls nothing of them takes none, and one calling
+ # a socket function takes the sockets and not the clock. On an MSVC target a
+ # binary holds no symbol table, so the links are run and their symbols unread
+ # here; what they import is the Windows box's to read.
+-test "every link carries the layer, and a program takes only the members it calls (feature 2295)"
++test "a link carrying the layer takes only the members a program calls (feature 2295, panel 260)"
+     t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+     dir = "build/selftest-layer-links"
+     assert !process.remove_tree(dir).is_err()
+diff --git a/selfhost/cli/layer_reach.hero b/selfhost/cli/layer_reach.hero
+index 1c49c64d0..2ee0b7201 100644
+--- a/selfhost/cli/layer_reach.hero
++++ b/selfhost/cli/layer_reach.hero
+@@ -23,6 +23,7 @@
+ # program is ever built with a member left out.
+ 
+ use ast
++use check/layer_header
+ use cli/io
+ use cli/layer
+ use cli/layer_swift
+@@ -31,6 +32,7 @@ use cli/runtime_key
+ use cli/toolchain
+ use emit/externs as emit_externs
+ use module/reading
++use parse
+ use source
+ use token
+ 
+@@ -40,7 +42,12 @@ use token
+ # refused is the compiler's, *internal error* with clang's words; any other
+ # failure is the machine's, said as itself by the caller.
+ #
+-# **None where the build `links` nothing** (`--emit-c`): the archive is a
++# **None where no group of the program says `layer`** (panel 260; design.md
++# §1.11): the layer is linked into a program that says it needs it, by a group
++# whose header is or reaches the layer's (`check/layer_header.hero`,
++# `cli/layer_bound.hero`), and into no other, so a program that says it
++# nowhere asks no member what it reaches, compiles none and links none. **And
++# none where the build `links` nothing** (`--emit-c`): the archive is a
+ # word of the link line alone (`assemble.linked_round`), so a build that
+ # writes C and links nothing asks the layer nothing. Measured on this Mac on
+ # 2026-11-25 (load 8 to 9): asking the 43 members what they reach, one clang
+@@ -49,7 +56,7 @@ use token
+ function for_build(t: toolchain.Toolchain, level: str, sanitize: bool, s: source.Source, decls: [ast.Decl], links: bool) -> [str]?
+     unlinked: [str] = []
+ 
+-    if !links
++    if !links || !layer_header.declared(decls)
+         return ok(unlinked)
+     swift = reached(t, named: headers_of(s, decls))?
+     made = layer.archive(t, level: level, sanitize: sanitize, swift: swift)
+@@ -245,6 +252,24 @@ test "a build that links nothing asks the platform layer nothing"
+     assert for_build(t, level: "-O0", sanitize: false, s: s, decls: none, links: false).must().len() == 0
+     assert !process.path_exists(t.build)
+ 
++# **A program none of whose groups says `layer` asks the layer nothing**
++# (panel 260): a build that links, with no group saying the word, gets no word
++# for the link line, asks no member what it reaches and makes no `build/`; one
++# group saying it, and the archive is the link's. What replaces the first half
++# of `cli/layer.hero`'s *every link carries the layer*: a declared link does.
++test "a program none of whose groups says layer asks the platform layer nothing, and one that says it links the archive (panel 260)"
++    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
++    t.build @ "build/selftest-layer-undeclared"
++    assert !process.remove_tree(t.build).is_err()
++    plain = "extern \"hero_os.h\"\n    function hero_os_pid() -> i64\n"
++    s = source.new_source(name: "main.hero", text: plain)
++    assert for_build(t, level: "-O0", sanitize: false, s: s, decls: parse.parse(plain).decls, links: true).must().len() == 0
++    assert !process.path_exists(t.build)
++    said = "extern \"hero_time.h\" layer\n    function hero_time_monotonic_ns() -> i64\n"
++    d = source.new_source(name: "main.hero", text: said)
++    assert for_build(t, level: "-O0", sanitize: false, s: d, decls: parse.parse(said).decls, links: true).must().len() == 1
++    assert !process.remove_tree(t.build).is_err()
++
+ test "a program reaches a member written in Swift only through the C member that includes its header (defect 2625)"
+     t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+     t.target @ "aarch64-unknown-linux-gnu"
+diff --git a/selfhost/cli/link_needs.hero b/selfhost/cli/link_needs.hero
+index a0946fdac..c0f428e1b 100644
+--- a/selfhost/cli/link_needs.hero
++++ b/selfhost/cli/link_needs.hero
+@@ -122,7 +122,8 @@ test "a link is told where every name it reports is answered by one reader, and
+         compiler_key: "",
+         compiler_banner: "",
+         target: "",
+-        asked_answer: ""
++        asked_answer: "",
++        layered: false
+     )
+     library = "Undefined symbols for architecture arm64:\n  \"_base_helper\", referenced from:\n      _top_value in libtop.a[2](top.o)\n"
+     alone = told(library, s, decls, t, asking: [], linked: [])
+diff --git a/selfhost/cli/produce.hero b/selfhost/cli/produce.hero
+index 1b72a5758..401593366 100644
+--- a/selfhost/cli/produce.hero
++++ b/selfhost/cli/produce.hero
+@@ -21,6 +21,7 @@
+ # every module's headers apart.
+ 
+ use bytes
++use check/layer_header
+ use cli/agreed
+ use cli/artifact
+ use cli/clang_floor
+@@ -225,13 +226,18 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
+     # is planned once (panel 202's C0, `cli/probing.hero`), every group record a
+     # unit spells of another module read there as its own module reads it, or
+     # refused before any of them (panel 239, `cli/agreed.hero`).
+-    planned = agreed.planned(t, under: under, art.must(), s, site, target: options.target)?
++    # The platform layer on every link this build makes, the value probe's
++    # among them, exactly where a group of the program says `layer` (panel
++    # 260; `layer_reach.for_build` above asks the same of the program).
++    lt: toolchain.Toolchain @= t
++    lt.layered @ layer_header.declared(art.must().decls)
++    planned = agreed.planned(lt, under: under, art.must(), s, site, target: options.target)?
+ 
+     # Each name a group binds asked of the header its group names, where the
+     # module's unit reads it, one question per header list (spec § 13;
+     # defects 2413 and 2429, `cli/declared_by.hero`).
+-    declared_by.stopped(t, planned.probings, s, art.must().decls, permissive: options.permissive)?
+-    went = rounds.run(t, options, art.must(), s, site, under: under, planned: planned, answered: @answered)
++    declared_by.stopped(lt, planned.probings, s, art.must().decls, permissive: options.permissive)?
++    went = rounds.run(lt, options, art.must(), s, site, under: under, planned: planned, answered: @answered)
+ 
+     if went.verdict.is_err()
+         return fail(code: whose.failure_code(went.verdict), msg: whose.failure_message(went.verdict))
+@@ -243,7 +249,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
+     # `ffi_missing_header` at exit 1. Now one refusal above answers both verbs.
+     if art.must().emit_c
+         wrote = artifact.write_c(
+-            t,
++            lt,
+             options,
+             art.must(),
+             s,
+@@ -264,7 +270,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
+                 wrote,
+                 art.must(),
+                 s,
+-                t,
++                lt,
+                 under: under,
+                 answered: answered,
+                 struct_tags: went.struct_tags,
+diff --git a/selfhost/cli/toolchain.hero b/selfhost/cli/toolchain.hero
+index c7b9dffd6..5cab859b6 100644
+--- a/selfhost/cli/toolchain.hero
++++ b/selfhost/cli/toolchain.hero
+@@ -103,6 +103,12 @@ record Toolchain
+     target: str
+     # The answer whole, "" where none came, which `cli/clang_added.hero` reads (defect 2344).
+     asked_answer: str
++    # Whether the program built links the platform layer: a group of it says
++    # `layer` (panel 260). Set by `cli/produce.hero` once the program is
++    # read, so every link a build makes, its own and the value probe's
++    # (`cli/value_run.hero`), carries the layer exactly then; false for a
++    # toolchain no program has been read for.
++    layered: bool
+ 
+ # Locate the runtime, or say the places it looked (`runtime_places.located`,
+ # where the search and its reasons stand since defect 2485, so `heroes
+@@ -124,7 +130,7 @@ function toolchain_at(runtime: str, fingerprint: str) -> Toolchain?
+     said = clang_floor.identity(build_dir: "build", runtime: runtime, words: asked)
+ 
+     return ok(
+-        Toolchain(runtime: runtime, build: "build", fingerprint: fingerprint_of(release: fingerprint, sources: hero_program_sources()), runtime_key: digest.digest(gathered), compiler_key: digest.digest(asked.join(" ") + "|" + answer_text(said)), compiler_banner: clang_floor.banner(said.default("")), target: clang_floor.target(said.default("")), asked_answer: said.default(""))
++        Toolchain(runtime: runtime, build: "build", fingerprint: fingerprint_of(release: fingerprint, sources: hero_program_sources()), runtime_key: digest.digest(gathered), compiler_key: digest.digest(asked.join(" ") + "|" + answer_text(said)), compiler_banner: clang_floor.banner(said.default("")), target: clang_floor.target(said.default("")), asked_answer: said.default(""), layered: false)
+     )
+ 
+ # The fingerprint every key opens with: the release the driver names, the
+diff --git a/selfhost/cli/value_run.hero b/selfhost/cli/value_run.hero
+index 01d638368..38605bf1e 100644
+--- a/selfhost/cli/value_run.hero
++++ b/selfhost/cli/value_run.hero
+@@ -190,8 +190,13 @@ function linked_and_run(t: toolchain.Toolchain, dir: str, object: str, total: i6
+     runtime = toolchain.runtime_object(t, level: level, sanitize: false)?
+ 
+     # The members written in Swift the probed unit's headers reach, as a
+-    # build's link holds them (`cli/layer_reach.hero`, defect 2625).
+-    layer_words = layer.archive(t, level: level, sanitize: false, swift: layer_reach.reached(t, named: layer_reach.includes(unit))?)?
++    # build's link holds them (`cli/layer_reach.hero`, defect 2625); and the
++    # layer only where the program says `layer`, as its own link does (panel
++    # 260).
++    layer_words: [str] @= []
++
++    if t.layered
++        layer_words @ layer.archive(t, level: level, sanitize: false, swift: layer_reach.reached(t, named: layer_reach.includes(unit))?)?
+     binary = publish.private_name(dir + "/probe") + process.exe_suffix()
+     line: [str] @= strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: false))
+     line @ strings.with_all(list: line, more: link_flags.target_words(t.target))
+diff --git a/selfhost/cli/whose.hero b/selfhost/cli/whose.hero
+index 8f809793e..fa78c7230 100644
+--- a/selfhost/cli/whose.hero
++++ b/selfhost/cli/whose.hero
+@@ -14,6 +14,7 @@ use cli/header_ask
+ use cli/header_told
+ use cli/inline_only
+ use cli/io
++use cli/layer_bound
+ use cli/library_file
+ use cli/link
+ use cli/link_needs
+@@ -109,6 +110,19 @@ function reading(failed: ()?, art: compile.Artifact, s: source.Source, t: toolch
+     if header.len() > 0
+         return authors(header, msg: "a header this program binds does not compile")
+ 
++    # A name the platform layer has, in a link that carries none of the layer
++    # since no group of the program says `layer` (panel 260,
++    # `cli/layer_bound.hero`): asked before every other reader of a refused
++    # link, which would tell it as a library nobody names.
++    if code == link.REFUSED
++        unlayered = layer_bound.told_at_link(message, s, art.decls, t)
++
++        if unlayered.len() > 0
++            return authors(
++                unlayered,
++                msg: "a name this program's link needs is the platform layer's, which no group of it says"
++            )
++
+     # A C name another library than its group's supplies (`cli/supplied.hero`,
+     # defect 2363), then a function the linker found no definition of whose
+     # header defines it only `inline` (defect 562, `cli/inline_only.hero`),
+diff --git a/selfhost/handles.hero b/selfhost/handles.hero
+index 46c4e9f59..cddba6793 100644
+--- a/selfhost/handles.hero
++++ b/selfhost/handles.hero
+@@ -292,20 +292,20 @@ test "all three clauses are load-bearing, and a record with fields is never a ha
+     one: [ast.Field] = [ast.Field(name: token.Span(start: 4, end: 5), ty: 0, doc: [])]
+ 
+     assert is_handle_record(
+-        .record_decl(fields: empty, header: header, library: none_library(), partial: false, tag: tag)
++        .record_decl(fields: empty, header: header, library: none_library(), layer: fail(code: "absent", msg: "no layer"), partial: false, tag: tag)
+     )
+ 
+     # Outside a group there is no header to leave a type opaque.
+-    assert !is_handle_record(.record_decl(fields: empty, header: none, library: none_library(), partial: false, tag: tag))
++    assert !is_handle_record(.record_decl(fields: empty, header: none, library: none_library(), layer: fail(code: "absent", msg: "no layer"), partial: false, tag: tag))
+ 
+     # Without a tag the C type has no name.
+-    assert !is_handle_record(.record_decl(fields: empty, header: header, library: none_library(), partial: false, tag: none))
++    assert !is_handle_record(.record_decl(fields: empty, header: header, library: none_library(), layer: fail(code: "absent", msg: "no layer"), partial: false, tag: none))
+ 
+     # `partial` names SOME fields; with none it names nothing.
+-    assert !is_handle_record(.record_decl(fields: empty, header: header, library: none_library(), partial: true, tag: tag))
++    assert !is_handle_record(.record_decl(fields: empty, header: header, library: none_library(), layer: fail(code: "absent", msg: "no layer"), partial: true, tag: tag))
+ 
+     # A group record WITH fields is the header's struct, by value, as before.
+-    assert !is_handle_record(.record_decl(fields: one, header: header, library: none_library(), partial: false, tag: tag))
++    assert !is_handle_record(.record_decl(fields: one, header: header, library: none_library(), layer: fail(code: "absent", msg: "no layer"), partial: false, tag: tag))
+ 
+     # And nothing else is a record at all.
+     assert !is_handle_record(.test_decl(body: ast.Block(span: token.Span(start: 0, end: 0), stmts: [])))
+diff --git a/selfhost/keywords.hero b/selfhost/keywords.hero
+index 97d2f7488..647cffebc 100644
+--- a/selfhost/keywords.hero
++++ b/selfhost/keywords.hero
+@@ -83,6 +83,13 @@ constant WORD_LINK: str
+ constant WORD_PKGCONFIG: str
+     "pkgconfig"
+ 
++# A group's head saying its header is, or reaches, the platform layer's, the
++# C of the language's own beside the runtime: `extern "hero_time.h" layer`
++# (panel 260). Read right after the header's string and nowhere else, so a
++# program may still name anything `layer`.
++constant WORD_LAYER: str
++    "layer"
++
+ constant WORD_TAG: str
+     "tag"
+ 
+@@ -149,6 +156,7 @@ function contextual() -> [str]
+         WORD_AS
+         WORD_LINK
+         WORD_PKGCONFIG
++        WORD_LAYER
+         WORD_TAG
+         WORD_PARTIAL
+         WORD_OWNED
+@@ -213,7 +221,9 @@ test "every keyword resolves and an identifier does not"
+ 
+ test "a contextual word is never a keyword, and each is listed once"
+     words = contextual()
+-    assert words.len() == 18
++
++    # Nineteen since panel 260's `layer`.
++    assert words.len() == 19
+ 
+     for word in words
+         assert keyword(word).is_err()
+diff --git a/selfhost/parse/group.hero b/selfhost/parse/group.hero
+index e673c1559..d10ef6d75 100644
+--- a/selfhost/parse/group.hero
++++ b/selfhost/parse/group.hero
+@@ -68,11 +68,12 @@ function extern_group(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
+     if h.is_err()
+         return
+     header = h.must()
++    layer = group_head.layer_word(@c, text)
+     library = group_head.library_clause(@c, text)
+     head = token.Span(start: keyword.start, end: cursor.previous_significant_span(@c).end)
+     cursor.skip_terminators(@c)
+ 
+-    linkage: tails.Linkage = .from_c(header: header, library: library)
++    linkage: tails.Linkage = .from_c(header: header, library: library, layer: layer)
+ 
+     # Past the line end, the next head is read as its swap (defect 133). Junk
+     # on the head's own line over the signatures below is the one report, and
+diff --git a/selfhost/parse/group_head.hero b/selfhost/parse/group_head.hero
+index d95281135..3fd64bab2 100644
+--- a/selfhost/parse/group_head.hero
++++ b/selfhost/parse/group_head.hero
+@@ -66,6 +66,19 @@ function judge_name(@c: cursor.Cursor, text: str, span: token.Span, what: str)
+     if !said.is_err()
+         cursor.say(@c, said.must())
+ 
++# `layer` right after the header (panel 260): the group says its header is,
++# or reaches, the platform layer's, so the program's link carries the layer
++# (`cli/layer_reach.hero`). One word with no string, matched by text as
++# `link` is, so a program may still name anything `layer`; it stands before
++# `link` or `pkgconfig`, which a group whose own header reaches the layer
++# beside a library of its own still writes. Where it is not the next word
++# nothing is taken, and `check/layer_header.hero` and the build's walk
++# (`cli/layer_bound.hero`) say where it was owed.
++function layer_word(@c: cursor.Cursor, text: str) -> token.Span?
++    if !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != keywords.WORD_LAYER
++        return fail(code: "absent", msg: "no layer word")
++    return ok(cursor.bump(@c).span)
++
+ # `link "sqlite3"` or `pkgconfig "raylib"` — optional, one or the other, and
+ # both matched by text rather than lexed as keywords, for the reason above.
+ # **They are alternatives because they are different questions.** `link`
+diff --git a/selfhost/parse/records.hero b/selfhost/parse/records.hero
+index e89717496..1dc44c27b 100644
+--- a/selfhost/parse/records.hero
++++ b/selfhost/parse/records.hero
+@@ -144,7 +144,7 @@ function record_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: s
+     if fields.len() > 0
+         finish @ fields[fields.len() - 1].name
+     decls @ decls.push(
+-        ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .record_decl(fields: fields, header: tails.linkage_header(linkage), library: tails.linkage_library(linkage), partial: partial, tag: tag))
++        ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .record_decl(fields: fields, header: tails.linkage_header(linkage), library: tails.linkage_library(linkage), layer: tails.linkage_layer(linkage), partial: partial, tag: tag))
+     )
+ 
+ # A record's or a variant's block that holds a declaration, `function f()`
+diff --git a/selfhost/parse/tails.hero b/selfhost/parse/tails.hero
+index f9737c8c8..40cfe894e 100644
+--- a/selfhost/parse/tails.hero
++++ b/selfhost/parse/tails.hero
+@@ -53,6 +53,7 @@ variant Linkage
+     from_c
+         header: token.Span
+         library: ast.Library?
++        layer: token.Span?
+ 
+ function is_from_c(l: Linkage) -> bool
+     return match l
+@@ -69,6 +70,12 @@ function linkage_library(l: Linkage) -> ast.Library?
+         .heroes   => fail(code: "absent", msg: "an ordinary declaration names no library")
+         .from_c x => x.library
+ 
++# The head line's `layer`, where it says it (panel 260).
++function linkage_layer(l: Linkage) -> token.Span?
++    return match l
++        .heroes   => fail(code: "absent", msg: "an ordinary declaration says no layer")
++        .from_c x => x.layer
++
+ # Rust's `here_or` falls back to the declaration's own keyword when the
+ # current token sits in the appended library text (§1.11), so a file ENDING
+ # in a bodyless declaration never points at a line the author cannot open.
+@@ -124,7 +131,7 @@ function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
+     if !body.is_err()
+         finish @ body.must().span
+     decls @ decls.push(
+-        ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .constant_decl(ty: ty, body: body, header: linkage_header(linkage), library: linkage_library(linkage)))
++        ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .constant_decl(ty: ty, body: body, header: linkage_header(linkage), library: linkage_library(linkage), layer: linkage_layer(linkage)))
+     )
+ 
+ # Everything after a function's name: generics, the signature, and — for a
+@@ -166,6 +173,7 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
+         is_extern: is_extern,
+         header: linkage_header(linkage),
+         library: linkage_library(linkage),
++        layer: linkage_layer(linkage),
+         owned_result: sig.marks.owned,
+         acquires_result: sig.marks.acquires,
+         retains_result: sig.marks.retains,
+diff --git a/selfhost/print/dump.hero b/selfhost/print/dump.hero
+index 2fef5c811..45067922a 100644
+--- a/selfhost/print/dump.hero
++++ b/selfhost/print/dump.hero
+@@ -82,7 +82,7 @@ function declaration(tree: ast.Ast, s: source.Source, decl: ast.Decl) -> str
+             # a reader must tell a constant whose value is in a header
+             # from one whose value is in this file.
+             rows: [str] @= [
+-                "  " + extern_prefix(s, header: k.header, library: k.library) + "constant " + name + ": " + types.render_type(tree, k.ty, s) + "\n"
++                "  " + extern_prefix(s, header: k.header, library: k.library, layer: k.layer) + "constant " + name + ": " + types.render_type(tree, k.ty, s) + "\n"
+             ]
+             rows @ rows.push(docs(s, doc: decl.doc))
+ 
+@@ -114,7 +114,7 @@ function declaration(tree: ast.Ast, s: source.Source, decl: ast.Decl) -> str
+             if rec.partial
+                 marker @ " partial"
+             rows: [str] @= [
+-                "  " + extern_prefix(s, header: rec.header, library: rec.library) + "record " + name + tag_text + marker + "\n"
++                "  " + extern_prefix(s, header: rec.header, library: rec.library, layer: rec.layer) + "record " + name + tag_text + marker + "\n"
+             ]
+             rows @ rows.push(docs(s, doc: decl.doc))
+ 
+@@ -154,11 +154,14 @@ function render_signature(tree: ast.Ast, s: source.Source, name: str, f: ast.Fun
+ # — §4.19, panel 036); fmt re-groups, because it hands the author
+ # their own program back. One writer for both member kinds, so a
+ # constant and a function in one group cannot print it two ways.
+-function extern_prefix(s: source.Source, header: token.Span?, library: ast.Library?) -> str
++function extern_prefix(s: source.Source, header: token.Span?, library: ast.Library?, layer: token.Span?) -> str
+     if header.is_err()
+         return ""
+     out: str @= "extern " + source.span_text(s, header.must())
+ 
++    if !layer.is_err()
++        out @ out + " " + source.span_text(s, layer.must())
++
+     if !library.is_err()
+         match library.must()
+             .link l       => out @ out + " link " + source.span_text(s, l.name)
+@@ -166,7 +169,7 @@ function extern_prefix(s: source.Source, header: token.Span?, library: ast.Libra
+     return out + " "
+ 
+ function signature(tree: ast.Ast, s: source.Source, name: str, f: ast.FunctionDecl) -> str
+-    out: str = extern_prefix(s, header: f.header, library: f.library) + "function " + name + sig.generics_text(s, f.generics)
++    out: str = extern_prefix(s, header: f.header, library: f.library, layer: f.layer) + "function " + name + sig.generics_text(s, f.generics)
+     rendered: [str] @= []
+ 
+     for param in f.params
+diff --git a/selfhost/print/fmt.hero b/selfhost/print/fmt.hero
+index 4e8d2a5e4..ec3a72686 100644
+--- a/selfhost/print/fmt.hero
++++ b/selfhost/print/fmt.hero
+@@ -390,10 +390,15 @@ function use_line(s: source.Source, used: ast.Use) -> str
+ # any one member, since every member carries both spans (§4.19). The
+ # word is chosen by the kind, so a package group cannot be printed
+ # back as a link one — which would be fmt changing what the program
+-# asks the machine.
+-function extern_head(s: source.Source, header: token.Span, library: ast.Library?) -> str
++# asks the machine. `layer` stands right after the header, where the
++# parser reads it (panel 260): a head that dropped it would be a program
++# whose link no longer carries the layer.
++function extern_head(s: source.Source, header: token.Span, library: ast.Library?, layer: token.Span?) -> str
+     out: str @= "extern " + source.span_text(s, header)
+ 
++    if !layer.is_err()
++        out @ out + " " + source.span_text(s, layer.must())
++
+     if !library.is_err()
+         match library.must()
+             .link l       => out @ out + " link " + source.span_text(s, l.name)
+@@ -409,21 +414,27 @@ function extern_head(s: source.Source, header: token.Span, library: ast.Library?
+ record ExternSpans
+     header: token.Span?
+     library: ast.Library?
++    layer: token.Span?
+ 
+ function extern_spans(decl: ast.Decl) -> ExternSpans
+     none_h: token.Span? = fail(code: "none", msg: "no header")
+     none_l: ast.Library? = fail(code: "none", msg: "no library")
++    none_w: token.Span? = fail(code: "none", msg: "no layer")
+ 
+     match decl.kind
+-        .function_decl fd => return ExternSpans(header: fd.value.header, library: fd.value.library)
+-        .constant_decl k  => return ExternSpans(header: k.header, library: k.library)
+-        .record_decl rec  => return ExternSpans(header: rec.header, library: rec.library)
++        .function_decl fd => return ExternSpans(
++            header: fd.value.header,
++            library: fd.value.library,
++            layer: fd.value.layer
++        )
++        .constant_decl k => return ExternSpans(header: k.header, library: k.library, layer: k.layer)
++        .record_decl rec => return ExternSpans(header: rec.header, library: rec.library, layer: rec.layer)
+         # A variant is not a C type and a test is not a declaration a
+         # header can make — refused in the parser, stated here.
+ 
+-        .variant_decl | .test_decl => return ExternSpans(header: none_h, library: none_l)
++        .variant_decl | .test_decl => return ExternSpans(header: none_h, library: none_l, layer: none_w)
+ 
+-    return ExternSpans(header: none_h, library: none_l)
++    return ExternSpans(header: none_h, library: none_l, layer: none_w)
+ 
+ # The group key: the whole head line's text, so two groups that differ
+ # only in link versus package are two groups — which they are. "" for
+@@ -433,7 +444,7 @@ function group_key(s: source.Source, decl: ast.Decl) -> str
+ 
+     if spans.header.is_err()
+         return ""
+-    return extern_head(s, header: spans.header.must(), library: spans.library)
++    return extern_head(s, header: spans.header.must(), library: spans.library, layer: spans.layer)
+ 
+ # The source line of a group member's head, 0 for a declaration outside
+ # any group.
+@@ -454,12 +465,12 @@ function head_line(s: source.Source, decl: ast.Decl) -> i64
+ # directly above it; a remark there keeps the blank line under it where the
+ # source has one (defect 096), and gains one where the member's doc is the
+ # one above the head, which the re-parse would otherwise take it in place of.
+-function extern_head_once(@f: page.Fmt, s: source.Source, comments: [token.Span], decl: ast.Decl, header: token.Span?, library: ast.Library?, continues: bool) -> i64
++function extern_head_once(@f: page.Fmt, s: source.Source, comments: [token.Span], decl: ast.Decl, header: token.Span?, library: ast.Library?, layer: token.Span?, continues: bool) -> i64
+     if header.is_err()
+         return 0
+ 
+     if !continues
+-        page.put_line(@f, indent: 0, text: extern_head(s, header: header.must(), library: library))
++        page.put_line(@f, indent: 0, text: extern_head(s, header: header.must(), library: library, layer: layer))
+         page.opened(@f, s, comments, line: source.line_of(s, header.must().start))
+         own: [token.Span] @= []
+ 
+@@ -496,6 +507,7 @@ function declaration(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [t
+                 decl: decl,
+                 header: k.header,
+                 library: k.library,
++                layer: k.layer,
+                 continues: continues
+             )
+             head = "constant " + name + ": " + types.render_type(tree, k.ty, s)
+@@ -519,6 +531,7 @@ function declaration(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [t
+                 decl: decl,
+                 header: fd.value.header,
+                 library: fd.value.library,
++                layer: fd.value.layer,
+                 continues: continues
+             )
+             headline.signature_lines(@f, tree, s, comments, name: decl.name, fd: fd.value, indent: indent)
+@@ -540,6 +553,7 @@ function declaration(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [t
+                 decl: decl,
+                 header: rec.header,
+                 library: rec.library,
++                layer: rec.layer,
+                 continues: continues
+             )
+             tag_text: str @= ""
+diff --git a/selfhost/print/signature.hero b/selfhost/print/signature.hero
+index 933e532a7..4e1844409 100644
+--- a/selfhost/print/signature.hero
++++ b/selfhost/print/signature.hero
+@@ -140,6 +140,7 @@ test "the two ends and the words between print as the one-line form does"
+         is_extern: true,
+         header: none,
+         library: fail(code: "absent", msg: "none"),
++        layer: fail(code: "absent", msg: "no layer"),
+         owned_result: none,
+         acquires_result: none,
+         retains_result: none,
+diff --git a/selfhost/resolve/qualified.hero b/selfhost/resolve/qualified.hero
+index 31a5035d2..9e98620e5 100644
+--- a/selfhost/resolve/qualified.hero
++++ b/selfhost/resolve/qualified.hero
+@@ -216,6 +216,7 @@ function a_function_decl(name_start: i64, name_end: i64) -> ast.Decl
+         is_extern: false,
+         header: fail(code: "absent", msg: "none"),
+         library: fail(code: "absent", msg: "none"),
++        layer: fail(code: "absent", msg: "no layer"),
+         owned_result: fail(code: "none", msg: "nothing to free"),
+         acquires_result: fail(code: "none", msg: "nothing to give back"),
+         retains_result: fail(code: "none", msg: "nothing to give back"),
+@@ -238,6 +239,7 @@ function an_extern_decl(name_start: i64, name_end: i64) -> ast.Decl
+         is_extern: true,
+         header: ok(token.Span(start: 0, end: 4)),
+         library: fail(code: "absent", msg: "none"),
++        layer: fail(code: "absent", msg: "no layer"),
+         owned_result: fail(code: "none", msg: "nothing to free"),
+         acquires_result: fail(code: "none", msg: "nothing to give back"),
+         retains_result: fail(code: "none", msg: "nothing to give back"),
+diff --git a/selfhost/resolve/state.hero b/selfhost/resolve/state.hero
+index d7fe502d9..9f346eb0d 100644
+--- a/selfhost/resolve/state.hero
++++ b/selfhost/resolve/state.hero
+@@ -618,6 +618,7 @@ test "what the library declares and what the file declares stay two programs"
+         is_extern: false,
+         header: fail(code: "absent", msg: "none"),
+         library: fail(code: "absent", msg: "none"),
++        layer: fail(code: "absent", msg: "no layer"),
+         owned_result: fail(code: "none", msg: "nothing to free"),
+         acquires_result: fail(code: "none", msg: "nothing to give back"),
+         retains_result: fail(code: "none", msg: "nothing to give back"),
+diff --git a/selfhost/resolve/types.hero b/selfhost/resolve/types.hero
+index a3ad8ece4..ed2a6f368 100644
+--- a/selfhost/resolve/types.hero
++++ b/selfhost/resolve/types.hero
+@@ -245,7 +245,7 @@ function record_decl_named(name_start: i64, name_end: i64) -> ast.Decl
+         name: span,
+         doc: doc,
+         span: span,
+-        kind: .record_decl(fields: fields, header: fail(code: "absent", msg: "plain"), library: fail(code: "absent", msg: "plain"), partial: false, tag: fail(code: "absent", msg: "plain"))
++        kind: .record_decl(fields: fields, header: fail(code: "absent", msg: "plain"), library: fail(code: "absent", msg: "plain"), layer: fail(code: "absent", msg: "plain"), partial: false, tag: fail(code: "absent", msg: "plain"))
+     )
+ 
+ test "the three namespaces answer in order: primitive, generic, declaration"
+@@ -298,6 +298,7 @@ test "a value in type position is named for what it is"
+         is_extern: false,
+         header: fail(code: "absent", msg: "none"),
+         library: fail(code: "absent", msg: "none"),
++        layer: fail(code: "absent", msg: "no layer"),
+         owned_result: fail(code: "none", msg: "nothing to free"),
+         acquires_result: fail(code: "none", msg: "nothing to give back"),
+         retains_result: fail(code: "none", msg: "nothing to give back"),
+diff --git a/tests/golden/run/fixedbugs-2502-a-close-wakes-a-waiting-call-at-once.hero b/tests/golden/run/fixedbugs-2502-a-close-wakes-a-waiting-call-at-once.hero
+index 34317bf39..11006dc27 100644
+--- a/tests/golden/run/fixedbugs-2502-a-close-wakes-a-waiting-call-at-once.hero
++++ b/tests/golden/run/fixedbugs-2502-a-close-wakes-a-waiting-call-at-once.hero
+@@ -9,7 +9,7 @@
+ # 10 ms, which slices of 50 ms pass with a chance near 1 in 400. The waiting
+ # threads are C's, in the header beside this file. It prints 1 where every
+ # step held, else the step that did not.
+-extern "fixedbugs-2502-waiters.h"
++extern "fixedbugs-2502-waiters.h" layer
+     function close_wakes_at_once(n: i64) -> i64
+ 
+ function main()
+diff --git a/tests/golden/run/fixedbugs-2502-one-poller-tells-many-waiting-calls.hero b/tests/golden/run/fixedbugs-2502-one-poller-tells-many-waiting-calls.hero
+index a73c9a117..a26c25d29 100644
+--- a/tests/golden/run/fixedbugs-2502-one-poller-tells-many-waiting-calls.hero
++++ b/tests/golden/run/fixedbugs-2502-one-poller-tells-many-waiting-calls.hero
+@@ -11,7 +11,7 @@
+ # ends when its own way is ready, the send then ended by the close. The
+ # waiting threads are C's, in the header beside this file. Each line prints 1
+ # where every step held, else the step that did not.
+-extern "fixedbugs-2502-waiters.h"
++extern "fixedbugs-2502-waiters.h" layer
+     function many_waiters_each_get_their_byte(n: i64) -> i64
+     function both_ways_on_one_socket() -> i64
+ 
+diff --git a/tests/golden/run/fixedbugs-2504-a-marks-life-and-a-doors-are-told-together.hero b/tests/golden/run/fixedbugs-2504-a-marks-life-and-a-doors-are-told-together.hero
+index 0ae50e28d..47fc9cefa 100644
+--- a/tests/golden/run/fixedbugs-2504-a-marks-life-and-a-doors-are-told-together.hero
++++ b/tests/golden/run/fixedbugs-2504-a-marks-life-and-a-doors-are-told-together.hero
+@@ -3,7 +3,7 @@
+ # a listener a mark began, `acquires hero_net_close`, never closed, and a
+ # socket given up for a number the platform layer's door began a life for,
+ # never taken back; so the sentence names both, the mark and the door.
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     record Socket tag hero_net_socket
+     function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+     function hero_net_connect(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+diff --git a/tests/golden/run/fixedbugs-2504-a-number-never-taken-back-is-told-as-a-life-a-door-began.hero b/tests/golden/run/fixedbugs-2504-a-number-never-taken-back-is-told-as-a-life-a-door-began.hero
+index c90d4516f..cfcbf3223 100644
+--- a/tests/golden/run/fixedbugs-2504-a-number-never-taken-back-is-told-as-a-life-a-door-began.hero
++++ b/tests/golden/run/fixedbugs-2504-a-number-never-taken-back-is-told-as-a-life-a-door-began.hero
+@@ -7,7 +7,7 @@
+ # standing, a door's place naming no line of the program, and names those
+ # and no one else (`runtime/parts/alloc.c`, `parts/panic.c`'s
+ # `hero_place_is_a_door`). Here a door's life stands alone.
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     record Socket tag hero_net_socket
+     function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+     function hero_net_connect(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+diff --git a/tests/golden/run/fixedbugs-2504-a-number-taken-back-and-never-closed-is-told-as-a-marks-life.hero b/tests/golden/run/fixedbugs-2504-a-number-taken-back-and-never-closed-is-told-as-a-marks-life.hero
+index 4441b3d42..69b82d28c 100644
+--- a/tests/golden/run/fixedbugs-2504-a-number-taken-back-and-never-closed-is-told-as-a-marks-life.hero
++++ b/tests/golden/run/fixedbugs-2504-a-number-taken-back-and-never-closed-is-told-as-a-marks-life.hero
+@@ -4,7 +4,7 @@
+ # life, the door's, and begins the socket's again by its own mark, `acquires
+ # hero_net_close | hero_net_number`; never closed, it is a life a mark began,
+ # and the sentence names the mark alone, as it did before the door existed.
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     record Socket tag hero_net_socket
+     function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+     function hero_net_connect(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+diff --git a/tests/golden/run/fixedbugs-2554-a-closed-listener-lets-its-port-go.hero b/tests/golden/run/fixedbugs-2554-a-closed-listener-lets-its-port-go.hero
+index dd8f5ad64..9e863fee0 100644
+--- a/tests/golden/run/fixedbugs-2554-a-closed-listener-lets-its-port-go.hero
++++ b/tests/golden/run/fixedbugs-2554-a-closed-listener-lets-its-port-go.hero
+@@ -19,7 +19,7 @@
+ # (`fixedbugs-2554-a-closed-listener-lets-its-port-go.h`). On POSIX both
+ # held before the repair; they are Windows' falsifiers.
+ 
+-extern "fixedbugs-2554-a-closed-listener-lets-its-port-go.h"
++extern "fixedbugs-2554-a-closed-listener-lets-its-port-go.h" layer
+     function port_after_waiting_accept(rounds: i64) -> i64
+     function port_after_timed_out_accept(rounds: i64) -> i64
+ 
+diff --git a/tests/golden/run/fixedbugs-2667-a-port-a-pseudo-terminal-and-a-channel-join-a-poll-set.hero b/tests/golden/run/fixedbugs-2667-a-port-a-pseudo-terminal-and-a-channel-join-a-poll-set.hero
+index f3d2f26c7..028f3b2ea 100644
+--- a/tests/golden/run/fixedbugs-2667-a-port-a-pseudo-terminal-and-a-channel-join-a-poll-set.hero
++++ b/tests/golden/run/fixedbugs-2667-a-port-a-pseudo-terminal-and-a-channel-join-a-poll-set.hero
+@@ -8,7 +8,7 @@
+ # The C is in the header beside this file. Each line prints 1 where every
+ # step held, or where the platform has no such stream or waits on none
+ # (Windows), else the step that did not.
+-extern "fixedbugs-2667-ready.h"
++extern "fixedbugs-2667-ready.h" layer
+     function pseudo_sides_join_a_set() -> i64
+     function channel_ends_join_a_set() -> i64
+ 
+diff --git a/tests/golden/run/fixedbugs-2673-a-lock-is-not-released-by-the-thread-after-its-holder.hero b/tests/golden/run/fixedbugs-2673-a-lock-is-not-released-by-the-thread-after-its-holder.hero
+index 1665cfeb8..164edda58 100644
+--- a/tests/golden/run/fixedbugs-2673-a-lock-is-not-released-by-the-thread-after-its-holder.hero
++++ b/tests/golden/run/fixedbugs-2673-a-lock-is-not-released-by-the-thread-after-its-holder.hero
+@@ -7,7 +7,7 @@
+ # a number given to each thread once in the process's life. The C, with its
+ # threads, is in the header beside this file. Each line prints 1 where every
+ # step held, else the step that did not.
+-extern "fixedbugs-2673-holders.h"
++extern "fixedbugs-2673-holders.h" layer
+     function release_after_the_holder_ended() -> i64
+     function acquire_after_the_holder_ended() -> i64
+ 
+diff --git a/tests/golden/run/fixedbugs-2696-a-strangers-datagram-never-stops-a-wait.hero b/tests/golden/run/fixedbugs-2696-a-strangers-datagram-never-stops-a-wait.hero
+index 940e7a181..332eeeffd 100644
+--- a/tests/golden/run/fixedbugs-2696-a-strangers-datagram-never-stops-a-wait.hero
++++ b/tests/golden/run/fixedbugs-2696-a-strangers-datagram-never-stops-a-wait.hero
+@@ -9,7 +9,7 @@
+ # set's next wait answers its timer, then nothing. It prints 1 where every
+ # step held, or on Darwin and Linux, whose bell is a pipe the process alone
+ # holds; else the step that did not.
+-extern "fixedbugs-2696-strangers.h"
++extern "fixedbugs-2696-strangers.h" layer
+     function strangers_leave_the_wait() -> i64
+ 
+ function main()
+diff --git a/tests/golden/run/poll-a-mailbox-in-a-set-is-told-at-each-send-from-any-thread.hero b/tests/golden/run/poll-a-mailbox-in-a-set-is-told-at-each-send-from-any-thread.hero
+index 605d36b4f..9077ba255 100644
+--- a/tests/golden/run/poll-a-mailbox-in-a-set-is-told-at-each-send-from-any-thread.hero
++++ b/tests/golden/run/poll-a-mailbox-in-a-set-is-told-at-each-send-from-any-thread.hero
+@@ -6,7 +6,7 @@
+ # stood in the mailbox; there is none, and every value is taken. Once closed
+ # and empty the mailbox is told still, so a loop's receive answers `closed`.
+ 
+-extern "hero_poll.h"
++extern "hero_poll.h" layer
+     record Set tag hero_poll_set
+     function hero_poll_make(most: i64) -> Set acquires hero_poll_close
+     function hero_poll_add_mailbox(set: Set, number: i64) -> i64
+diff --git a/tests/golden/run/poll-a-sets-descriptor-is-readable-while-a-mailbox-holds-a-value.hero b/tests/golden/run/poll-a-sets-descriptor-is-readable-while-a-mailbox-holds-a-value.hero
+index 6fae68da4..24269015d 100644
+--- a/tests/golden/run/poll-a-sets-descriptor-is-readable-while-a-mailbox-holds-a-value.hero
++++ b/tests/golden/run/poll-a-sets-descriptor-is-readable-while-a-mailbox-holds-a-value.hero
+@@ -5,7 +5,7 @@
+ # wait found nothing. The C is in the header beside this file; each line
+ # prints 1 where the step held. On Windows the descriptor is the handle of an
+ # event the set owns, and `readable` is that event being set.
+-extern "poll-a-sets-descriptor-shown.h"
++extern "poll-a-sets-descriptor-shown.h" layer
+     function shown_made(number: i64) -> i64
+     function shown_readable(want: i64) -> i64
+     function shown_told(want: i64) -> i64
+diff --git a/tests/golden/run/the-platform-layer-clock-never-goes-back.hero b/tests/golden/run/the-platform-layer-clock-never-goes-back.hero
+index 9950b0c93..4bf4c32c8 100644
+--- a/tests/golden/run/the-platform-layer-clock-never-goes-back.hero
++++ b/tests/golden/run/the-platform-layer-clock-never-goes-back.hero
+@@ -3,7 +3,7 @@
+ # the linker takes the clock's member from the archive on the link line and
+ # no other member. A reading is never -1 where the clock works, and a
+ # thousand readings in a row never go back.
+-extern "hero_time.h"
++extern "hero_time.h" layer
+     function hero_time_monotonic_ns() -> i64
+ 
+ function main()
+diff --git a/tests/golden/run/the-platform-layer-counts-every-interrupt-a-program-counts-instead-of-the-stop.hero b/tests/golden/run/the-platform-layer-counts-every-interrupt-a-program-counts-instead-of-the-stop.hero
+index 9931e018c..0c5dfb367 100644
+--- a/tests/golden/run/the-platform-layer-counts-every-interrupt-a-program-counts-instead-of-the-stop.hero
++++ b/tests/golden/run/the-platform-layer-counts-every-interrupt-a-program-counts-instead-of-the-stop.hero
+@@ -8,7 +8,7 @@
+ # the process's life, and the program ends at exit 0 with its leak check run.
+ # On Windows the interrupt is the console's Ctrl-C, counted on the thread the
+ # system makes for it (unrun there).
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     constant HERO_NET_INVALID: i64
+     function hero_net_count_signal(sig: i32) -> i64
+     function hero_net_catch_stop() -> i64
+@@ -20,7 +20,7 @@ extern "hero_os.h"
+     function hero_signal_watch(sig: i32) -> i64
+     function hero_signal_take(sig: i32) -> i64
+ 
+-extern "the-platform-layer-stop.h"
++extern "the-platform-layer-stop.h" layer
+     constant STOP_INTERRUPT: i64
+     function stop_begin(interrupt_ignored: i64) -> i64
+     function stop_send_now(what: i64) -> i64
+diff --git a/tests/golden/run/the-platform-layer-counts-no-interrupt-once-the-stop-is-caught.hero b/tests/golden/run/the-platform-layer-counts-no-interrupt-once-the-stop-is-caught.hero
+index c90c2b804..ffc1decc6 100644
+--- a/tests/golden/run/the-platform-layer-counts-no-interrupt-once-the-stop-is-caught.hero
++++ b/tests/golden/run/the-platform-layer-counts-no-interrupt-once-the-stop-is-caught.hero
+@@ -5,7 +5,7 @@
+ # did, the program going on, the stop asked, nothing counted. On Windows the
+ # request to end is the console's Ctrl-Break, which the stop takes too
+ # (unrun there).
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     constant HERO_NET_INVALID: i64
+     function hero_net_count_signal(sig: i32) -> i64
+     function hero_net_catch_stop() -> i64
+@@ -20,7 +20,7 @@ extern "hero_os.h"
+ extern "signal.h"
+     constant SIGTERM: i32
+ 
+-extern "the-platform-layer-stop.h"
++extern "the-platform-layer-stop.h" layer
+     constant STOP_INTERRUPT: i64
+     function stop_begin(interrupt_ignored: i64) -> i64
+     function stop_send_now(what: i64) -> i64
+diff --git a/tests/golden/run/the-platform-layer-echoes-over-loopback-in-one-thread.hero b/tests/golden/run/the-platform-layer-echoes-over-loopback-in-one-thread.hero
+index 73605cf59..f0b086933 100644
+--- a/tests/golden/run/the-platform-layer-echoes-over-loopback-in-one-thread.hero
++++ b/tests/golden/run/the-platform-layer-echoes-over-loopback-in-one-thread.hero
+@@ -10,7 +10,7 @@
+ # empty address are `HERO_NET_INVALID`, a connection to a port nobody holds
+ # is `HERO_NET_REFUSED`, and each path closes what it opened, since a handle
+ # never given back aborts at the end of `main`.
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     record Socket tag hero_net_socket
+     constant HERO_NET_INVALID: i64
+     constant HERO_NET_REFUSED: i64
+diff --git a/tests/golden/run/the-platform-layer-ends-a-call-its-socket-closes.hero b/tests/golden/run/the-platform-layer-ends-a-call-its-socket-closes.hero
+index ed72b1221..c52c46358 100644
+--- a/tests/golden/run/the-platform-layer-ends-a-call-its-socket-closes.hero
++++ b/tests/golden/run/the-platform-layer-ends-a-call-its-socket-closes.hero
+@@ -13,7 +13,7 @@
+ # waiting threads are C's, in the header beside this file: a program's
+ # Heroes threads carry one `i64`, and a socket is a handle. Each line prints
+ # 1 where every step held, else the step that did not.
+-extern "the-platform-layer-ends-a-call-its-socket-closes.h"
++extern "the-platform-layer-ends-a-call-its-socket-closes.h" layer
+     function close_ends_accept() -> i64
+     function close_ends_recv() -> i64
+     function close_ends_send() -> i64
+diff --git a/tests/golden/run/the-platform-layer-ends-a-wait-at-its-sockets-deadline.hero b/tests/golden/run/the-platform-layer-ends-a-wait-at-its-sockets-deadline.hero
+index 8aa13d290..17f9d64f9 100644
+--- a/tests/golden/run/the-platform-layer-ends-a-wait-at-its-sockets-deadline.hero
++++ b/tests/golden/run/the-platform-layer-ends-a-wait-at-its-sockets-deadline.hero
+@@ -17,7 +17,7 @@
+ # socket. The C is in the headers beside
+ # this file. Each line prints 1 where every step held, else the step that did
+ # not.
+-extern "the-platform-layer-deadline.h"
++extern "the-platform-layer-deadline.h" layer
+     function deadline_ends_a_quiet_wait() -> i64
+     function deadline_lets_an_early_byte_through() -> i64
+     function deadline_reaches_a_call_already_waiting() -> i64
+diff --git a/tests/golden/run/the-platform-layer-ends-at-a-second-interrupt-after-the-program-asked-its-stop.hero b/tests/golden/run/the-platform-layer-ends-at-a-second-interrupt-after-the-program-asked-its-stop.hero
+index 5ba148ba6..523318718 100644
+--- a/tests/golden/run/the-platform-layer-ends-at-a-second-interrupt-after-the-program-asked-its-stop.hero
++++ b/tests/golden/run/the-platform-layer-ends-at-a-second-interrupt-after-the-program-asked-its-stop.hero
+@@ -9,12 +9,12 @@
+ # 2 = 130, what it printed before written out; the leak check never runs, as
+ # under any signal's own end. Judged on POSIX: on Windows a second console
+ # event ends the process by the system's own handler, in its own status.
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     function hero_net_catch_stop() -> i64
+     function hero_net_ask_stop()
+     function hero_net_stop_asked() -> i64
+ 
+-extern "the-platform-layer-stop.h"
++extern "the-platform-layer-stop.h" layer
+     constant STOP_INTERRUPT: i64
+     function stop_begin(interrupt_ignored: i64) -> i64
+     function stop_send_now(what: i64) -> i64
+diff --git a/tests/golden/run/the-platform-layer-ends-at-a-second-request-to-end.hero b/tests/golden/run/the-platform-layer-ends-at-a-second-request-to-end.hero
+index 4e4b4a302..9a728cbd9 100644
+--- a/tests/golden/run/the-platform-layer-ends-at-a-second-request-to-end.hero
++++ b/tests/golden/run/the-platform-layer-ends-at-a-second-request-to-end.hero
+@@ -8,7 +8,7 @@
+ # not under any signal's own end. Judged on POSIX: on Windows a second
+ # console event ends the process by the system's own handler, in its own
+ # status, not 128 + a signal.
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     record Socket tag hero_net_socket
+     constant HERO_NET_STOPPED: i64
+     function hero_net_catch_stop() -> i64
+@@ -22,7 +22,7 @@ extern "hero_os.h"
+     function hero_thread_spawn(body: (function(x: i64) -> i64), arg: i64) -> i64
+     function hero_thread_join(handle: i64) -> i64
+ 
+-extern "the-platform-layer-stop.h"
++extern "the-platform-layer-stop.h" layer
+     constant STOP_REQUEST: i64
+     function stop_begin(interrupt_ignored: i64) -> i64
+     function stop_send_now(what: i64) -> i64
+diff --git a/tests/golden/run/the-platform-layer-hands-a-connection-to-a-thread-as-a-number.hero b/tests/golden/run/the-platform-layer-hands-a-connection-to-a-thread-as-a-number.hero
+index 54cd72a2c..f07bbfcc3 100644
+--- a/tests/golden/run/the-platform-layer-hands-a-connection-to-a-thread-as-a-number.hero
++++ b/tests/golden/run/the-platform-layer-hands-a-connection-to-a-thread-as-a-number.hero
+@@ -10,7 +10,7 @@
+ # given up names nothing and the one taken back is new. The silent ending
+ # holds that the leak check after `main` found every handle and every
+ # number given back.
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     record Socket tag hero_net_socket
+     constant HERO_NET_NOT_OPEN: i64
+     function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+@@ -28,7 +28,7 @@ extern "hero_os.h"
+     function hero_thread_spawn(body: (function(x: i64) -> i64), arg: i64) -> i64
+     function hero_thread_join(handle: i64) -> i64
+ 
+-extern "the-platform-layer-hands-a-connection-to-a-thread-as-a-number.h"
++extern "the-platform-layer-hands-a-connection-to-a-thread-as-a-number.h" layer
+     function given_up_names_nothing() -> i64
+     function never_given_is_refused() -> i64
+ 
+diff --git a/tests/golden/run/the-platform-layer-is-reached-from-a-fetched-packages-group.case/heroes.packages/stopwatch@1.0.0-d9946aad55e71455/stopwatch.hero b/tests/golden/run/the-platform-layer-is-reached-from-a-fetched-packages-group.case/heroes.packages/stopwatch@1.0.0-d9946aad55e71455/stopwatch.hero
+index 1b1c8443a..8da70e4de 100644
+--- a/tests/golden/run/the-platform-layer-is-reached-from-a-fetched-packages-group.case/heroes.packages/stopwatch@1.0.0-d9946aad55e71455/stopwatch.hero
++++ b/tests/golden/run/the-platform-layer-is-reached-from-a-fetched-packages-group.case/heroes.packages/stopwatch@1.0.0-d9946aad55e71455/stopwatch.hero
+@@ -1,7 +1,7 @@
+ # The package `stopwatch` of the case two folders up (feature 2295,
+ # 2026-11-12): its group names the platform layer's header and nothing else,
+ # no `link` and no flag, as every package reaches the layer.
+-extern "hero_time.h"
++extern "hero_time.h" layer
+     function hero_time_monotonic_ns() -> i64
+ 
+ # Whether two readings in a row go forward or stand still.
+diff --git a/tests/golden/run/the-platform-layer-leaves-an-ignored-interrupt-ignored-when-a-program-counts-it.hero b/tests/golden/run/the-platform-layer-leaves-an-ignored-interrupt-ignored-when-a-program-counts-it.hero
+index 9e0ec988b..b20c9cbc2 100644
+--- a/tests/golden/run/the-platform-layer-leaves-an-ignored-interrupt-ignored-when-a-program-counts-it.hero
++++ b/tests/golden/run/the-platform-layer-leaves-an-ignored-interrupt-ignored-when-a-program-counts-it.hero
+@@ -4,7 +4,7 @@
+ # the interrupt that comes changes nothing and is not counted, and the stop
+ # is refused all the same, the program having chosen the count. On Windows a
+ # console that ignores Ctrl-C sends it to no handler (unrun there).
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     function hero_net_count_signal(sig: i32) -> i64
+     function hero_net_catch_stop() -> i64
+ 
+@@ -13,7 +13,7 @@ extern "hero_os.h"
+     function hero_signal_number(name: i32) -> i32
+     function hero_signal_take(sig: i32) -> i64
+ 
+-extern "the-platform-layer-stop.h"
++extern "the-platform-layer-stop.h" layer
+     constant STOP_INTERRUPT: i64
+     function stop_begin(interrupt_ignored: i64) -> i64
+     function stop_send_now(what: i64) -> i64
+diff --git a/tests/golden/run/the-platform-layer-runs-the-leak-check-after-a-stop.hero b/tests/golden/run/the-platform-layer-runs-the-leak-check-after-a-stop.hero
+index f79d02afe..3bd28d25f 100644
+--- a/tests/golden/run/the-platform-layer-runs-the-leak-check-after-a-stop.hero
++++ b/tests/golden/run/the-platform-layer-runs-the-leak-check-after-a-stop.hero
+@@ -6,7 +6,7 @@
+ # the check, the line where it was taken named. Before the stop, a server
+ # blocked in `accept` was ended by its supervisor's SIGKILL (the sitting's
+ # ffi-pragmatist: alive past `timeout 30`, its leak never told).
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     record Socket tag hero_net_socket
+     constant HERO_NET_STOPPED: i64
+     function hero_net_catch_stop() -> i64
+@@ -20,7 +20,7 @@ extern "hero_os.h"
+     function hero_thread_spawn(body: (function(x: i64) -> i64), arg: i64) -> i64
+     function hero_thread_join(handle: i64) -> i64
+ 
+-extern "the-platform-layer-stop.h"
++extern "the-platform-layer-stop.h" layer
+     constant STOP_REQUEST: i64
+     function stop_begin(interrupt_ignored: i64) -> i64
+     function stop_send_after(what: i64, ms: i64) -> i64
+diff --git a/tests/golden/run/the-platform-layer-stops-a-server-on-a-request-to-end.hero b/tests/golden/run/the-platform-layer-stops-a-server-on-a-request-to-end.hero
+index 9915e025c..082345a5c 100644
+--- a/tests/golden/run/the-platform-layer-stops-a-server-on-a-request-to-end.hero
++++ b/tests/golden/run/the-platform-layer-stops-a-server-on-a-request-to-end.hero
+@@ -8,7 +8,7 @@
+ # inherited ignore the same way): an interrupt sent then asks no stop, and
+ # the request to end after it does. The signals are sent by a thread of the
+ # program's own (the header beside it says how on each platform).
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     record Socket tag hero_net_socket
+     constant HERO_NET_STOPPED: i64
+     function hero_net_catch_stop() -> i64
+@@ -23,7 +23,7 @@ extern "hero_os.h"
+     function hero_thread_spawn(body: (function(x: i64) -> i64), arg: i64) -> i64
+     function hero_thread_join(handle: i64) -> i64
+ 
+-extern "the-platform-layer-stop.h"
++extern "the-platform-layer-stop.h" layer
+     constant STOP_INTERRUPT: i64
+     constant STOP_REQUEST: i64
+     function stop_begin(interrupt_ignored: i64) -> i64
+diff --git a/tests/golden/run/the-platform-layer-stops-a-server-on-an-interrupt.hero b/tests/golden/run/the-platform-layer-stops-a-server-on-an-interrupt.hero
+index 263751020..755f4a2be 100644
+--- a/tests/golden/run/the-platform-layer-stops-a-server-on-an-interrupt.hero
++++ b/tests/golden/run/the-platform-layer-stops-a-server-on-an-interrupt.hero
+@@ -10,7 +10,7 @@
+ # given back, which this case's silent ending holds. The interrupt is sent by
+ # a thread of the program's own (the header beside it says how on each
+ # platform), 300 ms after the worker started.
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     record Socket tag hero_net_socket
+     constant HERO_NET_STOPPED: i64
+     function hero_net_catch_stop() -> i64
+@@ -25,7 +25,7 @@ extern "hero_os.h"
+     function hero_thread_spawn(body: (function(x: i64) -> i64), arg: i64) -> i64
+     function hero_thread_join(handle: i64) -> i64
+ 
+-extern "the-platform-layer-stop.h"
++extern "the-platform-layer-stop.h" layer
+     constant STOP_INTERRUPT: i64
+     function stop_begin(interrupt_ignored: i64) -> i64
+     function stop_send_after(what: i64, ms: i64) -> i64
+diff --git a/tests/golden/run/the-platform-layer-stops-every-waiting-call-when-the-program-asks.hero b/tests/golden/run/the-platform-layer-stops-every-waiting-call-when-the-program-asks.hero
+index f02ec4364..dcde96486 100644
+--- a/tests/golden/run/the-platform-layer-stops-every-waiting-call-when-the-program-asks.hero
++++ b/tests/golden/run/the-platform-layer-stops-every-waiting-call-when-the-program-asks.hero
+@@ -9,16 +9,16 @@
+ # median of the times from the ask to their return under 10 ms. Then a first
+ # interrupt comes, from the program itself, and the program goes on to its
+ # last line and its leak check. The C is in the headers beside this file.
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     function hero_net_catch_stop() -> i64
+     function hero_net_stop_asked() -> i64
+ 
+-extern "the-platform-layer-stop.h"
++extern "the-platform-layer-stop.h" layer
+     constant STOP_INTERRUPT: i64
+     function stop_begin(interrupt_ignored: i64) -> i64
+     function stop_send_now(what: i64) -> i64
+ 
+-extern "the-platform-layer-ask-stop.h"
++extern "the-platform-layer-ask-stop.h" layer
+     function ask_stops_every_wait() -> i64
+ 
+ function main()
+diff --git a/tests/golden/run/the-platform-layer-tells-a-number-never-taken-back.hero b/tests/golden/run/the-platform-layer-tells-a-number-never-taken-back.hero
+index d082e3f6d..620556ab3 100644
+--- a/tests/golden/run/the-platform-layer-tells-a-number-never-taken-back.hero
++++ b/tests/golden/run/the-platform-layer-tells-a-number-never-taken-back.hero
+@@ -7,7 +7,7 @@
+ # a program's own header made). The layer's door now begins a life of the
+ # number's own in the program's handle set, owed to `hero_net_of`, so the
+ # check names it, and names the door that began it.
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     record Socket tag hero_net_socket
+     function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+     function hero_net_connect(address: cstr lent, port: i64) -> Socket acquires hero_net_close
+diff --git a/tests/golden/run/the-platform-layer-tells-a-socket-it-does-not-hold.hero b/tests/golden/run/the-platform-layer-tells-a-socket-it-does-not-hold.hero
+index c5c918468..ed21fd479 100644
+--- a/tests/golden/run/the-platform-layer-tells-a-socket-it-does-not-hold.hero
++++ b/tests/golden/run/the-platform-layer-tells-a-socket-it-does-not-hold.hero
+@@ -7,12 +7,12 @@
+ # it is `HERO_NET_INVALID`; and a call that succeeds leaves `HERO_NET_OK`.
+ # Under the sanitisers and Guard Malloc, which the `run` form adds, a read
+ # through a freed or forged pointer would be a report here.
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     constant HERO_NET_OK: i64
+     constant HERO_NET_INVALID: i64
+     constant HERO_NET_NOT_OPEN: i64
+ 
+-extern "the-platform-layer-tells-a-socket-it-does-not-hold.h"
++extern "the-platform-layer-tells-a-socket-it-does-not-hold.h" layer
+     function closed_twice() -> i64
+     function null_handle() -> i64
+     function forged_handle() -> i64
+diff --git a/tests/golden/run/the-signal-door-wakes-a-readiness-set-and-a-wait-for-a-child.hero b/tests/golden/run/the-signal-door-wakes-a-readiness-set-and-a-wait-for-a-child.hero
+index e086faa49..7638f8785 100644
+--- a/tests/golden/run/the-signal-door-wakes-a-readiness-set-and-a-wait-for-a-child.hero
++++ b/tests/golden/run/the-signal-door-wakes-a-readiness-set-and-a-wait-for-a-child.hero
+@@ -9,7 +9,7 @@
+ # readiness sets take sockets alone), else the step that did not. On Windows
+ # the interrupt is the console's Ctrl-C, counted on the thread the system
+ # makes for it, which sets the door's event (unrun there).
+-extern "the-signal-door.h"
++extern "the-signal-door.h" layer
+     function door_begin() -> i64
+     function door_set() -> i64
+     function door_child() -> i64
+diff --git a/tests/golden/run/threads-the-stop-drains-each-mailbox-then-holds-it-stopped.hero b/tests/golden/run/threads-the-stop-drains-each-mailbox-then-holds-it-stopped.hero
+index c5dce76a6..e960231cc 100644
+--- a/tests/golden/run/threads-the-stop-drains-each-mailbox-then-holds-it-stopped.hero
++++ b/tests/golden/run/threads-the-stop-drains-each-mailbox-then-holds-it-stopped.hero
+@@ -5,7 +5,7 @@
+ # receive waiting with no limit on another thread wakes and answers
+ # `stopped`; `closed` comes before `stopped`.
+ 
+-extern "hero_net.h"
++extern "hero_net.h" layer
+     function hero_net_ask_stop()
+ 
+ function listen(inbox: (mailbox i64)) -> str
+diff --git a/tests/harness/rebel_apps_run.hero b/tests/harness/rebel_apps_run.hero
+index ddfbcbe97..a6d6b2ded 100644
+--- a/tests/harness/rebel_apps_run.hero
++++ b/tests/harness/rebel_apps_run.hero
+@@ -28,7 +28,7 @@ use strings
+ 
+ # The clock a build's and a run's seconds are read on, which no setting of
+ # the system's time moves (`runtime/hero_time.h`).
+-extern "hero_time.h"
++extern "hero_time.h" layer
+     function hero_time_monotonic_ns() -> i64
+ 
+ # The group of programs this check judges.
+diff --git a/selfhost/check/layer_header.hero b/selfhost/check/layer_header.hero
+new file mode 100644
+index 000000000..01c128de9
+--- /dev/null
++++ b/selfhost/check/layer_header.hero
+@@ -0,0 +1,192 @@
++# A group naming the platform layer's header says so with `layer`, told where
++# it does not at its own string (design.md §1.11, §4.19; panel 260,
++# provisional, author ratification pending).
++#
++# **The layer is linked only into a program that says it needs it.** Its
++# members, C of the language's own beside the runtime (`cli/layer.hero`), are
++# compiled, asked and archived for a build only where a group of the program,
++# or of a package it reaches, says `layer` (`cli/layer_reach.hero`); a
++# program that says it nowhere links nothing of the layer and asks nothing of
++# it. So a group binding the layer without the word is refused, at the
++# package's own `check`, where its writer runs it, never left to a link that
++# cannot find the layer's names.
++#
++# **Asked of the group's own string, at `check`**, which reads no header, as
++# `check/runtime_header.hero` asks: the name as its escapes decode it, a
++# leading `./` passed over. The layer's headers obey a rule the name shows:
++# `hero_<word>.h`, written bare, but the runtime's own `hero_os.h` and
++# `hero_compiler.h`; and `platform/hero_<word>.h`, a header of the layer's
++# own folder. `cli/layer_bound.hero` holds the runtime to the rule by its test
++# and tells at `build` what only the header's includes show: a header of the
++# program's own reaching the layer's, and a group saying `layer` whose header
++# reaches none of it.
++
++use ast
++use check/state
++use diag
++use escape
++use keywords
++use source
++use token
++
++constant UNDECLARED: str
++    "ffi_layer_undeclared"
++
++constant UNREACHED: str
++    "ffi_layer_unreached"
++
++# A function of the layer's bound through a header of the program's own that
++# declares it and includes none of the layer's (`cli/layer_bound.hero`).
++constant REDECLARED: str
++    "ffi_layer_redeclared"
++
++# What a program that binds the layer pays and what one that does not is
++# spared, said by every refusal of this class: §4.17's fix, which names no
++# file the reader must open to find it.
++constant WHY: str
++    "the platform layer's members are compiled and linked only for a program whose groups say `layer`; a program none of whose groups says it links nothing of the layer, so its build asks nothing of it"
++
++# Each group naming a layer header without `layer`, told once, at its string.
++function refused(@c: state.Checker, s: source.Source, decls: [ast.Decl])
++    told: {i64: bool} @= {}
++
++    for decl in decls
++        head = head_of(decl)
++
++        if head.header.is_err() || !head.layer.is_err()
++            continue
++        span = head.header.must()
++
++        if !told[span.start].is_err() || !names_layer(escape.unescape(source.span_text(s, span)))
++            continue
++        told[span.start] @ true
++        state.push_diagnostic(@c, undeclared(header: source.span_text(s, span), span: span, through: ""))
++
++# The refusal of a group whose header is, or reaches through `through`, the
++# layer's, at the group's string, with the word inserted after it as its
++# certain fix: the word repairs exactly what is told, and the program it
++# writes builds with the layer on its link.
++function undeclared(header: str, span: token.Span, through: str) -> diag.Diagnostic
++    what: str @= "`" + bare(header) + "` is the platform layer's header"
++
++    if through.len() > 0
++        what @ "`" + bare(header) + "` reaches the platform layer's " + through
++    d: diag.Diagnostic @= diag.new_diagnostic(
++        code: UNDECLARED,
++        message: what + ", and this group does not say `" + keywords.WORD_LAYER + "`: write `extern " + header + " " + keywords.WORD_LAYER + "`",
++        span: span
++    )
++    d.notes @ d.notes.push(WHY)
++    d.fixes @ d.fixes.push(
++        diag.Fix(title: "say `" + keywords.WORD_LAYER + "` after the header", replacement: " " + keywords.WORD_LAYER, span: token.Span(start: span.end, end: span.end), certainty: .certain)
++    )
++    return d
++
++# The refusal of a group saying `layer` whose header is not the layer's and
++# reaches none of its headers, at the word, with the word taken out as its
++# certain fix.
++function unreached(header: str, word: token.Span, from: i64) -> diag.Diagnostic
++    d: diag.Diagnostic @= diag.new_diagnostic(
++        code: UNREACHED,
++        message: "this group says `" + keywords.WORD_LAYER + "`, and `" + bare(header) + "` is none of the platform layer's headers and includes none of them, so nothing it binds is the layer's: take the word out, or name the layer's header that declares what this group binds",
++        span: word
++    )
++    d.notes @ d.notes.push(
++        WHY + "; a word that binds nothing makes every program reaching this group pay for the layer"
++    )
++    d.fixes @ d.fixes.push(
++        diag.Fix(title: "take `" + keywords.WORD_LAYER + "` out", replacement: "", span: token.Span(start: from, end: word.end), certainty: .certain)
++    )
++    return d
++
++# A header's string as a message names it: its quotes taken off.
++function bare(spelled: str) -> str
++    if spelled.len() >= 2 && spelled[0] == '"' && spelled[spelled.len() - 1] == '"'
++        return spelled.slice(from: 1, to: spelled.len() - 1)
++    return spelled
++
++# Whether a group's header, as its escapes decode it, names a header of the
++# platform layer: `hero_<word>.h` written bare but `hero_os.h` and
++# `hero_compiler.h`, the runtime's own, or `platform/hero_<word>.h`; a
++# leading `./` passed over.
++function names_layer(header: str) -> bool
++    at: i64 @= 0
++
++    while at + 1 < header.len() && header[at] == '.' && header[at + 1] == '/'
++        at @ at + 2
++
++    name = header.slice(from: at, to: header.len())
++    folder = "platform/"
++
++    if name.len() > folder.len() && name.slice(from: 0, to: folder.len()) == folder
++        return layer_stem(name.slice(from: folder.len(), to: name.len()))
++    return layer_stem(name) && name != "hero_os.h" && name != "hero_compiler.h"
++
++# `hero_<word>.h` with no folder: a name past `hero_`, then `.h`.
++function layer_stem(name: str) -> bool
++    head = "hero_"
++
++    if name.len() <= head.len() + 2 || name.slice(from: 0, to: head.len()) != head || name.slice(from: name.len() - 2, to: name.len()) != ".h"
++        return false
++
++    for at in range(from: 0, to: name.len())
++        if name[at] == '/' || name[at] == '\\'
++            return false
++
++    return true
++
++# A group member's head line: the header it names and its `layer`, each
++# absent outside a group.
++record Head
++    header: token.Span?
++    layer: token.Span?
++
++function head_of(decl: ast.Decl) -> Head
++    none_h: token.Span? = fail(code: "none", msg: "no header")
++    none_w: token.Span? = fail(code: "none", msg: "no layer")
++
++    match decl.kind
++        .function_decl fd          => return Head(header: fd.value.header, layer: fd.value.layer)
++        .constant_decl k           => return Head(header: k.header, layer: k.layer)
++        .record_decl rec           => return Head(header: rec.header, layer: rec.layer)
++        .variant_decl | .test_decl => return Head(header: none_h, layer: none_w)
++
++    return Head(header: none_h, layer: none_w)
++
++# Whether any group of `decls` says `layer`: the program's link carries the
++# layer exactly then.
++function declared(decls: [ast.Decl]) -> bool
++    for decl in decls
++        if !head_of(decl).layer.is_err()
++            return true
++
++    return false
++
++## Tests
++
++test "the layer's headers are named by the rule the runtime obeys, the runtime's own two left out (panel 260)"
++    for name in ["hero_time.h", "hero_net.h", "./hero_ui.h", "hero_audio_coreaudio.h", "platform/hero_audio_arm.h", "./platform/hero_ui_appkit.h"]
++        assert names_layer(name)
++
++    for other in ["hero_os.h", "hero_compiler.h", "./hero_os.h", "heroes_runtime.h", "stdio.h", "my/hero_time.h", "hero_.h", "hero_time.hh", "xhero_time.h", "platform/my.h", "platform/sub/hero_x.h", "", ".", "./"]
++        assert !names_layer(other)
++
++test "a group's head says layer only where its line wrote the word (panel 260)"
++    zero = token.Span(start: 0, end: 1)
++    fields: [ast.Field] = []
++    said: ast.Decl = ast.Decl(
++        name: zero,
++        doc: [],
++        span: zero,
++        kind: .record_decl(fields: fields, header: ok(zero), library: fail(code: "absent", msg: "none"), layer: ok(zero), partial: false, tag: fail(code: "absent", msg: "none"))
++    )
++    unsaid: ast.Decl = ast.Decl(
++        name: zero,
++        doc: [],
++        span: zero,
++        kind: .record_decl(fields: fields, header: ok(zero), library: fail(code: "absent", msg: "none"), layer: fail(code: "absent", msg: "none"), partial: false, tag: fail(code: "absent", msg: "none"))
++    )
++    assert declared([unsaid, said])
++    assert !declared([unsaid])
++    none: [ast.Decl] = []
++    assert !declared(none)
+diff --git a/selfhost/cli/layer_bound.hero b/selfhost/cli/layer_bound.hero
+new file mode 100644
+index 000000000..75ea0ee36
+--- /dev/null
++++ b/selfhost/cli/layer_bound.hero
+@@ -0,0 +1,365 @@
++# What a build knows of the platform layer that `check` cannot: a header of
++# the program's own reaching the layer's, a group saying `layer` whose header
++# reaches none of it, and a link missing a name the layer has (design.md
++# §1.11, §4.19; panel 260, provisional, author ratification pending).
++#
++# **A group binds the layer where its header is the layer's or reaches it.**
++# `check/layer_header.hero` reads the first half from the group's string;
++# the second is read here from the walk every build already makes before its
++# first clang (`cli/include_stands.hero`), which follows each group's header
++# and every file it includes, to any depth, as clang's search finds them,
++# every `#if` but `#if 0` read as true. One reading decides both refusals,
++# so no program is refused both with the word and without it: a group that
++# binds says `layer`, and a group that says `layer` binds.
++#
++# **A file is the layer's** where it stands in the runtime's folder and its
++# path there obeys the rule `check` reads names by, or lies under `vendor/`,
++# the C a member compiles inside itself; the runtime's own headers, which
++# every unit reads, include none of them (the test below holds both to the
++# runtime's own list, `runtime.c`'s block of the layer's files).
++#
++# **What the walk cannot see is the link's to say**: a header of the
++# program's own that declares a function of the layer itself, or calls one
++# from a body, and includes none of the layer's headers. A program none of
++# whose groups says `layer` links none of the layer, so such a link misses
++# the name; it is told here, before every other reader of a refused link
++# (`cli/whose.hero`), at the binding that names it or at the group whose
++# header is the program's own, never as `internal error: linking failed` and
++# never as a name no group says which library has.
++
++use ast
++use check/layer_header
++use cli/deps
++use cli/include_told
++use cli/link_report
++use cli/own_names
++use cli/package_reads
++use cli/runtime_bound
++use cli/runtime_key
++use cli/toolchain
++use diag
++use emit/c_words
++use emit/externs as emit_externs
++use module/reading
++use source
++use token
++
++# The path of `path` in the runtime's folder `runtime` where it is the
++# layer's, read lexically as `include_told.file_said` reads a file of the
++# runtime's; "" where it is not: a header whose name the rule calls the
++# layer's, and any file under `platform/`, the members and what they include,
++# or under `vendor/`, the C a member compiles inside itself.
++function layer_path(runtime: str, path: str) -> str
++    at = package_reads.lexical(path)
++    home = package_reads.lexical(runtime)
++
++    if !include_told.within(place: at, folders: [home])
++        return ""
++    inside = at.slice(from: home.len() + 1, to: at.len())
++
++    if layer_header.names_layer(inside) || opens(text: inside, head: "platform/") || opens(text: inside, head: "vendor/")
++        return inside
++    return ""
++
++# Each group of `decls` whose header is one of `headers`, judged by what the
++# walk found its header reaches: `reached[i]`, the layer's file the walk met
++# first below `headers[i]`, "" where it met none. A group that reaches one and
++# does not say `layer` is refused at its string; one that says `layer`, whose
++# header is not the layer's by its name and reaches none of its files, at its
++# word, or, where it binds a name a header of the layer declares, at that
++# binding (`redeclared`). Each group once, in the order the declarations
++# stand; the layer's headers are read only where a group says the word and its
++# header reaches none of them.
++function told(s: source.Source, decls: [ast.Decl], headers: [str], reached: [str], runtime: str) -> [diag.Diagnostic]
++    out: [diag.Diagnostic] @= []
++    seen: {i64: bool} @= {}
++    names: {str: str} @= {}
++    read: bool @= false
++    declared = layer_header.declared(decls)
++
++    for decl in decls
++        head = layer_header.head_of(decl)
++
++        if head.header.is_err()
++            continue
++        span = head.header.must()
++
++        if !seen[span.start].is_err()
++            continue
++        named = emit_externs.unquoted(s, span: span)
++        at = index_of(headers, name: named)
++
++        if at < 0
++            continue
++        seen[span.start] @ true
++        spelled = source.span_text(s, span)
++        by_name = layer_header.names_layer(named)
++
++        if head.layer.is_err() && !by_name && reached[at].len() > 0
++            out @ out.push(layer_header.undeclared(header: spelled, span: span, through: "`" + reached[at] + "`"))
++        else if !head.layer.is_err() && !by_name && reached[at].len() == 0
++            if !read
++                names @ declared_names(runtime)
++                read @ true
++            bound = bound_in_group(s, decls, header: span, names: names)
++
++            if bound.is_err()
++                out @ out.push(layer_header.unreached(header: spelled, word: head.layer.must(), from: span.end))
++            else
++                out @ out.push(
++                    redeclared(name: bound.must().name, header: names[bound.must().name].default(""), own: spelled, span: bound.must().span)
++                )
++        else if head.layer.is_err() && !by_name && reached[at].len() == 0 && declared
++            # Where another group says the word, the layer is on the link and
++            # a binding of its function through a declaration of the program's
++            # would link unseen: asked of the names, as the word's own group is.
++            if !read
++                names @ declared_names(runtime)
++                read @ true
++            bound = bound_in_group(s, decls, header: span, names: names)
++
++            if !bound.is_err()
++                out @ out.push(
++                    redeclared(name: bound.must().name, header: names[bound.must().name].default(""), own: spelled, span: bound.must().span)
++                )
++
++    return out
++
++# The first file of the layer's, its path in the runtime's folder, that the
++# walk's `edges` reach from `root`, itself included, breadth first; "" where
++# none is, or `root` is "".
++function first_reached(edges: {str: [str]}, root: str, runtime: str) -> str
++    if root.len() == 0
++        return ""
++    queue: [str] @= [root]
++    seen: {str: bool} @= {}
++    seen[root] @ true
++    at: i64 @= 0
++
++    while at < queue.len()
++        path = queue[at]
++        at @ at + 1
++        inside = layer_path(runtime: runtime, path: path)
++
++        if inside.len() > 0
++            return inside
++
++        for next in edges[path].default([])
++            if seen[next].is_err()
++                seen[next] @ true
++                queue @ queue.push(next)
++
++    return ""
++
++# A name of the group whose header string is `header` that a header of the
++# layer declares (`names`), with where it is bound: the first, in the order
++# the declarations stand.
++record Bound
++    name: str
++    span: token.Span
++
++function bound_in_group(s: source.Source, decls: [ast.Decl], header: token.Span, names: {str: str}) -> Bound?
++    for decl in decls
++        head = layer_header.head_of(decl)
++        bound = runtime_bound.bound(decl)
++
++        if head.header.is_err() || bound.is_err() || head.header.must().start != header.start
++            continue
++        name = source.span_text(s, bound.must())
++
++        if !names[name].is_err()
++            return ok(Bound(name: name, span: bound.must()))
++
++    return fail(code: "none", msg: "binds no name of the layer's")
++
++# A group saying `layer` that binds a function of the layer through a header
++# of its own, which declares it and includes none of the layer's: told at the
++# binding. Its fix names the layer's header, a guess, since the group may bind
++# more of its own header than that name.
++function redeclared(name: str, header: str, own: str, span: token.Span) -> diag.Diagnostic
++    d: diag.Diagnostic @= diag.new_diagnostic(
++        code: layer_header.REDECLARED,
++        message: "`" + name + "` is the platform layer's, declared by its `" + header + "`, and this group binds it through `" + layer_header.bare(own) + "`, which includes none of the layer's headers: name `" + header + "` in the group, or include it in `" + layer_header.bare(own) + "`",
++        span: span
++    )
++    d.notes @ d.notes.push(REDECLARED)
++    return d
++
++# Why a binding of the layer's own function through a declaration of the
++# program's is refused, which every refusal of that shape says.
++constant REDECLARED: str
++    "clang checks a binding against the header its group names, so a function of the layer's declared by the program itself is checked against nothing the layer wrote: a parameter or a result of another width there is a call the layer reads otherwise"
++
++function opens(text: str, head: str) -> bool
++    return text.len() > head.len() && text.slice(from: 0, to: head.len()) == head
++
++function index_of(list: [str], name: str) -> i64
++    for at in range(from: 0, to: list.len())
++        if list[at] == name
++            return at
++
++    return -1
++
++## A link that misses a name of the layer's
++
++# The diagnostics for a refused link's `message` where no group of the
++# program says `layer`, its link carrying none of the layer: one per name the
++# link reports that a header of the layer declares, in the runtime's own forms
++# (`own_names.reserved`), at the binding of that name, or else at the first
++# group whose header is the program's own, the layer's header named. None
++# where a group says `layer`, or no name reported is the layer's: the other
++# readers' then (`cli/whose.hero`).
++function told_at_link(message: str, s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain) -> [diag.Diagnostic]
++    out: [diag.Diagnostic] @= []
++
++    if layer_header.declared(decls)
++        return out
++    refs = link_report.references(message)
++
++    if refs.len() == 0
++        return out
++    names = declared_names(t.runtime)
++    told_names: {str: bool} @= {}
++
++    for one in refs
++        header = names[one.symbol]
++
++        if header.is_err() || !told_names[one.symbol].is_err()
++            continue
++        told_names[one.symbol] @ true
++        at = binding_of(s, decls, name: one.symbol)
++
++        if !at.is_err()
++            out @ out.push(missing(name: one.symbol, header: header.must(), span: at.must(), bound: true))
++            continue
++        own = first_own_group(s, decls)
++
++        if !own.is_err()
++            out @ out.push(missing(name: one.symbol, header: header.must(), span: own.must(), bound: false))
++
++    return out
++
++function missing(name: str, header: str, span: token.Span, bound: bool) -> diag.Diagnostic
++    how: str @= "this group binds it"
++
++    if !bound
++        how @ "this group's header puts it in the program's own code"
++    d: diag.Diagnostic @= diag.new_diagnostic(
++        code: layer_header.UNDECLARED,
++        message: "`" + name + "` is the platform layer's, declared by its `" + header + "`, and " + how + " through a header that includes none of the layer's, so no group of this program says `layer` and its link carries none of the layer: name `" + header + "` in this group, or include it in the group's header, and say `layer` after the header",
++        span: span
++    )
++    d.notes @ d.notes.push(layer_header.WHY)
++    d.notes @ d.notes.push(REDECLARED)
++    d.fixes @ d.fixes.push(
++        diag.Fix(title: "name the layer's header and say `layer`", replacement: "\"" + header + "\" layer", span: span, certainty: .guess)
++    )
++    return d
++
++# The header string of the group binding the C name `name`, where one does.
++function binding_of(s: source.Source, decls: [ast.Decl], name: str) -> token.Span?
++    for decl in decls
++        bound = runtime_bound.bound(decl)
++        head = layer_header.head_of(decl)
++
++        if !bound.is_err() && !head.header.is_err() && source.span_text(s, bound.must()) == name
++            return head.header
++
++    return fail(code: "none", msg: "no group binds it")
++
++# The header string of the first group whose header is no layer's by its name.
++function first_own_group(s: source.Source, decls: [ast.Decl]) -> token.Span?
++    for decl in decls
++        head = layer_header.head_of(decl)
++
++        if !head.header.is_err() && !layer_header.names_layer(emit_externs.unquoted(s, span: head.header.must()))
++            return head.header
++
++    return fail(code: "none", msg: "no group of the program's own")
++
++# Each name in the runtime's own forms a header of the layer declares, with
++# the first such header's path in the runtime's folder: the layer's headers
++# are the files `runtime.c` names that `layer_path` calls the layer's.
++function declared_names(runtime: str) -> {str: str}
++    out: {str: str} @= {}
++    files = runtime_key.made_of(runtime)
++
++    if files.is_err()
++        return out
++
++    for path in files.must()
++        inside = layer_path(runtime: runtime, path: path)
++
++        if inside.len() < 3 || inside.slice(from: inside.len() - 2, to: inside.len()) != ".h"
++            continue
++        text = reading.text_of(path)
++
++        if text.is_err()
++            continue
++        words = c_words.used(text.must())
++
++        # ORDER: none — each name keeps the first header in `made_of`'s order,
++        # the order `runtime.c` writes, whatever order `keys` gives.
++        for word in keys(words)
++            if own_names.reserved(word) && out[word].is_err()
++                out[word] @ inside
++
++    return out
++
++## Tests
++
++# **The rule a group's string obeys is the runtime's own list**: every file
++# `runtime.c` names in the block its preprocessor never reads is the layer's
++# by `layer_path`, the members, their headers and what a member compiles
++# inside itself; and every header the runtime ships whose name the rule calls
++# the layer's is named in that block, but the five `platform/hero_layer_*.h`
++# the runtime's own unit includes as well, which the rule calls the layer's in
++# the loud direction. The runtime's own headers, `hero_os.h`, `hero_compiler.h`
++# and `heroes_*.h`, are none of it.
++test "the rule names the layer's files exactly as the runtime's never-read block does (panel 260)"
++    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
++    text = reading.text_of(t.runtime + "/runtime.c").must()
++    block: [str] @= []
++    inside: bool @= false
++
++    for line in deps.lines(text)
++        if line == "#if 0"
++            inside @ true
++        else if line == "#endif"
++            inside @ false
++        else if inside && line.len() > 11 && line.slice(from: 0, to: 10) == "#include \""
++            block @ block.push(line.slice(from: 10, to: line.len() - 1))
++
++    assert block.len() > 0
++
++    for name in block
++        assert layer_path(runtime: t.runtime, path: t.runtime + "/" + name) == name
++
++    for member in runtime_key.layer_members(t.runtime).must()
++        assert layer_path(runtime: t.runtime, path: member).len() > 0
++
++    for path in runtime_key.made_of(t.runtime).must()
++        inside_path = layer_path(runtime: t.runtime, path: path)
++
++        if inside_path.len() > 0 && !has(block, name: inside_path)
++            assert inside_path.len() > 19 && inside_path.slice(from: 0, to: 19) == "platform/hero_layer"
++
++    for own in ["hero_os.h", "hero_compiler.h", "heroes_runtime.h", "heroes_unit.h", "heroes_standard.h"]
++        assert layer_path(runtime: t.runtime, path: t.runtime + "/" + own) == ""
++
++    assert layer_path(runtime: t.runtime, path: "elsewhere/hero_time.h") == ""
++
++test "a name the layer's headers declare is found with its header, and one of the runtime's own is not (panel 260)"
++    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
++    names = declared_names(t.runtime)
++    assert names["hero_time_monotonic_ns"].must() == "hero_time.h"
++    assert names["hero_net_stop_asked"].must() == "hero_net.h"
++    assert names["hero_args_set"].is_err()
++    assert names["printf"].is_err()
++
++function has(list: [str], name: str) -> bool
++    for one in list
++        if one == name
++            return true
++
++    return false
+diff --git a/tests/golden/check/layer-a-group-naming-the-layers-header-says-layer.expected b/tests/golden/check/layer-a-group-naming-the-layers-header-says-layer.expected
+new file mode 100644
+index 000000000..ad93cc845
+--- /dev/null
++++ b/tests/golden/check/layer-a-group-naming-the-layers-header-says-layer.expected
+@@ -0,0 +1,3 @@
++tests/golden/check/layer-a-group-naming-the-layers-header-says-layer.hero:10:8: error[ffi_layer_undeclared]: `hero_time.h` is the platform layer's header, and this group does not say `layer`: write `extern "hero_time.h" layer`
++tests/golden/check/layer-a-group-naming-the-layers-header-says-layer.hero:13:8: error[ffi_layer_undeclared]: `./hero_net.h` is the platform layer's header, and this group does not say `layer`: write `extern "./hero_net.h" layer`
++tests/golden/check/layer-a-group-naming-the-layers-header-says-layer.hero:16:8: error[ffi_layer_undeclared]: `platform/hero_audio_arm.h` is the platform layer's header, and this group does not say `layer`: write `extern "platform/hero_audio_arm.h" layer`
+diff --git a/tests/golden/check/layer-a-group-naming-the-layers-header-says-layer.fixed b/tests/golden/check/layer-a-group-naming-the-layers-header-says-layer.fixed
+new file mode 100644
+index 000000000..7dde4acfb
+--- /dev/null
++++ b/tests/golden/check/layer-a-group-naming-the-layers-header-says-layer.fixed
+@@ -0,0 +1,30 @@
++# Panel 260 (provisional, author ratification pending): the platform layer is
++# linked only into a program one of whose groups says `layer`, so a group
++# naming one of the layer's headers without the word is refused at its own
++# string, at `check`, where the package's writer runs it. The layer's headers
++# are `hero_<word>.h` but the runtime's own `hero_os.h` and `hero_compiler.h`,
++# and `platform/hero_<word>.h`; each fix inserts the word after the header,
++# and the program it writes builds with the layer on its link. A group naming
++# `hero_os.h`, and one that says the word, are not told.
++
++extern "hero_time.h" layer  #~ ffi_layer_undeclared
++    function hero_time_monotonic_ns() -> i64
++
++extern "./hero_net.h" layer  #~ ffi_layer_undeclared
++    constant HERO_NET_INVALID: i64
++
++extern "platform/hero_audio_arm.h" layer  #~ ffi_layer_undeclared
++    function hero_audio_arm_permission(limit_ns: i64) -> i64
++
++extern "hero_poll.h" layer
++    function hero_poll_last_error() -> i64
++
++extern "hero_os.h"
++    function hero_os_pid() -> i64
++
++function main()
++    print(hero_time_monotonic_ns() > 0)
++    print(HERO_NET_INVALID)
++    print(hero_audio_arm_permission(limit_ns: 0) == 12345)
++    print(hero_poll_last_error() >= 0)
++    print(hero_os_pid() > 0)
+diff --git a/tests/golden/check/layer-a-group-naming-the-layers-header-says-layer.hero b/tests/golden/check/layer-a-group-naming-the-layers-header-says-layer.hero
+new file mode 100644
+index 000000000..a011204ee
+--- /dev/null
++++ b/tests/golden/check/layer-a-group-naming-the-layers-header-says-layer.hero
+@@ -0,0 +1,30 @@
++# Panel 260 (provisional, author ratification pending): the platform layer is
++# linked only into a program one of whose groups says `layer`, so a group
++# naming one of the layer's headers without the word is refused at its own
++# string, at `check`, where the package's writer runs it. The layer's headers
++# are `hero_<word>.h` but the runtime's own `hero_os.h` and `hero_compiler.h`,
++# and `platform/hero_<word>.h`; each fix inserts the word after the header,
++# and the program it writes builds with the layer on its link. A group naming
++# `hero_os.h`, and one that says the word, are not told.
++
++extern "hero_time.h"  #~ ffi_layer_undeclared
++    function hero_time_monotonic_ns() -> i64
++
++extern "./hero_net.h"  #~ ffi_layer_undeclared
++    constant HERO_NET_INVALID: i64
++
++extern "platform/hero_audio_arm.h"  #~ ffi_layer_undeclared
++    function hero_audio_arm_permission(limit_ns: i64) -> i64
++
++extern "hero_poll.h" layer
++    function hero_poll_last_error() -> i64
++
++extern "hero_os.h"
++    function hero_os_pid() -> i64
++
++function main()
++    print(hero_time_monotonic_ns() > 0)
++    print(HERO_NET_INVALID)
++    print(hero_audio_arm_permission(limit_ns: 0) == 12345)
++    print(hero_poll_last_error() >= 0)
++    print(hero_os_pid() > 0)
+diff --git a/tests/golden/unsupported/layer-a-group-saying-layer-whose-header-reaches-none-of-it.expected b/tests/golden/unsupported/layer-a-group-saying-layer-whose-header-reaches-none-of-it.expected
+new file mode 100644
+index 000000000..a18ddc83e
+--- /dev/null
++++ b/tests/golden/unsupported/layer-a-group-saying-layer-whose-header-reaches-none-of-it.expected
+@@ -0,0 +1,7 @@
++error[ffi_layer_unreached]: this group says `layer`, and `layer-a-group-saying-layer-whose-header-reaches-none-of-it.h` is none of the platform layer's headers and includes none of them, so nothing it binds is the layer's: take the word out, or name the layer's header that declares what this group binds
++  at tests/golden/unsupported/layer-a-group-saying-layer-whose-header-reaches-none-of-it.hero:7:71
++    |
++  7 | extern "layer-a-group-saying-layer-whose-header-reaches-none-of-it.h" layer  #~ ffi_layer_unreached
++    |                                                                       ^^^^^
++  note: the platform layer's members are compiled and linked only for a program whose groups say `layer`; a program none of whose groups says it links nothing of the layer, so its build asks nothing of it; a word that binds nothing makes every program reaching this group pay for the layer
++  fix (certain): take `layer` out
+diff --git a/tests/golden/unsupported/layer-a-group-saying-layer-whose-header-reaches-none-of-it.h b/tests/golden/unsupported/layer-a-group-saying-layer-whose-header-reaches-none-of-it.h
+new file mode 100644
+index 000000000..adebc4cd4
+--- /dev/null
++++ b/tests/golden/unsupported/layer-a-group-saying-layer-whose-header-reaches-none-of-it.h
+@@ -0,0 +1,3 @@
++#include <stdint.h>
++
++static inline int64_t answer(void) { return 42; }
+diff --git a/tests/golden/unsupported/layer-a-group-saying-layer-whose-header-reaches-none-of-it.hero b/tests/golden/unsupported/layer-a-group-saying-layer-whose-header-reaches-none-of-it.hero
+new file mode 100644
+index 000000000..cb909b6ab
+--- /dev/null
++++ b/tests/golden/unsupported/layer-a-group-saying-layer-whose-header-reaches-none-of-it.hero
+@@ -0,0 +1,11 @@
++# Panel 260 (provisional, author ratification pending): a group that says
++# `layer` and whose header is none of the platform layer's and includes none of
++# them binds nothing of the layer, and would make every program reaching it
++# compile and link the layer for nothing: refused at the word, told at `build`,
++# which follows the header's includes. The fix takes the word out.
++
++extern "layer-a-group-saying-layer-whose-header-reaches-none-of-it.h" layer  #~ ffi_layer_unreached
++    function answer() -> i64
++
++function main()
++    print(answer())
+diff --git a/tests/golden/unsupported/layer-a-header-of-the-programs-own-reaching-the-layer-says-layer-below.h b/tests/golden/unsupported/layer-a-header-of-the-programs-own-reaching-the-layer-says-layer-below.h
+new file mode 100644
+index 000000000..8da8d7dfe
+--- /dev/null
++++ b/tests/golden/unsupported/layer-a-header-of-the-programs-own-reaching-the-layer-says-layer-below.h
+@@ -0,0 +1,2 @@
++#include <stdint.h>
++#include "hero_time.h"
+diff --git a/tests/golden/unsupported/layer-a-header-of-the-programs-own-reaching-the-layer-says-layer.expected b/tests/golden/unsupported/layer-a-header-of-the-programs-own-reaching-the-layer-says-layer.expected
+new file mode 100644
+index 000000000..9071ac460
+--- /dev/null
++++ b/tests/golden/unsupported/layer-a-header-of-the-programs-own-reaching-the-layer-says-layer.expected
+@@ -0,0 +1,7 @@
++error[ffi_layer_undeclared]: `layer-a-header-of-the-programs-own-reaching-the-layer-says-layer.h` reaches the platform layer's `hero_time.h`, and this group does not say `layer`: write `extern "layer-a-header-of-the-programs-own-reaching-the-layer-says-layer.h" layer`
++  at tests/golden/unsupported/layer-a-header-of-the-programs-own-reaching-the-layer-says-layer.hero:7:8
++    |
++  7 | extern "layer-a-header-of-the-programs-own-reaching-the-layer-says-layer.h"  #~ ffi_layer_undeclared
++    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++  note: the platform layer's members are compiled and linked only for a program whose groups say `layer`; a program none of whose groups says it links nothing of the layer, so its build asks nothing of it
++  fix (certain): say `layer` after the header
+diff --git a/tests/golden/unsupported/layer-a-header-of-the-programs-own-reaching-the-layer-says-layer.h b/tests/golden/unsupported/layer-a-header-of-the-programs-own-reaching-the-layer-says-layer.h
+new file mode 100644
+index 000000000..d88c3870f
+--- /dev/null
++++ b/tests/golden/unsupported/layer-a-header-of-the-programs-own-reaching-the-layer-says-layer.h
+@@ -0,0 +1,5 @@
++/* A header of the program's own: it reaches the platform layer's clock two
++   includes down, through the header beside it. */
++#include "layer-a-header-of-the-programs-own-reaching-the-layer-says-layer-below.h"
++
++static inline int64_t ticks_twice(void) { return 2 * hero_time_monotonic_ns(); }
+diff --git a/tests/golden/unsupported/layer-a-header-of-the-programs-own-reaching-the-layer-says-layer.hero b/tests/golden/unsupported/layer-a-header-of-the-programs-own-reaching-the-layer-says-layer.hero
+new file mode 100644
+index 000000000..1d499ad6e
+--- /dev/null
++++ b/tests/golden/unsupported/layer-a-header-of-the-programs-own-reaching-the-layer-says-layer.hero
+@@ -0,0 +1,11 @@
++# Panel 260 (provisional, author ratification pending): a group whose header
++# is the program's own and reaches the platform layer's, here two includes
++# down, says `layer`, told at `build`, which follows every include of a
++# group's header before its first clang (`cli/include_stands.hero`): `check`
++# reads the group's string alone and cannot see it. The fix inserts the word.
++
++extern "layer-a-header-of-the-programs-own-reaching-the-layer-says-layer.h"  #~ ffi_layer_undeclared
++    function ticks_twice() -> i64
++
++function main()
++    print(ticks_twice() > 0)
+diff --git a/tests/golden/unsupported/layer-a-layer-function-declared-by-the-programs-own-header-beside-a-group-saying-layer.expected b/tests/golden/unsupported/layer-a-layer-function-declared-by-the-programs-own-header-beside-a-group-saying-layer.expected
+new file mode 100644
+index 000000000..8637d7652
+--- /dev/null
++++ b/tests/golden/unsupported/layer-a-layer-function-declared-by-the-programs-own-header-beside-a-group-saying-layer.expected
+@@ -0,0 +1,6 @@
++error[ffi_layer_redeclared]: `hero_time_monotonic_ns` is the platform layer's, declared by its `hero_time.h`, and this group binds it through `layer-a-layer-function-declared-by-the-programs-own-header-beside-a-group-saying-layer.h`, which includes none of the layer's headers: name `hero_time.h` in the group, or include it in `layer-a-layer-function-declared-by-the-programs-own-header-beside-a-group-saying-layer.h`
++  at tests/golden/unsupported/layer-a-layer-function-declared-by-the-programs-own-header-beside-a-group-saying-layer.hero:7:14
++    |
++  7 |     function hero_time_monotonic_ns() -> i64  #~ ffi_layer_redeclared
++    |              ^^^^^^^^^^^^^^^^^^^^^^
++  note: clang checks a binding against the header its group names, so a function of the layer's declared by the program itself is checked against nothing the layer wrote: a parameter or a result of another width there is a call the layer reads otherwise
+diff --git a/tests/golden/unsupported/layer-a-layer-function-declared-by-the-programs-own-header-beside-a-group-saying-layer.h b/tests/golden/unsupported/layer-a-layer-function-declared-by-the-programs-own-header-beside-a-group-saying-layer.h
+new file mode 100644
+index 000000000..e3b1f6629
+--- /dev/null
++++ b/tests/golden/unsupported/layer-a-layer-function-declared-by-the-programs-own-header-beside-a-group-saying-layer.h
+@@ -0,0 +1,3 @@
++#include <stdint.h>
++
++int64_t hero_time_monotonic_ns(void);
+diff --git a/tests/golden/unsupported/layer-a-layer-function-declared-by-the-programs-own-header-beside-a-group-saying-layer.hero b/tests/golden/unsupported/layer-a-layer-function-declared-by-the-programs-own-header-beside-a-group-saying-layer.hero
+new file mode 100644
+index 000000000..c246a3a15
+--- /dev/null
++++ b/tests/golden/unsupported/layer-a-layer-function-declared-by-the-programs-own-header-beside-a-group-saying-layer.hero
+@@ -0,0 +1,11 @@
++# Panel 260, the residue: one group says `layer` (the sockets' constant), and another, saying nothing, binds the
++# layer's clock through a header of the program's own that declares it and includes none of the layer's headers.
++extern "hero_net.h" layer
++    constant HERO_NET_INVALID: i64
++
++extern "layer-a-layer-function-declared-by-the-programs-own-header-beside-a-group-saying-layer.h"
++    function hero_time_monotonic_ns() -> i64  #~ ffi_layer_redeclared
++
++function main()
++    print(HERO_NET_INVALID)
++    print(hero_time_monotonic_ns() > 0)
+diff --git a/tests/golden/unsupported/layer-a-name-of-the-layers-declared-by-a-header-of-the-programs-own.expected b/tests/golden/unsupported/layer-a-name-of-the-layers-declared-by-a-header-of-the-programs-own.expected
+new file mode 100644
+index 000000000..23e1d76da
+--- /dev/null
++++ b/tests/golden/unsupported/layer-a-name-of-the-layers-declared-by-a-header-of-the-programs-own.expected
+@@ -0,0 +1,8 @@
++error[ffi_layer_undeclared]: `hero_time_monotonic_ns` is the platform layer's, declared by its `hero_time.h`, and this group binds it through a header that includes none of the layer's, so no group of this program says `layer` and its link carries none of the layer: name `hero_time.h` in this group, or include it in the group's header, and say `layer` after the header
++  at tests/golden/unsupported/layer-a-name-of-the-layers-declared-by-a-header-of-the-programs-own.hero:9:8
++    |
++  9 | extern "layer-a-name-of-the-layers-declared-by-a-header-of-the-programs-own.h"  #~ ffi_layer_undeclared
++    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++  note: the platform layer's members are compiled and linked only for a program whose groups say `layer`; a program none of whose groups says it links nothing of the layer, so its build asks nothing of it
++  note: clang checks a binding against the header its group names, so a function of the layer's declared by the program itself is checked against nothing the layer wrote: a parameter or a result of another width there is a call the layer reads otherwise
++  fix (guess): name the layer's header and say `layer`
+diff --git a/tests/golden/unsupported/layer-a-name-of-the-layers-declared-by-a-header-of-the-programs-own.h b/tests/golden/unsupported/layer-a-name-of-the-layers-declared-by-a-header-of-the-programs-own.h
+new file mode 100644
+index 000000000..b4df68bf1
+--- /dev/null
++++ b/tests/golden/unsupported/layer-a-name-of-the-layers-declared-by-a-header-of-the-programs-own.h
+@@ -0,0 +1,5 @@
++#include <stdint.h>
++
++/* The layer's clock, declared here by the program itself rather than through
++   the layer's `hero_time.h`. */
++int64_t hero_time_monotonic_ns(void);
+diff --git a/tests/golden/unsupported/layer-a-name-of-the-layers-declared-by-a-header-of-the-programs-own.hero b/tests/golden/unsupported/layer-a-name-of-the-layers-declared-by-a-header-of-the-programs-own.hero
+new file mode 100644
+index 000000000..7c73eb0c5
+--- /dev/null
++++ b/tests/golden/unsupported/layer-a-name-of-the-layers-declared-by-a-header-of-the-programs-own.hero
+@@ -0,0 +1,13 @@
++# Panel 260 (provisional, author ratification pending): a group binding a
++# function of the platform layer through a header of the program's own that
++# declares it and includes none of the layer's headers. No group says
++# `layer`, so the link carries none of the layer and misses the name; told at
++# the group, before every other reader of a refused link, never as `internal
++# error: linking failed` and never as a library no group names. The fix names
++# the layer's header, which declares the function, and says the word.
++
++extern "layer-a-name-of-the-layers-declared-by-a-header-of-the-programs-own.h"  #~ ffi_layer_undeclared
++    function hero_time_monotonic_ns() -> i64
++
++function main()
++    print(hero_time_monotonic_ns() > 0)

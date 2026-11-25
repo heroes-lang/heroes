@@ -1,0 +1,5 @@
+# t1 reference at c3885b81b, sources 41f32a8f4b745c0c, this Mac, 11:50:11
+w1 build exit=0 note: the package `ticks` is read from the folder `ticks/`, a `path` entry of the catalogue: unverified, no fingerprint holds it run exit=0 prints: true 
+w2 build exit=0 note: the package `ident` is read from the folder `ident/`, a `path` entry of the catalogue: unverified, no fingerprint holds it run exit=0 prints: true 
+w3 build exit=0 wrote bin run exit=0 prints: stop asked: false 
+w4 build exit=0 wrote bin run exit=0 prints: handed: 0 

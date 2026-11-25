@@ -1,0 +1,26 @@
+Wed Nov 25 17:55:02 CET 2026
+  run (only the-platform-layer): 16 passed, 2 failed
+FAIL run/the-platform-layer-never-takes-a-connect-that-failed-between-its-two-looks-for-one-made
+  did not build (exit 1):
+error[ffi_layer_undeclared]: `the-platform-layer-connect-order.h` reaches the platform layer's `platform/hero_net.c`, and this group does not say `layer`: write `extern "the-platform-layer-connect-order.h" layer`
+  at tests/golden/run/the-platform-layer-never-takes-a-connect-that-failed-between-its-two-looks-for-one-made.hero:17:8
+     |
+  17 | extern "the-platform-layer-connect-order.h"
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: the platform layer's members are compiled and linked only for a program whose groups say `layer`; a program none of whose groups says it links nothing of the layer, so its build asks nothing of it
+  fix (certain): say `layer` after the header
+
+FAIL run/the-platform-layer-is-reached-from-a-fetched-packages-group
+  did not build (exit 1):
+error[package_unread]: `<stopwatch>` cannot be read: the tree placed at `tests/golden/run/the-platform-layer-is-reached-from-a-fetched-packages-group.case/heroes.packages/stopwatch@1.0.0-d9946aad55e71455/` is `sha256-8a825e07efd350a6f4c9163794ae6bb05966754a68b8dec086c124938f026792`, and the catalogue's `sum` for it is `sha256-2ed7d1c7edbf3c9c814ac4d62d9dac3f0fe8c9d33debbecbabbdbe650f42c8ab`: a file of it was changed, added or taken out since it was placed — move it out of `heroes.packages/` to keep the change, or remove it, and `heroes fetch` places it again
+  at tests/golden/run/the-platform-layer-is-reached-from-a-fetched-packages-group.case/main.hero:6:5
+    |
+  6 | use <stopwatch>/stopwatch
+    |     ^^^^^^^^^^^^^^^^^^^^^
+
+harness: 16 passed, 2 failed
+real 1166.95
+user 400.69
+sys 156.43
+exit=1
+Wed Nov 25 18:14:29 CET 2026

@@ -1,0 +1,10 @@
+# base-ffi asis /x/base/heroes levels[plain] 17:23:39 load 2.07 2.70 3.33
+linklib/main.hero plain exit=1 | error[ffi_missing_link]: the library `now` needs `hero_time_monotonic_ns`, and nothing on the link line defines it | ran:  | members: none
+linklibhdr/main.hero plain exit=0 |  | ran: true|true| | members: time 5, 
+owndeclwrong/main.hero plain exit=0 |  | ran: 1.26e-321| | members: time 5, 
+owndeclswift/main.hero plain exit=0 |  | ran: 0| | members: crypto 27, 
+linklib/main.hero check exit=0 |  || emit-c exit=0 | 
+linklibhdr/main.hero check exit=0 |  || emit-c exit=0 | 
+owndeclwrong/main.hero check exit=0 |  || emit-c exit=0 | 
+owndeclswift/main.hero check exit=0 |  || emit-c exit=0 | 
+# layer archives under this variant: 4; done 17:24:51

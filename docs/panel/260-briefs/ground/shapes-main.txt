@@ -1,0 +1,22 @@
+# main /Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/panel260-scratch/main-o2/heroes 10:32:27 load { 126.29 130.27 128.29 }
+print.hero exit=0 
+clock.hero exit=0 
+audio.hero exit=0 
+ui.hero exit=0 
+usemod/main.hero exit=0 
+ownhdr/main.hero exit=0 
+owndecl/main.hero exit=0 
+rebel/reach_hero_time.hero exit=0 
+rebel/reach_hero_audio.hero exit=0 
+rebel/reach_hero_net.hero exit=0 
+fixedbugs-2502-a-close-wakes-a-waiting-call-at-once.hero exit=0 
+fixedbugs-2502-one-poller-tells-many-waiting-calls.hero exit=0 
+fixedbugs-2554-a-closed-listener-lets-its-port-go.hero exit=0 
+fixedbugs-2667-a-port-a-pseudo-terminal-and-a-channel-join-a-poll-set.hero exit=0 
+fixedbugs-2673-a-lock-is-not-released-by-the-thread-after-its-holder.hero exit=0 
+fixedbugs-2696-a-strangers-datagram-never-stops-a-wait.hero exit=0 
+poll-a-sets-descriptor-is-readable-while-a-mailbox-holds-a-value.hero exit=0 
+the-platform-layer-ends-a-call-its-socket-closes.hero exit=0 
+the-platform-layer-tells-a-socket-it-does-not-hold.hero exit=0 
+the-signal-door-wakes-a-readiness-set-and-a-wait-for-a-child.hero exit=0 
+# done 10:35:51

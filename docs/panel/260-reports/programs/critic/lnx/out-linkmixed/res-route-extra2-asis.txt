@@ -1,0 +1,4 @@
+# route-extra2 asis /x/mine/heroes levels[plain] 20:58:35 load 5.13 4.90 4.43
+linkmixed/main.hero plain exit=1 | error[ffi_missing_link]: the library `now` needs `hero_time_monotonic_ns`, and nothing on the link line defines it | ran:  | members: none
+linkmixed/main.hero check exit=0 |  || emit-c exit=0 | 
+# layer archives under this variant: 1; done 21:13:57
