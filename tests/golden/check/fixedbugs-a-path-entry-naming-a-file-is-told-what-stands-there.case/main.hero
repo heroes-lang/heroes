@@ -1,0 +1,9 @@
+# Defect d-lane-blocking-small-1, beside it (2026-11-25): a `path` entry
+# naming a file was told *the folder ... its `path` names is not there*, the
+# folder named by the program's folder joined to the path, while a file stood
+# at the path written. It is told by the path as the catalogue writes it, from
+# the program's folder, and by what stands there.
+use <json>/parse  #~ package_unread
+
+function main()
+    print(parse.x().to_str())

@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-a-path-entry-naming-a-file-is-told-what-stands-there.case/main.hero:6:5: error[package_unread]: `<json>` cannot be read: its `path` names the folder `vendor/json` from the program's folder `tests/golden/check/fixedbugs-a-path-entry-naming-a-file-is-told-what-stands-there.case/`, and a file stands there, where a package's folder is read
