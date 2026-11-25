@@ -1,0 +1,20 @@
+# Fixed 2026-11-25, defect d-lane-d2745-1's class, lane-ctx-after: a save point fills a `jmp_buf`
+# in a static page made unreadable with `mprotect` right after it returns, the program never jumps
+# to it, and another save point and a signal's handler follow. Correct C.
+# Symptom: built with `HERO_JMP_FORCE_UNCALIBRATED` 3, the runtime faulted at the next save point,
+# SIGSEGV on Linux arm64 (exit 139) and a Bus error on this Mac (exit 138).
+# Cause: route A, the record the runtime keeps of the save points where the C library's layout
+# does not verify, fingerprints a buffer saved before at the next save point and at a handler's
+# begin, wherever the buffer lies in memory that provably lives (the thread's stack, an image
+# loaded before `main`, the alternate stack), reading it by a load of its own: memory that
+# lives can still be made unreadable.
+# Fix: the fingerprint's bytes are copied by the kernel (`process_vm_readv` on Linux,
+# `mach_vm_read_overwrite` on Darwin), and a copy refused is a buffer read as unreadable, never a
+# fault. Route A is not this platform's route on the CI's legs, so the forced builds
+# (`HERO_JMP_FORCE_UNCALIBRATED` 3) are run apart (a golden carries no define); this case holds
+# what both routes must say.
+extern "fixedbugs-a-saved-buffer-made-unreadable-before-the-next-save.h"
+    function ur_run(how: i32) -> i64
+
+function main()
+    print("ur_0: ", ur_run(how: 0))

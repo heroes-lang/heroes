@@ -63,18 +63,31 @@ static HeroRebindRecord *hero_rebind_probe(size_t home, int i) {
     return &hero_rebind_records[(home + (size_t)i) & (HERO_REBIND_RECORDS - 1)];
 }
 
-/* A fingerprint read only of a buffer that provably lives (rule 3). A machine
- * read of a mapped stack, never a program's access, so not instrumented by
- * AddressSanitizer: a returned frame's bytes may sit under a later frame's
+/* A fingerprint read only of a buffer that provably lives (rule 3), into
+ * `*print`; false where it could not be read. The bytes are copied by the
+ * kernel (`mach_vm_read_overwrite` of this task), never loaded by this thread:
+ * memory that provably lives may still have been made unreadable by the
+ * program since the save (a static page `mprotect`ed to none: a Bus error at
+ * the next save point, measured with `HERO_JMP_FORCE_UNCALIBRATED` 3 on this
+ * Mac, defect d-lane-d2745-1's class), and a copy the kernel refuses is an
+ * answer, never a fault. Nor is it a program's access, so AddressSanitizer
+ * does not see it: a returned frame's bytes may sit under a later frame's
  * redzone. */
-__attribute__((no_sanitize("address"))) static uint64_t hero_rebind_fingerprint(const void *buf) {
-    const unsigned char *p = (const unsigned char *)buf;
+static bool hero_rebind_fingerprint(const void *buf, uint64_t *print) {
+    unsigned char copy[HERO_REBIND_PRINT_BYTES];
+    mach_vm_size_t got = 0;
+    if (mach_vm_read_overwrite(mach_task_self(), (mach_vm_address_t)(uintptr_t)buf, sizeof copy,
+                               (mach_vm_address_t)(uintptr_t)copy, &got) != KERN_SUCCESS ||
+        got != sizeof copy) {
+        return false;
+    }
     uint64_t h = UINT64_C(1469598103934665603);
-    for (int i = 0; i < HERO_REBIND_PRINT_BYTES; i += 1) {
-        h ^= p[i];
+    for (size_t i = 0; i < sizeof copy; i += 1) {
+        h ^= copy[i];
         h *= UINT64_C(1099511628211);
     }
-    return h;
+    *print = h;
+    return true;
 }
 
 static void hero_rebind_write(HeroRebindRecord *r, uintptr_t was, uintptr_t buf, uintptr_t thread, uint64_t entry,
@@ -150,11 +163,12 @@ static void hero_rebind_settle(void) {
     pthread_setspecific(key, NULL);
     HeroRebindRecord *r = hero_rebind_record(buf);
     if (r == NULL) return;
-    if (!hero_rebind_lives(buf, HERO_REBIND_PRINT_BYTES)) {
+    uint64_t print = 0;
+    if (!hero_rebind_lives(buf, HERO_REBIND_PRINT_BYTES) || !hero_rebind_fingerprint(buf, &print)) {
         atomic_store(&r->printed, 2);
         return;
     }
-    atomic_store(&r->print, hero_rebind_fingerprint(buf));
+    atomic_store(&r->print, print);
     atomic_store(&r->printed, 1);
 }
 
@@ -244,7 +258,9 @@ static bool hero_rebind_target(HeroSignalStack *own, const void *buf, uintptr_t 
     HeroRebindRecord *r = hero_rebind_record(buf);
     uintptr_t b = (uintptr_t)buf;
     int printed = r != NULL ? atomic_load(&r->printed) : 0;
-    bool trusted = r != NULL && printed != 2 && !(printed == 1 && atomic_load(&r->print) != hero_rebind_fingerprint(buf));
+    uint64_t now = 0;
+    bool trusted = r != NULL && printed != 2 &&
+                   !(printed == 1 && (!hero_rebind_fingerprint(buf, &now) || atomic_load(&r->print) != now));
     uint64_t entry = trusted ? atomic_load(&r->entry) : 0;
     uintptr_t frame = trusted ? atomic_load(&r->sp) : 0;
     if (!trusted || frame == 0 || atomic_load_explicit(&r->buf, memory_order_acquire) != b) return false;

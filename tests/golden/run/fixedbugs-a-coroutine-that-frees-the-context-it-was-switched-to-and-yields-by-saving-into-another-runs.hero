@@ -1,0 +1,18 @@
+# Fixed 2026-11-25, defect d-lane-d2745-1, lane-ctx-after: a coroutine frees the heap block
+# holding the context the runner switched to it with, then yields by a `swapcontext` that saves
+# into another context, which the runner never resumes.
+# Correct C: nothing reads the context again.
+# Symptom: before, the runtime read the freed block once the switch had returned: exit 0 plain,
+# and under `--sanitize` a heap-use-after-free in `hero_rebind_swapcontext` on this Mac (and on
+# Linux arm64 in `swapcontext`).
+# Cause: to learn whether the coroutine had ended, the runtime compared the stack pointer in the
+# context switched to with the one it held before the switch, reading a buffer the program may
+# have given back by then.
+# Fix: the context is read after the switch only where it provably lives, and by the kernel; a
+# coroutine is judged ended where its swap returns, no `swapcontext` or `setcontext` was made from
+# its stack since the swap began, and that context did not move.
+extern "fixedbugs-a-coroutine-gives-back-the-context-it-was-switched-to.h"
+    function gb_run(ends: i32, how: i32) -> i64
+
+function main()
+    print("gb_0_1: ", gb_run(ends: 0, how: 1))

@@ -50,6 +50,15 @@ static uintptr_t hero_jmp_context_sp(const ucontext_t *uc) {
 #endif
 }
 
+/* Where that word lies, computed and never read. */
+static uintptr_t hero_jmp_context_sp_at(const ucontext_t *uc) {
+#if defined(__aarch64__)
+    return (uintptr_t)&uc->uc_mcontext.sp;
+#else
+    return (uintptr_t)&uc->uc_mcontext.gregs[REG_RSP];
+#endif
+}
+
 /* What the calibration has taken and verified so far, and where a context
  * `swapcontext`'s probe goes to may run. */
 typedef struct {
@@ -177,6 +186,10 @@ static uintptr_t hero_jmp_sp_of(const struct __jmp_buf_tag *env) {
     return 0;
 }
 static uintptr_t hero_jmp_context_sp(const ucontext_t *uc) {
+    (void)uc;
+    return 0;
+}
+static uintptr_t hero_jmp_context_sp_at(const ucontext_t *uc) {
     (void)uc;
     return 0;
 }

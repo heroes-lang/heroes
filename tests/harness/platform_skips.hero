@@ -146,6 +146,9 @@ constant SYSV_SWITCH_ON_WINDOWS: str
 constant DOORS_BY_NAME_ON_WINDOWS: str
     "`dlfcn.h`, `dlsym` and the context functions are POSIX's, and the Windows target's C library has no `dlfcn.h`, so the case's header, which asks the names the runtime defines or rewrites of every door by name, is refused at its `#include <dlfcn.h>` (`zig cc` 0.15.2 for x86_64-windows-gnu and aarch64-windows-gnu on this Mac, 2026-11-25, each case's unit as the compiler emits it, under `-I runtime` and the case's folder; MSVC's headers, the CI's Windows target, unrun), and it is built nowhere there; Windows's door by name is `GetProcAddress`, and the runtime defines none of the C runtime's names there, so the `longjmp` or `setjmp` it hands out is the one a call by name reaches (read, unrun; defect d-p259-clerk-1)"
 
+constant POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS: str
+    "the case's header binds POSIX's `mmap`, `munmap`, `mprotect`, `sigaltstack` or `ucontext_t` and its functions, none of C11's (C11 7.13 and 7.14 hold `setjmp` and `signal` alone, read), and the Windows target's C refuses it at `sys/mman.h` or `ucontext.h` not found (`zig cc` 0.15.2 for x86_64-windows-gnu and aarch64-windows-gnu on this Mac, 2026-11-25, the header compiled alone; MSVC's headers, the CI's Windows target, unrun), so it is built nowhere there; what it asks of the runtime is the POSIX route's (defect d-lane-d2745-1, lane ctx-after)"
+
 # The cases and rows whose shape Windows cannot hold, by the name the report
 # gives them: each builds there, or is refused there in other words, so only
 # the forms that judge what it does skip it (every `run` case here was built,
@@ -326,6 +329,17 @@ function unbuildable_on_windows() -> [Skip]
         Skip(name: "tests/golden/run/fixedbugs-coroutines-on-carved-stacks-made-by-a-makecontext-the-dlsym-of-dlsym-found-leave-its-large-value-alone.hero", why: DOORS_BY_NAME_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-coroutines-on-carved-stacks-made-by-a-makecontext-the-systems-other-lookup-found-leave-its-large-value-alone.hero", why: DOORS_BY_NAME_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-every-name-the-runtime-defines-in-place-of-the-c-librarys-is-answered-by-every-door.hero", why: DOORS_BY_NAME_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-a-coroutine-that-unmaps-the-context-it-was-switched-to-and-yields-by-saving-into-another-runs.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-a-coroutine-that-frees-the-context-it-was-switched-to-and-yields-by-saving-into-another-runs.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-a-coroutine-that-makes-the-context-it-was-switched-to-unreadable-and-yields-by-saving-into-another-runs.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-a-coroutine-that-unmaps-the-context-it-was-switched-to-and-ends-through-uc-link-runs.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-a-coroutine-that-frees-the-context-it-was-switched-to-and-ends-through-uc-link-runs.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-a-coroutine-that-yields-by-saving-into-another-context-on-the-own-stack-is-refused-in-words-that-name-the-jump.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-a-coroutine-that-yields-by-saving-into-another-context-on-the-heap-is-refused-in-words-that-name-the-jump.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-a-jmp-buf-in-a-static-page-made-unreadable-before-the-next-save-runs.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-a-context-in-a-static-page-made-unreadable-before-the-next-save-runs.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-a-jmp-buf-in-an-alternate-stack-unmapped-while-registered-before-the-next-save-runs.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-a-context-in-an-alternate-stack-unmapped-while-registered-before-the-next-save-runs.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
     ]
 
 # Why the program at `source` is not built on this machine: one of
@@ -578,7 +592,11 @@ test "every program Windows cannot build is a file that exists, skipped there al
     # d-p259-clerk-1 (lane dlsym-make), two cases' units compiled by `zig cc`
     # 0.15.2 for both Windows targets on 2026-11-25, one of each header,
     # refused at `dlfcn.h` not found (`DOORS_BY_NAME_ON_WINDOWS`).
-    assert unbuildable_on_windows().len() == 140
+    # Then the 11 of defect d-lane-d2745-1 (lane ctx-after), whose three
+    # headers, compiled alone by `zig cc` 0.15.2 for both Windows targets on
+    # 2026-11-25, were refused at `sys/mman.h` or `ucontext.h` not found
+    # (`POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS`).
+    assert unbuildable_on_windows().len() == 151
 
     for one in unbuildable_on_windows()
         assert strings.has_prefix(s: one.name, prefix: "tests/golden/run/")
