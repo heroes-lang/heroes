@@ -209,7 +209,7 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
             deliberate: str @= ""
 
             if !slots_read[index]
-                deliberate @ "__attribute__((unused)) "
+                deliberate @ "__attribute__((__unused__)) "
 
             if invented(slot.kind)
                 nodebug.hidden(@lines, words: deliberate, spelling: spelled.must(), declared: name + initialiser)
@@ -269,7 +269,7 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
                 deliberate: str @= ""
 
                 if read[value_at].is_err()
-                    deliberate @ "__attribute__((unused)) "
+                    deliberate @ "__attribute__((__unused__)) "
 
                 # A lend rooted at a name the author may not write is
                 # `const void *`, and the temporary has to say so: declared by

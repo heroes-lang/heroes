@@ -1,3 +1,0 @@
-[dependencies.rebel]
-path = "../../packages/rebel/0.1.0/files"
-packages = ["io", "json", "json/jq", "os", "time", "toml", "yaml"]

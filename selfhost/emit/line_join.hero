@@ -119,4 +119,4 @@ test "a plain line joins a plain line, and a directive, a blank, a newline or a 
     hold(@h, text: "#pragma once")
     assert !joins(h, text: "x;")
     assert plain("x = '#'; y = a / b;")
-    assert unindented("\t  bb0:") == "bb0:"
+    assert unindented("\t  hero_bb0:") == "hero_bb0:"

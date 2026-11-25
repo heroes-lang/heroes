@@ -9,32 +9,32 @@
 # by `seed/README.md`'s line, then stage 2, this commit's source, which judges):
 #
 #   - **the `rebel` suite of the net** (`tests/harness/suite_rebel.hero`), the
-#     coherence review's instruments over `packages/rebel` and its rules page,
+#     coherence review's instruments over `rebel/library` and its rules page,
 #     its `docs` check among them: `heroes doc` over every face and every
-#     floor of Rebel, each reference read for `examples-rebel/README.md` § A7's
+#     floor of Rebel, each reference read for `rebel/examples/README.md` § A7's
 #     rules, and red where the verb refuses one (`tests/harness/rebel_docs.hero`).
 #     A step of this file's own ran `heroes doc` over every face from step 65a
 #     to step 94a, which removed it as the check's repetition;
 #   - **every package's own tests**, through the drivers
-#     `examples-rebel/reach/reach_*.hero` (the `plan` job counts them), each
+#     `rebel/examples/reach/reach_*.hero` (the `plan` job counts them), each
 #     `heroes test` plain, and on the two Linux legs also under
 #     `--sanitize`, since LeakSanitizer is there and a driver reaches the
 #     floors' C bindings (`.claude/rules/platforms.md` § Linux is where a leak
 #     in a binding is visible);
 #   - **Rebel's programs**, in a part of their own, `programs`, beside the
 #     drivers' parts and with their installs: every
-#     application of `examples-rebel/` built and its demo held to its
+#     application of `rebel/examples/` built and its demo held to its
 #     `main.expected`, every twin held to its original's, and the
 #     applications' catalogues asked for every face of Rebel, by the check of
 #     Rebel's programs (`tests/harness/rebel_apps.hero`, README § A10), a
-#     small jq among them (`examples-rebel/jq/`).
+#     small jq among them (`rebel/examples/jq/`).
 #
 # Every system library a Rebel package links or loads is installed below, on
 # the platform that lacks it (the author's decision 6 of 2026-11-19: nothing is
 # installed on the Windows box, so the CI installs it), each asked for by the
 # name the code asks and then asked to answer, so a leg meant to run a test
 # never skips it quietly. Read from the tree, never from a list: the `link`
-# lines of `packages/rebel/` (`git grep -n '^link\|link "' packages/rebel/`
+# lines of `rebel/library/` (`git grep -n '^link\|link "' rebel/library/`
 # names two, `m` and `sqlite3`), the `#pragma comment(lib)` and `.linker_option`
 # lines of `runtime/platform/` (Windows SDK libraries and macOS frameworks,
 # which every image carries), and its `dlopen` calls (OpenSSL's `libssl` and
@@ -57,7 +57,8 @@
 name: rebel
 
 on:
-  # A push to `main` touching Rebel's packages, its examples, the platform
+  # A push to `main` touching Rebel's folder `rebel/` (its library, its
+  # examples and its generators), the platform
   # layer its floors bind, or this file. A compiler change alone does not
   # start it, which is decision 7's trade: what such a change breaks in Rebel
   # is seen at the next push that touches Rebel, at the next release tag, or
@@ -69,18 +70,14 @@ on:
     # reference, read 2026-11-20), so every release tag runs this whole.
     tags: ['v*']
     paths:
-      - 'packages/rebel/**'
-      - 'examples-rebel/**'
-      - 'generators/**'
+      - 'rebel/**'
       - 'runtime/platform/**'
       - '.github/workflows/rebel.yml'
   # A pull request touching the same paths, so a change to Rebel is judged
   # before it reaches `main`. A fork's run gets a read-only token and no secret.
   pull_request:
     paths:
-      - 'packages/rebel/**'
-      - 'examples-rebel/**'
-      - 'generators/**'
+      - 'rebel/**'
       - 'runtime/platform/**'
       - '.github/workflows/rebel.yml'
   # By hand, the door for a compiler change suspected of breaking Rebel.
@@ -158,7 +155,7 @@ jobs:
       # least (`LEAST_REFERENCES`, 175 on 2026-11-21: 152 faces and 23
       # floors). That is every face the step
       # `heroes doc over every face` ran from step 65a, read through the
-      # drivers' catalogue's one `path` (`examples-rebel/reach/heroes.toml`
+      # drivers' catalogue's one `path` (`rebel/examples/reach/heroes.toml`
       # since step 127a), the same version folder, and
       # each face by the same rule (a part `internal` after the first is
       # private, a last part beginning `hero_` a floor), with the floors added:
@@ -169,7 +166,7 @@ jobs:
 
   # ─────────────── Every generated table still its generator's ───────────────
   #
-  # Each program under `generators/` writes one or more of Rebel's generated
+  # Each program under `rebel/generators/` writes one or more of Rebel's generated
   # tables from pinned public data and has a `check` that reads the tables in
   # the tree and exits 0 where each is byte for byte what the generator
   # writes, 1 where one is not (naming the first line that differs), and 2
@@ -177,7 +174,7 @@ jobs:
   # lets it be copied and whose source serves only its latest version is kept
   # in the generator's own folder; any other is fetched here by the URL the
   # generator records and held to the SHA-256 it pins, so no generator can rot
-  # unseen. `generators/rebel_index/` reads no data from outside: it writes the
+  # unseen. `rebel/generators/rebel_index/` reads no data from outside: it writes the
   # pages of Rebel's programs and the index of its packages from the tree
   # itself, and its `check` holds them to it the same way. One leg: the tables
   # are text, the same on every platform.
@@ -202,37 +199,37 @@ jobs:
           ./heroes-from-seed build selfhost/main.hero -o heroes
           ./heroes --version
 
-      # `generators/i18n_units/cldr.hero`'s `SOURCE_URL`; the generator holds
+      # `rebel/generators/i18n_units/cldr.hero`'s `SOURCE_URL`; the generator holds
       # the zip to its `SOURCE_SHA256` itself.
-      - name: generators/i18n_units, CLDR 49's unit table of i18n/dates
+      - name: rebel/generators/i18n_units, CLDR 49's unit table of i18n/dates
         run: |
           mkdir -p build/generators
           curl --fail --location --silent --show-error -o build/generators/cldr-49.0.0-json-full.zip \
             https://github.com/unicode-org/cldr-json/releases/download/49.0.0/cldr-49.0.0-json-full.zip
-          ./heroes run generators/i18n_units/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
+          ./heroes run rebel/generators/i18n_units/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
 
-      # The WHATWG's files are kept in `generators/unicode_encodings/whatwg/`;
+      # The WHATWG's files are kept in `rebel/generators/unicode_encodings/whatwg/`;
       # the generator holds each to the SHA-256 `layout.hero` pins.
-      - name: generators/unicode_encodings, the WHATWG Encoding Standard's tables of unicode/encodings
-        run: ./heroes run generators/unicode_encodings/main.hero -- check
+      - name: rebel/generators/unicode_encodings, the WHATWG Encoding Standard's tables of unicode/encodings
+        run: ./heroes run rebel/generators/unicode_encodings/main.hero -- check
 
-      # `generators/brotli/main.hero`'s `SOURCE_URL`; the generator holds the
+      # `rebel/generators/brotli/main.hero`'s `SOURCE_URL`; the generator holds the
       # text to its `SOURCE_SHA256` itself.
-      - name: generators/brotli, RFC 7932's dictionary, transforms and context tables of compress/brotli
+      - name: rebel/generators/brotli, RFC 7932's dictionary, transforms and context tables of compress/brotli
         run: |
           mkdir -p build/generators
           curl --fail --location --silent --show-error -o build/generators/rfc7932.txt \
             https://www.rfc-editor.org/rfc/rfc7932.txt
-          ./heroes run generators/brotli/main.hero -- check build/generators/rfc7932.txt
+          ./heroes run rebel/generators/brotli/main.hero -- check build/generators/rfc7932.txt
 
       # The HTML Standard's `entities.json` is kept in
-      # `generators/html_entities/whatwg/`.
-      - name: generators/html_entities, the HTML Standard's named character references of html
-        run: ./heroes run generators/html_entities/main.hero -- check
+      # `rebel/generators/html_entities/whatwg/`.
+      - name: rebel/generators/html_entities, the HTML Standard's named character references of html
+        run: ./heroes run rebel/generators/html_entities/main.hero -- check
 
-      # The five files of `generators/unicode_cases/main.hero`'s
+      # The five files of `rebel/generators/unicode_cases/main.hero`'s
       # `AUXILIARY_URL` and `UCD_URL`; the generator holds each to its SHA-256.
-      - name: generators/unicode_cases, Unicode 17.0.0's conformance cases of unicode/segment and unicode/normalize
+      - name: rebel/generators/unicode_cases, Unicode 17.0.0's conformance cases of unicode/segment and unicode/normalize
         run: |
           mkdir -p build/generators/ucd-17.0.0
           for f in GraphemeBreakTest WordBreakTest SentenceBreakTest LineBreakTest; do
@@ -241,11 +238,11 @@ jobs:
           done
           curl --fail --location --silent --show-error -o build/generators/ucd-17.0.0/NormalizationTest.txt \
             https://www.unicode.org/Public/17.0.0/ucd/NormalizationTest.txt
-          ./heroes run generators/unicode_cases/main.hero -- check build/generators/ucd-17.0.0
+          ./heroes run rebel/generators/unicode_cases/main.hero -- check build/generators/ucd-17.0.0
 
-      # The four files of `generators/tokenizer_tables/main.hero`'s
+      # The four files of `rebel/generators/tokenizer_tables/main.hero`'s
       # `RANKS_URL` and `TIKTOKEN_URL`; the generator holds each to its SHA-256.
-      - name: generators/tokenizer_tables, tiktoken's tables of tokenizer/tables
+      - name: rebel/generators/tokenizer_tables, tiktoken's tables of tokenizer/tables
         run: |
           mkdir -p build/generators/tiktoken
           for f in cl100k_base o200k_base; do
@@ -256,15 +253,15 @@ jobs:
             https://raw.githubusercontent.com/openai/tiktoken/0.14.0/tiktoken_ext/openai_public.py
           curl --fail --location --silent --show-error -o build/generators/tiktoken/model.py \
             https://raw.githubusercontent.com/openai/tiktoken/0.14.0/tiktoken/model.py
-          ./heroes run generators/tokenizer_tables/main.hero -- check build/generators/tiktoken
+          ./heroes run rebel/generators/tokenizer_tables/main.hero -- check build/generators/tiktoken
 
-      # The list and its tests are kept in `generators/http_suffixes/publicsuffix/`.
-      - name: generators/http_suffixes, the Public Suffix List of http/suffixes
-        run: ./heroes run generators/http_suffixes/main.hero -- check
+      # The list and its tests are kept in `rebel/generators/http_suffixes/publicsuffix/`.
+      - name: rebel/generators/http_suffixes, the Public Suffix List of http/suffixes
+        run: ./heroes run rebel/generators/http_suffixes/main.hero -- check
 
-      # The five files of `generators/url_idna/main.hero`'s `IDNA_URL` and
+      # The five files of `rebel/generators/url_idna/main.hero`'s `IDNA_URL` and
       # `EXTRACTED_URL`; the generator holds each to its SHA-256.
-      - name: generators/url_idna, UTS 46's mapping table, properties and conformance cases of url/idna
+      - name: rebel/generators/url_idna, UTS 46's mapping table, properties and conformance cases of url/idna
         run: |
           mkdir -p build/generators/idna-17.0.0
           for f in IdnaMappingTable IdnaTestV2; do
@@ -275,52 +272,52 @@ jobs:
             curl --fail --location --silent --show-error -o "build/generators/idna-17.0.0/$f.txt" \
               "https://www.unicode.org/Public/17.0.0/ucd/extracted/$f.txt"
           done
-          ./heroes run generators/url_idna/main.hero -- check build/generators/idna-17.0.0
+          ./heroes run rebel/generators/url_idna/main.hero -- check build/generators/idna-17.0.0
 
-      # The zip `generators/i18n_units` fetched above; `generators/cldrkit`
+      # The zip `rebel/generators/i18n_units` fetched above; `rebel/generators/cldrkit`
       # holds it to its SHA-256.
-      - name: generators/i18n_core, CLDR 49's plural, locale and alias tables of i18n
-        run: ./heroes run generators/i18n_core/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
+      - name: rebel/generators/i18n_core, CLDR 49's plural, locale and alias tables of i18n
+        run: ./heroes run rebel/generators/i18n_core/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
 
-      - name: generators/i18n_numbers, CLDR 49's number table of i18n/numbers
-        run: ./heroes run generators/i18n_numbers/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
+      - name: rebel/generators/i18n_numbers, CLDR 49's number table of i18n/numbers
+        run: ./heroes run rebel/generators/i18n_numbers/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
 
-      - name: generators/i18n_dates, CLDR 49's calendar table of i18n/dates
-        run: ./heroes run generators/i18n_dates/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
+      - name: rebel/generators/i18n_dates, CLDR 49's calendar table of i18n/dates
+        run: ./heroes run rebel/generators/i18n_dates/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
 
-      # `generators/cldrkit/cldrkit.hero`'s `COMMON_URL`; `generators/cldrkit`
+      # `rebel/generators/cldrkit/cldrkit.hero`'s `COMMON_URL`; `rebel/generators/cldrkit`
       # holds the zip to its `COMMON_SHA256`.
-      - name: generators/i18n_collate, CLDR 49's root collation and tailorings of i18n/collate
+      - name: rebel/generators/i18n_collate, CLDR 49's root collation and tailorings of i18n/collate
         run: |
           mkdir -p build/generators
           curl --fail --location --silent --show-error -o build/generators/cldr-common-49.zip \
             https://unicode.org/Public/cldr/49/cldr-common-49.zip
-          ./heroes run generators/i18n_collate/main.hero -- check build/generators/cldr-common-49.zip
+          ./heroes run rebel/generators/i18n_collate/main.hero -- check build/generators/cldr-common-49.zip
 
-      # The five files of `generators/unicode_tables/main.hero`'s `UCD_URL`;
+      # The five files of `rebel/generators/unicode_tables/main.hero`'s `UCD_URL`;
       # the generator holds each to its SHA-256.
-      - name: generators/unicode_tables, Unicode 17.0.0's category, property, case and fold tables of unicode
+      - name: rebel/generators/unicode_tables, Unicode 17.0.0's category, property, case and fold tables of unicode
         run: |
           mkdir -p build/generators/ucd-17.0.0
           for f in UnicodeData PropList DerivedCoreProperties SpecialCasing CaseFolding; do
             curl --fail --location --silent --show-error -o "build/generators/ucd-17.0.0/$f.txt" \
               "https://www.unicode.org/Public/17.0.0/ucd/$f.txt"
           done
-          ./heroes run generators/unicode_tables/main.hero -- check build/generators/ucd-17.0.0
+          ./heroes run rebel/generators/unicode_tables/main.hero -- check build/generators/ucd-17.0.0
 
-      # `generators/html_tables/main.hero`'s `SOURCE_URL`, the standard's
+      # `rebel/generators/html_tables/main.hero`'s `SOURCE_URL`, the standard's
       # source at a commit; the generator holds it to its `SOURCE_SHA256`.
-      - name: generators/html_tables, the HTML Standard's doctype lists and SVG name tables of html
+      - name: rebel/generators/html_tables, the HTML Standard's doctype lists and SVG name tables of html
         run: |
           mkdir -p build/generators/whatwg-html
           curl --fail --location --silent --show-error -o build/generators/whatwg-html/source \
             https://raw.githubusercontent.com/whatwg/html/efcc0bcdec596651e2cb316ab076c0bdc7c4d120/source
-          ./heroes run generators/html_tables/main.hero -- check build/generators/whatwg-html/source
+          ./heroes run rebel/generators/html_tables/main.hero -- check build/generators/whatwg-html/source
 
-      # `generators/pdf_tables/main.hero`'s `AGL_URL`, `AFM_URL` and
+      # `rebel/generators/pdf_tables/main.hero`'s `AGL_URL`, `AFM_URL` and
       # `MAPPINGS_URL`; the generator holds each file to its SHA-256 in
       # `INPUTS`.
-      - name: generators/pdf_tables, the glyph list, the 14 fonts' metrics and the encodings of pdf
+      - name: rebel/generators/pdf_tables, the glyph list, the 14 fonts' metrics and the encodings of pdf
         run: |
           mkdir -p build/generators/pdf
           for f in glyphlist zapfdingbats; do
@@ -336,20 +333,20 @@ jobs:
             https://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP1252.TXT
           curl --fail --location --silent --show-error -o build/generators/pdf/ROMAN.TXT \
             https://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/ROMAN.TXT
-          ./heroes run generators/pdf_tables/main.hero -- check build/generators/pdf
+          ./heroes run rebel/generators/pdf_tables/main.hero -- check build/generators/pdf
 
-      # `generators/time_zones/main.hero`'s `SOURCE_URL`; the generator holds
+      # `rebel/generators/time_zones/main.hero`'s `SOURCE_URL`; the generator holds
       # the archive to its `SOURCE_SHA256` itself.
-      - name: generators/time_zones, the IANA time zone database's names of time
+      - name: rebel/generators/time_zones, the IANA time zone database's names of time
         run: |
           mkdir -p build/generators
           curl --fail --location --silent --show-error -o build/generators/tzdata2026f.tar.gz \
             https://data.iana.org/time-zones/releases/tzdata2026f.tar.gz
-          ./heroes run generators/time_zones/main.hero -- check build/generators/tzdata2026f.tar.gz
+          ./heroes run rebel/generators/time_zones/main.hero -- check build/generators/tzdata2026f.tar.gz
 
-      # The eight files of `generators/unicode_segment/main.hero`'s `UCD_URL`,
+      # The eight files of `rebel/generators/unicode_segment/main.hero`'s `UCD_URL`,
       # each under its folder there; the generator holds each to its SHA-256.
-      - name: generators/unicode_segment, Unicode 17.0.0's break classes, widths and flags of unicode/segment
+      - name: rebel/generators/unicode_segment, Unicode 17.0.0's break classes, widths and flags of unicode/segment
         run: |
           mkdir -p build/generators/ucd-17.0.0
           for f in LineBreak.txt EastAsianWidth.txt DerivedCoreProperties.txt UnicodeData.txt \
@@ -358,22 +355,22 @@ jobs:
             curl --fail --location --silent --show-error -o "build/generators/ucd-17.0.0/$(basename "$f")" \
               "https://www.unicode.org/Public/17.0.0/ucd/$f"
           done
-          ./heroes run generators/unicode_segment/main.hero -- check build/generators/ucd-17.0.0
+          ./heroes run rebel/generators/unicode_segment/main.hero -- check build/generators/ucd-17.0.0
 
-      # The three files of `generators/unicode_normalize/main.hero`'s `UCD_URL`;
+      # The three files of `rebel/generators/unicode_normalize/main.hero`'s `UCD_URL`;
       # the generator holds each to its SHA-256.
-      - name: generators/unicode_normalize, Unicode 17.0.0's classes, decompositions, compositions and quick checks of unicode/normalize
+      - name: rebel/generators/unicode_normalize, Unicode 17.0.0's classes, decompositions, compositions and quick checks of unicode/normalize
         run: |
           mkdir -p build/generators/ucd-17.0.0
           for f in UnicodeData.txt DerivedNormalizationProps.txt PropList.txt; do
             curl --fail --location --silent --show-error -o "build/generators/ucd-17.0.0/$(basename "$f")" \
               "https://www.unicode.org/Public/17.0.0/ucd/$f"
           done
-          ./heroes run generators/unicode_normalize/main.hero -- check build/generators/ucd-17.0.0
+          ./heroes run rebel/generators/unicode_normalize/main.hero -- check build/generators/ucd-17.0.0
 
-      # The sixteen files of `generators/unicode_names/main.hero`'s `UCD_URL`,
+      # The sixteen files of `rebel/generators/unicode_names/main.hero`'s `UCD_URL`,
       # each under its folder there; the generator holds each to its SHA-256.
-      - name: generators/unicode_names, Unicode 17.0.0's names, aliases, named sequences and properties of unicode/names
+      - name: rebel/generators/unicode_names, Unicode 17.0.0's names, aliases, named sequences and properties of unicode/names
         run: |
           mkdir -p build/generators/ucd-17.0.0
           for f in Scripts.txt ScriptExtensions.txt PropertyValueAliases.txt PropertyAliases.txt Blocks.txt \
@@ -383,11 +380,11 @@ jobs:
             curl --fail --location --silent --show-error -o "build/generators/ucd-17.0.0/$(basename "$f")" \
               "https://www.unicode.org/Public/17.0.0/ucd/$f"
           done
-          ./heroes run generators/unicode_names/main.hero -- check build/generators/ucd-17.0.0
+          ./heroes run rebel/generators/unicode_names/main.hero -- check build/generators/ucd-17.0.0
 
-      # The nine files of `generators/json_idna/main.hero`'s `UCD_URL`, each
+      # The nine files of `rebel/generators/json_idna/main.hero`'s `UCD_URL`, each
       # under its folder there; the generator holds each to its SHA-256.
-      - name: generators/json_idna, RFC 5892's derivation over Unicode 17.0.0 for json/schema's idn formats
+      - name: rebel/generators/json_idna, RFC 5892's derivation over Unicode 17.0.0 for json/schema's idn formats
         run: |
           mkdir -p build/generators/ucd-17.0.0
           for f in UnicodeData.txt PropList.txt DerivedCoreProperties.txt Blocks.txt HangulSyllableType.txt \
@@ -395,31 +392,31 @@ jobs:
             curl --fail --location --silent --show-error -o "build/generators/ucd-17.0.0/$(basename "$f")" \
               "https://www.unicode.org/Public/17.0.0/ucd/$f"
           done
-          ./heroes run generators/json_idna/main.hero -- check build/generators/ucd-17.0.0
+          ./heroes run rebel/generators/json_idna/main.hero -- check build/generators/ucd-17.0.0
 
-      # Each program's page, `examples-rebel/<name>/README.md`, the short list
-      # `examples-rebel/INDEX.md`, and `examples-rebel/PACKAGES.md`, read from
+      # Each program's page, `rebel/examples/<name>/README.md`, the short list
+      # `rebel/examples/INDEX.md`, and `rebel/examples/PACKAGES.md`, read from
       # what `heroes doc` prints of every face, run by the compiler built
       # above: a face it refuses fails the step by name. A compiler change that
       # moves what `heroes doc` prints is seen here at the next run, decision
       # 7's trade written at this file's head.
-      - name: generators/rebel_index, the pages of Rebel's programs and the index of its packages
-        run: ./heroes run generators/rebel_index/main.hero -- check ./heroes
+      - name: rebel/generators/rebel_index, the pages of Rebel's programs and the index of its packages
+        run: ./heroes run rebel/generators/rebel_index/main.hero -- check ./heroes
 
-      # The tests of the packages the generators share: `generators/tablekit/`,
-      # which every generator writes its tables with, `generators/cldrkit/`,
-      # which reads CLDR's two zips, and `generators/ucdkit/`, which reads the
+      # The tests of the packages the generators share: `rebel/generators/tablekit/`,
+      # which every generator writes its tables with, `rebel/generators/cldrkit/`,
+      # which reads CLDR's two zips, and `rebel/generators/ucdkit/`, which reads the
       # Unicode Character Database's files. A generator's own tests are left
       # to whoever changes it: `heroes test` runs every test its program
       # reaches, Rebel's packages' among them (1,875 tests and three minutes
       # for `tablekit` alone on 2026-11-22, on a Mac running other builds),
       # which the `coherence` job runs already, and each `check` above judges
       # a generator's whole output byte for byte.
-      - name: generators/tablekit, cldrkit and ucdkit, their tests
+      - name: rebel/generators/tablekit, cldrkit and ucdkit, their tests
         run: |
-          ./heroes test generators/tablekit/tablekit.hero
-          ./heroes test generators/cldrkit/cldrkit.hero
-          ./heroes test generators/ucdkit/ucdkit.hero
+          ./heroes test rebel/generators/tablekit/tablekit.hero
+          ./heroes test rebel/generators/cldrkit/cldrkit.hero
+          ./heroes test rebel/generators/ucdkit/ucdkit.hero
 
   # ──────────────── The drivers, dealt into parts, on every leg ────────────────
   #
@@ -448,7 +445,7 @@ jobs:
         run: |
           set -euo pipefail
           drivers=()
-          for file in $(ls examples-rebel/reach/reach_*.hero | LC_ALL=C sort); do
+          for file in $(ls rebel/examples/reach/reach_*.hero | LC_ALL=C sort); do
             name=$(basename "$file" .hero)
             if ! printf '%s\n' "$name" | grep -Eqx 'reach_[a-z0-9_]+'; then
               echo "::error::$file is named outside \`reach_[a-z0-9_]+\`, which this step writes into JSON and a shell's words"
@@ -457,7 +454,7 @@ jobs:
             drivers+=("$name")
           done
           if [ "${#drivers[@]}" -eq 0 ]; then
-            echo "::error::no examples-rebel/reach/reach_*.hero, so no package's tests would run"
+            echo "::error::no rebel/examples/reach/reach_*.hero, so no package's tests would run"
             exit 1
           fi
           json=""
@@ -512,7 +509,7 @@ jobs:
       # opened by `runtime/platform/hero_odbc.c`; and SQLite's ODBC driver,
       # `libsqliteodbc`, which registers itself as `SQLite3`, the name
       # `sql/odbc`'s live tests look for
-      # (`packages/rebel/0.1.0/files/sql/odbc/internal/fixture.hero`); GTK 4's
+      # (`rebel/library/0.1.0/files/sql/odbc/internal/fixture.hero`); GTK 4's
       # `libgtk-4.so.1`, opened by `runtime/platform/hero_ui_gtk.c`, the Linux arm,
       # and Xvfb, an X server with no screen, which the drivers' step runs
       # them under so `ui`'s native tests run here rather than skip; XTest's
@@ -765,7 +762,7 @@ jobs:
           for name in $DRIVERS; do
             base=$(printf '%s' "$name" | tr -d _)
             for run in $RUNS; do
-              set -- "examples-rebel/reach/$name.hero"
+              set -- "rebel/examples/reach/$name.hero"
               if [ "$RUNNER_OS" = "Windows" ]; then set -- "$@" --library "$SQLITE_LIB"; fi
               if [ "$run" = "sanitize" ]; then set -- "$@" --sanitize; fi
               log="$logs/$name.$run.log"
@@ -808,9 +805,9 @@ jobs:
           if [ -n "$red" ]; then echo "::error::the runs of this part that did not end green:$red"; fi
           exit "$worst"
 
-      # The part `programs` (job `plan`): every program of `examples-rebel/`
+      # The part `programs` (job `plan`): every program of `rebel/examples/`
       # judged by the check of Rebel's programs, `tests/harness/rebel_apps.hero`
-      # (`examples-rebel/README.md` § A10): each application built and its demo
+      # (`rebel/examples/README.md` § A10): each application built and its demo
       # held to its `main.expected` byte for byte, each twin to its original's
       # in `examples/`, four built or run at once, and the applications'
       # catalogues asked, between them, for every face of Rebel. It is a part

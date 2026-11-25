@@ -145,6 +145,16 @@ export function isFile(relative: string): boolean {
   }
 }
 
+/** Whether a repository-relative path is a directory, recorded as `isFile` records. */
+export function isDirectory(relative: string): boolean {
+  record(relative);
+  try {
+    return statSync(absolute(relative)).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
 /** The repository-relative names of the directories directly inside `relative`. */
 export function directoriesIn(relative: string): string[] {
   record(relative);

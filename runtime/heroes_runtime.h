@@ -219,12 +219,12 @@ typedef struct {
  * block. Measured (panel 021): with SQLite's own text buffer that write landed
  * inside a valid allocation, so ASan said nothing and the program exited 0 —
  * silent corruption of foreign memory. The tag turns it into a panic. */
-#define HERO_STR_MAGIC ((uint64_t)0x4845524f53535452ULL) /* "HEROSSTR" */
+#define HERO_STR_MAGIC ((__UINT64_TYPE__)0x4845524f53535452ULL) /* "HEROSSTR" */
 /* The same mark with its low bit set: this block's bytes hold a NUL (panel
  * 192's R1, defect 245). A fact kept from the block's making, so the lend and
  * the lease ask it in one load and one test; `parts/str.c` says who sets it.
  * Every check of the mark accepts both values. */
-#define HERO_STR_MAGIC_NUL (HERO_STR_MAGIC | (uint64_t)1) /* "HEROSSTS" */
+#define HERO_STR_MAGIC_NUL (HERO_STR_MAGIC | (__UINT64_TYPE__)1) /* "HEROSSTS" */
 
 /* -- a lease, the held buffer (design.md §4.19's fourth case, panel 124) ---------------
  * Bytes the PROGRAM owns, copied out of a `str`, which C may read for as long
@@ -245,7 +245,7 @@ typedef struct {
     int64_t len;
 } HeroHeldHeader;
 
-#define HERO_HELD_MAGIC ((uint64_t)0x4845524f48454c44ULL) /* "HEROHELD" */
+#define HERO_HELD_MAGIC ((__UINT64_TYPE__)0x4845524f48454c44ULL) /* "HEROHELD" */
 
 /* A literal is a static const block: no allocation, no runtime call, and a
  * negative refcount so decref is a no-op. The emitter writes one of these per
@@ -256,16 +256,31 @@ typedef struct {
  * none. clang folds `__builtin_strlen` of a string literal to a constant, so
  * the test costs nothing at run time and is legal in a static initializer
  * (the ffi-pragmatist's `fold.c`, both values printed, no warning under
- * `-pedantic`); a binding's C writing this macro gets the same answer. */
+ * `-pedantic`); a binding's C writing this macro gets the same answer.
+ *
+ * EVERY NAME THESE MACROS WRITE IS OF THE RUNTIME'S OWN FORM (`hero_`, `Hero`,
+ * `HERO_`) or one C reserves (defect d-lane-macro-members-1, 2026-11-24). A
+ * macro is expanded where the unit writes it, after its groups' headers, and a
+ * name the program binds from one of them keeps the header's meaning there
+ * (`selfhost/emit/macro_guard.hero`): the members were `h` and `b`, and a
+ * group's `#define b 5` bound as `constant b: i64` made every unit holding a
+ * literal an internal error at exit 2. So the members are `hero_header` and
+ * `hero_body`, a cast is to `__INT64_TYPE__` or `__UINT64_TYPE__`, clang's
+ * own names for the types `int64_t` and `uint64_t` stand for, and the constant's
+ * block below takes `__builtin_offsetof` for `offsetof`, each reserved name
+ * saved and given back around the groups (`heroes_reserved_open.h`). A
+ * parameter's name is no such word: C puts the argument in its place (C11
+ * 6.10.3.1). `selfhost/emit/guarded_names.hero`'s test holds every macro of
+ * the unit's own headers to this. */
 #define HERO_STR_STATIC(name, text)                                          \
     static const struct {                                                    \
-        HeroStrHeader h;                                                     \
-        char b[sizeof(text)];                                                \
+        HeroStrHeader hero_header;                                           \
+        char hero_body[sizeof(text)];                                        \
     } name = {{-1, (__builtin_strlen(text) + 1 == sizeof(text)) ? HERO_STR_MAGIC \
                                                                 : HERO_STR_MAGIC_NUL}, \
               text}
 #define HERO_STR_LIT(name) \
-    ((HeroStr){(name).b, (int64_t)sizeof((name).b) - 1})
+    ((HeroStr){(name).hero_body, (__INT64_TYPE__)sizeof((name).hero_body) - 1})
 
 HeroStr hero_str_empty(void); /* "" — non-NULL ptr, static block */
 
@@ -705,16 +720,17 @@ int64_t hero_array_len(const HeroArrayHeader *a);
  * array of no elements. */
 #define HERO_ARRAY_STATIC(name, type, elem, n, ...)                          \
     static const struct {                                                    \
-        HeroArrayHeader h;                                                   \
-        type b[n];                                                           \
+        HeroArrayHeader hero_header;                                         \
+        type hero_body[n];                                                   \
     } name = {{-1, n, n, elem}, {__VA_ARGS__}};                              \
-    _Static_assert(offsetof(__typeof__(name), b) == sizeof(HeroArrayHeader), \
+    _Static_assert(__builtin_offsetof(__typeof__(name), hero_body) ==        \
+                       sizeof(HeroArrayHeader),                              \
                    "a constant's elements must follow its header")
 #define HERO_ARRAY_STATIC_EMPTY(name, elem) \
     static const struct {                   \
-        HeroArrayHeader h;                  \
+        HeroArrayHeader hero_header;        \
     } name = {{-1, 0, 0, elem}}
-#define HERO_ARRAY_LIT(name) ((HeroArrayHeader *)&(name).h)
+#define HERO_ARRAY_LIT(name) ((HeroArrayHeader *)&(name).hero_header)
 
 /* WHETHER A CONSTANT IS ITS STATIC BLOCK, or is built at every read (panel
  * 195's R2): 1, and 0 under AddressSanitizer, which is what `--sanitize` turns

@@ -116,12 +116,11 @@ each carries in modules of its own the few functions it calls, written for it
 (M-rebel-library's decisions 6 to 8, 2026-11-19): text taken apart in a
 `strings.hero`, numbers read in a `numbers.hero`, a JSON reader in
 `json/json.hero`, sockets and HTTP in `server/`. Until that day the programs
-that did took a package from a local static index at the repository's root,
-`packages/`, each through a catalogue `heroes.toml` and the tree `heroes add`
-placed beside it; the milestone removed that package.
-`packages/` now holds Rebel, the optional library, and the programs that use
-it stand in `examples-rebel/`, beside this folder, with one catalogue among
-them.
+that did took a package from a local static index at the repository's root
+(`packages/` on 2026-11-19), each through a catalogue `heroes.toml` and the
+tree `heroes add` placed beside it; the milestone removed that package. Rebel,
+the optional library, stands in `rebel/library/`, and the programs that use it
+in `rebel/examples/`, with one catalogue among them.
 
 ## `gallery/`
 

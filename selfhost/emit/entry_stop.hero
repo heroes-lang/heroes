@@ -7,7 +7,7 @@
 # WHY. A debugger's `step` into a function stops at the first instruction
 # after the frame's setup, the one the line table flags `prologue_end`, and
 # design.md §3.1 promises that this is on the function's `function` line. The
-# prologue's line ends `goto bb0;`, and `bb0` follows it at once. clang for
+# prologue's line ends `goto hero_bb0;`, and `hero_bb0` follows it at once. clang for
 # arm64 keeps that jump, a `b` on the function's line flagged
 # `prologue_end`; clang for x86-64 drops a jump to the next instruction, so
 # where nothing else on the line makes code, no zeroed slot and no thread

@@ -20,7 +20,7 @@ use resolve
 use source
 
 constant ABORT: str
-    "    (void)b; (void)p; hero_panic(\"a value reaching a ptr or a cstr crosses between threads (spec section 11)\");"
+    "    (void)hero_b; (void)hero_p; hero_panic(\"a value reaching a ptr or a cstr crosses between threads (spec section 11)\");"
 
 # Whether the put of `ty` is the abort, written in its place.
 function refused_put(@w: writer.Writer, c: state.Checked, decls: [ast.Decl], ty: i64) -> bool

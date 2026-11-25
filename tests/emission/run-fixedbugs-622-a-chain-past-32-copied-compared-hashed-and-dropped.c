@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -219,80 +219,80 @@ typedef struct h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 {
 } h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
-__attribute__((used)) static void hero_tu_type_order(void *at) {
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 *)at + 1);
-    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *)at + 1);
-    (void)((h_0opt_e201354 *)at + 1);
-    (void)((h_0opt_f87774a *)at + 1);
-    (void)((h_0opt_a8ea2 *)at + 1);
+__attribute__((__used__)) static void hero_tu_type_order(void *hero_at) {
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 *)hero_at + 1);
+    (void)((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *)hero_at + 1);
+    (void)((h_0opt_e201354 *)hero_at + 1);
+    (void)((h_0opt_f87774a *)hero_at + 1);
+    (void)((h_0opt_a8ea2 *)hero_at + 1);
 }
 
 #undef HERO_TU_LOCAL
 #if defined(__OPTIMIZE__) && __has_feature(undefined_behavior_sanitizer)
-#define HERO_TU_LOCAL __attribute__((unused, used, nodebug, no_sanitize("null", "alignment", "object-size"))) static
+#define HERO_TU_LOCAL __attribute__((__unused__, __used__, __nodebug__, __no_sanitize__("null", "alignment", "object-size"))) static
 #else
-#define HERO_TU_LOCAL __attribute__((unused, used, nodebug)) static
+#define HERO_TU_LOCAL __attribute__((__unused__, __used__, __nodebug__)) static
 #endif
 
 #define HERO_COPY(dst, src) do { _Static_assert(__builtin_types_compatible_p(__typeof__(dst), __typeof__(src)), "heroes-copy"); __builtin_memmove(&(dst), &(src), sizeof(dst)); } while (0)
@@ -304,203 +304,203 @@ __attribute__((used)) static void hero_tu_type_order(void *at) {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 316 "fixedbugs622achainpast32copiedcomparedhashedanddropped.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_hash(const void *elem);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *v);
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *v);
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *hero_v);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *hero_v);
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 
-static void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_desc_copy(void *dst, const void *src) {
-    __builtin_memmove(dst, src, sizeof(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40));
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_retain((const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *)dst);
+static void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_desc_copy(void *hero_dst, const void *hero_src) {
+    __builtin_memmove(hero_dst, hero_src, sizeof(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40));
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_retain((const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *)hero_dst);
 }
-static void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_desc_drop(void *elem) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_release((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *)elem);
+static void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_desc_drop(void *hero_elem) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_release((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *)hero_elem);
 }
-static bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_desc_eq(const void *a, const void *b) {
-    return h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_eq((const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *)a, (const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *)b);
+static bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_desc_eq(const void *hero_a, const void *hero_b) {
+    return h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_eq((const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *)hero_a, (const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *)hero_b);
 }
 HERO_TU_QUIET static const HeroDesc h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_desc = {
     sizeof(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40),
@@ -514,7 +514,7 @@ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h_fixedbugs622achai
 void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_main(void);
 
 #line 138 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h_fixedbugs622achainpast32copiedcomparedhashedanddropped_chain(HeroStr h0_s, int64_t h1_n) { h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 h2_v0; __builtin_memset(&h2_v0, 0, sizeof h2_v0); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 h3_v1; __builtin_memset(&h3_v1, 0, sizeof h3_v1); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 h4_v2; __builtin_memset(&h4_v2, 0, sizeof h4_v2); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 h5_v3; __builtin_memset(&h5_v3, 0, sizeof h5_v3); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 h6_v4; __builtin_memset(&h6_v4, 0, sizeof h6_v4); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 h7_v5; __builtin_memset(&h7_v5, 0, sizeof h7_v5); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 h8_v6; __builtin_memset(&h8_v6, 0, sizeof h8_v6); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 h9_v7; __builtin_memset(&h9_v7, 0, sizeof h9_v7); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 h10_v8; __builtin_memset(&h10_v8, 0, sizeof h10_v8); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 h11_v9; __builtin_memset(&h11_v9, 0, sizeof h11_v9); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 h12_v10; __builtin_memset(&h12_v10, 0, sizeof h12_v10); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 h13_v11; __builtin_memset(&h13_v11, 0, sizeof h13_v11); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 h14_v12; __builtin_memset(&h14_v12, 0, sizeof h14_v12); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 h15_v13; __builtin_memset(&h15_v13, 0, sizeof h15_v13); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 h16_v14; __builtin_memset(&h16_v14, 0, sizeof h16_v14); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 h17_v15; __builtin_memset(&h17_v15, 0, sizeof h17_v15); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 h18_v16; __builtin_memset(&h18_v16, 0, sizeof h18_v16); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 h19_v17; __builtin_memset(&h19_v17, 0, sizeof h19_v17); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 h20_v18; __builtin_memset(&h20_v18, 0, sizeof h20_v18); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 h21_v19; __builtin_memset(&h21_v19, 0, sizeof h21_v19); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 h22_v20; __builtin_memset(&h22_v20, 0, sizeof h22_v20); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 h23_v21; __builtin_memset(&h23_v21, 0, sizeof h23_v21); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 h24_v22; __builtin_memset(&h24_v22, 0, sizeof h24_v22); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 h25_v23; __builtin_memset(&h25_v23, 0, sizeof h25_v23); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 h26_v24; __builtin_memset(&h26_v24, 0, sizeof h26_v24); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 h27_v25; __builtin_memset(&h27_v25, 0, sizeof h27_v25); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 h28_v26; __builtin_memset(&h28_v26, 0, sizeof h28_v26); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 h29_v27; __builtin_memset(&h29_v27, 0, sizeof h29_v27); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 h30_v28; __builtin_memset(&h30_v28, 0, sizeof h30_v28); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 h31_v29; __builtin_memset(&h31_v29, 0, sizeof h31_v29); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 h32_v30; __builtin_memset(&h32_v30, 0, sizeof h32_v30); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 h33_v31; __builtin_memset(&h33_v31, 0, sizeof h33_v31); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 h34_v32; __builtin_memset(&h34_v32, 0, sizeof h34_v32); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 h35_v33; __builtin_memset(&h35_v33, 0, sizeof h35_v33); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 h36_v34; __builtin_memset(&h36_v34, 0, sizeof h36_v34); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 h37_v35; __builtin_memset(&h37_v35, 0, sizeof h37_v35); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 h38_v36; __builtin_memset(&h38_v36, 0, sizeof h38_v36); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 h39_v37; __builtin_memset(&h39_v37, 0, sizeof h39_v37); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 h40_v38; __builtin_memset(&h40_v38, 0, sizeof h40_v38); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 h41_v39; __builtin_memset(&h41_v39, 0, sizeof h41_v39); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h42_v40; __builtin_memset(&h42_v40, 0, sizeof h42_v40); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 h43_own43, t3, t4, t85, t86; __builtin_memset(&h43_own43, 0, sizeof h43_own43); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 h44_own44, t5, t6, t87, t88; __builtin_memset(&h44_own44, 0, sizeof h44_own44); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 h45_own45, t7, t8, t89, t90; __builtin_memset(&h45_own45, 0, sizeof h45_own45); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 h46_own46, t9, t10, t91, t92; __builtin_memset(&h46_own46, 0, sizeof h46_own46); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 h47_own47, t11, t12, t93, t94; __builtin_memset(&h47_own47, 0, sizeof h47_own47); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 h48_own48, t13, t14, t95, t96; __builtin_memset(&h48_own48, 0, sizeof h48_own48); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 h49_own49, t15, t16, t97, t98; __builtin_memset(&h49_own49, 0, sizeof h49_own49); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 h50_own50, t17, t18, t99, t100; __builtin_memset(&h50_own50, 0, sizeof h50_own50); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 h51_own51, t19, t20, t101, t102; __builtin_memset(&h51_own51, 0, sizeof h51_own51); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 h52_own52, t21, t22, t103, t104; __builtin_memset(&h52_own52, 0, sizeof h52_own52); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 h53_own53, t23, t24, t105, t106; __builtin_memset(&h53_own53, 0, sizeof h53_own53); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 h54_own54, t25, t26, t107, t108; __builtin_memset(&h54_own54, 0, sizeof h54_own54); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 h55_own55, t27, t28, t109, t110; __builtin_memset(&h55_own55, 0, sizeof h55_own55); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 h56_own56, t29, t30, t111, t112; __builtin_memset(&h56_own56, 0, sizeof h56_own56); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 h57_own57, t31, t32, t113, t114; __builtin_memset(&h57_own57, 0, sizeof h57_own57); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 h58_own58, t33, t34, t115, t116; __builtin_memset(&h58_own58, 0, sizeof h58_own58); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 h59_own59, t35, t36, t117, t118; __builtin_memset(&h59_own59, 0, sizeof h59_own59); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 h60_own60, t37, t38, t119, t120; __builtin_memset(&h60_own60, 0, sizeof h60_own60); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 h61_own61, t39, t40, t121, t122; __builtin_memset(&h61_own61, 0, sizeof h61_own61); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 h62_own62, t41, t42, t123, t124; __builtin_memset(&h62_own62, 0, sizeof h62_own62); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 h63_own63, t43, t44, t125, t126; __builtin_memset(&h63_own63, 0, sizeof h63_own63); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 h64_own64, t45, t46, t127, t128; __builtin_memset(&h64_own64, 0, sizeof h64_own64); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 h65_own65, t47, t48, t129, t130; __builtin_memset(&h65_own65, 0, sizeof h65_own65); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 h66_own66, t49, t50, t131, t132; __builtin_memset(&h66_own66, 0, sizeof h66_own66); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 h67_own67, t51, t52, t133, t134; __builtin_memset(&h67_own67, 0, sizeof h67_own67); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 h68_own68, t53, t54, t135, t136; __builtin_memset(&h68_own68, 0, sizeof h68_own68); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 h69_own69, t55, t56, t137, t138; __builtin_memset(&h69_own69, 0, sizeof h69_own69); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 h70_own70, t57, t58, t139, t140; __builtin_memset(&h70_own70, 0, sizeof h70_own70); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 h71_own71, t59, t60, t141, t142; __builtin_memset(&h71_own71, 0, sizeof h71_own71); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 h72_own72, t61, t62, t143, t144; __builtin_memset(&h72_own72, 0, sizeof h72_own72); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 h73_own73, t63, t64, t145, t146; __builtin_memset(&h73_own73, 0, sizeof h73_own73); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 h74_own74, t65, t66, t147, t148; __builtin_memset(&h74_own74, 0, sizeof h74_own74); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 h75_own75, t67, t68, t149, t150; __builtin_memset(&h75_own75, 0, sizeof h75_own75); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 h76_own76, t69, t70, t151, t152; __builtin_memset(&h76_own76, 0, sizeof h76_own76); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 h77_own77, t71, t72, t153, t154; __builtin_memset(&h77_own77, 0, sizeof h77_own77); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 h78_own78, t73, t74, t155, t156; __builtin_memset(&h78_own78, 0, sizeof h78_own78); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 h79_own79, t75, t76, t157, t158; __builtin_memset(&h79_own79, 0, sizeof h79_own79); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 h80_own80, t77, t78, t159, t160; __builtin_memset(&h80_own80, 0, sizeof h80_own80); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 h81_own81, t79, t80, t161, t162; __builtin_memset(&h81_own81, 0, sizeof h81_own81); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 h82_own82, t81, t82, t163, t164; __builtin_memset(&h82_own82, 0, sizeof h82_own82); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h83_own83, t83, t84, t165, t166; __builtin_memset(&h83_own83, 0, sizeof h83_own83); HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h_fixedbugs622achainpast32copiedcomparedhashedanddropped_chain(HeroStr h0_s, int64_t h1_n) { h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 h2_v0; __builtin_memset(&h2_v0, 0, sizeof h2_v0); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 h3_v1; __builtin_memset(&h3_v1, 0, sizeof h3_v1); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 h4_v2; __builtin_memset(&h4_v2, 0, sizeof h4_v2); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 h5_v3; __builtin_memset(&h5_v3, 0, sizeof h5_v3); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 h6_v4; __builtin_memset(&h6_v4, 0, sizeof h6_v4); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 h7_v5; __builtin_memset(&h7_v5, 0, sizeof h7_v5); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 h8_v6; __builtin_memset(&h8_v6, 0, sizeof h8_v6); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 h9_v7; __builtin_memset(&h9_v7, 0, sizeof h9_v7); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 h10_v8; __builtin_memset(&h10_v8, 0, sizeof h10_v8); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 h11_v9; __builtin_memset(&h11_v9, 0, sizeof h11_v9); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 h12_v10; __builtin_memset(&h12_v10, 0, sizeof h12_v10); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 h13_v11; __builtin_memset(&h13_v11, 0, sizeof h13_v11); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 h14_v12; __builtin_memset(&h14_v12, 0, sizeof h14_v12); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 h15_v13; __builtin_memset(&h15_v13, 0, sizeof h15_v13); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 h16_v14; __builtin_memset(&h16_v14, 0, sizeof h16_v14); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 h17_v15; __builtin_memset(&h17_v15, 0, sizeof h17_v15); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 h18_v16; __builtin_memset(&h18_v16, 0, sizeof h18_v16); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 h19_v17; __builtin_memset(&h19_v17, 0, sizeof h19_v17); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 h20_v18; __builtin_memset(&h20_v18, 0, sizeof h20_v18); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 h21_v19; __builtin_memset(&h21_v19, 0, sizeof h21_v19); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 h22_v20; __builtin_memset(&h22_v20, 0, sizeof h22_v20); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 h23_v21; __builtin_memset(&h23_v21, 0, sizeof h23_v21); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 h24_v22; __builtin_memset(&h24_v22, 0, sizeof h24_v22); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 h25_v23; __builtin_memset(&h25_v23, 0, sizeof h25_v23); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 h26_v24; __builtin_memset(&h26_v24, 0, sizeof h26_v24); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 h27_v25; __builtin_memset(&h27_v25, 0, sizeof h27_v25); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 h28_v26; __builtin_memset(&h28_v26, 0, sizeof h28_v26); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 h29_v27; __builtin_memset(&h29_v27, 0, sizeof h29_v27); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 h30_v28; __builtin_memset(&h30_v28, 0, sizeof h30_v28); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 h31_v29; __builtin_memset(&h31_v29, 0, sizeof h31_v29); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 h32_v30; __builtin_memset(&h32_v30, 0, sizeof h32_v30); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 h33_v31; __builtin_memset(&h33_v31, 0, sizeof h33_v31); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 h34_v32; __builtin_memset(&h34_v32, 0, sizeof h34_v32); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 h35_v33; __builtin_memset(&h35_v33, 0, sizeof h35_v33); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 h36_v34; __builtin_memset(&h36_v34, 0, sizeof h36_v34); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 h37_v35; __builtin_memset(&h37_v35, 0, sizeof h37_v35); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 h38_v36; __builtin_memset(&h38_v36, 0, sizeof h38_v36); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 h39_v37; __builtin_memset(&h39_v37, 0, sizeof h39_v37); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 h40_v38; __builtin_memset(&h40_v38, 0, sizeof h40_v38); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 h41_v39; __builtin_memset(&h41_v39, 0, sizeof h41_v39); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h42_v40; __builtin_memset(&h42_v40, 0, sizeof h42_v40); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 h43_own43, t3, t4, t85, t86; __builtin_memset(&h43_own43, 0, sizeof h43_own43); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 h44_own44, t5, t6, t87, t88; __builtin_memset(&h44_own44, 0, sizeof h44_own44); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 h45_own45, t7, t8, t89, t90; __builtin_memset(&h45_own45, 0, sizeof h45_own45); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 h46_own46, t9, t10, t91, t92; __builtin_memset(&h46_own46, 0, sizeof h46_own46); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 h47_own47, t11, t12, t93, t94; __builtin_memset(&h47_own47, 0, sizeof h47_own47); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 h48_own48, t13, t14, t95, t96; __builtin_memset(&h48_own48, 0, sizeof h48_own48); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 h49_own49, t15, t16, t97, t98; __builtin_memset(&h49_own49, 0, sizeof h49_own49); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 h50_own50, t17, t18, t99, t100; __builtin_memset(&h50_own50, 0, sizeof h50_own50); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 h51_own51, t19, t20, t101, t102; __builtin_memset(&h51_own51, 0, sizeof h51_own51); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 h52_own52, t21, t22, t103, t104; __builtin_memset(&h52_own52, 0, sizeof h52_own52); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 h53_own53, t23, t24, t105, t106; __builtin_memset(&h53_own53, 0, sizeof h53_own53); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 h54_own54, t25, t26, t107, t108; __builtin_memset(&h54_own54, 0, sizeof h54_own54); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 h55_own55, t27, t28, t109, t110; __builtin_memset(&h55_own55, 0, sizeof h55_own55); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 h56_own56, t29, t30, t111, t112; __builtin_memset(&h56_own56, 0, sizeof h56_own56); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 h57_own57, t31, t32, t113, t114; __builtin_memset(&h57_own57, 0, sizeof h57_own57); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 h58_own58, t33, t34, t115, t116; __builtin_memset(&h58_own58, 0, sizeof h58_own58); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 h59_own59, t35, t36, t117, t118; __builtin_memset(&h59_own59, 0, sizeof h59_own59); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 h60_own60, t37, t38, t119, t120; __builtin_memset(&h60_own60, 0, sizeof h60_own60); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 h61_own61, t39, t40, t121, t122; __builtin_memset(&h61_own61, 0, sizeof h61_own61); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 h62_own62, t41, t42, t123, t124; __builtin_memset(&h62_own62, 0, sizeof h62_own62); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 h63_own63, t43, t44, t125, t126; __builtin_memset(&h63_own63, 0, sizeof h63_own63); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 h64_own64, t45, t46, t127, t128; __builtin_memset(&h64_own64, 0, sizeof h64_own64); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 h65_own65, t47, t48, t129, t130; __builtin_memset(&h65_own65, 0, sizeof h65_own65); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 h66_own66, t49, t50, t131, t132; __builtin_memset(&h66_own66, 0, sizeof h66_own66); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 h67_own67, t51, t52, t133, t134; __builtin_memset(&h67_own67, 0, sizeof h67_own67); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 h68_own68, t53, t54, t135, t136; __builtin_memset(&h68_own68, 0, sizeof h68_own68); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 h69_own69, t55, t56, t137, t138; __builtin_memset(&h69_own69, 0, sizeof h69_own69); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 h70_own70, t57, t58, t139, t140; __builtin_memset(&h70_own70, 0, sizeof h70_own70); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 h71_own71, t59, t60, t141, t142; __builtin_memset(&h71_own71, 0, sizeof h71_own71); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 h72_own72, t61, t62, t143, t144; __builtin_memset(&h72_own72, 0, sizeof h72_own72); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 h73_own73, t63, t64, t145, t146; __builtin_memset(&h73_own73, 0, sizeof h73_own73); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 h74_own74, t65, t66, t147, t148; __builtin_memset(&h74_own74, 0, sizeof h74_own74); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 h75_own75, t67, t68, t149, t150; __builtin_memset(&h75_own75, 0, sizeof h75_own75); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 h76_own76, t69, t70, t151, t152; __builtin_memset(&h76_own76, 0, sizeof h76_own76); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 h77_own77, t71, t72, t153, t154; __builtin_memset(&h77_own77, 0, sizeof h77_own77); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 h78_own78, t73, t74, t155, t156; __builtin_memset(&h78_own78, 0, sizeof h78_own78); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 h79_own79, t75, t76, t157, t158; __builtin_memset(&h79_own79, 0, sizeof h79_own79); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 h80_own80, t77, t78, t159, t160; __builtin_memset(&h80_own80, 0, sizeof h80_own80); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 h81_own81, t79, t80, t161, t162; __builtin_memset(&h81_own81, 0, sizeof h81_own81); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 h82_own82, t81, t82, t163, t164; __builtin_memset(&h82_own82, 0, sizeof h82_own82); HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h83_own83, t83, t84, t165, t166; __builtin_memset(&h83_own83, 0, sizeof h83_own83); HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_s; t2 = h1_n; hero_str_incref(t1); HERO_COPY_HELD(t3, ((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0){.f_s = t1, .f_n = t2})); HERO_COPY_HELD(t85, (h43_own43)); HERO_COPY_HELD(h43_own43, (t3)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_release(&t85); HERO_COPY_HELD(t86, (h2_v0)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_retain(&t3); HERO_COPY_HELD(h2_v0, (t3)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_release(&t86);
     HERO_COPY_HELD(t4, (h2_v0)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_retain(&t4); HERO_COPY_HELD(t5, ((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1){.f_inner = t4})); HERO_COPY_HELD(t87, (h44_own44)); HERO_COPY_HELD(h44_own44, (t5)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_release(&t87); HERO_COPY_HELD(t88, (h3_v1)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_retain(&t5); HERO_COPY_HELD(h3_v1, (t5)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_release(&t88);
     HERO_COPY_HELD(t6, (h3_v1)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_retain(&t6); HERO_COPY_HELD(t7, ((h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2){.f_inner = t6})); HERO_COPY_HELD(t89, (h45_own45)); HERO_COPY_HELD(h45_own45, (t7)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_release(&t89); HERO_COPY_HELD(t90, (h4_v2)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_retain(&t7); HERO_COPY_HELD(h4_v2, (t7)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_release(&t90);
@@ -645,21 +645,21 @@ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h_fixedbugs622achai
 }
 
 #line 182 "tests/golden/run/fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero"
-void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_main(void) { h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h0_a; __builtin_memset(&h0_a, 0, sizeof h0_a); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h1_b; __builtin_memset(&h1_b, 0, sizeof h1_b); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h2_c; __builtin_memset(&h2_c, 0, sizeof h2_c); HeroMapHeader * h3_seen; __builtin_memset(&h3_seen, 0, sizeof h3_seen); HERO_NODEBUG h_0opt_e201354 h4_f0, h6_f1, h14_own14, h15_own15, t23, t24, t28, t34, t35, t39, t118, t119, t120, t121; __builtin_memset(&h4_f0, 0, sizeof h4_f0); HERO_NODEBUG int64_t h5_r0, h7_r1, t2, t5, t8, t18, t20, t25, t26, t29, t30, t31, t36, t37, t40, t41, t42, t45, t47, t48, t49, t54, t55, t56, t59, t61, t104, t106; __builtin_memset(&h6_f1, 0, sizeof h6_f1); HeroArrayHeader * h8_copies; __builtin_memset(&h8_copies, 0, sizeof h8_copies); int64_t h9_k; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h10_own10, h11_own11, h12_own12, t3, t6, t9, t10, t11, t13, t14, t17, t19, t22, t33, t52, t57, t62, t107, t108, t110, t111, t112, t113, t114, t115, t125; __builtin_memset(&h10_own10, 0, sizeof h10_own10); __builtin_memset(&h11_own11, 0, sizeof h11_own11); __builtin_memset(&h12_own12, 0, sizeof h12_own12); HERO_NODEBUG HeroMapHeader *h13_own13, *t16, *t21, *t32, *t43, *t116, *t117; __builtin_memset(&h13_own13, 0, sizeof h13_own13); __builtin_memset(&h14_own14, 0, sizeof h14_own14); __builtin_memset(&h15_own15, 0, sizeof h15_own15); HERO_NODEBUG HeroArrayHeader *h16_own16, *h17_own17, *t44, *t46, *t58, *t60, *t105, *t122, *t123, *t124; __builtin_memset(&h16_own16, 0, sizeof h16_own16); __builtin_memset(&h17_own17, 0, sizeof h17_own17); HERO_NODEBUG HeroStr t1, t4, t7, t103; HERO_NODEBUG bool t12, t15, t27, t38, t50, t109; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 t63; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 t64; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 t65; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 t66; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 t67; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 t68; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 t69; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 t70; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 t71; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 t72; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 t73; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 t74; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 t75; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 t76; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 t77; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 t78; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 t79; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 t80; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 t81; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 t82; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 t83; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 t84; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 t85; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 t86; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 t87; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 t88; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 t89; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 t90; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 t91; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 t92; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 t93; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 t94; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 t95; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 t96; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 t97; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 t98; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 t99; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 t100; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 t101; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 t102; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_main(void) { h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h0_a; __builtin_memset(&h0_a, 0, sizeof h0_a); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h1_b; __builtin_memset(&h1_b, 0, sizeof h1_b); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h2_c; __builtin_memset(&h2_c, 0, sizeof h2_c); HeroMapHeader * h3_seen; __builtin_memset(&h3_seen, 0, sizeof h3_seen); HERO_NODEBUG h_0opt_e201354 h4_f0, h6_f1, h14_own14, h15_own15, t23, t24, t28, t34, t35, t39, t118, t119, t120, t121; __builtin_memset(&h4_f0, 0, sizeof h4_f0); HERO_NODEBUG int64_t h5_r0, h7_r1, t2, t5, t8, t18, t20, t25, t26, t29, t30, t31, t36, t37, t40, t41, t42, t45, t47, t48, t49, t54, t55, t56, t59, t61, t104, t106; __builtin_memset(&h6_f1, 0, sizeof h6_f1); HeroArrayHeader * h8_copies; __builtin_memset(&h8_copies, 0, sizeof h8_copies); int64_t h9_k; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 h10_own10, h11_own11, h12_own12, t3, t6, t9, t10, t11, t13, t14, t17, t19, t22, t33, t52, t57, t62, t107, t108, t110, t111, t112, t113, t114, t115, t125; __builtin_memset(&h10_own10, 0, sizeof h10_own10); __builtin_memset(&h11_own11, 0, sizeof h11_own11); __builtin_memset(&h12_own12, 0, sizeof h12_own12); HERO_NODEBUG HeroMapHeader *h13_own13, *t16, *t21, *t32, *t43, *t116, *t117; __builtin_memset(&h13_own13, 0, sizeof h13_own13); __builtin_memset(&h14_own14, 0, sizeof h14_own14); __builtin_memset(&h15_own15, 0, sizeof h15_own15); HERO_NODEBUG HeroArrayHeader *h16_own16, *h17_own17, *t44, *t46, *t58, *t60, *t105, *t122, *t123, *t124; __builtin_memset(&h16_own16, 0, sizeof h16_own16); __builtin_memset(&h17_own17, 0, sizeof h17_own17); HERO_NODEBUG HeroStr t1, t4, t7, t103; HERO_NODEBUG bool t12, t15, t27, t38, t50, t109; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 t63; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 t64; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 t65; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 t66; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 t67; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 t68; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 t69; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 t70; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 t71; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 t72; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 t73; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 t74; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 t75; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 t76; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 t77; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 t78; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 t79; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 t80; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 t81; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 t82; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 t83; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 t84; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 t85; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 t86; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 t87; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 t88; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 t89; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 t90; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 t91; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 t92; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 t93; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 t94; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 t95; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 t96; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 t97; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 t98; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 t99; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 t100; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 t101; HERO_NODEBUG h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 t102; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_78); t2 = INT64_C(1); t3 = h_fixedbugs622achainpast32copiedcomparedhashedanddropped_chain(t1, t2); HERO_COPY_HELD(t110, (h10_own10)); HERO_COPY_HELD(h10_own10, (t3)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_release(&t110); HERO_COPY_HELD(t111, (h0_a)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_retain(&t3); HERO_COPY_HELD(h0_a, (t3)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_release(&t111);
     t4 = HERO_STR_LIT(hero_str_78); t5 = INT64_C(1); t6 = h_fixedbugs622achainpast32copiedcomparedhashedanddropped_chain(t4, t5); HERO_COPY_HELD(t112, (h11_own11)); HERO_COPY_HELD(h11_own11, (t6)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_release(&t112); HERO_COPY_HELD(t113, (h1_b)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_retain(&t6); HERO_COPY_HELD(h1_b, (t6)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_release(&t113);
     t7 = HERO_STR_LIT(hero_str_79); t8 = INT64_C(2); t9 = h_fixedbugs622achainpast32copiedcomparedhashedanddropped_chain(t7, t8); HERO_COPY_HELD(t114, (h12_own12)); HERO_COPY_HELD(h12_own12, (t9)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_release(&t114); HERO_COPY_HELD(t115, (h2_c)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_retain(&t9); HERO_COPY_HELD(h2_c, (t9)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_release(&t115);
     HERO_COPY_HELD(t10, (h0_a)); HERO_COPY_HELD(t11, (h1_b)); t12 = h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_eq(&t10, &t11); HERO_COPY_HELD(t13, (h0_a)); HERO_COPY_HELD(t14, (h2_c)); t15 = h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_eq(&t13, &t14); hero_print_bool(t12); hero_print_bool(t15); hero_print_end();
     t16 = hero_map_new(&h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_desc, &hero_desc_int, 0); t116 = h13_own13; h13_own13 = t16; hero_map_decref(t116); t117 = h3_seen; hero_map_incref(t16); h3_seen = t16; hero_map_decref(t117);
-    HERO_COPY_HELD(t17, (h0_a)); t18 = INT64_C(10); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero", "fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.main", 188, 5}; hero_map_set_at(&(h3_seen), &t17, &t18, &hero_here); }
-    HERO_COPY_HELD(t19, (h2_c)); t20 = INT64_C(20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero", "fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.main", 189, 5}; hero_map_set_at(&(h3_seen), &t19, &t20, &hero_here); }
-    t21 = h3_seen; HERO_COPY_HELD(t22, (h1_b)); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero", "fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.main", 190, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t21, &t22, &hero_here); if (found == NULL) { t23 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t23 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t23.as.ok, found); } } HERO_COPY_HELD(t118, (h14_own14)); HERO_COPY_HELD(h14_own14, (t23)); h_0opt_e201354_release(&t118); HERO_COPY_HELD(t119, (h4_f0)); h_0opt_e201354_retain(&t23); HERO_COPY_HELD(h4_f0, (t23)); h_0opt_e201354_release(&t119); HERO_COPY_HELD(t24, (h4_f0)); t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb1; else goto bb2; bb1: HERO_COPY_HELD(t28, (h4_f0)); t29 = t28.as.ok; h5_r0 = t29; goto bb3; bb2: t30 = INT64_C(0); h5_r0 = t30; goto bb3; bb3: t31 = h5_r0; t32 = h3_seen; HERO_COPY_HELD(t33, (h2_c)); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero", "fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.main", 190, 31}; HERO_NODEBUG const void *found = hero_map_find_at(t32, &t33, &hero_here); if (found == NULL) { t34 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t34 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t34.as.ok, found); } } HERO_COPY_HELD(t120, (h15_own15)); HERO_COPY_HELD(h15_own15, (t34)); h_0opt_e201354_release(&t120); HERO_COPY_HELD(t121, (h6_f1)); h_0opt_e201354_retain(&t34); HERO_COPY_HELD(h6_f1, (t34)); h_0opt_e201354_release(&t121); HERO_COPY_HELD(t35, (h6_f1)); t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb4; else goto bb5; bb4: HERO_COPY_HELD(t39, (h6_f1)); t40 = t39.as.ok; h7_r1 = t40; goto bb6; bb5: t41 = INT64_C(0); h7_r1 = t41; goto bb6; bb6: t42 = h7_r1; t43 = h3_seen; t44 = hero_map_keys(t43); t122 = h16_own16; h16_own16 = t44; hero_array_decref(t122); t45 = ((void)(t44 == NULL ? ((void)hero_array_len(t44), hero_unreachable()) : (void)0), t44->len); hero_print_int(t31); hero_print_int(t42); hero_print_int(t45); hero_print_end();
+    HERO_COPY_HELD(t17, (h0_a)); t18 = INT64_C(10); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero", "fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.main", 188, 5}; hero_map_set_at(&(h3_seen), &t17, &t18, &hero_here); }
+    HERO_COPY_HELD(t19, (h2_c)); t20 = INT64_C(20); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero", "fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.main", 189, 5}; hero_map_set_at(&(h3_seen), &t19, &t20, &hero_here); }
+    t21 = h3_seen; HERO_COPY_HELD(t22, (h1_b)); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero", "fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.main", 190, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t21, &t22, &hero_here); if (hero_found == NULL) { t23 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t23 = (h_0opt_e201354){.hero_tag = INT64_C(0)}; (&hero_desc_int)->copy(&t23.hero_as.hero_ok, hero_found); } } HERO_COPY_HELD(t118, (h14_own14)); HERO_COPY_HELD(h14_own14, (t23)); h_0opt_e201354_release(&t118); HERO_COPY_HELD(t119, (h4_f0)); h_0opt_e201354_retain(&t23); HERO_COPY_HELD(h4_f0, (t23)); h_0opt_e201354_release(&t119); HERO_COPY_HELD(t24, (h4_f0)); t25 = t24.hero_tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto hero_bb1; else goto hero_bb2; hero_bb1: HERO_COPY_HELD(t28, (h4_f0)); t29 = t28.hero_as.hero_ok; h5_r0 = t29; goto hero_bb3; hero_bb2: t30 = INT64_C(0); h5_r0 = t30; goto hero_bb3; hero_bb3: t31 = h5_r0; t32 = h3_seen; HERO_COPY_HELD(t33, (h2_c)); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero", "fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.main", 190, 31}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t32, &t33, &hero_here); if (hero_found == NULL) { t34 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t34 = (h_0opt_e201354){.hero_tag = INT64_C(0)}; (&hero_desc_int)->copy(&t34.hero_as.hero_ok, hero_found); } } HERO_COPY_HELD(t120, (h15_own15)); HERO_COPY_HELD(h15_own15, (t34)); h_0opt_e201354_release(&t120); HERO_COPY_HELD(t121, (h6_f1)); h_0opt_e201354_retain(&t34); HERO_COPY_HELD(h6_f1, (t34)); h_0opt_e201354_release(&t121); HERO_COPY_HELD(t35, (h6_f1)); t36 = t35.hero_tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto hero_bb4; else goto hero_bb5; hero_bb4: HERO_COPY_HELD(t39, (h6_f1)); t40 = t39.hero_as.hero_ok; h7_r1 = t40; goto hero_bb6; hero_bb5: t41 = INT64_C(0); h7_r1 = t41; goto hero_bb6; hero_bb6: t42 = h7_r1; t43 = h3_seen; t44 = hero_map_keys(t43); t122 = h16_own16; h16_own16 = t44; hero_array_decref(t122); t45 = ((void)(t44 == NULL ? ((void)hero_array_len(t44), hero_unreachable()) : (void)0), t44->len); hero_print_int(t31); hero_print_int(t42); hero_print_int(t45); hero_print_end();
     t46 = hero_array_new(&h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_desc, 1); t123 = h17_own17; h17_own17 = t46; hero_array_decref(t123); t124 = h8_copies; hero_array_incref(t46); h8_copies = t46; hero_array_decref(t124);
-    t47 = INT64_C(0); h9_k = t47; goto bb7; bb7:
+    t47 = INT64_C(0); h9_k = t47; goto hero_bb7; hero_bb7:
 #line 194
-    t48 = h9_k; t49 = INT64_C(100); t50 = t48 < t49; if (t50) goto bb8; else goto bb9; bb8:
+    t48 = h9_k; t49 = INT64_C(100); t50 = t48 < t49; if (t50) goto hero_bb8; else goto hero_bb9; hero_bb8:
     HERO_COPY_HELD(t52, (h1_b)); hero_array_push_owned(&h8_copies, &t52);
-    t54 = h9_k; t55 = INT64_C(1); if (__builtin_add_overflow(t54, t55, &t56)) hero_panic_overflow_at("fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero", "fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.main", 196, 13); h9_k = t56; goto bb7; bb9:
+    t54 = h9_k; t55 = INT64_C(1); if (__builtin_add_overflow(t54, t55, &t56)) hero_panic_overflow_at("fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.hero", "fixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped.main", 196, 13); h9_k = t56; goto hero_bb7; hero_bb9:
 #line 198
     HERO_COPY_HELD(t57, (h2_c)); HERO_COPY_HELD(t125, (h1_b)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_retain(&t57); HERO_COPY_HELD(h1_b, (t57)); h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_release(&t125);
 #line 200
@@ -687,928 +687,928 @@ void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_main(void) { h_fix
     hero_array_release_at(&h17_own17);
     return;
 }
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 *v) {
-    hero_str_incref(v->f_s);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 *hero_v) {
+    hero_str_incref(hero_v->f_s);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 *v) {
-    hero_str_decref(v->f_s);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 *hero_v) {
+    hero_str_decref(hero_v->f_s);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 *b) {
-    if (!(hero_str_eq(a->f_s, b->f_s))) return false;
-    if (!(a->f_n == b->f_n)) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 *hero_b) {
+    if (!(hero_str_eq(hero_a->f_s, hero_b->f_s))) return false;
+    if (!(hero_a->f_n == hero_b->f_n)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_str)->hash(&v->f_s)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_int)->hash(&v->f_n)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R0 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_str)->hash(&hero_v->f_s)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_n)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R1 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R0_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R2 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R1_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R3 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R2_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R4 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R3_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R5 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R4_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R6 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R5_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R7 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R6_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R8 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R7_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R9 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R8_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R10 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R9_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R11 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R10_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R12 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R11_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R13 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R12_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R14 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R13_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R15 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R14_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R16 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R15_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R17 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R16_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R18 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R17_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R19 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R18_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R20 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R19_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R21 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R20_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R22 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R21_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R23 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R22_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R24 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R23_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R25 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R24_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R26 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R25_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R27 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R26_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R28 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R27_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R29 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R28_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R30 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R29_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R31 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R30_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R32 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R31_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R33 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R32_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R34 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R33_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R35 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R34_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R36 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R35_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R37 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R36_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R38 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R37_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R39 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R38_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_retain(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_retain(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_retain(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *v) {
-    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_release(&v->f_inner);
+HERO_TU_LOCAL void h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_release(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *hero_v) {
+    h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_release(&hero_v->f_inner);
 }
 
-HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *b) {
-    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_eq(&a->f_inner, &b->f_inner))) return false;
+HERO_TU_LOCAL bool h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_eq(const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *hero_a, const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *hero_b) {
+    if (!(h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_eq(&hero_a->f_inner, &hero_b->f_inner))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_hash(const void *elem) {
-    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_hash(&v->f_inner)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R40_hash(const void *hero_elem) {
+    const h_fixedbugs622achainpast32copiedcomparedhashedanddropped_R40 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs622achainpast32copiedcomparedhashedanddropped_0R39_hash(&hero_v->f_inner)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4fc7c9270f2b3a74", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7347088a12932d09", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs622achainpast32copiedcomparedhashedanddropped\tfixedbugs-622-a-chain-past-32-copied-compared-hashed-and-dropped\n");
     h_fixedbugs622achainpast32copiedcomparedhashedanddropped_main();
     hero_runtime_check_leaks();

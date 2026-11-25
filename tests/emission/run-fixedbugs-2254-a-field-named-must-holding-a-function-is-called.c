@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -65,26 +65,26 @@ typedef struct h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_Box {
 
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 #pragma clang diagnostic push
@@ -93,31 +93,31 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 105 "fixedbugs2254afieldnamedmustholdingafunctioniscalled.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_0Box_eq(const h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_Box *a, const h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_Box *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_0Box_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_0Box_eq(const h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_Box *hero_a, const h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_Box *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_0Box_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 
 int64_t h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_seven(void);
 int64_t h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_twice(int64_t h0_n);
@@ -125,35 +125,35 @@ bool h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_yes(void);
 void h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_main(void);
 
 #line 14 "tests/golden/run/fixedbugs-2254-a-field-named-must-holding-a-function-is-called.hero"
-int64_t h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_seven(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_seven(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(7); return t1;
 #line 131 "fixedbugs2254afieldnamedmustholdingafunctioniscalled.c"
 }
 
 #line 17 "tests/golden/run/fixedbugs-2254-a-field-named-must-holding-a-function-is-called.hero"
-int64_t h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_twice(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_twice(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-2254-a-field-named-must-holding-a-function-is-called.hero", "fixedbugs-2254-a-field-named-must-holding-a-function-is-called.twice", 18, 12); return t3;
 #line 137 "fixedbugs2254afieldnamedmustholdingafunctioniscalled.c"
 }
 
 #line 20 "tests/golden/run/fixedbugs-2254-a-field-named-must-holding-a-function-is-called.hero"
-bool h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_yes(void) { HERO_NODEBUG bool t1; HERO_ENTRY_STOP; goto bb0; bb0:
+bool h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_yes(void) { HERO_NODEBUG bool t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = true; return t1;
 #line 143 "fixedbugs2254afieldnamedmustholdingafunctioniscalled.c"
 }
 
 #line 23 "tests/golden/run/fixedbugs-2254-a-field-named-must-holding-a-function-is-called.hero"
-void h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_main(void) { h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_Box h0_b; HeroMapHeader * h1_m = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_f1 = {0}, h5_f2 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, t22, t23, t27, t29, t34, t35, t39, t46, t47, t53, t54, t55, t56, t57, t58; HERO_NODEBUG int64_t h4_r0, t7, t11, t12, t18, t24, t25, t30, t36, t37, t40, t41, t42, t48, t49; HERO_NODEBUG HeroMapHeader *h6_own6 = {0}, *t19, *t20, *t32, *t44, *t51, *t52; HERO_NODEBUG h_0fn_28cae2db t1, t6; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG h_0fn_6ca4f70a t3, t15; HERO_NODEBUG h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_Box t4, t5, t9, t14; HERO_NODEBUG HeroStr t8, t13, t17, t21, t31, t33, t43, t45; HERO_NODEBUG h_0fn_7e55721 t10; HERO_NODEBUG bool t16, t26, t38, t50; HERO_NODEBUG HeroFailure t28; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_main(void) { h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_Box h0_b; HeroMapHeader * h1_m = {0}; HERO_NODEBUG h_0opt_e201354 h2_f0 = {0}, h3_f1 = {0}, h5_f2 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, t22, t23, t27, t29, t34, t35, t39, t46, t47, t53, t54, t55, t56, t57, t58; HERO_NODEBUG int64_t h4_r0, t7, t11, t12, t18, t24, t25, t30, t36, t37, t40, t41, t42, t48, t49; HERO_NODEBUG HeroMapHeader *h6_own6 = {0}, *t19, *t20, *t32, *t44, *t51, *t52; HERO_NODEBUG h_0fn_28cae2db t1, t6; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG h_0fn_6ca4f70a t3, t15; HERO_NODEBUG h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_Box t4, t5, t9, t14; HERO_NODEBUG HeroStr t8, t13, t17, t21, t31, t33, t43, t45; HERO_NODEBUG h_0fn_7e55721 t10; HERO_NODEBUG bool t16, t26, t38, t50; HERO_NODEBUG HeroFailure t28; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_seven; t2 = h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_twice; t3 = h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_yes; t4 = (h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_Box){.f_must = t1, .f_default = t2, .f_is_err = t3}; h0_b = t4;
     t5 = h0_b; t6 = t5.f_must; t7 = t6(); t8 = HERO_STR_LIT(hero_str_20); t9 = h0_b; t10 = t9.f_default; t11 = INT64_C(21); t12 = t10(t11); t13 = HERO_STR_LIT(hero_str_20); t14 = h0_b; t15 = t14.f_is_err; t16 = t15(); hero_print_int(t7); hero_print_str(t8); hero_print_int(t12); hero_print_str(t13); hero_print_bool(t16); hero_print_end();
-    t17 = HERO_STR_LIT(hero_str_61); t18 = INT64_C(1); t19 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2254-a-field-named-must-holding-a-function-is-called.hero", "fixedbugs-2254-a-field-named-must-holding-a-function-is-called.main", 26, 21}; hero_map_put_at(t19, &t17, &t18, &hero_here); } t51 = h6_own6; h6_own6 = t19; hero_map_decref(t51); t52 = h1_m; hero_map_incref(t19); h1_m = t19; hero_map_decref(t52);
-    t20 = h1_m; t21 = HERO_STR_LIT(hero_str_61); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2254-a-field-named-must-holding-a-function-is-called.hero", "fixedbugs-2254-a-field-named-must-holding-a-function-is-called.main", 27, 11}; HERO_NODEBUG const void *found = hero_map_find_at(t20, &t21, &hero_here); if (found == NULL) { t22 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t22 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t22.as.ok, found); } } t53 = h7_own7; h7_own7 = t22; h_0opt_e201354_release(&t53); t54 = h2_f0; h_0opt_e201354_retain(&t22); h2_f0 = t22; h_0opt_e201354_release(&t54); t23 = h2_f0; t24 = t23.tag; t25 = INT64_C(0); t26 = t24 == t25; if (t26) goto bb1; else goto bb2; bb1: t29 = h2_f0; t30 = t29.as.ok; t31 = HERO_STR_LIT(hero_str_20); t32 = h1_m; t33 = HERO_STR_LIT(hero_str_62); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2254-a-field-named-must-holding-a-function-is-called.hero", "fixedbugs-2254-a-field-named-must-holding-a-function-is-called.main", 27, 31}; HERO_NODEBUG const void *found = hero_map_find_at(t32, &t33, &hero_here); if (found == NULL) { t34 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t34 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t34.as.ok, found); } } t55 = h8_own8; h8_own8 = t34; h_0opt_e201354_release(&t55); t56 = h3_f1; h_0opt_e201354_retain(&t34); h3_f1 = t34; h_0opt_e201354_release(&t56); t35 = h3_f1; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb3; else goto bb4; bb2: t27 = h2_f0; t28 = t27.as.err;
+    t17 = HERO_STR_LIT(hero_str_61); t18 = INT64_C(1); t19 = hero_map_new(&hero_desc_str, &hero_desc_int, 1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2254-a-field-named-must-holding-a-function-is-called.hero", "fixedbugs-2254-a-field-named-must-holding-a-function-is-called.main", 26, 21}; hero_map_put_at(t19, &t17, &t18, &hero_here); } t51 = h6_own6; h6_own6 = t19; hero_map_decref(t51); t52 = h1_m; hero_map_incref(t19); h1_m = t19; hero_map_decref(t52);
+    t20 = h1_m; t21 = HERO_STR_LIT(hero_str_61); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2254-a-field-named-must-holding-a-function-is-called.hero", "fixedbugs-2254-a-field-named-must-holding-a-function-is-called.main", 27, 11}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t20, &t21, &hero_here); if (hero_found == NULL) { t22 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t22 = (h_0opt_e201354){.hero_tag = INT64_C(0)}; (&hero_desc_int)->copy(&t22.hero_as.hero_ok, hero_found); } } t53 = h7_own7; h7_own7 = t22; h_0opt_e201354_release(&t53); t54 = h2_f0; h_0opt_e201354_retain(&t22); h2_f0 = t22; h_0opt_e201354_release(&t54); t23 = h2_f0; t24 = t23.hero_tag; t25 = INT64_C(0); t26 = t24 == t25; if (t26) goto hero_bb1; else goto hero_bb2; hero_bb1: t29 = h2_f0; t30 = t29.hero_as.hero_ok; t31 = HERO_STR_LIT(hero_str_20); t32 = h1_m; t33 = HERO_STR_LIT(hero_str_62); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2254-a-field-named-must-holding-a-function-is-called.hero", "fixedbugs-2254-a-field-named-must-holding-a-function-is-called.main", 27, 31}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t32, &t33, &hero_here); if (hero_found == NULL) { t34 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t34 = (h_0opt_e201354){.hero_tag = INT64_C(0)}; (&hero_desc_int)->copy(&t34.hero_as.hero_ok, hero_found); } } t55 = h8_own8; h8_own8 = t34; h_0opt_e201354_release(&t55); t56 = h3_f1; h_0opt_e201354_retain(&t34); h3_f1 = t34; h_0opt_e201354_release(&t56); t35 = h3_f1; t36 = t35.hero_tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto hero_bb3; else goto hero_bb4; hero_bb2: t27 = h2_f0; t28 = t27.hero_as.hero_err;
 #line 152 "fixedbugs2254afieldnamedmustholdingafunctioniscalled.c"
     hero_panic_must_at(t28, "fixedbugs-2254-a-field-named-must-holding-a-function-is-called.hero", "fixedbugs-2254-a-field-named-must-holding-a-function-is-called.main", 27, 11);
     hero_unreachable();
-bb3:
+hero_bb3:
 #line 27 "tests/golden/run/fixedbugs-2254-a-field-named-must-holding-a-function-is-called.hero"
-    t39 = h3_f1; t40 = t39.as.ok; h4_r0 = t40; goto bb5; bb4: t41 = INT64_C(3); h4_r0 = t41; goto bb5; bb5: t42 = h4_r0; t43 = HERO_STR_LIT(hero_str_20); t44 = h1_m; t45 = HERO_STR_LIT(hero_str_62); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2254-a-field-named-must-holding-a-function-is-called.hero", "fixedbugs-2254-a-field-named-must-holding-a-function-is-called.main", 27, 55}; HERO_NODEBUG const void *found = hero_map_find_at(t44, &t45, &hero_here); if (found == NULL) { t46 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = hero_failure_missing_key()}; } else { t46 = (h_0opt_e201354){.tag = INT64_C(0)}; (&hero_desc_int)->copy(&t46.as.ok, found); } } t57 = h9_own9; h9_own9 = t46; h_0opt_e201354_release(&t57); t58 = h5_f2; h_0opt_e201354_retain(&t46); h5_f2 = t46; h_0opt_e201354_release(&t58); t47 = h5_f2; t48 = t47.tag; t49 = INT64_C(1); t50 = t48 == t49; hero_print_int(t30); hero_print_str(t31); hero_print_int(t42); hero_print_str(t43); hero_print_bool(t50); hero_print_end();
+    t39 = h3_f1; t40 = t39.hero_as.hero_ok; h4_r0 = t40; goto hero_bb5; hero_bb4: t41 = INT64_C(3); h4_r0 = t41; goto hero_bb5; hero_bb5: t42 = h4_r0; t43 = HERO_STR_LIT(hero_str_20); t44 = h1_m; t45 = HERO_STR_LIT(hero_str_62); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2254-a-field-named-must-holding-a-function-is-called.hero", "fixedbugs-2254-a-field-named-must-holding-a-function-is-called.main", 27, 55}; HERO_NODEBUG const void *hero_found = hero_map_find_at(t44, &t45, &hero_here); if (hero_found == NULL) { t46 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()}; } else { t46 = (h_0opt_e201354){.hero_tag = INT64_C(0)}; (&hero_desc_int)->copy(&t46.hero_as.hero_ok, hero_found); } } t57 = h9_own9; h9_own9 = t46; h_0opt_e201354_release(&t57); t58 = h5_f2; h_0opt_e201354_retain(&t46); h5_f2 = t46; h_0opt_e201354_release(&t58); t47 = h5_f2; t48 = t47.hero_tag; t49 = INT64_C(1); t50 = t48 == t49; hero_print_int(t30); hero_print_str(t31); hero_print_int(t42); hero_print_str(t43); hero_print_bool(t50); hero_print_end();
 #line 158 "fixedbugs2254afieldnamedmustholdingafunctioniscalled.c"
     hero_map_release_at(&h1_m);
     h_0opt_e201354_release(hero_slot_escape(&h2_f0));
@@ -165,122 +165,122 @@ bb3:
     h_0opt_e201354_release(hero_slot_escape(&h9_own9));
     return;
 }
-HERO_TU_LOCAL bool h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_0Box_eq(const h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_Box *a, const h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_Box *b) {
-    if (!(a->f_must == b->f_must)) return false;
-    if (!(a->f_default == b->f_default)) return false;
-    if (!(a->f_is_err == b->f_is_err)) return false;
+HERO_TU_LOCAL bool h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_0Box_eq(const h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_Box *hero_a, const h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_Box *hero_b) {
+    if (!(hero_a->f_must == hero_b->f_must)) return false;
+    if (!(hero_a->f_default == hero_b->f_default)) return false;
+    if (!(hero_a->f_is_err == hero_b->f_is_err)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_0Box_hash(const void *elem) {
-    const h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_Box *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_func)->hash(&v->f_must)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_func)->hash(&v->f_default)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_func)->hash(&v->f_is_err)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_0Box_hash(const void *hero_elem) {
+    const h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_Box *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_func)->hash(&hero_v->f_must)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_func)->hash(&hero_v->f_default)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_func)->hash(&hero_v->f_is_err)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("2eec696114c89cf4", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6b8ea28643252309", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2254afieldnamedmustholdingafunctioniscalled\tfixedbugs-2254-a-field-named-must-holding-a-function-is-called\n");
     h_fixedbugs2254afieldnamedmustholdingafunctioniscalled_main();
     hero_runtime_check_leaks();

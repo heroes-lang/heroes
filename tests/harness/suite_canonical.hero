@@ -73,6 +73,7 @@
 # reads files. A `--check` flag would be surface bought for nothing.
 
 use floors
+use package_rules
 use placed_trees
 use report
 use shell
@@ -86,6 +87,9 @@ use strings
 # `packages` joined them on 2026-11-08 (panel 238's R10): the package
 # index left `examples/` for the repository's root, and its newest version's
 # `files/` is the package's source, read by every program that places it.
+# Rebel's library left `packages/` for `rebel/library` on 2026-11-24 (the
+# author's 1a of 2026-11-23), read here as every instrument reads it,
+# through `package_rules.LIBRARY`.
 # `tests/golden/doc` joined them on 2026-11-19 (panel 253's R2), written in
 # form: its modules check clean, and the reference quotes their comments and
 # examples as written, so a case out of form would move its expectation.
@@ -95,7 +99,7 @@ constant SOURCE_DIRS: [str]
         "selfhost"
         "tests/harness"
         "examples"
-        "packages"
+        package_rules.LIBRARY
         "tests/golden/run"
         "tests/golden/ir"
         "tests/golden/emit"

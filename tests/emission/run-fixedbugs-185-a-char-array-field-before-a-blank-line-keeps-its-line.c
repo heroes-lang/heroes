@@ -28,6 +28,44 @@
 #include <fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.h>
 #pragma push_macro("name")
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -35,6 +73,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -59,7 +116,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -69,13 +126,13 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 14 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
 _Static_assert(__builtin_classify_type(((struct label *)0)->id) == 1 && sizeof(((struct label *)0)->id) == sizeof(int32_t) && (_Generic(((struct label *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Label id");
 _Static_assert(sizeof(struct label) - __builtin_offsetof(struct label, name) != 0, "heroes-ffi-flex Label name"); _Static_assert(_Generic(&((struct label *)0)->name, _Bool (*)[8]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Label name");
-#line 73 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+#line 130 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
 
 #line 13 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
 _Static_assert(__builtin_classify_type(*(struct label *)0) != 13, "heroes-ffi-union Label id name");
-#line 77 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
-_Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
-_Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
+#line 134 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+_Static_assert(__builtin_classify_type(*(union { int hero_a; float hero_b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
+_Static_assert(__builtin_classify_type(*(struct { int hero_a; float hero_b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -114,26 +171,26 @@ _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK"
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -154,191 +211,191 @@ typedef struct h_0opt_a8ea2 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 12 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_label_id(struct label a0) { (void)(label_id)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_label_id(struct label hero_a0) { (void)(label_id)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 168 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 225 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_0Label_eq(const struct label *a, const struct label *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_0Label_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_0Label_eq(const struct label *hero_a, const struct label *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_0Label_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
 
 void h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_main(void);
 void *hero_pad_nowhere(void);
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct label *)hero_pad_nowhere()) == 13 ? sizeof(struct label) : 0), __builtin_offsetof(struct label, id), sizeof(((struct label *)0)->id), __builtin_offsetof(struct label, name), sizeof(((struct label *)0)->name)};
-__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_1;
-__attribute__((constructor)) static void hero_pad_init(void) {
+__attribute__((__unused__)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct label *)hero_pad_nowhere()) == 13 ? sizeof(struct label) : 0), __builtin_offsetof(struct label, id), sizeof(((struct label *)0)->id), __builtin_offsetof(struct label, name), sizeof(((struct label *)0)->name)};
+__attribute__((__unused__)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_1;
+__attribute__((__constructor__)) static void hero_pad_init(void) {
     hero_pad_n_1 = hero_pad_gaps(sizeof(struct label), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
 }
 
 
 #line 17 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
-void h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_main(void) { struct label h0_l; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h3_own3 = {0}, t14, t15, t19, t21, t34, t35; HERO_NODEBUG h_0opt_e201354 h2_f1 = {0}, h4_own4 = {0}, t25, t26, t30, t32, t36, t37; HERO_NODEBUG int32_t t1, t24; HERO_NODEBUG int8_t t2, t3, t4, t5, t6, t7, t8, t9; HERO_NODEBUG struct label t11, t12, t23; HERO_NODEBUG int64_t t16, t17, t27, t28, t33; HERO_NODEBUG bool t18, t29; HERO_NODEBUG HeroFailure t20, t31; HERO_NODEBUG HeroStr t22; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_main(void) { struct label h0_l; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h3_own3 = {0}, t14, t15, t19, t21, t34, t35; HERO_NODEBUG h_0opt_e201354 h2_f1 = {0}, h4_own4 = {0}, t25, t26, t30, t32, t36, t37; HERO_NODEBUG int32_t t1, t24; HERO_NODEBUG int8_t t2, t3, t4, t5, t6, t7, t8, t9; HERO_NODEBUG struct label t11, t12, t23; HERO_NODEBUG int64_t t16, t17, t27, t28, t33; HERO_NODEBUG bool t18, t29; HERO_NODEBUG HeroFailure t20, t31; HERO_NODEBUG HeroStr t22; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(7); t2 = INT64_C(104); t3 = INT64_C(105); t4 = INT64_C(0); t5 = INT64_C(0); t6 = INT64_C(0); t7 = INT64_C(0); t8 = INT64_C(0); t9 = INT64_C(0); t11 = (struct label){.id = t1, .name = {t2, t3, t4, t5, t6, t7, t8, t9}}; h0_l = t11; hero_pad_fill(&h0_l, sizeof(struct label), 1, hero_pad_g_1, hero_pad_n_1);
-    t12 = h0_l; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t12.name), INT64_C(8), &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = hero_vb_text}; } else { t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = hero_failure_not_text()}; } } t34 = h3_own3; h3_own3 = t14; h_0opt_f87774a_release(&t34); t35 = h1_f0; h_0opt_f87774a_retain(&t14); h1_f0 = t14; h_0opt_f87774a_release(&t35); t15 = h1_f0; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb1; else goto bb2; bb1: t21 = h1_f0; t22 = t21.as.ok; hero_print_str(t22); hero_print_end();
-    t23 = h0_l; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero", "fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.main", 20, 11}; t24 = label_id(t23); } t25 = (h_0opt_e201354){.tag = INT64_C(0), .as.ok = (int64_t)t24}; t36 = h4_own4; h4_own4 = t25; h_0opt_e201354_release(&t36); t37 = h2_f1; h_0opt_e201354_retain(&t25); h2_f1 = t25; h_0opt_e201354_release(&t37); t26 = h2_f1; t27 = t26.tag; t28 = INT64_C(0); t29 = t27 == t28; if (t29) goto bb3; else goto bb4; bb2:
+    t12 = h0_l; { HERO_NODEBUG int64_t hero_vb_status = 0; HERO_NODEBUG HeroStr hero_vb_text = hero_str_try_from_bytes((const char *)(t12.name), INT64_C(8), &hero_vb_status); if (hero_vb_status == HERO_STR_OK) { t14 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = hero_vb_text}; } else { t14 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_not_text()}; } } t34 = h3_own3; h3_own3 = t14; h_0opt_f87774a_release(&t34); t35 = h1_f0; h_0opt_f87774a_retain(&t14); h1_f0 = t14; h_0opt_f87774a_release(&t35); t15 = h1_f0; t16 = t15.hero_tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto hero_bb1; else goto hero_bb2; hero_bb1: t21 = h1_f0; t22 = t21.hero_as.hero_ok; hero_print_str(t22); hero_print_end();
+    t23 = h0_l; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero", "fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.main", 20, 11}; t24 = label_id(t23); } t25 = (h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = (int64_t)t24}; t36 = h4_own4; h4_own4 = t25; h_0opt_e201354_release(&t36); t37 = h2_f1; h_0opt_e201354_retain(&t25); h2_f1 = t25; h_0opt_e201354_release(&t37); t26 = h2_f1; t27 = t26.hero_tag; t28 = INT64_C(0); t29 = t27 == t28; if (t29) goto hero_bb3; else goto hero_bb4; hero_bb2:
 #line 19
-    t19 = h1_f0; t20 = t19.as.err;
-#line 203 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+    t19 = h1_f0; t20 = t19.hero_as.hero_err;
+#line 260 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
     hero_panic_must_at(t20, "fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero", "fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.main", 19, 11);
     hero_unreachable();
-bb3:
+hero_bb3:
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
-    t32 = h2_f1; t33 = t32.as.ok; hero_print_int(t33); hero_print_end();
-#line 209 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+    t32 = h2_f1; t33 = t32.hero_as.hero_ok; hero_print_int(t33); hero_print_end();
+#line 266 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     h_0opt_e201354_release(hero_slot_escape(&h2_f1));
     h_0opt_f87774a_release(hero_slot_escape(&h3_own3));
     h_0opt_e201354_release(hero_slot_escape(&h4_own4));
     return;
-bb4:
+hero_bb4:
 #line 20 "tests/golden/run/fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero"
-    t30 = h2_f1; t31 = t30.as.err;
-#line 218 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
+    t30 = h2_f1; t31 = t30.hero_as.hero_err;
+#line 275 "fixedbugs185achararrayfieldbeforeablanklinekeepsitsline.c"
     hero_panic_must_at(t31, "fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.hero", "fixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line.main", 20, 11);
     hero_unreachable();
 }
-HERO_TU_LOCAL bool h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_0Label_eq(const struct label *a, const struct label *b) {
-    if (!(a->id == b->id)) return false;
-    if (!((a->name[0] == b->name[0] && a->name[1] == b->name[1] && a->name[2] == b->name[2] && a->name[3] == b->name[3] && a->name[4] == b->name[4] && a->name[5] == b->name[5] && a->name[6] == b->name[6] && a->name[7] == b->name[7]))) return false;
+HERO_TU_LOCAL bool h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_0Label_eq(const struct label *hero_a, const struct label *hero_b) {
+    if (!(hero_a->id == hero_b->id)) return false;
+    if (!((hero_a->name[0] == hero_b->name[0] && hero_a->name[1] == hero_b->name[1] && hero_a->name[2] == hero_b->name[2] && hero_a->name[3] == hero_b->name[3] && hero_a->name[4] == hero_b->name[4] && hero_a->name[5] == hero_b->name[5] && hero_a->name[6] == hero_b->name[6] && hero_a->name[7] == hero_b->name[7]))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_0Label_hash(const void *elem) {
-    const struct label *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_i32)->hash(&v->id)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[1])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[2])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[3])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[4])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[5])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[6])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[7])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_0Label_hash(const void *hero_elem) {
+    const struct label *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_i32)->hash(&hero_v->id)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[1])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[2])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[3])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[4])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[5])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[6])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[7])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("27b2e2f4746a6c8a", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1093d9ef07415baa", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs185achararrayfieldbeforeablanklinekeepsitsline\tfixedbugs-185-a-char-array-field-before-a-blank-line-keeps-its-line\n");
     h_fixedbugs185achararrayfieldbeforeablanklinekeepsitsline_main();
     hero_runtime_check_leaks();

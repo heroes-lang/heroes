@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -69,36 +69,36 @@ typedef struct h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Hol
 
 typedef HeroStr (*h_0fn_6f1dc5d7)(HeroStr);
 typedef struct h_0opt_30514ebf {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        h_0fn_48ac9712 ok;
-        HeroFailure err;
-    } as;
+        h_0fn_48ac9712 hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_30514ebf;
 
 typedef int64_t (*h_0fn_643113a0)(int64_t, int64_t);
 typedef HeroStr (*h_0fn_1fb9aa18)(HeroStr, int64_t);
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic push
@@ -107,35 +107,35 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 119 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0Holder_eq(const h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder *a, const h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0Holder_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_30514ebf_retain(const h_0opt_30514ebf *v);
-HERO_TU_LOCAL void h_0opt_30514ebf_release(h_0opt_30514ebf *v);
-HERO_TU_LOCAL bool h_0opt_30514ebf_eq(const h_0opt_30514ebf *a, const h_0opt_30514ebf *b);
-HERO_TU_LOCAL uint64_t h_0opt_30514ebf_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0Holder_eq(const h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder *hero_a, const h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0Holder_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_30514ebf_retain(const h_0opt_30514ebf *hero_v);
+HERO_TU_LOCAL void h_0opt_30514ebf_release(h_0opt_30514ebf *hero_v);
+HERO_TU_LOCAL bool h_0opt_30514ebf_eq(const h_0opt_30514ebf *hero_a, const h_0opt_30514ebf *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_30514ebf_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_twice(int64_t h0_x);
 int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_apply(h_0fn_48ac9712 h0_f, int64_t h1_v);
@@ -144,9 +144,9 @@ int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_wrapped(h_
 void h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_main(void);
 int64_t h_library_HERO_STR_OK(void);
 h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller);
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c);
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c);
 HeroArrayHeader * h_library_args(const HeroPlace *hero_caller);
-__attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void);
+__attribute__((__unused__)) HeroArrayHeader * hero_value_h_library_args(void);
 HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1e58d9(HeroStr h0_x);
 HERO_TU_LOCAL int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1b9a87(int64_t h0_x);
 HERO_TU_LOCAL int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0first_37f8817a(int64_t h0_x, int64_t h1_y);
@@ -156,28 +156,28 @@ HERO_TU_LOCAL int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextna
 HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0outer_1e58d9(HeroStr h0_x);
 
 #line 23 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_twice(int64_t h0_x) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_twice(int64_t h0_x) { HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_x; t2 = INT64_C(2); if (__builtin_mul_overflow(t1, t2, &t3)) hero_panic_overflow_at("fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero", "fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.twice", 24, 12); return t3;
 #line 162 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
 #line 31 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_apply(h_0fn_48ac9712 h0_f, int64_t h1_v) { HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_apply(h_0fn_48ac9712 h0_f, int64_t h1_v) { HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_f; t2 = h1_v; t3 = t1(t2); return t3;
 #line 168 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
 #line 34 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-h_0fn_6f1dc5d7 h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_shout(void) { HERO_NODEBUG h_0fn_6f1dc5d7 t1; HERO_ENTRY_STOP; goto bb0; bb0:
+h_0fn_6f1dc5d7 h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_shout(void) { HERO_NODEBUG h_0fn_6f1dc5d7 t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1e58d9; return t1;
 #line 174 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
 #line 37 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_wrapped(h_0opt_30514ebf h0_f) { HERO_NODEBUG h_0opt_30514ebf h1_s0 = {0}, t1, t2, t4, t9, t14; h_0fn_48ac9712 h2_g; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t h4_ret0, t3, t7, t8, t12, t13; HERO_NODEBUG h_0fn_48ac9712 t5, t6; HERO_NODEBUG HeroFailure t10, t15; HERO_NODEBUG HeroStr t11; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_f; t14 = h1_s0; h_0opt_30514ebf_retain(&t1); h1_s0 = t1; h_0opt_30514ebf_release(&t14); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; default: hero_unreachable(); } bb2:
-    t4 = h1_s0; t5 = t4.as.ok; h2_g = t5; t6 = h2_g; t7 = INT64_C(8); t8 = t6(t7); h4_ret0 = t8; goto bb4; bb3:
-    t9 = h1_s0; t10 = t9.as.err; t15 = h3_e; hero_failure_retain(&t10); h3_e = t10; hero_failure_release(&t15); t11 = h3_e.code; t12 = hero_str_len(t11); h4_ret0 = t12; goto bb4; bb4:
+int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_wrapped(h_0opt_30514ebf h0_f) { HERO_NODEBUG h_0opt_30514ebf h1_s0 = {0}, t1, t2, t4, t9, t14; h_0fn_48ac9712 h2_g; HeroFailure h3_e = {0}; HERO_NODEBUG int64_t h4_ret0, t3, t7, t8, t12, t13; HERO_NODEBUG h_0fn_48ac9712 t5, t6; HERO_NODEBUG HeroFailure t10, t15; HERO_NODEBUG HeroStr t11; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_f; t14 = h1_s0; h_0opt_30514ebf_retain(&t1); h1_s0 = t1; h_0opt_30514ebf_release(&t14); t2 = h1_s0; t3 = t2.hero_tag; switch (t3) { case 0: goto hero_bb2; case 1: goto hero_bb3; default: hero_unreachable(); } hero_bb2:
+    t4 = h1_s0; t5 = t4.hero_as.hero_ok; h2_g = t5; t6 = h2_g; t7 = INT64_C(8); t8 = t6(t7); h4_ret0 = t8; goto hero_bb4; hero_bb3:
+    t9 = h1_s0; t10 = t9.hero_as.hero_err; t15 = h3_e; hero_failure_retain(&t10); h3_e = t10; hero_failure_release(&t15); t11 = h3_e.code; t12 = hero_str_len(t11); h4_ret0 = t12; goto hero_bb4; hero_bb4:
 #line 182 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     t13 = h4_ret0;
     h_0opt_30514ebf_release(hero_slot_escape(&h1_s0));
@@ -186,7 +186,7 @@ int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_wrapped(h_
 }
 
 #line 51 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-void h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_main(void) { h_0fn_48ac9712 h0_f; h_0fn_6f1dc5d7 h1_g; h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder h2_h; HeroArrayHeader * h3_fs = {0}; HeroArrayHeader * h4_mixed = {0}; HeroArrayHeader * h5_grown = {0}; h_0fn_48ac9712 h6_cell; HERO_NODEBUG h_0fn_48ac9712 h7_r0, t1, t2, t5, t12, t15, t18, t19, t23, t28, t32, t33, t37, t42, t46, t49, t50, t51, t58, t59, t60, t61, t64; h_0fn_48ac9712 h8_chosen; h_0fn_643113a0 h9_pair; h_0fn_1fb9aa18 h10_other; HERO_NODEBUG HeroStr h11_own11 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, t10, t11, t74, t76, t79, t80, t83, t84, t85, t94, t95, t96; HERO_NODEBUG HeroArrayHeader *h12_own12 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *t20, *t21, *t26, *t34, *t35, *t40, *t44, *t54, *t86, *t87, *t88, *t89, *t90, *t91, *t92; HERO_NODEBUG h_0opt_30514ebf h16_own16 = {0}, t65, t93; HERO_NODEBUG int64_t t3, t4, t6, t7, t16, t17, t22, t24, t25, t27, t29, t30, t31, t36, t38, t39, t45, t47, t48, t52, t53, t55, t56, t62, t63, t66, t69, t70, t71, t75, t77, t78, t81, t82; HERO_NODEBUG h_0fn_6f1dc5d7 t8, t9; HERO_NODEBUG h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder t13, t14; HERO_NODEBUG bool t57; HERO_NODEBUG h_0fn_643113a0 t67, t68; HERO_NODEBUG h_0fn_1fb9aa18 t72, t73; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_main(void) { h_0fn_48ac9712 h0_f; h_0fn_6f1dc5d7 h1_g; h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder h2_h; HeroArrayHeader * h3_fs = {0}; HeroArrayHeader * h4_mixed = {0}; HeroArrayHeader * h5_grown = {0}; h_0fn_48ac9712 h6_cell; HERO_NODEBUG h_0fn_48ac9712 h7_r0, t1, t2, t5, t12, t15, t18, t19, t23, t28, t32, t33, t37, t42, t46, t49, t50, t51, t58, t59, t60, t61, t64; h_0fn_48ac9712 h8_chosen; h_0fn_643113a0 h9_pair; h_0fn_1fb9aa18 h10_other; HERO_NODEBUG HeroStr h11_own11 = {0}, h17_own17 = {0}, h18_own18 = {0}, h19_own19 = {0}, t10, t11, t74, t76, t79, t80, t83, t84, t85, t94, t95, t96; HERO_NODEBUG HeroArrayHeader *h12_own12 = {0}, *h13_own13 = {0}, *h14_own14 = {0}, *h15_own15 = {0}, *t20, *t21, *t26, *t34, *t35, *t40, *t44, *t54, *t86, *t87, *t88, *t89, *t90, *t91, *t92; HERO_NODEBUG h_0opt_30514ebf h16_own16 = {0}, t65, t93; HERO_NODEBUG int64_t t3, t4, t6, t7, t16, t17, t22, t24, t25, t27, t29, t30, t31, t36, t38, t39, t45, t47, t48, t52, t53, t55, t56, t62, t63, t66, t69, t70, t71, t75, t77, t78, t81, t82; HERO_NODEBUG h_0fn_6f1dc5d7 t8, t9; HERO_NODEBUG h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder t13, t14; HERO_NODEBUG bool t57; HERO_NODEBUG h_0fn_643113a0 t67, t68; HERO_NODEBUG h_0fn_1fb9aa18 t72, t73; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1b9a87; h0_f = t1;
     t2 = h0_f; t3 = INT64_C(1); t4 = t2(t3); hero_print_int(t4); hero_print_end();
     t5 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1b9a87; t6 = INT64_C(2); t7 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_apply(t5, t6); hero_print_int(t7); hero_print_end();
@@ -205,10 +205,10 @@ void h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_main(void) { 
     t50 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1b9a87; h6_cell = t50;
     t51 = h6_cell; t52 = INT64_C(9); t53 = t51(t52); hero_print_int(t53); hero_print_end();
 #line 70
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero", "fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.main", 70, 41}; t54 = h_library_args(&hero_here); } t92 = h15_own15; h15_own15 = t54; hero_array_decref(t92); t55 = ((void)(t54 == NULL ? ((void)hero_array_len(t54), hero_unreachable()) : (void)0), t54->len); t56 = INT64_C(99); t57 = t55 > t56; if (t57) goto bb2; else goto bb3; bb1: t60 = h7_r0; h8_chosen = t60;
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero", "fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.main", 70, 41}; t54 = h_library_args(&hero_here); } t92 = h15_own15; h15_own15 = t54; hero_array_decref(t92); t55 = ((void)(t54 == NULL ? ((void)hero_array_len(t54), hero_unreachable()) : (void)0), t54->len); t56 = INT64_C(99); t57 = t55 > t56; if (t57) goto hero_bb2; else goto hero_bb3; hero_bb1: t60 = h7_r0; h8_chosen = t60;
 #line 74
     t61 = h8_chosen; t62 = INT64_C(10); t63 = t61(t62); hero_print_int(t63); hero_print_end();
-    t64 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1b9a87; t65 = (h_0opt_30514ebf){.tag = INT64_C(0), .as.ok = t64}; t93 = h16_own16; h16_own16 = t65; h_0opt_30514ebf_release(&t93); t66 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_wrapped(t65); hero_print_int(t66); hero_print_end();
+    t64 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1b9a87; t65 = (h_0opt_30514ebf){.hero_tag = INT64_C(0), .hero_as.hero_ok = t64}; t93 = h16_own16; h16_own16 = t65; h_0opt_30514ebf_release(&t93); t66 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_wrapped(t65); hero_print_int(t66); hero_print_end();
     t67 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0first_37f8817a; h9_pair = t67;
     t68 = h9_pair; t69 = INT64_C(11); t70 = INT64_C(0); t71 = t68(t69, t70); hero_print_int(t71); hero_print_end();
     t72 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0first_f6f4f7b; h10_other = t72;
@@ -231,15 +231,15 @@ void h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_main(void) { 
     hero_str_release_at(&h18_own18);
     hero_str_release_at(&h19_own19);
     return;
-bb2:
+hero_bb2:
 #line 71 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
     t58 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_twice;
 #line 70
-    h7_r0 = t58; goto bb1; bb3:
+    h7_r0 = t58; goto hero_bb1; hero_bb3:
 #line 73
     t59 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1b9a87;
 #line 70
-    h7_r0 = t59; goto bb1;
+    h7_r0 = t59; goto hero_bb1;
 #line 244 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
@@ -253,18 +253,18 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
 #line 152
 #define h1_status (*hero_lend_h1_status)
 #line 152
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 155
     t7 = INT64_C(0); h1_status = t7;
-    t8 = h0_c; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
-    t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb2:
+    t8 = h0_c; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
+    t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 154
-    t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto bb7; bb3: goto bb1; bb4:
+    t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto hero_bb7; hero_bb3: goto hero_bb1; hero_bb4:
 #line 159
-    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
+    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto hero_bb7; hero_bb5:
 #line 158
-    t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
+    t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto hero_bb7; hero_bb6: goto hero_bb4; hero_bb7:
 #line 269 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
@@ -277,18 +277,18 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
     return t18;
 }
 #undef h1_status
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 152, 1};
     return h_library_validated(h0_c, &hero_here);
 }
 
 #line 196 "<heroes library>"
-HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; h_0opt_f87774a h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}, h5_f1 = {0}, h6_f2 = {0}, h8_own8 = {0}, h12_own12 = {0}, t8, t9, t10, t21, t23, t24, t28, t30, t34, t35, t39, t41, t50, t51, t52, t56, t57, t58, t59; h_0opt_f87774a h4_unread = {0}; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t1, *t47, *t48, *t49; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t14, t15, t17, t18, t19, t20, t31, t42, t53, t54, t55; HERO_NODEBUG int64_t t2, t3, t4, t6, t11, t12, t16, t25, t26, t36, t37, t44, t45, t46; HERO_NODEBUG bool t5, t13, t27, t38; HERO_NODEBUG const char *t7; HERO_NODEBUG HeroFailure t29, t40; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; h_0opt_f87774a h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}, h5_f1 = {0}, h6_f2 = {0}, h8_own8 = {0}, h12_own12 = {0}, t8, t9, t10, t21, t23, t24, t28, t30, t34, t35, t39, t41, t50, t51, t52, t56, t57, t58, t59; h_0opt_f87774a h4_unread = {0}; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t1, *t47, *t48, *t49; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t14, t15, t17, t18, t19, t20, t31, t42, t53, t54, t55; HERO_NODEBUG int64_t t2, t3, t4, t6, t11, t12, t16, t25, t26, t36, t37, t44, t45, t46; HERO_NODEBUG bool t5, t13, t27, t38; HERO_NODEBUG const char *t7; HERO_NODEBUG HeroFailure t29, t40; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t48 = h7_own7; h7_own7 = t1; hero_array_decref(t48); t49 = h0_out; hero_array_incref(t1); h0_out = t1; hero_array_decref(t49);
-    t2 = INT64_C(0); h1_i = t2; goto bb1; bb1:
-    t3 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t4 = hero_args_count(); } t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
-    t6 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t7 = (const char *)hero_args_raw(t6); } t8 = h_library_validated(t7, hero_caller); t50 = h8_own8; h8_own8 = t8; h_0opt_f87774a_release(&t50); t51 = h2_text; h_0opt_f87774a_retain(&t8); h2_text = t8; h_0opt_f87774a_release(&t51);
-    t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3:
+    t2 = INT64_C(0); h1_i = t2; goto hero_bb1; hero_bb1:
+    t3 = h1_i; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; t4 = hero_args_count(); } t5 = t3 < t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb2:
+    t6 = h1_i; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; t7 = (const char *)hero_args_raw(t6); } t8 = h_library_validated(t7, hero_caller); t50 = h8_own8; h8_own8 = t8; h_0opt_f87774a_release(&t50); t51 = h2_text; h_0opt_f87774a_retain(&t8); h2_text = t8; h_0opt_f87774a_release(&t51);
+    t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.hero_tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto hero_bb5; else goto hero_bb6; hero_bb3:
 #line 207
     t47 = h0_out;
 #line 295 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
@@ -306,33 +306,33 @@ HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader
     hero_str_release_at(&h11_own11);
     h_0opt_f87774a_release(hero_slot_escape(&h12_own12));
     return t47;
-bb4:
+hero_bb4:
 #line 206 "<heroes library>"
-    t44 = h1_i; t45 = INT64_C(1); if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h1_i = t46; goto bb1; bb5:
+    t44 = h1_i; t45 = INT64_C(1); if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h1_i = t46; goto hero_bb1; hero_bb5:
 #line 202
-    t14 = HERO_STR_LIT(hero_str_34624695); t15 = HERO_STR_LIT(hero_str_5ffd8fa5); t16 = h1_i; t17 = hero_int_to_str(t16); t53 = h9_own9; h9_own9 = t17; hero_str_decref(t53); t18 = hero_str_concat(t15, t17); t54 = h10_own10; h10_own10 = t18; hero_str_decref(t54); t19 = HERO_STR_LIT(hero_str_14b8f7ca); t20 = hero_str_concat(t18, t19); t55 = h11_own11; h11_own11 = t20; hero_str_decref(t55); hero_str_incref(t14); hero_str_incref(t20); t21 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t20}}; t56 = h12_own12; h12_own12 = t21; h_0opt_f87774a_release(&t56); t57 = h4_unread; h_0opt_f87774a_retain(&t21); h4_unread = t21; h_0opt_f87774a_release(&t57);
-    t23 = h4_unread; t58 = h5_f1; h_0opt_f87774a_retain(&t23); h5_f1 = t23; h_0opt_f87774a_release(&t58); t24 = h5_f1; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb7; else goto bb8; bb6:
+    t14 = HERO_STR_LIT(hero_str_34624695); t15 = HERO_STR_LIT(hero_str_5ffd8fa5); t16 = h1_i; t17 = hero_int_to_str(t16); t53 = h9_own9; h9_own9 = t17; hero_str_decref(t53); t18 = hero_str_concat(t15, t17); t54 = h10_own10; h10_own10 = t18; hero_str_decref(t54); t19 = HERO_STR_LIT(hero_str_14b8f7ca); t20 = hero_str_concat(t18, t19); t55 = h11_own11; h11_own11 = t20; hero_str_decref(t55); hero_str_incref(t14); hero_str_incref(t20); t21 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t14, .msg = t20}}; t56 = h12_own12; h12_own12 = t21; h_0opt_f87774a_release(&t56); t57 = h4_unread; h_0opt_f87774a_retain(&t21); h4_unread = t21; h_0opt_f87774a_release(&t57);
+    t23 = h4_unread; t58 = h5_f1; h_0opt_f87774a_retain(&t23); h5_f1 = t23; h_0opt_f87774a_release(&t58); t24 = h5_f1; t25 = t24.hero_tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto hero_bb7; else goto hero_bb8; hero_bb6:
 #line 205
-    t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb9; else goto bb10; bb7:
+    t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.hero_tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto hero_bb9; else goto hero_bb10; hero_bb7:
 #line 203
-    t30 = h5_f1; t31 = t30.as.ok; hero_array_push_owned(&h0_out, &t31); goto bb4; bb8: t28 = h5_f1; t29 = t28.as.err;
+    t30 = h5_f1; t31 = t30.hero_as.hero_ok; hero_array_push_owned(&h0_out, &t31); goto hero_bb4; hero_bb8: t28 = h5_f1; t29 = t28.hero_as.hero_err;
 #line 320 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_panic_library_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
-bb9:
+hero_bb9:
 #line 205 "<heroes library>"
-    t41 = h6_f2; t42 = t41.as.ok; hero_array_push_owned(&h0_out, &t42); goto bb4; bb10: t39 = h6_f2; t40 = t39.as.err;
+    t41 = h6_f2; t42 = t41.hero_as.hero_ok; hero_array_push_owned(&h0_out, &t42); goto hero_bb4; hero_bb10: t39 = h6_f2; t40 = t39.hero_as.hero_err;
 #line 326 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_panic_library_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }
-__attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void) {
+__attribute__((__unused__)) HeroArrayHeader * hero_value_h_library_args(void) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.args", 196, 1};
     return h_library_args(&hero_here);
 }
 
 #line 20 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-/* ident<str> */ HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1e58d9(HeroStr h0_x) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+/* ident<str> */ HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1e58d9(HeroStr h0_x) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_x;
 #line 338 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_str_incref(t1);
@@ -340,42 +340,42 @@ __attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void) {
 }
 
 #line 20 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-/* ident<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1b9a87(int64_t h0_x) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+/* ident<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1b9a87(int64_t h0_x) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_x; return t1;
 #line 346 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
 #line 26 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-/* first<i64, i64> */ HERO_TU_LOCAL int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0first_37f8817a(int64_t h0_x, int64_t h1_y) { HeroArrayHeader * h2_kept = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t2, *t4, *t9, *t10; HERO_NODEBUG int64_t t1, t5, t6, t8; HERO_NODEBUG HeroStr t3; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0; bb0:
+/* first<i64, i64> */ HERO_TU_LOCAL int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0first_37f8817a(int64_t h0_x, int64_t h1_y) { HeroArrayHeader * h2_kept = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t2, *t4, *t9, *t10; HERO_NODEBUG int64_t t1, t5, t6, t8; HERO_NODEBUG HeroStr t3; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h1_y; t2 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t2, &t1); t9 = h3_own3; h3_own3 = t2; hero_array_decref(t9); t10 = h2_kept; hero_array_incref(t2); h2_kept = t2; hero_array_decref(t10);
-    t3 = HERO_STR_LIT(hero_str_4bb496f); t4 = h2_kept; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = INT64_C(1); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1:
+    t3 = HERO_STR_LIT(hero_str_4bb496f); t4 = h2_kept; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = INT64_C(1); t7 = t5 == t6; if (t7) goto hero_bb1; else goto hero_bb2; hero_bb1:
     t8 = h0_x;
 #line 354 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_array_release_at(&h2_kept);
     hero_array_release_at(&h3_own3);
     return t8;
-bb2:
+hero_bb2:
     hero_panic_assert_shown_at(t3, hero_show_i64, &t5, &t6, 1, "fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero", "fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.first", 28, 12);
     hero_unreachable();
 }
 
 #line 26 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-/* first<str, i64> */ HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0first_f6f4f7b(HeroStr h0_x, int64_t h1_y) { HeroArrayHeader * h2_kept = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t2, *t4, *t9, *t10; HERO_NODEBUG int64_t t1, t5, t6; HERO_NODEBUG HeroStr t3, t8; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0; bb0:
+/* first<str, i64> */ HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0first_f6f4f7b(HeroStr h0_x, int64_t h1_y) { HeroArrayHeader * h2_kept = {0}; HERO_NODEBUG HeroArrayHeader *h3_own3 = {0}, *t2, *t4, *t9, *t10; HERO_NODEBUG int64_t t1, t5, t6; HERO_NODEBUG HeroStr t3, t8; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h1_y; t2 = hero_array_new(&hero_desc_int, 1); hero_array_push_owned(&t2, &t1); t9 = h3_own3; h3_own3 = t2; hero_array_decref(t9); t10 = h2_kept; hero_array_incref(t2); h2_kept = t2; hero_array_decref(t10);
-    t3 = HERO_STR_LIT(hero_str_4bb496f); t4 = h2_kept; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = INT64_C(1); t7 = t5 == t6; if (t7) goto bb1; else goto bb2; bb1:
+    t3 = HERO_STR_LIT(hero_str_4bb496f); t4 = h2_kept; t5 = ((void)(t4 == NULL ? ((void)hero_array_len(t4), hero_unreachable()) : (void)0), t4->len); t6 = INT64_C(1); t7 = t5 == t6; if (t7) goto hero_bb1; else goto hero_bb2; hero_bb1:
     t8 = h0_x;
 #line 368 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
     hero_str_incref(t8);
     hero_array_release_at(&h2_kept);
     hero_array_release_at(&h3_own3);
     return t8;
-bb2:
+hero_bb2:
     hero_panic_assert_shown_at(t3, hero_show_i64, &t5, &t6, 1, "fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero", "fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.first", 28, 12);
     hero_unreachable();
 }
 
 #line 42 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-/* counted<str> */ HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0counted_1e58d9(HeroStr h0_x) { h_0fn_48ac9712 h1_f; HERO_NODEBUG h_0fn_48ac9712 t1, t2; HERO_NODEBUG int64_t t3, t4; HERO_NODEBUG HeroStr t5; HERO_ENTRY_STOP; goto bb0; bb0:
+/* counted<str> */ HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0counted_1e58d9(HeroStr h0_x) { h_0fn_48ac9712 h1_f; HERO_NODEBUG h_0fn_48ac9712 t1, t2; HERO_NODEBUG int64_t t3, t4; HERO_NODEBUG HeroStr t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1b9a87; h1_f = t1;
     t2 = h1_f; t3 = INT64_C(16); t4 = t2(t3); hero_print_int(t4); hero_print_end();
     t5 = h0_x;
@@ -385,14 +385,14 @@ bb2:
 }
 
 #line 47 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-/* outer<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0outer_1b9a87(int64_t h0_x) { h_0fn_48ac9712 h1_f; HERO_NODEBUG h_0fn_48ac9712 t1, t2; HERO_NODEBUG int64_t t3, t4; HERO_ENTRY_STOP; goto bb0; bb0:
+/* outer<i64> */ HERO_TU_LOCAL int64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0outer_1b9a87(int64_t h0_x) { h_0fn_48ac9712 h1_f; HERO_NODEBUG h_0fn_48ac9712 t1, t2; HERO_NODEBUG int64_t t3, t4; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1b9a87; h1_f = t1;
     t2 = h1_f; t3 = h0_x; t4 = t2(t3); return t4;
 #line 392 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
 }
 
 #line 47 "tests/golden/run/fixedbugs-402-a-generic-function-takes-the-instance-its-context-names.hero"
-/* outer<str> */ HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0outer_1e58d9(HeroStr h0_x) { h_0fn_6f1dc5d7 h1_f; HERO_NODEBUG HeroStr h2_own2 = {0}, t3, t4, t5; HERO_NODEBUG h_0fn_6f1dc5d7 t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+/* outer<str> */ HERO_TU_LOCAL HeroStr h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0outer_1e58d9(HeroStr h0_x) { h_0fn_6f1dc5d7 h1_f; HERO_NODEBUG HeroStr h2_own2 = {0}, t3, t4, t5; HERO_NODEBUG h_0fn_6f1dc5d7 t1, t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0ident_1e58d9; h1_f = t1;
     t2 = h1_f; t3 = h0_x; t4 = t2(t3); t5 = h2_own2; h2_own2 = t4; hero_str_decref(t5);
 #line 399 "fixedbugs402agenericfunctiontakestheinstanceitscontextnames.c"
@@ -400,150 +400,150 @@ bb2:
     hero_str_release_at(&h2_own2);
     return t4;
 }
-HERO_TU_LOCAL bool h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0Holder_eq(const h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder *a, const h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder *b) {
-    if (!(a->f_f == b->f_f)) return false;
+HERO_TU_LOCAL bool h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0Holder_eq(const h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder *hero_a, const h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder *hero_b) {
+    if (!(hero_a->f_f == hero_b->f_f)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0Holder_hash(const void *elem) {
-    const h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_func)->hash(&v->f_f)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_0Holder_hash(const void *hero_elem) {
+    const h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_Holder *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_func)->hash(&hero_v->f_f)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_30514ebf_retain(const h_0opt_30514ebf *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_30514ebf_retain(const h_0opt_30514ebf *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_30514ebf_release(h_0opt_30514ebf *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_30514ebf_release(h_0opt_30514ebf *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_30514ebf_eq(const h_0opt_30514ebf *a, const h_0opt_30514ebf *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_func)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_30514ebf_eq(const h_0opt_30514ebf *hero_a, const h_0opt_30514ebf *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_func)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_30514ebf_hash(const void *elem) {
-    const h_0opt_30514ebf *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_30514ebf_hash(const void *hero_elem) {
+    const h_0opt_30514ebf *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_func)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_func)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("49c7d6264dbca800", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("672a983203d3a0fc", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs402agenericfunctiontakestheinstanceitscontextnames\tfixedbugs-402-a-generic-function-takes-the-instance-its-context-names\n");
     h_fixedbugs402agenericfunctiontakestheinstanceitscontextnames_main();
     hero_runtime_check_leaks();

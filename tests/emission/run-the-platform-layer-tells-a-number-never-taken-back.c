@@ -27,6 +27,44 @@
 #include "heroes_guard_open.h"
 #include <hero_net.h>
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -34,6 +72,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -55,7 +112,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -112,28 +169,28 @@ HERO_STR_STATIC(hero_str_5001dc37, "no accept");
 HERO_STR_STATIC(hero_str_266e053e, "the accepted socket is given up for a number, and nothing takes it back: ");
 HERO_STR_STATIC(hero_str_2af20233, "main returns");
 
-#line 116 "theplatformlayertellsanumbernevertakenback.c"
+#line 173 "theplatformlayertellsanumbernevertakenback.c"
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -154,186 +211,186 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 12 "tests/golden/run/the-platform-layer-tells-a-number-never-taken-back.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayertellsanumbernevertakenback_hero_net_listen(const char * a0, int64_t a1) { (void)(hero_net_listen)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayertellsanumbernevertakenback_hero_net_connect(const char * a0, int64_t a1) { (void)(hero_net_connect)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayertellsanumbernevertakenback_hero_net_accept(hero_net_socket * a0) { (void)(hero_net_accept)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayertellsanumbernevertakenback_hero_net_port(hero_net_socket * a0) { (void)(hero_net_port)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayertellsanumbernevertakenback_hero_net_close(hero_net_socket * a0) { (void)(hero_net_close)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayertellsanumbernevertakenback_hero_net_number(hero_net_socket * a0) { (void)(hero_net_number)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayertellsanumbernevertakenback_hero_net_of(int64_t a0) { (void)(hero_net_of)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayertellsanumbernevertakenback_hero_net_listen(const char * hero_a0, int64_t hero_a1) { (void)(hero_net_listen)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayertellsanumbernevertakenback_hero_net_connect(const char * hero_a0, int64_t hero_a1) { (void)(hero_net_connect)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayertellsanumbernevertakenback_hero_net_accept(hero_net_socket * hero_a0) { (void)(hero_net_accept)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayertellsanumbernevertakenback_hero_net_port(hero_net_socket * hero_a0) { (void)(hero_net_port)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayertellsanumbernevertakenback_hero_net_close(hero_net_socket * hero_a0) { (void)(hero_net_close)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayertellsanumbernevertakenback_hero_net_number(hero_net_socket * hero_a0) { (void)(hero_net_number)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayertellsanumbernevertakenback_hero_net_of(int64_t hero_a0) { (void)(hero_net_of)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 174 "theplatformlayertellsanumbernevertakenback.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 231 "theplatformlayertellsanumbernevertakenback.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_theplatformlayertellsanumbernevertakenback_0Socket_eq(hero_net_socket * const *a, hero_net_socket * const *b);
-HERO_TU_LOCAL uint64_t h_theplatformlayertellsanumbernevertakenback_0Socket_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_theplatformlayertellsanumbernevertakenback_0Socket_eq(hero_net_socket * const *hero_a, hero_net_socket * const *hero_b);
+HERO_TU_LOCAL uint64_t h_theplatformlayertellsanumbernevertakenback_0Socket_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 void h_theplatformlayertellsanumbernevertakenback_main(void);
 
 #line 20 "tests/golden/run/the-platform-layer-tells-a-number-never-taken-back.hero"
-void h_theplatformlayertellsanumbernevertakenback_main(void) { hero_net_socket * h0_listener; hero_net_socket * h1_client; hero_net_socket * h2_accepted; int64_t h3_number; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, t1, t8, t9, t19, t29, t35, t36, t37, t42, t43, t44; HERO_NODEBUG const char *t2, *t10; HERO_NODEBUG int64_t t3, t12, t31, t32, t33; HERO_NODEBUG hero_net_socket *t4, *t5, *t6, *t11, *t13, *t14, *t15, *t17, *t20, *t21, *t22, *t23, *t25, *t27, *t30, *t38, *t40; HERO_NODEBUG bool t7, t16, t24, t34; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_69fd5e8e); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 21, 41}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 21, 16}; t4 = hero_net_listen(hero_cstr_nonnull_at(t2, &hero_here), t3); hero_handle_acquired_at(t4, "hero_net_close", &hero_here); } h0_listener = t4;
+void h_theplatformlayertellsanumbernevertakenback_main(void) { hero_net_socket * h0_listener; hero_net_socket * h1_client; hero_net_socket * h2_accepted; int64_t h3_number; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, t1, t8, t9, t19, t29, t35, t36, t37, t42, t43, t44; HERO_NODEBUG const char *t2, *t10; HERO_NODEBUG int64_t t3, t12, t31, t32, t33; HERO_NODEBUG hero_net_socket *t4, *t5, *t6, *t11, *t13, *t14, *t15, *t17, *t20, *t21, *t22, *t23, *t25, *t27, *t30, *t38, *t40; HERO_NODEBUG bool t7, t16, t24, t34; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = HERO_STR_LIT(hero_str_69fd5e8e); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 21, 41}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 21, 16}; t4 = hero_net_listen(hero_cstr_nonnull_at(t2, &hero_here), t3); hero_handle_acquired_at(t4, "hero_net_close", &hero_here); } h0_listener = t4;
 #line 23
-    t5 = h0_listener; t6 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 23, 8}; t7 = hero_handle_eq_at(t5, t6, &hero_here); } if (t7) goto bb2; else goto bb3; bb1:
+    t5 = h0_listener; t6 = ((void *)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 23, 8}; t7 = hero_handle_eq_at(t5, t6, &hero_here); } if (t7) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 26
-    t9 = HERO_STR_LIT(hero_str_69fd5e8e); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 26, 40}; t10 = hero_str_lend_at(t9, &hero_here); } t11 = h0_listener; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 26, 66}; hero_handle_alive_at(t11, "the argument `s` of `hero_net_port`", &hero_here); t12 = hero_net_port(t11); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 26, 14}; t13 = hero_net_connect(hero_cstr_nonnull_at(t10, &hero_here), t12); hero_handle_acquired_at(t13, "hero_net_close", &hero_here); } h1_client = t13;
+    t9 = HERO_STR_LIT(hero_str_69fd5e8e); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 26, 40}; t10 = hero_str_lend_at(t9, &hero_here); } t11 = h0_listener; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 26, 66}; hero_handle_alive_at(t11, "the argument `s` of `hero_net_port`", &hero_here); t12 = hero_net_port(t11); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 26, 14}; t13 = hero_net_connect(hero_cstr_nonnull_at(t10, &hero_here), t12); hero_handle_acquired_at(t13, "hero_net_close", &hero_here); } h1_client = t13;
 #line 28
-    t14 = h1_client; t15 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 28, 8}; t16 = hero_handle_eq_at(t14, t15, &hero_here); } if (t16) goto bb5; else goto bb6; bb2:
+    t14 = h1_client; t15 = ((void *)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 28, 8}; t16 = hero_handle_eq_at(t14, t15, &hero_here); } if (t16) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 24
-    t8 = HERO_STR_LIT(hero_str_688dde01); hero_print_str(t8); hero_print_end(); goto bb10; bb3: goto bb1; bb4:
+    t8 = HERO_STR_LIT(hero_str_688dde01); hero_print_str(t8); hero_print_end(); goto hero_bb10; hero_bb3: goto hero_bb1; hero_bb4:
 #line 32
-    t20 = h0_listener; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 32, 16}; hero_handle_alive_at(t20, "the argument `listener` of `hero_net_accept`", &hero_here); t21 = hero_net_accept(t20); hero_handle_acquired_at(t21, "hero_net_close|hero_net_number", &hero_here); } h2_accepted = t21;
+    t20 = h0_listener; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 32, 16}; hero_handle_alive_at(t20, "the argument `listener` of `hero_net_accept`", &hero_here); t21 = hero_net_accept(t20); hero_handle_acquired_at(t21, "hero_net_close|hero_net_number", &hero_here); } h2_accepted = t21;
 #line 34
-    t22 = h2_accepted; t23 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 34, 8}; t24 = hero_handle_eq_at(t22, t23, &hero_here); } if (t24) goto bb8; else goto bb9; bb5:
+    t22 = h2_accepted; t23 = ((void *)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 34, 8}; t24 = hero_handle_eq_at(t22, t23, &hero_here); } if (t24) goto hero_bb8; else goto hero_bb9; hero_bb5:
 #line 29
-    t17 = h0_listener; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 29, 13}; { hero_handle_alive_at(t17, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t17, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t17); if (hero_handle_ended(t17, hero_life_0_0) && h0_listener == t17) h0_listener = hero_handle_dead(); } }
-    t19 = HERO_STR_LIT(hero_str_19e56000); hero_print_str(t19); hero_print_end(); goto bb10; bb6: goto bb4; bb7:
+    t17 = h0_listener; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 29, 13}; { hero_handle_alive_at(t17, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t17, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t17); if (hero_handle_ended(t17, hero_life_0_0) && h0_listener == t17) h0_listener = hero_handle_dead(); } }
+    t19 = HERO_STR_LIT(hero_str_19e56000); hero_print_str(t19); hero_print_end(); goto hero_bb10; hero_bb6: goto hero_bb4; hero_bb7:
 #line 39
-    t30 = h2_accepted; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 39, 14}; { hero_handle_alive_at(t30, "the argument `s` of `hero_net_number`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t30, "hero_net_number", NULL, &hero_here); t31 = hero_net_number(t30); if (hero_handle_ended(t30, hero_life_0_0) && h2_accepted == t30) h2_accepted = hero_handle_dead(); } } h3_number = t31;
+    t30 = h2_accepted; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 39, 14}; { hero_handle_alive_at(t30, "the argument `s` of `hero_net_number`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t30, "hero_net_number", NULL, &hero_here); t31 = hero_net_number(t30); if (hero_handle_ended(t30, hero_life_0_0) && h2_accepted == t30) h2_accepted = hero_handle_dead(); } } h3_number = t31;
     t32 = h3_number; t33 = INT64_C(0); t34 = t32 > t33; t35 = HERO_STR_LIT(hero_str_266e053e); t36 = hero_bool_to_str(t34); t43 = h4_own4; h4_own4 = t36; hero_str_decref(t43); t37 = hero_str_concat(t35, t36); t44 = h5_own5; h5_own5 = t37; hero_str_decref(t44); hero_print_str(t37); hero_print_end();
-    t38 = h1_client; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 41, 9}; { hero_handle_alive_at(t38, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t38, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t38); if (hero_handle_ended(t38, hero_life_0_0) && h1_client == t38) h1_client = hero_handle_dead(); } }
-    t40 = h0_listener; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 42, 9}; { hero_handle_alive_at(t40, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t40, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t40); if (hero_handle_ended(t40, hero_life_0_0) && h0_listener == t40) h0_listener = hero_handle_dead(); } }
-    t42 = HERO_STR_LIT(hero_str_2af20233); hero_print_str(t42); hero_print_end(); goto bb10; bb8:
+    t38 = h1_client; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 41, 9}; { hero_handle_alive_at(t38, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t38, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t38); if (hero_handle_ended(t38, hero_life_0_0) && h1_client == t38) h1_client = hero_handle_dead(); } }
+    t40 = h0_listener; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 42, 9}; { hero_handle_alive_at(t40, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t40, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t40); if (hero_handle_ended(t40, hero_life_0_0) && h0_listener == t40) h0_listener = hero_handle_dead(); } }
+    t42 = HERO_STR_LIT(hero_str_2af20233); hero_print_str(t42); hero_print_end(); goto hero_bb10; hero_bb8:
 #line 35
-    t25 = h1_client; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 35, 13}; { hero_handle_alive_at(t25, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t25, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t25); if (hero_handle_ended(t25, hero_life_0_0) && h1_client == t25) h1_client = hero_handle_dead(); } }
-    t27 = h0_listener; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 36, 13}; { hero_handle_alive_at(t27, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t27, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t27); if (hero_handle_ended(t27, hero_life_0_0) && h0_listener == t27) h0_listener = hero_handle_dead(); } }
-    t29 = HERO_STR_LIT(hero_str_5001dc37); hero_print_str(t29); hero_print_end(); goto bb10; bb9: goto bb7; bb10:
-#line 222 "theplatformlayertellsanumbernevertakenback.c"
+    t25 = h1_client; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 35, 13}; { hero_handle_alive_at(t25, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t25, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t25); if (hero_handle_ended(t25, hero_life_0_0) && h1_client == t25) h1_client = hero_handle_dead(); } }
+    t27 = h0_listener; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-tells-a-number-never-taken-back.hero", "the-platform-layer-tells-a-number-never-taken-back.main", 36, 13}; { hero_handle_alive_at(t27, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t27, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t27); if (hero_handle_ended(t27, hero_life_0_0) && h0_listener == t27) h0_listener = hero_handle_dead(); } }
+    t29 = HERO_STR_LIT(hero_str_5001dc37); hero_print_str(t29); hero_print_end(); goto hero_bb10; hero_bb9: goto hero_bb7; hero_bb10:
+#line 279 "theplatformlayertellsanumbernevertakenback.c"
     hero_str_release_at(&h4_own4);
     hero_str_release_at(&h5_own5);
     return;
 }
-HERO_TU_LOCAL bool h_theplatformlayertellsanumbernevertakenback_0Socket_eq(hero_net_socket * const *a, hero_net_socket * const *b) {
-    return hero_handle_eq(*a, *b);
+HERO_TU_LOCAL bool h_theplatformlayertellsanumbernevertakenback_0Socket_eq(hero_net_socket * const *hero_a, hero_net_socket * const *hero_b) {
+    return hero_handle_eq(*hero_a, *hero_b);
 }
 
-HERO_TU_LOCAL uint64_t h_theplatformlayertellsanumbernevertakenback_0Socket_hash(const void *elem) {
-    hero_net_socket * const *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_theplatformlayertellsanumbernevertakenback_0Socket_hash(const void *hero_elem) {
+    hero_net_socket * const *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (uint64_t)(uintptr_t)*hero_v) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("58ca9e8d7b673095", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("1fc3a6ee1930594e", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("theplatformlayertellsanumbernevertakenback\tthe-platform-layer-tells-a-number-never-taken-back\n");
     h_theplatformlayertellsanumbernevertakenback_main();
     hero_runtime_check_leaks();

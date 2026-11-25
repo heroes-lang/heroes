@@ -30,7 +30,7 @@ use source
 # so dead-stripping may drop what the table reaches (panel 216's R1,
 # `emit/value_probe.hero`).
 constant HEAD: str
-    "__attribute__((used)) static void hero_extern_refs(void) {"
+    "__attribute__((__used__)) static void hero_extern_refs(void) {"
 
 constant UNUSED_HEAD: str
     "static void hero_extern_refs(void) {"

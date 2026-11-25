@@ -2,8 +2,8 @@
 # 31, the author's of 2026-11-17: *before going to main, a check of coherence
 # and style: redundancies, things not well organised*), measured by
 # instruments rather than read, each a module of this harness asked of the
-# newest version of `packages/rebel` and of the rules page,
-# `examples-rebel/README.md`:
+# newest version of `rebel/library` and of the rules page,
+# `rebel/examples/README.md`:
 #
 #   ledgers    the same capability done by its own package in two ledgers
 #              (`rebel_ledgers.hero`)

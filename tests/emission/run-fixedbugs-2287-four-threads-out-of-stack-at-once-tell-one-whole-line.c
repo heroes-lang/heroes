@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -56,26 +56,26 @@ HERO_STR_STATIC(hero_str_20, " ");
 #line 57 "fixedbugs2287fourthreadsoutofstackatoncetellonewholeline.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic push
@@ -84,51 +84,51 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 15 "tests/golden/run/fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_hero_thread_spawn(h_0fn_48ac9712 a0, int64_t a1) { (void)(hero_thread_spawn)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_hero_thread_join(int64_t a0) { (void)(hero_thread_join)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_hero_thread_spawn(h_0fn_48ac9712 hero_a0, int64_t hero_a1) { (void)(hero_thread_spawn)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_hero_thread_join(int64_t hero_a0) { (void)(hero_thread_join)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 99 "fixedbugs2287fourthreadsoutofstackatoncetellonewholeline.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int64_t h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down(int64_t h0_n);
 void h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_main(void);
 int64_t h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down(int64_t h0_n);
 int64_t h_0cb_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down(int64_t h0_n);
-__attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+__attribute__((__unused__)) static void (*hero_callback_of(void (*hero_f)(void)))(void) {
     hero_signal_learn();
-    if (f == (void (*)(void))h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down) return (void (*)(void))h_0cb_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down;
-    return f;
+    if (hero_f == (void (*)(void))h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down) return (void (*)(void))h_0cb_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down;
+    return hero_f;
 }
 
 
 #line 18 "tests/golden/run/fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.hero"
-int64_t h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down(int64_t h0_n) { hero_thread_guard("fixedbugs2287fourthreadsoutofstackatoncetellonewholeline.down"); HERO_NODEBUG int64_t h1_ret0, t1, t2, t4, t5, t6, t7, t8, t9, t10, t11; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_n; t2 = INT64_C(0); t3 = t1 < t2; if (t3) goto bb2; else goto bb3; bb1:
+int64_t h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down(int64_t h0_n) { hero_thread_guard("fixedbugs2287fourthreadsoutofstackatoncetellonewholeline.down"); HERO_NODEBUG int64_t h1_ret0, t1, t2, t4, t5, t6, t7, t8, t9, t10, t11; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_n; t2 = INT64_C(0); t3 = t1 < t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 21
-    t5 = h0_n; t6 = INT64_C(1); if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow_at("fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.hero", "fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.down", 21, 17); t8 = h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down(t7); t9 = INT64_C(1); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow_at("fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.hero", "fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.down", 21, 12); h1_ret0 = t10; goto bb4; bb2:
+    t5 = h0_n; t6 = INT64_C(1); if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow_at("fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.hero", "fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.down", 21, 17); t8 = h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down(t7); t9 = INT64_C(1); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow_at("fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.hero", "fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.down", 21, 12); h1_ret0 = t10; goto hero_bb4; hero_bb2:
 #line 20
-    t4 = INT64_C(0); h1_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
+    t4 = INT64_C(0); h1_ret0 = t4; goto hero_bb4; hero_bb3: goto hero_bb1; hero_bb4:
 #line 133 "fixedbugs2287fourthreadsoutofstackatoncetellonewholeline.c"
     t11 = h1_ret0;
     return t11;
@@ -137,118 +137,119 @@ int64_t h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down(int64_t 
 __attribute__((__noinline__)) int64_t h_0cb_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down(int64_t h0_n) {
     hero_callback_entered("fixedbugs2287fourthreadsoutofstackatoncetellonewholeline.down", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down(h0_n);
+    hero_callback_left();
     return hero_result;
 }
 
 #line 23 "tests/golden/run/fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.hero"
-void h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_main(void) { int64_t h0_a; int64_t h1_b; int64_t h2_c; int64_t h3_here; HERO_NODEBUG h_0fn_48ac9712 t1, t4, t7; HERO_NODEBUG int64_t t2, t3, t5, t6, t8, t9, t10, t11, t12, t13, t15, t16, t18, t19, t21; HERO_NODEBUG HeroStr t14, t17, t20; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down; t2 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.hero", "fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.main", 24, 9}; t3 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t1), t2); } h0_a = t3;
-    t4 = h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down; t5 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.hero", "fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.main", 25, 9}; t6 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t4), t5); } h1_b = t6;
-    t7 = h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down; t8 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.hero", "fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.main", 26, 9}; t9 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t7), t8); } h2_c = t9;
+void h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_main(void) { int64_t h0_a; int64_t h1_b; int64_t h2_c; int64_t h3_here; HERO_NODEBUG h_0fn_48ac9712 t1, t4, t7; HERO_NODEBUG int64_t t2, t3, t5, t6, t8, t9, t10, t11, t12, t13, t15, t16, t18, t19, t21; HERO_NODEBUG HeroStr t14, t17, t20; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down; t2 = INT64_C(1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.hero", "fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.main", 24, 9}; t3 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t1), t2); } h0_a = t3;
+    t4 = h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down; t5 = INT64_C(1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.hero", "fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.main", 25, 9}; t6 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t4), t5); } h1_b = t6;
+    t7 = h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down; t8 = INT64_C(1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.hero", "fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.main", 26, 9}; t9 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t7), t8); } h2_c = t9;
     t10 = INT64_C(1); t11 = h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_down(t10); h3_here = t11;
-    t12 = h0_a; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.hero", "fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.main", 28, 11}; t13 = hero_thread_join(t12); } t14 = HERO_STR_LIT(hero_str_20); t15 = h1_b; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.hero", "fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.main", 28, 45}; t16 = hero_thread_join(t15); } t17 = HERO_STR_LIT(hero_str_20); t18 = h2_c; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.hero", "fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.main", 28, 79}; t19 = hero_thread_join(t18); } t20 = HERO_STR_LIT(hero_str_20); t21 = h3_here; hero_print_int(t13); hero_print_str(t14); hero_print_int(t16); hero_print_str(t17); hero_print_int(t19); hero_print_str(t20); hero_print_int(t21); hero_print_end(); return;
-#line 151 "fixedbugs2287fourthreadsoutofstackatoncetellonewholeline.c"
+    t12 = h0_a; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.hero", "fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.main", 28, 11}; t13 = hero_thread_join(t12); } t14 = HERO_STR_LIT(hero_str_20); t15 = h1_b; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.hero", "fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.main", 28, 45}; t16 = hero_thread_join(t15); } t17 = HERO_STR_LIT(hero_str_20); t18 = h2_c; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.hero", "fixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line.main", 28, 79}; t19 = hero_thread_join(t18); } t20 = HERO_STR_LIT(hero_str_20); t21 = h3_here; hero_print_int(t13); hero_print_str(t14); hero_print_int(t16); hero_print_str(t17); hero_print_int(t19); hero_print_str(t20); hero_print_int(t21); hero_print_end(); return;
+#line 152 "fixedbugs2287fourthreadsoutofstackatoncetellonewholeline.c"
 }
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("57908a6048917a02", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2a89c2e557f40151", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2287fourthreadsoutofstackatoncetellonewholeline\tfixedbugs-2287-four-threads-out-of-stack-at-once-tell-one-whole-line\n");
     h_fixedbugs2287fourthreadsoutofstackatoncetellonewholeline_main();
     hero_runtime_check_leaks();

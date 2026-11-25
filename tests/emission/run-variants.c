@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -75,34 +75,34 @@ typedef struct h_variants_0Token_c_word {
 } h_variants_0Token_c_word;
 
 typedef struct h_variants_Token {
-    h_variants_0Token_tag tag;
+    h_variants_0Token_tag hero_tag;
     union {
-        h_variants_0Token_c_num c_num;
-        h_variants_0Token_c_word c_word;
-    } as;
+        h_variants_0Token_c_num hero_c_num;
+        h_variants_0Token_c_word hero_c_word;
+    } hero_as;
 } h_variants_Token;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic push
@@ -111,70 +111,70 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 123 "variants.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_variants_0Token_c_num_eq(const h_variants_0Token_c_num *a, const h_variants_0Token_c_num *b);
-HERO_TU_LOCAL uint64_t h_variants_0Token_c_num_hash(const void *elem);
-HERO_TU_LOCAL void h_variants_0Token_c_word_retain(const h_variants_0Token_c_word *v);
-HERO_TU_LOCAL void h_variants_0Token_c_word_release(h_variants_0Token_c_word *v);
-HERO_TU_LOCAL bool h_variants_0Token_c_word_eq(const h_variants_0Token_c_word *a, const h_variants_0Token_c_word *b);
-HERO_TU_LOCAL uint64_t h_variants_0Token_c_word_hash(const void *elem);
-HERO_TU_LOCAL void h_variants_0Token_retain(const h_variants_Token *v);
-HERO_TU_LOCAL void h_variants_0Token_release(h_variants_Token *v);
-HERO_TU_LOCAL bool h_variants_0Token_eq(const h_variants_Token *a, const h_variants_Token *b);
-HERO_TU_LOCAL uint64_t h_variants_0Token_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_variants_0Token_c_num_eq(const h_variants_0Token_c_num *hero_a, const h_variants_0Token_c_num *hero_b);
+HERO_TU_LOCAL uint64_t h_variants_0Token_c_num_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_variants_0Token_c_word_retain(const h_variants_0Token_c_word *hero_v);
+HERO_TU_LOCAL void h_variants_0Token_c_word_release(h_variants_0Token_c_word *hero_v);
+HERO_TU_LOCAL bool h_variants_0Token_c_word_eq(const h_variants_0Token_c_word *hero_a, const h_variants_0Token_c_word *hero_b);
+HERO_TU_LOCAL uint64_t h_variants_0Token_c_word_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_variants_0Token_retain(const h_variants_Token *hero_v);
+HERO_TU_LOCAL void h_variants_0Token_release(h_variants_Token *hero_v);
+HERO_TU_LOCAL bool h_variants_0Token_eq(const h_variants_Token *hero_a, const h_variants_Token *hero_b);
+HERO_TU_LOCAL uint64_t h_variants_0Token_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int64_t h_variants_size(h_variants_Token h0_t);
 HeroStr h_variants_label(h_variants_Token h0_t);
 void h_variants_main(void);
 
 #line 19 "tests/golden/run/variants.hero"
-int64_t h_variants_size(h_variants_Token h0_t) { HERO_NODEBUG h_variants_Token h1_s0 = {0}, t1, t2, t4, t7, t13; HERO_NODEBUG int64_t h2_r0, t3, t6, t10, t11, t12; h_variants_0Token_c_num h3_n; h_variants_0Token_c_word h4_w = {0}; HERO_NODEBUG h_variants_0Token_c_num t5; HERO_NODEBUG h_variants_0Token_c_word t8, t14; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_t; t13 = h1_s0; h_variants_0Token_retain(&t1); h1_s0 = t1; h_variants_0Token_release(&t13); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; default: hero_unreachable(); } bb1: t12 = h2_r0;
+int64_t h_variants_size(h_variants_Token h0_t) { HERO_NODEBUG h_variants_Token h1_s0 = {0}, t1, t2, t4, t7, t13; HERO_NODEBUG int64_t h2_r0, t3, t6, t10, t11, t12; h_variants_0Token_c_num h3_n; h_variants_0Token_c_word h4_w = {0}; HERO_NODEBUG h_variants_0Token_c_num t5; HERO_NODEBUG h_variants_0Token_c_word t8, t14; HERO_NODEBUG HeroStr t9; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_t; t13 = h1_s0; h_variants_0Token_retain(&t1); h1_s0 = t1; h_variants_0Token_release(&t13); t2 = h1_s0; t3 = t2.hero_tag; switch (t3) { case 0: goto hero_bb2; case 1: goto hero_bb3; case 2: goto hero_bb4; default: hero_unreachable(); } hero_bb1: t12 = h2_r0;
 #line 156 "variants.c"
     h_variants_0Token_release(hero_slot_escape(&h1_s0));
     h_variants_0Token_c_word_release(hero_slot_escape(&h4_w));
     return t12;
-bb2:
+hero_bb2:
 #line 21 "tests/golden/run/variants.hero"
-    t4 = h1_s0; t5 = t4.as.c_num; h3_n = t5; t6 = h3_n.f_v;
+    t4 = h1_s0; t5 = t4.hero_as.hero_c_num; h3_n = t5; t6 = h3_n.f_v;
 #line 20
-    h2_r0 = t6; goto bb1; bb3:
+    h2_r0 = t6; goto hero_bb1; hero_bb3:
 #line 22
-    t7 = h1_s0; t8 = t7.as.c_word; t14 = h4_w; h_variants_0Token_c_word_retain(&t8); h4_w = t8; h_variants_0Token_c_word_release(&t14); t9 = h4_w.f_text; t10 = hero_str_len(t9);
+    t7 = h1_s0; t8 = t7.hero_as.hero_c_word; t14 = h4_w; h_variants_0Token_c_word_retain(&t8); h4_w = t8; h_variants_0Token_c_word_release(&t14); t9 = h4_w.f_text; t10 = hero_str_len(t9);
 #line 20
-    h2_r0 = t10; goto bb1; bb4:
+    h2_r0 = t10; goto hero_bb1; hero_bb4:
 #line 23
     t11 = INT64_C(0);
 #line 20
-    h2_r0 = t11; goto bb1;
+    h2_r0 = t11; goto hero_bb1;
 #line 173 "variants.c"
 }
 
 #line 25 "tests/golden/run/variants.hero"
-HeroStr h_variants_label(h_variants_Token h0_t) { HERO_NODEBUG h_variants_Token h1_s0 = {0}, t1, t2, t5, t12; HERO_NODEBUG HeroStr h2_r0 = {0}, h4_own4 = {0}, t4, t7, t8, t9, t10, t11, t13, t15, t16, t17; h_variants_0Token_c_word h3_w = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_variants_0Token_c_word t6, t14; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_t; t12 = h1_s0; h_variants_0Token_retain(&t1); h1_s0 = t1; h_variants_0Token_release(&t12); t2 = h1_s0; t3 = t2.tag; switch (t3) { case 0: goto bb2; case 1: goto bb3; case 2: goto bb4; default: hero_unreachable(); } bb1: t11 = h2_r0;
+HeroStr h_variants_label(h_variants_Token h0_t) { HERO_NODEBUG h_variants_Token h1_s0 = {0}, t1, t2, t5, t12; HERO_NODEBUG HeroStr h2_r0 = {0}, h4_own4 = {0}, t4, t7, t8, t9, t10, t11, t13, t15, t16, t17; h_variants_0Token_c_word h3_w = {0}; HERO_NODEBUG int64_t t3; HERO_NODEBUG h_variants_0Token_c_word t6, t14; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_t; t12 = h1_s0; h_variants_0Token_retain(&t1); h1_s0 = t1; h_variants_0Token_release(&t12); t2 = h1_s0; t3 = t2.hero_tag; switch (t3) { case 0: goto hero_bb2; case 1: goto hero_bb3; case 2: goto hero_bb4; default: hero_unreachable(); } hero_bb1: t11 = h2_r0;
 #line 179 "variants.c"
     hero_str_incref(t11);
     h_variants_0Token_release(hero_slot_escape(&h1_s0));
@@ -182,41 +182,41 @@ HeroStr h_variants_label(h_variants_Token h0_t) { HERO_NODEBUG h_variants_Token 
     h_variants_0Token_c_word_release(hero_slot_escape(&h3_w));
     hero_str_release_at(&h4_own4);
     return t11;
-bb2:
+hero_bb2:
 #line 27 "tests/golden/run/variants.hero"
     t4 = HERO_STR_LIT(hero_str_1d0a2a);
 #line 26
-    t13 = h2_r0; hero_str_incref(t4); h2_r0 = t4; hero_str_decref(t13); goto bb1; bb3:
+    t13 = h2_r0; hero_str_incref(t4); h2_r0 = t4; hero_str_decref(t13); goto hero_bb1; hero_bb3:
 #line 28
-    t5 = h1_s0; t6 = t5.as.c_word; t14 = h3_w; h_variants_0Token_c_word_retain(&t6); h3_w = t6; h_variants_0Token_c_word_release(&t14); t7 = HERO_STR_LIT(hero_str_37dd7354); t8 = h3_w.f_text; t9 = hero_str_concat(t7, t8); t15 = h4_own4; h4_own4 = t9; hero_str_decref(t15);
+    t5 = h1_s0; t6 = t5.hero_as.hero_c_word; t14 = h3_w; h_variants_0Token_c_word_retain(&t6); h3_w = t6; h_variants_0Token_c_word_release(&t14); t7 = HERO_STR_LIT(hero_str_37dd7354); t8 = h3_w.f_text; t9 = hero_str_concat(t7, t8); t15 = h4_own4; h4_own4 = t9; hero_str_decref(t15);
 #line 26
-    t16 = h2_r0; hero_str_incref(t9); h2_r0 = t9; hero_str_decref(t16); goto bb1; bb4:
+    t16 = h2_r0; hero_str_incref(t9); h2_r0 = t9; hero_str_decref(t16); goto hero_bb1; hero_bb4:
 #line 29
     t10 = HERO_STR_LIT(hero_str_1aab3b);
 #line 26
-    t17 = h2_r0; hero_str_incref(t10); h2_r0 = t10; hero_str_decref(t17); goto bb1;
+    t17 = h2_r0; hero_str_incref(t10); h2_r0 = t10; hero_str_decref(t17); goto hero_bb1;
 #line 199 "variants.c"
 }
 
 #line 31 "tests/golden/run/variants.hero"
-void h_variants_main(void) { h_variants_Token h0_a = {0}; h_variants_Token h1_b = {0}; h_variants_Token h2_c = {0}; h_variants_Token h3_d = {0}; h_variants_Token h4_w1 = {0}; h_variants_Token h5_w2 = {0}; HERO_NODEBUG h_variants_Token h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h10_own10 = {0}, h12_own12 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h20_own20 = {0}, t2, t5, t7, t12, t14, t17, t19, t21, t22, t23, t24, t26, t27, t29, t30, t32, t33, t36, t40, t41, t42, t44, t45, t46, t48, t50, t52, t53, t54, t55, t56, t57, t58, t59, t60, t61, t63, t64; HERO_NODEBUG HeroStr h9_own9 = {0}, h11_own11 = {0}, h13_own13 = {0}, h19_own19 = {0}, t4, t9, t10, t11, t13, t15, t35, t37, t38, t39, t47, t49, t51, t62; HERO_NODEBUG int64_t t1, t3, t6, t8, t16, t18, t20; HERO_NODEBUG bool t25, t28, t31, t34, t43; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(7); t2 = (h_variants_Token){.tag = h_variants_0Token_tag_num, .as.c_num = {.f_v = t1}}; t44 = h6_own6; h6_own6 = t2; h_variants_0Token_release(&t44); t3 = h_variants_size(t2); hero_print_int(t3); hero_print_end();
-    t4 = HERO_STR_LIT(hero_str_d19443a); hero_str_incref(t4); t5 = (h_variants_Token){.tag = h_variants_0Token_tag_word, .as.c_word = {.f_text = t4}}; t45 = h7_own7; h7_own7 = t5; h_variants_0Token_release(&t45); t6 = h_variants_size(t5); hero_print_int(t6); hero_print_end();
-    t7 = (h_variants_Token){.tag = h_variants_0Token_tag_end}; t46 = h8_own8; h8_own8 = t7; h_variants_0Token_release(&t46); t8 = h_variants_size(t7); hero_print_int(t8); hero_print_end();
-    t9 = HERO_STR_LIT(hero_str_35a1); t10 = HERO_STR_LIT(hero_str_21); t11 = hero_str_concat(t9, t10); t47 = h9_own9; h9_own9 = t11; hero_str_decref(t47); hero_str_incref(t11); t12 = (h_variants_Token){.tag = h_variants_0Token_tag_word, .as.c_word = {.f_text = t11}}; t48 = h10_own10; h10_own10 = t12; h_variants_0Token_release(&t48); t13 = h_variants_label(t12); t49 = h11_own11; h11_own11 = t13; hero_str_decref(t49); hero_print_str(t13); hero_print_end();
-    t14 = (h_variants_Token){.tag = h_variants_0Token_tag_end}; t50 = h12_own12; h12_own12 = t14; h_variants_0Token_release(&t50); t15 = h_variants_label(t14); t51 = h13_own13; h13_own13 = t15; hero_str_decref(t51); hero_print_str(t15); hero_print_end();
+void h_variants_main(void) { h_variants_Token h0_a = {0}; h_variants_Token h1_b = {0}; h_variants_Token h2_c = {0}; h_variants_Token h3_d = {0}; h_variants_Token h4_w1 = {0}; h_variants_Token h5_w2 = {0}; HERO_NODEBUG h_variants_Token h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h10_own10 = {0}, h12_own12 = {0}, h14_own14 = {0}, h15_own15 = {0}, h16_own16 = {0}, h17_own17 = {0}, h18_own18 = {0}, h20_own20 = {0}, t2, t5, t7, t12, t14, t17, t19, t21, t22, t23, t24, t26, t27, t29, t30, t32, t33, t36, t40, t41, t42, t44, t45, t46, t48, t50, t52, t53, t54, t55, t56, t57, t58, t59, t60, t61, t63, t64; HERO_NODEBUG HeroStr h9_own9 = {0}, h11_own11 = {0}, h13_own13 = {0}, h19_own19 = {0}, t4, t9, t10, t11, t13, t15, t35, t37, t38, t39, t47, t49, t51, t62; HERO_NODEBUG int64_t t1, t3, t6, t8, t16, t18, t20; HERO_NODEBUG bool t25, t28, t31, t34, t43; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = INT64_C(7); t2 = (h_variants_Token){.hero_tag = h_variants_0Token_tag_num, .hero_as.hero_c_num = {.f_v = t1}}; t44 = h6_own6; h6_own6 = t2; h_variants_0Token_release(&t44); t3 = h_variants_size(t2); hero_print_int(t3); hero_print_end();
+    t4 = HERO_STR_LIT(hero_str_d19443a); hero_str_incref(t4); t5 = (h_variants_Token){.hero_tag = h_variants_0Token_tag_word, .hero_as.hero_c_word = {.f_text = t4}}; t45 = h7_own7; h7_own7 = t5; h_variants_0Token_release(&t45); t6 = h_variants_size(t5); hero_print_int(t6); hero_print_end();
+    t7 = (h_variants_Token){.hero_tag = h_variants_0Token_tag_end}; t46 = h8_own8; h8_own8 = t7; h_variants_0Token_release(&t46); t8 = h_variants_size(t7); hero_print_int(t8); hero_print_end();
+    t9 = HERO_STR_LIT(hero_str_35a1); t10 = HERO_STR_LIT(hero_str_21); t11 = hero_str_concat(t9, t10); t47 = h9_own9; h9_own9 = t11; hero_str_decref(t47); hero_str_incref(t11); t12 = (h_variants_Token){.hero_tag = h_variants_0Token_tag_word, .hero_as.hero_c_word = {.f_text = t11}}; t48 = h10_own10; h10_own10 = t12; h_variants_0Token_release(&t48); t13 = h_variants_label(t12); t49 = h11_own11; h11_own11 = t13; hero_str_decref(t49); hero_print_str(t13); hero_print_end();
+    t14 = (h_variants_Token){.hero_tag = h_variants_0Token_tag_end}; t50 = h12_own12; h12_own12 = t14; h_variants_0Token_release(&t50); t15 = h_variants_label(t14); t51 = h13_own13; h13_own13 = t15; hero_str_decref(t51); hero_print_str(t15); hero_print_end();
 #line 39
-    t16 = INT64_C(1); t17 = (h_variants_Token){.tag = h_variants_0Token_tag_num, .as.c_num = {.f_v = t16}}; t52 = h14_own14; h14_own14 = t17; h_variants_0Token_release(&t52); t53 = h0_a; h_variants_0Token_retain(&t17); h0_a = t17; h_variants_0Token_release(&t53);
-    t18 = INT64_C(1); t19 = (h_variants_Token){.tag = h_variants_0Token_tag_num, .as.c_num = {.f_v = t18}}; t54 = h15_own15; h15_own15 = t19; h_variants_0Token_release(&t54); t55 = h1_b; h_variants_0Token_retain(&t19); h1_b = t19; h_variants_0Token_release(&t55);
-    t20 = INT64_C(2); t21 = (h_variants_Token){.tag = h_variants_0Token_tag_num, .as.c_num = {.f_v = t20}}; t56 = h16_own16; h16_own16 = t21; h_variants_0Token_release(&t56); t57 = h2_c; h_variants_0Token_retain(&t21); h2_c = t21; h_variants_0Token_release(&t57);
-    t22 = (h_variants_Token){.tag = h_variants_0Token_tag_end}; t58 = h17_own17; h17_own17 = t22; h_variants_0Token_release(&t58); t59 = h3_d; h_variants_0Token_retain(&t22); h3_d = t22; h_variants_0Token_release(&t59);
+    t16 = INT64_C(1); t17 = (h_variants_Token){.hero_tag = h_variants_0Token_tag_num, .hero_as.hero_c_num = {.f_v = t16}}; t52 = h14_own14; h14_own14 = t17; h_variants_0Token_release(&t52); t53 = h0_a; h_variants_0Token_retain(&t17); h0_a = t17; h_variants_0Token_release(&t53);
+    t18 = INT64_C(1); t19 = (h_variants_Token){.hero_tag = h_variants_0Token_tag_num, .hero_as.hero_c_num = {.f_v = t18}}; t54 = h15_own15; h15_own15 = t19; h_variants_0Token_release(&t54); t55 = h1_b; h_variants_0Token_retain(&t19); h1_b = t19; h_variants_0Token_release(&t55);
+    t20 = INT64_C(2); t21 = (h_variants_Token){.hero_tag = h_variants_0Token_tag_num, .hero_as.hero_c_num = {.f_v = t20}}; t56 = h16_own16; h16_own16 = t21; h_variants_0Token_release(&t56); t57 = h2_c; h_variants_0Token_retain(&t21); h2_c = t21; h_variants_0Token_release(&t57);
+    t22 = (h_variants_Token){.hero_tag = h_variants_0Token_tag_end}; t58 = h17_own17; h17_own17 = t22; h_variants_0Token_release(&t58); t59 = h3_d; h_variants_0Token_retain(&t22); h3_d = t22; h_variants_0Token_release(&t59);
     t23 = h0_a; t24 = h1_b; t25 = h_variants_0Token_eq(&t23, &t24); hero_print_bool(t25); hero_print_end();
     t26 = h0_a; t27 = h2_c; t28 = h_variants_0Token_eq(&t26, &t27); hero_print_bool(t28); hero_print_end();
     t29 = h0_a; t30 = h3_d; t31 = h_variants_0Token_eq(&t29, &t30); hero_print_bool(t31); hero_print_end();
     t32 = h3_d; t33 = h3_d; t34 = h_variants_0Token_eq(&t32, &t33); hero_print_bool(t34); hero_print_end();
 #line 50
-    t35 = HERO_STR_LIT(hero_str_3205); hero_str_incref(t35); t36 = (h_variants_Token){.tag = h_variants_0Token_tag_word, .as.c_word = {.f_text = t35}}; t60 = h18_own18; h18_own18 = t36; h_variants_0Token_release(&t60); t61 = h4_w1; h_variants_0Token_retain(&t36); h4_w1 = t36; h_variants_0Token_release(&t61);
-    t37 = HERO_STR_LIT(hero_str_61); t38 = HERO_STR_LIT(hero_str_62); t39 = hero_str_concat(t37, t38); t62 = h19_own19; h19_own19 = t39; hero_str_decref(t62); hero_str_incref(t39); t40 = (h_variants_Token){.tag = h_variants_0Token_tag_word, .as.c_word = {.f_text = t39}}; t63 = h20_own20; h20_own20 = t40; h_variants_0Token_release(&t63); t64 = h5_w2; h_variants_0Token_retain(&t40); h5_w2 = t40; h_variants_0Token_release(&t64);
+    t35 = HERO_STR_LIT(hero_str_3205); hero_str_incref(t35); t36 = (h_variants_Token){.hero_tag = h_variants_0Token_tag_word, .hero_as.hero_c_word = {.f_text = t35}}; t60 = h18_own18; h18_own18 = t36; h_variants_0Token_release(&t60); t61 = h4_w1; h_variants_0Token_retain(&t36); h4_w1 = t36; h_variants_0Token_release(&t61);
+    t37 = HERO_STR_LIT(hero_str_61); t38 = HERO_STR_LIT(hero_str_62); t39 = hero_str_concat(t37, t38); t62 = h19_own19; h19_own19 = t39; hero_str_decref(t62); hero_str_incref(t39); t40 = (h_variants_Token){.hero_tag = h_variants_0Token_tag_word, .hero_as.hero_c_word = {.f_text = t39}}; t63 = h20_own20; h20_own20 = t40; h_variants_0Token_release(&t63); t64 = h5_w2; h_variants_0Token_retain(&t40); h5_w2 = t40; h_variants_0Token_release(&t64);
     t41 = h4_w1; t42 = h5_w2; t43 = h_variants_0Token_eq(&t41, &t42); hero_print_bool(t43); hero_print_end();
 #line 222 "variants.c"
     h_variants_0Token_release(hero_slot_escape(&h0_a));
@@ -242,174 +242,174 @@ void h_variants_main(void) { h_variants_Token h0_a = {0}; h_variants_Token h1_b 
     h_variants_0Token_release(hero_slot_escape(&h20_own20));
     return;
 }
-HERO_TU_LOCAL bool h_variants_0Token_c_num_eq(const h_variants_0Token_c_num *a, const h_variants_0Token_c_num *b) {
-    if (!(a->f_v == b->f_v)) return false;
+HERO_TU_LOCAL bool h_variants_0Token_c_num_eq(const h_variants_0Token_c_num *hero_a, const h_variants_0Token_c_num *hero_b) {
+    if (!(hero_a->f_v == hero_b->f_v)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_variants_0Token_c_num_hash(const void *elem) {
-    const h_variants_0Token_c_num *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_int)->hash(&v->f_v)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_variants_0Token_c_num_hash(const void *hero_elem) {
+    const h_variants_0Token_c_num *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_v)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_variants_0Token_c_word_retain(const h_variants_0Token_c_word *v) {
-    hero_str_incref(v->f_text);
+HERO_TU_LOCAL void h_variants_0Token_c_word_retain(const h_variants_0Token_c_word *hero_v) {
+    hero_str_incref(hero_v->f_text);
 }
 
-HERO_TU_LOCAL void h_variants_0Token_c_word_release(h_variants_0Token_c_word *v) {
-    hero_str_decref(v->f_text);
+HERO_TU_LOCAL void h_variants_0Token_c_word_release(h_variants_0Token_c_word *hero_v) {
+    hero_str_decref(hero_v->f_text);
 }
 
-HERO_TU_LOCAL bool h_variants_0Token_c_word_eq(const h_variants_0Token_c_word *a, const h_variants_0Token_c_word *b) {
-    if (!(hero_str_eq(a->f_text, b->f_text))) return false;
+HERO_TU_LOCAL bool h_variants_0Token_c_word_eq(const h_variants_0Token_c_word *hero_a, const h_variants_0Token_c_word *hero_b) {
+    if (!(hero_str_eq(hero_a->f_text, hero_b->f_text))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_variants_0Token_c_word_hash(const void *elem) {
-    const h_variants_0Token_c_word *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_str)->hash(&v->f_text)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_variants_0Token_c_word_hash(const void *hero_elem) {
+    const h_variants_0Token_c_word *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_str)->hash(&hero_v->f_text)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_variants_0Token_retain(const h_variants_Token *v) {
-    switch (v->tag) {
-        case h_variants_0Token_tag_word: h_variants_0Token_c_word_retain(&v->as.c_word); break;
+HERO_TU_LOCAL void h_variants_0Token_retain(const h_variants_Token *hero_v) {
+    switch (hero_v->hero_tag) {
+        case h_variants_0Token_tag_word: h_variants_0Token_c_word_retain(&hero_v->hero_as.hero_c_word); break;
         default: break;
     }
 }
 
-HERO_TU_LOCAL void h_variants_0Token_release(h_variants_Token *v) {
-    switch (v->tag) {
-        case h_variants_0Token_tag_word: h_variants_0Token_c_word_release(&v->as.c_word); break;
+HERO_TU_LOCAL void h_variants_0Token_release(h_variants_Token *hero_v) {
+    switch (hero_v->hero_tag) {
+        case h_variants_0Token_tag_word: h_variants_0Token_c_word_release(&hero_v->hero_as.hero_c_word); break;
         default: break;
     }
 }
 
-HERO_TU_LOCAL bool h_variants_0Token_eq(const h_variants_Token *a, const h_variants_Token *b) {
-    if (a->tag != b->tag) return false;
-    switch (a->tag) {
-        case h_variants_0Token_tag_num: return h_variants_0Token_c_num_eq(&a->as.c_num, &b->as.c_num);
-        case h_variants_0Token_tag_word: return h_variants_0Token_c_word_eq(&a->as.c_word, &b->as.c_word);
+HERO_TU_LOCAL bool h_variants_0Token_eq(const h_variants_Token *hero_a, const h_variants_Token *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    switch (hero_a->hero_tag) {
+        case h_variants_0Token_tag_num: return h_variants_0Token_c_num_eq(&hero_a->hero_as.hero_c_num, &hero_b->hero_as.hero_c_num);
+        case h_variants_0Token_tag_word: return h_variants_0Token_c_word_eq(&hero_a->hero_as.hero_c_word, &hero_b->hero_as.hero_c_word);
         case h_variants_0Token_tag_end: return true;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL uint64_t h_variants_0Token_hash(const void *elem) {
-    const h_variants_Token *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_variants_0Token_hash(const void *hero_elem) {
+    const h_variants_Token *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    switch (v->tag) {
-        case h_variants_0Token_tag_num: return (h ^ h_variants_0Token_c_num_hash(&v->as.c_num)) * UINT64_C(0x100000001b3);
-        case h_variants_0Token_tag_word: return (h ^ h_variants_0Token_c_word_hash(&v->as.c_word)) * UINT64_C(0x100000001b3);
-        case h_variants_0Token_tag_end: return h;
+    switch (hero_v->hero_tag) {
+        case h_variants_0Token_tag_num: return (hero_h ^ h_variants_0Token_c_num_hash(&hero_v->hero_as.hero_c_num)) * UINT64_C(0x100000001b3);
+        case h_variants_0Token_tag_word: return (hero_h ^ h_variants_0Token_c_word_hash(&hero_v->hero_as.hero_c_word)) * UINT64_C(0x100000001b3);
+        case h_variants_0Token_tag_end: return hero_h;
     }
     hero_unreachable();
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("34bdd9493f779e45", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("747cfff402ca8d2d", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     h_variants_main();
     hero_runtime_check_leaks();
     return 0;

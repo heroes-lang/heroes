@@ -28,6 +28,44 @@
 #include <ffi-a-lent-field-counted-by-a-constant.h>
 #pragma push_macro("name")
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -35,6 +73,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -59,7 +116,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -71,7 +128,7 @@ _Static_assert(sizeof(Sl) - __builtin_offsetof(Sl, name) != 0, "heroes-ffi-flex 
 _Static_assert(__builtin_classify_type(((Sl *)0)->id) == 1 && sizeof(((Sl *)0)->id) == sizeof(int64_t) && (_Generic(((Sl *)0)->id, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Sl id");
 #line 24
 _Static_assert(sizeof(Both) - __builtin_offsetof(Both, name) != 0, "heroes-ffi-flex Both name"); _Static_assert(_Generic(&((Both *)0)->name, _Bool (*)[8]: (sizeof(_Bool) == sizeof(uint8_t) && (((_Bool)-1 < 0) == ((uint8_t)-1 < 0))), char (*)[8]: (sizeof(char) == sizeof(uint8_t) && (((char)-1 < 0) == ((uint8_t)-1 < 0))), signed char (*)[8]: (sizeof(signed char) == sizeof(uint8_t) && (((signed char)-1 < 0) == ((uint8_t)-1 < 0))), short (*)[8]: (sizeof(short) == sizeof(uint8_t) && (((short)-1 < 0) == ((uint8_t)-1 < 0))), int (*)[8]: (sizeof(int) == sizeof(uint8_t) && (((int)-1 < 0) == ((uint8_t)-1 < 0))), long (*)[8]: (sizeof(long) == sizeof(uint8_t) && (((long)-1 < 0) == ((uint8_t)-1 < 0))), long long (*)[8]: (sizeof(long long) == sizeof(uint8_t) && (((long long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned char (*)[8]: (sizeof(unsigned char) == sizeof(uint8_t) && (((unsigned char)-1 < 0) == ((uint8_t)-1 < 0))), unsigned short (*)[8]: (sizeof(unsigned short) == sizeof(uint8_t) && (((unsigned short)-1 < 0) == ((uint8_t)-1 < 0))), unsigned int (*)[8]: (sizeof(unsigned int) == sizeof(uint8_t) && (((unsigned int)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long (*)[8]: (sizeof(unsigned long) == sizeof(uint8_t) && (((unsigned long)-1 < 0) == ((uint8_t)-1 < 0))), unsigned long long (*)[8]: (sizeof(unsigned long long) == sizeof(uint8_t) && (((unsigned long long)-1 < 0) == ((uint8_t)-1 < 0))), default: 0), "heroes-ffi-field Both name");
-#line 75 "ffialentfieldcountedbyaconstant.c"
+#line 132 "ffialentfieldcountedbyaconstant.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -114,26 +171,26 @@ _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK"
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -154,56 +211,56 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 27 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_ffialentfieldcountedbyaconstant_sum_n(void * a0, int64_t a1) { (void)(sum_n)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_ffialentfieldcountedbyaconstant_sl_fill(void * a0, int64_t a1) { (void)(sl_fill)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_ffialentfieldcountedbyaconstant_sum_n(void * hero_a0, int64_t hero_a1) { (void)(sum_n)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_ffialentfieldcountedbyaconstant_sl_fill(void * hero_a0, int64_t hero_a1) { (void)(sl_fill)(hero_a0, hero_a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 169 "ffialentfieldcountedbyaconstant.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 226 "ffialentfieldcountedbyaconstant.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_ffialentfieldcountedbyaconstant_0Sl_eq(const Sl *a, const Sl *b);
-HERO_TU_LOCAL uint64_t h_ffialentfieldcountedbyaconstant_0Sl_hash(const void *elem);
-HERO_TU_LOCAL bool h_ffialentfieldcountedbyaconstant_0Both_eq(const Both *a, const Both *b);
-HERO_TU_LOCAL uint64_t h_ffialentfieldcountedbyaconstant_0Both_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffialentfieldcountedbyaconstant_0Sl_eq(const Sl *hero_a, const Sl *hero_b);
+HERO_TU_LOCAL uint64_t h_ffialentfieldcountedbyaconstant_0Sl_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_ffialentfieldcountedbyaconstant_0Both_eq(const Both *hero_a, const Both *hero_b);
+HERO_TU_LOCAL uint64_t h_ffialentfieldcountedbyaconstant_0Both_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int64_t h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(void);
 void h_ffialentfieldcountedbyaconstant_main(void);
 void *hero_pad_nowhere(void);
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(Sl *)hero_pad_nowhere()) == 13 ? sizeof(Sl) : 0), __builtin_offsetof(Sl, name), sizeof(((Sl *)0)->name), __builtin_offsetof(Sl, id), sizeof(((Sl *)0)->id)};
-__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_1;
+__attribute__((__unused__)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(Sl *)hero_pad_nowhere()) == 13 ? sizeof(Sl) : 0), __builtin_offsetof(Sl, name), sizeof(((Sl *)0)->name), __builtin_offsetof(Sl, id), sizeof(((Sl *)0)->id)};
+__attribute__((__unused__)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_1;
 #pragma push_macro("hidden_a")
 #undef hidden_a
 #pragma push_macro("hidden_b")
 #undef hidden_b
 #pragma push_macro("name")
 #undef name
-__attribute__((unused)) static const size_t hero_pad_t_2[] = {__builtin_offsetof(Both, name), sizeof(((Both *)0)->name), __builtin_offsetof(Both, hidden_a), sizeof(((Both *)0)->hidden_a), __builtin_offsetof(Both, hidden_b), sizeof(((Both *)0)->hidden_b)};
+__attribute__((__unused__)) static const size_t hero_pad_t_2[] = {__builtin_offsetof(Both, name), sizeof(((Both *)0)->name), __builtin_offsetof(Both, hidden_a), sizeof(((Both *)0)->hidden_a), __builtin_offsetof(Both, hidden_b), sizeof(((Both *)0)->hidden_b)};
 #pragma pop_macro("hidden_a")
 #pragma pop_macro("hidden_b")
 #pragma pop_macro("name")
-__attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_2;
-__attribute__((constructor)) static void hero_pad_init(void) {
+__attribute__((__unused__)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_2;
+__attribute__((__constructor__)) static void hero_pad_init(void) {
     hero_pad_n_1 = hero_pad_gaps(sizeof(Sl), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
     hero_pad_n_2 = hero_pad_gaps(sizeof(Both), hero_pad_t_2, sizeof hero_pad_t_2 / (2 * sizeof(size_t)), hero_pad_g_2);
 }
@@ -211,7 +268,7 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 #line 19 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
 int64_t h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(void) {
-#line 215 "ffialentfieldcountedbyaconstant.c"
+#line 272 "ffialentfieldcountedbyaconstant.c"
     _Static_assert(HERO_RET_INT(SL_NAME_LEN), "heroes-ffi-return SL_NAME_LEN i64");
     _Static_assert(__builtin_constant_p(SL_NAME_LEN), "heroes-ffi-const SL_NAME_LEN");
 #pragma clang diagnostic push
@@ -223,7 +280,7 @@ int64_t h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 19 "tests/golden/run/ffi-a-lent-field-counted-by-a-constant.hero"
     return SL_NAME_LEN;
-#line 227 "ffialentfieldcountedbyaconstant.c"
+#line 284 "ffialentfieldcountedbyaconstant.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -246,155 +303,155 @@ __attribute__((__noinline__)) void h_ffialentfieldcountedbyaconstant_main(void) 
 #line 30
 #define t35 (*hero_big_t35)
 #line 30
-    Sl h0_s; int64_t h1_k; Both *const hero_big_h2_b = (Both *)hero_frame_take(sizeof(Both)); HERO_NODEBUG Sl t1; HERO_NODEBUG void *t4, *t9, *t14, *t22, *t27, *t31; HERO_NODEBUG int64_t t5, t6, t10, t11, t15, t16, t17, t18, t19, t23, t24, t28, t32, t33, t34, t39, t40; HERO_NODEBUG Both *const hero_big_t35 = (Both *)hero_frame_take(sizeof(Both)); HERO_NODEBUG const void *t38; HERO_ENTRY_STOP; goto bb0; bb0:
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 31, 14}; t1 = sl_make(); } h0_s = t1; hero_pad_fill(&h0_s, sizeof(Sl), 1, hero_pad_g_1, hero_pad_n_1);
+    Sl h0_s; int64_t h1_k; Both *const hero_big_h2_b = (Both *)hero_frame_take(sizeof(Both)); HERO_NODEBUG Sl t1; HERO_NODEBUG void *t4, *t9, *t14, *t22, *t27, *t31; HERO_NODEBUG int64_t t5, t6, t10, t11, t15, t16, t17, t18, t19, t23, t24, t28, t32, t33, t34, t39, t40; HERO_NODEBUG Both *const hero_big_t35 = (Both *)hero_frame_take(sizeof(Both)); HERO_NODEBUG const void *t38; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 31, 14}; t1 = sl_make(); } h0_s = t1; hero_pad_fill(&h0_s, sizeof(Sl), 1, hero_pad_g_1, hero_pad_n_1);
 #line 34
-    t4 = (void *)(h0_s.name); t5 = INT64_C(8); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 34, 11}; _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.name)), "heroes-ffi-extent sum_n p n 1589 1601 1606 1607 8"); _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 1589 1601 1606 1607 8 const void *"); t6 = sum_n(t4, t5); } hero_print_int(t6); hero_print_end();
-    t9 = (void *)(h0_s.name); t10 = h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 35, 11}; _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)sizeof(h0_s.name)), "heroes-ffi-extent sum_n p n 1629 1641 1646 1657 8"); _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)(sizeof(h0_s.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 1629 1641 1646 1657 8 const void *"); t11 = sum_n(t9, t10); } hero_print_int(t11); hero_print_end();
-    t14 = (void *)(h0_s.name); t15 = h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(); t16 = INT64_C(4); if (__builtin_sub_overflow(t15, t16, &t17)) hero_panic_overflow_at("ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 36, 37); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 36, 11}; _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)((SL_NAME_LEN - INT64_C(4))) && (int64_t)((SL_NAME_LEN - INT64_C(4))) <= (int64_t)sizeof(h0_s.name)), "heroes-ffi-extent sum_n p n 1679 1691 1696 1711 8"); _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)((SL_NAME_LEN - INT64_C(4))) && (int64_t)((SL_NAME_LEN - INT64_C(4))) <= (int64_t)(sizeof(h0_s.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 1679 1691 1696 1711 8 const void *"); t18 = sum_n(t14, t17); } hero_print_int(t18); hero_print_end();
+    t4 = (void *)(h0_s.name); t5 = INT64_C(8); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 34, 11}; _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.name)), "heroes-ffi-extent sum_n p n 1589 1601 1606 1607 8"); _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 1589 1601 1606 1607 8 const void *"); t6 = sum_n(t4, t5); } hero_print_int(t6); hero_print_end();
+    t9 = (void *)(h0_s.name); t10 = h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 35, 11}; _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)sizeof(h0_s.name)), "heroes-ffi-extent sum_n p n 1629 1641 1646 1657 8"); _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)(sizeof(h0_s.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 1629 1641 1646 1657 8 const void *"); t11 = sum_n(t9, t10); } hero_print_int(t11); hero_print_end();
+    t14 = (void *)(h0_s.name); t15 = h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(); t16 = INT64_C(4); if (__builtin_sub_overflow(t15, t16, &t17)) hero_panic_overflow_at("ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 36, 37); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 36, 11}; _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)((SL_NAME_LEN - INT64_C(4))) && (int64_t)((SL_NAME_LEN - INT64_C(4))) <= (int64_t)sizeof(h0_s.name)), "heroes-ffi-extent sum_n p n 1679 1691 1696 1711 8"); _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)((SL_NAME_LEN - INT64_C(4))) && (int64_t)((SL_NAME_LEN - INT64_C(4))) <= (int64_t)(sizeof(h0_s.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 1679 1691 1696 1711 8 const void *"); t18 = sum_n(t14, t17); } hero_print_int(t18); hero_print_end();
 #line 39
     t19 = INT64_C(2); h1_k = t19;
-    t22 = (void *)(h0_s.name); t23 = h1_k; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 40, 11}; if (t23 < 0 || (uint64_t)(t23) > (uint64_t)(sizeof(h0_s.name) / sizeof(*(const void *)0))) hero_panic_at(sizeof(*(const void *)0) == 1 ? "`sum_n` was given an extent past the 8 bytes of the field lent to it, read from `n` at run time" : "`sum_n` was given an extent past the 8 bytes of the field lent to it, read from `n` at run time and counted in what the header's `const void *` points at", "ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 40, 20); t24 = sum_n(t22, t23); } hero_print_int(t24); hero_print_end();
+    t22 = (void *)(h0_s.name); t23 = h1_k; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 40, 11}; if (t23 < 0 || (uint64_t)(t23) > (uint64_t)(sizeof(h0_s.name) / sizeof(*(const void *)0))) hero_panic_at(sizeof(*(const void *)0) == 1 ? "`sum_n` was given an extent past the 8 bytes of the field lent to it, read from `n` at run time" : "`sum_n` was given an extent past the 8 bytes of the field lent to it, read from `n` at run time and counted in what the header's `const void *` points at", "ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 40, 20); t24 = sum_n(t22, t23); } hero_print_int(t24); hero_print_end();
 #line 43
-    t27 = (void *)(h0_s.name); t28 = h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 43, 5}; _Static_assert(sizeof(*(void *)0) != 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)sizeof(h0_s.name)), "heroes-ffi-extent sl_fill p n 1917 1929 1934 1945 8"); _Static_assert(sizeof(*(void *)0) == 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)(sizeof(h0_s.name) / sizeof(*(void *)0))), "heroes-ffi-extent-unit sl_fill p n 1917 1929 1934 1945 8 void *"); (void)sl_fill(t27, t28); }
-    t31 = (void *)(h0_s.name); t32 = INT64_C(8); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 44, 11}; _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.name)), "heroes-ffi-extent sum_n p n 1966 1978 1983 1984 8"); _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 1966 1978 1983 1984 8 const void *"); t33 = sum_n(t31, t32); } hero_print_int(t33); hero_print_end();
+    t27 = (void *)(h0_s.name); t28 = h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 43, 5}; _Static_assert(sizeof(*(void *)0) != 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)sizeof(h0_s.name)), "heroes-ffi-extent sl_fill p n 1917 1929 1934 1945 8"); _Static_assert(sizeof(*(void *)0) == 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)(sizeof(h0_s.name) / sizeof(*(void *)0))), "heroes-ffi-extent-unit sl_fill p n 1917 1929 1934 1945 8 void *"); (void)sl_fill(t27, t28); }
+    t31 = (void *)(h0_s.name); t32 = INT64_C(8); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 44, 11}; _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)sizeof(h0_s.name)), "heroes-ffi-extent sum_n p n 1966 1978 1983 1984 8"); _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(INT64_C(8)) && (int64_t)(INT64_C(8)) <= (int64_t)(sizeof(h0_s.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 1966 1978 1983 1984 8 const void *"); t33 = sum_n(t31, t32); } hero_print_int(t33); hero_print_end();
     t34 = h0_s.id; hero_print_int(t34); hero_print_end();
 #line 48
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 48, 9}; t35 = both_make(); } h2_b = t35; hero_pad_fill(&h2_b, sizeof(Both), 1, hero_pad_g_2, hero_pad_n_2);
-    t38 = (const void *)(h2_b.name); t39 = h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 49, 11}; _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)sizeof(h2_b.name)), "heroes-ffi-extent sum_n p n 2122 2134 2139 2150 8"); _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)(sizeof(h2_b.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 2122 2134 2139 2150 8 const void *"); t40 = sum_n(t38, t39); } hero_print_int(t40); hero_print_end(); hero_frame_give(hero_big_t35); hero_frame_give(hero_big_h2_b); return;
-#line 266 "ffialentfieldcountedbyaconstant.c"
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 48, 9}; t35 = both_make(); } h2_b = t35; hero_pad_fill(&h2_b, sizeof(Both), 1, hero_pad_g_2, hero_pad_n_2);
+    t38 = (const void *)(h2_b.name); t39 = h_ffialentfieldcountedbyaconstant_SL_NAME_LEN(); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-a-lent-field-counted-by-a-constant.hero", "ffi-a-lent-field-counted-by-a-constant.main", 49, 11}; _Static_assert(sizeof(*(const void *)0) != 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)sizeof(h2_b.name)), "heroes-ffi-extent sum_n p n 2122 2134 2139 2150 8"); _Static_assert(sizeof(*(const void *)0) == 1 || (0 <= (int64_t)(SL_NAME_LEN) && (int64_t)(SL_NAME_LEN) <= (int64_t)(sizeof(h2_b.name) / sizeof(*(const void *)0))), "heroes-ffi-extent-unit sum_n p n 2122 2134 2139 2150 8 const void *"); t40 = sum_n(t38, t39); } hero_print_int(t40); hero_print_end(); hero_frame_give(hero_big_t35); hero_frame_give(hero_big_h2_b); return;
+#line 323 "ffialentfieldcountedbyaconstant.c"
 }
 #undef h2_b
 #undef t35
-HERO_TU_LOCAL bool h_ffialentfieldcountedbyaconstant_0Sl_eq(const Sl *a, const Sl *b) {
-    if (!((a->name[0] == b->name[0] && a->name[1] == b->name[1] && a->name[2] == b->name[2] && a->name[3] == b->name[3] && a->name[4] == b->name[4] && a->name[5] == b->name[5] && a->name[6] == b->name[6] && a->name[7] == b->name[7]))) return false;
-    if (!(a->id == b->id)) return false;
+HERO_TU_LOCAL bool h_ffialentfieldcountedbyaconstant_0Sl_eq(const Sl *hero_a, const Sl *hero_b) {
+    if (!((hero_a->name[0] == hero_b->name[0] && hero_a->name[1] == hero_b->name[1] && hero_a->name[2] == hero_b->name[2] && hero_a->name[3] == hero_b->name[3] && hero_a->name[4] == hero_b->name[4] && hero_a->name[5] == hero_b->name[5] && hero_a->name[6] == hero_b->name[6] && hero_a->name[7] == hero_b->name[7]))) return false;
+    if (!(hero_a->id == hero_b->id)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffialentfieldcountedbyaconstant_0Sl_hash(const void *elem) {
-    const Sl *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_u8)->hash(&v->name[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u8)->hash(&v->name[1])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u8)->hash(&v->name[2])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u8)->hash(&v->name[3])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u8)->hash(&v->name[4])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u8)->hash(&v->name[5])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u8)->hash(&v->name[6])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u8)->hash(&v->name[7])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_int)->hash(&v->id)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_ffialentfieldcountedbyaconstant_0Sl_hash(const void *hero_elem) {
+    const Sl *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_u8)->hash(&hero_v->name[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u8)->hash(&hero_v->name[1])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u8)->hash(&hero_v->name[2])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u8)->hash(&hero_v->name[3])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u8)->hash(&hero_v->name[4])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u8)->hash(&hero_v->name[5])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u8)->hash(&hero_v->name[6])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u8)->hash(&hero_v->name[7])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->id)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_ffialentfieldcountedbyaconstant_0Both_eq(const Both *a, const Both *b) {
+HERO_TU_LOCAL bool h_ffialentfieldcountedbyaconstant_0Both_eq(const Both *hero_a, const Both *hero_b) {
     hero_panic("h_ffialentfieldcountedbyaconstant_0Both_eq: a partial record has no structural equality");
 }
 
-HERO_TU_LOCAL uint64_t h_ffialentfieldcountedbyaconstant_0Both_hash(const void *elem) {
-    (void)elem; hero_panic("h_ffialentfieldcountedbyaconstant_0Both_hash: a partial record has no structural hash");
+HERO_TU_LOCAL uint64_t h_ffialentfieldcountedbyaconstant_0Both_hash(const void *hero_elem) {
+    (void)hero_elem; hero_panic("h_ffialentfieldcountedbyaconstant_0Both_hash: a partial record has no structural hash");
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("20c5898647bb52b3", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("453bbc2f6b894c99", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("ffialentfieldcountedbyaconstant\tffi-a-lent-field-counted-by-a-constant\n");
     h_ffialentfieldcountedbyaconstant_main();
     hero_runtime_check_leaks();

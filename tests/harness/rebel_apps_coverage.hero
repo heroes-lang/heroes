@@ -1,5 +1,5 @@
 # Whether Rebel's applications between them use every face of Rebel, the
-# author's word of 2026-11-21 (`examples-rebel/README.md` § A10: *between
+# author's word of 2026-11-21 (`rebel/examples/README.md` § A10: *between
 # them using every face of Rebel*), asked by the check of Rebel's programs
 # (`rebel_apps.hero`).
 #
@@ -122,7 +122,7 @@ function unused(every: [str], used: [[str]]) -> [str]
     return out
 
 test "listed: the rebel entry's packages, on one line or one a line, and none elsewhere"
-    many = "[dependencies.rebel]\npath = \"../../packages/rebel/0.1.0/files\"\npackages = [\n    \"bytes\",\n    \"compress/zstd\",\n]\n"
+    many = "[dependencies.rebel]\npath = \"../../library/0.1.0/files\"\npackages = [\n    \"bytes\",\n    \"compress/zstd\",\n]\n"
     assert listed(many).must() == ["bytes", "compress/zstd"]
     assert listed("[dependencies.rebel]\npath = \"x\"\npackages = [\"strings\"]\n").must() == ["strings"]
     assert listed("[dependencies.rebel]\npackages = [\"a\", \"b/c\"]\n").must() == ["a", "b/c"]

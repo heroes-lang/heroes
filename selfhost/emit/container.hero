@@ -187,12 +187,14 @@ function map_get(c: state.Checked, names: ctype.Names, s: source.Source, f: cont
     option = ctype.option_of(names, ty: result)
     lines: [str] @= ["{", "  " + stop_place.declared(s, f, offset: site)]
     lines @ lines.push(
-        "  " + nodebug.MARK + "const void *found = hero_map_find_at(" + mangle.value(map_value) + ", &" + mangle.value(key) + ", &" + stop_place.HERE + ");"
+        "  " + nodebug.MARK + "const void *hero_found = hero_map_find_at(" + mangle.value(map_value) + ", &" + mangle.value(key) + ", &" + stop_place.HERE + ");"
     )
-    lines @ lines.push("  if (found == NULL) {")
-    lines @ lines.push("    " + into + " = (" + option + "){.tag = INT64_C(1), .as.err = hero_failure_missing_key()};")
+    lines @ lines.push("  if (hero_found == NULL) {")
+    lines @ lines.push(
+        "    " + into + " = (" + option + "){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_missing_key()};"
+    )
     lines @ lines.push("  } else {")
-    lines @ lines.push("    " + into + " = (" + option + "){.tag = INT64_C(0)};")
+    lines @ lines.push("    " + into + " = (" + option + "){.hero_tag = INT64_C(0)};")
 
     # A unit value type has no ok member at all, so the tag is the
     # whole answer.
@@ -201,7 +203,7 @@ function map_get(c: state.Checked, names: ctype.Names, s: source.Source, f: cont
 
         if desc.is_err()
             return fail(code: "none", msg: "a value with no descriptor")
-        lines @ lines.push("    (" + desc.must() + ")->copy(&" + into + ".as.ok, found);")
+        lines @ lines.push("    (" + desc.must() + ")->copy(&" + into + ".hero_as.hero_ok, hero_found);")
     lines @ lines.push("  }")
     lines @ lines.push("}")
     return ok(lines)

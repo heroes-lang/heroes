@@ -3,7 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { renderRebelPage } from '../lib/rebel-page.ts';
 
 // Rebel's page: its prose a fragment, its packages read from
-// examples-rebel/README.md § A1, each opening its reference (`rebel-page.ts`).
+// rebel/examples/README.md § A1, each opening its reference (`rebel-page.ts`).
 const page = await renderRebelPage('en');
 ---
 <BaseLayout url={page.url} title={page.title} description={page.description}>

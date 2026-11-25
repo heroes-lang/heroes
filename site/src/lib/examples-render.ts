@@ -67,7 +67,7 @@ function shared(name: string, lang: Lang): string {
  * What the footer of an examples page says before the shared tail: where its
  * code is read from, and what holds its recorded output, which is the corpus
  * suite for `examples/` and the check of Rebel's programs for
- * `examples-rebel/`. The index, which shows no code, takes the first.
+ * `rebel/examples/`. The index, which shows no code, takes the first.
  */
 function footer(lang: Lang, group: Example['group'] = 'examples'): string {
   return shared(group === 'rebel' ? 'from-rebel' : 'from-examples', lang);

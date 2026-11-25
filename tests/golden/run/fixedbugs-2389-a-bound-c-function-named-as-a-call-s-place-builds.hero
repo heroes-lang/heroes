@@ -9,6 +9,12 @@
 # FIX: every name the emitter declares inside a body is one of
 # `emit/shadowed.hero`'s, a bound function of such a name reached through an
 # accessor, so both calls print.
+#
+# Corrected 2026-11-24, lane macro-members: the map lookup's entry is
+# `hero_found` since that day, every name the unit chooses being of the
+# compiler's own form, so a bound `found` is no name the emitter writes and
+# is called as it is spelled; the case keeps it as the shape beside
+# `hero_here`, which still goes through its accessor.
 
 extern "fixedbugs-2389-a-bound-c-function-named-as-a-call-s-place-builds.h"
     function hero_here(x: i64) -> i64

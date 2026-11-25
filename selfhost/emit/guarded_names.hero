@@ -7,7 +7,7 @@
 #
 # It is three sets: every word `heroes_runtime.h` and `hero_os.h` write, a
 # runtime macro's expansion included (`HERO_STR_LIT` writes `HeroStr` and the
-# member `b`); every name C11 gives the standard headers a unit reads,
+# member `hero_body`); every name C11 gives the standard headers a unit reads,
 # <stdbool.h> and <stddef.h> through the runtime before the groups and
 # <stdint.h> and <math.h> after them (7.18, 7.19, 7.20, 7.12), but the macros
 # of the last two the unit never writes (`LEFT`); and `main`. `macro_guard`'s
@@ -60,7 +60,7 @@ constant NAMES: [str]
         "hero_array_eq hero_array_incref hero_array_len hero_array_new"
         "hero_array_push hero_array_push_owned hero_array_release_at"
         "hero_array_set hero_array_slice hero_array_slice_at hero_array_sort hero_array_sort_at hero_array_unshare"
-        "hero_bool_to_str hero_callback_entered hero_callback_left hero_cross_free hero_cross_put_array hero_cross_put_failure hero_cross_put_handle hero_cross_put_mail hero_cross_put_map hero_cross_put_raw hero_cross_put_str hero_cross_put_thread hero_cross_sent_array hero_cross_sent_map hero_cross_take_array hero_cross_take_failure hero_cross_take_handle hero_cross_take_mail hero_cross_take_map hero_cross_take_raw hero_cross_take_str hero_cross_take_thread hero_cstr_nonnull hero_cstr_nonnull_at"
+        "hero_body hero_bool_to_str hero_callback_entered hero_callback_left hero_cross_free hero_cross_put_array hero_cross_put_failure hero_cross_put_handle hero_cross_put_mail hero_cross_put_map hero_cross_put_raw hero_cross_put_str hero_cross_put_thread hero_cross_sent_array hero_cross_sent_map hero_cross_take_array hero_cross_take_failure hero_cross_take_handle hero_cross_take_mail hero_cross_take_map hero_cross_take_raw hero_cross_take_str hero_cross_take_thread hero_cstr_nonnull hero_cstr_nonnull_at"
         "hero_desc_array"
         "hero_desc_bool hero_desc_f32 hero_desc_f64 hero_desc_failure hero_desc_func"
         "hero_desc_i16 hero_desc_i32 hero_desc_i8 hero_desc_int hero_desc_mailbox hero_desc_map"
@@ -84,7 +84,7 @@ constant NAMES: [str]
         "hero_handle_ended hero_handle_ending hero_handle_ending_at hero_handle_eq hero_handle_eq_at"
         "hero_handle_eq_from hero_handle_kept"
         "hero_handle_lent hero_handle_retained hero_handle_retained_at hero_handle_sent hero_handle_transferring hero_handle_transferring_at"
-        "hero_held_release hero_held_release_at hero_int_to_f32 hero_int_to_f64 hero_int_to_str"
+        "hero_header hero_held_release hero_held_release_at hero_int_to_f32 hero_int_to_f64 hero_int_to_str"
         "hero_lend_count_u64 hero_lend_count_u64_at hero_lend_give hero_lend_give_at hero_lend_local hero_lend_local_give hero_lend_local_in"
         "hero_lend_local_name hero_lend_take hero_lend_take_at hero_lend_take_in hero_mail_close hero_mail_decref hero_mail_hear_stop hero_mail_incref hero_mail_new hero_mail_number hero_mail_receive hero_mail_release_at hero_mail_send hero_map_decref hero_map_eq"
         "hero_map_find hero_map_find_at hero_map_incref hero_map_keys hero_map_len hero_map_new"
@@ -207,6 +207,16 @@ constant MATH_LINES: [str]
 # after them, and around the headers of every probe an emitter module writes
 # (`reserved_around`); `macro_guard`'s tests hold the two files to this list
 # and every emitter module and runtime header to it. Sorted by bytes.
+#
+# **And C's keywords, every one, and the reserved spellings of the
+# attributes the unit writes** (2026-11-24): a header's `#define default 1`
+# made every `switch` and `_Generic` of the unit an internal error at exit
+# 2, and `#define unused 1` every `__attribute__((unused))`, the unit
+# spelling the attribute in the plain form a header may define. So the unit
+# writes `__unused__`, `__used__`, `__nodebug__`, `__constructor__` and
+# `__no_sanitize__`, names no header has to define, and each is saved and
+# given back with the rest; a keyword is saved whether or not the unit
+# writes it today, since none is a header's to redefine.
 constant RESERVED_LINES: [str]
     [
         "_Alignof _Atomic _Bool _CRT_SECURE_NO_WARNINGS _Generic _Noreturn"
@@ -220,12 +230,15 @@ constant RESERVED_LINES: [str]
         "__UINT64_C_SUFFIX__ __UINT64_TYPE__ __UINT8_TYPE__ __UINTPTR_TYPE__"
         "__asm__ __atomic_always_lock_free __attribute__ __builtin_add_overflow"
         "__builtin_choose_expr __builtin_classify_type __builtin_constant_p"
-        "__builtin_frame_address"
-        "__builtin_huge_val __builtin_memcpy __builtin_memmove __builtin_memset"
-        "__builtin_mul_overflow __builtin_offsetof __builtin_return_address"
-        "__builtin_strlen"
+        "__builtin_frame_address __builtin_huge_val __builtin_memcpy"
+        "__builtin_memmove __builtin_memset __builtin_mul_overflow"
+        "__builtin_offsetof __builtin_return_address __builtin_strlen"
         "__builtin_sub_overflow __builtin_types_compatible_p __cleanup__"
-        "__has_feature __noinline__ __optnone__ __typeof__"
+        "__constructor__ __has_feature __no_sanitize__ __nodebug__ __noinline__"
+        "__optnone__ __typeof__ __unused__ __used__ auto break case char const"
+        "continue default do double else enum extern float for goto if inline"
+        "int long register restrict return short signed sizeof static struct"
+        "switch typedef union unsigned void volatile while"
     ]
 
 # The line that saves the reserved names, and the one that gives them back.

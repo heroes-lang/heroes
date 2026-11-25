@@ -166,7 +166,7 @@ working is a calculator, spread over four modules, with its own tests.
 minimal runtime, and what a program needs beyond them comes from C through the
 FFI, every declaration checked by clang against the real header, or from a
 package the program carries. Rebel, the library this project writes in Heroes
-under `packages/rebel/`, is one such package: a program takes it through its
+under `rebel/library/`, is one such package: a program takes it through its
 catalogue or leaves it, and the compiler is written without it. There is no
 standard library to obey; there is a Rebel to call, or not. Why is
 `docs/design.md` §1.11.

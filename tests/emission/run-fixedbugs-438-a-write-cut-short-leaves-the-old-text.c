@@ -27,6 +27,44 @@
 #include "heroes_guard_open.h"
 #include <sys/resource.h>
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -34,6 +72,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -55,7 +112,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -65,13 +122,13 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 #line 23 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
 _Static_assert(__builtin_classify_type(((struct rlimit *)0)->rlim_cur) == 1 && sizeof(((struct rlimit *)0)->rlim_cur) == sizeof(uint64_t) && (_Generic(((struct rlimit *)0)->rlim_cur, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Ceiling rlim_cur");
 _Static_assert(__builtin_classify_type(((struct rlimit *)0)->rlim_max) == 1 && sizeof(((struct rlimit *)0)->rlim_max) == sizeof(uint64_t) && (_Generic(((struct rlimit *)0)->rlim_max, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 1), "heroes-ffi-field Ceiling rlim_max");
-#line 69 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 126 "fixedbugs438awritecutshortleavestheoldtext.c"
 
 #line 22 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
 _Static_assert(__builtin_classify_type(*(struct rlimit *)0) != 13, "heroes-ffi-union Ceiling rlim_cur rlim_max");
-#line 73 "fixedbugs438awritecutshortleavestheoldtext.c"
-_Static_assert(__builtin_classify_type(*(union { int a; float b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
-_Static_assert(__builtin_classify_type(*(struct { int a; float b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
+#line 130 "fixedbugs438awritecutshortleavestheoldtext.c"
+_Static_assert(__builtin_classify_type(*(union { int hero_a; float hero_b; } *)0) == 13, "a union must classify as 13, or every heroes-ffi-union assertion above is vacuous");
+_Static_assert(__builtin_classify_type(*(struct { int hero_a; float hero_b; } *)0) == 12, "a struct must classify as 12, or every heroes-ffi-union assertion above refuses every record");
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -155,34 +212,34 @@ HERO_STR_STATIC(hero_str_2633b9f3, "does_not_fit");
 HERO_STR_STATIC(hero_str_1744a71f, "`exit(code:)` takes 0 to 255, the statuses a shell reads, and was given ");
 
 typedef struct h_0opt_fbbb698 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        uint64_t ok;
-        HeroFailure err;
-    } as;
+        uint64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_fbbb698;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -203,49 +260,49 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 25 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438awritecutshortleavestheoldtext_getrlimit(int32_t a0, struct rlimit * a1) { (void)(getrlimit)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs438awritecutshortleavestheoldtext_getrlimit(int32_t hero_a0, struct rlimit * hero_a1) { (void)(getrlimit)(hero_a0, hero_a1); }
 #line 29
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438awritecutshortleavestheoldtext_hero_run_arg(HeroStr a0) { (void)(hero_run_arg)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438awritecutshortleavestheoldtext_hero_run_limit(int64_t a0) { (void)(hero_run_limit)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438awritecutshortleavestheoldtext_hero_run_limit_writes(int64_t a0) { (void)(hero_run_limit_writes)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438awritecutshortleavestheoldtext_hero_run_go(const char * a0, const char * a1, const char * a2, const char * a3, int64_t * a4) { (void)(hero_run_go)(a0, a1, a2, a3, (void *)a4); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438awritecutshortleavestheoldtext_hero_exe_path_shown(int64_t * a0, int64_t * a1) { (void)(hero_exe_path_shown)((void *)a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs438awritecutshortleavestheoldtext_hero_run_arg(HeroStr hero_a0) { (void)(hero_run_arg)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs438awritecutshortleavestheoldtext_hero_run_limit(int64_t hero_a0) { (void)(hero_run_limit)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs438awritecutshortleavestheoldtext_hero_run_limit_writes(int64_t hero_a0) { (void)(hero_run_limit_writes)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs438awritecutshortleavestheoldtext_hero_run_go(const char * hero_a0, const char * hero_a1, const char * hero_a2, const char * hero_a3, int64_t * hero_a4) { (void)(hero_run_go)(hero_a0, hero_a1, hero_a2, hero_a3, (void *)hero_a4); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs438awritecutshortleavestheoldtext_hero_exe_path_shown(int64_t * hero_a0, int64_t * hero_a1) { (void)(hero_exe_path_shown)((void *)hero_a0, (void *)hero_a1); }
 #line 35
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438awritecutshortleavestheoldtext_hero_fs_mkdir_all(const char * a0) { (void)(hero_fs_mkdir_all)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438awritecutshortleavestheoldtext_hero_fs_exists(const char * a0) { (void)(hero_fs_exists)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438awritecutshortleavestheoldtext_hero_dir_scan(const char * a0, int64_t a1, int64_t a2) { (void)(hero_dir_scan)(a0, a1, a2); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs438awritecutshortleavestheoldtext_hero_fs_mkdir_all(const char * hero_a0) { (void)(hero_fs_mkdir_all)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs438awritecutshortleavestheoldtext_hero_fs_exists(const char * hero_a0) { (void)(hero_fs_exists)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs438awritecutshortleavestheoldtext_hero_dir_scan(const char * hero_a0, int64_t hero_a1, int64_t hero_a2) { (void)(hero_dir_scan)(hero_a0, hero_a1, hero_a2); }
 #line 39
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs438awritecutshortleavestheoldtext_hero_dir_remove_tree(const char * a0) { (void)(hero_dir_remove_tree)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs438awritecutshortleavestheoldtext_hero_dir_remove_tree(const char * hero_a0) { (void)(hero_dir_remove_tree)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 229 "fixedbugs438awritecutshortleavestheoldtext.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 286 "fixedbugs438awritecutshortleavestheoldtext.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs438awritecutshortleavestheoldtext_0Ceiling_eq(const struct rlimit *a, const struct rlimit *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs438awritecutshortleavestheoldtext_0Ceiling_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *v);
-HERO_TU_LOCAL void h_0opt_fbbb698_release(h_0opt_fbbb698 *v);
-HERO_TU_LOCAL bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *a, const h_0opt_fbbb698 *b);
-HERO_TU_LOCAL uint64_t h_0opt_fbbb698_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs438awritecutshortleavestheoldtext_0Ceiling_eq(const struct rlimit *hero_a, const struct rlimit *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs438awritecutshortleavestheoldtext_0Ceiling_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *hero_v);
+HERO_TU_LOCAL void h_0opt_fbbb698_release(h_0opt_fbbb698 *hero_v);
+HERO_TU_LOCAL bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *hero_a, const h_0opt_fbbb698 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_fbbb698_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int32_t h_fixedbugs438awritecutshortleavestheoldtext_RLIMIT_FSIZE(void);
 int64_t h_fixedbugs438awritecutshortleavestheoldtext_HERO_DIR_FILES(void);
@@ -261,27 +318,27 @@ int64_t h_library_HERO_OS_NOT_TEXT(void);
 int64_t h_library_HERO_OS_BAD_NAME(void);
 int64_t h_library_HERO_STR_OK(void);
 h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller);
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c);
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c);
 h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller);
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path);
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path);
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPlace *hero_caller);
-__attribute__((unused)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_path, HeroStr h1_text);
+__attribute__((__unused__)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_path, HeroStr h1_text);
 HeroArrayHeader * h_library_args(const HeroPlace *hero_caller);
-__attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void);
+__attribute__((__unused__)) HeroArrayHeader * hero_value_h_library_args(void);
 void h_library_exit(int64_t h0_code, const HeroPlace *hero_caller);
-__attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code);
+__attribute__((__unused__)) void hero_value_h_library_exit(int64_t h0_code);
 void *hero_pad_nowhere(void);
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct rlimit *)hero_pad_nowhere()) == 13 ? sizeof(struct rlimit) : 0), __builtin_offsetof(struct rlimit, rlim_cur), sizeof(((struct rlimit *)0)->rlim_cur), __builtin_offsetof(struct rlimit, rlim_max), sizeof(((struct rlimit *)0)->rlim_max)};
-__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_1;
-__attribute__((constructor)) static void hero_pad_init(void) {
+__attribute__((__unused__)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct rlimit *)hero_pad_nowhere()) == 13 ? sizeof(struct rlimit) : 0), __builtin_offsetof(struct rlimit, rlim_cur), sizeof(((struct rlimit *)0)->rlim_cur), __builtin_offsetof(struct rlimit, rlim_max), sizeof(((struct rlimit *)0)->rlim_max)};
+__attribute__((__unused__)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_1;
+__attribute__((__constructor__)) static void hero_pad_init(void) {
     hero_pad_n_1 = hero_pad_gaps(sizeof(struct rlimit), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
 }
 
 
 #line 21 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
 int32_t h_fixedbugs438awritecutshortleavestheoldtext_RLIMIT_FSIZE(void) {
-#line 285 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 342 "fixedbugs438awritecutshortleavestheoldtext.c"
     _Static_assert(HERO_RET_I32(RLIMIT_FSIZE), "heroes-ffi-return RLIMIT_FSIZE i32");
     _Static_assert(__builtin_constant_p(RLIMIT_FSIZE), "heroes-ffi-const RLIMIT_FSIZE");
 #pragma clang diagnostic push
@@ -293,7 +350,7 @@ int32_t h_fixedbugs438awritecutshortleavestheoldtext_RLIMIT_FSIZE(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 21 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     return RLIMIT_FSIZE;
-#line 297 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 354 "fixedbugs438awritecutshortleavestheoldtext.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -311,7 +368,7 @@ int32_t h_fixedbugs438awritecutshortleavestheoldtext_RLIMIT_FSIZE(void) {
 
 #line 40 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
 int64_t h_fixedbugs438awritecutshortleavestheoldtext_HERO_DIR_FILES(void) {
-#line 315 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 372 "fixedbugs438awritecutshortleavestheoldtext.c"
     _Static_assert(HERO_RET_INT(HERO_DIR_FILES), "heroes-ffi-return HERO_DIR_FILES i64");
     _Static_assert(__builtin_constant_p(HERO_DIR_FILES), "heroes-ffi-const HERO_DIR_FILES");
 #pragma clang diagnostic push
@@ -323,14 +380,14 @@ int64_t h_fixedbugs438awritecutshortleavestheoldtext_HERO_DIR_FILES(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 40 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
     return HERO_DIR_FILES;
-#line 327 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 384 "fixedbugs438awritecutshortleavestheoldtext.c"
 #pragma clang diagnostic pop
 }
 
 #line 42 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
-int64_t h_fixedbugs438awritecutshortleavestheoldtext_CEILING(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_fixedbugs438awritecutshortleavestheoldtext_CEILING(void) { HERO_NODEBUG int64_t t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(4096); return t1;
-#line 334 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 391 "fixedbugs438awritecutshortleavestheoldtext.c"
 }
 
 #line 45 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
@@ -340,11 +397,11 @@ HeroStr h_fixedbugs438awritecutshortleavestheoldtext_itself(void) {
 #line 45
 #define h1_marks (*hero_lend_h1_marks)
 #line 45
-    int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs438awritecutshortleavestheoldtext.itself", "status"); int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs438awritecutshortleavestheoldtext.itself", "marks"); HERO_NODEBUG HeroStr h2_own2 = {0}, t3, t4; HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs438awritecutshortleavestheoldtext.itself", "status"); int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs438awritecutshortleavestheoldtext.itself", "marks"); HERO_NODEBUG HeroStr h2_own2 = {0}, t3, t4; HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(0); h0_status = t1;
     t2 = INT64_C(0); h1_marks = t2;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.itself", 48, 12}; hero_lend_local_name(hero_lend_h0_status, "hero_exe_path_shown", "status"); hero_lend_local_name(hero_lend_h1_marks, "hero_exe_path_shown", "marks"); t3 = hero_exe_path_shown((void *)&h0_status, (void *)&h1_marks); } t4 = h2_own2; h2_own2 = t3; hero_str_decref(t4);
-#line 348 "fixedbugs438awritecutshortleavestheoldtext.c"
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.itself", 48, 12}; hero_lend_local_name(hero_lend_h0_status, "hero_exe_path_shown", "status"); hero_lend_local_name(hero_lend_h1_marks, "hero_exe_path_shown", "marks"); t3 = hero_exe_path_shown((void *)&h0_status, (void *)&h1_marks); } t4 = h2_own2; h2_own2 = t3; hero_str_decref(t4);
+#line 405 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_incref(t3);
     hero_str_release_at(&h2_own2);
     hero_lend_local_give(hero_lend_h1_marks);
@@ -359,23 +416,23 @@ void h_fixedbugs438awritecutshortleavestheoldtext_child(HeroStr h0_path) {
 #line 51
 #define h1_limit (*hero_lend_h1_limit)
 #line 51
-    struct rlimit *const hero_lend_h1_limit = (struct rlimit *)hero_lend_local(sizeof(struct rlimit), "fixedbugs438awritecutshortleavestheoldtext.child", "limit"); HERO_NODEBUG bool h2_b0, t7, t14, t19, t20, t30; HERO_NODEBUG h_0opt_fbbb698 h3_f0 = {0}, h7_own7 = {0}, t10, t11, t15, t17, t36, t37; HERO_NODEBUG h_0opt_a8ea2 h4_f1 = {0}, h6_own6 = {0}, t26, t27, t34, t35; HERO_NODEBUG HeroStr h5_own5 = {0}, t22, t23, t25, t33; HERO_NODEBUG uint64_t t1, t2, t8, t18, t24; HERO_NODEBUG struct rlimit t3; HERO_NODEBUG int32_t t4, t5, t6; HERO_NODEBUG int64_t t9, t12, t13, t21, t28, t29, t31, t32; HERO_NODEBUG HeroFailure t16; HERO_ENTRY_STOP; goto bb0; bb0:
+    struct rlimit *const hero_lend_h1_limit = (struct rlimit *)hero_lend_local(sizeof(struct rlimit), "fixedbugs438awritecutshortleavestheoldtext.child", "limit"); HERO_NODEBUG bool h2_b0, t7, t14, t19, t20, t30; HERO_NODEBUG h_0opt_fbbb698 h3_f0 = {0}, h7_own7 = {0}, t10, t11, t15, t17, t36, t37; HERO_NODEBUG h_0opt_a8ea2 h4_f1 = {0}, h6_own6 = {0}, t26, t27, t34, t35; HERO_NODEBUG HeroStr h5_own5 = {0}, t22, t23, t25, t33; HERO_NODEBUG uint64_t t1, t2, t8, t18, t24; HERO_NODEBUG struct rlimit t3; HERO_NODEBUG int32_t t4, t5, t6; HERO_NODEBUG int64_t t9, t12, t13, t21, t28, t29, t31, t32; HERO_NODEBUG HeroFailure t16; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = UINT64_C(0); t2 = UINT64_C(0); t3 = (struct rlimit){.rlim_cur = t1, .rlim_max = t2}; h1_limit = t3; hero_pad_fill(&h1_limit, sizeof(struct rlimit), 1, hero_pad_g_1, hero_pad_n_1);
 #line 54
-    t4 = h_fixedbugs438awritecutshortleavestheoldtext_RLIMIT_FSIZE(); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.child", 54, 8}; hero_lend_local_name(hero_lend_h1_limit, "getrlimit", "limit"); hero_pad_fill(&h1_limit, sizeof(struct rlimit), 1, hero_pad_g_1, hero_pad_n_1); t5 = getrlimit(t4, &h1_limit); } t6 = INT64_C(0); t7 = t5 != t6; h2_b0 = t7; if (t7) goto bb3; else goto bb2; bb1:
+    t4 = h_fixedbugs438awritecutshortleavestheoldtext_RLIMIT_FSIZE(); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.child", 54, 8}; hero_lend_local_name(hero_lend_h1_limit, "getrlimit", "limit"); hero_pad_fill(&h1_limit, sizeof(struct rlimit), 1, hero_pad_g_1, hero_pad_n_1); t5 = getrlimit(t4, &h1_limit); } t6 = INT64_C(0); t7 = t5 != t6; h2_b0 = t7; if (t7) goto hero_bb3; else goto hero_bb2; hero_bb1:
 #line 57
-    t22 = h0_path; t23 = HERO_STR_LIT(hero_str_78); t24 = UINT64_C(1048576); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.child", 57, 37}; t25 = hero_str_repeat_at(t23, t24, &hero_here); } t33 = h5_own5; h5_own5 = t25; hero_str_decref(t33); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.child", 57, 8}; t26 = h_library_write_file(t22, t25, &hero_here); } t34 = h6_own6; h6_own6 = t26; h_0opt_a8ea2_release(&t34); t35 = h4_f1; h_0opt_a8ea2_retain(&t26); h4_f1 = t26; h_0opt_a8ea2_release(&t35); t27 = h4_f1; t28 = t27.tag; t29 = INT64_C(1); t30 = t28 == t29; if (t30) goto bb9; else goto bb10; bb2:
+    t22 = h0_path; t23 = HERO_STR_LIT(hero_str_78); t24 = UINT64_C(1048576); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.child", 57, 37}; t25 = hero_str_repeat_at(t23, t24, &hero_here); } t33 = h5_own5; h5_own5 = t25; hero_str_decref(t33); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.child", 57, 8}; t26 = h_library_write_file(t22, t25, &hero_here); } t34 = h6_own6; h6_own6 = t26; h_0opt_a8ea2_release(&t34); t35 = h4_f1; h_0opt_a8ea2_retain(&t26); h4_f1 = t26; h_0opt_a8ea2_release(&t35); t27 = h4_f1; t28 = t27.hero_tag; t29 = INT64_C(1); t30 = t28 == t29; if (t30) goto hero_bb9; else goto hero_bb10; hero_bb2:
 #line 54
-    t8 = h1_limit.rlim_cur; t9 = h_fixedbugs438awritecutshortleavestheoldtext_CEILING(); if (t9 >= 0LL) { t10 = (h_0opt_fbbb698){.tag = INT64_C(0), .as.ok = (uint64_t)t9}; } else { t10 = (h_0opt_fbbb698){.tag = INT64_C(1), .as.err = hero_failure_does_not_fit()}; } t36 = h7_own7; h7_own7 = t10; h_0opt_fbbb698_release(&t36); t37 = h3_f0; h_0opt_fbbb698_retain(&t10); h3_f0 = t10; h_0opt_fbbb698_release(&t37); t11 = h3_f0; t12 = t11.tag; t13 = INT64_C(0); t14 = t12 == t13; if (t14) goto bb4; else goto bb5; bb3: t20 = h2_b0; if (t20) goto bb6; else goto bb7; bb4: t17 = h3_f0; t18 = t17.as.ok; t19 = t8 != t18; h2_b0 = t19; goto bb3; bb5: t15 = h3_f0; t16 = t15.as.err;
-#line 371 "fixedbugs438awritecutshortleavestheoldtext.c"
+    t8 = h1_limit.rlim_cur; t9 = h_fixedbugs438awritecutshortleavestheoldtext_CEILING(); if (t9 >= 0LL) { t10 = (h_0opt_fbbb698){.hero_tag = INT64_C(0), .hero_as.hero_ok = (uint64_t)t9}; } else { t10 = (h_0opt_fbbb698){.hero_tag = INT64_C(1), .hero_as.hero_err = hero_failure_does_not_fit()}; } t36 = h7_own7; h7_own7 = t10; h_0opt_fbbb698_release(&t36); t37 = h3_f0; h_0opt_fbbb698_retain(&t10); h3_f0 = t10; h_0opt_fbbb698_release(&t37); t11 = h3_f0; t12 = t11.hero_tag; t13 = INT64_C(0); t14 = t12 == t13; if (t14) goto hero_bb4; else goto hero_bb5; hero_bb3: t20 = h2_b0; if (t20) goto hero_bb6; else goto hero_bb7; hero_bb4: t17 = h3_f0; t18 = t17.hero_as.hero_ok; t19 = t8 != t18; h2_b0 = t19; goto hero_bb3; hero_bb5: t15 = h3_f0; t16 = t15.hero_as.hero_err;
+#line 428 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_panic_must_at(t16, "fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.child", 54, 76);
     hero_unreachable();
-bb6:
+hero_bb6:
 #line 55 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
-    t21 = INT64_C(5); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.child", 55, 9}; h_library_exit(t21, &hero_here); } hero_unreachable(); goto bb1; bb7: goto bb1; bb8:
+    t21 = INT64_C(5); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.child", 55, 9}; h_library_exit(t21, &hero_here); } hero_unreachable(); goto hero_bb1; hero_bb7: goto hero_bb1; hero_bb8:
 #line 59
-    t32 = INT64_C(4); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.child", 59, 5}; h_library_exit(t32, &hero_here); } hero_unreachable();
-#line 379 "fixedbugs438awritecutshortleavestheoldtext.c"
+    t32 = INT64_C(4); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.child", 59, 5}; h_library_exit(t32, &hero_here); } hero_unreachable();
+#line 436 "fixedbugs438awritecutshortleavestheoldtext.c"
     h_0opt_fbbb698_release(hero_slot_escape(&h3_f0));
     h_0opt_a8ea2_release(hero_slot_escape(&h4_f1));
     hero_str_release_at(&h5_own5);
@@ -383,10 +440,10 @@ bb6:
     h_0opt_fbbb698_release(hero_slot_escape(&h7_own7));
     hero_lend_local_give(hero_lend_h1_limit);
     return;
-bb9:
+hero_bb9:
 #line 58 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
-    t31 = INT64_C(3); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.child", 58, 9}; h_library_exit(t31, &hero_here); } hero_unreachable(); goto bb8; bb10: goto bb8;
-#line 390 "fixedbugs438awritecutshortleavestheoldtext.c"
+    t31 = INT64_C(3); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.child", 58, 9}; h_library_exit(t31, &hero_here); } hero_unreachable(); goto hero_bb8; hero_bb10: goto hero_bb8;
+#line 447 "fixedbugs438awritecutshortleavestheoldtext.c"
 }
 #undef h1_limit
 
@@ -395,18 +452,18 @@ int64_t h_fixedbugs438awritecutshortleavestheoldtext_cut_short(HeroStr h0_path) 
 #line 62
 #define h2_status (*hero_lend_h2_status)
 #line 62
-    HeroStr h1_program = {0}; int64_t *const hero_lend_h2_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs438awritecutshortleavestheoldtext.cut_short", "status"); int64_t h3_code; HERO_NODEBUG HeroStr h4_own4 = {0}, t1, t2, t3, t8, t10, t12, t14, t18, t19; HERO_NODEBUG int64_t t4, t5, t7, t16, t17; HERO_NODEBUG const char *t9, *t11, *t13, *t15; HERO_ENTRY_STOP; goto bb0; bb0:
+    HeroStr h1_program = {0}; int64_t *const hero_lend_h2_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs438awritecutshortleavestheoldtext.cut_short", "status"); int64_t h3_code; HERO_NODEBUG HeroStr h4_own4 = {0}, t1, t2, t3, t8, t10, t12, t14, t18, t19; HERO_NODEBUG int64_t t4, t5, t7, t16, t17; HERO_NODEBUG const char *t9, *t11, *t13, *t15; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h_fixedbugs438awritecutshortleavestheoldtext_itself(); t18 = h4_own4; h4_own4 = t1; hero_str_decref(t18); t19 = h1_program; hero_str_incref(t1); h1_program = t1; hero_str_decref(t19);
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 64, 5}; (void)hero_run_reset(); }
-    t2 = h1_program; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 65, 5}; (void)hero_run_arg(t2); }
-    t3 = h0_path; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 66, 5}; (void)hero_run_arg(t3); }
-    t4 = INT64_C(60); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 67, 5}; (void)hero_run_limit(t4); }
-    t5 = h_fixedbugs438awritecutshortleavestheoldtext_CEILING(); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 68, 9}; (void)hero_run_limit_writes(t5); }
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 64, 5}; (void)hero_run_reset(); }
+    t2 = h1_program; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 65, 5}; (void)hero_run_arg(t2); }
+    t3 = h0_path; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 66, 5}; (void)hero_run_arg(t3); }
+    t4 = INT64_C(60); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 67, 5}; (void)hero_run_limit(t4); }
+    t5 = h_fixedbugs438awritecutshortleavestheoldtext_CEILING(); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 68, 9}; (void)hero_run_limit_writes(t5); }
     t7 = INT64_C(0); h2_status = t7;
-    t8 = h1_program; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 70, 33}; t9 = hero_str_lend_at(t8, &hero_here); } t10 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 70, 58}; t11 = hero_str_lend_at(t10, &hero_here); } t12 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 70, 79}; t13 = hero_str_lend_at(t12, &hero_here); } t14 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 70, 100}; t15 = hero_str_lend_at(t14, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 70, 12}; hero_lend_local_name(hero_lend_h2_status, "hero_run_go", "status"); t16 = hero_run_go(hero_cstr_nonnull_at(t9, &hero_here), hero_cstr_nonnull_at(t11, &hero_here), hero_cstr_nonnull_at(t13, &hero_here), hero_cstr_nonnull_at(t15, &hero_here), (void *)&h2_status); } h3_code = t16;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 71, 5}; (void)hero_run_reset(); }
+    t8 = h1_program; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 70, 33}; t9 = hero_str_lend_at(t8, &hero_here); } t10 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 70, 58}; t11 = hero_str_lend_at(t10, &hero_here); } t12 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 70, 79}; t13 = hero_str_lend_at(t12, &hero_here); } t14 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 70, 100}; t15 = hero_str_lend_at(t14, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 70, 12}; hero_lend_local_name(hero_lend_h2_status, "hero_run_go", "status"); t16 = hero_run_go(hero_cstr_nonnull_at(t9, &hero_here), hero_cstr_nonnull_at(t11, &hero_here), hero_cstr_nonnull_at(t13, &hero_here), hero_cstr_nonnull_at(t15, &hero_here), (void *)&h2_status); } h3_code = t16;
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.cut_short", 71, 5}; (void)hero_run_reset(); }
     t17 = h3_code;
-#line 410 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 467 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_str_release_at(&h1_program);
     hero_str_release_at(&h4_own4);
     hero_lend_local_give(hero_lend_h2_status);
@@ -415,34 +472,34 @@ int64_t h_fixedbugs438awritecutshortleavestheoldtext_cut_short(HeroStr h0_path) 
 #undef h2_status
 
 #line 75 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
-int64_t h_fixedbugs438awritecutshortleavestheoldtext_files_in(HeroStr h0_dir) { int64_t h1_count; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t3, t4, t5, t6; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_dir; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.files_in", 76, 33}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = h_fixedbugs438awritecutshortleavestheoldtext_HERO_DIR_FILES(); t4 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.files_in", 76, 13}; t5 = hero_dir_scan(hero_cstr_nonnull_at(t2, &hero_here), t3, t4); } h1_count = t5;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.files_in", 77, 5}; (void)hero_dir_release(); }
+int64_t h_fixedbugs438awritecutshortleavestheoldtext_files_in(HeroStr h0_dir) { int64_t h1_count; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG int64_t t3, t4, t5, t6; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_dir; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.files_in", 76, 33}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = h_fixedbugs438awritecutshortleavestheoldtext_HERO_DIR_FILES(); t4 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.files_in", 76, 13}; t5 = hero_dir_scan(hero_cstr_nonnull_at(t2, &hero_here), t3, t4); } h1_count = t5;
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.files_in", 77, 5}; (void)hero_dir_release(); }
     t6 = h1_count; return t6;
-#line 423 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 480 "fixedbugs438awritecutshortleavestheoldtext.c"
 }
 
 #line 80 "tests/golden/run/fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero"
-void h_fixedbugs438awritecutshortleavestheoldtext_main(void) { HeroArrayHeader * h0_words = {0}; HeroStr h1_dir = {0}; HeroStr h2_held = {0}; HERO_NODEBUG h_0opt_a8ea2 h3_f0 = {0}, h14_own14 = {0}, t21, t22, t83, t84; int64_t h4_code; HERO_NODEBUG h_0opt_f87774a h5_f1 = {0}, h15_own15 = {0}, t35, t36, t40, t85, t86; HERO_NODEBUG HeroStr h6_r0 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h16_own16 = {0}, t8, t9, t11, t12, t13, t16, t17, t18, t19, t20, t26, t27, t28, t30, t34, t41, t42, t43, t44, t48, t49, t50, t52, t53, t55, t56, t57, t58, t60, t64, t65, t70, t71, t73, t78, t79, t80, t81, t82, t87, t88, t89, t90, t91; HeroStr h7_after = {0}; HeroStr h8_fresh = {0}; int64_t h9_code2; HERO_NODEBUG HeroArrayHeader *h10_own10 = {0}, *t1, *t2, *t6, *t76, *t77; HERO_NODEBUG int64_t t3, t4, t7, t10, t23, t24, t29, t31, t32, t37, t38, t45, t46, t54, t59, t61, t62, t67, t68, t72; HERO_NODEBUG bool t5, t25, t33, t39, t47, t51, t63, t69; HERO_NODEBUG const char *t14, *t66, *t74; HERO_ENTRY_STOP; goto bb0; bb0:
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 81, 13}; t1 = h_library_args(&hero_here); } t76 = h10_own10; h10_own10 = t1; hero_array_decref(t76); t77 = h0_words; hero_array_incref(t1); h0_words = t1; hero_array_decref(t77);
+void h_fixedbugs438awritecutshortleavestheoldtext_main(void) { HeroArrayHeader * h0_words = {0}; HeroStr h1_dir = {0}; HeroStr h2_held = {0}; HERO_NODEBUG h_0opt_a8ea2 h3_f0 = {0}, h14_own14 = {0}, t21, t22, t83, t84; int64_t h4_code; HERO_NODEBUG h_0opt_f87774a h5_f1 = {0}, h15_own15 = {0}, t35, t36, t40, t85, t86; HERO_NODEBUG HeroStr h6_r0 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h16_own16 = {0}, t8, t9, t11, t12, t13, t16, t17, t18, t19, t20, t26, t27, t28, t30, t34, t41, t42, t43, t44, t48, t49, t50, t52, t53, t55, t56, t57, t58, t60, t64, t65, t70, t71, t73, t78, t79, t80, t81, t82, t87, t88, t89, t90, t91; HeroStr h7_after = {0}; HeroStr h8_fresh = {0}; int64_t h9_code2; HERO_NODEBUG HeroArrayHeader *h10_own10 = {0}, *t1, *t2, *t6, *t76, *t77; HERO_NODEBUG int64_t t3, t4, t7, t10, t23, t24, t29, t31, t32, t37, t38, t45, t46, t54, t59, t61, t62, t67, t68, t72; HERO_NODEBUG bool t5, t25, t33, t39, t47, t51, t63, t69; HERO_NODEBUG const char *t14, *t66, *t74; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 81, 13}; t1 = h_library_args(&hero_here); } t76 = h10_own10; h10_own10 = t1; hero_array_decref(t76); t77 = h0_words; hero_array_incref(t1); h0_words = t1; hero_array_decref(t77);
 #line 83
-    t2 = h0_words; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = INT64_C(0); t5 = t3 > t4; if (t5) goto bb2; else goto bb3; bb1:
+    t2 = h0_words; t3 = ((void)(t2 == NULL ? ((void)hero_array_len(t2), hero_unreachable()) : (void)0), t2->len); t4 = INT64_C(0); t5 = t3 > t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 86
-    t9 = HERO_STR_LIT(hero_str_9563f0b); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 86, 44}; t10 = hero_os_pid(); } t11 = hero_int_to_str(t10); t78 = h11_own11; h11_own11 = t11; hero_str_decref(t78); t12 = hero_str_concat(t9, t11); t79 = h12_own12; h12_own12 = t12; hero_str_decref(t79); t80 = h1_dir; hero_str_incref(t12); h1_dir = t12; hero_str_decref(t80);
-    t13 = h1_dir; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 87, 33}; t14 = hero_str_lend_at(t13, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 87, 9}; (void)hero_fs_mkdir_all(hero_cstr_nonnull_at(t14, &hero_here)); }
+    t9 = HERO_STR_LIT(hero_str_9563f0b); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 86, 44}; t10 = hero_os_pid(); } t11 = hero_int_to_str(t10); t78 = h11_own11; h11_own11 = t11; hero_str_decref(t78); t12 = hero_str_concat(t9, t11); t79 = h12_own12; h12_own12 = t12; hero_str_decref(t79); t80 = h1_dir; hero_str_incref(t12); h1_dir = t12; hero_str_decref(t80);
+    t13 = h1_dir; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 87, 33}; t14 = hero_str_lend_at(t13, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 87, 9}; (void)hero_fs_mkdir_all(hero_cstr_nonnull_at(t14, &hero_here)); }
     t16 = h1_dir; t17 = HERO_STR_LIT(hero_str_567dc96f); t18 = hero_str_concat(t16, t17); t81 = h13_own13; h13_own13 = t18; hero_str_decref(t81); t82 = h2_held; hero_str_incref(t18); h2_held = t18; hero_str_decref(t82);
 #line 90
-    t19 = h2_held; t20 = HERO_STR_LIT(hero_str_14d6ef); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 90, 8}; t21 = h_library_write_file(t19, t20, &hero_here); } t83 = h14_own14; h14_own14 = t21; h_0opt_a8ea2_release(&t83); t84 = h3_f0; h_0opt_a8ea2_retain(&t21); h3_f0 = t21; h_0opt_a8ea2_release(&t84); t22 = h3_f0; t23 = t22.tag; t24 = INT64_C(1); t25 = t23 == t24; if (t25) goto bb5; else goto bb6; bb2:
+    t19 = h2_held; t20 = HERO_STR_LIT(hero_str_14d6ef); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 90, 8}; t21 = h_library_write_file(t19, t20, &hero_here); } t83 = h14_own14; h14_own14 = t21; h_0opt_a8ea2_release(&t83); t84 = h3_f0; h_0opt_a8ea2_retain(&t21); h3_f0 = t21; h_0opt_a8ea2_release(&t84); t22 = h3_f0; t23 = t22.hero_tag; t24 = INT64_C(1); t25 = t23 == t24; if (t25) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 84
-    t6 = h0_words; t7 = INT64_C(0); t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? hero_panic_index_at(t6, t7, "fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 84, 15) : (void)0), (void)(t6->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t6 + 1))[t7]); h_fixedbugs438awritecutshortleavestheoldtext_child(t8); goto bb10; bb3: goto bb1; bb4:
+    t6 = h0_words; t7 = INT64_C(0); t8 = ((void)((t6 == NULL || t7 < 0 || t7 >= t6->len) ? hero_panic_index_at(t6, t7, "fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 84, 15) : (void)0), (void)(t6->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t6 + 1))[t7]); h_fixedbugs438awritecutshortleavestheoldtext_child(t8); goto hero_bb10; hero_bb3: goto hero_bb1; hero_bb4:
 #line 93
     t28 = h2_held; t29 = h_fixedbugs438awritecutshortleavestheoldtext_cut_short(t28); h4_code = t29;
     t30 = HERO_STR_LIT(hero_str_3e7f8016); t31 = h4_code; t32 = INT64_C(5); t33 = t31 != t32; hero_print_str(t30); hero_print_bool(t33); hero_print_end();
-    t34 = h2_held; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 95, 13}; t35 = h_library_read_file(t34, &hero_here); } t85 = h15_own15; h15_own15 = t35; h_0opt_f87774a_release(&t85); t86 = h5_f1; h_0opt_f87774a_retain(&t35); h5_f1 = t35; h_0opt_f87774a_release(&t86); t36 = h5_f1; t37 = t36.tag; t38 = INT64_C(0); t39 = t37 == t38; if (t39) goto bb7; else goto bb8; bb5:
+    t34 = h2_held; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 95, 13}; t35 = h_library_read_file(t34, &hero_here); } t85 = h15_own15; h15_own15 = t35; h_0opt_f87774a_release(&t85); t86 = h5_f1; h_0opt_f87774a_retain(&t35); h5_f1 = t35; h_0opt_f87774a_release(&t86); t36 = h5_f1; t37 = t36.hero_tag; t38 = INT64_C(0); t39 = t37 == t38; if (t39) goto hero_bb7; else goto hero_bb8; hero_bb5:
 #line 91
-    t26 = HERO_STR_LIT(hero_str_552d9e74); t27 = h2_held; hero_print_str(t26); hero_print_str(t27); hero_print_end(); goto bb10; bb6: goto bb4; bb7:
+    t26 = HERO_STR_LIT(hero_str_552d9e74); t27 = h2_held; hero_print_str(t26); hero_print_str(t27); hero_print_end(); goto hero_bb10; hero_bb6: goto hero_bb4; hero_bb7:
 #line 95
-    t40 = h5_f1; t41 = t40.as.ok; t87 = h6_r0; hero_str_incref(t41); h6_r0 = t41; hero_str_decref(t87); goto bb9; bb8: t42 = HERO_STR_LIT(hero_str_c328310); t88 = h6_r0; hero_str_incref(t42); h6_r0 = t42; hero_str_decref(t88); goto bb9; bb9: t43 = h6_r0; t89 = h7_after; hero_str_incref(t43); h7_after = t43; hero_str_decref(t89);
+    t40 = h5_f1; t41 = t40.hero_as.hero_ok; t87 = h6_r0; hero_str_incref(t41); h6_r0 = t41; hero_str_decref(t87); goto hero_bb9; hero_bb8: t42 = HERO_STR_LIT(hero_str_c328310); t88 = h6_r0; hero_str_incref(t42); h6_r0 = t42; hero_str_decref(t88); goto hero_bb9; hero_bb9: t43 = h6_r0; t89 = h7_after; hero_str_incref(t43); h7_after = t43; hero_str_decref(t89);
 #line 97
     t44 = HERO_STR_LIT(hero_str_23bc109c);
     t45 = h4_code; t46 = INT64_C(3); t47 = t45 == t46;
@@ -459,14 +516,14 @@ void h_fixedbugs438awritecutshortleavestheoldtext_main(void) { HeroArrayHeader *
     t60 = HERO_STR_LIT(hero_str_68c0073a);
     t61 = h9_code2; t62 = INT64_C(3); t63 = t61 == t62;
     t64 = HERO_STR_LIT(hero_str_4c484fa3);
-    t65 = h8_fresh; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 110, 30}; t66 = hero_str_lend_at(t65, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 110, 9}; t67 = hero_fs_exists(hero_cstr_nonnull_at(t66, &hero_here)); } t68 = INT64_C(0); t69 = t67 == t68;
+    t65 = h8_fresh; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 110, 30}; t66 = hero_str_lend_at(t65, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 110, 9}; t67 = hero_fs_exists(hero_cstr_nonnull_at(t66, &hero_here)); } t68 = INT64_C(0); t69 = t67 == t68;
     t70 = HERO_STR_LIT(hero_str_322b620b);
     t71 = h1_dir; t72 = h_fixedbugs438awritecutshortleavestheoldtext_files_in(t71);
 #line 106
     hero_print_str(t60); hero_print_bool(t63); hero_print_str(t64); hero_print_bool(t69); hero_print_str(t70); hero_print_int(t72); hero_print_end();
 #line 114
-    t73 = h1_dir; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 114, 36}; t74 = hero_str_lend_at(t73, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 114, 9}; (void)hero_dir_remove_tree(hero_cstr_nonnull_at(t74, &hero_here)); } goto bb10; bb10:
-#line 470 "fixedbugs438awritecutshortleavestheoldtext.c"
+    t73 = h1_dir; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 114, 36}; t74 = hero_str_lend_at(t73, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-438-a-write-cut-short-leaves-the-old-text.hero", "fixedbugs-438-a-write-cut-short-leaves-the-old-text.main", 114, 9}; (void)hero_dir_remove_tree(hero_cstr_nonnull_at(t74, &hero_here)); } goto hero_bb10; hero_bb10:
+#line 527 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_array_release_at(&h0_words);
     hero_str_release_at(&h1_dir);
     hero_str_release_at(&h2_held);
@@ -487,27 +544,27 @@ void h_fixedbugs438awritecutshortleavestheoldtext_main(void) { HeroArrayHeader *
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) { return HERO_OS_OK;
-#line 491 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 548 "fixedbugs438awritecutshortleavestheoldtext.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) { return HERO_OS_NOT_FOUND;
-#line 496 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 553 "fixedbugs438awritecutshortleavestheoldtext.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) { return HERO_OS_NOT_TEXT;
-#line 501 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 558 "fixedbugs438awritecutshortleavestheoldtext.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) { return HERO_OS_BAD_NAME;
-#line 506 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 563 "fixedbugs438awritecutshortleavestheoldtext.c"
 }
 
 #line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 511 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 568 "fixedbugs438awritecutshortleavestheoldtext.c"
 }
 
 #line 152 "<heroes library>"
@@ -515,19 +572,19 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
 #line 152
 #define h1_status (*hero_lend_h1_status)
 #line 152
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 155
     t7 = INT64_C(0); h1_status = t7;
-    t8 = h0_c; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
-    t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb2:
+    t8 = h0_c; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
+    t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 154
-    t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto bb7; bb3: goto bb1; bb4:
+    t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto hero_bb7; hero_bb3: goto hero_bb1; hero_bb4:
 #line 159
-    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
+    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto hero_bb7; hero_bb5:
 #line 158
-    t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 531 "fixedbugs438awritecutshortleavestheoldtext.c"
+    t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto hero_bb7; hero_bb6: goto hero_bb4; hero_bb7:
+#line 588 "fixedbugs438awritecutshortleavestheoldtext.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -539,7 +596,7 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
     return t18;
 }
 #undef h1_status
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 152, 1};
     return h_library_validated(h0_c, &hero_here);
 }
@@ -549,27 +606,27 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller
 #line 166
 #define h1_status (*hero_lend_h1_status)
 #line 166
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h10_own10 = {0}, h13_own13 = {0}, t8, t14, t22, t32, t37, t38, t41, t42, t44, t46, t49; HERO_NODEBUG HeroStr h4_own4 = {0}, h7_own7 = {0}, h9_own9 = {0}, h11_own11 = {0}, h12_own12 = {0}, t2, t3, t7, t12, t13, t18, t19, t20, t21, t26, t27, t28, t29, t30, t31, t33, t34, t35, t36, t39, t40, t43, t45, t47, t48; HERO_NODEBUG int64_t t1, t4, t5, t9, t10, t15, t16, t23, t24; HERO_NODEBUG bool t6, t11, t17, t25; HERO_ENTRY_STOP; goto bb0; bb0:
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h10_own10 = {0}, h13_own13 = {0}, t8, t14, t22, t32, t37, t38, t41, t42, t44, t46, t49; HERO_NODEBUG HeroStr h4_own4 = {0}, h7_own7 = {0}, h9_own9 = {0}, h11_own11 = {0}, h12_own12 = {0}, t2, t3, t7, t12, t13, t18, t19, t20, t21, t26, t27, t28, t29, t30, t31, t33, t34, t35, t36, t39, t40, t43, t45, t47, t48; HERO_NODEBUG int64_t t1, t4, t5, t9, t10, t15, t16, t23, t24; HERO_NODEBUG bool t6, t11, t17, t25; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(0); h1_status = t1;
-    t2 = h0_path; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_file_read_str", "status"); t3 = hero_file_read_str(t2, (void *)&h1_status); } t39 = h4_own4; h4_own4 = t3; hero_str_decref(t39); t40 = h2_text; hero_str_incref(t3); h2_text = t3; hero_str_decref(t40);
-    t4 = h1_status; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto bb2; else goto bb3; bb1:
+    t2 = h0_path; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_file_read_str", "status"); t3 = hero_file_read_str(t2, (void *)&h1_status); } t39 = h4_own4; h4_own4 = t3; hero_str_decref(t39); t40 = h2_text; hero_str_incref(t3); h2_text = t3; hero_str_decref(t40);
+    t4 = h1_status; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 173
-    t9 = h1_status; t10 = h_library_HERO_OS_BAD_NAME(); t11 = t9 == t10; if (t11) goto bb5; else goto bb6; bb2:
+    t9 = h1_status; t10 = h_library_HERO_OS_BAD_NAME(); t11 = t9 == t10; if (t11) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 170
-    t7 = h2_text; hero_str_incref(t7); t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7}; t41 = h5_own5; h5_own5 = t8; h_0opt_f87774a_release(&t41); h3_ret0 = t8; goto bb13; bb3: goto bb1; bb4:
+    t7 = h2_text; hero_str_incref(t7); t8 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = t7}; t41 = h5_own5; h5_own5 = t8; h_0opt_f87774a_release(&t41); h3_ret0 = t8; goto hero_bb13; hero_bb3: goto hero_bb1; hero_bb4:
 #line 175
-    t15 = h1_status; t16 = h_library_HERO_OS_NOT_FOUND(); t17 = t15 == t16; if (t17) goto bb8; else goto bb9; bb5:
+    t15 = h1_status; t16 = h_library_HERO_OS_NOT_FOUND(); t17 = t15 == t16; if (t17) goto hero_bb8; else goto hero_bb9; hero_bb5:
 #line 174
-    t12 = HERO_STR_LIT(hero_str_3e46668); t13 = HERO_STR_LIT(hero_str_75aeb685); hero_str_incref(t12); hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t12, .msg = t13}}; t42 = h6_own6; h6_own6 = t14; h_0opt_f87774a_release(&t42); h3_ret0 = t14; goto bb13; bb6: goto bb4; bb7:
+    t12 = HERO_STR_LIT(hero_str_3e46668); t13 = HERO_STR_LIT(hero_str_75aeb685); hero_str_incref(t12); hero_str_incref(t13); t14 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t12, .msg = t13}}; t42 = h6_own6; h6_own6 = t14; h_0opt_f87774a_release(&t42); h3_ret0 = t14; goto hero_bb13; hero_bb6: goto hero_bb4; hero_bb7:
 #line 180
-    t23 = h1_status; t24 = h_library_HERO_OS_NOT_TEXT(); t25 = t23 == t24; if (t25) goto bb11; else goto bb12; bb8:
+    t23 = h1_status; t24 = h_library_HERO_OS_NOT_TEXT(); t25 = t23 == t24; if (t25) goto hero_bb11; else goto hero_bb12; hero_bb8:
 #line 176
-    t18 = HERO_STR_LIT(hero_str_5b56e076); t19 = HERO_STR_LIT(hero_str_2ae119c5); t20 = h0_path; t21 = hero_str_concat(t19, t20); t43 = h7_own7; h7_own7 = t21; hero_str_decref(t43); hero_str_incref(t18); hero_str_incref(t21); t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}}; t44 = h8_own8; h8_own8 = t22; h_0opt_f87774a_release(&t44); h3_ret0 = t22; goto bb13; bb9: goto bb7; bb10:
+    t18 = HERO_STR_LIT(hero_str_5b56e076); t19 = HERO_STR_LIT(hero_str_2ae119c5); t20 = h0_path; t21 = hero_str_concat(t19, t20); t43 = h7_own7; h7_own7 = t21; hero_str_decref(t43); hero_str_incref(t18); hero_str_incref(t21); t22 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t18, .msg = t21}}; t44 = h8_own8; h8_own8 = t22; h_0opt_f87774a_release(&t44); h3_ret0 = t22; goto hero_bb13; hero_bb9: goto hero_bb7; hero_bb10:
 #line 182
-    t33 = HERO_STR_LIT(hero_str_3e46668); t34 = HERO_STR_LIT(hero_str_b908f30); t35 = h0_path; t36 = hero_str_concat(t34, t35); t45 = h9_own9; h9_own9 = t36; hero_str_decref(t45); hero_str_incref(t33); hero_str_incref(t36); t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}}; t46 = h10_own10; h10_own10 = t37; h_0opt_f87774a_release(&t46); h3_ret0 = t37; goto bb13; bb11:
+    t33 = HERO_STR_LIT(hero_str_3e46668); t34 = HERO_STR_LIT(hero_str_b908f30); t35 = h0_path; t36 = hero_str_concat(t34, t35); t45 = h9_own9; h9_own9 = t36; hero_str_decref(t45); hero_str_incref(t33); hero_str_incref(t36); t37 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t33, .msg = t36}}; t46 = h10_own10; h10_own10 = t37; h_0opt_f87774a_release(&t46); h3_ret0 = t37; goto hero_bb13; hero_bb11:
 #line 181
-    t26 = HERO_STR_LIT(hero_str_34624695); t27 = HERO_STR_LIT(hero_str_d028710); t28 = h0_path; t29 = hero_str_concat(t27, t28); t47 = h11_own11; h11_own11 = t29; hero_str_decref(t47); t30 = HERO_STR_LIT(hero_str_612f4355); t31 = hero_str_concat(t29, t30); t48 = h12_own12; h12_own12 = t31; hero_str_decref(t48); hero_str_incref(t26); hero_str_incref(t31); t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}}; t49 = h13_own13; h13_own13 = t32; h_0opt_f87774a_release(&t49); h3_ret0 = t32; goto bb13; bb12: goto bb10; bb13:
-#line 573 "fixedbugs438awritecutshortleavestheoldtext.c"
+    t26 = HERO_STR_LIT(hero_str_34624695); t27 = HERO_STR_LIT(hero_str_d028710); t28 = h0_path; t29 = hero_str_concat(t27, t28); t47 = h11_own11; h11_own11 = t29; hero_str_decref(t47); t30 = HERO_STR_LIT(hero_str_612f4355); t31 = hero_str_concat(t29, t30); t48 = h12_own12; h12_own12 = t31; hero_str_decref(t48); hero_str_incref(t26); hero_str_incref(t31); t32 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t26, .msg = t31}}; t49 = h13_own13; h13_own13 = t32; h_0opt_f87774a_release(&t49); h3_ret0 = t32; goto hero_bb13; hero_bb12: goto hero_bb10; hero_bb13:
+#line 630 "fixedbugs438awritecutshortleavestheoldtext.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -587,24 +644,24 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller
     return t38;
 }
 #undef h1_status
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path) {
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.read_file", 166, 1};
     return h_library_read_file(h0_path, &hero_here);
 }
 
 #line 185 "<heroes library>"
-h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPlace *hero_caller) { int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_path; t2 = h1_text; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t3 = hero_file_write_str(t1, t2); } h2_wrote = t3;
-    t4 = h2_wrote; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto bb2; else goto bb3; bb1:
+h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPlace *hero_caller) { int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_path; t2 = h1_text; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; t3 = hero_file_write_str(t1, t2); } h2_wrote = t3;
+    t4 = h2_wrote; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 189
-    t8 = h2_wrote; t9 = h_library_HERO_OS_BAD_NAME(); t10 = t8 == t9; if (t10) goto bb5; else goto bb6; bb2:
+    t8 = h2_wrote; t9 = h_library_HERO_OS_BAD_NAME(); t10 = t8 == t9; if (t10) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 188
-    t7 = (h_0opt_a8ea2){.tag = INT64_C(0)}; t20 = h4_own4; h4_own4 = t7; h_0opt_a8ea2_release(&t20); h3_ret0 = t7; goto bb7; bb3: goto bb1; bb4:
+    t7 = (h_0opt_a8ea2){.hero_tag = INT64_C(0)}; t20 = h4_own4; h4_own4 = t7; h_0opt_a8ea2_release(&t20); h3_ret0 = t7; goto hero_bb7; hero_bb3: goto hero_bb1; hero_bb4:
 #line 191
-    t14 = HERO_STR_LIT(hero_str_7e662f9e); t15 = HERO_STR_LIT(hero_str_39d7c22a); t16 = h0_path; t17 = hero_str_concat(t15, t16); t21 = h5_own5; h5_own5 = t17; hero_str_decref(t21); hero_str_incref(t14); hero_str_incref(t17); t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t17}}; t22 = h6_own6; h6_own6 = t18; h_0opt_a8ea2_release(&t22); h3_ret0 = t18; goto bb7; bb5:
+    t14 = HERO_STR_LIT(hero_str_7e662f9e); t15 = HERO_STR_LIT(hero_str_39d7c22a); t16 = h0_path; t17 = hero_str_concat(t15, t16); t21 = h5_own5; h5_own5 = t17; hero_str_decref(t21); hero_str_incref(t14); hero_str_incref(t17); t18 = (h_0opt_a8ea2){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t14, .msg = t17}}; t22 = h6_own6; h6_own6 = t18; h_0opt_a8ea2_release(&t22); h3_ret0 = t18; goto hero_bb7; hero_bb5:
 #line 190
-    t11 = HERO_STR_LIT(hero_str_7e662f9e); t12 = HERO_STR_LIT(hero_str_1755ec20); hero_str_incref(t11); hero_str_incref(t12); t13 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t12}}; t23 = h7_own7; h7_own7 = t13; h_0opt_a8ea2_release(&t23); h3_ret0 = t13; goto bb7; bb6: goto bb4; bb7:
-#line 608 "fixedbugs438awritecutshortleavestheoldtext.c"
+    t11 = HERO_STR_LIT(hero_str_7e662f9e); t12 = HERO_STR_LIT(hero_str_1755ec20); hero_str_incref(t11); hero_str_incref(t12); t13 = (h_0opt_a8ea2){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t11, .msg = t12}}; t23 = h7_own7; h7_own7 = t13; h_0opt_a8ea2_release(&t23); h3_ret0 = t13; goto hero_bb7; hero_bb6: goto hero_bb4; hero_bb7:
+#line 665 "fixedbugs438awritecutshortleavestheoldtext.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
@@ -613,21 +670,21 @@ h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPl
     h_0opt_a8ea2_release(hero_slot_escape(&h7_own7));
     return t19;
 }
-__attribute__((unused)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
+__attribute__((__unused__)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.write_file", 185, 1};
     return h_library_write_file(h0_path, h1_text, &hero_here);
 }
 
 #line 196 "<heroes library>"
-HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; h_0opt_f87774a h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}, h5_f1 = {0}, h6_f2 = {0}, h8_own8 = {0}, h12_own12 = {0}, t8, t9, t10, t21, t23, t24, t28, t30, t34, t35, t39, t41, t50, t51, t52, t56, t57, t58, t59; h_0opt_f87774a h4_unread = {0}; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t1, *t47, *t48, *t49; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t14, t15, t17, t18, t19, t20, t31, t42, t53, t54, t55; HERO_NODEBUG int64_t t2, t3, t4, t6, t11, t12, t16, t25, t26, t36, t37, t44, t45, t46; HERO_NODEBUG bool t5, t13, t27, t38; HERO_NODEBUG const char *t7; HERO_NODEBUG HeroFailure t29, t40; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; h_0opt_f87774a h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}, h5_f1 = {0}, h6_f2 = {0}, h8_own8 = {0}, h12_own12 = {0}, t8, t9, t10, t21, t23, t24, t28, t30, t34, t35, t39, t41, t50, t51, t52, t56, t57, t58, t59; h_0opt_f87774a h4_unread = {0}; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t1, *t47, *t48, *t49; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t14, t15, t17, t18, t19, t20, t31, t42, t53, t54, t55; HERO_NODEBUG int64_t t2, t3, t4, t6, t11, t12, t16, t25, t26, t36, t37, t44, t45, t46; HERO_NODEBUG bool t5, t13, t27, t38; HERO_NODEBUG const char *t7; HERO_NODEBUG HeroFailure t29, t40; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t48 = h7_own7; h7_own7 = t1; hero_array_decref(t48); t49 = h0_out; hero_array_incref(t1); h0_out = t1; hero_array_decref(t49);
-    t2 = INT64_C(0); h1_i = t2; goto bb1; bb1:
-    t3 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t4 = hero_args_count(); } t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
-    t6 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t7 = (const char *)hero_args_raw(t6); } t8 = h_library_validated(t7, hero_caller); t50 = h8_own8; h8_own8 = t8; h_0opt_f87774a_release(&t50); t51 = h2_text; h_0opt_f87774a_retain(&t8); h2_text = t8; h_0opt_f87774a_release(&t51);
-    t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3:
+    t2 = INT64_C(0); h1_i = t2; goto hero_bb1; hero_bb1:
+    t3 = h1_i; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; t4 = hero_args_count(); } t5 = t3 < t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb2:
+    t6 = h1_i; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; t7 = (const char *)hero_args_raw(t6); } t8 = h_library_validated(t7, hero_caller); t50 = h8_own8; h8_own8 = t8; h_0opt_f87774a_release(&t50); t51 = h2_text; h_0opt_f87774a_retain(&t8); h2_text = t8; h_0opt_f87774a_release(&t51);
+    t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.hero_tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto hero_bb5; else goto hero_bb6; hero_bb3:
 #line 207
     t47 = h0_out;
-#line 631 "fixedbugs438awritecutshortleavestheoldtext.c"
+#line 688 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_array_incref(t47);
     hero_array_release_at(&h0_out);
     h_0opt_f87774a_release(hero_slot_escape(&h2_text));
@@ -642,202 +699,202 @@ HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader
     hero_str_release_at(&h11_own11);
     h_0opt_f87774a_release(hero_slot_escape(&h12_own12));
     return t47;
-bb4:
+hero_bb4:
 #line 206 "<heroes library>"
-    t44 = h1_i; t45 = INT64_C(1); if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h1_i = t46; goto bb1; bb5:
+    t44 = h1_i; t45 = INT64_C(1); if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h1_i = t46; goto hero_bb1; hero_bb5:
 #line 202
-    t14 = HERO_STR_LIT(hero_str_34624695); t15 = HERO_STR_LIT(hero_str_5ffd8fa5); t16 = h1_i; t17 = hero_int_to_str(t16); t53 = h9_own9; h9_own9 = t17; hero_str_decref(t53); t18 = hero_str_concat(t15, t17); t54 = h10_own10; h10_own10 = t18; hero_str_decref(t54); t19 = HERO_STR_LIT(hero_str_14b8f7ca); t20 = hero_str_concat(t18, t19); t55 = h11_own11; h11_own11 = t20; hero_str_decref(t55); hero_str_incref(t14); hero_str_incref(t20); t21 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t20}}; t56 = h12_own12; h12_own12 = t21; h_0opt_f87774a_release(&t56); t57 = h4_unread; h_0opt_f87774a_retain(&t21); h4_unread = t21; h_0opt_f87774a_release(&t57);
-    t23 = h4_unread; t58 = h5_f1; h_0opt_f87774a_retain(&t23); h5_f1 = t23; h_0opt_f87774a_release(&t58); t24 = h5_f1; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb7; else goto bb8; bb6:
+    t14 = HERO_STR_LIT(hero_str_34624695); t15 = HERO_STR_LIT(hero_str_5ffd8fa5); t16 = h1_i; t17 = hero_int_to_str(t16); t53 = h9_own9; h9_own9 = t17; hero_str_decref(t53); t18 = hero_str_concat(t15, t17); t54 = h10_own10; h10_own10 = t18; hero_str_decref(t54); t19 = HERO_STR_LIT(hero_str_14b8f7ca); t20 = hero_str_concat(t18, t19); t55 = h11_own11; h11_own11 = t20; hero_str_decref(t55); hero_str_incref(t14); hero_str_incref(t20); t21 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t14, .msg = t20}}; t56 = h12_own12; h12_own12 = t21; h_0opt_f87774a_release(&t56); t57 = h4_unread; h_0opt_f87774a_retain(&t21); h4_unread = t21; h_0opt_f87774a_release(&t57);
+    t23 = h4_unread; t58 = h5_f1; h_0opt_f87774a_retain(&t23); h5_f1 = t23; h_0opt_f87774a_release(&t58); t24 = h5_f1; t25 = t24.hero_tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto hero_bb7; else goto hero_bb8; hero_bb6:
 #line 205
-    t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb9; else goto bb10; bb7:
+    t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.hero_tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto hero_bb9; else goto hero_bb10; hero_bb7:
 #line 203
-    t30 = h5_f1; t31 = t30.as.ok; hero_array_push_owned(&h0_out, &t31); goto bb4; bb8: t28 = h5_f1; t29 = t28.as.err;
-#line 656 "fixedbugs438awritecutshortleavestheoldtext.c"
+    t30 = h5_f1; t31 = t30.hero_as.hero_ok; hero_array_push_owned(&h0_out, &t31); goto hero_bb4; hero_bb8: t28 = h5_f1; t29 = t28.hero_as.hero_err;
+#line 713 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_panic_library_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
-bb9:
+hero_bb9:
 #line 205 "<heroes library>"
-    t41 = h6_f2; t42 = t41.as.ok; hero_array_push_owned(&h0_out, &t42); goto bb4; bb10: t39 = h6_f2; t40 = t39.as.err;
-#line 662 "fixedbugs438awritecutshortleavestheoldtext.c"
+    t41 = h6_f2; t42 = t41.hero_as.hero_ok; hero_array_push_owned(&h0_out, &t42); goto hero_bb4; hero_bb10: t39 = h6_f2; t40 = t39.hero_as.hero_err;
+#line 719 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_panic_library_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }
-__attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void) {
+__attribute__((__unused__)) HeroArrayHeader * hero_value_h_library_args(void) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.args", 196, 1};
     return h_library_args(&hero_here);
 }
 
 #line 231 "<heroes library>"
-void h_library_exit(int64_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBUG bool h1_b0, t3, t6, t7, t18; h_0opt_e201354 h2_status = {0}; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h6_own6 = {0}, t13, t14, t15, t19, t26, t27, t28; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, t8, t9, t11, t12, t24, t25; HERO_NODEBUG int64_t t1, t2, t4, t5, t10, t16, t17, t23; HERO_NODEBUG HeroFailure t20; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_code; t2 = INT64_C(0); t3 = t1 < t2; h1_b0 = t3; if (t3) goto bb3; else goto bb2; bb1:
+void h_library_exit(int64_t h0_code, const HeroPlace *hero_caller) { HERO_NODEBUG bool h1_b0, t3, t6, t7, t18; h_0opt_e201354 h2_status = {0}; HERO_NODEBUG h_0opt_e201354 h3_f0 = {0}, h6_own6 = {0}, t13, t14, t15, t19, t26, t27, t28; HERO_NODEBUG HeroStr h4_own4 = {0}, h5_own5 = {0}, t8, t9, t11, t12, t24, t25; HERO_NODEBUG int64_t t1, t2, t4, t5, t10, t16, t17, t23; HERO_NODEBUG HeroFailure t20; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_code; t2 = INT64_C(0); t3 = t1 < t2; h1_b0 = t3; if (t3) goto hero_bb3; else goto hero_bb2; hero_bb1:
 #line 235
-    t23 = h0_code; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; (void)hero_exit(t23); }
-#line 676 "fixedbugs438awritecutshortleavestheoldtext.c"
+    t23 = h0_code; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; (void)hero_exit(t23); }
+#line 733 "fixedbugs438awritecutshortleavestheoldtext.c"
     h_0opt_e201354_release(hero_slot_escape(&h2_status));
     h_0opt_e201354_release(hero_slot_escape(&h3_f0));
     hero_str_release_at(&h4_own4);
     hero_str_release_at(&h5_own5);
     h_0opt_e201354_release(hero_slot_escape(&h6_own6));
     return;
-bb2:
+hero_bb2:
 #line 232 "<heroes library>"
-    t4 = h0_code; t5 = INT64_C(255); t6 = t4 > t5; h1_b0 = t6; goto bb3; bb3: t7 = h1_b0; if (t7) goto bb4; else goto bb5; bb4:
-    t8 = HERO_STR_LIT(hero_str_2633b9f3); t9 = HERO_STR_LIT(hero_str_1744a71f); t10 = h0_code; t11 = hero_int_to_str(t10); t24 = h4_own4; h4_own4 = t11; hero_str_decref(t24); t12 = hero_str_concat(t9, t11); t25 = h5_own5; h5_own5 = t12; hero_str_decref(t25); hero_str_incref(t8); hero_str_incref(t12); t13 = (h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t8, .msg = t12}}; t26 = h6_own6; h6_own6 = t13; h_0opt_e201354_release(&t26); t27 = h2_status; h_0opt_e201354_retain(&t13); h2_status = t13; h_0opt_e201354_release(&t27);
-    t14 = h2_status; t28 = h3_f0; h_0opt_e201354_retain(&t14); h3_f0 = t14; h_0opt_e201354_release(&t28); t15 = h3_f0; t16 = t15.tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto bb6; else goto bb7; bb5: goto bb1; bb6: goto bb1; bb7: t19 = h3_f0; t20 = t19.as.err;
-#line 688 "fixedbugs438awritecutshortleavestheoldtext.c"
+    t4 = h0_code; t5 = INT64_C(255); t6 = t4 > t5; h1_b0 = t6; goto hero_bb3; hero_bb3: t7 = h1_b0; if (t7) goto hero_bb4; else goto hero_bb5; hero_bb4:
+    t8 = HERO_STR_LIT(hero_str_2633b9f3); t9 = HERO_STR_LIT(hero_str_1744a71f); t10 = h0_code; t11 = hero_int_to_str(t10); t24 = h4_own4; h4_own4 = t11; hero_str_decref(t24); t12 = hero_str_concat(t9, t11); t25 = h5_own5; h5_own5 = t12; hero_str_decref(t25); hero_str_incref(t8); hero_str_incref(t12); t13 = (h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t8, .msg = t12}}; t26 = h6_own6; h6_own6 = t13; h_0opt_e201354_release(&t26); t27 = h2_status; h_0opt_e201354_retain(&t13); h2_status = t13; h_0opt_e201354_release(&t27);
+    t14 = h2_status; t28 = h3_f0; h_0opt_e201354_retain(&t14); h3_f0 = t14; h_0opt_e201354_release(&t28); t15 = h3_f0; t16 = t15.hero_tag; t17 = INT64_C(0); t18 = t16 == t17; if (t18) goto hero_bb6; else goto hero_bb7; hero_bb5: goto hero_bb1; hero_bb6: goto hero_bb1; hero_bb7: t19 = h3_f0; t20 = t19.hero_as.hero_err;
+#line 745 "fixedbugs438awritecutshortleavestheoldtext.c"
     hero_panic_library_at(t20, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }
-__attribute__((unused)) void hero_value_h_library_exit(int64_t h0_code) {
+__attribute__((__unused__)) void hero_value_h_library_exit(int64_t h0_code) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.exit", 231, 1};
     h_library_exit(h0_code, &hero_here);
 }
-HERO_TU_LOCAL bool h_fixedbugs438awritecutshortleavestheoldtext_0Ceiling_eq(const struct rlimit *a, const struct rlimit *b) {
-    if (!(a->rlim_cur == b->rlim_cur)) return false;
-    if (!(a->rlim_max == b->rlim_max)) return false;
+HERO_TU_LOCAL bool h_fixedbugs438awritecutshortleavestheoldtext_0Ceiling_eq(const struct rlimit *hero_a, const struct rlimit *hero_b) {
+    if (!(hero_a->rlim_cur == hero_b->rlim_cur)) return false;
+    if (!(hero_a->rlim_max == hero_b->rlim_max)) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs438awritecutshortleavestheoldtext_0Ceiling_hash(const void *elem) {
-    const struct rlimit *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_u64)->hash(&v->rlim_cur)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_u64)->hash(&v->rlim_max)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs438awritecutshortleavestheoldtext_0Ceiling_hash(const void *hero_elem) {
+    const struct rlimit *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_u64)->hash(&hero_v->rlim_cur)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_u64)->hash(&hero_v->rlim_max)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_fbbb698_retain(const h_0opt_fbbb698 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_fbbb698_release(h_0opt_fbbb698 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_fbbb698_release(h_0opt_fbbb698 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *a, const h_0opt_fbbb698 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_u64)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_fbbb698_eq(const h_0opt_fbbb698 *hero_a, const h_0opt_fbbb698 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_u64)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_fbbb698_hash(const void *elem) {
-    const h_0opt_fbbb698 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_fbbb698_hash(const void *hero_elem) {
+    const h_0opt_fbbb698 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_u64)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_u64)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5753c0f848df6bf7", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("509de08c33e2c633", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs438awritecutshortleavestheoldtext\tfixedbugs-438-a-write-cut-short-leaves-the-old-text\n");
     h_fixedbugs438awritecutshortleavestheoldtext_main();
     hero_runtime_check_leaks();

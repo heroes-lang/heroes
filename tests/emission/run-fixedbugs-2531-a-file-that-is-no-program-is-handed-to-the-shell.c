@@ -27,6 +27,44 @@
 #include "heroes_guard_open.h"
 #include <unistd.h>
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -34,6 +72,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -55,7 +112,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -166,28 +223,28 @@ HERO_STR_STATIC(hero_str_39d7c22a, "could not write ");
 HERO_STR_STATIC(hero_str_5ffd8fa5, "`args()[");
 HERO_STR_STATIC(hero_str_14b8f7ca, "]` is not UTF-8 text: `args()` reads every argument as text, and `args_checked()` reads each one as a `str?`, its `err` where it is not");
 
-#line 170 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+#line 227 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -208,44 +265,44 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 23 "tests/golden/run/fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_access(const char * a0, int32_t a1) { (void)(access)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_access(const char * hero_a0, int32_t hero_a1) { (void)(access)(hero_a0, hero_a1); }
 #line 27
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_run_arg(HeroStr a0) { (void)(hero_run_arg)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_run_env(HeroStr a0, HeroStr a1) { (void)(hero_run_env)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_run_dir(HeroStr a0) { (void)(hero_run_dir)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_run_limit(int64_t a0) { (void)(hero_run_limit)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_run_go(const char * a0, const char * a1, const char * a2, const char * a3, int64_t * a4) { (void)(hero_run_go)(a0, a1, a2, a3, (void *)a4); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_run_arg(HeroStr hero_a0) { (void)(hero_run_arg)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_run_env(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_run_env)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_run_dir(HeroStr hero_a0) { (void)(hero_run_dir)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_run_limit(int64_t hero_a0) { (void)(hero_run_limit)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_run_go(const char * hero_a0, const char * hero_a1, const char * hero_a2, const char * hero_a3, int64_t * hero_a4) { (void)(hero_run_go)(hero_a0, hero_a1, hero_a2, hero_a3, (void *)hero_a4); }
 #line 33
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_exe_path_shown(int64_t * a0, int64_t * a1) { (void)(hero_exe_path_shown)((void *)a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_env_shown(const char * a0, int64_t * a1, int64_t * a2) { (void)(hero_env_shown)(a0, (void *)a1, (void *)a2); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_fs_mkdir_all(const char * a0) { (void)(hero_fs_mkdir_all)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_fs_link(const char * a0, const char * a1) { (void)(hero_fs_link)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_fs_set_mode(const char * a0, int64_t a1) { (void)(hero_fs_set_mode)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_dir_remove_tree(const char * a0) { (void)(hero_dir_remove_tree)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_exe_path_shown(int64_t * hero_a0, int64_t * hero_a1) { (void)(hero_exe_path_shown)((void *)hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_env_shown(const char * hero_a0, int64_t * hero_a1, int64_t * hero_a2) { (void)(hero_env_shown)(hero_a0, (void *)hero_a1, (void *)hero_a2); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_fs_mkdir_all(const char * hero_a0) { (void)(hero_fs_mkdir_all)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_fs_link(const char * hero_a0, const char * hero_a1) { (void)(hero_fs_link)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_fs_set_mode(const char * hero_a0, int64_t hero_a1) { (void)(hero_fs_set_mode)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_fixedbugs2531afilethatisnoprogramishandedtotheshell_hero_dir_remove_tree(const char * hero_a0) { (void)(hero_dir_remove_tree)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 235 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 292 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int32_t h_fixedbugs2531afilethatisnoprogramishandedtotheshell_X_OK(void);
 int64_t h_fixedbugs2531afilethatisnoprogramishandedtotheshell_HERO_OS_OK(void);
@@ -263,15 +320,15 @@ int64_t h_library_HERO_OS_OK(void);
 int64_t h_library_HERO_OS_BAD_NAME(void);
 int64_t h_library_HERO_STR_OK(void);
 h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller);
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c);
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c);
 h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPlace *hero_caller);
-__attribute__((unused)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_path, HeroStr h1_text);
+__attribute__((__unused__)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_path, HeroStr h1_text);
 HeroArrayHeader * h_library_args(const HeroPlace *hero_caller);
-__attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void);
+__attribute__((__unused__)) HeroArrayHeader * hero_value_h_library_args(void);
 
 #line 22 "tests/golden/run/fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero"
 int32_t h_fixedbugs2531afilethatisnoprogramishandedtotheshell_X_OK(void) {
-#line 275 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+#line 332 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
     _Static_assert(HERO_RET_I32(X_OK), "heroes-ffi-return X_OK i32");
     _Static_assert(__builtin_constant_p(X_OK), "heroes-ffi-const X_OK");
 #pragma clang diagnostic push
@@ -283,7 +340,7 @@ int32_t h_fixedbugs2531afilethatisnoprogramishandedtotheshell_X_OK(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 22 "tests/golden/run/fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero"
     return X_OK;
-#line 287 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+#line 344 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -301,7 +358,7 @@ int32_t h_fixedbugs2531afilethatisnoprogramishandedtotheshell_X_OK(void) {
 
 #line 40 "tests/golden/run/fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero"
 int64_t h_fixedbugs2531afilethatisnoprogramishandedtotheshell_HERO_OS_OK(void) {
-#line 305 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+#line 362 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
     _Static_assert(HERO_RET_INT(HERO_OS_OK), "heroes-ffi-return HERO_OS_OK i64");
     _Static_assert(__builtin_constant_p(HERO_OS_OK), "heroes-ffi-const HERO_OS_OK");
 #pragma clang diagnostic push
@@ -313,13 +370,13 @@ int64_t h_fixedbugs2531afilethatisnoprogramishandedtotheshell_HERO_OS_OK(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 40 "tests/golden/run/fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero"
     return HERO_OS_OK;
-#line 317 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+#line 374 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
 #pragma clang diagnostic pop
 }
 
 #line 41 "tests/golden/run/fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero"
 int64_t h_fixedbugs2531afilethatisnoprogramishandedtotheshell_HERO_OS_NOT_FOUND(void) {
-#line 323 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+#line 380 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
     _Static_assert(HERO_RET_INT(HERO_OS_NOT_FOUND), "heroes-ffi-return HERO_OS_NOT_FOUND i64");
     _Static_assert(__builtin_constant_p(HERO_OS_NOT_FOUND), "heroes-ffi-const HERO_OS_NOT_FOUND");
 #pragma clang diagnostic push
@@ -331,38 +388,38 @@ int64_t h_fixedbugs2531afilethatisnoprogramishandedtotheshell_HERO_OS_NOT_FOUND(
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 41 "tests/golden/run/fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero"
     return HERO_OS_NOT_FOUND;
-#line 335 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+#line 392 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
 #pragma clang diagnostic pop
 }
 
 #line 43 "tests/golden/run/fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero"
-HeroStr h_fixedbugs2531afilethatisnoprogramishandedtotheshell_SCRIPT(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroStr h_fixedbugs2531afilethatisnoprogramishandedtotheshell_SCRIPT(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_37104695);
-#line 342 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+#line 399 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 46 "tests/golden/run/fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero"
-HeroStr h_fixedbugs2531afilethatisnoprogramishandedtotheshell_TOOL(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroStr h_fixedbugs2531afilethatisnoprogramishandedtotheshell_TOOL(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_486cca80);
-#line 350 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+#line 407 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 50 "tests/golden/run/fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero"
-HeroStr h_fixedbugs2531afilethatisnoprogramishandedtotheshell_CHILDS(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroStr h_fixedbugs2531afilethatisnoprogramishandedtotheshell_CHILDS(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_36ec2ae9);
-#line 358 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+#line 415 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 54 "tests/golden/run/fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero"
-HeroStr h_fixedbugs2531afilethatisnoprogramishandedtotheshell_TEXT(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroStr h_fixedbugs2531afilethatisnoprogramishandedtotheshell_TEXT(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_1e2869e5);
-#line 366 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+#line 423 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
     hero_str_incref(t1);
     return t1;
 }
@@ -374,11 +431,11 @@ HeroStr h_fixedbugs2531afilethatisnoprogramishandedtotheshell_itself(void) {
 #line 57
 #define h1_marks (*hero_lend_h1_marks)
 #line 57
-    int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2531afilethatisnoprogramishandedtotheshell.itself", "status"); int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2531afilethatisnoprogramishandedtotheshell.itself", "marks"); HERO_NODEBUG HeroStr h2_own2 = {0}, t3, t4; HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto bb0; bb0:
+    int64_t *const hero_lend_h0_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2531afilethatisnoprogramishandedtotheshell.itself", "status"); int64_t *const hero_lend_h1_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2531afilethatisnoprogramishandedtotheshell.itself", "marks"); HERO_NODEBUG HeroStr h2_own2 = {0}, t3, t4; HERO_NODEBUG int64_t t1, t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(0); h0_status = t1;
     t2 = INT64_C(0); h1_marks = t2;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.itself", 60, 12}; hero_lend_local_name(hero_lend_h0_status, "hero_exe_path_shown", "status"); hero_lend_local_name(hero_lend_h1_marks, "hero_exe_path_shown", "marks"); t3 = hero_exe_path_shown((void *)&h0_status, (void *)&h1_marks); } t4 = h2_own2; h2_own2 = t3; hero_str_decref(t4);
-#line 382 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.itself", 60, 12}; hero_lend_local_name(hero_lend_h0_status, "hero_exe_path_shown", "status"); hero_lend_local_name(hero_lend_h1_marks, "hero_exe_path_shown", "marks"); t3 = hero_exe_path_shown((void *)&h0_status, (void *)&h1_marks); } t4 = h2_own2; h2_own2 = t3; hero_str_decref(t4);
+#line 439 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
     hero_str_incref(t3);
     hero_str_release_at(&h2_own2);
     hero_lend_local_give(hero_lend_h1_marks);
@@ -389,17 +446,17 @@ HeroStr h_fixedbugs2531afilethatisnoprogramishandedtotheshell_itself(void) {
 #undef h1_marks
 
 #line 63 "tests/golden/run/fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero"
-HeroStr h_fixedbugs2531afilethatisnoprogramishandedtotheshell_said(int64_t h0_status) { HERO_NODEBUG HeroStr h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t4, t8, t9, t11, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t5, t6, t10; HERO_NODEBUG bool t3, t7; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_status; t2 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_HERO_OS_OK(); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+HeroStr h_fixedbugs2531afilethatisnoprogramishandedtotheshell_said(int64_t h0_status) { HERO_NODEBUG HeroStr h1_ret0 = {0}, h2_own2 = {0}, h3_own3 = {0}, t4, t8, t9, t11, t12, t13, t14, t15; HERO_NODEBUG int64_t t1, t2, t5, t6, t10; HERO_NODEBUG bool t3, t7; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_status; t2 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_HERO_OS_OK(); t3 = t1 == t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 67
-    t5 = h0_status; t6 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_HERO_OS_NOT_FOUND(); t7 = t5 == t6; if (t7) goto bb5; else goto bb6; bb2:
+    t5 = h0_status; t6 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_HERO_OS_NOT_FOUND(); t7 = t5 == t6; if (t7) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 65
-    t4 = HERO_STR_LIT(hero_str_5a4993d8); h1_ret0 = t4; goto bb7; bb3: goto bb1; bb4:
+    t4 = HERO_STR_LIT(hero_str_5a4993d8); h1_ret0 = t4; goto hero_bb7; hero_bb3: goto hero_bb1; hero_bb4:
 #line 69
-    t9 = HERO_STR_LIT(hero_str_5a8e78fd); t10 = h0_status; t11 = hero_int_to_str(t10); t14 = h2_own2; h2_own2 = t11; hero_str_decref(t14); t12 = hero_str_concat(t9, t11); t15 = h3_own3; h3_own3 = t12; hero_str_decref(t15); h1_ret0 = t12; goto bb7; bb5:
+    t9 = HERO_STR_LIT(hero_str_5a8e78fd); t10 = h0_status; t11 = hero_int_to_str(t10); t14 = h2_own2; h2_own2 = t11; hero_str_decref(t14); t12 = hero_str_concat(t9, t11); t15 = h3_own3; h3_own3 = t12; hero_str_decref(t15); h1_ret0 = t12; goto hero_bb7; hero_bb5:
 #line 68
-    t8 = HERO_STR_LIT(hero_str_7451cc90); h1_ret0 = t8; goto bb7; bb6: goto bb4; bb7:
-#line 403 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+    t8 = HERO_STR_LIT(hero_str_7451cc90); h1_ret0 = t8; goto hero_bb7; hero_bb6: goto hero_bb4; hero_bb7:
+#line 460 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
     t13 = h1_ret0;
     hero_str_incref(t13);
     hero_str_release_at(&h2_own2);
@@ -412,22 +469,22 @@ void h_fixedbugs2531afilethatisnoprogramishandedtotheshell_start(HeroStr h0_what
 #line 74
 #define h3_status (*hero_lend_h3_status)
 #line 74
-    int64_t *const hero_lend_h3_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2531afilethatisnoprogramishandedtotheshell.start", "status"); int64_t h4_code; HERO_NODEBUG HeroStr h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, t1, t2, t3, t5, t6, t8, t10, t12, t14, t16, t22, t23, t24, t26, t27, t28, t29, t31, t32, t33, t35, t36, t37, t38, t40, t42, t43, t44, t45, t46, t47, t48, t49; HERO_NODEBUG int64_t t4, t9, t18, t19, t20, t25, t30, t34, t39, t41; HERO_NODEBUG bool t7, t21; HERO_NODEBUG const char *t11, *t13, *t15, *t17; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h1_name; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 75, 5}; (void)hero_run_arg(t1); }
-    t2 = HERO_STR_LIT(hero_str_1d4996); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 76, 5}; (void)hero_run_arg(t2); }
-    t3 = HERO_STR_LIT(hero_str_1e9d68); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 77, 5}; (void)hero_run_arg(t3); }
-    t4 = INT64_C(60); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 78, 5}; (void)hero_run_limit(t4); }
+    int64_t *const hero_lend_h3_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2531afilethatisnoprogramishandedtotheshell.start", "status"); int64_t h4_code; HERO_NODEBUG HeroStr h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, t1, t2, t3, t5, t6, t8, t10, t12, t14, t16, t22, t23, t24, t26, t27, t28, t29, t31, t32, t33, t35, t36, t37, t38, t40, t42, t43, t44, t45, t46, t47, t48, t49; HERO_NODEBUG int64_t t4, t9, t18, t19, t20, t25, t30, t34, t39, t41; HERO_NODEBUG bool t7, t21; HERO_NODEBUG const char *t11, *t13, *t15, *t17; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h1_name; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 75, 5}; (void)hero_run_arg(t1); }
+    t2 = HERO_STR_LIT(hero_str_1d4996); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 76, 5}; (void)hero_run_arg(t2); }
+    t3 = HERO_STR_LIT(hero_str_1e9d68); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 77, 5}; (void)hero_run_arg(t3); }
+    t4 = INT64_C(60); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 78, 5}; (void)hero_run_limit(t4); }
 #line 80
-    t5 = h2_folder; t6 = HERO_STR_LIT(hero_str_2d); t7 = !hero_str_eq(t5, t6); if (t7) goto bb2; else goto bb3; bb1:
+    t5 = h2_folder; t6 = HERO_STR_LIT(hero_str_2d); t7 = !hero_str_eq(t5, t6); if (t7) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 82
     t9 = INT64_C(0); h3_status = t9;
-    t10 = h1_name; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 83, 33}; t11 = hero_str_lend_at(t10, &hero_here); } t12 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 83, 55}; t13 = hero_str_lend_at(t12, &hero_here); } t14 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 83, 76}; t15 = hero_str_lend_at(t14, &hero_here); } t16 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 83, 97}; t17 = hero_str_lend_at(t16, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 83, 12}; hero_lend_local_name(hero_lend_h3_status, "hero_run_go", "status"); t18 = hero_run_go(hero_cstr_nonnull_at(t11, &hero_here), hero_cstr_nonnull_at(t13, &hero_here), hero_cstr_nonnull_at(t15, &hero_here), hero_cstr_nonnull_at(t17, &hero_here), (void *)&h3_status); } h4_code = t18;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 84, 5}; (void)hero_run_reset(); }
+    t10 = h1_name; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 83, 33}; t11 = hero_str_lend_at(t10, &hero_here); } t12 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 83, 55}; t13 = hero_str_lend_at(t12, &hero_here); } t14 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 83, 76}; t15 = hero_str_lend_at(t14, &hero_here); } t16 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 83, 97}; t17 = hero_str_lend_at(t16, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 83, 12}; hero_lend_local_name(hero_lend_h3_status, "hero_run_go", "status"); t18 = hero_run_go(hero_cstr_nonnull_at(t11, &hero_here), hero_cstr_nonnull_at(t13, &hero_here), hero_cstr_nonnull_at(t15, &hero_here), hero_cstr_nonnull_at(t17, &hero_here), (void *)&h3_status); } h4_code = t18;
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 84, 5}; (void)hero_run_reset(); }
 #line 86
-    t19 = h3_status; t20 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_HERO_OS_OK(); t21 = t19 == t20; if (t21) goto bb5; else goto bb6; bb2:
+    t19 = h3_status; t20 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_HERO_OS_OK(); t21 = t19 == t20; if (t21) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 81
-    t8 = h2_folder; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 81, 9}; (void)hero_run_dir(t8); } goto bb1; bb3: goto bb1; bb4:
-#line 431 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+    t8 = h2_folder; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 81, 9}; (void)hero_run_dir(t8); } goto hero_bb1; hero_bb3: goto hero_bb1; hero_bb4:
+#line 488 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
     hero_str_release_at(&h5_own5);
     hero_str_release_at(&h6_own6);
     hero_str_release_at(&h7_own7);
@@ -438,12 +495,12 @@ void h_fixedbugs2531afilethatisnoprogramishandedtotheshell_start(HeroStr h0_what
     hero_str_release_at(&h12_own12);
     hero_lend_local_give(hero_lend_h3_status);
     return;
-bb5:
+hero_bb5:
 #line 87 "tests/golden/run/fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero"
-    t22 = h0_what; t23 = HERO_STR_LIT(hero_str_1dce); t24 = hero_str_concat(t22, t23); t42 = h5_own5; h5_own5 = t24; hero_str_decref(t42); t25 = h3_status; t26 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_said(t25); t43 = h6_own6; h6_own6 = t26; hero_str_decref(t43); t27 = hero_str_concat(t24, t26); t44 = h7_own7; h7_own7 = t27; hero_str_decref(t44); t28 = HERO_STR_LIT(hero_str_7c56d740); t29 = hero_str_concat(t27, t28); t45 = h8_own8; h8_own8 = t29; hero_str_decref(t45); t30 = h4_code; hero_print_str(t29); hero_print_int(t30); hero_print_end(); goto bb4; bb6:
+    t22 = h0_what; t23 = HERO_STR_LIT(hero_str_1dce); t24 = hero_str_concat(t22, t23); t42 = h5_own5; h5_own5 = t24; hero_str_decref(t42); t25 = h3_status; t26 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_said(t25); t43 = h6_own6; h6_own6 = t26; hero_str_decref(t43); t27 = hero_str_concat(t24, t26); t44 = h7_own7; h7_own7 = t27; hero_str_decref(t44); t28 = HERO_STR_LIT(hero_str_7c56d740); t29 = hero_str_concat(t27, t28); t45 = h8_own8; h8_own8 = t29; hero_str_decref(t45); t30 = h4_code; hero_print_str(t29); hero_print_int(t30); hero_print_end(); goto hero_bb4; hero_bb6:
 #line 89
-    t31 = h0_what; t32 = HERO_STR_LIT(hero_str_1dce); t33 = hero_str_concat(t31, t32); t46 = h9_own9; h9_own9 = t33; hero_str_decref(t46); t34 = h3_status; t35 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_said(t34); t47 = h10_own10; h10_own10 = t35; hero_str_decref(t47); t36 = hero_str_concat(t33, t35); t48 = h11_own11; h11_own11 = t36; hero_str_decref(t48); t37 = HERO_STR_LIT(hero_str_7c56d740); t38 = hero_str_concat(t36, t37); t49 = h12_own12; h12_own12 = t38; hero_str_decref(t49); t39 = h4_code; t40 = HERO_STR_LIT(hero_str_f294114); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 89, 74}; t41 = hero_run_why(); } hero_print_str(t38); hero_print_int(t39); hero_print_str(t40); hero_print_int(t41); hero_print_end(); goto bb4;
-#line 447 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+    t31 = h0_what; t32 = HERO_STR_LIT(hero_str_1dce); t33 = hero_str_concat(t31, t32); t46 = h9_own9; h9_own9 = t33; hero_str_decref(t46); t34 = h3_status; t35 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_said(t34); t47 = h10_own10; h10_own10 = t35; hero_str_decref(t47); t36 = hero_str_concat(t33, t35); t48 = h11_own11; h11_own11 = t36; hero_str_decref(t48); t37 = HERO_STR_LIT(hero_str_7c56d740); t38 = hero_str_concat(t36, t37); t49 = h12_own12; h12_own12 = t38; hero_str_decref(t49); t39 = h4_code; t40 = HERO_STR_LIT(hero_str_f294114); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.start", 89, 74}; t41 = hero_run_why(); } hero_print_str(t38); hero_print_int(t39); hero_print_str(t40); hero_print_int(t41); hero_print_end(); goto hero_bb4;
+#line 504 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
 }
 #undef h3_status
 
@@ -452,22 +509,22 @@ void h_fixedbugs2531afilethatisnoprogramishandedtotheshell_through(HeroStr h0_pr
 #line 93
 #define h6_status (*hero_lend_h6_status)
 #line 93
-    int64_t *const hero_lend_h6_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2531afilethatisnoprogramishandedtotheshell.through", "status"); int64_t h7_code; HERO_NODEBUG bool h8_b0, t24, t27, t28; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, t1, t2, t3, t4, t5, t7, t8, t9, t10, t11, t13, t15, t17, t19, t29, t30, t31, t32, t33, t35, t36, t37, t38, t40, t41, t42, t43, t44; HERO_NODEBUG int64_t t6, t12, t21, t22, t23, t25, t26, t34, t39; HERO_NODEBUG const char *t14, *t16, *t18, *t20; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_program; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 94, 5}; (void)hero_run_arg(t1); }
-    t2 = HERO_STR_LIT(hero_str_57f4a69d); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 95, 5}; (void)hero_run_arg(t2); }
-    t3 = h2_what; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 96, 5}; (void)hero_run_arg(t3); }
-    t4 = h4_folder; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 97, 5}; (void)hero_run_arg(t4); }
-    t5 = h5_name; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 98, 5}; (void)hero_run_arg(t5); }
-    t6 = INT64_C(60); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 99, 5}; (void)hero_run_limit(t6); }
-    t7 = HERO_STR_LIT(hero_str_ac970fd); t8 = h3_path; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 100, 5}; (void)hero_run_env(t7, t8); }
-    t9 = HERO_STR_LIT(hero_str_3faa8d8); t10 = HERO_STR_LIT(hero_str_17a6c65e); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 101, 5}; (void)hero_run_env(t9, t10); }
-    t11 = h1_root; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 102, 5}; (void)hero_run_dir(t11); }
+    int64_t *const hero_lend_h6_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2531afilethatisnoprogramishandedtotheshell.through", "status"); int64_t h7_code; HERO_NODEBUG bool h8_b0, t24, t27, t28; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, t1, t2, t3, t4, t5, t7, t8, t9, t10, t11, t13, t15, t17, t19, t29, t30, t31, t32, t33, t35, t36, t37, t38, t40, t41, t42, t43, t44; HERO_NODEBUG int64_t t6, t12, t21, t22, t23, t25, t26, t34, t39; HERO_NODEBUG const char *t14, *t16, *t18, *t20; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_program; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 94, 5}; (void)hero_run_arg(t1); }
+    t2 = HERO_STR_LIT(hero_str_57f4a69d); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 95, 5}; (void)hero_run_arg(t2); }
+    t3 = h2_what; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 96, 5}; (void)hero_run_arg(t3); }
+    t4 = h4_folder; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 97, 5}; (void)hero_run_arg(t4); }
+    t5 = h5_name; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 98, 5}; (void)hero_run_arg(t5); }
+    t6 = INT64_C(60); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 99, 5}; (void)hero_run_limit(t6); }
+    t7 = HERO_STR_LIT(hero_str_ac970fd); t8 = h3_path; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 100, 5}; (void)hero_run_env(t7, t8); }
+    t9 = HERO_STR_LIT(hero_str_3faa8d8); t10 = HERO_STR_LIT(hero_str_17a6c65e); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 101, 5}; (void)hero_run_env(t9, t10); }
+    t11 = h1_root; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 102, 5}; (void)hero_run_dir(t11); }
     t12 = INT64_C(0); h6_status = t12;
-    t13 = h0_program; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 104, 33}; t14 = hero_str_lend_at(t13, &hero_here); } t15 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 104, 58}; t16 = hero_str_lend_at(t15, &hero_here); } t17 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 104, 79}; t18 = hero_str_lend_at(t17, &hero_here); } t19 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 104, 100}; t20 = hero_str_lend_at(t19, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 104, 12}; hero_lend_local_name(hero_lend_h6_status, "hero_run_go", "status"); t21 = hero_run_go(hero_cstr_nonnull_at(t14, &hero_here), hero_cstr_nonnull_at(t16, &hero_here), hero_cstr_nonnull_at(t18, &hero_here), hero_cstr_nonnull_at(t20, &hero_here), (void *)&h6_status); } h7_code = t21;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 105, 5}; (void)hero_run_reset(); }
+    t13 = h0_program; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 104, 33}; t14 = hero_str_lend_at(t13, &hero_here); } t15 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 104, 58}; t16 = hero_str_lend_at(t15, &hero_here); } t17 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 104, 79}; t18 = hero_str_lend_at(t17, &hero_here); } t19 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 104, 100}; t20 = hero_str_lend_at(t19, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 104, 12}; hero_lend_local_name(hero_lend_h6_status, "hero_run_go", "status"); t21 = hero_run_go(hero_cstr_nonnull_at(t14, &hero_here), hero_cstr_nonnull_at(t16, &hero_here), hero_cstr_nonnull_at(t18, &hero_here), hero_cstr_nonnull_at(t20, &hero_here), (void *)&h6_status); } h7_code = t21;
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.through", 105, 5}; (void)hero_run_reset(); }
 #line 107
-    t22 = h6_status; t23 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_HERO_OS_OK(); t24 = t22 != t23; h8_b0 = t24; if (t24) goto bb3; else goto bb2; bb1:
-#line 471 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+    t22 = h6_status; t23 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_HERO_OS_OK(); t24 = t22 != t23; h8_b0 = t24; if (t24) goto hero_bb3; else goto hero_bb2; hero_bb1:
+#line 528 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
     hero_str_release_at(&h9_own9);
     hero_str_release_at(&h10_own10);
     hero_str_release_at(&h11_own11);
@@ -475,11 +532,11 @@ void h_fixedbugs2531afilethatisnoprogramishandedtotheshell_through(HeroStr h0_pr
     hero_str_release_at(&h13_own13);
     hero_lend_local_give(hero_lend_h6_status);
     return;
-bb2:
+hero_bb2:
 #line 107 "tests/golden/run/fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero"
-    t25 = h7_code; t26 = INT64_C(0); t27 = t25 != t26; h8_b0 = t27; goto bb3; bb3: t28 = h8_b0; if (t28) goto bb4; else goto bb5; bb4:
-    t29 = HERO_STR_LIT(hero_str_6a3f40f3); t30 = h2_what; t31 = hero_str_concat(t29, t30); t40 = h9_own9; h9_own9 = t31; hero_str_decref(t40); t32 = HERO_STR_LIT(hero_str_19412e); t33 = hero_str_concat(t31, t32); t41 = h10_own10; h10_own10 = t33; hero_str_decref(t41); t34 = h6_status; t35 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_said(t34); t42 = h11_own11; h11_own11 = t35; hero_str_decref(t42); t36 = hero_str_concat(t33, t35); t43 = h12_own12; h12_own12 = t36; hero_str_decref(t43); t37 = HERO_STR_LIT(hero_str_7c56d740); t38 = hero_str_concat(t36, t37); t44 = h13_own13; h13_own13 = t38; hero_str_decref(t44); t39 = h7_code; hero_print_str(t38); hero_print_int(t39); hero_print_end(); goto bb1; bb5: goto bb1;
-#line 483 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+    t25 = h7_code; t26 = INT64_C(0); t27 = t25 != t26; h8_b0 = t27; goto hero_bb3; hero_bb3: t28 = h8_b0; if (t28) goto hero_bb4; else goto hero_bb5; hero_bb4:
+    t29 = HERO_STR_LIT(hero_str_6a3f40f3); t30 = h2_what; t31 = hero_str_concat(t29, t30); t40 = h9_own9; h9_own9 = t31; hero_str_decref(t40); t32 = HERO_STR_LIT(hero_str_19412e); t33 = hero_str_concat(t31, t32); t41 = h10_own10; h10_own10 = t33; hero_str_decref(t41); t34 = h6_status; t35 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_said(t34); t42 = h11_own11; h11_own11 = t35; hero_str_decref(t42); t36 = hero_str_concat(t33, t35); t43 = h12_own12; h12_own12 = t36; hero_str_decref(t43); t37 = HERO_STR_LIT(hero_str_7c56d740); t38 = hero_str_concat(t36, t37); t44 = h13_own13; h13_own13 = t38; hero_str_decref(t44); t39 = h7_code; hero_print_str(t38); hero_print_int(t39); hero_print_end(); goto hero_bb1; hero_bb5: goto hero_bb1;
+#line 540 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
 }
 #undef h6_status
 
@@ -490,42 +547,42 @@ void h_fixedbugs2531afilethatisnoprogramishandedtotheshell_main(void) {
 #line 110
 #define h17_marks (*hero_lend_h17_marks)
 #line 110
-    HERO_NODEBUG bool h0_b0, h8_b1, h9_b2, h11_b3, h12_b4, h13_b5, t4, t9, t10, t34, t56, t60, t65, t66, t70, t77, t78, t79, t80, t86, t87, t88, t99, t100, t101, t108, t109, t110, t112, t119, t126; HeroStr h1_root = {0}; HeroStr h2_script = {0}; HeroStr h3_locked = {0}; bool h4_made; HERO_NODEBUG HeroArrayHeader *h5_xs0 = {0}, *h19_own19 = {0}, *h36_own36 = {0}, *h37_own37 = {0}, *h38_own38 = {0}, *h39_own39 = {0}, *h40_own40 = {0}, *t1, *t5, *t11, *t14, *t17, *t51, *t54, *t57, *t184, *t204, *t205, *t206, *t207, *t208, *t209; HERO_NODEBUG int64_t h6_i0, t2, t3, t6, t12, t15, t18, t21, t52, t53, t55, t58, t63, t64, t67, t68, t69, t75, t76, t83, t84, t85, t97, t98, t106, t107, t133, t134; HeroStr h7_folder = {0}; HERO_NODEBUG h_0opt_a8ea2 h10_f0 = {0}, h14_f1 = {0}, h42_own42 = {0}, h46_own46 = {0}, t73, t74, t104, t105, t212, t213, t217, t218; HeroStr h15_program = {0}; int64_t *const hero_lend_h16_path_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2531afilethatisnoprogramishandedtotheshell.main", "path_status"); int64_t *const hero_lend_h17_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2531afilethatisnoprogramishandedtotheshell.main", "marks"); HeroStr h18_own = {0}; HERO_NODEBUG HeroStr h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, h26_own26 = {0}, h27_own27 = {0}, h28_own28 = {0}, h29_own29 = {0}, h30_own30 = {0}, h31_own31 = {0}, h32_own32 = {0}, h33_own33 = {0}, h34_own34 = {0}, h35_own35 = {0}, h41_own41 = {0}, h43_own43 = {0}, h44_own44 = {0}, h45_own45 = {0}, h47_own47 = {0}, h48_own48 = {0}, h49_own49 = {0}, h50_own50 = {0}, h51_own51 = {0}, h52_own52 = {0}, h53_own53 = {0}, h54_own54 = {0}, h55_own55 = {0}, h56_own56 = {0}, h57_own57 = {0}, h58_own58 = {0}, h59_own59 = {0}, h60_own60 = {0}, h61_own61 = {0}, t7, t8, t13, t16, t19, t20, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48, t49, t50, t59, t61, t71, t72, t81, t89, t91, t92, t93, t94, t95, t102, t103, t111, t113, t114, t120, t121, t127, t128, t129, t130, t131, t132, t135, t137, t138, t139, t140, t141, t142, t143, t144, t145, t146, t147, t148, t149, t150, t151, t152, t153, t154, t155, t156, t157, t158, t159, t160, t161, t162, t163, t164, t165, t166, t167, t168, t169, t170, t171, t172, t173, t174, t175, t176, t177, t178, t179, t180, t181, t185, t186, t187, t188, t189, t190, t191, t192, t193, t194, t195, t196, t197, t198, t199, t200, t201, t202, t203, t210, t211, t214, t215, t216, t219, t220, t221, t222, t223, t224, t225, t226, t227, t228, t229, t230, t231, t232, t233, t234, t235; HERO_NODEBUG const char *t62, *t82, *t90, *t96, *t115, *t122, *t136, *t182; HERO_NODEBUG int32_t t116, t117, t118, t123, t124, t125; HERO_ENTRY_STOP; goto bb0; bb0:
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 111, 8}; t1 = h_library_args(&hero_here); } t184 = h19_own19; h19_own19 = t1; hero_array_decref(t184); t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(3); t4 = t2 > t3; h0_b0 = t4; if (t4) goto bb2; else goto bb3; bb1:
+    HERO_NODEBUG bool h0_b0, h8_b1, h9_b2, h11_b3, h12_b4, h13_b5, t4, t9, t10, t34, t56, t60, t65, t66, t70, t77, t78, t79, t80, t86, t87, t88, t99, t100, t101, t108, t109, t110, t112, t119, t126; HeroStr h1_root = {0}; HeroStr h2_script = {0}; HeroStr h3_locked = {0}; bool h4_made; HERO_NODEBUG HeroArrayHeader *h5_xs0 = {0}, *h19_own19 = {0}, *h36_own36 = {0}, *h37_own37 = {0}, *h38_own38 = {0}, *h39_own39 = {0}, *h40_own40 = {0}, *t1, *t5, *t11, *t14, *t17, *t51, *t54, *t57, *t184, *t204, *t205, *t206, *t207, *t208, *t209; HERO_NODEBUG int64_t h6_i0, t2, t3, t6, t12, t15, t18, t21, t52, t53, t55, t58, t63, t64, t67, t68, t69, t75, t76, t83, t84, t85, t97, t98, t106, t107, t133, t134; HeroStr h7_folder = {0}; HERO_NODEBUG h_0opt_a8ea2 h10_f0 = {0}, h14_f1 = {0}, h42_own42 = {0}, h46_own46 = {0}, t73, t74, t104, t105, t212, t213, t217, t218; HeroStr h15_program = {0}; int64_t *const hero_lend_h16_path_status = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2531afilethatisnoprogramishandedtotheshell.main", "path_status"); int64_t *const hero_lend_h17_marks = (int64_t *)hero_lend_local(sizeof(int64_t), "fixedbugs2531afilethatisnoprogramishandedtotheshell.main", "marks"); HeroStr h18_own = {0}; HERO_NODEBUG HeroStr h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, h23_own23 = {0}, h24_own24 = {0}, h25_own25 = {0}, h26_own26 = {0}, h27_own27 = {0}, h28_own28 = {0}, h29_own29 = {0}, h30_own30 = {0}, h31_own31 = {0}, h32_own32 = {0}, h33_own33 = {0}, h34_own34 = {0}, h35_own35 = {0}, h41_own41 = {0}, h43_own43 = {0}, h44_own44 = {0}, h45_own45 = {0}, h47_own47 = {0}, h48_own48 = {0}, h49_own49 = {0}, h50_own50 = {0}, h51_own51 = {0}, h52_own52 = {0}, h53_own53 = {0}, h54_own54 = {0}, h55_own55 = {0}, h56_own56 = {0}, h57_own57 = {0}, h58_own58 = {0}, h59_own59 = {0}, h60_own60 = {0}, h61_own61 = {0}, t7, t8, t13, t16, t19, t20, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48, t49, t50, t59, t61, t71, t72, t81, t89, t91, t92, t93, t94, t95, t102, t103, t111, t113, t114, t120, t121, t127, t128, t129, t130, t131, t132, t135, t137, t138, t139, t140, t141, t142, t143, t144, t145, t146, t147, t148, t149, t150, t151, t152, t153, t154, t155, t156, t157, t158, t159, t160, t161, t162, t163, t164, t165, t166, t167, t168, t169, t170, t171, t172, t173, t174, t175, t176, t177, t178, t179, t180, t181, t185, t186, t187, t188, t189, t190, t191, t192, t193, t194, t195, t196, t197, t198, t199, t200, t201, t202, t203, t210, t211, t214, t215, t216, t219, t220, t221, t222, t223, t224, t225, t226, t227, t228, t229, t230, t231, t232, t233, t234, t235; HERO_NODEBUG const char *t62, *t82, *t90, *t96, *t115, *t122, *t136, *t182; HERO_NODEBUG int32_t t116, t117, t118, t123, t124, t125; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 111, 8}; t1 = h_library_args(&hero_here); } t184 = h19_own19; h19_own19 = t1; hero_array_decref(t184); t2 = ((void)(t1 == NULL ? ((void)hero_array_len(t1), hero_unreachable()) : (void)0), t1->len); t3 = INT64_C(3); t4 = t2 > t3; h0_b0 = t4; if (t4) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 114
-    t20 = HERO_STR_LIT(hero_str_594b153b); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 114, 45}; t21 = hero_os_pid(); } t22 = hero_int_to_str(t21); t185 = h20_own20; h20_own20 = t22; hero_str_decref(t185); t23 = hero_str_concat(t20, t22); t186 = h21_own21; h21_own21 = t23; hero_str_decref(t186); t187 = h1_root; hero_str_incref(t23); h1_root = t23; hero_str_decref(t187);
+    t20 = HERO_STR_LIT(hero_str_594b153b); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 114, 45}; t21 = hero_os_pid(); } t22 = hero_int_to_str(t21); t185 = h20_own20; h20_own20 = t22; hero_str_decref(t185); t23 = hero_str_concat(t20, t22); t186 = h21_own21; h21_own21 = t23; hero_str_decref(t186); t187 = h1_root; hero_str_incref(t23); h1_root = t23; hero_str_decref(t187);
     t24 = h1_root; t25 = HERO_STR_LIT(hero_str_2f); t26 = hero_str_concat(t24, t25); t188 = h22_own22; h22_own22 = t26; hero_str_decref(t188); t27 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_SCRIPT(); t189 = h23_own23; h23_own23 = t27; hero_str_decref(t189); t28 = hero_str_concat(t26, t27); t190 = h24_own24; h24_own24 = t28; hero_str_decref(t190); t191 = h2_script; hero_str_incref(t28); h2_script = t28; hero_str_decref(t191);
     t29 = h1_root; t30 = HERO_STR_LIT(hero_str_e845186); t31 = hero_str_concat(t29, t30); t192 = h25_own25; h25_own25 = t31; hero_str_decref(t192); t32 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_TOOL(); t193 = h26_own26; h26_own26 = t32; hero_str_decref(t193); t33 = hero_str_concat(t31, t32); t194 = h27_own27; h27_own27 = t33; hero_str_decref(t194); t195 = h3_locked; hero_str_incref(t33); h3_locked = t33; hero_str_decref(t195);
     t34 = true; h4_made = t34;
 #line 119
-    t35 = h1_root; t36 = HERO_STR_LIT(hero_str_2f); t37 = hero_str_concat(t35, t36); t196 = h28_own28; h28_own28 = t37; hero_str_decref(t196); t38 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_CHILDS(); t197 = h29_own29; h29_own29 = t38; hero_str_decref(t197); t39 = hero_str_concat(t37, t38); t198 = h30_own30; h30_own30 = t39; hero_str_decref(t198); t40 = h1_root; t41 = HERO_STR_LIT(hero_str_3c3f47f5); t42 = hero_str_concat(t40, t41); t199 = h31_own31; h31_own31 = t42; hero_str_decref(t199); t43 = h1_root; t44 = HERO_STR_LIT(hero_str_726e71f6); t45 = hero_str_concat(t43, t44); t200 = h32_own32; h32_own32 = t45; hero_str_decref(t200); t46 = h1_root; t47 = HERO_STR_LIT(hero_str_16d4feb8); t48 = hero_str_concat(t46, t47); t201 = h33_own33; h33_own33 = t48; hero_str_decref(t201); t49 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_TOOL(); t202 = h34_own34; h34_own34 = t49; hero_str_decref(t202); t50 = hero_str_concat(t48, t49); t203 = h35_own35; h35_own35 = t50; hero_str_decref(t203); t51 = hero_array_new(&hero_desc_str, 4); hero_array_push_owned(&t51, &t39); hero_array_push_owned(&t51, &t42); hero_array_push_owned(&t51, &t45); hero_array_push_owned(&t51, &t50); t204 = h36_own36; h36_own36 = t51; hero_array_decref(t204); t205 = h5_xs0; hero_array_incref(t51); h5_xs0 = t51; hero_array_decref(t205); t52 = INT64_C(0); h6_i0 = t52; goto bb6; bb2:
+    t35 = h1_root; t36 = HERO_STR_LIT(hero_str_2f); t37 = hero_str_concat(t35, t36); t196 = h28_own28; h28_own28 = t37; hero_str_decref(t196); t38 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_CHILDS(); t197 = h29_own29; h29_own29 = t38; hero_str_decref(t197); t39 = hero_str_concat(t37, t38); t198 = h30_own30; h30_own30 = t39; hero_str_decref(t198); t40 = h1_root; t41 = HERO_STR_LIT(hero_str_3c3f47f5); t42 = hero_str_concat(t40, t41); t199 = h31_own31; h31_own31 = t42; hero_str_decref(t199); t43 = h1_root; t44 = HERO_STR_LIT(hero_str_726e71f6); t45 = hero_str_concat(t43, t44); t200 = h32_own32; h32_own32 = t45; hero_str_decref(t200); t46 = h1_root; t47 = HERO_STR_LIT(hero_str_16d4feb8); t48 = hero_str_concat(t46, t47); t201 = h33_own33; h33_own33 = t48; hero_str_decref(t201); t49 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_TOOL(); t202 = h34_own34; h34_own34 = t49; hero_str_decref(t202); t50 = hero_str_concat(t48, t49); t203 = h35_own35; h35_own35 = t50; hero_str_decref(t203); t51 = hero_array_new(&hero_desc_str, 4); hero_array_push_owned(&t51, &t39); hero_array_push_owned(&t51, &t42); hero_array_push_owned(&t51, &t45); hero_array_push_owned(&t51, &t50); t204 = h36_own36; h36_own36 = t51; hero_array_decref(t204); t205 = h5_xs0; hero_array_incref(t51); h5_xs0 = t51; hero_array_decref(t205); t52 = INT64_C(0); h6_i0 = t52; goto hero_bb6; hero_bb2:
 #line 111
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 111, 28}; t5 = h_library_args(&hero_here); } t206 = h37_own37; h37_own37 = t5; hero_array_decref(t206); t6 = INT64_C(0); t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? hero_panic_index_at(t5, t6, "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 111, 28) : (void)0), (void)(t5->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t5 + 1))[t6]); t8 = HERO_STR_LIT(hero_str_57f4a69d); t9 = hero_str_eq(t7, t8); h0_b0 = t9; goto bb3; bb3: t10 = h0_b0; if (t10) goto bb4; else goto bb5; bb4:
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 112, 21}; t11 = h_library_args(&hero_here); } t207 = h38_own38; h38_own38 = t11; hero_array_decref(t207); t12 = INT64_C(1); t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? hero_panic_index_at(t11, t12, "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 112, 21) : (void)0), (void)(t11->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t11 + 1))[t12]); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 112, 38}; t14 = h_library_args(&hero_here); } t208 = h39_own39; h39_own39 = t14; hero_array_decref(t208); t15 = INT64_C(3); t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? hero_panic_index_at(t14, t15, "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 112, 38) : (void)0), (void)(t14->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t14 + 1))[t15]); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 112, 57}; t17 = h_library_args(&hero_here); } t209 = h40_own40; h40_own40 = t17; hero_array_decref(t209); t18 = INT64_C(2); t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? hero_panic_index_at(t17, t18, "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 112, 57) : (void)0), (void)(t17->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t17 + 1))[t18]); h_fixedbugs2531afilethatisnoprogramishandedtotheshell_start(t13, t16, t19); goto bb20; bb5: goto bb1; bb6:
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 111, 28}; t5 = h_library_args(&hero_here); } t206 = h37_own37; h37_own37 = t5; hero_array_decref(t206); t6 = INT64_C(0); t7 = ((void)((t5 == NULL || t6 < 0 || t6 >= t5->len) ? hero_panic_index_at(t5, t6, "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 111, 28) : (void)0), (void)(t5->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t5 + 1))[t6]); t8 = HERO_STR_LIT(hero_str_57f4a69d); t9 = hero_str_eq(t7, t8); h0_b0 = t9; goto hero_bb3; hero_bb3: t10 = h0_b0; if (t10) goto hero_bb4; else goto hero_bb5; hero_bb4:
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 112, 21}; t11 = h_library_args(&hero_here); } t207 = h38_own38; h38_own38 = t11; hero_array_decref(t207); t12 = INT64_C(1); t13 = ((void)((t11 == NULL || t12 < 0 || t12 >= t11->len) ? hero_panic_index_at(t11, t12, "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 112, 21) : (void)0), (void)(t11->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t11 + 1))[t12]); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 112, 38}; t14 = h_library_args(&hero_here); } t208 = h39_own39; h39_own39 = t14; hero_array_decref(t208); t15 = INT64_C(3); t16 = ((void)((t14 == NULL || t15 < 0 || t15 >= t14->len) ? hero_panic_index_at(t14, t15, "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 112, 38) : (void)0), (void)(t14->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t14 + 1))[t15]); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 112, 57}; t17 = h_library_args(&hero_here); } t209 = h40_own40; h40_own40 = t17; hero_array_decref(t209); t18 = INT64_C(2); t19 = ((void)((t17 == NULL || t18 < 0 || t18 >= t17->len) ? hero_panic_index_at(t17, t18, "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 112, 57) : (void)0), (void)(t17->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t17 + 1))[t18]); h_fixedbugs2531afilethatisnoprogramishandedtotheshell_start(t13, t16, t19); goto hero_bb20; hero_bb5: goto hero_bb1; hero_bb6:
 #line 119
-    t53 = h6_i0; t54 = h5_xs0; t55 = ((void)(t54 == NULL ? ((void)hero_array_len(t54), hero_unreachable()) : (void)0), t54->len); t56 = t53 < t55; if (t56) goto bb7; else goto bb9; bb7: t57 = h5_xs0; t58 = h6_i0; t59 = ((void)((t57 == NULL || t58 < 0 || t58 >= t57->len) ? hero_panic_index_at(t57, t58, "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 119, 9) : (void)0), (void)(t57->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t57 + 1))[t58]); t210 = h7_folder; hero_str_incref(t59); h7_folder = t59; hero_str_decref(t210);
-    t60 = h4_made; h8_b1 = t60; if (t60) goto bb10; else goto bb11; bb8:
+    t53 = h6_i0; t54 = h5_xs0; t55 = ((void)(t54 == NULL ? ((void)hero_array_len(t54), hero_unreachable()) : (void)0), t54->len); t56 = t53 < t55; if (t56) goto hero_bb7; else goto hero_bb9; hero_bb7: t57 = h5_xs0; t58 = h6_i0; t59 = ((void)((t57 == NULL || t58 < 0 || t58 >= t57->len) ? hero_panic_index_at(t57, t58, "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 119, 9) : (void)0), (void)(t57->elem->size != sizeof(HeroStr) ? hero_unreachable() : (void)0), ((HeroStr const *)(const void *)(t57 + 1))[t58]); t210 = h7_folder; hero_str_incref(t59); h7_folder = t59; hero_str_decref(t210);
+    t60 = h4_made; h8_b1 = t60; if (t60) goto hero_bb10; else goto hero_bb11; hero_bb8:
 #line 119
-    t67 = h6_i0; t68 = INT64_C(1); if (__builtin_add_overflow(t67, t68, &t69)) hero_panic_overflow_at("fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 119, 9); h6_i0 = t69; goto bb6; bb9:
+    t67 = h6_i0; t68 = INT64_C(1); if (__builtin_add_overflow(t67, t68, &t69)) hero_panic_overflow_at("fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 119, 9); h6_i0 = t69; goto hero_bb6; hero_bb9:
 #line 122
-    t70 = h4_made; h9_b2 = t70; if (t70) goto bb12; else goto bb13; bb10:
+    t70 = h4_made; h9_b2 = t70; if (t70) goto hero_bb12; else goto hero_bb13; hero_bb10:
 #line 120
-    t61 = h7_folder; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 120, 48}; t62 = hero_str_lend_at(t61, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 120, 24}; t63 = hero_fs_mkdir_all(hero_cstr_nonnull_at(t62, &hero_here)); } t64 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_HERO_OS_OK(); t65 = t63 == t64; h8_b1 = t65; goto bb11; bb11: t66 = h8_b1; h4_made = t66; goto bb8; bb12:
+    t61 = h7_folder; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 120, 48}; t62 = hero_str_lend_at(t61, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 120, 24}; t63 = hero_fs_mkdir_all(hero_cstr_nonnull_at(t62, &hero_here)); } t64 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_HERO_OS_OK(); t65 = t63 == t64; h8_b1 = t65; goto hero_bb11; hero_bb11: t66 = h8_b1; h4_made = t66; goto hero_bb8; hero_bb12:
 #line 122
-    t71 = h2_script; t72 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_TEXT(); t211 = h41_own41; h41_own41 = t72; hero_str_decref(t211); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 122, 21}; t73 = h_library_write_file(t71, t72, &hero_here); } t212 = h42_own42; h42_own42 = t73; h_0opt_a8ea2_release(&t212); t213 = h10_f0; h_0opt_a8ea2_retain(&t73); h10_f0 = t73; h_0opt_a8ea2_release(&t213); t74 = h10_f0; t75 = t74.tag; t76 = INT64_C(1); t77 = t75 == t76; t78 = !t77; h9_b2 = t78; goto bb13; bb13: t79 = h9_b2; h4_made = t79;
-    t80 = h4_made; h11_b3 = t80; if (t80) goto bb14; else goto bb15; bb14: t81 = h2_script; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 123, 43}; t82 = hero_str_lend_at(t81, &hero_here); } t83 = INT64_C(493); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 123, 20}; t84 = hero_fs_set_mode(hero_cstr_nonnull_at(t82, &hero_here), t83); } t85 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_HERO_OS_OK(); t86 = t84 == t85; h11_b3 = t86; goto bb15; bb15: t87 = h11_b3; h4_made = t87;
-    t88 = h4_made; h12_b4 = t88; if (t88) goto bb16; else goto bb17; bb16: t89 = h2_script; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 124, 43}; t90 = hero_str_lend_at(t89, &hero_here); } t91 = h1_root; t92 = HERO_STR_LIT(hero_str_5461d2cb); t93 = hero_str_concat(t91, t92); t214 = h43_own43; h43_own43 = t93; hero_str_decref(t214); t94 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_SCRIPT(); t215 = h44_own44; h44_own44 = t94; hero_str_decref(t215); t95 = hero_str_concat(t93, t94); t216 = h45_own45; h45_own45 = t95; hero_str_decref(t216); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 124, 64}; t96 = hero_str_lend_at(t95, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 124, 20}; t97 = hero_fs_link(hero_cstr_nonnull_at(t90, &hero_here), hero_cstr_nonnull_at(t96, &hero_here)); } t98 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_HERO_OS_OK(); t99 = t97 == t98; h12_b4 = t99; goto bb17; bb17: t100 = h12_b4; h4_made = t100;
-    t101 = h4_made; h13_b5 = t101; if (t101) goto bb18; else goto bb19; bb18: t102 = h3_locked; t103 = HERO_STR_LIT(hero_str_4ff69996); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 125, 21}; t104 = h_library_write_file(t102, t103, &hero_here); } t217 = h46_own46; h46_own46 = t104; h_0opt_a8ea2_release(&t217); t218 = h14_f1; h_0opt_a8ea2_retain(&t104); h14_f1 = t104; h_0opt_a8ea2_release(&t218); t105 = h14_f1; t106 = t105.tag; t107 = INT64_C(1); t108 = t106 == t107; t109 = !t108; h13_b5 = t109; goto bb19; bb19: t110 = h13_b5; h4_made = t110;
+    t71 = h2_script; t72 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_TEXT(); t211 = h41_own41; h41_own41 = t72; hero_str_decref(t211); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 122, 21}; t73 = h_library_write_file(t71, t72, &hero_here); } t212 = h42_own42; h42_own42 = t73; h_0opt_a8ea2_release(&t212); t213 = h10_f0; h_0opt_a8ea2_retain(&t73); h10_f0 = t73; h_0opt_a8ea2_release(&t213); t74 = h10_f0; t75 = t74.hero_tag; t76 = INT64_C(1); t77 = t75 == t76; t78 = !t77; h9_b2 = t78; goto hero_bb13; hero_bb13: t79 = h9_b2; h4_made = t79;
+    t80 = h4_made; h11_b3 = t80; if (t80) goto hero_bb14; else goto hero_bb15; hero_bb14: t81 = h2_script; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 123, 43}; t82 = hero_str_lend_at(t81, &hero_here); } t83 = INT64_C(493); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 123, 20}; t84 = hero_fs_set_mode(hero_cstr_nonnull_at(t82, &hero_here), t83); } t85 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_HERO_OS_OK(); t86 = t84 == t85; h11_b3 = t86; goto hero_bb15; hero_bb15: t87 = h11_b3; h4_made = t87;
+    t88 = h4_made; h12_b4 = t88; if (t88) goto hero_bb16; else goto hero_bb17; hero_bb16: t89 = h2_script; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 124, 43}; t90 = hero_str_lend_at(t89, &hero_here); } t91 = h1_root; t92 = HERO_STR_LIT(hero_str_5461d2cb); t93 = hero_str_concat(t91, t92); t214 = h43_own43; h43_own43 = t93; hero_str_decref(t214); t94 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_SCRIPT(); t215 = h44_own44; h44_own44 = t94; hero_str_decref(t215); t95 = hero_str_concat(t93, t94); t216 = h45_own45; h45_own45 = t95; hero_str_decref(t216); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 124, 64}; t96 = hero_str_lend_at(t95, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 124, 20}; t97 = hero_fs_link(hero_cstr_nonnull_at(t90, &hero_here), hero_cstr_nonnull_at(t96, &hero_here)); } t98 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_HERO_OS_OK(); t99 = t97 == t98; h12_b4 = t99; goto hero_bb17; hero_bb17: t100 = h12_b4; h4_made = t100;
+    t101 = h4_made; h13_b5 = t101; if (t101) goto hero_bb18; else goto hero_bb19; hero_bb18: t102 = h3_locked; t103 = HERO_STR_LIT(hero_str_4ff69996); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 125, 21}; t104 = h_library_write_file(t102, t103, &hero_here); } t217 = h46_own46; h46_own46 = t104; h_0opt_a8ea2_release(&t217); t218 = h14_f1; h_0opt_a8ea2_retain(&t104); h14_f1 = t104; h_0opt_a8ea2_release(&t218); t105 = h14_f1; t106 = t105.hero_tag; t107 = INT64_C(1); t108 = t106 == t107; t109 = !t108; h13_b5 = t109; goto hero_bb19; hero_bb19: t110 = h13_b5; h4_made = t110;
     t111 = HERO_STR_LIT(hero_str_6ef83d0d); t112 = h4_made; hero_print_str(t111); hero_print_bool(t112); hero_print_end();
-    t113 = HERO_STR_LIT(hero_str_36509d2a); t114 = h2_script; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 127, 64}; t115 = hero_str_lend_at(t114, &hero_here); } t116 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_X_OK(); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 127, 51}; t117 = access(hero_cstr_nonnull_at(t115, &hero_here), t116); } t118 = INT64_C(0); t119 = t117 == t118; hero_print_str(t113); hero_print_bool(t119); hero_print_end();
-    t120 = HERO_STR_LIT(hero_str_2dc5bee4); t121 = h3_locked; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 128, 75}; t122 = hero_str_lend_at(t121, &hero_here); } t123 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_X_OK(); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 128, 62}; t124 = access(hero_cstr_nonnull_at(t122, &hero_here), t123); } t125 = INT64_C(0); t126 = t124 == t125; hero_print_str(t120); hero_print_bool(t126); hero_print_end();
+    t113 = HERO_STR_LIT(hero_str_36509d2a); t114 = h2_script; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 127, 64}; t115 = hero_str_lend_at(t114, &hero_here); } t116 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_X_OK(); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 127, 51}; t117 = access(hero_cstr_nonnull_at(t115, &hero_here), t116); } t118 = INT64_C(0); t119 = t117 == t118; hero_print_str(t113); hero_print_bool(t119); hero_print_end();
+    t120 = HERO_STR_LIT(hero_str_2dc5bee4); t121 = h3_locked; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 128, 75}; t122 = hero_str_lend_at(t121, &hero_here); } t123 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_X_OK(); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 128, 62}; t124 = access(hero_cstr_nonnull_at(t122, &hero_here), t123); } t125 = INT64_C(0); t126 = t124 == t125; hero_print_str(t120); hero_print_bool(t126); hero_print_end();
 #line 131
-    t127 = HERO_STR_LIT(hero_str_3faa8d8); t128 = HERO_STR_LIT(hero_str_7dbf1deb); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 131, 5}; (void)hero_run_env(t127, t128); }
+    t127 = HERO_STR_LIT(hero_str_3faa8d8); t128 = HERO_STR_LIT(hero_str_7dbf1deb); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 131, 5}; (void)hero_run_env(t127, t128); }
     t129 = HERO_STR_LIT(hero_str_18bf73e0); t130 = h2_script; t131 = HERO_STR_LIT(hero_str_2d); h_fixedbugs2531afilethatisnoprogramishandedtotheshell_start(t129, t130, t131);
     t132 = h_fixedbugs2531afilethatisnoprogramishandedtotheshell_itself(); t219 = h47_own47; h47_own47 = t132; hero_str_decref(t219); t220 = h15_program; hero_str_incref(t132); h15_program = t132; hero_str_decref(t220);
     t133 = INT64_C(0); h16_path_status = t133;
     t134 = INT64_C(0); h17_marks = t134;
-    t135 = HERO_STR_LIT(hero_str_ac970fd); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 136, 32}; t136 = hero_str_lend_at(t135, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 136, 11}; hero_lend_local_name(hero_lend_h16_path_status, "hero_env_shown", "status"); hero_lend_local_name(hero_lend_h17_marks, "hero_env_shown", "marks"); t137 = hero_env_shown(hero_cstr_nonnull_at(t136, &hero_here), (void *)&h16_path_status, (void *)&h17_marks); } t221 = h48_own48; h48_own48 = t137; hero_str_decref(t221); t222 = h18_own; hero_str_incref(t137); h18_own = t137; hero_str_decref(t222);
+    t135 = HERO_STR_LIT(hero_str_ac970fd); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 136, 32}; t136 = hero_str_lend_at(t135, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 136, 11}; hero_lend_local_name(hero_lend_h16_path_status, "hero_env_shown", "status"); hero_lend_local_name(hero_lend_h17_marks, "hero_env_shown", "marks"); t137 = hero_env_shown(hero_cstr_nonnull_at(t136, &hero_here), (void *)&h16_path_status, (void *)&h17_marks); } t221 = h48_own48; h48_own48 = t137; hero_str_decref(t221); t222 = h18_own; hero_str_incref(t137); h18_own = t137; hero_str_decref(t222);
 #line 138
     t138 = h15_program;
     t139 = h1_root;
@@ -573,8 +630,8 @@ void h_fixedbugs2531afilethatisnoprogramishandedtotheshell_main(void) {
     h_fixedbugs2531afilethatisnoprogramishandedtotheshell_through(t170, t171, t172, t175, t176, t177);
 #line 177
     t178 = HERO_STR_LIT(hero_str_334d1f75); t179 = HERO_STR_LIT(hero_str_0); t180 = HERO_STR_LIT(hero_str_2d); h_fixedbugs2531afilethatisnoprogramishandedtotheshell_start(t178, t179, t180);
-    t181 = h1_root; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 178, 36}; t182 = hero_str_lend_at(t181, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 178, 9}; (void)hero_dir_remove_tree(hero_cstr_nonnull_at(t182, &hero_here)); } goto bb20; bb20:
-#line 578 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+    t181 = h1_root; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 178, 36}; t182 = hero_str_lend_at(t181, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.hero", "fixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell.main", 178, 9}; (void)hero_dir_remove_tree(hero_cstr_nonnull_at(t182, &hero_here)); } goto hero_bb20; hero_bb20:
+#line 635 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
     hero_str_release_at(&h1_root);
     hero_str_release_at(&h2_script);
     hero_str_release_at(&h3_locked);
@@ -636,17 +693,17 @@ void h_fixedbugs2531afilethatisnoprogramishandedtotheshell_main(void) {
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) { return HERO_OS_OK;
-#line 640 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+#line 697 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) { return HERO_OS_BAD_NAME;
-#line 645 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+#line 702 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
 }
 
 #line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 650 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+#line 707 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
 }
 
 #line 152 "<heroes library>"
@@ -654,19 +711,19 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
 #line 152
 #define h1_status (*hero_lend_h1_status)
 #line 152
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 155
     t7 = INT64_C(0); h1_status = t7;
-    t8 = h0_c; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
-    t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb2:
+    t8 = h0_c; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
+    t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 154
-    t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto bb7; bb3: goto bb1; bb4:
+    t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto hero_bb7; hero_bb3: goto hero_bb1; hero_bb4:
 #line 159
-    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
+    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto hero_bb7; hero_bb5:
 #line 158
-    t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 670 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+    t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto hero_bb7; hero_bb6: goto hero_bb4; hero_bb7:
+#line 727 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -678,24 +735,24 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
     return t18;
 }
 #undef h1_status
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 152, 1};
     return h_library_validated(h0_c, &hero_here);
 }
 
 #line 185 "<heroes library>"
-h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPlace *hero_caller) { int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_path; t2 = h1_text; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t3 = hero_file_write_str(t1, t2); } h2_wrote = t3;
-    t4 = h2_wrote; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto bb2; else goto bb3; bb1:
+h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPlace *hero_caller) { int64_t h2_wrote; HERO_NODEBUG h_0opt_a8ea2 h3_ret0 = {0}, h4_own4 = {0}, h6_own6 = {0}, h7_own7 = {0}, t7, t13, t18, t19, t20, t22, t23; HERO_NODEBUG HeroStr h5_own5 = {0}, t1, t2, t11, t12, t14, t15, t16, t17, t21; HERO_NODEBUG int64_t t3, t4, t5, t8, t9; HERO_NODEBUG bool t6, t10; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_path; t2 = h1_text; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; t3 = hero_file_write_str(t1, t2); } h2_wrote = t3;
+    t4 = h2_wrote; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 189
-    t8 = h2_wrote; t9 = h_library_HERO_OS_BAD_NAME(); t10 = t8 == t9; if (t10) goto bb5; else goto bb6; bb2:
+    t8 = h2_wrote; t9 = h_library_HERO_OS_BAD_NAME(); t10 = t8 == t9; if (t10) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 188
-    t7 = (h_0opt_a8ea2){.tag = INT64_C(0)}; t20 = h4_own4; h4_own4 = t7; h_0opt_a8ea2_release(&t20); h3_ret0 = t7; goto bb7; bb3: goto bb1; bb4:
+    t7 = (h_0opt_a8ea2){.hero_tag = INT64_C(0)}; t20 = h4_own4; h4_own4 = t7; h_0opt_a8ea2_release(&t20); h3_ret0 = t7; goto hero_bb7; hero_bb3: goto hero_bb1; hero_bb4:
 #line 191
-    t14 = HERO_STR_LIT(hero_str_7e662f9e); t15 = HERO_STR_LIT(hero_str_39d7c22a); t16 = h0_path; t17 = hero_str_concat(t15, t16); t21 = h5_own5; h5_own5 = t17; hero_str_decref(t21); hero_str_incref(t14); hero_str_incref(t17); t18 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t17}}; t22 = h6_own6; h6_own6 = t18; h_0opt_a8ea2_release(&t22); h3_ret0 = t18; goto bb7; bb5:
+    t14 = HERO_STR_LIT(hero_str_7e662f9e); t15 = HERO_STR_LIT(hero_str_39d7c22a); t16 = h0_path; t17 = hero_str_concat(t15, t16); t21 = h5_own5; h5_own5 = t17; hero_str_decref(t21); hero_str_incref(t14); hero_str_incref(t17); t18 = (h_0opt_a8ea2){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t14, .msg = t17}}; t22 = h6_own6; h6_own6 = t18; h_0opt_a8ea2_release(&t22); h3_ret0 = t18; goto hero_bb7; hero_bb5:
 #line 190
-    t11 = HERO_STR_LIT(hero_str_7e662f9e); t12 = HERO_STR_LIT(hero_str_1755ec20); hero_str_incref(t11); hero_str_incref(t12); t13 = (h_0opt_a8ea2){.tag = INT64_C(1), .as.err = {.code = t11, .msg = t12}}; t23 = h7_own7; h7_own7 = t13; h_0opt_a8ea2_release(&t23); h3_ret0 = t13; goto bb7; bb6: goto bb4; bb7:
-#line 699 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+    t11 = HERO_STR_LIT(hero_str_7e662f9e); t12 = HERO_STR_LIT(hero_str_1755ec20); hero_str_incref(t11); hero_str_incref(t12); t13 = (h_0opt_a8ea2){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t11, .msg = t12}}; t23 = h7_own7; h7_own7 = t13; h_0opt_a8ea2_release(&t23); h3_ret0 = t13; goto hero_bb7; hero_bb6: goto hero_bb4; hero_bb7:
+#line 756 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
     t19 = h3_ret0;
     h_0opt_a8ea2_retain(&t19);
     h_0opt_a8ea2_release(hero_slot_escape(&h4_own4));
@@ -704,21 +761,21 @@ h_0opt_a8ea2 h_library_write_file(HeroStr h0_path, HeroStr h1_text, const HeroPl
     h_0opt_a8ea2_release(hero_slot_escape(&h7_own7));
     return t19;
 }
-__attribute__((unused)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
+__attribute__((__unused__)) h_0opt_a8ea2 hero_value_h_library_write_file(HeroStr h0_path, HeroStr h1_text) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.write_file", 185, 1};
     return h_library_write_file(h0_path, h1_text, &hero_here);
 }
 
 #line 196 "<heroes library>"
-HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; h_0opt_f87774a h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}, h5_f1 = {0}, h6_f2 = {0}, h8_own8 = {0}, h12_own12 = {0}, t8, t9, t10, t21, t23, t24, t28, t30, t34, t35, t39, t41, t50, t51, t52, t56, t57, t58, t59; h_0opt_f87774a h4_unread = {0}; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t1, *t47, *t48, *t49; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t14, t15, t17, t18, t19, t20, t31, t42, t53, t54, t55; HERO_NODEBUG int64_t t2, t3, t4, t6, t11, t12, t16, t25, t26, t36, t37, t44, t45, t46; HERO_NODEBUG bool t5, t13, t27, t38; HERO_NODEBUG const char *t7; HERO_NODEBUG HeroFailure t29, t40; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader * h0_out = {0}; int64_t h1_i; h_0opt_f87774a h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_f0 = {0}, h5_f1 = {0}, h6_f2 = {0}, h8_own8 = {0}, h12_own12 = {0}, t8, t9, t10, t21, t23, t24, t28, t30, t34, t35, t39, t41, t50, t51, t52, t56, t57, t58, t59; h_0opt_f87774a h4_unread = {0}; HERO_NODEBUG HeroArrayHeader *h7_own7 = {0}, *t1, *t47, *t48, *t49; HERO_NODEBUG HeroStr h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, t14, t15, t17, t18, t19, t20, t31, t42, t53, t54, t55; HERO_NODEBUG int64_t t2, t3, t4, t6, t11, t12, t16, t25, t26, t36, t37, t44, t45, t46; HERO_NODEBUG bool t5, t13, t27, t38; HERO_NODEBUG const char *t7; HERO_NODEBUG HeroFailure t29, t40; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = hero_array_new(&hero_desc_str, 1); t48 = h7_own7; h7_own7 = t1; hero_array_decref(t48); t49 = h0_out; hero_array_incref(t1); h0_out = t1; hero_array_decref(t49);
-    t2 = INT64_C(0); h1_i = t2; goto bb1; bb1:
-    t3 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t4 = hero_args_count(); } t5 = t3 < t4; if (t5) goto bb2; else goto bb3; bb2:
-    t6 = h1_i; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; t7 = (const char *)hero_args_raw(t6); } t8 = h_library_validated(t7, hero_caller); t50 = h8_own8; h8_own8 = t8; h_0opt_f87774a_release(&t50); t51 = h2_text; h_0opt_f87774a_retain(&t8); h2_text = t8; h_0opt_f87774a_release(&t51);
-    t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto bb5; else goto bb6; bb3:
+    t2 = INT64_C(0); h1_i = t2; goto hero_bb1; hero_bb1:
+    t3 = h1_i; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; t4 = hero_args_count(); } t5 = t3 < t4; if (t5) goto hero_bb2; else goto hero_bb3; hero_bb2:
+    t6 = h1_i; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; t7 = (const char *)hero_args_raw(t6); } t8 = h_library_validated(t7, hero_caller); t50 = h8_own8; h8_own8 = t8; h_0opt_f87774a_release(&t50); t51 = h2_text; h_0opt_f87774a_retain(&t8); h2_text = t8; h_0opt_f87774a_release(&t51);
+    t9 = h2_text; t52 = h3_f0; h_0opt_f87774a_retain(&t9); h3_f0 = t9; h_0opt_f87774a_release(&t52); t10 = h3_f0; t11 = t10.hero_tag; t12 = INT64_C(1); t13 = t11 == t12; if (t13) goto hero_bb5; else goto hero_bb6; hero_bb3:
 #line 207
     t47 = h0_out;
-#line 722 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+#line 779 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
     hero_array_incref(t47);
     hero_array_release_at(&h0_out);
     h_0opt_f87774a_release(hero_slot_escape(&h2_text));
@@ -733,130 +790,130 @@ HeroArrayHeader * h_library_args(const HeroPlace *hero_caller) { HeroArrayHeader
     hero_str_release_at(&h11_own11);
     h_0opt_f87774a_release(hero_slot_escape(&h12_own12));
     return t47;
-bb4:
+hero_bb4:
 #line 206 "<heroes library>"
-    t44 = h1_i; t45 = INT64_C(1); if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h1_i = t46; goto bb1; bb5:
+    t44 = h1_i; t45 = INT64_C(1); if (__builtin_add_overflow(t44, t45, &t46)) hero_panic_overflow_at(hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column); h1_i = t46; goto hero_bb1; hero_bb5:
 #line 202
-    t14 = HERO_STR_LIT(hero_str_34624695); t15 = HERO_STR_LIT(hero_str_5ffd8fa5); t16 = h1_i; t17 = hero_int_to_str(t16); t53 = h9_own9; h9_own9 = t17; hero_str_decref(t53); t18 = hero_str_concat(t15, t17); t54 = h10_own10; h10_own10 = t18; hero_str_decref(t54); t19 = HERO_STR_LIT(hero_str_14b8f7ca); t20 = hero_str_concat(t18, t19); t55 = h11_own11; h11_own11 = t20; hero_str_decref(t55); hero_str_incref(t14); hero_str_incref(t20); t21 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t14, .msg = t20}}; t56 = h12_own12; h12_own12 = t21; h_0opt_f87774a_release(&t56); t57 = h4_unread; h_0opt_f87774a_retain(&t21); h4_unread = t21; h_0opt_f87774a_release(&t57);
-    t23 = h4_unread; t58 = h5_f1; h_0opt_f87774a_retain(&t23); h5_f1 = t23; h_0opt_f87774a_release(&t58); t24 = h5_f1; t25 = t24.tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto bb7; else goto bb8; bb6:
+    t14 = HERO_STR_LIT(hero_str_34624695); t15 = HERO_STR_LIT(hero_str_5ffd8fa5); t16 = h1_i; t17 = hero_int_to_str(t16); t53 = h9_own9; h9_own9 = t17; hero_str_decref(t53); t18 = hero_str_concat(t15, t17); t54 = h10_own10; h10_own10 = t18; hero_str_decref(t54); t19 = HERO_STR_LIT(hero_str_14b8f7ca); t20 = hero_str_concat(t18, t19); t55 = h11_own11; h11_own11 = t20; hero_str_decref(t55); hero_str_incref(t14); hero_str_incref(t20); t21 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t14, .msg = t20}}; t56 = h12_own12; h12_own12 = t21; h_0opt_f87774a_release(&t56); t57 = h4_unread; h_0opt_f87774a_retain(&t21); h4_unread = t21; h_0opt_f87774a_release(&t57);
+    t23 = h4_unread; t58 = h5_f1; h_0opt_f87774a_retain(&t23); h5_f1 = t23; h_0opt_f87774a_release(&t58); t24 = h5_f1; t25 = t24.hero_tag; t26 = INT64_C(0); t27 = t25 == t26; if (t27) goto hero_bb7; else goto hero_bb8; hero_bb6:
 #line 205
-    t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto bb9; else goto bb10; bb7:
+    t34 = h2_text; t59 = h6_f2; h_0opt_f87774a_retain(&t34); h6_f2 = t34; h_0opt_f87774a_release(&t59); t35 = h6_f2; t36 = t35.hero_tag; t37 = INT64_C(0); t38 = t36 == t37; if (t38) goto hero_bb9; else goto hero_bb10; hero_bb7:
 #line 203
-    t30 = h5_f1; t31 = t30.as.ok; hero_array_push_owned(&h0_out, &t31); goto bb4; bb8: t28 = h5_f1; t29 = t28.as.err;
-#line 747 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+    t30 = h5_f1; t31 = t30.hero_as.hero_ok; hero_array_push_owned(&h0_out, &t31); goto hero_bb4; hero_bb8: t28 = h5_f1; t29 = t28.hero_as.hero_err;
+#line 804 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
     hero_panic_library_at(t29, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
-bb9:
+hero_bb9:
 #line 205 "<heroes library>"
-    t41 = h6_f2; t42 = t41.as.ok; hero_array_push_owned(&h0_out, &t42); goto bb4; bb10: t39 = h6_f2; t40 = t39.as.err;
-#line 753 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
+    t41 = h6_f2; t42 = t41.hero_as.hero_ok; hero_array_push_owned(&h0_out, &t42); goto hero_bb4; hero_bb10: t39 = h6_f2; t40 = t39.hero_as.hero_err;
+#line 810 "fixedbugs2531afilethatisnoprogramishandedtotheshell.c"
     hero_panic_library_at(t40, hero_caller->path, hero_caller->name, hero_caller->line, hero_caller->column);
     hero_unreachable();
 }
-__attribute__((unused)) HeroArrayHeader * hero_value_h_library_args(void) {
+__attribute__((__unused__)) HeroArrayHeader * hero_value_h_library_args(void) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.args", 196, 1};
     return h_library_args(&hero_here);
 }
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("10a6a1b37271db57", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3f84b60b3c522c6a", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2531afilethatisnoprogramishandedtotheshell\tfixedbugs-2531-a-file-that-is-no-program-is-handed-to-the-shell\n");
     h_fixedbugs2531afilethatisnoprogramishandedtotheshell_main();
     hero_runtime_check_leaks();

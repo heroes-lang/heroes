@@ -32,21 +32,21 @@ function construct_option(names: ctype.Names, result: i64, shape: ir.Shape, argu
     match shape
         .ok_shape =>
             if arguments.len() > 0
-                return ok("(" + name + "){.tag = INT64_C(0), .as.ok = " + arguments[0] + "}")
+                return ok("(" + name + "){.hero_tag = INT64_C(0), .hero_as.hero_ok = " + arguments[0] + "}")
 
             # ok(()) — a unit payload has no member at all, so the tag
             # is the whole value.
-            return ok("(" + name + "){.tag = INT64_C(0)}")
+            return ok("(" + name + "){.hero_tag = INT64_C(0)}")
         .fail_shape =>
             if arguments.len() < 2
                 return fail(code: "none", msg: "a fail without both sides")
             return ok(
-                "(" + name + "){.tag = INT64_C(1), .as.err = {.code = " + arguments[0] + ", .msg = " + arguments[1] + "}}"
+                "(" + name + "){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = " + arguments[0] + ", .msg = " + arguments[1] + "}}"
             )
         .err_shape =>
             if arguments.len() < 1
                 return fail(code: "none", msg: "an err without its failure")
-            return ok("(" + name + "){.tag = INT64_C(1), .as.err = " + arguments[0] + "}")
+            return ok("(" + name + "){.hero_tag = INT64_C(1), .hero_as.hero_err = " + arguments[0] + "}")
         .record_shape | .case_shape | .array_shape | .map_shape => return fail(code: "none", msg: "not an option shape")
 
     return fail(code: "none", msg: "unreached")
@@ -70,17 +70,18 @@ function carried_arguments(c: state.Checked, f: containers.Function, run: ir.Run
 
     return out
 
-# t16 = t15.tag; for a T?, the same member a variant uses.
+# t16 = t15.hero_tag; for a T?, the same member a variant uses.
 function option_tag(base: i64) -> str
-    return mangle.value(base) + ".tag"
+    return mangle.value(base) + ".hero_tag"
 
-# .as.ok for case 0 and .as.err for case 1 — the IR's own numbering.
+# .hero_as.hero_ok for case 0 and .hero_as.hero_err for case 1 — the IR's
+# own numbering; the members `emit/types.hero` names.
 function option_payload(base: i64, at: i64) -> str
-    member: str @= "err"
+    member: str @= "hero_err"
 
     if at == 0
-        member @ "ok"
-    return mangle.value(base) + ".as." + member
+        member @ "hero_ok"
+    return mangle.value(base) + ".hero_as." + member
 
 ## Tests
 
@@ -99,14 +100,14 @@ test "the tag is written even where C would zero it, and err is one assignment"
 
     assert opt >= 0
     built = construct_option(names, result: opt, shape: .ok_shape, arguments: ["t3"])
-    assert built.must() == "(h_0opt_e201354){.tag = INT64_C(0), .as.ok = t3}"
+    assert built.must() == "(h_0opt_e201354){.hero_tag = INT64_C(0), .hero_as.hero_ok = t3}"
     failed = construct_option(names, result: opt, shape: .fail_shape, arguments: ["t1", "t2"])
-    assert failed.must() == "(h_0opt_e201354){.tag = INT64_C(1), .as.err = {.code = t1, .msg = t2}}"
+    assert failed.must() == "(h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t1, .msg = t2}}"
     wrapped = construct_option(names, result: opt, shape: .err_shape, arguments: ["t9"])
-    assert wrapped.must() == "(h_0opt_e201354){.tag = INT64_C(1), .as.err = t9}"
-    assert option_tag(base: 15) == "t15.tag"
-    assert option_payload(base: 15, at: 0) == "t15.as.ok"
-    assert option_payload(base: 15, at: 1) == "t15.as.err"
+    assert wrapped.must() == "(h_0opt_e201354){.hero_tag = INT64_C(1), .hero_as.hero_err = t9}"
+    assert option_tag(base: 15) == "t15.hero_tag"
+    assert option_payload(base: 15, at: 0) == "t15.hero_as.hero_ok"
+    assert option_payload(base: 15, at: 1) == "t15.hero_as.hero_err"
 
 test "carried_arguments: a unit-typed argument has no temporary, so ok of one is the tag alone"
     text = "function main()\n    x: ()? = ok()\n    print(x.is_err())\n"
@@ -141,4 +142,4 @@ test "carried_arguments: a unit-typed argument has no temporary, so ok of one is
     assert carried_arguments(c, f, run: ir.Run(start: 0, length: 2)) == ["t1"]
     unit_opt = table.lookup(c.types, .fallible(payload: unit_id)).must()
     built = construct_option(names, result: unit_opt, shape: .ok_shape, arguments: unit_only)
-    assert built.must() == "(" + ctype.option_of(names, ty: unit_opt) + "){.tag = INT64_C(0)}"
+    assert built.must() == "(" + ctype.option_of(names, ty: unit_opt) + "){.hero_tag = INT64_C(0)}"

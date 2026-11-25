@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -74,26 +74,26 @@ typedef struct h_lentarecordisreadinthecallersplace_Pair {
 } h_lentarecordisreadinthecallersplace_Pair;
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic push
@@ -102,47 +102,47 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 114 "lentarecordisreadinthecallersplace.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_lentarecordisreadinthecallersplace_0Pt_retain(const h_lentarecordisreadinthecallersplace_Pt *v);
-HERO_TU_LOCAL void h_lentarecordisreadinthecallersplace_0Pt_release(h_lentarecordisreadinthecallersplace_Pt *v);
-HERO_TU_LOCAL bool h_lentarecordisreadinthecallersplace_0Pt_eq(const h_lentarecordisreadinthecallersplace_Pt *a, const h_lentarecordisreadinthecallersplace_Pt *b);
-HERO_TU_LOCAL uint64_t h_lentarecordisreadinthecallersplace_0Pt_hash(const void *elem);
-HERO_TU_LOCAL void h_lentarecordisreadinthecallersplace_0Pair_retain(const h_lentarecordisreadinthecallersplace_Pair *v);
-HERO_TU_LOCAL void h_lentarecordisreadinthecallersplace_0Pair_release(h_lentarecordisreadinthecallersplace_Pair *v);
-HERO_TU_LOCAL bool h_lentarecordisreadinthecallersplace_0Pair_eq(const h_lentarecordisreadinthecallersplace_Pair *a, const h_lentarecordisreadinthecallersplace_Pair *b);
-HERO_TU_LOCAL uint64_t h_lentarecordisreadinthecallersplace_0Pair_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_lentarecordisreadinthecallersplace_0Pt_retain(const h_lentarecordisreadinthecallersplace_Pt *hero_v);
+HERO_TU_LOCAL void h_lentarecordisreadinthecallersplace_0Pt_release(h_lentarecordisreadinthecallersplace_Pt *hero_v);
+HERO_TU_LOCAL bool h_lentarecordisreadinthecallersplace_0Pt_eq(const h_lentarecordisreadinthecallersplace_Pt *hero_a, const h_lentarecordisreadinthecallersplace_Pt *hero_b);
+HERO_TU_LOCAL uint64_t h_lentarecordisreadinthecallersplace_0Pt_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_lentarecordisreadinthecallersplace_0Pair_retain(const h_lentarecordisreadinthecallersplace_Pair *hero_v);
+HERO_TU_LOCAL void h_lentarecordisreadinthecallersplace_0Pair_release(h_lentarecordisreadinthecallersplace_Pair *hero_v);
+HERO_TU_LOCAL bool h_lentarecordisreadinthecallersplace_0Pair_eq(const h_lentarecordisreadinthecallersplace_Pair *hero_a, const h_lentarecordisreadinthecallersplace_Pair *hero_b);
+HERO_TU_LOCAL uint64_t h_lentarecordisreadinthecallersplace_0Pair_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
-static void h_lentarecordisreadinthecallersplace_0Pt_desc_copy(void *dst, const void *src) {
-    __builtin_memmove(dst, src, sizeof(h_lentarecordisreadinthecallersplace_Pt));
-    h_lentarecordisreadinthecallersplace_0Pt_retain((const h_lentarecordisreadinthecallersplace_Pt *)dst);
+static void h_lentarecordisreadinthecallersplace_0Pt_desc_copy(void *hero_dst, const void *hero_src) {
+    __builtin_memmove(hero_dst, hero_src, sizeof(h_lentarecordisreadinthecallersplace_Pt));
+    h_lentarecordisreadinthecallersplace_0Pt_retain((const h_lentarecordisreadinthecallersplace_Pt *)hero_dst);
 }
-static void h_lentarecordisreadinthecallersplace_0Pt_desc_drop(void *elem) {
-    h_lentarecordisreadinthecallersplace_0Pt_release((h_lentarecordisreadinthecallersplace_Pt *)elem);
+static void h_lentarecordisreadinthecallersplace_0Pt_desc_drop(void *hero_elem) {
+    h_lentarecordisreadinthecallersplace_0Pt_release((h_lentarecordisreadinthecallersplace_Pt *)hero_elem);
 }
-static bool h_lentarecordisreadinthecallersplace_0Pt_desc_eq(const void *a, const void *b) {
-    return h_lentarecordisreadinthecallersplace_0Pt_eq((const h_lentarecordisreadinthecallersplace_Pt *)a, (const h_lentarecordisreadinthecallersplace_Pt *)b);
+static bool h_lentarecordisreadinthecallersplace_0Pt_desc_eq(const void *hero_a, const void *hero_b) {
+    return h_lentarecordisreadinthecallersplace_0Pt_eq((const h_lentarecordisreadinthecallersplace_Pt *)hero_a, (const h_lentarecordisreadinthecallersplace_Pt *)hero_b);
 }
 HERO_TU_QUIET static const HeroDesc h_lentarecordisreadinthecallersplace_0Pt_desc = {
     sizeof(h_lentarecordisreadinthecallersplace_Pt),
@@ -165,7 +165,7 @@ HERO_TU_LOCAL int64_t h_lentarecordisreadinthecallersplace_0first_of_1b9a87(Hero
 HERO_TU_LOCAL h_lentarecordisreadinthecallersplace_Pt h_lentarecordisreadinthecallersplace_0first_of_6c7c2487(HeroArrayHeader * *ph0_xs);
 
 #line 20 "tests/golden/run/lent-a-record-is-read-in-the-callers-place.hero"
-HeroStr h_lentarecordisreadinthecallersplace_label(h_lentarecordisreadinthecallersplace_Pt *ph0_p) { HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, t1, t2, t3, t5, t6, t7, t8, t9; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroStr h_lentarecordisreadinthecallersplace_label(h_lentarecordisreadinthecallersplace_Pt *ph0_p) { HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, h3_own3 = {0}, t1, t2, t3, t5, t6, t7, t8, t9; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = (*ph0_p).f_name; t2 = HERO_STR_LIT(hero_str_3d); t3 = hero_str_concat(t1, t2); t7 = h1_own1; h1_own1 = t3; hero_str_decref(t7); t4 = (*ph0_p).f_x; t5 = hero_int_to_str(t4); t8 = h2_own2; h2_own2 = t5; hero_str_decref(t8); t6 = hero_str_concat(t3, t5); t9 = h3_own3; h3_own3 = t6; hero_str_decref(t9);
 #line 171 "lentarecordisreadinthecallersplace.c"
     hero_str_incref(t6);
@@ -176,7 +176,7 @@ HeroStr h_lentarecordisreadinthecallersplace_label(h_lentarecordisreadinthecalle
 }
 
 #line 23 "tests/golden/run/lent-a-record-is-read-in-the-callers-place.hero"
-HeroStr h_lentarecordisreadinthecallersplace_via(h_lentarecordisreadinthecallersplace_Pt *ph0_p) { HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroStr h_lentarecordisreadinthecallersplace_via(h_lentarecordisreadinthecallersplace_Pt *ph0_p) { HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t1, t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_feb75e6); t2 = h_lentarecordisreadinthecallersplace_label(&(*ph0_p)); t4 = h1_own1; h1_own1 = t2; hero_str_decref(t4); t3 = hero_str_concat(t1, t2); t5 = h2_own2; h2_own2 = t3; hero_str_decref(t5);
 #line 182 "lentarecordisreadinthecallersplace.c"
     hero_str_incref(t3);
@@ -186,19 +186,19 @@ HeroStr h_lentarecordisreadinthecallersplace_via(h_lentarecordisreadinthecallers
 }
 
 #line 26 "tests/golden/run/lent-a-record-is-read-in-the-callers-place.hero"
-int64_t h_lentarecordisreadinthecallersplace_depth(h_lentarecordisreadinthecallersplace_Pt *ph0_p, int64_t h1_k) { HERO_NODEBUG int64_t h2_ret0, t1, t2, t4, t5, t6, t7, t8, t9, t10, t11; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h1_k; t2 = INT64_C(0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+int64_t h_lentarecordisreadinthecallersplace_depth(h_lentarecordisreadinthecallersplace_Pt *ph0_p, int64_t h1_k) { HERO_NODEBUG int64_t h2_ret0, t1, t2, t4, t5, t6, t7, t8, t9, t10, t11; HERO_NODEBUG bool t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h1_k; t2 = INT64_C(0); t3 = t1 == t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 29
-    t5 = h1_k; t6 = INT64_C(1); if (__builtin_sub_overflow(t5, t6, &t7)) hero_panic_overflow_at("lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.depth", 29, 24); t8 = h_lentarecordisreadinthecallersplace_depth(&(*ph0_p), t7); t9 = INT64_C(1); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow_at("lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.depth", 29, 12); h2_ret0 = t10; goto bb4; bb2:
+    t5 = h1_k; t6 = INT64_C(1); if (__builtin_sub_overflow(t5, t6, &t7)) hero_panic_overflow_at("lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.depth", 29, 24); t8 = h_lentarecordisreadinthecallersplace_depth(&(*ph0_p), t7); t9 = INT64_C(1); if (__builtin_add_overflow(t8, t9, &t10)) hero_panic_overflow_at("lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.depth", 29, 12); h2_ret0 = t10; goto hero_bb4; hero_bb2:
 #line 28
-    t4 = (*ph0_p).f_x; h2_ret0 = t4; goto bb4; bb3: goto bb1; bb4:
+    t4 = (*ph0_p).f_x; h2_ret0 = t4; goto hero_bb4; hero_bb3: goto hero_bb1; hero_bb4:
 #line 196 "lentarecordisreadinthecallersplace.c"
     t11 = h2_ret0;
     return t11;
 }
 
 #line 31 "tests/golden/run/lent-a-record-is-read-in-the-callers-place.hero"
-HeroStr h_lentarecordisreadinthecallersplace_moved(h_lentarecordisreadinthecallersplace_Pt *ph0_p) { HERO_NODEBUG HeroStr h1_own1 = {0}, t4, t5; HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroStr h_lentarecordisreadinthecallersplace_moved(h_lentarecordisreadinthecallersplace_Pt *ph0_p) { HERO_NODEBUG HeroStr h1_own1 = {0}, t4, t5; HERO_NODEBUG int64_t t1, t2, t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = (*ph0_p).f_x; t2 = INT64_C(10); if (__builtin_add_overflow(t1, t2, &t3)) hero_panic_overflow_at("lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.moved", 32, 11); (*ph0_p).f_x = t3;
     t4 = h_lentarecordisreadinthecallersplace_label(&(*ph0_p)); t5 = h1_own1; h1_own1 = t4; hero_str_decref(t5);
 #line 205 "lentarecordisreadinthecallersplace.c"
@@ -208,7 +208,7 @@ HeroStr h_lentarecordisreadinthecallersplace_moved(h_lentarecordisreadinthecalle
 }
 
 #line 35 "tests/golden/run/lent-a-record-is-read-in-the-callers-place.hero"
-h_lentarecordisreadinthecallersplace_Pt h_lentarecordisreadinthecallersplace_keep(h_lentarecordisreadinthecallersplace_Pt *ph0_p) { HERO_NODEBUG h_lentarecordisreadinthecallersplace_Pt t1; HERO_ENTRY_STOP; goto bb0; bb0:
+h_lentarecordisreadinthecallersplace_Pt h_lentarecordisreadinthecallersplace_keep(h_lentarecordisreadinthecallersplace_Pt *ph0_p) { HERO_NODEBUG h_lentarecordisreadinthecallersplace_Pt t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = (*ph0_p);
 #line 214 "lentarecordisreadinthecallersplace.c"
     h_lentarecordisreadinthecallersplace_0Pt_retain(&t1);
@@ -216,19 +216,19 @@ h_lentarecordisreadinthecallersplace_Pt h_lentarecordisreadinthecallersplace_kee
 }
 
 #line 38 "tests/golden/run/lent-a-record-is-read-in-the-callers-place.hero"
-int64_t h_lentarecordisreadinthecallersplace_size(HeroStr *ph0_t) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_lentarecordisreadinthecallersplace_size(HeroStr *ph0_t) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = (*ph0_t); t2 = hero_str_len(t1); return t2;
 #line 222 "lentarecordisreadinthecallersplace.c"
 }
 
 #line 41 "tests/golden/run/lent-a-record-is-read-in-the-callers-place.hero"
-int64_t h_lentarecordisreadinthecallersplace_total(HeroArrayHeader * *ph0_xs) { int64_t h1_sum; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t18; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t6, t9, t10, t11, t12, t13, t14, t15, t16, t17; int64_t h4_x; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto bb0; bb0:
+int64_t h_lentarecordisreadinthecallersplace_total(HeroArrayHeader * *ph0_xs) { int64_t h1_sum; HERO_NODEBUG HeroArrayHeader *h2_xs0 = {0}, *t2, *t5, *t8, *t18; HERO_NODEBUG int64_t h3_i0, t1, t3, t4, t6, t9, t10, t11, t12, t13, t14, t15, t16, t17; int64_t h4_x; HERO_NODEBUG bool t7; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(0); h1_sum = t1;
 #line 44
-    t2 = (*ph0_xs); t18 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t18); t3 = INT64_C(0); h3_i0 = t3; goto bb1; bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto bb2; else goto bb4; bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.total", 44, 9) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]); h4_x = t10;
-    t11 = h1_sum; t12 = h4_x; if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow_at("lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.total", 45, 15); h1_sum = t13; goto bb3; bb3:
+    t2 = (*ph0_xs); t18 = h2_xs0; hero_array_incref(t2); h2_xs0 = t2; hero_array_decref(t18); t3 = INT64_C(0); h3_i0 = t3; goto hero_bb1; hero_bb1: t4 = h3_i0; t5 = h2_xs0; t6 = ((void)(t5 == NULL ? ((void)hero_array_len(t5), hero_unreachable()) : (void)0), t5->len); t7 = t4 < t6; if (t7) goto hero_bb2; else goto hero_bb4; hero_bb2: t8 = h2_xs0; t9 = h3_i0; t10 = ((void)((t8 == NULL || t9 < 0 || t9 >= t8->len) ? hero_panic_index_at(t8, t9, "lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.total", 44, 9) : (void)0), (void)(t8->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t8 + 1))[t9]); h4_x = t10;
+    t11 = h1_sum; t12 = h4_x; if (__builtin_add_overflow(t11, t12, &t13)) hero_panic_overflow_at("lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.total", 45, 15); h1_sum = t13; goto hero_bb3; hero_bb3:
 #line 44
-    t14 = h3_i0; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.total", 44, 9); h3_i0 = t16; goto bb1; bb4:
+    t14 = h3_i0; t15 = INT64_C(1); if (__builtin_add_overflow(t14, t15, &t16)) hero_panic_overflow_at("lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.total", 44, 9); h3_i0 = t16; goto hero_bb1; hero_bb4:
 #line 47
     t17 = h1_sum;
 #line 235 "lentarecordisreadinthecallersplace.c"
@@ -237,7 +237,7 @@ int64_t h_lentarecordisreadinthecallersplace_total(HeroArrayHeader * *ph0_xs) { 
 }
 
 #line 52 "tests/golden/run/lent-a-record-is-read-in-the-callers-place.hero"
-h_lentarecordisreadinthecallersplace_Pt h_lentarecordisreadinthecallersplace_make(int64_t h0_n) { HERO_NODEBUG h_lentarecordisreadinthecallersplace_Pt h1_own1 = {0}, t3, t4; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_ENTRY_STOP; goto bb0; bb0:
+h_lentarecordisreadinthecallersplace_Pt h_lentarecordisreadinthecallersplace_make(int64_t h0_n) { HERO_NODEBUG h_lentarecordisreadinthecallersplace_Pt h1_own1 = {0}, t3, t4; HERO_NODEBUG int64_t t1; HERO_NODEBUG HeroStr t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = HERO_STR_LIT(hero_str_eb4a4f9); hero_str_incref(t2); t3 = (h_lentarecordisreadinthecallersplace_Pt){.f_x = t1, .f_name = t2}; t4 = h1_own1; h1_own1 = t3; h_lentarecordisreadinthecallersplace_0Pt_release(&t4);
 #line 243 "lentarecordisreadinthecallersplace.c"
     h_lentarecordisreadinthecallersplace_0Pt_retain(&t3);
@@ -246,7 +246,7 @@ h_lentarecordisreadinthecallersplace_Pt h_lentarecordisreadinthecallersplace_mak
 }
 
 #line 55 "tests/golden/run/lent-a-record-is-read-in-the-callers-place.hero"
-void h_lentarecordisreadinthecallersplace_main(void) { h_lentarecordisreadinthecallersplace_Pair h0_pair = {0}; h_lentarecordisreadinthecallersplace_Pt h1_fixed = {0}; HERO_NODEBUG h_lentarecordisreadinthecallersplace_Pt h2_lent0 = {0}, h4_lent1 = {0}, h15_own15 = {0}, h16_own16 = {0}, h23_own23 = {0}, h25_own25 = {0}, h27_own27 = {0}, h28_own28 = {0}, h32_own32 = {0}, h33_own33 = {0}, h40_own40 = {0}, t3, t6, t17, t20, t24, t27, t31, t41, t48, t49, t73, t75, t76, t84, t85, t87, t88, t90, t91, t94, t97, t99, t100, t101, t102, t114; HeroArrayHeader * h3_pts = {0}; HERO_NODEBUG HeroArrayHeader *h5_xs0 = {0}, *h13_lent4 = {0}, *h29_own29 = {0}, *h38_own38 = {0}, *h39_own39 = {0}, *t28, *t29, *t33, *t36, *t39, *t66, *t70, *t92, *t93, *t96, *t110, *t111, *t112, *t113; HERO_NODEBUG int64_t h6_i0, t1, t4, t11, t12, t15, t19, t22, t25, t30, t34, t35, t37, t40, t43, t44, t45, t46, t50, t56, t58, t62, t63, t64, t65, t67, t68, t69, t71, t72; h_lentarecordisreadinthecallersplace_Pt h7_one = {0}; h_lentarecordisreadinthecallersplace_Pt h8_p = {0}; h_lentarecordisreadinthecallersplace_Pt h9_k = {0}; HeroStr h10_word = {0}; HERO_NODEBUG HeroStr h11_lent2 = {0}, h12_lent3 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, h24_own24 = {0}, h26_own26 = {0}, h30_own30 = {0}, h31_own31 = {0}, h34_own34 = {0}, h35_own35 = {0}, h36_own36 = {0}, h37_own37 = {0}, t2, t5, t8, t9, t10, t13, t14, t16, t18, t21, t23, t26, t32, t42, t47, t51, t52, t53, t54, t55, t57, t59, t60, t61, t74, t79, t80, t81, t82, t83, t86, t89, t95, t98, t103, t104, t105, t106, t107, t108, t109; HeroArrayHeader * h14_nums = {0}; HERO_NODEBUG h_lentarecordisreadinthecallersplace_Pair h17_own17 = {0}, t7, t77, t78; HERO_NODEBUG bool t38; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_lentarecordisreadinthecallersplace_main(void) { h_lentarecordisreadinthecallersplace_Pair h0_pair = {0}; h_lentarecordisreadinthecallersplace_Pt h1_fixed = {0}; HERO_NODEBUG h_lentarecordisreadinthecallersplace_Pt h2_lent0 = {0}, h4_lent1 = {0}, h15_own15 = {0}, h16_own16 = {0}, h23_own23 = {0}, h25_own25 = {0}, h27_own27 = {0}, h28_own28 = {0}, h32_own32 = {0}, h33_own33 = {0}, h40_own40 = {0}, t3, t6, t17, t20, t24, t27, t31, t41, t48, t49, t73, t75, t76, t84, t85, t87, t88, t90, t91, t94, t97, t99, t100, t101, t102, t114; HeroArrayHeader * h3_pts = {0}; HERO_NODEBUG HeroArrayHeader *h5_xs0 = {0}, *h13_lent4 = {0}, *h29_own29 = {0}, *h38_own38 = {0}, *h39_own39 = {0}, *t28, *t29, *t33, *t36, *t39, *t66, *t70, *t92, *t93, *t96, *t110, *t111, *t112, *t113; HERO_NODEBUG int64_t h6_i0, t1, t4, t11, t12, t15, t19, t22, t25, t30, t34, t35, t37, t40, t43, t44, t45, t46, t50, t56, t58, t62, t63, t64, t65, t67, t68, t69, t71, t72; h_lentarecordisreadinthecallersplace_Pt h7_one = {0}; h_lentarecordisreadinthecallersplace_Pt h8_p = {0}; h_lentarecordisreadinthecallersplace_Pt h9_k = {0}; HeroStr h10_word = {0}; HERO_NODEBUG HeroStr h11_lent2 = {0}, h12_lent3 = {0}, h18_own18 = {0}, h19_own19 = {0}, h20_own20 = {0}, h21_own21 = {0}, h22_own22 = {0}, h24_own24 = {0}, h26_own26 = {0}, h30_own30 = {0}, h31_own31 = {0}, h34_own34 = {0}, h35_own35 = {0}, h36_own36 = {0}, h37_own37 = {0}, t2, t5, t8, t9, t10, t13, t14, t16, t18, t21, t23, t26, t32, t42, t47, t51, t52, t53, t54, t55, t57, t59, t60, t61, t74, t79, t80, t81, t82, t83, t86, t89, t95, t98, t103, t104, t105, t106, t107, t108, t109; HeroArrayHeader * h14_nums = {0}; HERO_NODEBUG h_lentarecordisreadinthecallersplace_Pair h17_own17 = {0}, t7, t77, t78; HERO_NODEBUG bool t38; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(3); t2 = HERO_STR_LIT(hero_str_ca68e36); hero_str_incref(t2); t3 = (h_lentarecordisreadinthecallersplace_Pt){.f_x = t1, .f_name = t2}; t75 = h15_own15; h15_own15 = t3; h_lentarecordisreadinthecallersplace_0Pt_release(&t75); t4 = INT64_C(4); t5 = HERO_STR_LIT(hero_str_76b82743); hero_str_incref(t5); t6 = (h_lentarecordisreadinthecallersplace_Pt){.f_x = t4, .f_name = t5}; t76 = h16_own16; h16_own16 = t6; h_lentarecordisreadinthecallersplace_0Pt_release(&t76); h_lentarecordisreadinthecallersplace_0Pt_retain(&t3); h_lentarecordisreadinthecallersplace_0Pt_retain(&t6); t7 = (h_lentarecordisreadinthecallersplace_Pair){.f_first = t3, .f_second = t6}; t77 = h17_own17; h17_own17 = t7; h_lentarecordisreadinthecallersplace_0Pair_release(&t77); t78 = h0_pair; h_lentarecordisreadinthecallersplace_0Pair_retain(&t7); h0_pair = t7; h_lentarecordisreadinthecallersplace_0Pair_release(&t78);
     t8 = h_lentarecordisreadinthecallersplace_label(&h0_pair.f_first); t79 = h18_own18; h18_own18 = t8; hero_str_decref(t79); hero_print_str(t8); hero_print_end();
     t9 = h_lentarecordisreadinthecallersplace_label(&h0_pair.f_second); t80 = h19_own19; h19_own19 = t9; hero_str_decref(t80); hero_print_str(t9); hero_print_end();
@@ -260,10 +260,10 @@ void h_lentarecordisreadinthecallersplace_main(void) { h_lentarecordisreadinthec
     t22 = INT64_C(7); t23 = HERO_STR_LIT(hero_str_61); hero_str_incref(t23); t24 = (h_lentarecordisreadinthecallersplace_Pt){.f_x = t22, .f_name = t23}; t90 = h27_own27; h27_own27 = t24; h_lentarecordisreadinthecallersplace_0Pt_release(&t90); t25 = INT64_C(8); t26 = HERO_STR_LIT(hero_str_62); hero_str_incref(t26); t27 = (h_lentarecordisreadinthecallersplace_Pt){.f_x = t25, .f_name = t26}; t91 = h28_own28; h28_own28 = t27; h_lentarecordisreadinthecallersplace_0Pt_release(&t91); t28 = hero_array_new(&h_lentarecordisreadinthecallersplace_0Pt_desc, 2); hero_array_push_owned(&t28, &t24); hero_array_push_owned(&t28, &t27); t92 = h29_own29; h29_own29 = t28; hero_array_decref(t92); t93 = h3_pts; hero_array_incref(t28); h3_pts = t28; hero_array_decref(t93);
     t29 = h3_pts; t30 = INT64_C(1); t31 = ((void)((t29 == NULL || t30 < 0 || t30 >= t29->len) ? hero_panic_index_at(t29, t30, "lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.main", 67, 17) : (void)0), (void)(t29->elem->size != sizeof(h_lentarecordisreadinthecallersplace_Pt) ? hero_unreachable() : (void)0), ((h_lentarecordisreadinthecallersplace_Pt const *)(const void *)(t29 + 1))[t30]); t94 = h4_lent1; h_lentarecordisreadinthecallersplace_0Pt_retain(&t31); h4_lent1 = t31; h_lentarecordisreadinthecallersplace_0Pt_release(&t94); t32 = h_lentarecordisreadinthecallersplace_label(&h4_lent1); t95 = h30_own30; h30_own30 = t32; hero_str_decref(t95); hero_print_str(t32); hero_print_end();
 #line 69
-    t33 = h3_pts; t96 = h5_xs0; hero_array_incref(t33); h5_xs0 = t33; hero_array_decref(t96); t34 = INT64_C(0); h6_i0 = t34; goto bb1; bb1: t35 = h6_i0; t36 = h5_xs0; t37 = ((void)(t36 == NULL ? ((void)hero_array_len(t36), hero_unreachable()) : (void)0), t36->len); t38 = t35 < t37; if (t38) goto bb2; else goto bb4; bb2: t39 = h5_xs0; t40 = h6_i0; t41 = ((void)((t39 == NULL || t40 < 0 || t40 >= t39->len) ? hero_panic_index_at(t39, t40, "lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.main", 69, 9) : (void)0), (void)(t39->elem->size != sizeof(h_lentarecordisreadinthecallersplace_Pt) ? hero_unreachable() : (void)0), ((h_lentarecordisreadinthecallersplace_Pt const *)(const void *)(t39 + 1))[t40]); t97 = h7_one; h_lentarecordisreadinthecallersplace_0Pt_retain(&t41); h7_one = t41; h_lentarecordisreadinthecallersplace_0Pt_release(&t97);
-    t42 = h_lentarecordisreadinthecallersplace_label(&h7_one); t98 = h31_own31; h31_own31 = t42; hero_str_decref(t98); hero_print_str(t42); hero_print_end(); goto bb3; bb3:
+    t33 = h3_pts; t96 = h5_xs0; hero_array_incref(t33); h5_xs0 = t33; hero_array_decref(t96); t34 = INT64_C(0); h6_i0 = t34; goto hero_bb1; hero_bb1: t35 = h6_i0; t36 = h5_xs0; t37 = ((void)(t36 == NULL ? ((void)hero_array_len(t36), hero_unreachable()) : (void)0), t36->len); t38 = t35 < t37; if (t38) goto hero_bb2; else goto hero_bb4; hero_bb2: t39 = h5_xs0; t40 = h6_i0; t41 = ((void)((t39 == NULL || t40 < 0 || t40 >= t39->len) ? hero_panic_index_at(t39, t40, "lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.main", 69, 9) : (void)0), (void)(t39->elem->size != sizeof(h_lentarecordisreadinthecallersplace_Pt) ? hero_unreachable() : (void)0), ((h_lentarecordisreadinthecallersplace_Pt const *)(const void *)(t39 + 1))[t40]); t97 = h7_one; h_lentarecordisreadinthecallersplace_0Pt_retain(&t41); h7_one = t41; h_lentarecordisreadinthecallersplace_0Pt_release(&t97);
+    t42 = h_lentarecordisreadinthecallersplace_label(&h7_one); t98 = h31_own31; h31_own31 = t42; hero_str_decref(t98); hero_print_str(t42); hero_print_end(); goto hero_bb3; hero_bb3:
 #line 69
-    t43 = h6_i0; t44 = INT64_C(1); if (__builtin_add_overflow(t43, t44, &t45)) hero_panic_overflow_at("lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.main", 69, 9); h6_i0 = t45; goto bb1; bb4:
+    t43 = h6_i0; t44 = INT64_C(1); if (__builtin_add_overflow(t43, t44, &t45)) hero_panic_overflow_at("lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.main", 69, 9); h6_i0 = t45; goto hero_bb1; hero_bb4:
 #line 72
     t46 = INT64_C(1); t47 = HERO_STR_LIT(hero_str_70); hero_str_incref(t47); t48 = (h_lentarecordisreadinthecallersplace_Pt){.f_x = t46, .f_name = t47}; t99 = h32_own32; h32_own32 = t48; h_lentarecordisreadinthecallersplace_0Pt_release(&t99); t100 = h8_p; h_lentarecordisreadinthecallersplace_0Pt_retain(&t48); h8_p = t48; h_lentarecordisreadinthecallersplace_0Pt_release(&t100);
     t49 = h_lentarecordisreadinthecallersplace_keep(&h8_p); t101 = h33_own33; h33_own33 = t49; h_lentarecordisreadinthecallersplace_0Pt_release(&t101); t102 = h9_k; h_lentarecordisreadinthecallersplace_0Pt_retain(&t49); h9_k = t49; h_lentarecordisreadinthecallersplace_0Pt_release(&t102);
@@ -324,164 +324,164 @@ void h_lentarecordisreadinthecallersplace_main(void) { h_lentarecordisreadinthec
 }
 
 #line 49 "tests/golden/run/lent-a-record-is-read-in-the-callers-place.hero"
-/* first_of<i64> */ HERO_TU_LOCAL int64_t h_lentarecordisreadinthecallersplace_0first_of_1b9a87(HeroArrayHeader * *ph0_xs) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto bb0; bb0:
+/* first_of<i64> */ HERO_TU_LOCAL int64_t h_lentarecordisreadinthecallersplace_0first_of_1b9a87(HeroArrayHeader * *ph0_xs) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = (*ph0_xs); t2 = INT64_C(0); t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.first_of", 50, 12) : (void)0), (void)(t1->elem->size != sizeof(int64_t) ? hero_unreachable() : (void)0), ((int64_t const *)(const void *)(t1 + 1))[t2]); return t3;
 #line 330 "lentarecordisreadinthecallersplace.c"
 }
 
 #line 49 "tests/golden/run/lent-a-record-is-read-in-the-callers-place.hero"
-/* first_of<Pt> */ HERO_TU_LOCAL h_lentarecordisreadinthecallersplace_Pt h_lentarecordisreadinthecallersplace_0first_of_6c7c2487(HeroArrayHeader * *ph0_xs) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_lentarecordisreadinthecallersplace_Pt t3; HERO_ENTRY_STOP; goto bb0; bb0:
+/* first_of<Pt> */ HERO_TU_LOCAL h_lentarecordisreadinthecallersplace_Pt h_lentarecordisreadinthecallersplace_0first_of_6c7c2487(HeroArrayHeader * *ph0_xs) { HERO_NODEBUG HeroArrayHeader *t1; HERO_NODEBUG int64_t t2; HERO_NODEBUG h_lentarecordisreadinthecallersplace_Pt t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = (*ph0_xs); t2 = INT64_C(0); t3 = ((void)((t1 == NULL || t2 < 0 || t2 >= t1->len) ? hero_panic_index_at(t1, t2, "lent-a-record-is-read-in-the-callers-place.hero", "lent-a-record-is-read-in-the-callers-place.first_of", 50, 12) : (void)0), (void)(t1->elem->size != sizeof(h_lentarecordisreadinthecallersplace_Pt) ? hero_unreachable() : (void)0), ((h_lentarecordisreadinthecallersplace_Pt const *)(const void *)(t1 + 1))[t2]);
 #line 336 "lentarecordisreadinthecallersplace.c"
     h_lentarecordisreadinthecallersplace_0Pt_retain(&t3);
     return t3;
 }
-HERO_TU_LOCAL void h_lentarecordisreadinthecallersplace_0Pt_retain(const h_lentarecordisreadinthecallersplace_Pt *v) {
-    hero_str_incref(v->f_name);
+HERO_TU_LOCAL void h_lentarecordisreadinthecallersplace_0Pt_retain(const h_lentarecordisreadinthecallersplace_Pt *hero_v) {
+    hero_str_incref(hero_v->f_name);
 }
 
-HERO_TU_LOCAL void h_lentarecordisreadinthecallersplace_0Pt_release(h_lentarecordisreadinthecallersplace_Pt *v) {
-    hero_str_decref(v->f_name);
+HERO_TU_LOCAL void h_lentarecordisreadinthecallersplace_0Pt_release(h_lentarecordisreadinthecallersplace_Pt *hero_v) {
+    hero_str_decref(hero_v->f_name);
 }
 
-HERO_TU_LOCAL bool h_lentarecordisreadinthecallersplace_0Pt_eq(const h_lentarecordisreadinthecallersplace_Pt *a, const h_lentarecordisreadinthecallersplace_Pt *b) {
-    if (!(a->f_x == b->f_x)) return false;
-    if (!(hero_str_eq(a->f_name, b->f_name))) return false;
+HERO_TU_LOCAL bool h_lentarecordisreadinthecallersplace_0Pt_eq(const h_lentarecordisreadinthecallersplace_Pt *hero_a, const h_lentarecordisreadinthecallersplace_Pt *hero_b) {
+    if (!(hero_a->f_x == hero_b->f_x)) return false;
+    if (!(hero_str_eq(hero_a->f_name, hero_b->f_name))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_lentarecordisreadinthecallersplace_0Pt_hash(const void *elem) {
-    const h_lentarecordisreadinthecallersplace_Pt *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_int)->hash(&v->f_x)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_str)->hash(&v->f_name)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_lentarecordisreadinthecallersplace_0Pt_hash(const void *hero_elem) {
+    const h_lentarecordisreadinthecallersplace_Pt *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->f_x)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_str)->hash(&hero_v->f_name)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_lentarecordisreadinthecallersplace_0Pair_retain(const h_lentarecordisreadinthecallersplace_Pair *v) {
-    h_lentarecordisreadinthecallersplace_0Pt_retain(&v->f_first);
-    h_lentarecordisreadinthecallersplace_0Pt_retain(&v->f_second);
+HERO_TU_LOCAL void h_lentarecordisreadinthecallersplace_0Pair_retain(const h_lentarecordisreadinthecallersplace_Pair *hero_v) {
+    h_lentarecordisreadinthecallersplace_0Pt_retain(&hero_v->f_first);
+    h_lentarecordisreadinthecallersplace_0Pt_retain(&hero_v->f_second);
 }
 
-HERO_TU_LOCAL void h_lentarecordisreadinthecallersplace_0Pair_release(h_lentarecordisreadinthecallersplace_Pair *v) {
-    h_lentarecordisreadinthecallersplace_0Pt_release(&v->f_first);
-    h_lentarecordisreadinthecallersplace_0Pt_release(&v->f_second);
+HERO_TU_LOCAL void h_lentarecordisreadinthecallersplace_0Pair_release(h_lentarecordisreadinthecallersplace_Pair *hero_v) {
+    h_lentarecordisreadinthecallersplace_0Pt_release(&hero_v->f_first);
+    h_lentarecordisreadinthecallersplace_0Pt_release(&hero_v->f_second);
 }
 
-HERO_TU_LOCAL bool h_lentarecordisreadinthecallersplace_0Pair_eq(const h_lentarecordisreadinthecallersplace_Pair *a, const h_lentarecordisreadinthecallersplace_Pair *b) {
-    if (!(h_lentarecordisreadinthecallersplace_0Pt_eq(&a->f_first, &b->f_first))) return false;
-    if (!(h_lentarecordisreadinthecallersplace_0Pt_eq(&a->f_second, &b->f_second))) return false;
+HERO_TU_LOCAL bool h_lentarecordisreadinthecallersplace_0Pair_eq(const h_lentarecordisreadinthecallersplace_Pair *hero_a, const h_lentarecordisreadinthecallersplace_Pair *hero_b) {
+    if (!(h_lentarecordisreadinthecallersplace_0Pt_eq(&hero_a->f_first, &hero_b->f_first))) return false;
+    if (!(h_lentarecordisreadinthecallersplace_0Pt_eq(&hero_a->f_second, &hero_b->f_second))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_lentarecordisreadinthecallersplace_0Pair_hash(const void *elem) {
-    const h_lentarecordisreadinthecallersplace_Pair *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_lentarecordisreadinthecallersplace_0Pt_hash(&v->f_first)) * UINT64_C(0x100000001b3);
-    h = (h ^ h_lentarecordisreadinthecallersplace_0Pt_hash(&v->f_second)) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_lentarecordisreadinthecallersplace_0Pair_hash(const void *hero_elem) {
+    const h_lentarecordisreadinthecallersplace_Pair *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_lentarecordisreadinthecallersplace_0Pt_hash(&hero_v->f_first)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_lentarecordisreadinthecallersplace_0Pt_hash(&hero_v->f_second)) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("075ddfa66c8c28fa", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5d1db307633d94c6", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("lentarecordisreadinthecallersplace\tlent-a-record-is-read-in-the-callers-place\n");
     h_lentarecordisreadinthecallersplace_main();
     hero_runtime_check_leaks();

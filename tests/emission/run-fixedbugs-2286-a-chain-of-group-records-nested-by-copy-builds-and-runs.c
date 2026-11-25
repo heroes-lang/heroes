@@ -29,6 +29,44 @@
 #pragma push_macro("h")
 #pragma push_macro("v")
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -36,6 +74,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -63,7 +120,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -104,7 +161,7 @@ _Static_assert(sizeof(struct fixedbugs_2286_g14) - __builtin_offsetof(struct fix
 _Static_assert(sizeof(struct fixedbugs_2286_g15) - __builtin_offsetof(struct fixedbugs_2286_g15, h) != 0, "heroes-ffi-flex G15 h"); _Static_assert(_Generic(&((struct fixedbugs_2286_g15 *)0)->h, struct fixedbugs_2286_g14 (*)[2]: 1, default: 0) && sizeof(struct fixedbugs_2286_g15) - __builtin_offsetof(struct fixedbugs_2286_g15, h) >= sizeof(struct fixedbugs_2286_g14[2]), "heroes-ffi-field G15 h");
 #line 44
 _Static_assert(sizeof(struct fixedbugs_2286_g16) - __builtin_offsetof(struct fixedbugs_2286_g16, h) != 0, "heroes-ffi-flex G16 h"); _Static_assert(_Generic(&((struct fixedbugs_2286_g16 *)0)->h, struct fixedbugs_2286_g15 (*)[2]: 1, default: 0) && sizeof(struct fixedbugs_2286_g16) - __builtin_offsetof(struct fixedbugs_2286_g16, h) >= sizeof(struct fixedbugs_2286_g15[2]), "heroes-ffi-field G16 h");
-#line 108 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
+#line 165 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -144,26 +201,26 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_43560e4d, "before");
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic push
@@ -172,63 +229,63 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 184 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 241 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G0_eq(const struct fixedbugs_2286_g0 *a, const struct fixedbugs_2286_g0 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G0_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G1_eq(const struct fixedbugs_2286_g1 *a, const struct fixedbugs_2286_g1 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G1_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G2_eq(const struct fixedbugs_2286_g2 *a, const struct fixedbugs_2286_g2 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G2_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G3_eq(const struct fixedbugs_2286_g3 *a, const struct fixedbugs_2286_g3 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G3_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G4_eq(const struct fixedbugs_2286_g4 *a, const struct fixedbugs_2286_g4 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G4_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G5_eq(const struct fixedbugs_2286_g5 *a, const struct fixedbugs_2286_g5 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G5_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G6_eq(const struct fixedbugs_2286_g6 *a, const struct fixedbugs_2286_g6 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G6_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G7_eq(const struct fixedbugs_2286_g7 *a, const struct fixedbugs_2286_g7 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G7_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G8_eq(const struct fixedbugs_2286_g8 *a, const struct fixedbugs_2286_g8 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G8_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G9_eq(const struct fixedbugs_2286_g9 *a, const struct fixedbugs_2286_g9 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G9_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G10_eq(const struct fixedbugs_2286_g10 *a, const struct fixedbugs_2286_g10 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G10_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G11_eq(const struct fixedbugs_2286_g11 *a, const struct fixedbugs_2286_g11 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G11_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G12_eq(const struct fixedbugs_2286_g12 *a, const struct fixedbugs_2286_g12 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G12_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G13_eq(const struct fixedbugs_2286_g13 *a, const struct fixedbugs_2286_g13 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G13_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G14_eq(const struct fixedbugs_2286_g14 *a, const struct fixedbugs_2286_g14 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G14_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G15_eq(const struct fixedbugs_2286_g15 *a, const struct fixedbugs_2286_g15 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G15_hash(const void *elem);
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G16_eq(const struct fixedbugs_2286_g16 *a, const struct fixedbugs_2286_g16 *b);
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G16_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G0_eq(const struct fixedbugs_2286_g0 *hero_a, const struct fixedbugs_2286_g0 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G0_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G1_eq(const struct fixedbugs_2286_g1 *hero_a, const struct fixedbugs_2286_g1 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G1_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G2_eq(const struct fixedbugs_2286_g2 *hero_a, const struct fixedbugs_2286_g2 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G2_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G3_eq(const struct fixedbugs_2286_g3 *hero_a, const struct fixedbugs_2286_g3 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G3_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G4_eq(const struct fixedbugs_2286_g4 *hero_a, const struct fixedbugs_2286_g4 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G4_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G5_eq(const struct fixedbugs_2286_g5 *hero_a, const struct fixedbugs_2286_g5 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G5_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G6_eq(const struct fixedbugs_2286_g6 *hero_a, const struct fixedbugs_2286_g6 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G6_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G7_eq(const struct fixedbugs_2286_g7 *hero_a, const struct fixedbugs_2286_g7 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G7_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G8_eq(const struct fixedbugs_2286_g8 *hero_a, const struct fixedbugs_2286_g8 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G8_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G9_eq(const struct fixedbugs_2286_g9 *hero_a, const struct fixedbugs_2286_g9 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G9_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G10_eq(const struct fixedbugs_2286_g10 *hero_a, const struct fixedbugs_2286_g10 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G10_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G11_eq(const struct fixedbugs_2286_g11 *hero_a, const struct fixedbugs_2286_g11 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G11_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G12_eq(const struct fixedbugs_2286_g12 *hero_a, const struct fixedbugs_2286_g12 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G12_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G13_eq(const struct fixedbugs_2286_g13 *hero_a, const struct fixedbugs_2286_g13 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G13_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G14_eq(const struct fixedbugs_2286_g14 *hero_a, const struct fixedbugs_2286_g14 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G14_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G15_eq(const struct fixedbugs_2286_g15 *hero_a, const struct fixedbugs_2286_g15 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G15_hash(const void *hero_elem);
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G16_eq(const struct fixedbugs_2286_g16 *hero_a, const struct fixedbugs_2286_g16 *hero_b);
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G16_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 struct fixedbugs_2286_g0 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make0(int64_t h0_n);
 struct fixedbugs_2286_g1 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make1(int64_t h0_n);
@@ -240,75 +297,75 @@ struct fixedbugs_2286_g6 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsan
 struct fixedbugs_2286_g7 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make7(int64_t h0_n);
 struct fixedbugs_2286_g8 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make8(int64_t h0_n);
 void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make9(struct fixedbugs_2286_g9 *hero_out, int64_t h0_n);
-__attribute__((unused)) struct fixedbugs_2286_g9 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make9(int64_t h0_n);
+__attribute__((__unused__)) struct fixedbugs_2286_g9 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make9(int64_t h0_n);
 void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make10(struct fixedbugs_2286_g10 *hero_out, int64_t h0_n);
-__attribute__((unused)) struct fixedbugs_2286_g10 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make10(int64_t h0_n);
+__attribute__((__unused__)) struct fixedbugs_2286_g10 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make10(int64_t h0_n);
 void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make11(struct fixedbugs_2286_g11 *hero_out, int64_t h0_n);
-__attribute__((unused)) struct fixedbugs_2286_g11 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make11(int64_t h0_n);
+__attribute__((__unused__)) struct fixedbugs_2286_g11 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make11(int64_t h0_n);
 void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make12(struct fixedbugs_2286_g12 *hero_out, int64_t h0_n);
-__attribute__((unused)) struct fixedbugs_2286_g12 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make12(int64_t h0_n);
+__attribute__((__unused__)) struct fixedbugs_2286_g12 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make12(int64_t h0_n);
 void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make13(struct fixedbugs_2286_g13 *hero_out, int64_t h0_n);
-__attribute__((unused)) struct fixedbugs_2286_g13 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make13(int64_t h0_n);
+__attribute__((__unused__)) struct fixedbugs_2286_g13 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make13(int64_t h0_n);
 void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make14(struct fixedbugs_2286_g14 *hero_out, int64_t h0_n);
-__attribute__((unused)) struct fixedbugs_2286_g14 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make14(int64_t h0_n);
+__attribute__((__unused__)) struct fixedbugs_2286_g14 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make14(int64_t h0_n);
 void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make15(struct fixedbugs_2286_g15 *hero_out, int64_t h0_n);
-__attribute__((unused)) struct fixedbugs_2286_g15 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make15(int64_t h0_n);
+__attribute__((__unused__)) struct fixedbugs_2286_g15 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make15(int64_t h0_n);
 void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make16(struct fixedbugs_2286_g16 *hero_out, int64_t h0_n);
-__attribute__((unused)) struct fixedbugs_2286_g16 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make16(int64_t h0_n);
+__attribute__((__unused__)) struct fixedbugs_2286_g16 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make16(int64_t h0_n);
 void h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_main(void);
 void *hero_pad_nowhere(void);
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g0 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g0) : 0), __builtin_offsetof(struct fixedbugs_2286_g0, v), sizeof(((struct fixedbugs_2286_g0 *)0)->v)};
-__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((unused)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g1 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g1) : 0), __builtin_offsetof(struct fixedbugs_2286_g1, h), sizeof(((struct fixedbugs_2286_g1 *)0)->h)};
-__attribute__((unused)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_1;
-__attribute__((unused)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g2 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g2) : 0), __builtin_offsetof(struct fixedbugs_2286_g2, h), sizeof(((struct fixedbugs_2286_g2 *)0)->h)};
-__attribute__((unused)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_2;
-__attribute__((unused)) static const size_t hero_pad_t_3[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g3 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g3) : 0), __builtin_offsetof(struct fixedbugs_2286_g3, h), sizeof(((struct fixedbugs_2286_g3 *)0)->h)};
-__attribute__((unused)) static size_t hero_pad_g_3[sizeof hero_pad_t_3 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_3;
-__attribute__((unused)) static const size_t hero_pad_t_4[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g4 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g4) : 0), __builtin_offsetof(struct fixedbugs_2286_g4, h), sizeof(((struct fixedbugs_2286_g4 *)0)->h)};
-__attribute__((unused)) static size_t hero_pad_g_4[sizeof hero_pad_t_4 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_4;
-__attribute__((unused)) static const size_t hero_pad_t_5[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g5 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g5) : 0), __builtin_offsetof(struct fixedbugs_2286_g5, h), sizeof(((struct fixedbugs_2286_g5 *)0)->h)};
-__attribute__((unused)) static size_t hero_pad_g_5[sizeof hero_pad_t_5 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_5;
-__attribute__((unused)) static const size_t hero_pad_t_6[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g6 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g6) : 0), __builtin_offsetof(struct fixedbugs_2286_g6, h), sizeof(((struct fixedbugs_2286_g6 *)0)->h)};
-__attribute__((unused)) static size_t hero_pad_g_6[sizeof hero_pad_t_6 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_6;
-__attribute__((unused)) static const size_t hero_pad_t_7[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g7 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g7) : 0), __builtin_offsetof(struct fixedbugs_2286_g7, h), sizeof(((struct fixedbugs_2286_g7 *)0)->h)};
-__attribute__((unused)) static size_t hero_pad_g_7[sizeof hero_pad_t_7 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_7;
-__attribute__((unused)) static const size_t hero_pad_t_8[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g8 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g8) : 0), __builtin_offsetof(struct fixedbugs_2286_g8, h), sizeof(((struct fixedbugs_2286_g8 *)0)->h)};
-__attribute__((unused)) static size_t hero_pad_g_8[sizeof hero_pad_t_8 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_8;
-__attribute__((unused)) static const size_t hero_pad_t_9[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g9 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g9) : 0), __builtin_offsetof(struct fixedbugs_2286_g9, h), sizeof(((struct fixedbugs_2286_g9 *)0)->h)};
-__attribute__((unused)) static size_t hero_pad_g_9[sizeof hero_pad_t_9 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_9;
-__attribute__((unused)) static const size_t hero_pad_t_10[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g10 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g10) : 0), __builtin_offsetof(struct fixedbugs_2286_g10, h), sizeof(((struct fixedbugs_2286_g10 *)0)->h)};
-__attribute__((unused)) static size_t hero_pad_g_10[sizeof hero_pad_t_10 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_10;
-__attribute__((unused)) static const size_t hero_pad_t_11[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g11 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g11) : 0), __builtin_offsetof(struct fixedbugs_2286_g11, h), sizeof(((struct fixedbugs_2286_g11 *)0)->h)};
-__attribute__((unused)) static size_t hero_pad_g_11[sizeof hero_pad_t_11 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_11;
-__attribute__((unused)) static const size_t hero_pad_t_12[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g12 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g12) : 0), __builtin_offsetof(struct fixedbugs_2286_g12, h), sizeof(((struct fixedbugs_2286_g12 *)0)->h)};
-__attribute__((unused)) static size_t hero_pad_g_12[sizeof hero_pad_t_12 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_12;
-__attribute__((unused)) static const size_t hero_pad_t_13[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g13 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g13) : 0), __builtin_offsetof(struct fixedbugs_2286_g13, h), sizeof(((struct fixedbugs_2286_g13 *)0)->h)};
-__attribute__((unused)) static size_t hero_pad_g_13[sizeof hero_pad_t_13 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_13;
-__attribute__((unused)) static const size_t hero_pad_t_14[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g14 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g14) : 0), __builtin_offsetof(struct fixedbugs_2286_g14, h), sizeof(((struct fixedbugs_2286_g14 *)0)->h)};
-__attribute__((unused)) static size_t hero_pad_g_14[sizeof hero_pad_t_14 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_14;
-__attribute__((unused)) static const size_t hero_pad_t_15[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g15 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g15) : 0), __builtin_offsetof(struct fixedbugs_2286_g15, h), sizeof(((struct fixedbugs_2286_g15 *)0)->h)};
-__attribute__((unused)) static size_t hero_pad_g_15[sizeof hero_pad_t_15 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_15;
-__attribute__((unused)) static const size_t hero_pad_t_16[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g16 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g16) : 0), __builtin_offsetof(struct fixedbugs_2286_g16, h), sizeof(((struct fixedbugs_2286_g16 *)0)->h)};
-__attribute__((unused)) static size_t hero_pad_g_16[sizeof hero_pad_t_16 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_16;
-__attribute__((constructor)) static void hero_pad_init(void) {
+__attribute__((__unused__)) static const size_t hero_pad_t_0[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g0 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g0) : 0), __builtin_offsetof(struct fixedbugs_2286_g0, v), sizeof(((struct fixedbugs_2286_g0 *)0)->v)};
+__attribute__((__unused__)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_0;
+__attribute__((__unused__)) static const size_t hero_pad_t_1[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g1 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g1) : 0), __builtin_offsetof(struct fixedbugs_2286_g1, h), sizeof(((struct fixedbugs_2286_g1 *)0)->h)};
+__attribute__((__unused__)) static size_t hero_pad_g_1[sizeof hero_pad_t_1 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_1;
+__attribute__((__unused__)) static const size_t hero_pad_t_2[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g2 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g2) : 0), __builtin_offsetof(struct fixedbugs_2286_g2, h), sizeof(((struct fixedbugs_2286_g2 *)0)->h)};
+__attribute__((__unused__)) static size_t hero_pad_g_2[sizeof hero_pad_t_2 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_2;
+__attribute__((__unused__)) static const size_t hero_pad_t_3[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g3 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g3) : 0), __builtin_offsetof(struct fixedbugs_2286_g3, h), sizeof(((struct fixedbugs_2286_g3 *)0)->h)};
+__attribute__((__unused__)) static size_t hero_pad_g_3[sizeof hero_pad_t_3 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_3;
+__attribute__((__unused__)) static const size_t hero_pad_t_4[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g4 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g4) : 0), __builtin_offsetof(struct fixedbugs_2286_g4, h), sizeof(((struct fixedbugs_2286_g4 *)0)->h)};
+__attribute__((__unused__)) static size_t hero_pad_g_4[sizeof hero_pad_t_4 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_4;
+__attribute__((__unused__)) static const size_t hero_pad_t_5[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g5 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g5) : 0), __builtin_offsetof(struct fixedbugs_2286_g5, h), sizeof(((struct fixedbugs_2286_g5 *)0)->h)};
+__attribute__((__unused__)) static size_t hero_pad_g_5[sizeof hero_pad_t_5 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_5;
+__attribute__((__unused__)) static const size_t hero_pad_t_6[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g6 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g6) : 0), __builtin_offsetof(struct fixedbugs_2286_g6, h), sizeof(((struct fixedbugs_2286_g6 *)0)->h)};
+__attribute__((__unused__)) static size_t hero_pad_g_6[sizeof hero_pad_t_6 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_6;
+__attribute__((__unused__)) static const size_t hero_pad_t_7[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g7 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g7) : 0), __builtin_offsetof(struct fixedbugs_2286_g7, h), sizeof(((struct fixedbugs_2286_g7 *)0)->h)};
+__attribute__((__unused__)) static size_t hero_pad_g_7[sizeof hero_pad_t_7 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_7;
+__attribute__((__unused__)) static const size_t hero_pad_t_8[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g8 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g8) : 0), __builtin_offsetof(struct fixedbugs_2286_g8, h), sizeof(((struct fixedbugs_2286_g8 *)0)->h)};
+__attribute__((__unused__)) static size_t hero_pad_g_8[sizeof hero_pad_t_8 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_8;
+__attribute__((__unused__)) static const size_t hero_pad_t_9[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g9 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g9) : 0), __builtin_offsetof(struct fixedbugs_2286_g9, h), sizeof(((struct fixedbugs_2286_g9 *)0)->h)};
+__attribute__((__unused__)) static size_t hero_pad_g_9[sizeof hero_pad_t_9 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_9;
+__attribute__((__unused__)) static const size_t hero_pad_t_10[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g10 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g10) : 0), __builtin_offsetof(struct fixedbugs_2286_g10, h), sizeof(((struct fixedbugs_2286_g10 *)0)->h)};
+__attribute__((__unused__)) static size_t hero_pad_g_10[sizeof hero_pad_t_10 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_10;
+__attribute__((__unused__)) static const size_t hero_pad_t_11[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g11 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g11) : 0), __builtin_offsetof(struct fixedbugs_2286_g11, h), sizeof(((struct fixedbugs_2286_g11 *)0)->h)};
+__attribute__((__unused__)) static size_t hero_pad_g_11[sizeof hero_pad_t_11 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_11;
+__attribute__((__unused__)) static const size_t hero_pad_t_12[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g12 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g12) : 0), __builtin_offsetof(struct fixedbugs_2286_g12, h), sizeof(((struct fixedbugs_2286_g12 *)0)->h)};
+__attribute__((__unused__)) static size_t hero_pad_g_12[sizeof hero_pad_t_12 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_12;
+__attribute__((__unused__)) static const size_t hero_pad_t_13[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g13 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g13) : 0), __builtin_offsetof(struct fixedbugs_2286_g13, h), sizeof(((struct fixedbugs_2286_g13 *)0)->h)};
+__attribute__((__unused__)) static size_t hero_pad_g_13[sizeof hero_pad_t_13 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_13;
+__attribute__((__unused__)) static const size_t hero_pad_t_14[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g14 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g14) : 0), __builtin_offsetof(struct fixedbugs_2286_g14, h), sizeof(((struct fixedbugs_2286_g14 *)0)->h)};
+__attribute__((__unused__)) static size_t hero_pad_g_14[sizeof hero_pad_t_14 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_14;
+__attribute__((__unused__)) static const size_t hero_pad_t_15[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g15 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g15) : 0), __builtin_offsetof(struct fixedbugs_2286_g15, h), sizeof(((struct fixedbugs_2286_g15 *)0)->h)};
+__attribute__((__unused__)) static size_t hero_pad_g_15[sizeof hero_pad_t_15 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_15;
+__attribute__((__unused__)) static const size_t hero_pad_t_16[] = {0, (__builtin_classify_type(*(struct fixedbugs_2286_g16 *)hero_pad_nowhere()) == 13 ? sizeof(struct fixedbugs_2286_g16) : 0), __builtin_offsetof(struct fixedbugs_2286_g16, h), sizeof(((struct fixedbugs_2286_g16 *)0)->h)};
+__attribute__((__unused__)) static size_t hero_pad_g_16[sizeof hero_pad_t_16 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_16;
+__attribute__((__constructor__)) static void hero_pad_init(void) {
     hero_pad_n_0 = hero_pad_gaps(sizeof(struct fixedbugs_2286_g0), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
     hero_pad_n_1 = hero_pad_gaps(sizeof(struct fixedbugs_2286_g1), hero_pad_t_1, sizeof hero_pad_t_1 / (2 * sizeof(size_t)), hero_pad_g_1);
     hero_pad_n_2 = hero_pad_gaps(sizeof(struct fixedbugs_2286_g2), hero_pad_t_2, sizeof hero_pad_t_2 / (2 * sizeof(size_t)), hero_pad_g_2);
@@ -330,57 +387,57 @@ __attribute__((constructor)) static void hero_pad_init(void) {
 
 
 #line 46 "tests/golden/run/fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero"
-struct fixedbugs_2286_g0 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make0(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_NODEBUG struct fixedbugs_2286_g0 t6; HERO_ENTRY_STOP; goto bb0; bb0:
+struct fixedbugs_2286_g0 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make0(int64_t h0_n) { HERO_NODEBUG int64_t t1, t2, t3, t4; HERO_NODEBUG struct fixedbugs_2286_g0 t6; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h0_n; t3 = INT64_C(1); if (__builtin_add_overflow(t2, t3, &t4)) hero_panic_overflow_at("fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.make0", 47, 22); t6 = (struct fixedbugs_2286_g0){.v = {t1, t4}}; return t6;
-#line 336 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
+#line 393 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
 }
 
 #line 49 "tests/golden/run/fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero"
-struct fixedbugs_2286_g1 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make1(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g0 t2, t6; HERO_NODEBUG struct fixedbugs_2286_g1 t8; HERO_ENTRY_STOP; goto bb0; bb0:
+struct fixedbugs_2286_g1 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make1(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g0 t2, t6; HERO_NODEBUG struct fixedbugs_2286_g1 t8; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make0(t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.make1", 50, 35); t6 = h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make0(t5); t8 = (struct fixedbugs_2286_g1){.h = {t2, t6}}; return t8;
-#line 342 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
+#line 399 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
 }
 
 #line 52 "tests/golden/run/fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero"
-struct fixedbugs_2286_g2 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make2(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g1 t2, t6; HERO_NODEBUG struct fixedbugs_2286_g2 t8; HERO_ENTRY_STOP; goto bb0; bb0:
+struct fixedbugs_2286_g2 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make2(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g1 t2, t6; HERO_NODEBUG struct fixedbugs_2286_g2 t8; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make1(t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.make2", 53, 35); t6 = h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make1(t5); t8 = (struct fixedbugs_2286_g2){.h = {t2, t6}}; return t8;
-#line 348 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
+#line 405 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
 }
 
 #line 55 "tests/golden/run/fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero"
-struct fixedbugs_2286_g3 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make3(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g2 t2, t6; HERO_NODEBUG struct fixedbugs_2286_g3 t8; HERO_ENTRY_STOP; goto bb0; bb0:
+struct fixedbugs_2286_g3 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make3(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g2 t2, t6; HERO_NODEBUG struct fixedbugs_2286_g3 t8; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make2(t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.make3", 56, 35); t6 = h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make2(t5); t8 = (struct fixedbugs_2286_g3){.h = {t2, t6}}; return t8;
-#line 354 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
+#line 411 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
 }
 
 #line 58 "tests/golden/run/fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero"
-struct fixedbugs_2286_g4 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make4(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g3 t2, t6; HERO_NODEBUG struct fixedbugs_2286_g4 t8; HERO_ENTRY_STOP; goto bb0; bb0:
+struct fixedbugs_2286_g4 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make4(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g3 t2, t6; HERO_NODEBUG struct fixedbugs_2286_g4 t8; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make3(t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.make4", 59, 35); t6 = h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make3(t5); t8 = (struct fixedbugs_2286_g4){.h = {t2, t6}}; return t8;
-#line 360 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
+#line 417 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
 }
 
 #line 61 "tests/golden/run/fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero"
-struct fixedbugs_2286_g5 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make5(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g4 t2, t6; HERO_NODEBUG struct fixedbugs_2286_g5 t8; HERO_ENTRY_STOP; goto bb0; bb0:
+struct fixedbugs_2286_g5 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make5(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g4 t2, t6; HERO_NODEBUG struct fixedbugs_2286_g5 t8; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make4(t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.make5", 62, 35); t6 = h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make4(t5); t8 = (struct fixedbugs_2286_g5){.h = {t2, t6}}; return t8;
-#line 366 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
+#line 423 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
 }
 
 #line 64 "tests/golden/run/fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero"
-struct fixedbugs_2286_g6 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make6(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g5 t2, t6; HERO_NODEBUG struct fixedbugs_2286_g6 t8; HERO_ENTRY_STOP; goto bb0; bb0:
+struct fixedbugs_2286_g6 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make6(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g5 t2, t6; HERO_NODEBUG struct fixedbugs_2286_g6 t8; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make5(t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.make6", 65, 35); t6 = h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make5(t5); t8 = (struct fixedbugs_2286_g6){.h = {t2, t6}}; return t8;
-#line 372 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
+#line 429 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
 }
 
 #line 67 "tests/golden/run/fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero"
-struct fixedbugs_2286_g7 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make7(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g6 t2, t6; HERO_NODEBUG struct fixedbugs_2286_g7 t8; HERO_ENTRY_STOP; goto bb0; bb0:
+struct fixedbugs_2286_g7 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make7(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g6 t2, t6; HERO_NODEBUG struct fixedbugs_2286_g7 t8; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make6(t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.make7", 68, 35); t6 = h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make6(t5); t8 = (struct fixedbugs_2286_g7){.h = {t2, t6}}; return t8;
-#line 378 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
+#line 435 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
 }
 
 #line 70 "tests/golden/run/fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero"
-struct fixedbugs_2286_g8 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make8(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g7 t2, t6; HERO_NODEBUG struct fixedbugs_2286_g8 t8; HERO_ENTRY_STOP; goto bb0; bb0:
+struct fixedbugs_2286_g8 h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make8(int64_t h0_n) { HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g7 t2, t6; HERO_NODEBUG struct fixedbugs_2286_g8 t8; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make7(t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.make8", 71, 35); t6 = h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make7(t5); t8 = (struct fixedbugs_2286_g8){.h = {t2, t6}}; return t8;
-#line 384 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
+#line 441 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
 }
 
 #line 73 "tests/golden/run/fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero"
@@ -388,12 +445,12 @@ __attribute__((__noinline__)) void h_fixedbugs2286achainofgrouprecordsnestedbyco
 #line 73
 #define t8 (*hero_big_t8)
 #line 73
-    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g8 t2, t6; HERO_NODEBUG struct fixedbugs_2286_g9 *const hero_big_t8 = (struct fixedbugs_2286_g9 *)hero_frame_take(sizeof(struct fixedbugs_2286_g9)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g8 t2, t6; HERO_NODEBUG struct fixedbugs_2286_g9 *const hero_big_t8 = (struct fixedbugs_2286_g9 *)hero_frame_take(sizeof(struct fixedbugs_2286_g9)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make8(t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.make9", 74, 35); t6 = h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make8(t5); t8 = *(struct fixedbugs_2286_g9 *)__builtin_memset(&t8, 0, sizeof t8); t8.h[0] = t2; t8.h[1] = t6; if (hero_out != NULL) *hero_out = t8; hero_frame_give(hero_big_t8); return;
-#line 394 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
+#line 451 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
 }
 #undef t8
-__attribute__((unused)) struct fixedbugs_2286_g9 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make9(int64_t h0_n) {
+__attribute__((__unused__)) struct fixedbugs_2286_g9 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make9(int64_t h0_n) {
     HERO_NODEBUG struct fixedbugs_2286_g9 hero_result;
     h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make9(&hero_result, h0_n);
     return hero_result;
@@ -408,14 +465,14 @@ __attribute__((__noinline__)) void h_fixedbugs2286achainofgrouprecordsnestedbyco
 #line 76
 #define t8 (*hero_big_t8)
 #line 76
-    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g9 *const hero_big_t2 = (struct fixedbugs_2286_g9 *)hero_frame_take(sizeof(struct fixedbugs_2286_g9)); HERO_NODEBUG struct fixedbugs_2286_g9 *const hero_big_t6 = (struct fixedbugs_2286_g9 *)hero_frame_take(sizeof(struct fixedbugs_2286_g9)); HERO_NODEBUG struct fixedbugs_2286_g10 *const hero_big_t8 = (struct fixedbugs_2286_g10 *)hero_frame_take(sizeof(struct fixedbugs_2286_g10)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g9 *const hero_big_t2 = (struct fixedbugs_2286_g9 *)hero_frame_take(sizeof(struct fixedbugs_2286_g9)); HERO_NODEBUG struct fixedbugs_2286_g9 *const hero_big_t6 = (struct fixedbugs_2286_g9 *)hero_frame_take(sizeof(struct fixedbugs_2286_g9)); HERO_NODEBUG struct fixedbugs_2286_g10 *const hero_big_t8 = (struct fixedbugs_2286_g10 *)hero_frame_take(sizeof(struct fixedbugs_2286_g10)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make9(&t2, t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.make10", 77, 36); h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make9(&t6, t5); t8 = *(struct fixedbugs_2286_g10 *)__builtin_memset(&t8, 0, sizeof t8); t8.h[0] = t2; t8.h[1] = t6; if (hero_out != NULL) *hero_out = t8; hero_frame_give(hero_big_t8); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t2); return;
-#line 414 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
+#line 471 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
 }
 #undef t2
 #undef t6
 #undef t8
-__attribute__((unused)) struct fixedbugs_2286_g10 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make10(int64_t h0_n) {
+__attribute__((__unused__)) struct fixedbugs_2286_g10 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make10(int64_t h0_n) {
     HERO_NODEBUG struct fixedbugs_2286_g10 hero_result;
     h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make10(&hero_result, h0_n);
     return hero_result;
@@ -430,14 +487,14 @@ __attribute__((__noinline__)) void h_fixedbugs2286achainofgrouprecordsnestedbyco
 #line 79
 #define t8 (*hero_big_t8)
 #line 79
-    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g10 *const hero_big_t2 = (struct fixedbugs_2286_g10 *)hero_frame_take(sizeof(struct fixedbugs_2286_g10)); HERO_NODEBUG struct fixedbugs_2286_g10 *const hero_big_t6 = (struct fixedbugs_2286_g10 *)hero_frame_take(sizeof(struct fixedbugs_2286_g10)); HERO_NODEBUG struct fixedbugs_2286_g11 *const hero_big_t8 = (struct fixedbugs_2286_g11 *)hero_frame_take(sizeof(struct fixedbugs_2286_g11)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g10 *const hero_big_t2 = (struct fixedbugs_2286_g10 *)hero_frame_take(sizeof(struct fixedbugs_2286_g10)); HERO_NODEBUG struct fixedbugs_2286_g10 *const hero_big_t6 = (struct fixedbugs_2286_g10 *)hero_frame_take(sizeof(struct fixedbugs_2286_g10)); HERO_NODEBUG struct fixedbugs_2286_g11 *const hero_big_t8 = (struct fixedbugs_2286_g11 *)hero_frame_take(sizeof(struct fixedbugs_2286_g11)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make10(&t2, t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.make11", 80, 38); h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make10(&t6, t5); t8 = *(struct fixedbugs_2286_g11 *)__builtin_memset(&t8, 0, sizeof t8); t8.h[0] = t2; t8.h[1] = t6; if (hero_out != NULL) *hero_out = t8; hero_frame_give(hero_big_t8); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t2); return;
-#line 436 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
+#line 493 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
 }
 #undef t2
 #undef t6
 #undef t8
-__attribute__((unused)) struct fixedbugs_2286_g11 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make11(int64_t h0_n) {
+__attribute__((__unused__)) struct fixedbugs_2286_g11 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make11(int64_t h0_n) {
     HERO_NODEBUG struct fixedbugs_2286_g11 hero_result;
     h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make11(&hero_result, h0_n);
     return hero_result;
@@ -452,14 +509,14 @@ __attribute__((__noinline__)) void h_fixedbugs2286achainofgrouprecordsnestedbyco
 #line 82
 #define t8 (*hero_big_t8)
 #line 82
-    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g11 *const hero_big_t2 = (struct fixedbugs_2286_g11 *)hero_frame_take(sizeof(struct fixedbugs_2286_g11)); HERO_NODEBUG struct fixedbugs_2286_g11 *const hero_big_t6 = (struct fixedbugs_2286_g11 *)hero_frame_take(sizeof(struct fixedbugs_2286_g11)); HERO_NODEBUG struct fixedbugs_2286_g12 *const hero_big_t8 = (struct fixedbugs_2286_g12 *)hero_frame_take(sizeof(struct fixedbugs_2286_g12)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g11 *const hero_big_t2 = (struct fixedbugs_2286_g11 *)hero_frame_take(sizeof(struct fixedbugs_2286_g11)); HERO_NODEBUG struct fixedbugs_2286_g11 *const hero_big_t6 = (struct fixedbugs_2286_g11 *)hero_frame_take(sizeof(struct fixedbugs_2286_g11)); HERO_NODEBUG struct fixedbugs_2286_g12 *const hero_big_t8 = (struct fixedbugs_2286_g12 *)hero_frame_take(sizeof(struct fixedbugs_2286_g12)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make11(&t2, t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.make12", 83, 38); h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make11(&t6, t5); t8 = *(struct fixedbugs_2286_g12 *)__builtin_memset(&t8, 0, sizeof t8); t8.h[0] = t2; t8.h[1] = t6; if (hero_out != NULL) *hero_out = t8; hero_frame_give(hero_big_t8); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t2); return;
-#line 458 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
+#line 515 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
 }
 #undef t2
 #undef t6
 #undef t8
-__attribute__((unused)) struct fixedbugs_2286_g12 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make12(int64_t h0_n) {
+__attribute__((__unused__)) struct fixedbugs_2286_g12 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make12(int64_t h0_n) {
     HERO_NODEBUG struct fixedbugs_2286_g12 hero_result;
     h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make12(&hero_result, h0_n);
     return hero_result;
@@ -474,14 +531,14 @@ __attribute__((__noinline__)) void h_fixedbugs2286achainofgrouprecordsnestedbyco
 #line 85
 #define t8 (*hero_big_t8)
 #line 85
-    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g12 *const hero_big_t2 = (struct fixedbugs_2286_g12 *)hero_frame_take(sizeof(struct fixedbugs_2286_g12)); HERO_NODEBUG struct fixedbugs_2286_g12 *const hero_big_t6 = (struct fixedbugs_2286_g12 *)hero_frame_take(sizeof(struct fixedbugs_2286_g12)); HERO_NODEBUG struct fixedbugs_2286_g13 *const hero_big_t8 = (struct fixedbugs_2286_g13 *)hero_frame_take(sizeof(struct fixedbugs_2286_g13)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g12 *const hero_big_t2 = (struct fixedbugs_2286_g12 *)hero_frame_take(sizeof(struct fixedbugs_2286_g12)); HERO_NODEBUG struct fixedbugs_2286_g12 *const hero_big_t6 = (struct fixedbugs_2286_g12 *)hero_frame_take(sizeof(struct fixedbugs_2286_g12)); HERO_NODEBUG struct fixedbugs_2286_g13 *const hero_big_t8 = (struct fixedbugs_2286_g13 *)hero_frame_take(sizeof(struct fixedbugs_2286_g13)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make12(&t2, t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.make13", 86, 38); h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make12(&t6, t5); t8 = *(struct fixedbugs_2286_g13 *)__builtin_memset(&t8, 0, sizeof t8); t8.h[0] = t2; t8.h[1] = t6; if (hero_out != NULL) *hero_out = t8; hero_frame_give(hero_big_t8); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t2); return;
-#line 480 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
+#line 537 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
 }
 #undef t2
 #undef t6
 #undef t8
-__attribute__((unused)) struct fixedbugs_2286_g13 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make13(int64_t h0_n) {
+__attribute__((__unused__)) struct fixedbugs_2286_g13 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make13(int64_t h0_n) {
     HERO_NODEBUG struct fixedbugs_2286_g13 hero_result;
     h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make13(&hero_result, h0_n);
     return hero_result;
@@ -496,14 +553,14 @@ __attribute__((__noinline__)) void h_fixedbugs2286achainofgrouprecordsnestedbyco
 #line 88
 #define t8 (*hero_big_t8)
 #line 88
-    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g13 *const hero_big_t2 = (struct fixedbugs_2286_g13 *)hero_frame_take(sizeof(struct fixedbugs_2286_g13)); HERO_NODEBUG struct fixedbugs_2286_g13 *const hero_big_t6 = (struct fixedbugs_2286_g13 *)hero_frame_take(sizeof(struct fixedbugs_2286_g13)); HERO_NODEBUG struct fixedbugs_2286_g14 *const hero_big_t8 = (struct fixedbugs_2286_g14 *)hero_frame_take(sizeof(struct fixedbugs_2286_g14)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g13 *const hero_big_t2 = (struct fixedbugs_2286_g13 *)hero_frame_take(sizeof(struct fixedbugs_2286_g13)); HERO_NODEBUG struct fixedbugs_2286_g13 *const hero_big_t6 = (struct fixedbugs_2286_g13 *)hero_frame_take(sizeof(struct fixedbugs_2286_g13)); HERO_NODEBUG struct fixedbugs_2286_g14 *const hero_big_t8 = (struct fixedbugs_2286_g14 *)hero_frame_take(sizeof(struct fixedbugs_2286_g14)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make13(&t2, t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.make14", 89, 38); h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make13(&t6, t5); t8 = *(struct fixedbugs_2286_g14 *)__builtin_memset(&t8, 0, sizeof t8); t8.h[0] = t2; t8.h[1] = t6; if (hero_out != NULL) *hero_out = t8; hero_frame_give(hero_big_t8); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t2); return;
-#line 502 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
+#line 559 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
 }
 #undef t2
 #undef t6
 #undef t8
-__attribute__((unused)) struct fixedbugs_2286_g14 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make14(int64_t h0_n) {
+__attribute__((__unused__)) struct fixedbugs_2286_g14 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make14(int64_t h0_n) {
     HERO_NODEBUG struct fixedbugs_2286_g14 hero_result;
     h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make14(&hero_result, h0_n);
     return hero_result;
@@ -518,14 +575,14 @@ __attribute__((__noinline__)) void h_fixedbugs2286achainofgrouprecordsnestedbyco
 #line 91
 #define t8 (*hero_big_t8)
 #line 91
-    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g14 *const hero_big_t2 = (struct fixedbugs_2286_g14 *)hero_frame_take(sizeof(struct fixedbugs_2286_g14)); HERO_NODEBUG struct fixedbugs_2286_g14 *const hero_big_t6 = (struct fixedbugs_2286_g14 *)hero_frame_take(sizeof(struct fixedbugs_2286_g14)); HERO_NODEBUG struct fixedbugs_2286_g15 *const hero_big_t8 = (struct fixedbugs_2286_g15 *)hero_frame_take(sizeof(struct fixedbugs_2286_g15)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g14 *const hero_big_t2 = (struct fixedbugs_2286_g14 *)hero_frame_take(sizeof(struct fixedbugs_2286_g14)); HERO_NODEBUG struct fixedbugs_2286_g14 *const hero_big_t6 = (struct fixedbugs_2286_g14 *)hero_frame_take(sizeof(struct fixedbugs_2286_g14)); HERO_NODEBUG struct fixedbugs_2286_g15 *const hero_big_t8 = (struct fixedbugs_2286_g15 *)hero_frame_take(sizeof(struct fixedbugs_2286_g15)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make14(&t2, t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.make15", 92, 38); h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make14(&t6, t5); t8 = *(struct fixedbugs_2286_g15 *)__builtin_memset(&t8, 0, sizeof t8); t8.h[0] = t2; t8.h[1] = t6; if (hero_out != NULL) *hero_out = t8; hero_frame_give(hero_big_t8); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t2); return;
-#line 524 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
+#line 581 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
 }
 #undef t2
 #undef t6
 #undef t8
-__attribute__((unused)) struct fixedbugs_2286_g15 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make15(int64_t h0_n) {
+__attribute__((__unused__)) struct fixedbugs_2286_g15 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make15(int64_t h0_n) {
     HERO_NODEBUG struct fixedbugs_2286_g15 hero_result;
     h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make15(&hero_result, h0_n);
     return hero_result;
@@ -540,14 +597,14 @@ __attribute__((__noinline__)) void h_fixedbugs2286achainofgrouprecordsnestedbyco
 #line 94
 #define t8 (*hero_big_t8)
 #line 94
-    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g15 *const hero_big_t2 = (struct fixedbugs_2286_g15 *)hero_frame_take(sizeof(struct fixedbugs_2286_g15)); HERO_NODEBUG struct fixedbugs_2286_g15 *const hero_big_t6 = (struct fixedbugs_2286_g15 *)hero_frame_take(sizeof(struct fixedbugs_2286_g15)); HERO_NODEBUG struct fixedbugs_2286_g16 *const hero_big_t8 = (struct fixedbugs_2286_g16 *)hero_frame_take(sizeof(struct fixedbugs_2286_g16)); HERO_ENTRY_STOP; goto bb0; bb0:
+    HERO_NODEBUG int64_t t1, t3, t4, t5; HERO_NODEBUG struct fixedbugs_2286_g15 *const hero_big_t2 = (struct fixedbugs_2286_g15 *)hero_frame_take(sizeof(struct fixedbugs_2286_g15)); HERO_NODEBUG struct fixedbugs_2286_g15 *const hero_big_t6 = (struct fixedbugs_2286_g15 *)hero_frame_take(sizeof(struct fixedbugs_2286_g15)); HERO_NODEBUG struct fixedbugs_2286_g16 *const hero_big_t8 = (struct fixedbugs_2286_g16 *)hero_frame_take(sizeof(struct fixedbugs_2286_g16)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make15(&t2, t1); t3 = h0_n; t4 = INT64_C(1); if (__builtin_add_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.make16", 95, 38); h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make15(&t6, t5); t8 = *(struct fixedbugs_2286_g16 *)__builtin_memset(&t8, 0, sizeof t8); t8.h[0] = t2; t8.h[1] = t6; if (hero_out != NULL) *hero_out = t8; hero_frame_give(hero_big_t8); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t2); return;
-#line 546 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
+#line 603 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
 }
 #undef t2
 #undef t6
 #undef t8
-__attribute__((unused)) struct fixedbugs_2286_g16 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make16(int64_t h0_n) {
+__attribute__((__unused__)) struct fixedbugs_2286_g16 hero_value_h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make16(int64_t h0_n) {
     HERO_NODEBUG struct fixedbugs_2286_g16 hero_result;
     h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make16(&hero_result, h0_n);
     return hero_result;
@@ -560,336 +617,336 @@ __attribute__((__noinline__)) void h_fixedbugs2286achainofgrouprecordsnestedbyco
 #line 97
 #define t3 (*hero_big_t3)
 #line 97
-    struct fixedbugs_2286_g16 *const hero_big_h0_r = (struct fixedbugs_2286_g16 *)hero_frame_take(sizeof(struct fixedbugs_2286_g16)); HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39; HERO_NODEBUG struct fixedbugs_2286_g16 *const hero_big_t3 = (struct fixedbugs_2286_g16 *)hero_frame_take(sizeof(struct fixedbugs_2286_g16)); HERO_ENTRY_STOP; goto bb0; bb0:
+    struct fixedbugs_2286_g16 *const hero_big_h0_r = (struct fixedbugs_2286_g16 *)hero_frame_take(sizeof(struct fixedbugs_2286_g16)); HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39; HERO_NODEBUG struct fixedbugs_2286_g16 *const hero_big_t3 = (struct fixedbugs_2286_g16 *)hero_frame_take(sizeof(struct fixedbugs_2286_g16)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t1); hero_print_end();
     t2 = INT64_C(1); h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_make16(&t3, t2); h0_r = t3; hero_pad_fill(&h0_r, sizeof(struct fixedbugs_2286_g16), 1, hero_pad_g_16, hero_pad_n_16); for (size_t hero_pad_k0 = 0; hero_pad_k0 < 1; hero_pad_k0++) { hero_pad_fill((unsigned char *)(&h0_r) + hero_pad_k0 * sizeof(struct fixedbugs_2286_g16) + __builtin_offsetof(struct fixedbugs_2286_g16, h), sizeof(struct fixedbugs_2286_g15), sizeof(((struct fixedbugs_2286_g16 *)0)->h) / sizeof(struct fixedbugs_2286_g15), hero_pad_g_15, hero_pad_n_15); for (size_t hero_pad_k1 = 0; hero_pad_k1 < sizeof(((struct fixedbugs_2286_g16 *)0)->h) / sizeof(struct fixedbugs_2286_g15); hero_pad_k1++) { hero_pad_fill((unsigned char *)((unsigned char *)(&h0_r) + hero_pad_k0 * sizeof(struct fixedbugs_2286_g16) + __builtin_offsetof(struct fixedbugs_2286_g16, h)) + hero_pad_k1 * sizeof(struct fixedbugs_2286_g15) + __builtin_offsetof(struct fixedbugs_2286_g15, h), sizeof(struct fixedbugs_2286_g14), sizeof(((struct fixedbugs_2286_g15 *)0)->h) / sizeof(struct fixedbugs_2286_g14), hero_pad_g_14, hero_pad_n_14); for (size_t hero_pad_k2 = 0; hero_pad_k2 < sizeof(((struct fixedbugs_2286_g15 *)0)->h) / sizeof(struct fixedbugs_2286_g14); hero_pad_k2++) { hero_pad_fill((unsigned char *)((unsigned char *)((unsigned char *)(&h0_r) + hero_pad_k0 * sizeof(struct fixedbugs_2286_g16) + __builtin_offsetof(struct fixedbugs_2286_g16, h)) + hero_pad_k1 * sizeof(struct fixedbugs_2286_g15) + __builtin_offsetof(struct fixedbugs_2286_g15, h)) + hero_pad_k2 * sizeof(struct fixedbugs_2286_g14) + __builtin_offsetof(struct fixedbugs_2286_g14, h), sizeof(struct fixedbugs_2286_g13), sizeof(((struct fixedbugs_2286_g14 *)0)->h) / sizeof(struct fixedbugs_2286_g13), hero_pad_g_13, hero_pad_n_13); for (size_t hero_pad_k3 = 0; hero_pad_k3 < sizeof(((struct fixedbugs_2286_g14 *)0)->h) / sizeof(struct fixedbugs_2286_g13); hero_pad_k3++) { hero_pad_fill((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)(&h0_r) + hero_pad_k0 * sizeof(struct fixedbugs_2286_g16) + __builtin_offsetof(struct fixedbugs_2286_g16, h)) + hero_pad_k1 * sizeof(struct fixedbugs_2286_g15) + __builtin_offsetof(struct fixedbugs_2286_g15, h)) + hero_pad_k2 * sizeof(struct fixedbugs_2286_g14) + __builtin_offsetof(struct fixedbugs_2286_g14, h)) + hero_pad_k3 * sizeof(struct fixedbugs_2286_g13) + __builtin_offsetof(struct fixedbugs_2286_g13, h), sizeof(struct fixedbugs_2286_g12), sizeof(((struct fixedbugs_2286_g13 *)0)->h) / sizeof(struct fixedbugs_2286_g12), hero_pad_g_12, hero_pad_n_12); for (size_t hero_pad_k4 = 0; hero_pad_k4 < sizeof(((struct fixedbugs_2286_g13 *)0)->h) / sizeof(struct fixedbugs_2286_g12); hero_pad_k4++) { hero_pad_fill((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)(&h0_r) + hero_pad_k0 * sizeof(struct fixedbugs_2286_g16) + __builtin_offsetof(struct fixedbugs_2286_g16, h)) + hero_pad_k1 * sizeof(struct fixedbugs_2286_g15) + __builtin_offsetof(struct fixedbugs_2286_g15, h)) + hero_pad_k2 * sizeof(struct fixedbugs_2286_g14) + __builtin_offsetof(struct fixedbugs_2286_g14, h)) + hero_pad_k3 * sizeof(struct fixedbugs_2286_g13) + __builtin_offsetof(struct fixedbugs_2286_g13, h)) + hero_pad_k4 * sizeof(struct fixedbugs_2286_g12) + __builtin_offsetof(struct fixedbugs_2286_g12, h), sizeof(struct fixedbugs_2286_g11), sizeof(((struct fixedbugs_2286_g12 *)0)->h) / sizeof(struct fixedbugs_2286_g11), hero_pad_g_11, hero_pad_n_11); for (size_t hero_pad_k5 = 0; hero_pad_k5 < sizeof(((struct fixedbugs_2286_g12 *)0)->h) / sizeof(struct fixedbugs_2286_g11); hero_pad_k5++) { hero_pad_fill((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)(&h0_r) + hero_pad_k0 * sizeof(struct fixedbugs_2286_g16) + __builtin_offsetof(struct fixedbugs_2286_g16, h)) + hero_pad_k1 * sizeof(struct fixedbugs_2286_g15) + __builtin_offsetof(struct fixedbugs_2286_g15, h)) + hero_pad_k2 * sizeof(struct fixedbugs_2286_g14) + __builtin_offsetof(struct fixedbugs_2286_g14, h)) + hero_pad_k3 * sizeof(struct fixedbugs_2286_g13) + __builtin_offsetof(struct fixedbugs_2286_g13, h)) + hero_pad_k4 * sizeof(struct fixedbugs_2286_g12) + __builtin_offsetof(struct fixedbugs_2286_g12, h)) + hero_pad_k5 * sizeof(struct fixedbugs_2286_g11) + __builtin_offsetof(struct fixedbugs_2286_g11, h), sizeof(struct fixedbugs_2286_g10), sizeof(((struct fixedbugs_2286_g11 *)0)->h) / sizeof(struct fixedbugs_2286_g10), hero_pad_g_10, hero_pad_n_10); for (size_t hero_pad_k6 = 0; hero_pad_k6 < sizeof(((struct fixedbugs_2286_g11 *)0)->h) / sizeof(struct fixedbugs_2286_g10); hero_pad_k6++) { hero_pad_fill((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)(&h0_r) + hero_pad_k0 * sizeof(struct fixedbugs_2286_g16) + __builtin_offsetof(struct fixedbugs_2286_g16, h)) + hero_pad_k1 * sizeof(struct fixedbugs_2286_g15) + __builtin_offsetof(struct fixedbugs_2286_g15, h)) + hero_pad_k2 * sizeof(struct fixedbugs_2286_g14) + __builtin_offsetof(struct fixedbugs_2286_g14, h)) + hero_pad_k3 * sizeof(struct fixedbugs_2286_g13) + __builtin_offsetof(struct fixedbugs_2286_g13, h)) + hero_pad_k4 * sizeof(struct fixedbugs_2286_g12) + __builtin_offsetof(struct fixedbugs_2286_g12, h)) + hero_pad_k5 * sizeof(struct fixedbugs_2286_g11) + __builtin_offsetof(struct fixedbugs_2286_g11, h)) + hero_pad_k6 * sizeof(struct fixedbugs_2286_g10) + __builtin_offsetof(struct fixedbugs_2286_g10, h), sizeof(struct fixedbugs_2286_g9), sizeof(((struct fixedbugs_2286_g10 *)0)->h) / sizeof(struct fixedbugs_2286_g9), hero_pad_g_9, hero_pad_n_9); for (size_t hero_pad_k7 = 0; hero_pad_k7 < sizeof(((struct fixedbugs_2286_g10 *)0)->h) / sizeof(struct fixedbugs_2286_g9); hero_pad_k7++) { hero_pad_fill((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)(&h0_r) + hero_pad_k0 * sizeof(struct fixedbugs_2286_g16) + __builtin_offsetof(struct fixedbugs_2286_g16, h)) + hero_pad_k1 * sizeof(struct fixedbugs_2286_g15) + __builtin_offsetof(struct fixedbugs_2286_g15, h)) + hero_pad_k2 * sizeof(struct fixedbugs_2286_g14) + __builtin_offsetof(struct fixedbugs_2286_g14, h)) + hero_pad_k3 * sizeof(struct fixedbugs_2286_g13) + __builtin_offsetof(struct fixedbugs_2286_g13, h)) + hero_pad_k4 * sizeof(struct fixedbugs_2286_g12) + __builtin_offsetof(struct fixedbugs_2286_g12, h)) + hero_pad_k5 * sizeof(struct fixedbugs_2286_g11) + __builtin_offsetof(struct fixedbugs_2286_g11, h)) + hero_pad_k6 * sizeof(struct fixedbugs_2286_g10) + __builtin_offsetof(struct fixedbugs_2286_g10, h)) + hero_pad_k7 * sizeof(struct fixedbugs_2286_g9) + __builtin_offsetof(struct fixedbugs_2286_g9, h), sizeof(struct fixedbugs_2286_g8), sizeof(((struct fixedbugs_2286_g9 *)0)->h) / sizeof(struct fixedbugs_2286_g8), hero_pad_g_8, hero_pad_n_8); for (size_t hero_pad_k8 = 0; hero_pad_k8 < sizeof(((struct fixedbugs_2286_g9 *)0)->h) / sizeof(struct fixedbugs_2286_g8); hero_pad_k8++) { hero_pad_fill((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)(&h0_r) + hero_pad_k0 * sizeof(struct fixedbugs_2286_g16) + __builtin_offsetof(struct fixedbugs_2286_g16, h)) + hero_pad_k1 * sizeof(struct fixedbugs_2286_g15) + __builtin_offsetof(struct fixedbugs_2286_g15, h)) + hero_pad_k2 * sizeof(struct fixedbugs_2286_g14) + __builtin_offsetof(struct fixedbugs_2286_g14, h)) + hero_pad_k3 * sizeof(struct fixedbugs_2286_g13) + __builtin_offsetof(struct fixedbugs_2286_g13, h)) + hero_pad_k4 * sizeof(struct fixedbugs_2286_g12) + __builtin_offsetof(struct fixedbugs_2286_g12, h)) + hero_pad_k5 * sizeof(struct fixedbugs_2286_g11) + __builtin_offsetof(struct fixedbugs_2286_g11, h)) + hero_pad_k6 * sizeof(struct fixedbugs_2286_g10) + __builtin_offsetof(struct fixedbugs_2286_g10, h)) + hero_pad_k7 * sizeof(struct fixedbugs_2286_g9) + __builtin_offsetof(struct fixedbugs_2286_g9, h)) + hero_pad_k8 * sizeof(struct fixedbugs_2286_g8) + __builtin_offsetof(struct fixedbugs_2286_g8, h), sizeof(struct fixedbugs_2286_g7), sizeof(((struct fixedbugs_2286_g8 *)0)->h) / sizeof(struct fixedbugs_2286_g7), hero_pad_g_7, hero_pad_n_7); for (size_t hero_pad_k9 = 0; hero_pad_k9 < sizeof(((struct fixedbugs_2286_g8 *)0)->h) / sizeof(struct fixedbugs_2286_g7); hero_pad_k9++) { hero_pad_fill((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)(&h0_r) + hero_pad_k0 * sizeof(struct fixedbugs_2286_g16) + __builtin_offsetof(struct fixedbugs_2286_g16, h)) + hero_pad_k1 * sizeof(struct fixedbugs_2286_g15) + __builtin_offsetof(struct fixedbugs_2286_g15, h)) + hero_pad_k2 * sizeof(struct fixedbugs_2286_g14) + __builtin_offsetof(struct fixedbugs_2286_g14, h)) + hero_pad_k3 * sizeof(struct fixedbugs_2286_g13) + __builtin_offsetof(struct fixedbugs_2286_g13, h)) + hero_pad_k4 * sizeof(struct fixedbugs_2286_g12) + __builtin_offsetof(struct fixedbugs_2286_g12, h)) + hero_pad_k5 * sizeof(struct fixedbugs_2286_g11) + __builtin_offsetof(struct fixedbugs_2286_g11, h)) + hero_pad_k6 * sizeof(struct fixedbugs_2286_g10) + __builtin_offsetof(struct fixedbugs_2286_g10, h)) + hero_pad_k7 * sizeof(struct fixedbugs_2286_g9) + __builtin_offsetof(struct fixedbugs_2286_g9, h)) + hero_pad_k8 * sizeof(struct fixedbugs_2286_g8) + __builtin_offsetof(struct fixedbugs_2286_g8, h)) + hero_pad_k9 * sizeof(struct fixedbugs_2286_g7) + __builtin_offsetof(struct fixedbugs_2286_g7, h), sizeof(struct fixedbugs_2286_g6), sizeof(((struct fixedbugs_2286_g7 *)0)->h) / sizeof(struct fixedbugs_2286_g6), hero_pad_g_6, hero_pad_n_6); for (size_t hero_pad_k10 = 0; hero_pad_k10 < sizeof(((struct fixedbugs_2286_g7 *)0)->h) / sizeof(struct fixedbugs_2286_g6); hero_pad_k10++) { hero_pad_fill((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)(&h0_r) + hero_pad_k0 * sizeof(struct fixedbugs_2286_g16) + __builtin_offsetof(struct fixedbugs_2286_g16, h)) + hero_pad_k1 * sizeof(struct fixedbugs_2286_g15) + __builtin_offsetof(struct fixedbugs_2286_g15, h)) + hero_pad_k2 * sizeof(struct fixedbugs_2286_g14) + __builtin_offsetof(struct fixedbugs_2286_g14, h)) + hero_pad_k3 * sizeof(struct fixedbugs_2286_g13) + __builtin_offsetof(struct fixedbugs_2286_g13, h)) + hero_pad_k4 * sizeof(struct fixedbugs_2286_g12) + __builtin_offsetof(struct fixedbugs_2286_g12, h)) + hero_pad_k5 * sizeof(struct fixedbugs_2286_g11) + __builtin_offsetof(struct fixedbugs_2286_g11, h)) + hero_pad_k6 * sizeof(struct fixedbugs_2286_g10) + __builtin_offsetof(struct fixedbugs_2286_g10, h)) + hero_pad_k7 * sizeof(struct fixedbugs_2286_g9) + __builtin_offsetof(struct fixedbugs_2286_g9, h)) + hero_pad_k8 * sizeof(struct fixedbugs_2286_g8) + __builtin_offsetof(struct fixedbugs_2286_g8, h)) + hero_pad_k9 * sizeof(struct fixedbugs_2286_g7) + __builtin_offsetof(struct fixedbugs_2286_g7, h)) + hero_pad_k10 * sizeof(struct fixedbugs_2286_g6) + __builtin_offsetof(struct fixedbugs_2286_g6, h), sizeof(struct fixedbugs_2286_g5), sizeof(((struct fixedbugs_2286_g6 *)0)->h) / sizeof(struct fixedbugs_2286_g5), hero_pad_g_5, hero_pad_n_5); for (size_t hero_pad_k11 = 0; hero_pad_k11 < sizeof(((struct fixedbugs_2286_g6 *)0)->h) / sizeof(struct fixedbugs_2286_g5); hero_pad_k11++) { hero_pad_fill((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)(&h0_r) + hero_pad_k0 * sizeof(struct fixedbugs_2286_g16) + __builtin_offsetof(struct fixedbugs_2286_g16, h)) + hero_pad_k1 * sizeof(struct fixedbugs_2286_g15) + __builtin_offsetof(struct fixedbugs_2286_g15, h)) + hero_pad_k2 * sizeof(struct fixedbugs_2286_g14) + __builtin_offsetof(struct fixedbugs_2286_g14, h)) + hero_pad_k3 * sizeof(struct fixedbugs_2286_g13) + __builtin_offsetof(struct fixedbugs_2286_g13, h)) + hero_pad_k4 * sizeof(struct fixedbugs_2286_g12) + __builtin_offsetof(struct fixedbugs_2286_g12, h)) + hero_pad_k5 * sizeof(struct fixedbugs_2286_g11) + __builtin_offsetof(struct fixedbugs_2286_g11, h)) + hero_pad_k6 * sizeof(struct fixedbugs_2286_g10) + __builtin_offsetof(struct fixedbugs_2286_g10, h)) + hero_pad_k7 * sizeof(struct fixedbugs_2286_g9) + __builtin_offsetof(struct fixedbugs_2286_g9, h)) + hero_pad_k8 * sizeof(struct fixedbugs_2286_g8) + __builtin_offsetof(struct fixedbugs_2286_g8, h)) + hero_pad_k9 * sizeof(struct fixedbugs_2286_g7) + __builtin_offsetof(struct fixedbugs_2286_g7, h)) + hero_pad_k10 * sizeof(struct fixedbugs_2286_g6) + __builtin_offsetof(struct fixedbugs_2286_g6, h)) + hero_pad_k11 * sizeof(struct fixedbugs_2286_g5) + __builtin_offsetof(struct fixedbugs_2286_g5, h), sizeof(struct fixedbugs_2286_g4), sizeof(((struct fixedbugs_2286_g5 *)0)->h) / sizeof(struct fixedbugs_2286_g4), hero_pad_g_4, hero_pad_n_4); for (size_t hero_pad_k12 = 0; hero_pad_k12 < sizeof(((struct fixedbugs_2286_g5 *)0)->h) / sizeof(struct fixedbugs_2286_g4); hero_pad_k12++) { hero_pad_fill((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)(&h0_r) + hero_pad_k0 * sizeof(struct fixedbugs_2286_g16) + __builtin_offsetof(struct fixedbugs_2286_g16, h)) + hero_pad_k1 * sizeof(struct fixedbugs_2286_g15) + __builtin_offsetof(struct fixedbugs_2286_g15, h)) + hero_pad_k2 * sizeof(struct fixedbugs_2286_g14) + __builtin_offsetof(struct fixedbugs_2286_g14, h)) + hero_pad_k3 * sizeof(struct fixedbugs_2286_g13) + __builtin_offsetof(struct fixedbugs_2286_g13, h)) + hero_pad_k4 * sizeof(struct fixedbugs_2286_g12) + __builtin_offsetof(struct fixedbugs_2286_g12, h)) + hero_pad_k5 * sizeof(struct fixedbugs_2286_g11) + __builtin_offsetof(struct fixedbugs_2286_g11, h)) + hero_pad_k6 * sizeof(struct fixedbugs_2286_g10) + __builtin_offsetof(struct fixedbugs_2286_g10, h)) + hero_pad_k7 * sizeof(struct fixedbugs_2286_g9) + __builtin_offsetof(struct fixedbugs_2286_g9, h)) + hero_pad_k8 * sizeof(struct fixedbugs_2286_g8) + __builtin_offsetof(struct fixedbugs_2286_g8, h)) + hero_pad_k9 * sizeof(struct fixedbugs_2286_g7) + __builtin_offsetof(struct fixedbugs_2286_g7, h)) + hero_pad_k10 * sizeof(struct fixedbugs_2286_g6) + __builtin_offsetof(struct fixedbugs_2286_g6, h)) + hero_pad_k11 * sizeof(struct fixedbugs_2286_g5) + __builtin_offsetof(struct fixedbugs_2286_g5, h)) + hero_pad_k12 * sizeof(struct fixedbugs_2286_g4) + __builtin_offsetof(struct fixedbugs_2286_g4, h), sizeof(struct fixedbugs_2286_g3), sizeof(((struct fixedbugs_2286_g4 *)0)->h) / sizeof(struct fixedbugs_2286_g3), hero_pad_g_3, hero_pad_n_3); for (size_t hero_pad_k13 = 0; hero_pad_k13 < sizeof(((struct fixedbugs_2286_g4 *)0)->h) / sizeof(struct fixedbugs_2286_g3); hero_pad_k13++) { hero_pad_fill((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)(&h0_r) + hero_pad_k0 * sizeof(struct fixedbugs_2286_g16) + __builtin_offsetof(struct fixedbugs_2286_g16, h)) + hero_pad_k1 * sizeof(struct fixedbugs_2286_g15) + __builtin_offsetof(struct fixedbugs_2286_g15, h)) + hero_pad_k2 * sizeof(struct fixedbugs_2286_g14) + __builtin_offsetof(struct fixedbugs_2286_g14, h)) + hero_pad_k3 * sizeof(struct fixedbugs_2286_g13) + __builtin_offsetof(struct fixedbugs_2286_g13, h)) + hero_pad_k4 * sizeof(struct fixedbugs_2286_g12) + __builtin_offsetof(struct fixedbugs_2286_g12, h)) + hero_pad_k5 * sizeof(struct fixedbugs_2286_g11) + __builtin_offsetof(struct fixedbugs_2286_g11, h)) + hero_pad_k6 * sizeof(struct fixedbugs_2286_g10) + __builtin_offsetof(struct fixedbugs_2286_g10, h)) + hero_pad_k7 * sizeof(struct fixedbugs_2286_g9) + __builtin_offsetof(struct fixedbugs_2286_g9, h)) + hero_pad_k8 * sizeof(struct fixedbugs_2286_g8) + __builtin_offsetof(struct fixedbugs_2286_g8, h)) + hero_pad_k9 * sizeof(struct fixedbugs_2286_g7) + __builtin_offsetof(struct fixedbugs_2286_g7, h)) + hero_pad_k10 * sizeof(struct fixedbugs_2286_g6) + __builtin_offsetof(struct fixedbugs_2286_g6, h)) + hero_pad_k11 * sizeof(struct fixedbugs_2286_g5) + __builtin_offsetof(struct fixedbugs_2286_g5, h)) + hero_pad_k12 * sizeof(struct fixedbugs_2286_g4) + __builtin_offsetof(struct fixedbugs_2286_g4, h)) + hero_pad_k13 * sizeof(struct fixedbugs_2286_g3) + __builtin_offsetof(struct fixedbugs_2286_g3, h), sizeof(struct fixedbugs_2286_g2), sizeof(((struct fixedbugs_2286_g3 *)0)->h) / sizeof(struct fixedbugs_2286_g2), hero_pad_g_2, hero_pad_n_2); for (size_t hero_pad_k14 = 0; hero_pad_k14 < sizeof(((struct fixedbugs_2286_g3 *)0)->h) / sizeof(struct fixedbugs_2286_g2); hero_pad_k14++) { hero_pad_fill((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)(&h0_r) + hero_pad_k0 * sizeof(struct fixedbugs_2286_g16) + __builtin_offsetof(struct fixedbugs_2286_g16, h)) + hero_pad_k1 * sizeof(struct fixedbugs_2286_g15) + __builtin_offsetof(struct fixedbugs_2286_g15, h)) + hero_pad_k2 * sizeof(struct fixedbugs_2286_g14) + __builtin_offsetof(struct fixedbugs_2286_g14, h)) + hero_pad_k3 * sizeof(struct fixedbugs_2286_g13) + __builtin_offsetof(struct fixedbugs_2286_g13, h)) + hero_pad_k4 * sizeof(struct fixedbugs_2286_g12) + __builtin_offsetof(struct fixedbugs_2286_g12, h)) + hero_pad_k5 * sizeof(struct fixedbugs_2286_g11) + __builtin_offsetof(struct fixedbugs_2286_g11, h)) + hero_pad_k6 * sizeof(struct fixedbugs_2286_g10) + __builtin_offsetof(struct fixedbugs_2286_g10, h)) + hero_pad_k7 * sizeof(struct fixedbugs_2286_g9) + __builtin_offsetof(struct fixedbugs_2286_g9, h)) + hero_pad_k8 * sizeof(struct fixedbugs_2286_g8) + __builtin_offsetof(struct fixedbugs_2286_g8, h)) + hero_pad_k9 * sizeof(struct fixedbugs_2286_g7) + __builtin_offsetof(struct fixedbugs_2286_g7, h)) + hero_pad_k10 * sizeof(struct fixedbugs_2286_g6) + __builtin_offsetof(struct fixedbugs_2286_g6, h)) + hero_pad_k11 * sizeof(struct fixedbugs_2286_g5) + __builtin_offsetof(struct fixedbugs_2286_g5, h)) + hero_pad_k12 * sizeof(struct fixedbugs_2286_g4) + __builtin_offsetof(struct fixedbugs_2286_g4, h)) + hero_pad_k13 * sizeof(struct fixedbugs_2286_g3) + __builtin_offsetof(struct fixedbugs_2286_g3, h)) + hero_pad_k14 * sizeof(struct fixedbugs_2286_g2) + __builtin_offsetof(struct fixedbugs_2286_g2, h), sizeof(struct fixedbugs_2286_g1), sizeof(((struct fixedbugs_2286_g2 *)0)->h) / sizeof(struct fixedbugs_2286_g1), hero_pad_g_1, hero_pad_n_1); for (size_t hero_pad_k15 = 0; hero_pad_k15 < sizeof(((struct fixedbugs_2286_g2 *)0)->h) / sizeof(struct fixedbugs_2286_g1); hero_pad_k15++) { hero_pad_fill((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)((unsigned char *)(&h0_r) + hero_pad_k0 * sizeof(struct fixedbugs_2286_g16) + __builtin_offsetof(struct fixedbugs_2286_g16, h)) + hero_pad_k1 * sizeof(struct fixedbugs_2286_g15) + __builtin_offsetof(struct fixedbugs_2286_g15, h)) + hero_pad_k2 * sizeof(struct fixedbugs_2286_g14) + __builtin_offsetof(struct fixedbugs_2286_g14, h)) + hero_pad_k3 * sizeof(struct fixedbugs_2286_g13) + __builtin_offsetof(struct fixedbugs_2286_g13, h)) + hero_pad_k4 * sizeof(struct fixedbugs_2286_g12) + __builtin_offsetof(struct fixedbugs_2286_g12, h)) + hero_pad_k5 * sizeof(struct fixedbugs_2286_g11) + __builtin_offsetof(struct fixedbugs_2286_g11, h)) + hero_pad_k6 * sizeof(struct fixedbugs_2286_g10) + __builtin_offsetof(struct fixedbugs_2286_g10, h)) + hero_pad_k7 * sizeof(struct fixedbugs_2286_g9) + __builtin_offsetof(struct fixedbugs_2286_g9, h)) + hero_pad_k8 * sizeof(struct fixedbugs_2286_g8) + __builtin_offsetof(struct fixedbugs_2286_g8, h)) + hero_pad_k9 * sizeof(struct fixedbugs_2286_g7) + __builtin_offsetof(struct fixedbugs_2286_g7, h)) + hero_pad_k10 * sizeof(struct fixedbugs_2286_g6) + __builtin_offsetof(struct fixedbugs_2286_g6, h)) + hero_pad_k11 * sizeof(struct fixedbugs_2286_g5) + __builtin_offsetof(struct fixedbugs_2286_g5, h)) + hero_pad_k12 * sizeof(struct fixedbugs_2286_g4) + __builtin_offsetof(struct fixedbugs_2286_g4, h)) + hero_pad_k13 * sizeof(struct fixedbugs_2286_g3) + __builtin_offsetof(struct fixedbugs_2286_g3, h)) + hero_pad_k14 * sizeof(struct fixedbugs_2286_g2) + __builtin_offsetof(struct fixedbugs_2286_g2, h)) + hero_pad_k15 * sizeof(struct fixedbugs_2286_g1) + __builtin_offsetof(struct fixedbugs_2286_g1, h), sizeof(struct fixedbugs_2286_g0), sizeof(((struct fixedbugs_2286_g1 *)0)->h) / sizeof(struct fixedbugs_2286_g0), hero_pad_g_0, hero_pad_n_0); } } } } } } } } } } } } } } } }
     t4 = INT64_C(0); t5 = INT64_C(0); t6 = INT64_C(0); t7 = INT64_C(0); t8 = INT64_C(0); t9 = INT64_C(0); t10 = INT64_C(0); t11 = INT64_C(0); t12 = INT64_C(0); t13 = INT64_C(0); t14 = INT64_C(0); t15 = INT64_C(0); t16 = INT64_C(0); t17 = INT64_C(0); t18 = INT64_C(0); t19 = INT64_C(0); t20 = INT64_C(0); t21 = h0_r.h[((uint64_t)(t4) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 100, 11), (int64_t)0) : (t4))].h[((uint64_t)(t5) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 100, 11), (int64_t)0) : (t5))].h[((uint64_t)(t6) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 100, 11), (int64_t)0) : (t6))].h[((uint64_t)(t7) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 100, 11), (int64_t)0) : (t7))].h[((uint64_t)(t8) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 100, 11), (int64_t)0) : (t8))].h[((uint64_t)(t9) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 100, 11), (int64_t)0) : (t9))].h[((uint64_t)(t10) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 100, 11), (int64_t)0) : (t10))].h[((uint64_t)(t11) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 100, 11), (int64_t)0) : (t11))].h[((uint64_t)(t12) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 100, 11), (int64_t)0) : (t12))].h[((uint64_t)(t13) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 100, 11), (int64_t)0) : (t13))].h[((uint64_t)(t14) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 100, 11), (int64_t)0) : (t14))].h[((uint64_t)(t15) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 100, 11), (int64_t)0) : (t15))].h[((uint64_t)(t16) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 100, 11), (int64_t)0) : (t16))].h[((uint64_t)(t17) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 100, 11), (int64_t)0) : (t17))].h[((uint64_t)(t18) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 100, 11), (int64_t)0) : (t18))].h[((uint64_t)(t19) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 100, 11), (int64_t)0) : (t19))].v[((uint64_t)(t20) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 100, 11), (int64_t)0) : (t20))]; hero_print_int(t21); hero_print_end();
     t22 = INT64_C(1); t23 = INT64_C(1); t24 = INT64_C(1); t25 = INT64_C(1); t26 = INT64_C(1); t27 = INT64_C(1); t28 = INT64_C(1); t29 = INT64_C(1); t30 = INT64_C(1); t31 = INT64_C(1); t32 = INT64_C(1); t33 = INT64_C(1); t34 = INT64_C(1); t35 = INT64_C(1); t36 = INT64_C(1); t37 = INT64_C(1); t38 = INT64_C(1); t39 = h0_r.h[((uint64_t)(t22) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 101, 11), (int64_t)0) : (t22))].h[((uint64_t)(t23) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 101, 11), (int64_t)0) : (t23))].h[((uint64_t)(t24) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 101, 11), (int64_t)0) : (t24))].h[((uint64_t)(t25) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 101, 11), (int64_t)0) : (t25))].h[((uint64_t)(t26) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 101, 11), (int64_t)0) : (t26))].h[((uint64_t)(t27) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 101, 11), (int64_t)0) : (t27))].h[((uint64_t)(t28) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 101, 11), (int64_t)0) : (t28))].h[((uint64_t)(t29) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 101, 11), (int64_t)0) : (t29))].h[((uint64_t)(t30) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 101, 11), (int64_t)0) : (t30))].h[((uint64_t)(t31) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 101, 11), (int64_t)0) : (t31))].h[((uint64_t)(t32) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 101, 11), (int64_t)0) : (t32))].h[((uint64_t)(t33) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 101, 11), (int64_t)0) : (t33))].h[((uint64_t)(t34) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 101, 11), (int64_t)0) : (t34))].h[((uint64_t)(t35) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 101, 11), (int64_t)0) : (t35))].h[((uint64_t)(t36) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 101, 11), (int64_t)0) : (t36))].h[((uint64_t)(t37) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 101, 11), (int64_t)0) : (t37))].v[((uint64_t)(t38) >= UINT64_C(2) ? (hero_panic_at("index out of range for a fixed array", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.hero", "fixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs.main", 101, 11), (int64_t)0) : (t38))]; hero_print_int(t39); hero_print_end(); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_h0_r); return;
-#line 569 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
+#line 626 "fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns.c"
 }
 #undef h0_r
 #undef t3
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G0_eq(const struct fixedbugs_2286_g0 *a, const struct fixedbugs_2286_g0 *b) {
-    if (!((a->v[0] == b->v[0] && a->v[1] == b->v[1]))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G0_eq(const struct fixedbugs_2286_g0 *hero_a, const struct fixedbugs_2286_g0 *hero_b) {
+    if (!((hero_a->v[0] == hero_b->v[0] && hero_a->v[1] == hero_b->v[1]))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G0_hash(const void *elem) {
-    const struct fixedbugs_2286_g0 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_int)->hash(&v->v[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_int)->hash(&v->v[1])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G0_hash(const void *hero_elem) {
+    const struct fixedbugs_2286_g0 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->v[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_int)->hash(&hero_v->v[1])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G1_eq(const struct fixedbugs_2286_g1 *a, const struct fixedbugs_2286_g1 *b) {
-    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G0_eq(&a->h[0], &b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G0_eq(&a->h[1], &b->h[1])))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G1_eq(const struct fixedbugs_2286_g1 *hero_a, const struct fixedbugs_2286_g1 *hero_b) {
+    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G0_eq(&hero_a->h[0], &hero_b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G0_eq(&hero_a->h[1], &hero_b->h[1])))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G1_hash(const void *elem) {
-    const struct fixedbugs_2286_g1 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G0_hash(&v->h[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G0_hash(&v->h[1])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G1_hash(const void *hero_elem) {
+    const struct fixedbugs_2286_g1 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G0_hash(&hero_v->h[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G0_hash(&hero_v->h[1])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G2_eq(const struct fixedbugs_2286_g2 *a, const struct fixedbugs_2286_g2 *b) {
-    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G1_eq(&a->h[0], &b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G1_eq(&a->h[1], &b->h[1])))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G2_eq(const struct fixedbugs_2286_g2 *hero_a, const struct fixedbugs_2286_g2 *hero_b) {
+    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G1_eq(&hero_a->h[0], &hero_b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G1_eq(&hero_a->h[1], &hero_b->h[1])))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G2_hash(const void *elem) {
-    const struct fixedbugs_2286_g2 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G1_hash(&v->h[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G1_hash(&v->h[1])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G2_hash(const void *hero_elem) {
+    const struct fixedbugs_2286_g2 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G1_hash(&hero_v->h[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G1_hash(&hero_v->h[1])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G3_eq(const struct fixedbugs_2286_g3 *a, const struct fixedbugs_2286_g3 *b) {
-    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G2_eq(&a->h[0], &b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G2_eq(&a->h[1], &b->h[1])))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G3_eq(const struct fixedbugs_2286_g3 *hero_a, const struct fixedbugs_2286_g3 *hero_b) {
+    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G2_eq(&hero_a->h[0], &hero_b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G2_eq(&hero_a->h[1], &hero_b->h[1])))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G3_hash(const void *elem) {
-    const struct fixedbugs_2286_g3 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G2_hash(&v->h[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G2_hash(&v->h[1])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G3_hash(const void *hero_elem) {
+    const struct fixedbugs_2286_g3 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G2_hash(&hero_v->h[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G2_hash(&hero_v->h[1])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G4_eq(const struct fixedbugs_2286_g4 *a, const struct fixedbugs_2286_g4 *b) {
-    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G3_eq(&a->h[0], &b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G3_eq(&a->h[1], &b->h[1])))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G4_eq(const struct fixedbugs_2286_g4 *hero_a, const struct fixedbugs_2286_g4 *hero_b) {
+    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G3_eq(&hero_a->h[0], &hero_b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G3_eq(&hero_a->h[1], &hero_b->h[1])))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G4_hash(const void *elem) {
-    const struct fixedbugs_2286_g4 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G3_hash(&v->h[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G3_hash(&v->h[1])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G4_hash(const void *hero_elem) {
+    const struct fixedbugs_2286_g4 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G3_hash(&hero_v->h[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G3_hash(&hero_v->h[1])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G5_eq(const struct fixedbugs_2286_g5 *a, const struct fixedbugs_2286_g5 *b) {
-    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G4_eq(&a->h[0], &b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G4_eq(&a->h[1], &b->h[1])))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G5_eq(const struct fixedbugs_2286_g5 *hero_a, const struct fixedbugs_2286_g5 *hero_b) {
+    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G4_eq(&hero_a->h[0], &hero_b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G4_eq(&hero_a->h[1], &hero_b->h[1])))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G5_hash(const void *elem) {
-    const struct fixedbugs_2286_g5 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G4_hash(&v->h[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G4_hash(&v->h[1])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G5_hash(const void *hero_elem) {
+    const struct fixedbugs_2286_g5 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G4_hash(&hero_v->h[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G4_hash(&hero_v->h[1])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G6_eq(const struct fixedbugs_2286_g6 *a, const struct fixedbugs_2286_g6 *b) {
-    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G5_eq(&a->h[0], &b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G5_eq(&a->h[1], &b->h[1])))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G6_eq(const struct fixedbugs_2286_g6 *hero_a, const struct fixedbugs_2286_g6 *hero_b) {
+    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G5_eq(&hero_a->h[0], &hero_b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G5_eq(&hero_a->h[1], &hero_b->h[1])))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G6_hash(const void *elem) {
-    const struct fixedbugs_2286_g6 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G5_hash(&v->h[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G5_hash(&v->h[1])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G6_hash(const void *hero_elem) {
+    const struct fixedbugs_2286_g6 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G5_hash(&hero_v->h[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G5_hash(&hero_v->h[1])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G7_eq(const struct fixedbugs_2286_g7 *a, const struct fixedbugs_2286_g7 *b) {
-    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G6_eq(&a->h[0], &b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G6_eq(&a->h[1], &b->h[1])))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G7_eq(const struct fixedbugs_2286_g7 *hero_a, const struct fixedbugs_2286_g7 *hero_b) {
+    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G6_eq(&hero_a->h[0], &hero_b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G6_eq(&hero_a->h[1], &hero_b->h[1])))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G7_hash(const void *elem) {
-    const struct fixedbugs_2286_g7 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G6_hash(&v->h[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G6_hash(&v->h[1])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G7_hash(const void *hero_elem) {
+    const struct fixedbugs_2286_g7 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G6_hash(&hero_v->h[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G6_hash(&hero_v->h[1])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G8_eq(const struct fixedbugs_2286_g8 *a, const struct fixedbugs_2286_g8 *b) {
-    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G7_eq(&a->h[0], &b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G7_eq(&a->h[1], &b->h[1])))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G8_eq(const struct fixedbugs_2286_g8 *hero_a, const struct fixedbugs_2286_g8 *hero_b) {
+    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G7_eq(&hero_a->h[0], &hero_b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G7_eq(&hero_a->h[1], &hero_b->h[1])))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G8_hash(const void *elem) {
-    const struct fixedbugs_2286_g8 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G7_hash(&v->h[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G7_hash(&v->h[1])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G8_hash(const void *hero_elem) {
+    const struct fixedbugs_2286_g8 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G7_hash(&hero_v->h[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G7_hash(&hero_v->h[1])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G9_eq(const struct fixedbugs_2286_g9 *a, const struct fixedbugs_2286_g9 *b) {
-    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G8_eq(&a->h[0], &b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G8_eq(&a->h[1], &b->h[1])))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G9_eq(const struct fixedbugs_2286_g9 *hero_a, const struct fixedbugs_2286_g9 *hero_b) {
+    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G8_eq(&hero_a->h[0], &hero_b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G8_eq(&hero_a->h[1], &hero_b->h[1])))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G9_hash(const void *elem) {
-    const struct fixedbugs_2286_g9 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G8_hash(&v->h[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G8_hash(&v->h[1])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G9_hash(const void *hero_elem) {
+    const struct fixedbugs_2286_g9 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G8_hash(&hero_v->h[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G8_hash(&hero_v->h[1])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G10_eq(const struct fixedbugs_2286_g10 *a, const struct fixedbugs_2286_g10 *b) {
-    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G9_eq(&a->h[0], &b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G9_eq(&a->h[1], &b->h[1])))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G10_eq(const struct fixedbugs_2286_g10 *hero_a, const struct fixedbugs_2286_g10 *hero_b) {
+    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G9_eq(&hero_a->h[0], &hero_b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G9_eq(&hero_a->h[1], &hero_b->h[1])))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G10_hash(const void *elem) {
-    const struct fixedbugs_2286_g10 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G9_hash(&v->h[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G9_hash(&v->h[1])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G10_hash(const void *hero_elem) {
+    const struct fixedbugs_2286_g10 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G9_hash(&hero_v->h[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G9_hash(&hero_v->h[1])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G11_eq(const struct fixedbugs_2286_g11 *a, const struct fixedbugs_2286_g11 *b) {
-    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G10_eq(&a->h[0], &b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G10_eq(&a->h[1], &b->h[1])))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G11_eq(const struct fixedbugs_2286_g11 *hero_a, const struct fixedbugs_2286_g11 *hero_b) {
+    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G10_eq(&hero_a->h[0], &hero_b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G10_eq(&hero_a->h[1], &hero_b->h[1])))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G11_hash(const void *elem) {
-    const struct fixedbugs_2286_g11 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G10_hash(&v->h[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G10_hash(&v->h[1])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G11_hash(const void *hero_elem) {
+    const struct fixedbugs_2286_g11 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G10_hash(&hero_v->h[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G10_hash(&hero_v->h[1])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G12_eq(const struct fixedbugs_2286_g12 *a, const struct fixedbugs_2286_g12 *b) {
-    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G11_eq(&a->h[0], &b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G11_eq(&a->h[1], &b->h[1])))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G12_eq(const struct fixedbugs_2286_g12 *hero_a, const struct fixedbugs_2286_g12 *hero_b) {
+    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G11_eq(&hero_a->h[0], &hero_b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G11_eq(&hero_a->h[1], &hero_b->h[1])))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G12_hash(const void *elem) {
-    const struct fixedbugs_2286_g12 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G11_hash(&v->h[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G11_hash(&v->h[1])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G12_hash(const void *hero_elem) {
+    const struct fixedbugs_2286_g12 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G11_hash(&hero_v->h[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G11_hash(&hero_v->h[1])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G13_eq(const struct fixedbugs_2286_g13 *a, const struct fixedbugs_2286_g13 *b) {
-    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G12_eq(&a->h[0], &b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G12_eq(&a->h[1], &b->h[1])))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G13_eq(const struct fixedbugs_2286_g13 *hero_a, const struct fixedbugs_2286_g13 *hero_b) {
+    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G12_eq(&hero_a->h[0], &hero_b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G12_eq(&hero_a->h[1], &hero_b->h[1])))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G13_hash(const void *elem) {
-    const struct fixedbugs_2286_g13 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G12_hash(&v->h[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G12_hash(&v->h[1])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G13_hash(const void *hero_elem) {
+    const struct fixedbugs_2286_g13 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G12_hash(&hero_v->h[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G12_hash(&hero_v->h[1])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G14_eq(const struct fixedbugs_2286_g14 *a, const struct fixedbugs_2286_g14 *b) {
-    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G13_eq(&a->h[0], &b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G13_eq(&a->h[1], &b->h[1])))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G14_eq(const struct fixedbugs_2286_g14 *hero_a, const struct fixedbugs_2286_g14 *hero_b) {
+    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G13_eq(&hero_a->h[0], &hero_b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G13_eq(&hero_a->h[1], &hero_b->h[1])))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G14_hash(const void *elem) {
-    const struct fixedbugs_2286_g14 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G13_hash(&v->h[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G13_hash(&v->h[1])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G14_hash(const void *hero_elem) {
+    const struct fixedbugs_2286_g14 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G13_hash(&hero_v->h[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G13_hash(&hero_v->h[1])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G15_eq(const struct fixedbugs_2286_g15 *a, const struct fixedbugs_2286_g15 *b) {
-    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G14_eq(&a->h[0], &b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G14_eq(&a->h[1], &b->h[1])))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G15_eq(const struct fixedbugs_2286_g15 *hero_a, const struct fixedbugs_2286_g15 *hero_b) {
+    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G14_eq(&hero_a->h[0], &hero_b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G14_eq(&hero_a->h[1], &hero_b->h[1])))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G15_hash(const void *elem) {
-    const struct fixedbugs_2286_g15 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G14_hash(&v->h[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G14_hash(&v->h[1])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G15_hash(const void *hero_elem) {
+    const struct fixedbugs_2286_g15 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G14_hash(&hero_v->h[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G14_hash(&hero_v->h[1])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G16_eq(const struct fixedbugs_2286_g16 *a, const struct fixedbugs_2286_g16 *b) {
-    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G15_eq(&a->h[0], &b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G15_eq(&a->h[1], &b->h[1])))) return false;
+HERO_TU_LOCAL bool h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G16_eq(const struct fixedbugs_2286_g16 *hero_a, const struct fixedbugs_2286_g16 *hero_b) {
+    if (!((h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G15_eq(&hero_a->h[0], &hero_b->h[0]) && h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G15_eq(&hero_a->h[1], &hero_b->h[1])))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G16_hash(const void *elem) {
-    const struct fixedbugs_2286_g16 *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G15_hash(&v->h[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G15_hash(&v->h[1])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G16_hash(const void *hero_elem) {
+    const struct fixedbugs_2286_g16 *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G15_hash(&hero_v->h[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_0G15_hash(&hero_v->h[1])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("72ed848e60427ac1", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2451a6fc4cea48f2", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns\tfixedbugs-2286-a-chain-of-group-records-nested-by-copy-builds-and-runs\n");
     h_fixedbugs2286achainofgrouprecordsnestedbycopybuildsandruns_main();
     hero_runtime_check_leaks();

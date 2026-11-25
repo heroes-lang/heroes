@@ -1,0 +1,94 @@
+# inventory: stock management for a small chain of shops. It keeps the
+# chain's locations, its products and their variants, every variant's stock
+# at every location, and every movement of stock (receipts from suppliers,
+# sales at the tills, transfers between locations, adjustments and counts)
+# with an audit trail of everything asked of it, refusals included. It
+# values stock at moving average cost in exact cents, tells which shelves
+# are at or below their reorder point, imports catalogues and count sheets
+# from CSV and XLSX (every rejected row told with its line and reason), and
+# exports the stock the same two ways. One model of the books stands over
+# three stores the operator chooses by configuration: MySQL (or MariaDB),
+# any database the system's ODBC manager reaches, and MongoDB, which holds
+# the same books as documents in BSON. Every key is a UUID of version 7
+# the program makes, so a catalogue keeps its keys in every store.
+#
+# Run for real:
+#
+#     heroes build rebel/examples/inventory/main.hero -o inventory
+#     ./inventory init shop.toml                   # make the tables or indexes
+#     ./inventory location shop.toml WH Warehouse
+#     ./inventory import shop.toml products catalogue.xlsx
+#     ./inventory import shop.toml counts opening.csv
+#     ./inventory receive shop.toml TEE-BLK-M WH 24 7.10 PO-1042
+#     ./inventory sell shop.toml TEE-BLK-M SHOP-N 2
+#     ./inventory account shop.toml
+#     ./inventory export shop.toml stock.xlsx
+#
+# `conf/settings.hero` documents the configuration file; `cli/commands.hero`
+# every command. A password stands in the environment
+# (`INVENTORY_STORE__MYSQL__PASSWORD`), never in the file. MySQL is reached
+# over TLS checked against the system's store unless the URL says
+# `ssl-mode=DISABLED`; `sql/mysql` begins no TLS on macOS, so there a MySQL
+# store is reached over loopback or a tunnel.
+#
+# The demo, `./inventory demo` (`main.args`), starts on loopback the two
+# stand-ins it carries, a MySQL server (the client/server protocol's
+# handshake with `caching_sha2_password`, the text protocol and prepared
+# statements, its statements run on SQLite in memory) and a MongoDB server
+# (OP_MSG with BSON: `hello`, `insert`, `update`, `delete`, `find`,
+# `aggregate`, `createIndexes`); it runs one scripted day against each
+# store, prints the account once and, for each store, the digest of the
+# account that store gave, which is the same for every store; then it
+# imports a CSV and a spreadsheet full of bad rows and exports the stock as
+# CSV and XLSX. The ODBC store runs through SQLite's ODBC driver
+# (`libsqliteodbc`, registered as `SQLite3`) where the machine has the
+# driver manager and the driver; elsewhere its one line reads
+# `odbc: skipped: no ODBC driver`. That line is the transcript's one line
+# that may differ: `main.expected` holds it as a machine without ODBC
+# prints it, and a machine with both, as the CI's Linux and macOS legs
+# install them, prints there the line the MySQL and MongoDB stores print,
+# its first word `odbc:`, the same digest among them, and no other line
+# changes.
+#
+# Rebel's packages, and what for:
+#
+# - `sql`, `sql/mysql`, `sql/odbc`, `sql/build`: the SQL store, its
+#   queries composed as values and re-spelt for MySQL and ODBC;
+# - `mongodb`, `bson`: the MongoDB store, keys as BSON UUIDs, a variant's
+#   levels one document so a movement is one atomic write; and the
+#   stand-in's OP_MSG;
+# - `sql/sqlite`: the engine behind the MySQL stand-in;
+# - `xlsx`, `csv`, `fs`, `io`: imports read by line or row, exports written;
+# - `uuid`: every key; `config`, `json`: the configuration in layers;
+# - `containers/indexed`: an import's SKUs and shelves in file order, each
+#   with the line that first named it;
+# - `crypto`, `random`, `bytes`: the MySQL stand-in's login, the digests of
+#   the accounts;
+# - `net`, `os`: the stand-ins' sockets and the stop, the stand-ins on
+#   threads of the language's own (`spawn`, mailboxes);
+# - `time`, `strings`, `numbers`, `lists`, `maps`: throughout.
+
+use cli/commands
+use demo/supervise
+
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program ends as its
+# other usage errors do, where `args()` would abort.
+function text_arguments() -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                print(f"inventory: argument {given.len() + 1} is not UTF-8")
+                exit(code: 2)
+
+    return given
+
+function main()
+    words = text_arguments()
+
+    if words.len() == 1 && words[0] == "demo"
+        exit(code: supervise.run())
+    exit(code: commands.run(words))

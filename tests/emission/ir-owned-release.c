@@ -28,6 +28,44 @@
 #include <stdlib.h>
 #include <string.h>
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -35,6 +73,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -56,7 +113,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -106,28 +163,28 @@ HERO_STR_STATIC(hero_str_5263489, "a null `cstr` holds no text");
 HERO_STR_STATIC(hero_str_34624695, "not_text");
 HERO_STR_STATIC(hero_str_4bb64adb, "the bytes behind this `cstr` are not UTF-8");
 
-#line 110 "ownedrelease.c"
+#line 167 "ownedrelease.c"
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -148,43 +205,43 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 23 "tests/golden/ir/owned-release.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_ownedrelease_free(char * a0) { (void)(free)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_ownedrelease_free(char * hero_a0) { (void)(free)(hero_a0); }
 #line 26
-__attribute__((unused)) static void hero_ffi_probe_h_ownedrelease_strdup(const char * a0) { (void)(strdup)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_ownedrelease_strdup(const char * hero_a0) { (void)(strdup)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 164 "ownedrelease.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 221 "ownedrelease.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 HeroStr h_ownedrelease_copy_of(HeroStr h0_text);
 int64_t h_library_HERO_STR_OK(void);
 h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_caller);
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c);
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c);
 
 #line 28 "tests/golden/ir/owned-release.hero"
-HeroStr h_ownedrelease_copy_of(HeroStr h0_text) { HERO_NODEBUG const char *h1_owned0, *t2, *t3, *t4, *t6, *t7, *t9; HERO_NODEBUG h_0opt_f87774a h2_owned1 = {0}, h3_f0 = {0}, h5_own5 = {0}, t5, t11, t12, t16, t20, t21, t22; HERO_NODEBUG HeroStr h4_r0 = {0}, t1, t17, t18, t19, t23, t24; HERO_NODEBUG bool t8, t15; HERO_NODEBUG void *t10; HERO_NODEBUG int64_t t13, t14; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_text; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"owned-release.hero", "owned-release.copy_of", 29, 19}; t2 = hero_str_lend_at(t1, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"owned-release.hero", "owned-release.copy_of", 29, 12}; t3 = (const char *)strdup(hero_cstr_nonnull_at(t2, &hero_here)); } h1_owned0 = t3; t4 = h1_owned0; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"owned-release.hero", "owned-release.copy_of", 29, 12}; t5 = h_library_validated(t4, &hero_here); } t20 = h5_own5; h5_own5 = t5; h_0opt_f87774a_release(&t20); t21 = h2_owned1; h_0opt_f87774a_retain(&t5); h2_owned1 = t5; h_0opt_f87774a_release(&t21); t6 = ((void *)0); t7 = h1_owned0; t8 = t7 != t6; if (t8) goto bb1; else goto bb2; bb1: t9 = h1_owned0; t10 = (void *)(char *)t9; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"owned-release.hero", "owned-release.copy_of", 29, 12}; (void)free(t10); } goto bb2; bb2: t11 = h2_owned1; t22 = h3_f0; h_0opt_f87774a_retain(&t11); h3_f0 = t11; h_0opt_f87774a_release(&t22); t12 = h3_f0; t13 = t12.tag; t14 = INT64_C(0); t15 = t13 == t14; if (t15) goto bb3; else goto bb4; bb3: t16 = h3_f0; t17 = t16.as.ok; t23 = h4_r0; hero_str_incref(t17); h4_r0 = t17; hero_str_decref(t23); goto bb5; bb4: t18 = HERO_STR_LIT(hero_str_0); t24 = h4_r0; hero_str_incref(t18); h4_r0 = t18; hero_str_decref(t24); goto bb5; bb5: t19 = h4_r0;
-#line 188 "ownedrelease.c"
+HeroStr h_ownedrelease_copy_of(HeroStr h0_text) { HERO_NODEBUG const char *h1_owned0, *t2, *t3, *t4, *t6, *t7, *t9; HERO_NODEBUG h_0opt_f87774a h2_owned1 = {0}, h3_f0 = {0}, h5_own5 = {0}, t5, t11, t12, t16, t20, t21, t22; HERO_NODEBUG HeroStr h4_r0 = {0}, t1, t17, t18, t19, t23, t24; HERO_NODEBUG bool t8, t15; HERO_NODEBUG void *t10; HERO_NODEBUG int64_t t13, t14; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_text; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"owned-release.hero", "owned-release.copy_of", 29, 19}; t2 = hero_str_lend_at(t1, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"owned-release.hero", "owned-release.copy_of", 29, 12}; t3 = (const char *)strdup(hero_cstr_nonnull_at(t2, &hero_here)); } h1_owned0 = t3; t4 = h1_owned0; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"owned-release.hero", "owned-release.copy_of", 29, 12}; t5 = h_library_validated(t4, &hero_here); } t20 = h5_own5; h5_own5 = t5; h_0opt_f87774a_release(&t20); t21 = h2_owned1; h_0opt_f87774a_retain(&t5); h2_owned1 = t5; h_0opt_f87774a_release(&t21); t6 = ((void *)0); t7 = h1_owned0; t8 = t7 != t6; if (t8) goto hero_bb1; else goto hero_bb2; hero_bb1: t9 = h1_owned0; t10 = (void *)(char *)t9; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"owned-release.hero", "owned-release.copy_of", 29, 12}; (void)free(t10); } goto hero_bb2; hero_bb2: t11 = h2_owned1; t22 = h3_f0; h_0opt_f87774a_retain(&t11); h3_f0 = t11; h_0opt_f87774a_release(&t22); t12 = h3_f0; t13 = t12.hero_tag; t14 = INT64_C(0); t15 = t13 == t14; if (t15) goto hero_bb3; else goto hero_bb4; hero_bb3: t16 = h3_f0; t17 = t16.hero_as.hero_ok; t23 = h4_r0; hero_str_incref(t17); h4_r0 = t17; hero_str_decref(t23); goto hero_bb5; hero_bb4: t18 = HERO_STR_LIT(hero_str_0); t24 = h4_r0; hero_str_incref(t18); h4_r0 = t18; hero_str_decref(t24); goto hero_bb5; hero_bb5: t19 = h4_r0;
+#line 245 "ownedrelease.c"
     hero_str_incref(t19);
     h_0opt_f87774a_release(hero_slot_escape(&h2_owned1));
     h_0opt_f87774a_release(hero_slot_escape(&h3_f0));
@@ -195,7 +252,7 @@ HeroStr h_ownedrelease_copy_of(HeroStr h0_text) { HERO_NODEBUG const char *h1_ow
 
 #line 122 "<heroes library>"
 int64_t h_library_HERO_STR_OK(void) { return HERO_STR_OK;
-#line 199 "ownedrelease.c"
+#line 256 "ownedrelease.c"
 }
 
 #line 152 "<heroes library>"
@@ -203,19 +260,19 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
 #line 152
 #define h1_status (*hero_lend_h1_status)
 #line 152
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto bb2; else goto bb3; bb1:
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.validated", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, t6, t14, t17, t18, t21, t22, t23; HERO_NODEBUG HeroStr h4_own4 = {0}, t4, t5, t9, t13, t15, t16, t19, t20; HERO_NODEBUG const char *t1, *t2, *t8; HERO_NODEBUG bool t3, t12; HERO_NODEBUG int64_t t7, t10, t11; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h0_c; t2 = ((void *)0); t3 = t1 == t2; if (t3) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 155
     t7 = INT64_C(0); h1_status = t7;
-    t8 = h0_c; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
-    t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto bb5; else goto bb6; bb2:
+    t8 = h0_c; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_str_try_from_cstr", "status"); t9 = hero_str_try_from_cstr(hero_cstr_nonnull_at(t8, &hero_here), (void *)&h1_status); } t19 = h4_own4; h4_own4 = t9; hero_str_decref(t19); t20 = h2_text; hero_str_incref(t9); h2_text = t9; hero_str_decref(t20);
+    t10 = h1_status; t11 = h_library_HERO_STR_OK(); t12 = t10 == t11; if (t12) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 154
-    t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto bb7; bb3: goto bb1; bb4:
+    t4 = HERO_STR_LIT(hero_str_4a05a740); t5 = HERO_STR_LIT(hero_str_5263489); hero_str_incref(t4); hero_str_incref(t5); t6 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t4, .msg = t5}}; t21 = h5_own5; h5_own5 = t6; h_0opt_f87774a_release(&t21); h3_ret0 = t6; goto hero_bb7; hero_bb3: goto hero_bb1; hero_bb4:
 #line 159
-    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto bb7; bb5:
+    t15 = HERO_STR_LIT(hero_str_34624695); t16 = HERO_STR_LIT(hero_str_4bb64adb); hero_str_incref(t15); hero_str_incref(t16); t17 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t15, .msg = t16}}; t22 = h6_own6; h6_own6 = t17; h_0opt_f87774a_release(&t22); h3_ret0 = t17; goto hero_bb7; hero_bb5:
 #line 158
-    t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto bb7; bb6: goto bb4; bb7:
-#line 219 "ownedrelease.c"
+    t13 = h2_text; hero_str_incref(t13); t14 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = t13}; t23 = h7_own7; h7_own7 = t14; h_0opt_f87774a_release(&t23); h3_ret0 = t14; goto hero_bb7; hero_bb6: goto hero_bb4; hero_bb7:
+#line 276 "ownedrelease.c"
     t18 = h3_ret0;
     h_0opt_f87774a_retain(&t18);
     hero_str_release_at(&h2_text);
@@ -227,103 +284,103 @@ h_0opt_f87774a h_library_validated(const char * h0_c, const HeroPlace *hero_call
     return t18;
 }
 #undef h1_status
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_validated(const char * h0_c) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.validated", 152, 1};
     return h_library_validated(h0_c, &hero_here);
 }
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 

@@ -27,14 +27,18 @@ use emit/writer
 use ir/layout
 use source
 
-# Every struct and prototype, before any body: a put calls its parts'.
+# Every struct and prototype, before any body: a put calls its parts'. A
+# box's members are of the compiler's own form, `hero_head` and `hero_fn`:
+# the unit's C stands after every header its groups name, and a header's
+# `#define head 1` made a program calling `spawn` an internal error at exit
+# 2 until 2026-11-24.
 function prototypes(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], crossed: crossing.Crossed)
     for fn_ty in crossed.started
         writer.at_generated(@w)
         box = crossing.box_of(c, s, decls, fn_ty: fn_ty)
         writer.line(
             @w,
-            text: "typedef struct { HeroThreadBox head; " + ctype.func_of(names, ty: fn_ty) + " f; } " + box + ";"
+            text: "typedef struct { HeroThreadBox hero_head; " + ctype.func_of(names, ty: fn_ty) + " hero_fn; } " + box + ";"
         )
         writer.line(
             @w,
@@ -45,19 +49,19 @@ function prototypes(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: 
         writer.at_generated(@w)
         writer.line(
             @w,
-            text: "HERO_TU_LOCAL void " + crossing.put_of(c, s, decls, ty: ty) + "(HeroCross *b, const void *p);"
+            text: "HERO_TU_LOCAL void " + crossing.put_of(c, s, decls, ty: ty) + "(HeroCross *hero_b, const void *hero_p);"
         )
 
     for ty in crossed.takes
         writer.at_generated(@w)
         writer.line(
             @w,
-            text: "HERO_TU_LOCAL void " + crossing.take_of(c, s, decls, ty: ty) + "(HeroCross *b, void *p);"
+            text: "HERO_TU_LOCAL void " + crossing.take_of(c, s, decls, ty: ty) + "(HeroCross *hero_b, void *hero_p);"
         )
 
     for ty in crossed.sents
         writer.at_generated(@w)
-        writer.line(@w, text: "HERO_TU_LOCAL void " + crossing.sent_of(c, s, decls, ty: ty) + "(void *cell);")
+        writer.line(@w, text: "HERO_TU_LOCAL void " + crossing.sent_of(c, s, decls, ty: ty) + "(void *hero_cell);")
 
     if crossed.started.len() + crossed.puts.len() + crossed.takes.len() + crossed.sents.len() > 0
         writer.blank(@w)
@@ -67,7 +71,7 @@ function bodies(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: sour
         writer.at_generated(@w)
         writer.line(
             @w,
-            text: "HERO_TU_LOCAL void " + crossing.put_of(c, s, decls, ty: ty) + "(HeroCross *b, const void *p) {"
+            text: "HERO_TU_LOCAL void " + crossing.put_of(c, s, decls, ty: ty) + "(HeroCross *hero_b, const void *hero_p) {"
         )
         body(@w, c, names, s, decls, ty: ty, verb: "put")
         writer.line(@w, text: "}")
@@ -77,7 +81,7 @@ function bodies(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: sour
         writer.at_generated(@w)
         writer.line(
             @w,
-            text: "HERO_TU_LOCAL void " + crossing.take_of(c, s, decls, ty: ty) + "(HeroCross *b, void *p) {"
+            text: "HERO_TU_LOCAL void " + crossing.take_of(c, s, decls, ty: ty) + "(HeroCross *hero_b, void *hero_p) {"
         )
         body(@w, c, names, s, decls, ty: ty, verb: "take")
         writer.line(@w, text: "}")
@@ -85,7 +89,7 @@ function bodies(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: sour
 
     for ty in crossed.sents
         writer.at_generated(@w)
-        writer.line(@w, text: "HERO_TU_LOCAL void " + crossing.sent_of(c, s, decls, ty: ty) + "(void *cell) {")
+        writer.line(@w, text: "HERO_TU_LOCAL void " + crossing.sent_of(c, s, decls, ty: ty) + "(void *hero_cell) {")
         body(@w, c, names, s, decls, ty: ty, verb: "sent")
         writer.line(@w, text: "}")
         writer.blank(@w)
@@ -101,7 +105,7 @@ function body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source
     if verb != "sent" && crossing.plain(c, decls, ty: ty)
         writer.line(
             @w,
-            text: "    hero_cross_" + verb + "_raw(b, p, (int64_t)sizeof(" + ctype.c_type(names, c: c, ty: ty).must() + "));"
+            text: "    hero_cross_" + verb + "_raw(hero_b, hero_p, (int64_t)sizeof(" + ctype.c_type(names, c: c, ty: ty).must() + "));"
         )
         return
 
@@ -110,33 +114,33 @@ function body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source
             if verb == "put"
                 writer.line(
                     @w,
-                    text: "    hero_cross_put_array(b, p, " + crossing.put_of(c, s, decls, ty: a.element) + ");"
+                    text: "    hero_cross_put_array(hero_b, hero_p, " + crossing.put_of(c, s, decls, ty: a.element) + ");"
                 )
             else if verb == "take"
                 writer.line(
                     @w,
-                    text: "    hero_cross_take_array(b, p, " + desc(c, names, a.element) + ", " + crossing.take_of(c, s, decls, ty: a.element) + ");"
+                    text: "    hero_cross_take_array(hero_b, hero_p, " + desc(c, names, a.element) + ", " + crossing.take_of(c, s, decls, ty: a.element) + ");"
                 )
             else
                 writer.line(
                     @w,
-                    text: "    hero_cross_sent_array(cell, " + crossing.sent_of(c, s, decls, ty: a.element) + ");"
+                    text: "    hero_cross_sent_array(hero_cell, " + crossing.sent_of(c, s, decls, ty: a.element) + ");"
                 )
         .map m =>
             if verb == "put"
                 writer.line(
                     @w,
-                    text: "    hero_cross_put_map(b, p, " + crossing.put_of(c, s, decls, ty: m.key) + ", " + crossing.put_of(c, s, decls, ty: m.value) + ");"
+                    text: "    hero_cross_put_map(hero_b, hero_p, " + crossing.put_of(c, s, decls, ty: m.key) + ", " + crossing.put_of(c, s, decls, ty: m.value) + ");"
                 )
             else if verb == "take"
                 writer.line(
                     @w,
-                    text: "    hero_cross_take_map(b, p, " + desc(c, names, m.key) + ", " + desc(c, names, m.value) + ", " + crossing.take_of(c, s, decls, ty: m.key) + ", " + crossing.take_of(c, s, decls, ty: m.value) + ");"
+                    text: "    hero_cross_take_map(hero_b, hero_p, " + desc(c, names, m.key) + ", " + desc(c, names, m.value) + ", " + crossing.take_of(c, s, decls, ty: m.key) + ", " + crossing.take_of(c, s, decls, ty: m.value) + ");"
                 )
             else
                 writer.line(
                     @w,
-                    text: "    hero_cross_sent_map(cell, " + crossing.sent_of(c, s, decls, ty: m.key) + ", " + crossing.sent_of(c, s, decls, ty: m.value) + ");"
+                    text: "    hero_cross_sent_map(hero_cell, " + crossing.sent_of(c, s, decls, ty: m.key) + ", " + crossing.sent_of(c, s, decls, ty: m.value) + ");"
                 )
         .fallible o => option_body(@w, c, names, s, decls, ty: ty, payload: o.payload, verb: verb)
         .named n =>
@@ -177,11 +181,11 @@ function body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source
 # The value's place, read through `p` or `cell` as the verb takes it.
 function start(@w: writer.Writer, c_type: str, verb: str)
     if verb == "put"
-        writer.line(@w, text: "    const " + c_type + " *v = p;")
+        writer.line(@w, text: "    const " + c_type + " *hero_v = hero_p;")
     else if verb == "take"
-        writer.line(@w, text: "    " + c_type + " *v = p;")
+        writer.line(@w, text: "    " + c_type + " *hero_v = hero_p;")
     else
-        writer.line(@w, text: "    " + c_type + " *v = cell;")
+        writer.line(@w, text: "    " + c_type + " *hero_v = hero_cell;")
 
 # One line per field in its declared order; a sent only for a field holding a
 # C handle or a thread, and none for a field of no C storage.
@@ -190,17 +194,17 @@ function fields(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: sour
         written = state.written_type(c, field.ty)
 
         if !written.is_err() && crossing.answers(c, names, ty: written.must())
-            member = "&v->" + base + mangle.field_of(foreign: foreign, name: source.span_text(s, field.name))
+            member = "&hero_v->" + base + mangle.field_of(foreign: foreign, name: source.span_text(s, field.name))
             writer.line(@w, text: one(c, s, decls, ty: written.must(), member: member, verb: verb))
 
 # The call that walks one part at `member`, or no line for a part a sent
 # leaves alone.
 function one(c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64, member: str, verb: str) -> str
     if verb == "put"
-        return "    " + crossing.put_of(c, s, decls, ty: ty) + "(b, " + member + ");"
+        return "    " + crossing.put_of(c, s, decls, ty: ty) + "(hero_b, " + member + ");"
 
     if verb == "take"
-        return "    " + crossing.take_of(c, s, decls, ty: ty) + "(b, " + member + ");"
+        return "    " + crossing.take_of(c, s, decls, ty: ty) + "(hero_b, " + member + ");"
 
     if !handed.holds(c, decls, ty: ty)
         return "    (void)0;"
@@ -209,10 +213,10 @@ function one(c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64, mem
 # A variant: its tag first, then the case's fields.
 function variant_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64, prefix: str, verb: str)
     if verb == "put"
-        writer.line(@w, text: "    hero_cross_put_raw(b, &v->tag, (int64_t)sizeof(v->tag));")
+        writer.line(@w, text: "    hero_cross_put_raw(hero_b, &hero_v->hero_tag, (int64_t)sizeof(hero_v->hero_tag));")
     else if verb == "take"
-        writer.line(@w, text: "    hero_cross_take_raw(b, &v->tag, (int64_t)sizeof(v->tag));")
-    writer.line(@w, text: "    switch (v->tag) {")
+        writer.line(@w, text: "    hero_cross_take_raw(hero_b, &hero_v->hero_tag, (int64_t)sizeof(hero_v->hero_tag));")
+    writer.line(@w, text: "    switch (hero_v->hero_tag) {")
 
     for one_case in types.cases_of(decls, decl: decl)
         case_name = source.span_text(s, one_case.name)
@@ -225,7 +229,7 @@ function variant_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s
             decls,
             one_case.fields,
             foreign: false,
-            base: "as." + mangle.case_member(case_name) + ".",
+            base: "hero_as." + mangle.case_member(case_name) + ".",
             verb: verb
         )
         writer.line(@w, text: "        break;")
@@ -239,28 +243,28 @@ function option_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s:
     start(@w, c_type: ctype.option_of(names, ty: ty), verb: verb)
 
     if verb == "put"
-        writer.line(@w, text: "    hero_cross_put_raw(b, &v->tag, (int64_t)sizeof(v->tag));")
+        writer.line(@w, text: "    hero_cross_put_raw(hero_b, &hero_v->hero_tag, (int64_t)sizeof(hero_v->hero_tag));")
     else if verb == "take"
-        writer.line(@w, text: "    hero_cross_take_raw(b, &v->tag, (int64_t)sizeof(v->tag));")
-    writer.line(@w, text: "    if (v->tag == INT64_C(0)) {")
+        writer.line(@w, text: "    hero_cross_take_raw(hero_b, &hero_v->hero_tag, (int64_t)sizeof(hero_v->hero_tag));")
+    writer.line(@w, text: "    if (hero_v->hero_tag == INT64_C(0)) {")
 
     if crossing.answers(c, names, ty: payload)
-        writer.line(@w, text: "    " + one(c, s, decls, ty: payload, member: "&v->as.ok", verb: verb))
+        writer.line(@w, text: "    " + one(c, s, decls, ty: payload, member: "&hero_v->hero_as.hero_ok", verb: verb))
 
     if verb == "sent"
         writer.line(@w, text: "    }")
         return
     writer.line(@w, text: "    } else {")
-    writer.line(@w, text: "        hero_cross_" + verb + "_failure(b, &v->as.err);")
+    writer.line(@w, text: "        hero_cross_" + verb + "_failure(hero_b, &hero_v->hero_as.hero_err);")
     writer.line(@w, text: "    }")
 
 # A body for a type no list here holds, which `crossing.generated` keeps out.
 function unread(@w: writer.Writer, verb: str)
     if verb == "sent"
-        writer.line(@w, text: "    (void)cell;")
+        writer.line(@w, text: "    (void)hero_cell;")
     else
-        writer.line(@w, text: "    (void)b;")
-        writer.line(@w, text: "    (void)p;")
+        writer.line(@w, text: "    (void)hero_b;")
+        writer.line(@w, text: "    (void)hero_p;")
     writer.line(@w, text: "    hero_unreachable();")
 
 # The descriptor of `ty`, as a take of an array or a map names it.
@@ -295,14 +299,14 @@ function runner(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: sour
         argument @ "&hero_arg"
 
     if !crossing.answers(c, names, ty: result)
-        writer.line(@w, text: "    hero_box->f(" + argument + ");")
+        writer.line(@w, text: "    hero_box->hero_fn(" + argument + ");")
     else
         writer.line(@w, text: "    " + nodebug.MARK + ctype.c_type(names, c: c, ty: result).must() + " hero_answer;")
 
         if large_value.value_large(names, ty: result)
-            writer.line(@w, text: "    hero_box->f(&hero_answer, " + argument + ");")
+            writer.line(@w, text: "    hero_box->hero_fn(&hero_answer, " + argument + ");")
         else
-            writer.line(@w, text: "    hero_answer = hero_box->f(" + argument + ");")
+            writer.line(@w, text: "    hero_answer = hero_box->hero_fn(" + argument + ");")
         writer.line(@w, text: "    " + crossing.put_of(c, s, decls, ty: result) + "(&hero_head->answer, &hero_answer);")
 
         if handed.holds(c, decls, ty: result)

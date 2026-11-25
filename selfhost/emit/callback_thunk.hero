@@ -234,7 +234,7 @@ function lookup_table(@w: writer.Writer, p: containers.Program, c: state.Checked
             signature.value_prototype(@w, f, c, names, s, decls)
         writer.line(@w, text: header(f, c, names, s, decls) + ";")
 
-    writer.line(@w, text: "__attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {")
+    writer.line(@w, text: "__attribute__((__unused__)) static void (*hero_callback_of(void (*hero_f)(void)))(void) {")
 
     # The delivery's address is learned before the first thunk reaches C, by
     # the one door every thunk crosses through: once per process, a load after.
@@ -248,10 +248,10 @@ function lookup_table(@w: writer.Writer, p: containers.Program, c: state.Checked
         real = signature.as_value(f, c, names, s, decls)
         writer.line(
             @w,
-            text: "    if (f == (void (*)(void))" + real + ") return (void (*)(void))" + thunk_name(real) + ";"
+            text: "    if (hero_f == (void (*)(void))" + real + ") return (void (*)(void))" + thunk_name(real) + ";"
         )
 
-    writer.line(@w, text: "    return f;")
+    writer.line(@w, text: "    return hero_f;")
     writer.line(@w, text: "}")
     writer.blank(@w)
 
@@ -331,7 +331,10 @@ test "an extern handed as a callback comes out of the table unchanged, a Heroes 
     lookup_table(@w, low, c, names, s, p.decls, callbacks: callback_guard.callbacks_of(low, c, p.decls))
     got = writer.finish(w)
     assert strings.holds(text: got, needle: "void h_0cb_t_bye(void);")
-    assert strings.holds(text: got, needle: "    if (f == (void (*)(void))h_t_bye) return (void (*)(void))h_0cb_t_bye;")
+    assert strings.holds(
+        text: got,
+        needle: "    if (hero_f == (void (*)(void))h_t_bye) return (void (*)(void))h_0cb_t_bye;"
+    )
     crossed = crossings(instances.hold(low), c, names, decl: 0, arguments: ["t1"])
     assert crossed.len() == 1
     assert strings.holds(text: crossed[0], needle: "hero_callback_of((void (*)(void))t1)")
@@ -360,7 +363,7 @@ test "a thunk's first line asks whether a signal called it, and the table learns
     got = writer.finish(w)
     assert strings.holds(
         text: got,
-        needle: "static void (*hero_callback_of(void (*f)(void)))(void) {\n    hero_signal_learn();\n"
+        needle: "static void (*hero_callback_of(void (*hero_f)(void)))(void) {\n    hero_signal_learn();\n"
     )
     assert strings.holds(
         text: got,

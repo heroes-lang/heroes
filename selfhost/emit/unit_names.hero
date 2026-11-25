@@ -1,0 +1,174 @@
+# The names a unit's C writes where a header's macro reaches them, each with
+# whether C declares it there (design.md §4.19; CLAUDE.md §7; 2026-11-24,
+# lane macro-members): the instrument `cli/own_names.hero`'s test holds the
+# emitter to, so that every name the unit writes after its groups is one a
+# header's macro cannot rewrite unblamed, and every name it declares is of
+# the compiler's own forms. A reading of C tokens, not of C: comments,
+# literals and numbers left out, a directive's own words too, the
+# preprocessor reading them unexpanded or as the name it tests, and a
+# `#define`'s parameters, which its body names apart from every macro.
+
+use cli/standard_name
+use emit/c_words
+use emit/ffi_lookup
+
+# One identifier of a unit's C, and whether it stands where C declares it:
+# after a type's name or a `*`, before a `,`, `)`, `;`, `=` or `[`.
+record UnitWord
+    name: str
+    declared: bool
+
+# The identifiers of C text a header's macro reaches: its code and its
+# `#define` bodies, outside comments, literals and numbers; a directive's
+# own words, which the preprocessor reads unexpanded or as the name it
+# tests, left out, and the pragma lines with them (above).
+function unit_words(text: str) -> [UnitWord]
+    out: [UnitWord] @= []
+
+    for line in ffi_lookup.lines(text: text)
+        at: i64 @= 0
+
+        while at < line.len() && line[at] == 32
+            at @ at + 1
+
+        if at < line.len() && line[at] == 35
+            body = define_body(line.slice(from: at, to: line.len()))
+
+            if body != ""
+                for one in line_words(body)
+                    out @ out.push(UnitWord(name: one.name, declared: false))
+            continue
+
+        for one in line_words(line)
+            out @ out.push(one)
+
+    return out
+
+# A `#define`'s body with its parameters' names left out, or `""` for any
+# other directive.
+function define_body(line: str) -> str
+    head = "#define "
+
+    if !standard_name.starts(text: line, head: head)
+        return ""
+    i: i64 @= head.len()
+
+    while i < line.len() && c_words.in_word(line[i])
+        i @ i + 1
+
+    params: {str: bool} @= {}
+
+    if i < line.len() && line[i] == 40
+        start = i
+
+        while i < line.len() && line[i] != 41
+            i @ i + 1
+
+        c_words.words_into(@params, text: line.slice(from: start, to: i))
+    body: [str] @= []
+
+    for one in line_words(line.slice(from: i, to: line.len()))
+        if params[one.name].is_err()
+            body @ body.push(one.name)
+
+    return " " + body.join(" ") + " "
+
+# The identifiers of one line of code, each with whether it is declared.
+function line_words(line: str) -> [UnitWord]
+    out: [UnitWord] @= []
+    previous: str @= ""
+    n = line.len()
+    i: i64 @= 0
+
+    while i < n
+        b = line[i]
+
+        if b == 34 || b == 39
+            i @ i + 1
+
+            while i < n && line[i] != b
+                if line[i] == 92
+                    i @ i + 1
+                i @ i + 1
+
+            i @ i + 1
+            previous @ "\""
+            continue
+
+        if b == 47 && i + 1 < n && line[i + 1] == 42
+            i @ i + 2
+
+            while i + 1 < n && !(line[i] == 42 && line[i + 1] == 47)
+                i @ i + 1
+
+            i @ i + 2
+            continue
+
+        if b == 47 && i + 1 < n && line[i + 1] == 47
+            break
+
+        if b >= 48 && b <= 57
+            while i < n && (c_words.in_word(line[i]) || line[i] == 46)
+                i @ i + 1
+
+            previous @ "0"
+            continue
+
+        if c_words.starts_word(b)
+            start = i
+
+            while i < n && c_words.in_word(line[i])
+                i @ i + 1
+
+            name = line.slice(from: start, to: i)
+            after: i64 @= i
+
+            while after < n && line[after] == 32
+                after @ after + 1
+
+            closes = after < n && (line[after] == 44 || line[after] == 41 || line[after] == 59 || line[after] == 61 || line[after] == 91)
+            typed = previous == "*" || previous != "" && c_words.starts_word(previous[0]) && !holds(ffi_lookup.words(NOT_TYPES), previous)
+            out @ out.push(UnitWord(name: name, declared: closes && typed))
+            previous @ name
+            continue
+
+        if b != 32
+            previous @ line.slice(from: i, to: i + 1)
+        i @ i + 1
+
+    return out
+
+# The words before a name that make no declaration of it.
+constant NOT_TYPES: str
+    "return goto case else sizeof do"
+
+function holds(list: [str], one: str) -> bool
+    for each in list
+        if each == one
+            return true
+
+    return false
+
+## Tests
+
+# A declaration is read where C makes one, and nowhere else: a parameter, a
+# local and a member, not a value, a call's argument, a label or a return.
+test "a unit's names are read with whether C declares each there"
+    said = unit_words(
+        "int64_t h_m_f(int64_t h0_a, HeroStr *hero_p) { HERO_NODEBUG int64_t t1, t2; goto hero_bb0; hero_bb0:\n    t1 = g(h0_a, \"x y\"); /* z */ return t1; }\n#define HERO_TWICE(c) ((c) + (c) + k)\n#line 3 \"m.hero\"\n"
+    )
+    declared: [str] @= []
+    names: [str] @= []
+
+    for one in said
+        names @ names.push(one.name)
+
+        if one.declared
+            declared @ declared.push(one.name)
+
+    assert declared.join(" ") == "h0_a hero_p t1"
+    assert holds(names, "k")
+    assert !holds(names, "c")
+    assert !holds(names, "x")
+    assert !holds(names, "z")
+    assert !holds(names, "m")

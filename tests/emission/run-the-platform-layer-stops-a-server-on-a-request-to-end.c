@@ -28,6 +28,44 @@
 #include <hero_net.h>
 #include <the-platform-layer-stop.h>
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -35,6 +73,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -56,7 +113,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -123,30 +180,30 @@ HERO_STR_STATIC(hero_str_37366225, "the worker's accept answered stopped: ");
 HERO_STR_STATIC(hero_str_24f6e4c, "a stop was asked: ");
 HERO_STR_STATIC(hero_str_2af20233, "main returns");
 
-#line 127 "theplatformlayerstopsaserveronarequesttoend.c"
+#line 184 "theplatformlayerstopsaserveronarequesttoend.c"
 typedef int64_t (*h_0fn_65e16c85)(int64_t);
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -167,44 +224,44 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 16 "tests/golden/run/the-platform-layer-stops-a-server-on-a-request-to-end.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayerstopsaserveronarequesttoend_hero_net_listen(const char * a0, int64_t a1) { (void)(hero_net_listen)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayerstopsaserveronarequesttoend_hero_net_port(hero_net_socket * a0) { (void)(hero_net_port)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayerstopsaserveronarequesttoend_hero_net_accept(hero_net_socket * a0) { (void)(hero_net_accept)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayerstopsaserveronarequesttoend_hero_net_close(hero_net_socket * a0) { (void)(hero_net_close)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayerstopsaserveronarequesttoend_hero_net_listen(const char * hero_a0, int64_t hero_a1) { (void)(hero_net_listen)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayerstopsaserveronarequesttoend_hero_net_port(hero_net_socket * hero_a0) { (void)(hero_net_port)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayerstopsaserveronarequesttoend_hero_net_accept(hero_net_socket * hero_a0) { (void)(hero_net_accept)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayerstopsaserveronarequesttoend_hero_net_close(hero_net_socket * hero_a0) { (void)(hero_net_close)(hero_a0); }
 #line 23
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayerstopsaserveronarequesttoend_hero_thread_spawn(h_0fn_65e16c85 a0, int64_t a1) { (void)(hero_thread_spawn)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayerstopsaserveronarequesttoend_hero_thread_join(int64_t a0) { (void)(hero_thread_join)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayerstopsaserveronarequesttoend_hero_thread_spawn(h_0fn_65e16c85 hero_a0, int64_t hero_a1) { (void)(hero_thread_spawn)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayerstopsaserveronarequesttoend_hero_thread_join(int64_t hero_a0) { (void)(hero_thread_join)(hero_a0); }
 #line 29
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayerstopsaserveronarequesttoend_stop_begin(int64_t a0) { (void)(stop_begin)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayerstopsaserveronarequesttoend_stop_send_now(int64_t a0) { (void)(stop_send_now)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayerstopsaserveronarequesttoend_stop_send_after(int64_t a0, int64_t a1) { (void)(stop_send_after)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_theplatformlayerstopsaserveronarequesttoend_stop_note_port(int64_t a0) { (void)(stop_note_port)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayerstopsaserveronarequesttoend_stop_begin(int64_t hero_a0) { (void)(stop_begin)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayerstopsaserveronarequesttoend_stop_send_now(int64_t hero_a0) { (void)(stop_send_now)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayerstopsaserveronarequesttoend_stop_send_after(int64_t hero_a0, int64_t hero_a1) { (void)(stop_send_after)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_theplatformlayerstopsaserveronarequesttoend_stop_note_port(int64_t hero_a0) { (void)(stop_note_port)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 192 "theplatformlayerstopsaserveronarequesttoend.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 249 "theplatformlayerstopsaserveronarequesttoend.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_theplatformlayerstopsaserveronarequesttoend_0Socket_eq(hero_net_socket * const *a, hero_net_socket * const *b);
-HERO_TU_LOCAL uint64_t h_theplatformlayerstopsaserveronarequesttoend_0Socket_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_theplatformlayerstopsaserveronarequesttoend_0Socket_eq(hero_net_socket * const *hero_a, hero_net_socket * const *hero_b);
+HERO_TU_LOCAL uint64_t h_theplatformlayerstopsaserveronarequesttoend_0Socket_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int64_t h_theplatformlayerstopsaserveronarequesttoend_HERO_NET_STOPPED(void);
 int64_t h_theplatformlayerstopsaserveronarequesttoend_STOP_INTERRUPT(void);
@@ -213,16 +270,16 @@ int64_t h_theplatformlayerstopsaserveronarequesttoend_serve(int64_t h0_port);
 void h_theplatformlayerstopsaserveronarequesttoend_main(void);
 int64_t h_theplatformlayerstopsaserveronarequesttoend_serve(int64_t h0_port);
 int64_t h_0cb_theplatformlayerstopsaserveronarequesttoend_serve(int64_t h0_port);
-__attribute__((unused)) static void (*hero_callback_of(void (*f)(void)))(void) {
+__attribute__((__unused__)) static void (*hero_callback_of(void (*hero_f)(void)))(void) {
     hero_signal_learn();
-    if (f == (void (*)(void))h_theplatformlayerstopsaserveronarequesttoend_serve) return (void (*)(void))h_0cb_theplatformlayerstopsaserveronarequesttoend_serve;
-    return f;
+    if (hero_f == (void (*)(void))h_theplatformlayerstopsaserveronarequesttoend_serve) return (void (*)(void))h_0cb_theplatformlayerstopsaserveronarequesttoend_serve;
+    return hero_f;
 }
 
 
 #line 13 "tests/golden/run/the-platform-layer-stops-a-server-on-a-request-to-end.hero"
 int64_t h_theplatformlayerstopsaserveronarequesttoend_HERO_NET_STOPPED(void) {
-#line 226 "theplatformlayerstopsaserveronarequesttoend.c"
+#line 283 "theplatformlayerstopsaserveronarequesttoend.c"
     _Static_assert(HERO_RET_INT(HERO_NET_STOPPED), "heroes-ffi-return HERO_NET_STOPPED i64");
     _Static_assert(__builtin_constant_p(HERO_NET_STOPPED), "heroes-ffi-const HERO_NET_STOPPED");
 #pragma clang diagnostic push
@@ -234,7 +291,7 @@ int64_t h_theplatformlayerstopsaserveronarequesttoend_HERO_NET_STOPPED(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 13 "tests/golden/run/the-platform-layer-stops-a-server-on-a-request-to-end.hero"
     return HERO_NET_STOPPED;
-#line 238 "theplatformlayerstopsaserveronarequesttoend.c"
+#line 295 "theplatformlayerstopsaserveronarequesttoend.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -252,7 +309,7 @@ int64_t h_theplatformlayerstopsaserveronarequesttoend_HERO_NET_STOPPED(void) {
 
 #line 27 "tests/golden/run/the-platform-layer-stops-a-server-on-a-request-to-end.hero"
 int64_t h_theplatformlayerstopsaserveronarequesttoend_STOP_INTERRUPT(void) {
-#line 256 "theplatformlayerstopsaserveronarequesttoend.c"
+#line 313 "theplatformlayerstopsaserveronarequesttoend.c"
     _Static_assert(HERO_RET_INT(STOP_INTERRUPT), "heroes-ffi-return STOP_INTERRUPT i64");
     _Static_assert(__builtin_constant_p(STOP_INTERRUPT), "heroes-ffi-const STOP_INTERRUPT");
 #pragma clang diagnostic push
@@ -264,7 +321,7 @@ int64_t h_theplatformlayerstopsaserveronarequesttoend_STOP_INTERRUPT(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 27 "tests/golden/run/the-platform-layer-stops-a-server-on-a-request-to-end.hero"
     return STOP_INTERRUPT;
-#line 268 "theplatformlayerstopsaserveronarequesttoend.c"
+#line 325 "theplatformlayerstopsaserveronarequesttoend.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -282,7 +339,7 @@ int64_t h_theplatformlayerstopsaserveronarequesttoend_STOP_INTERRUPT(void) {
 
 #line 28 "tests/golden/run/the-platform-layer-stops-a-server-on-a-request-to-end.hero"
 int64_t h_theplatformlayerstopsaserveronarequesttoend_STOP_REQUEST(void) {
-#line 286 "theplatformlayerstopsaserveronarequesttoend.c"
+#line 343 "theplatformlayerstopsaserveronarequesttoend.c"
     _Static_assert(HERO_RET_INT(STOP_REQUEST), "heroes-ffi-return STOP_REQUEST i64");
     _Static_assert(__builtin_constant_p(STOP_REQUEST), "heroes-ffi-const STOP_REQUEST");
 #pragma clang diagnostic push
@@ -294,7 +351,7 @@ int64_t h_theplatformlayerstopsaserveronarequesttoend_STOP_REQUEST(void) {
 #pragma clang diagnostic error "-Wdivision-by-zero"
 #line 28 "tests/golden/run/the-platform-layer-stops-a-server-on-a-request-to-end.hero"
     return STOP_REQUEST;
-#line 298 "theplatformlayerstopsaserveronarequesttoend.c"
+#line 355 "theplatformlayerstopsaserveronarequesttoend.c"
 #pragma clang diagnostic pop
 }
 #pragma clang diagnostic error "-Wreturn-type"
@@ -311,27 +368,27 @@ int64_t h_theplatformlayerstopsaserveronarequesttoend_STOP_REQUEST(void) {
 #pragma clang diagnostic error "-Wincompatible-function-pointer-types"
 
 #line 38 "tests/golden/run/the-platform-layer-stops-a-server-on-a-request-to-end.hero"
-int64_t h_theplatformlayerstopsaserveronarequesttoend_serve(int64_t h0_port) { hero_thread_guard("theplatformlayerstopsaserveronarequesttoend.serve"); hero_net_socket * h1_listener; hero_net_socket * h2_accepted; int64_t h3_kind; HERO_NODEBUG int64_t h4_ret0, t3, t8, t10, t13, t21, t24, t25; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG hero_net_socket *t4, *t5, *t6, *t9, *t11, *t12, *t14, *t15, *t17, *t19, *t22; HERO_NODEBUG bool t7, t16; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = HERO_STR_LIT(hero_str_69fd5e8e); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 39, 41}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = h0_port; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 39, 16}; t4 = hero_net_listen(hero_cstr_nonnull_at(t2, &hero_here), t3); hero_handle_acquired_at(t4, "hero_net_close", &hero_here); } h1_listener = t4;
+int64_t h_theplatformlayerstopsaserveronarequesttoend_serve(int64_t h0_port) { hero_thread_guard("theplatformlayerstopsaserveronarequesttoend.serve"); hero_net_socket * h1_listener; hero_net_socket * h2_accepted; int64_t h3_kind; HERO_NODEBUG int64_t h4_ret0, t3, t8, t10, t13, t21, t24, t25; HERO_NODEBUG HeroStr t1; HERO_NODEBUG const char *t2; HERO_NODEBUG hero_net_socket *t4, *t5, *t6, *t9, *t11, *t12, *t14, *t15, *t17, *t19, *t22; HERO_NODEBUG bool t7, t16; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = HERO_STR_LIT(hero_str_69fd5e8e); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 39, 41}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = h0_port; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 39, 16}; t4 = hero_net_listen(hero_cstr_nonnull_at(t2, &hero_here), t3); hero_handle_acquired_at(t4, "hero_net_close", &hero_here); } h1_listener = t4;
 #line 41
-    t5 = h1_listener; t6 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 41, 8}; t7 = hero_handle_eq_at(t5, t6, &hero_here); } if (t7) goto bb2; else goto bb3; bb1:
+    t5 = h1_listener; t6 = ((void *)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 41, 8}; t7 = hero_handle_eq_at(t5, t6, &hero_here); } if (t7) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 43
-    t9 = h1_listener; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 43, 20}; hero_handle_alive_at(t9, "the argument `s` of `hero_net_port`", &hero_here); t10 = hero_net_port(t9); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 43, 5}; (void)stop_note_port(t10); }
-    t11 = h1_listener; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 44, 16}; hero_handle_alive_at(t11, "the argument `listener` of `hero_net_accept`", &hero_here); t12 = hero_net_accept(t11); hero_handle_acquired_at(t12, "hero_net_close", &hero_here); } h2_accepted = t12;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 45, 12}; t13 = hero_net_last_error(); } h3_kind = t13;
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 46, 5}; (void)stop_note_done(); }
+    t9 = h1_listener; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 43, 20}; hero_handle_alive_at(t9, "the argument `s` of `hero_net_port`", &hero_here); t10 = hero_net_port(t9); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 43, 5}; (void)stop_note_port(t10); }
+    t11 = h1_listener; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 44, 16}; hero_handle_alive_at(t11, "the argument `listener` of `hero_net_accept`", &hero_here); t12 = hero_net_accept(t11); hero_handle_acquired_at(t12, "hero_net_close", &hero_here); } h2_accepted = t12;
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 45, 12}; t13 = hero_net_last_error(); } h3_kind = t13;
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 46, 5}; (void)stop_note_done(); }
 #line 48
-    t14 = h2_accepted; t15 = ((void *)0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 48, 8}; t16 = !hero_handle_eq_at(t14, t15, &hero_here); } if (t16) goto bb5; else goto bb6; bb2:
+    t14 = h2_accepted; t15 = ((void *)0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 48, 8}; t16 = !hero_handle_eq_at(t14, t15, &hero_here); } if (t16) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 42
-    t8 = INT64_C(-2); h4_ret0 = t8; goto bb7; bb3: goto bb1; bb4:
+    t8 = INT64_C(-2); h4_ret0 = t8; goto hero_bb7; hero_bb3: goto hero_bb1; hero_bb4:
 #line 52
-    t22 = h1_listener; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 52, 9}; { hero_handle_alive_at(t22, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t22, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t22); if (hero_handle_ended(t22, hero_life_0_0) && h1_listener == t22) h1_listener = hero_handle_dead(); } }
-    t24 = h3_kind; h4_ret0 = t24; goto bb7; bb5:
+    t22 = h1_listener; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 52, 9}; { hero_handle_alive_at(t22, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t22, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t22); if (hero_handle_ended(t22, hero_life_0_0) && h1_listener == t22) h1_listener = hero_handle_dead(); } }
+    t24 = h3_kind; h4_ret0 = t24; goto hero_bb7; hero_bb5:
 #line 49
-    t17 = h2_accepted; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 49, 13}; { hero_handle_alive_at(t17, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t17, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t17); if (hero_handle_ended(t17, hero_life_0_0) && h2_accepted == t17) h2_accepted = hero_handle_dead(); } }
-    t19 = h1_listener; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 50, 13}; { hero_handle_alive_at(t19, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t19, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t19); if (hero_handle_ended(t19, hero_life_0_0) && h1_listener == t19) h1_listener = hero_handle_dead(); } }
-    t21 = INT64_C(-1); h4_ret0 = t21; goto bb7; bb6: goto bb4; bb7:
-#line 335 "theplatformlayerstopsaserveronarequesttoend.c"
+    t17 = h2_accepted; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 49, 13}; { hero_handle_alive_at(t17, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t17, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t17); if (hero_handle_ended(t17, hero_life_0_0) && h2_accepted == t17) h2_accepted = hero_handle_dead(); } }
+    t19 = h1_listener; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.serve", 50, 13}; { hero_handle_alive_at(t19, "the argument `s` of `hero_net_close`", &hero_here); HERO_NODEBUG uint64_t hero_life_0_0 = hero_handle_ending_at(t19, "hero_net_close", NULL, &hero_here); (void)hero_net_close(t19); if (hero_handle_ended(t19, hero_life_0_0) && h1_listener == t19) h1_listener = hero_handle_dead(); } }
+    t21 = INT64_C(-1); h4_ret0 = t21; goto hero_bb7; hero_bb6: goto hero_bb4; hero_bb7:
+#line 392 "theplatformlayerstopsaserveronarequesttoend.c"
     t25 = h4_ret0;
     return t25;
 }
@@ -339,22 +396,23 @@ int64_t h_theplatformlayerstopsaserveronarequesttoend_serve(int64_t h0_port) { h
 __attribute__((__noinline__)) int64_t h_0cb_theplatformlayerstopsaserveronarequesttoend_serve(int64_t h0_port) {
     hero_callback_entered("theplatformlayerstopsaserveronarequesttoend.serve", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_theplatformlayerstopsaserveronarequesttoend_serve(h0_port);
+    hero_callback_left();
     return hero_result;
 }
 
 #line 55 "tests/golden/run/the-platform-layer-stops-a-server-on-a-request-to-end.hero"
-void h_theplatformlayerstopsaserveronarequesttoend_main(void) { int64_t h0_worker; int64_t h1_kind; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, t3, t4, t5, t7, t8, t9, t15, t16, t17, t19, t20, t21, t25, t26, t27, t33, t34, t35, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48, t49, t50, t51, t52, t53, t54; HERO_NODEBUG int64_t t1, t2, t6, t11, t12, t13, t14, t18, t22, t23, t24, t28, t29, t30, t31, t36; HERO_NODEBUG h_0fn_48ac9712 t10; HERO_NODEBUG bool t32; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = INT64_C(1); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.main", 56, 61}; t2 = stop_begin(t1); } t3 = HERO_STR_LIT(hero_str_5da4a5b6); t4 = hero_int_to_str(t2); t41 = h2_own2; h2_own2 = t4; hero_str_decref(t41); t5 = hero_str_concat(t3, t4); t42 = h3_own3; h3_own3 = t5; hero_str_decref(t42); hero_print_str(t5); hero_print_end();
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.main", 57, 34}; t6 = hero_net_catch_stop(); } t7 = HERO_STR_LIT(hero_str_64d754d7); t8 = hero_int_to_str(t6); t43 = h4_own4; h4_own4 = t8; hero_str_decref(t43); t9 = hero_str_concat(t7, t8); t44 = h5_own5; h5_own5 = t9; hero_str_decref(t44); hero_print_str(t9); hero_print_end();
-    t10 = h_theplatformlayerstopsaserveronarequesttoend_serve; t11 = INT64_C(0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.main", 58, 14}; t12 = hero_thread_spawn((h_0fn_65e16c85)hero_callback_of((void (*)(void))t10), t11); } h0_worker = t12;
-    t13 = h_theplatformlayerstopsaserveronarequesttoend_STOP_INTERRUPT(); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.main", 59, 36}; t14 = stop_send_now(t13); } t15 = HERO_STR_LIT(hero_str_6bd1a65a); t16 = hero_int_to_str(t14); t45 = h6_own6; h6_own6 = t16; hero_str_decref(t45); t17 = hero_str_concat(t15, t16); t46 = h7_own7; h7_own7 = t17; hero_str_decref(t46); hero_print_str(t17); hero_print_end();
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.main", 60, 50}; t18 = hero_net_stop_asked(); } t19 = HERO_STR_LIT(hero_str_76dfad7b); t20 = hero_int_to_str(t18); t47 = h8_own8; h8_own8 = t20; hero_str_decref(t47); t21 = hero_str_concat(t19, t20); t48 = h9_own9; h9_own9 = t21; hero_str_decref(t48); hero_print_str(t21); hero_print_end();
-    t22 = h_theplatformlayerstopsaserveronarequesttoend_STOP_REQUEST(); t23 = INT64_C(300); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.main", 61, 60}; t24 = stop_send_after(t22, t23); } t25 = HERO_STR_LIT(hero_str_32909e0a); t26 = hero_int_to_str(t24); t49 = h10_own10; h10_own10 = t26; hero_str_decref(t49); t27 = hero_str_concat(t25, t26); t50 = h11_own11; h11_own11 = t27; hero_str_decref(t50); hero_print_str(t27); hero_print_end();
-    t28 = h0_worker; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.main", 62, 12}; t29 = hero_thread_join(t28); } h1_kind = t29;
+void h_theplatformlayerstopsaserveronarequesttoend_main(void) { int64_t h0_worker; int64_t h1_kind; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, h4_own4 = {0}, h5_own5 = {0}, h6_own6 = {0}, h7_own7 = {0}, h8_own8 = {0}, h9_own9 = {0}, h10_own10 = {0}, h11_own11 = {0}, h12_own12 = {0}, h13_own13 = {0}, h14_own14 = {0}, h15_own15 = {0}, t3, t4, t5, t7, t8, t9, t15, t16, t17, t19, t20, t21, t25, t26, t27, t33, t34, t35, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48, t49, t50, t51, t52, t53, t54; HERO_NODEBUG int64_t t1, t2, t6, t11, t12, t13, t14, t18, t22, t23, t24, t28, t29, t30, t31, t36; HERO_NODEBUG h_0fn_48ac9712 t10; HERO_NODEBUG bool t32; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = INT64_C(1); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.main", 56, 61}; t2 = stop_begin(t1); } t3 = HERO_STR_LIT(hero_str_5da4a5b6); t4 = hero_int_to_str(t2); t41 = h2_own2; h2_own2 = t4; hero_str_decref(t41); t5 = hero_str_concat(t3, t4); t42 = h3_own3; h3_own3 = t5; hero_str_decref(t42); hero_print_str(t5); hero_print_end();
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.main", 57, 34}; t6 = hero_net_catch_stop(); } t7 = HERO_STR_LIT(hero_str_64d754d7); t8 = hero_int_to_str(t6); t43 = h4_own4; h4_own4 = t8; hero_str_decref(t43); t9 = hero_str_concat(t7, t8); t44 = h5_own5; h5_own5 = t9; hero_str_decref(t44); hero_print_str(t9); hero_print_end();
+    t10 = h_theplatformlayerstopsaserveronarequesttoend_serve; t11 = INT64_C(0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.main", 58, 14}; t12 = hero_thread_spawn((h_0fn_65e16c85)hero_callback_of((void (*)(void))t10), t11); } h0_worker = t12;
+    t13 = h_theplatformlayerstopsaserveronarequesttoend_STOP_INTERRUPT(); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.main", 59, 36}; t14 = stop_send_now(t13); } t15 = HERO_STR_LIT(hero_str_6bd1a65a); t16 = hero_int_to_str(t14); t45 = h6_own6; h6_own6 = t16; hero_str_decref(t45); t17 = hero_str_concat(t15, t16); t46 = h7_own7; h7_own7 = t17; hero_str_decref(t46); hero_print_str(t17); hero_print_end();
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.main", 60, 50}; t18 = hero_net_stop_asked(); } t19 = HERO_STR_LIT(hero_str_76dfad7b); t20 = hero_int_to_str(t18); t47 = h8_own8; h8_own8 = t20; hero_str_decref(t47); t21 = hero_str_concat(t19, t20); t48 = h9_own9; h9_own9 = t21; hero_str_decref(t48); hero_print_str(t21); hero_print_end();
+    t22 = h_theplatformlayerstopsaserveronarequesttoend_STOP_REQUEST(); t23 = INT64_C(300); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.main", 61, 60}; t24 = stop_send_after(t22, t23); } t25 = HERO_STR_LIT(hero_str_32909e0a); t26 = hero_int_to_str(t24); t49 = h10_own10; h10_own10 = t26; hero_str_decref(t49); t27 = hero_str_concat(t25, t26); t50 = h11_own11; h11_own11 = t27; hero_str_decref(t50); hero_print_str(t27); hero_print_end();
+    t28 = h0_worker; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.main", 62, 12}; t29 = hero_thread_join(t28); } h1_kind = t29;
     t30 = h1_kind; t31 = h_theplatformlayerstopsaserveronarequesttoend_HERO_NET_STOPPED(); t32 = t30 == t31; t33 = HERO_STR_LIT(hero_str_37366225); t34 = hero_bool_to_str(t32); t51 = h12_own12; h12_own12 = t34; hero_str_decref(t51); t35 = hero_str_concat(t33, t34); t52 = h13_own13; h13_own13 = t35; hero_str_decref(t52); hero_print_str(t35); hero_print_end();
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.main", 64, 32}; t36 = hero_net_stop_asked(); } t37 = HERO_STR_LIT(hero_str_24f6e4c); t38 = hero_int_to_str(t36); t53 = h14_own14; h14_own14 = t38; hero_str_decref(t53); t39 = hero_str_concat(t37, t38); t54 = h15_own15; h15_own15 = t39; hero_str_decref(t54); hero_print_str(t39); hero_print_end();
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"the-platform-layer-stops-a-server-on-a-request-to-end.hero", "the-platform-layer-stops-a-server-on-a-request-to-end.main", 64, 32}; t36 = hero_net_stop_asked(); } t37 = HERO_STR_LIT(hero_str_24f6e4c); t38 = hero_int_to_str(t36); t53 = h14_own14; h14_own14 = t38; hero_str_decref(t53); t39 = hero_str_concat(t37, t38); t54 = h15_own15; h15_own15 = t39; hero_str_decref(t54); hero_print_str(t39); hero_print_end();
     t40 = HERO_STR_LIT(hero_str_2af20233); hero_print_str(t40); hero_print_end();
-#line 358 "theplatformlayerstopsaserveronarequesttoend.c"
+#line 416 "theplatformlayerstopsaserveronarequesttoend.c"
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     hero_str_release_at(&h4_own4);
@@ -371,117 +429,117 @@ void h_theplatformlayerstopsaserveronarequesttoend_main(void) { int64_t h0_worke
     hero_str_release_at(&h15_own15);
     return;
 }
-HERO_TU_LOCAL bool h_theplatformlayerstopsaserveronarequesttoend_0Socket_eq(hero_net_socket * const *a, hero_net_socket * const *b) {
-    return hero_handle_eq(*a, *b);
+HERO_TU_LOCAL bool h_theplatformlayerstopsaserveronarequesttoend_0Socket_eq(hero_net_socket * const *hero_a, hero_net_socket * const *hero_b) {
+    return hero_handle_eq(*hero_a, *hero_b);
 }
 
-HERO_TU_LOCAL uint64_t h_theplatformlayerstopsaserveronarequesttoend_0Socket_hash(const void *elem) {
-    hero_net_socket * const *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (uint64_t)(uintptr_t)*v) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_theplatformlayerstopsaserveronarequesttoend_0Socket_hash(const void *hero_elem) {
+    hero_net_socket * const *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (uint64_t)(uintptr_t)*hero_v) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0436af5e50caa0ef", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3aebf263177aac48", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("theplatformlayerstopsaserveronarequesttoend\tthe-platform-layer-stops-a-server-on-a-request-to-end\n");
     h_theplatformlayerstopsaserveronarequesttoend_main();
     hero_runtime_check_leaks();

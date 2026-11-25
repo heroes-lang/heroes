@@ -7,7 +7,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -66,26 +66,26 @@ HERO_STR_STATIC(hero_str_4a8e4962, "heroes-no-such-program");
 
 #line 68 "achildisfoundthroughtheparentspath.c"
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic push
@@ -94,35 +94,35 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 14 "tests/golden/run/a-child-is-found-through-the-parents-path.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_achildisfoundthroughtheparentspath_hero_run_arg(HeroStr a0) { (void)(hero_run_arg)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_achildisfoundthroughtheparentspath_hero_run_env(HeroStr a0, HeroStr a1) { (void)(hero_run_env)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_achildisfoundthroughtheparentspath_hero_run_limit(int64_t a0) { (void)(hero_run_limit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_achildisfoundthroughtheparentspath_hero_run_arg(HeroStr hero_a0) { (void)(hero_run_arg)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_achildisfoundthroughtheparentspath_hero_run_env(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_run_env)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_achildisfoundthroughtheparentspath_hero_run_limit(int64_t hero_a0) { (void)(hero_run_limit)(hero_a0); }
 #line 18
-__attribute__((unused)) static void hero_ffi_probe_h_achildisfoundthroughtheparentspath_hero_run_go(const char * a0, const char * a1, const char * a2, const char * a3, int64_t * a4) { (void)(hero_run_go)(a0, a1, a2, a3, (void *)a4); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_achildisfoundthroughtheparentspath_hero_run_go(const char * hero_a0, const char * hero_a1, const char * hero_a2, const char * hero_a3, int64_t * hero_a4) { (void)(hero_run_go)(hero_a0, hero_a1, hero_a2, hero_a3, (void *)hero_a4); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
 #line 112 "achildisfoundthroughtheparentspath.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 int64_t h_achildisfoundthroughtheparentspath_HERO_OS_OK(void);
 bool h_achildisfoundthroughtheparentspath_found(HeroStr h0_program);
@@ -151,23 +151,23 @@ bool h_achildisfoundthroughtheparentspath_found(HeroStr h0_program) {
 #line 23
 #define h2_status (*hero_lend_h2_status)
 #line 23
-    HeroStr h1_discard = {0}; int64_t *const hero_lend_h2_status = (int64_t *)hero_lend_local(sizeof(int64_t), "achildisfoundthroughtheparentspath.found", "status"); HERO_NODEBUG HeroStr h3_own3 = {0}, t1, t2, t3, t4, t6, t8, t10, t12, t14, t20, t21; HERO_NODEBUG int64_t t5, t7, t17, t18; HERO_NODEBUG const char *t9, *t11, *t13, *t15; HERO_NODEBUG bool t19; HERO_ENTRY_STOP; goto bb0; bb0:
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 24, 5}; (void)hero_run_reset(); }
-    t1 = HERO_STR_LIT(hero_str_ac970fd); t2 = HERO_STR_LIT(hero_str_3f1e6ba8); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 25, 5}; (void)hero_run_env(t1, t2); }
-    t3 = h0_program; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 26, 5}; (void)hero_run_arg(t3); }
-    t4 = HERO_STR_LIT(hero_str_383cce72); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 27, 5}; (void)hero_run_arg(t4); }
-    t5 = INT64_C(60); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 28, 5}; (void)hero_run_limit(t5); }
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 29, 15}; t6 = hero_run_discard_path(); } t20 = h3_own3; h3_own3 = t6; hero_str_decref(t20); t21 = h1_discard; hero_str_incref(t6); h1_discard = t6; hero_str_decref(t21);
+    HeroStr h1_discard = {0}; int64_t *const hero_lend_h2_status = (int64_t *)hero_lend_local(sizeof(int64_t), "achildisfoundthroughtheparentspath.found", "status"); HERO_NODEBUG HeroStr h3_own3 = {0}, t1, t2, t3, t4, t6, t8, t10, t12, t14, t20, t21; HERO_NODEBUG int64_t t5, t7, t17, t18; HERO_NODEBUG const char *t9, *t11, *t13, *t15; HERO_NODEBUG bool t19; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 24, 5}; (void)hero_run_reset(); }
+    t1 = HERO_STR_LIT(hero_str_ac970fd); t2 = HERO_STR_LIT(hero_str_3f1e6ba8); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 25, 5}; (void)hero_run_env(t1, t2); }
+    t3 = h0_program; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 26, 5}; (void)hero_run_arg(t3); }
+    t4 = HERO_STR_LIT(hero_str_383cce72); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 27, 5}; (void)hero_run_arg(t4); }
+    t5 = INT64_C(60); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 28, 5}; (void)hero_run_limit(t5); }
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 29, 15}; t6 = hero_run_discard_path(); } t20 = h3_own3; h3_own3 = t6; hero_str_decref(t20); t21 = h1_discard; hero_str_incref(t6); h1_discard = t6; hero_str_decref(t21);
     t7 = INT64_C(0); h2_status = t7;
 #line 32
-    t8 = h0_program; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 32, 18}; t9 = hero_str_lend_at(t8, &hero_here); }
-    t10 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 33, 18}; t11 = hero_str_lend_at(t10, &hero_here); }
-    t12 = h1_discard; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 34, 19}; t13 = hero_str_lend_at(t12, &hero_here); }
-    t14 = h1_discard; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 35, 19}; t15 = hero_str_lend_at(t14, &hero_here); }
+    t8 = h0_program; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 32, 18}; t9 = hero_str_lend_at(t8, &hero_here); }
+    t10 = HERO_STR_LIT(hero_str_0); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 33, 18}; t11 = hero_str_lend_at(t10, &hero_here); }
+    t12 = h1_discard; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 34, 19}; t13 = hero_str_lend_at(t12, &hero_here); }
+    t14 = h1_discard; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 35, 19}; t15 = hero_str_lend_at(t14, &hero_here); }
 #line 31
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 31, 9}; hero_lend_local_name(hero_lend_h2_status, "hero_run_go", "status"); (void)hero_run_go(hero_cstr_nonnull_at(t9, &hero_here), hero_cstr_nonnull_at(t11, &hero_here), hero_cstr_nonnull_at(t13, &hero_here), hero_cstr_nonnull_at(t15, &hero_here), (void *)&h2_status); }
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 31, 9}; hero_lend_local_name(hero_lend_h2_status, "hero_run_go", "status"); (void)hero_run_go(hero_cstr_nonnull_at(t9, &hero_here), hero_cstr_nonnull_at(t11, &hero_here), hero_cstr_nonnull_at(t13, &hero_here), hero_cstr_nonnull_at(t15, &hero_here), (void *)&h2_status); }
 #line 38
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 38, 5}; (void)hero_run_reset(); }
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"a-child-is-found-through-the-parents-path.hero", "a-child-is-found-through-the-parents-path.found", 38, 5}; (void)hero_run_reset(); }
     t17 = h2_status; t18 = h_achildisfoundthroughtheparentspath_HERO_OS_OK(); t19 = t17 == t18;
 #line 173 "achildisfoundthroughtheparentspath.c"
     hero_str_release_at(&h1_discard);
@@ -178,111 +178,111 @@ bool h_achildisfoundthroughtheparentspath_found(HeroStr h0_program) {
 #undef h2_status
 
 #line 41 "tests/golden/run/a-child-is-found-through-the-parents-path.hero"
-void h_achildisfoundthroughtheparentspath_main(void) { HERO_NODEBUG HeroStr t1, t2, t4, t5; HERO_NODEBUG bool t3, t6; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_achildisfoundthroughtheparentspath_main(void) { HERO_NODEBUG HeroStr t1, t2, t4, t5; HERO_NODEBUG bool t3, t6; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_1da37a93); t2 = HERO_STR_LIT(hero_str_585fddde); t3 = h_achildisfoundthroughtheparentspath_found(t2); hero_print_str(t1); hero_print_bool(t3); hero_print_end();
     t4 = HERO_STR_LIT(hero_str_7b2e9ab3); t5 = HERO_STR_LIT(hero_str_4a8e4962); t6 = h_achildisfoundthroughtheparentspath_found(t5); hero_print_str(t4); hero_print_bool(t6); hero_print_end(); return;
 #line 185 "achildisfoundthroughtheparentspath.c"
 }
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("0ec45cdc6da25734", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("23a2ef674b09bbd9", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("achildisfoundthroughtheparentspath\ta-child-is-found-through-the-parents-path\n");
     h_achildisfoundthroughtheparentspath_main();
     hero_runtime_check_leaks();

@@ -442,6 +442,6 @@ test "a Heroes call names the copy, an extern stays bare with its cstr guarded"
     # The extern call stands in a block that declares its place, the site `0`
     # of `main` in `t.hero`, the first line's first column, and each `cstr`
     # crossing is guarded with it (panel 230's R1).
-    place = "    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {\"t.hero\", \"t.main\", 1, 1};\n"
+    place = "    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {\"t.hero\", \"t.main\", 1, 1};\n"
     guarded = "    t5 = (const char *)strstr(hero_cstr_nonnull_at(t3, &hero_here), hero_cstr_nonnull_at(t4, &hero_here));\n"
     assert got == "    t2 = h_t_double_it(t1);\n" + place + guarded + "    }\n"

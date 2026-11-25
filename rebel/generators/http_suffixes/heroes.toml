@@ -1,0 +1,6 @@
+[dependencies.rebel]
+path = "../../library/0.1.0/files"
+packages = ["bytes", "strings", "unicode"]
+
+[dependencies.tablekit]
+path = "../tablekit"

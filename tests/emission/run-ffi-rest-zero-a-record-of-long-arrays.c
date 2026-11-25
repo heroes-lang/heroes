@@ -29,6 +29,44 @@
 #pragma push_macro("n")
 #pragma push_macro("name")
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -36,6 +74,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -63,7 +120,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -74,7 +131,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 _Static_assert(sizeof(struct big) - __builtin_offsetof(struct big, name) != 0, "heroes-ffi-flex Big name"); _Static_assert(_Generic(&((struct big *)0)->name, _Bool (*)[256]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[256]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[256]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[256]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[256]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[256]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[256]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[256]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[256]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[256]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[256]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[256]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Big name");
 _Static_assert(__builtin_classify_type(((struct big *)0)->n) == 1 && sizeof(((struct big *)0)->n) == sizeof(int32_t) && (_Generic(((struct big *)0)->n, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Big n");
 _Static_assert(sizeof(struct big) - __builtin_offsetof(struct big, tail) != 0, "heroes-ffi-flex Big tail"); _Static_assert(_Generic(&((struct big *)0)->tail, _Bool (*)[100]: (sizeof(_Bool) == sizeof(int8_t) && (((_Bool)-1 < 0) == ((int8_t)-1 < 0))), char (*)[100]: (sizeof(char) == sizeof(int8_t) && (((char)-1 < 0) == ((int8_t)-1 < 0))), signed char (*)[100]: (sizeof(signed char) == sizeof(int8_t) && (((signed char)-1 < 0) == ((int8_t)-1 < 0))), short (*)[100]: (sizeof(short) == sizeof(int8_t) && (((short)-1 < 0) == ((int8_t)-1 < 0))), int (*)[100]: (sizeof(int) == sizeof(int8_t) && (((int)-1 < 0) == ((int8_t)-1 < 0))), long (*)[100]: (sizeof(long) == sizeof(int8_t) && (((long)-1 < 0) == ((int8_t)-1 < 0))), long long (*)[100]: (sizeof(long long) == sizeof(int8_t) && (((long long)-1 < 0) == ((int8_t)-1 < 0))), unsigned char (*)[100]: (sizeof(unsigned char) == sizeof(int8_t) && (((unsigned char)-1 < 0) == ((int8_t)-1 < 0))), unsigned short (*)[100]: (sizeof(unsigned short) == sizeof(int8_t) && (((unsigned short)-1 < 0) == ((int8_t)-1 < 0))), unsigned int (*)[100]: (sizeof(unsigned int) == sizeof(int8_t) && (((unsigned int)-1 < 0) == ((int8_t)-1 < 0))), unsigned long (*)[100]: (sizeof(unsigned long) == sizeof(int8_t) && (((unsigned long)-1 < 0) == ((int8_t)-1 < 0))), unsigned long long (*)[100]: (sizeof(unsigned long long) == sizeof(int8_t) && (((unsigned long long)-1 < 0) == ((int8_t)-1 < 0))), default: 0), "heroes-ffi-field Big tail");
-#line 78 "ffirestzeroarecordoflongarrays.c"
+#line 135 "ffirestzeroarecordoflongarrays.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -116,26 +173,26 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_20, " ");
 
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -156,33 +213,33 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 17 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_ffirestzeroarecordoflongarrays_big_arrays(struct big * a0) { (void)(big_arrays)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_ffirestzeroarecordoflongarrays_big_arrays(struct big * hero_a0) { (void)(big_arrays)(hero_a0); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 170 "ffirestzeroarecordoflongarrays.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 227 "ffirestzeroarecordoflongarrays.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL bool h_ffirestzeroarecordoflongarrays_0Big_eq(const struct big *a, const struct big *b);
-HERO_TU_LOCAL uint64_t h_ffirestzeroarecordoflongarrays_0Big_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL bool h_ffirestzeroarecordoflongarrays_0Big_eq(const struct big *hero_a, const struct big *hero_b);
+HERO_TU_LOCAL uint64_t h_ffirestzeroarecordoflongarrays_0Big_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 struct big h_ffirestzeroarecordoflongarrays_one_named(void);
 struct big h_ffirestzeroarecordoflongarrays_none_named(void);
@@ -194,30 +251,30 @@ void *hero_pad_nowhere(void);
 #undef name
 #pragma push_macro("tail")
 #undef tail
-__attribute__((unused)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct big, name), sizeof(((struct big *)0)->name), __builtin_offsetof(struct big, n), sizeof(((struct big *)0)->n), __builtin_offsetof(struct big, tail), sizeof(((struct big *)0)->tail)};
+__attribute__((__unused__)) static const size_t hero_pad_t_0[] = {__builtin_offsetof(struct big, name), sizeof(((struct big *)0)->name), __builtin_offsetof(struct big, n), sizeof(((struct big *)0)->n), __builtin_offsetof(struct big, tail), sizeof(((struct big *)0)->tail)};
 #pragma pop_macro("n")
 #pragma pop_macro("name")
 #pragma pop_macro("tail")
-__attribute__((unused)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
-__attribute__((unused)) static size_t hero_pad_n_0;
-__attribute__((constructor)) static void hero_pad_init(void) {
+__attribute__((__unused__)) static size_t hero_pad_g_0[sizeof hero_pad_t_0 / sizeof(size_t) + 2];
+__attribute__((__unused__)) static size_t hero_pad_n_0;
+__attribute__((__constructor__)) static void hero_pad_init(void) {
     hero_pad_n_0 = hero_pad_gaps(sizeof(struct big), hero_pad_t_0, sizeof hero_pad_t_0 / (2 * sizeof(size_t)), hero_pad_g_0);
 }
 
 
 #line 19 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
-struct big h_ffirestzeroarecordoflongarrays_one_named(void) { HERO_NODEBUG int32_t t1; HERO_NODEBUG struct big t2; HERO_ENTRY_STOP; goto bb0; bb0:
+struct big h_ffirestzeroarecordoflongarrays_one_named(void) { HERO_NODEBUG int32_t t1; HERO_NODEBUG struct big t2; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
 #line 21
     t1 = INT64_C(7);
 #line 20
     t2 = (struct big){0}; __builtin_memset(&t2, 0, sizeof t2); t2.n = t1; return t2;
-#line 215 "ffirestzeroarecordoflongarrays.c"
+#line 272 "ffirestzeroarecordoflongarrays.c"
 }
 
 #line 26 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
-struct big h_ffirestzeroarecordoflongarrays_none_named(void) { HERO_NODEBUG struct big t1; HERO_ENTRY_STOP; goto bb0; bb0:
+struct big h_ffirestzeroarecordoflongarrays_none_named(void) { HERO_NODEBUG struct big t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = (struct big){0}; __builtin_memset(&t1, 0, sizeof t1); return t1;
-#line 221 "ffirestzeroarecordoflongarrays.c"
+#line 278 "ffirestzeroarecordoflongarrays.c"
 }
 
 #line 29 "tests/golden/run/ffi-rest-zero-a-record-of-long-arrays.hero"
@@ -227,487 +284,487 @@ void h_ffirestzeroarecordoflongarrays_main(void) {
 #line 29
 #define h1_b (*hero_lend_h1_b)
 #line 29
-    struct big *const hero_lend_h0_a = (struct big *)hero_lend_local(sizeof(struct big), "ffirestzeroarecordoflongarrays.main", "a"); struct big *const hero_lend_h1_b = (struct big *)hero_lend_local(sizeof(struct big), "ffirestzeroarecordoflongarrays.main", "b"); HERO_NODEBUG struct big t1, t5; HERO_NODEBUG int32_t t2, t6; HERO_NODEBUG HeroStr t3, t7; HERO_NODEBUG int64_t t4, t8; HERO_ENTRY_STOP; goto bb0; bb0:
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-rest-zero-a-record-of-long-arrays.hero", "ffi-rest-zero-a-record-of-long-arrays.main", 30, 5}; (void)dirty(); }
+    struct big *const hero_lend_h0_a = (struct big *)hero_lend_local(sizeof(struct big), "ffirestzeroarecordoflongarrays.main", "a"); struct big *const hero_lend_h1_b = (struct big *)hero_lend_local(sizeof(struct big), "ffirestzeroarecordoflongarrays.main", "b"); HERO_NODEBUG struct big t1, t5; HERO_NODEBUG int32_t t2, t6; HERO_NODEBUG HeroStr t3, t7; HERO_NODEBUG int64_t t4, t8; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-rest-zero-a-record-of-long-arrays.hero", "ffi-rest-zero-a-record-of-long-arrays.main", 30, 5}; (void)dirty(); }
     t1 = h_ffirestzeroarecordoflongarrays_one_named(); h0_a = t1; hero_pad_fill(&h0_a, sizeof(struct big), 1, hero_pad_g_0, hero_pad_n_0);
-    t2 = h0_a.n; t3 = HERO_STR_LIT(hero_str_20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-rest-zero-a-record-of-long-arrays.hero", "ffi-rest-zero-a-record-of-long-arrays.main", 32, 21}; hero_lend_local_name(hero_lend_h0_a, "big_arrays", "b"); hero_pad_fill(&h0_a, sizeof(struct big), 1, hero_pad_g_0, hero_pad_n_0); t4 = big_arrays(&h0_a); } hero_print_int(t2); hero_print_str(t3); hero_print_int(t4); hero_print_end();
-    { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-rest-zero-a-record-of-long-arrays.hero", "ffi-rest-zero-a-record-of-long-arrays.main", 33, 5}; (void)dirty(); }
+    t2 = h0_a.n; t3 = HERO_STR_LIT(hero_str_20); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-rest-zero-a-record-of-long-arrays.hero", "ffi-rest-zero-a-record-of-long-arrays.main", 32, 21}; hero_lend_local_name(hero_lend_h0_a, "big_arrays", "b"); hero_pad_fill(&h0_a, sizeof(struct big), 1, hero_pad_g_0, hero_pad_n_0); t4 = big_arrays(&h0_a); } hero_print_int(t2); hero_print_str(t3); hero_print_int(t4); hero_print_end();
+    { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-rest-zero-a-record-of-long-arrays.hero", "ffi-rest-zero-a-record-of-long-arrays.main", 33, 5}; (void)dirty(); }
     t5 = h_ffirestzeroarecordoflongarrays_none_named(); h1_b = t5; hero_pad_fill(&h1_b, sizeof(struct big), 1, hero_pad_g_0, hero_pad_n_0);
-    t6 = h1_b.n; t7 = HERO_STR_LIT(hero_str_20); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"ffi-rest-zero-a-record-of-long-arrays.hero", "ffi-rest-zero-a-record-of-long-arrays.main", 35, 21}; hero_lend_local_name(hero_lend_h1_b, "big_arrays", "b"); hero_pad_fill(&h1_b, sizeof(struct big), 1, hero_pad_g_0, hero_pad_n_0); t8 = big_arrays(&h1_b); } hero_print_int(t6); hero_print_str(t7); hero_print_int(t8); hero_print_end(); hero_lend_local_give(hero_lend_h1_b); hero_lend_local_give(hero_lend_h0_a); return;
-#line 238 "ffirestzeroarecordoflongarrays.c"
+    t6 = h1_b.n; t7 = HERO_STR_LIT(hero_str_20); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"ffi-rest-zero-a-record-of-long-arrays.hero", "ffi-rest-zero-a-record-of-long-arrays.main", 35, 21}; hero_lend_local_name(hero_lend_h1_b, "big_arrays", "b"); hero_pad_fill(&h1_b, sizeof(struct big), 1, hero_pad_g_0, hero_pad_n_0); t8 = big_arrays(&h1_b); } hero_print_int(t6); hero_print_str(t7); hero_print_int(t8); hero_print_end(); hero_lend_local_give(hero_lend_h1_b); hero_lend_local_give(hero_lend_h0_a); return;
+#line 295 "ffirestzeroarecordoflongarrays.c"
 }
 #undef h0_a
 #undef h1_b
-HERO_TU_LOCAL bool h_ffirestzeroarecordoflongarrays_0Big_eq(const struct big *a, const struct big *b) {
-    if (!((a->name[0] == b->name[0] && a->name[1] == b->name[1] && a->name[2] == b->name[2] && a->name[3] == b->name[3] && a->name[4] == b->name[4] && a->name[5] == b->name[5] && a->name[6] == b->name[6] && a->name[7] == b->name[7] && a->name[8] == b->name[8] && a->name[9] == b->name[9] && a->name[10] == b->name[10] && a->name[11] == b->name[11] && a->name[12] == b->name[12] && a->name[13] == b->name[13] && a->name[14] == b->name[14] && a->name[15] == b->name[15] && a->name[16] == b->name[16] && a->name[17] == b->name[17] && a->name[18] == b->name[18] && a->name[19] == b->name[19] && a->name[20] == b->name[20] && a->name[21] == b->name[21] && a->name[22] == b->name[22] && a->name[23] == b->name[23] && a->name[24] == b->name[24] && a->name[25] == b->name[25] && a->name[26] == b->name[26] && a->name[27] == b->name[27] && a->name[28] == b->name[28] && a->name[29] == b->name[29] && a->name[30] == b->name[30] && a->name[31] == b->name[31] && a->name[32] == b->name[32] && a->name[33] == b->name[33] && a->name[34] == b->name[34] && a->name[35] == b->name[35] && a->name[36] == b->name[36] && a->name[37] == b->name[37] && a->name[38] == b->name[38] && a->name[39] == b->name[39] && a->name[40] == b->name[40] && a->name[41] == b->name[41] && a->name[42] == b->name[42] && a->name[43] == b->name[43] && a->name[44] == b->name[44] && a->name[45] == b->name[45] && a->name[46] == b->name[46] && a->name[47] == b->name[47] && a->name[48] == b->name[48] && a->name[49] == b->name[49] && a->name[50] == b->name[50] && a->name[51] == b->name[51] && a->name[52] == b->name[52] && a->name[53] == b->name[53] && a->name[54] == b->name[54] && a->name[55] == b->name[55] && a->name[56] == b->name[56] && a->name[57] == b->name[57] && a->name[58] == b->name[58] && a->name[59] == b->name[59] && a->name[60] == b->name[60] && a->name[61] == b->name[61] && a->name[62] == b->name[62] && a->name[63] == b->name[63] && a->name[64] == b->name[64] && a->name[65] == b->name[65] && a->name[66] == b->name[66] && a->name[67] == b->name[67] && a->name[68] == b->name[68] && a->name[69] == b->name[69] && a->name[70] == b->name[70] && a->name[71] == b->name[71] && a->name[72] == b->name[72] && a->name[73] == b->name[73] && a->name[74] == b->name[74] && a->name[75] == b->name[75] && a->name[76] == b->name[76] && a->name[77] == b->name[77] && a->name[78] == b->name[78] && a->name[79] == b->name[79] && a->name[80] == b->name[80] && a->name[81] == b->name[81] && a->name[82] == b->name[82] && a->name[83] == b->name[83] && a->name[84] == b->name[84] && a->name[85] == b->name[85] && a->name[86] == b->name[86] && a->name[87] == b->name[87] && a->name[88] == b->name[88] && a->name[89] == b->name[89] && a->name[90] == b->name[90] && a->name[91] == b->name[91] && a->name[92] == b->name[92] && a->name[93] == b->name[93] && a->name[94] == b->name[94] && a->name[95] == b->name[95] && a->name[96] == b->name[96] && a->name[97] == b->name[97] && a->name[98] == b->name[98] && a->name[99] == b->name[99] && a->name[100] == b->name[100] && a->name[101] == b->name[101] && a->name[102] == b->name[102] && a->name[103] == b->name[103] && a->name[104] == b->name[104] && a->name[105] == b->name[105] && a->name[106] == b->name[106] && a->name[107] == b->name[107] && a->name[108] == b->name[108] && a->name[109] == b->name[109] && a->name[110] == b->name[110] && a->name[111] == b->name[111] && a->name[112] == b->name[112] && a->name[113] == b->name[113] && a->name[114] == b->name[114] && a->name[115] == b->name[115] && a->name[116] == b->name[116] && a->name[117] == b->name[117] && a->name[118] == b->name[118] && a->name[119] == b->name[119] && a->name[120] == b->name[120] && a->name[121] == b->name[121] && a->name[122] == b->name[122] && a->name[123] == b->name[123] && a->name[124] == b->name[124] && a->name[125] == b->name[125] && a->name[126] == b->name[126] && a->name[127] == b->name[127] && a->name[128] == b->name[128] && a->name[129] == b->name[129] && a->name[130] == b->name[130] && a->name[131] == b->name[131] && a->name[132] == b->name[132] && a->name[133] == b->name[133] && a->name[134] == b->name[134] && a->name[135] == b->name[135] && a->name[136] == b->name[136] && a->name[137] == b->name[137] && a->name[138] == b->name[138] && a->name[139] == b->name[139] && a->name[140] == b->name[140] && a->name[141] == b->name[141] && a->name[142] == b->name[142] && a->name[143] == b->name[143] && a->name[144] == b->name[144] && a->name[145] == b->name[145] && a->name[146] == b->name[146] && a->name[147] == b->name[147] && a->name[148] == b->name[148] && a->name[149] == b->name[149] && a->name[150] == b->name[150] && a->name[151] == b->name[151] && a->name[152] == b->name[152] && a->name[153] == b->name[153] && a->name[154] == b->name[154] && a->name[155] == b->name[155] && a->name[156] == b->name[156] && a->name[157] == b->name[157] && a->name[158] == b->name[158] && a->name[159] == b->name[159] && a->name[160] == b->name[160] && a->name[161] == b->name[161] && a->name[162] == b->name[162] && a->name[163] == b->name[163] && a->name[164] == b->name[164] && a->name[165] == b->name[165] && a->name[166] == b->name[166] && a->name[167] == b->name[167] && a->name[168] == b->name[168] && a->name[169] == b->name[169] && a->name[170] == b->name[170] && a->name[171] == b->name[171] && a->name[172] == b->name[172] && a->name[173] == b->name[173] && a->name[174] == b->name[174] && a->name[175] == b->name[175] && a->name[176] == b->name[176] && a->name[177] == b->name[177] && a->name[178] == b->name[178] && a->name[179] == b->name[179] && a->name[180] == b->name[180] && a->name[181] == b->name[181] && a->name[182] == b->name[182] && a->name[183] == b->name[183] && a->name[184] == b->name[184] && a->name[185] == b->name[185] && a->name[186] == b->name[186] && a->name[187] == b->name[187] && a->name[188] == b->name[188] && a->name[189] == b->name[189] && a->name[190] == b->name[190] && a->name[191] == b->name[191] && a->name[192] == b->name[192] && a->name[193] == b->name[193] && a->name[194] == b->name[194] && a->name[195] == b->name[195] && a->name[196] == b->name[196] && a->name[197] == b->name[197] && a->name[198] == b->name[198] && a->name[199] == b->name[199] && a->name[200] == b->name[200] && a->name[201] == b->name[201] && a->name[202] == b->name[202] && a->name[203] == b->name[203] && a->name[204] == b->name[204] && a->name[205] == b->name[205] && a->name[206] == b->name[206] && a->name[207] == b->name[207] && a->name[208] == b->name[208] && a->name[209] == b->name[209] && a->name[210] == b->name[210] && a->name[211] == b->name[211] && a->name[212] == b->name[212] && a->name[213] == b->name[213] && a->name[214] == b->name[214] && a->name[215] == b->name[215] && a->name[216] == b->name[216] && a->name[217] == b->name[217] && a->name[218] == b->name[218] && a->name[219] == b->name[219] && a->name[220] == b->name[220] && a->name[221] == b->name[221] && a->name[222] == b->name[222] && a->name[223] == b->name[223] && a->name[224] == b->name[224] && a->name[225] == b->name[225] && a->name[226] == b->name[226] && a->name[227] == b->name[227] && a->name[228] == b->name[228] && a->name[229] == b->name[229] && a->name[230] == b->name[230] && a->name[231] == b->name[231] && a->name[232] == b->name[232] && a->name[233] == b->name[233] && a->name[234] == b->name[234] && a->name[235] == b->name[235] && a->name[236] == b->name[236] && a->name[237] == b->name[237] && a->name[238] == b->name[238] && a->name[239] == b->name[239] && a->name[240] == b->name[240] && a->name[241] == b->name[241] && a->name[242] == b->name[242] && a->name[243] == b->name[243] && a->name[244] == b->name[244] && a->name[245] == b->name[245] && a->name[246] == b->name[246] && a->name[247] == b->name[247] && a->name[248] == b->name[248] && a->name[249] == b->name[249] && a->name[250] == b->name[250] && a->name[251] == b->name[251] && a->name[252] == b->name[252] && a->name[253] == b->name[253] && a->name[254] == b->name[254] && a->name[255] == b->name[255]))) return false;
-    if (!(a->n == b->n)) return false;
-    if (!((a->tail[0] == b->tail[0] && a->tail[1] == b->tail[1] && a->tail[2] == b->tail[2] && a->tail[3] == b->tail[3] && a->tail[4] == b->tail[4] && a->tail[5] == b->tail[5] && a->tail[6] == b->tail[6] && a->tail[7] == b->tail[7] && a->tail[8] == b->tail[8] && a->tail[9] == b->tail[9] && a->tail[10] == b->tail[10] && a->tail[11] == b->tail[11] && a->tail[12] == b->tail[12] && a->tail[13] == b->tail[13] && a->tail[14] == b->tail[14] && a->tail[15] == b->tail[15] && a->tail[16] == b->tail[16] && a->tail[17] == b->tail[17] && a->tail[18] == b->tail[18] && a->tail[19] == b->tail[19] && a->tail[20] == b->tail[20] && a->tail[21] == b->tail[21] && a->tail[22] == b->tail[22] && a->tail[23] == b->tail[23] && a->tail[24] == b->tail[24] && a->tail[25] == b->tail[25] && a->tail[26] == b->tail[26] && a->tail[27] == b->tail[27] && a->tail[28] == b->tail[28] && a->tail[29] == b->tail[29] && a->tail[30] == b->tail[30] && a->tail[31] == b->tail[31] && a->tail[32] == b->tail[32] && a->tail[33] == b->tail[33] && a->tail[34] == b->tail[34] && a->tail[35] == b->tail[35] && a->tail[36] == b->tail[36] && a->tail[37] == b->tail[37] && a->tail[38] == b->tail[38] && a->tail[39] == b->tail[39] && a->tail[40] == b->tail[40] && a->tail[41] == b->tail[41] && a->tail[42] == b->tail[42] && a->tail[43] == b->tail[43] && a->tail[44] == b->tail[44] && a->tail[45] == b->tail[45] && a->tail[46] == b->tail[46] && a->tail[47] == b->tail[47] && a->tail[48] == b->tail[48] && a->tail[49] == b->tail[49] && a->tail[50] == b->tail[50] && a->tail[51] == b->tail[51] && a->tail[52] == b->tail[52] && a->tail[53] == b->tail[53] && a->tail[54] == b->tail[54] && a->tail[55] == b->tail[55] && a->tail[56] == b->tail[56] && a->tail[57] == b->tail[57] && a->tail[58] == b->tail[58] && a->tail[59] == b->tail[59] && a->tail[60] == b->tail[60] && a->tail[61] == b->tail[61] && a->tail[62] == b->tail[62] && a->tail[63] == b->tail[63] && a->tail[64] == b->tail[64] && a->tail[65] == b->tail[65] && a->tail[66] == b->tail[66] && a->tail[67] == b->tail[67] && a->tail[68] == b->tail[68] && a->tail[69] == b->tail[69] && a->tail[70] == b->tail[70] && a->tail[71] == b->tail[71] && a->tail[72] == b->tail[72] && a->tail[73] == b->tail[73] && a->tail[74] == b->tail[74] && a->tail[75] == b->tail[75] && a->tail[76] == b->tail[76] && a->tail[77] == b->tail[77] && a->tail[78] == b->tail[78] && a->tail[79] == b->tail[79] && a->tail[80] == b->tail[80] && a->tail[81] == b->tail[81] && a->tail[82] == b->tail[82] && a->tail[83] == b->tail[83] && a->tail[84] == b->tail[84] && a->tail[85] == b->tail[85] && a->tail[86] == b->tail[86] && a->tail[87] == b->tail[87] && a->tail[88] == b->tail[88] && a->tail[89] == b->tail[89] && a->tail[90] == b->tail[90] && a->tail[91] == b->tail[91] && a->tail[92] == b->tail[92] && a->tail[93] == b->tail[93] && a->tail[94] == b->tail[94] && a->tail[95] == b->tail[95] && a->tail[96] == b->tail[96] && a->tail[97] == b->tail[97] && a->tail[98] == b->tail[98] && a->tail[99] == b->tail[99]))) return false;
+HERO_TU_LOCAL bool h_ffirestzeroarecordoflongarrays_0Big_eq(const struct big *hero_a, const struct big *hero_b) {
+    if (!((hero_a->name[0] == hero_b->name[0] && hero_a->name[1] == hero_b->name[1] && hero_a->name[2] == hero_b->name[2] && hero_a->name[3] == hero_b->name[3] && hero_a->name[4] == hero_b->name[4] && hero_a->name[5] == hero_b->name[5] && hero_a->name[6] == hero_b->name[6] && hero_a->name[7] == hero_b->name[7] && hero_a->name[8] == hero_b->name[8] && hero_a->name[9] == hero_b->name[9] && hero_a->name[10] == hero_b->name[10] && hero_a->name[11] == hero_b->name[11] && hero_a->name[12] == hero_b->name[12] && hero_a->name[13] == hero_b->name[13] && hero_a->name[14] == hero_b->name[14] && hero_a->name[15] == hero_b->name[15] && hero_a->name[16] == hero_b->name[16] && hero_a->name[17] == hero_b->name[17] && hero_a->name[18] == hero_b->name[18] && hero_a->name[19] == hero_b->name[19] && hero_a->name[20] == hero_b->name[20] && hero_a->name[21] == hero_b->name[21] && hero_a->name[22] == hero_b->name[22] && hero_a->name[23] == hero_b->name[23] && hero_a->name[24] == hero_b->name[24] && hero_a->name[25] == hero_b->name[25] && hero_a->name[26] == hero_b->name[26] && hero_a->name[27] == hero_b->name[27] && hero_a->name[28] == hero_b->name[28] && hero_a->name[29] == hero_b->name[29] && hero_a->name[30] == hero_b->name[30] && hero_a->name[31] == hero_b->name[31] && hero_a->name[32] == hero_b->name[32] && hero_a->name[33] == hero_b->name[33] && hero_a->name[34] == hero_b->name[34] && hero_a->name[35] == hero_b->name[35] && hero_a->name[36] == hero_b->name[36] && hero_a->name[37] == hero_b->name[37] && hero_a->name[38] == hero_b->name[38] && hero_a->name[39] == hero_b->name[39] && hero_a->name[40] == hero_b->name[40] && hero_a->name[41] == hero_b->name[41] && hero_a->name[42] == hero_b->name[42] && hero_a->name[43] == hero_b->name[43] && hero_a->name[44] == hero_b->name[44] && hero_a->name[45] == hero_b->name[45] && hero_a->name[46] == hero_b->name[46] && hero_a->name[47] == hero_b->name[47] && hero_a->name[48] == hero_b->name[48] && hero_a->name[49] == hero_b->name[49] && hero_a->name[50] == hero_b->name[50] && hero_a->name[51] == hero_b->name[51] && hero_a->name[52] == hero_b->name[52] && hero_a->name[53] == hero_b->name[53] && hero_a->name[54] == hero_b->name[54] && hero_a->name[55] == hero_b->name[55] && hero_a->name[56] == hero_b->name[56] && hero_a->name[57] == hero_b->name[57] && hero_a->name[58] == hero_b->name[58] && hero_a->name[59] == hero_b->name[59] && hero_a->name[60] == hero_b->name[60] && hero_a->name[61] == hero_b->name[61] && hero_a->name[62] == hero_b->name[62] && hero_a->name[63] == hero_b->name[63] && hero_a->name[64] == hero_b->name[64] && hero_a->name[65] == hero_b->name[65] && hero_a->name[66] == hero_b->name[66] && hero_a->name[67] == hero_b->name[67] && hero_a->name[68] == hero_b->name[68] && hero_a->name[69] == hero_b->name[69] && hero_a->name[70] == hero_b->name[70] && hero_a->name[71] == hero_b->name[71] && hero_a->name[72] == hero_b->name[72] && hero_a->name[73] == hero_b->name[73] && hero_a->name[74] == hero_b->name[74] && hero_a->name[75] == hero_b->name[75] && hero_a->name[76] == hero_b->name[76] && hero_a->name[77] == hero_b->name[77] && hero_a->name[78] == hero_b->name[78] && hero_a->name[79] == hero_b->name[79] && hero_a->name[80] == hero_b->name[80] && hero_a->name[81] == hero_b->name[81] && hero_a->name[82] == hero_b->name[82] && hero_a->name[83] == hero_b->name[83] && hero_a->name[84] == hero_b->name[84] && hero_a->name[85] == hero_b->name[85] && hero_a->name[86] == hero_b->name[86] && hero_a->name[87] == hero_b->name[87] && hero_a->name[88] == hero_b->name[88] && hero_a->name[89] == hero_b->name[89] && hero_a->name[90] == hero_b->name[90] && hero_a->name[91] == hero_b->name[91] && hero_a->name[92] == hero_b->name[92] && hero_a->name[93] == hero_b->name[93] && hero_a->name[94] == hero_b->name[94] && hero_a->name[95] == hero_b->name[95] && hero_a->name[96] == hero_b->name[96] && hero_a->name[97] == hero_b->name[97] && hero_a->name[98] == hero_b->name[98] && hero_a->name[99] == hero_b->name[99] && hero_a->name[100] == hero_b->name[100] && hero_a->name[101] == hero_b->name[101] && hero_a->name[102] == hero_b->name[102] && hero_a->name[103] == hero_b->name[103] && hero_a->name[104] == hero_b->name[104] && hero_a->name[105] == hero_b->name[105] && hero_a->name[106] == hero_b->name[106] && hero_a->name[107] == hero_b->name[107] && hero_a->name[108] == hero_b->name[108] && hero_a->name[109] == hero_b->name[109] && hero_a->name[110] == hero_b->name[110] && hero_a->name[111] == hero_b->name[111] && hero_a->name[112] == hero_b->name[112] && hero_a->name[113] == hero_b->name[113] && hero_a->name[114] == hero_b->name[114] && hero_a->name[115] == hero_b->name[115] && hero_a->name[116] == hero_b->name[116] && hero_a->name[117] == hero_b->name[117] && hero_a->name[118] == hero_b->name[118] && hero_a->name[119] == hero_b->name[119] && hero_a->name[120] == hero_b->name[120] && hero_a->name[121] == hero_b->name[121] && hero_a->name[122] == hero_b->name[122] && hero_a->name[123] == hero_b->name[123] && hero_a->name[124] == hero_b->name[124] && hero_a->name[125] == hero_b->name[125] && hero_a->name[126] == hero_b->name[126] && hero_a->name[127] == hero_b->name[127] && hero_a->name[128] == hero_b->name[128] && hero_a->name[129] == hero_b->name[129] && hero_a->name[130] == hero_b->name[130] && hero_a->name[131] == hero_b->name[131] && hero_a->name[132] == hero_b->name[132] && hero_a->name[133] == hero_b->name[133] && hero_a->name[134] == hero_b->name[134] && hero_a->name[135] == hero_b->name[135] && hero_a->name[136] == hero_b->name[136] && hero_a->name[137] == hero_b->name[137] && hero_a->name[138] == hero_b->name[138] && hero_a->name[139] == hero_b->name[139] && hero_a->name[140] == hero_b->name[140] && hero_a->name[141] == hero_b->name[141] && hero_a->name[142] == hero_b->name[142] && hero_a->name[143] == hero_b->name[143] && hero_a->name[144] == hero_b->name[144] && hero_a->name[145] == hero_b->name[145] && hero_a->name[146] == hero_b->name[146] && hero_a->name[147] == hero_b->name[147] && hero_a->name[148] == hero_b->name[148] && hero_a->name[149] == hero_b->name[149] && hero_a->name[150] == hero_b->name[150] && hero_a->name[151] == hero_b->name[151] && hero_a->name[152] == hero_b->name[152] && hero_a->name[153] == hero_b->name[153] && hero_a->name[154] == hero_b->name[154] && hero_a->name[155] == hero_b->name[155] && hero_a->name[156] == hero_b->name[156] && hero_a->name[157] == hero_b->name[157] && hero_a->name[158] == hero_b->name[158] && hero_a->name[159] == hero_b->name[159] && hero_a->name[160] == hero_b->name[160] && hero_a->name[161] == hero_b->name[161] && hero_a->name[162] == hero_b->name[162] && hero_a->name[163] == hero_b->name[163] && hero_a->name[164] == hero_b->name[164] && hero_a->name[165] == hero_b->name[165] && hero_a->name[166] == hero_b->name[166] && hero_a->name[167] == hero_b->name[167] && hero_a->name[168] == hero_b->name[168] && hero_a->name[169] == hero_b->name[169] && hero_a->name[170] == hero_b->name[170] && hero_a->name[171] == hero_b->name[171] && hero_a->name[172] == hero_b->name[172] && hero_a->name[173] == hero_b->name[173] && hero_a->name[174] == hero_b->name[174] && hero_a->name[175] == hero_b->name[175] && hero_a->name[176] == hero_b->name[176] && hero_a->name[177] == hero_b->name[177] && hero_a->name[178] == hero_b->name[178] && hero_a->name[179] == hero_b->name[179] && hero_a->name[180] == hero_b->name[180] && hero_a->name[181] == hero_b->name[181] && hero_a->name[182] == hero_b->name[182] && hero_a->name[183] == hero_b->name[183] && hero_a->name[184] == hero_b->name[184] && hero_a->name[185] == hero_b->name[185] && hero_a->name[186] == hero_b->name[186] && hero_a->name[187] == hero_b->name[187] && hero_a->name[188] == hero_b->name[188] && hero_a->name[189] == hero_b->name[189] && hero_a->name[190] == hero_b->name[190] && hero_a->name[191] == hero_b->name[191] && hero_a->name[192] == hero_b->name[192] && hero_a->name[193] == hero_b->name[193] && hero_a->name[194] == hero_b->name[194] && hero_a->name[195] == hero_b->name[195] && hero_a->name[196] == hero_b->name[196] && hero_a->name[197] == hero_b->name[197] && hero_a->name[198] == hero_b->name[198] && hero_a->name[199] == hero_b->name[199] && hero_a->name[200] == hero_b->name[200] && hero_a->name[201] == hero_b->name[201] && hero_a->name[202] == hero_b->name[202] && hero_a->name[203] == hero_b->name[203] && hero_a->name[204] == hero_b->name[204] && hero_a->name[205] == hero_b->name[205] && hero_a->name[206] == hero_b->name[206] && hero_a->name[207] == hero_b->name[207] && hero_a->name[208] == hero_b->name[208] && hero_a->name[209] == hero_b->name[209] && hero_a->name[210] == hero_b->name[210] && hero_a->name[211] == hero_b->name[211] && hero_a->name[212] == hero_b->name[212] && hero_a->name[213] == hero_b->name[213] && hero_a->name[214] == hero_b->name[214] && hero_a->name[215] == hero_b->name[215] && hero_a->name[216] == hero_b->name[216] && hero_a->name[217] == hero_b->name[217] && hero_a->name[218] == hero_b->name[218] && hero_a->name[219] == hero_b->name[219] && hero_a->name[220] == hero_b->name[220] && hero_a->name[221] == hero_b->name[221] && hero_a->name[222] == hero_b->name[222] && hero_a->name[223] == hero_b->name[223] && hero_a->name[224] == hero_b->name[224] && hero_a->name[225] == hero_b->name[225] && hero_a->name[226] == hero_b->name[226] && hero_a->name[227] == hero_b->name[227] && hero_a->name[228] == hero_b->name[228] && hero_a->name[229] == hero_b->name[229] && hero_a->name[230] == hero_b->name[230] && hero_a->name[231] == hero_b->name[231] && hero_a->name[232] == hero_b->name[232] && hero_a->name[233] == hero_b->name[233] && hero_a->name[234] == hero_b->name[234] && hero_a->name[235] == hero_b->name[235] && hero_a->name[236] == hero_b->name[236] && hero_a->name[237] == hero_b->name[237] && hero_a->name[238] == hero_b->name[238] && hero_a->name[239] == hero_b->name[239] && hero_a->name[240] == hero_b->name[240] && hero_a->name[241] == hero_b->name[241] && hero_a->name[242] == hero_b->name[242] && hero_a->name[243] == hero_b->name[243] && hero_a->name[244] == hero_b->name[244] && hero_a->name[245] == hero_b->name[245] && hero_a->name[246] == hero_b->name[246] && hero_a->name[247] == hero_b->name[247] && hero_a->name[248] == hero_b->name[248] && hero_a->name[249] == hero_b->name[249] && hero_a->name[250] == hero_b->name[250] && hero_a->name[251] == hero_b->name[251] && hero_a->name[252] == hero_b->name[252] && hero_a->name[253] == hero_b->name[253] && hero_a->name[254] == hero_b->name[254] && hero_a->name[255] == hero_b->name[255]))) return false;
+    if (!(hero_a->n == hero_b->n)) return false;
+    if (!((hero_a->tail[0] == hero_b->tail[0] && hero_a->tail[1] == hero_b->tail[1] && hero_a->tail[2] == hero_b->tail[2] && hero_a->tail[3] == hero_b->tail[3] && hero_a->tail[4] == hero_b->tail[4] && hero_a->tail[5] == hero_b->tail[5] && hero_a->tail[6] == hero_b->tail[6] && hero_a->tail[7] == hero_b->tail[7] && hero_a->tail[8] == hero_b->tail[8] && hero_a->tail[9] == hero_b->tail[9] && hero_a->tail[10] == hero_b->tail[10] && hero_a->tail[11] == hero_b->tail[11] && hero_a->tail[12] == hero_b->tail[12] && hero_a->tail[13] == hero_b->tail[13] && hero_a->tail[14] == hero_b->tail[14] && hero_a->tail[15] == hero_b->tail[15] && hero_a->tail[16] == hero_b->tail[16] && hero_a->tail[17] == hero_b->tail[17] && hero_a->tail[18] == hero_b->tail[18] && hero_a->tail[19] == hero_b->tail[19] && hero_a->tail[20] == hero_b->tail[20] && hero_a->tail[21] == hero_b->tail[21] && hero_a->tail[22] == hero_b->tail[22] && hero_a->tail[23] == hero_b->tail[23] && hero_a->tail[24] == hero_b->tail[24] && hero_a->tail[25] == hero_b->tail[25] && hero_a->tail[26] == hero_b->tail[26] && hero_a->tail[27] == hero_b->tail[27] && hero_a->tail[28] == hero_b->tail[28] && hero_a->tail[29] == hero_b->tail[29] && hero_a->tail[30] == hero_b->tail[30] && hero_a->tail[31] == hero_b->tail[31] && hero_a->tail[32] == hero_b->tail[32] && hero_a->tail[33] == hero_b->tail[33] && hero_a->tail[34] == hero_b->tail[34] && hero_a->tail[35] == hero_b->tail[35] && hero_a->tail[36] == hero_b->tail[36] && hero_a->tail[37] == hero_b->tail[37] && hero_a->tail[38] == hero_b->tail[38] && hero_a->tail[39] == hero_b->tail[39] && hero_a->tail[40] == hero_b->tail[40] && hero_a->tail[41] == hero_b->tail[41] && hero_a->tail[42] == hero_b->tail[42] && hero_a->tail[43] == hero_b->tail[43] && hero_a->tail[44] == hero_b->tail[44] && hero_a->tail[45] == hero_b->tail[45] && hero_a->tail[46] == hero_b->tail[46] && hero_a->tail[47] == hero_b->tail[47] && hero_a->tail[48] == hero_b->tail[48] && hero_a->tail[49] == hero_b->tail[49] && hero_a->tail[50] == hero_b->tail[50] && hero_a->tail[51] == hero_b->tail[51] && hero_a->tail[52] == hero_b->tail[52] && hero_a->tail[53] == hero_b->tail[53] && hero_a->tail[54] == hero_b->tail[54] && hero_a->tail[55] == hero_b->tail[55] && hero_a->tail[56] == hero_b->tail[56] && hero_a->tail[57] == hero_b->tail[57] && hero_a->tail[58] == hero_b->tail[58] && hero_a->tail[59] == hero_b->tail[59] && hero_a->tail[60] == hero_b->tail[60] && hero_a->tail[61] == hero_b->tail[61] && hero_a->tail[62] == hero_b->tail[62] && hero_a->tail[63] == hero_b->tail[63] && hero_a->tail[64] == hero_b->tail[64] && hero_a->tail[65] == hero_b->tail[65] && hero_a->tail[66] == hero_b->tail[66] && hero_a->tail[67] == hero_b->tail[67] && hero_a->tail[68] == hero_b->tail[68] && hero_a->tail[69] == hero_b->tail[69] && hero_a->tail[70] == hero_b->tail[70] && hero_a->tail[71] == hero_b->tail[71] && hero_a->tail[72] == hero_b->tail[72] && hero_a->tail[73] == hero_b->tail[73] && hero_a->tail[74] == hero_b->tail[74] && hero_a->tail[75] == hero_b->tail[75] && hero_a->tail[76] == hero_b->tail[76] && hero_a->tail[77] == hero_b->tail[77] && hero_a->tail[78] == hero_b->tail[78] && hero_a->tail[79] == hero_b->tail[79] && hero_a->tail[80] == hero_b->tail[80] && hero_a->tail[81] == hero_b->tail[81] && hero_a->tail[82] == hero_b->tail[82] && hero_a->tail[83] == hero_b->tail[83] && hero_a->tail[84] == hero_b->tail[84] && hero_a->tail[85] == hero_b->tail[85] && hero_a->tail[86] == hero_b->tail[86] && hero_a->tail[87] == hero_b->tail[87] && hero_a->tail[88] == hero_b->tail[88] && hero_a->tail[89] == hero_b->tail[89] && hero_a->tail[90] == hero_b->tail[90] && hero_a->tail[91] == hero_b->tail[91] && hero_a->tail[92] == hero_b->tail[92] && hero_a->tail[93] == hero_b->tail[93] && hero_a->tail[94] == hero_b->tail[94] && hero_a->tail[95] == hero_b->tail[95] && hero_a->tail[96] == hero_b->tail[96] && hero_a->tail[97] == hero_b->tail[97] && hero_a->tail[98] == hero_b->tail[98] && hero_a->tail[99] == hero_b->tail[99]))) return false;
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_ffirestzeroarecordoflongarrays_0Big_hash(const void *elem) {
-    const struct big *v = elem;
-    uint64_t h = UINT64_C(0xcbf29ce484222325);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[1])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[2])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[3])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[4])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[5])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[6])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[7])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[8])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[9])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[10])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[11])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[12])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[13])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[14])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[15])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[16])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[17])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[18])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[19])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[20])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[21])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[22])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[23])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[24])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[25])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[26])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[27])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[28])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[29])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[30])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[31])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[32])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[33])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[34])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[35])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[36])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[37])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[38])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[39])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[40])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[41])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[42])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[43])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[44])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[45])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[46])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[47])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[48])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[49])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[50])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[51])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[52])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[53])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[54])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[55])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[56])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[57])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[58])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[59])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[60])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[61])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[62])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[63])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[64])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[65])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[66])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[67])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[68])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[69])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[70])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[71])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[72])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[73])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[74])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[75])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[76])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[77])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[78])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[79])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[80])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[81])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[82])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[83])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[84])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[85])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[86])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[87])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[88])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[89])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[90])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[91])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[92])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[93])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[94])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[95])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[96])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[97])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[98])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[99])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[100])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[101])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[102])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[103])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[104])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[105])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[106])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[107])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[108])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[109])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[110])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[111])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[112])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[113])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[114])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[115])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[116])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[117])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[118])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[119])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[120])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[121])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[122])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[123])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[124])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[125])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[126])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[127])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[128])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[129])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[130])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[131])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[132])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[133])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[134])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[135])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[136])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[137])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[138])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[139])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[140])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[141])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[142])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[143])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[144])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[145])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[146])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[147])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[148])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[149])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[150])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[151])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[152])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[153])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[154])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[155])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[156])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[157])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[158])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[159])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[160])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[161])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[162])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[163])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[164])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[165])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[166])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[167])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[168])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[169])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[170])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[171])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[172])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[173])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[174])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[175])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[176])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[177])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[178])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[179])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[180])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[181])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[182])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[183])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[184])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[185])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[186])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[187])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[188])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[189])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[190])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[191])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[192])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[193])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[194])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[195])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[196])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[197])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[198])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[199])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[200])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[201])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[202])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[203])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[204])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[205])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[206])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[207])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[208])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[209])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[210])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[211])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[212])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[213])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[214])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[215])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[216])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[217])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[218])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[219])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[220])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[221])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[222])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[223])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[224])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[225])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[226])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[227])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[228])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[229])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[230])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[231])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[232])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[233])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[234])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[235])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[236])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[237])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[238])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[239])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[240])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[241])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[242])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[243])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[244])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[245])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[246])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[247])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[248])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[249])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[250])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[251])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[252])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[253])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[254])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->name[255])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i32)->hash(&v->n)) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[0])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[1])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[2])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[3])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[4])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[5])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[6])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[7])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[8])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[9])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[10])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[11])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[12])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[13])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[14])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[15])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[16])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[17])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[18])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[19])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[20])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[21])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[22])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[23])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[24])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[25])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[26])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[27])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[28])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[29])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[30])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[31])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[32])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[33])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[34])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[35])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[36])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[37])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[38])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[39])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[40])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[41])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[42])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[43])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[44])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[45])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[46])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[47])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[48])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[49])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[50])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[51])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[52])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[53])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[54])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[55])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[56])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[57])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[58])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[59])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[60])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[61])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[62])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[63])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[64])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[65])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[66])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[67])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[68])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[69])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[70])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[71])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[72])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[73])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[74])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[75])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[76])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[77])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[78])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[79])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[80])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[81])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[82])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[83])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[84])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[85])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[86])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[87])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[88])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[89])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[90])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[91])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[92])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[93])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[94])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[95])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[96])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[97])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[98])) * UINT64_C(0x100000001b3);
-    h = (h ^ (&hero_desc_i8)->hash(&v->tail[99])) * UINT64_C(0x100000001b3);
-    return h;
+HERO_TU_LOCAL uint64_t h_ffirestzeroarecordoflongarrays_0Big_hash(const void *hero_elem) {
+    const struct big *hero_v = hero_elem;
+    uint64_t hero_h = UINT64_C(0xcbf29ce484222325);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[1])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[2])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[3])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[4])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[5])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[6])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[7])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[8])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[9])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[10])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[11])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[12])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[13])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[14])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[15])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[16])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[17])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[18])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[19])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[20])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[21])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[22])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[23])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[24])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[25])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[26])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[27])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[28])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[29])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[30])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[31])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[32])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[33])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[34])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[35])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[36])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[37])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[38])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[39])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[40])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[41])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[42])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[43])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[44])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[45])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[46])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[47])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[48])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[49])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[50])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[51])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[52])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[53])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[54])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[55])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[56])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[57])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[58])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[59])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[60])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[61])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[62])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[63])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[64])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[65])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[66])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[67])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[68])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[69])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[70])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[71])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[72])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[73])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[74])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[75])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[76])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[77])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[78])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[79])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[80])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[81])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[82])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[83])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[84])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[85])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[86])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[87])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[88])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[89])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[90])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[91])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[92])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[93])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[94])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[95])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[96])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[97])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[98])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[99])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[100])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[101])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[102])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[103])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[104])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[105])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[106])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[107])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[108])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[109])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[110])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[111])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[112])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[113])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[114])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[115])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[116])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[117])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[118])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[119])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[120])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[121])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[122])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[123])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[124])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[125])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[126])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[127])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[128])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[129])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[130])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[131])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[132])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[133])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[134])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[135])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[136])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[137])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[138])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[139])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[140])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[141])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[142])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[143])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[144])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[145])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[146])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[147])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[148])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[149])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[150])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[151])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[152])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[153])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[154])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[155])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[156])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[157])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[158])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[159])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[160])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[161])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[162])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[163])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[164])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[165])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[166])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[167])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[168])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[169])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[170])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[171])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[172])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[173])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[174])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[175])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[176])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[177])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[178])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[179])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[180])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[181])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[182])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[183])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[184])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[185])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[186])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[187])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[188])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[189])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[190])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[191])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[192])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[193])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[194])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[195])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[196])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[197])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[198])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[199])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[200])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[201])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[202])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[203])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[204])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[205])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[206])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[207])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[208])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[209])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[210])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[211])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[212])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[213])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[214])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[215])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[216])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[217])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[218])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[219])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[220])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[221])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[222])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[223])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[224])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[225])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[226])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[227])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[228])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[229])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[230])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[231])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[232])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[233])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[234])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[235])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[236])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[237])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[238])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[239])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[240])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[241])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[242])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[243])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[244])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[245])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[246])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[247])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[248])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[249])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[250])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[251])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[252])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[253])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[254])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->name[255])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i32)->hash(&hero_v->n)) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[0])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[1])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[2])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[3])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[4])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[5])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[6])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[7])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[8])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[9])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[10])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[11])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[12])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[13])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[14])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[15])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[16])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[17])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[18])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[19])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[20])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[21])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[22])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[23])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[24])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[25])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[26])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[27])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[28])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[29])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[30])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[31])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[32])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[33])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[34])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[35])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[36])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[37])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[38])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[39])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[40])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[41])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[42])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[43])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[44])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[45])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[46])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[47])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[48])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[49])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[50])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[51])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[52])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[53])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[54])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[55])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[56])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[57])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[58])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[59])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[60])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[61])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[62])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[63])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[64])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[65])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[66])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[67])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[68])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[69])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[70])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[71])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[72])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[73])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[74])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[75])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[76])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[77])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[78])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[79])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[80])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[81])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[82])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[83])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[84])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[85])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[86])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[87])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[88])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[89])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[90])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[91])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[92])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[93])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[94])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[95])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[96])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[97])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[98])) * UINT64_C(0x100000001b3);
+    hero_h = (hero_h ^ (&hero_desc_i8)->hash(&hero_v->tail[99])) * UINT64_C(0x100000001b3);
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("47d1338c41db6ab6", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("46d06ee12e8a0695", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("ffirestzeroarecordoflongarrays\tffi-rest-zero-a-record-of-long-arrays\n");
     h_ffirestzeroarecordoflongarrays_main();
     hero_runtime_check_leaks();

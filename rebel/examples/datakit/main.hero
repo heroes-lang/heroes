@@ -1,0 +1,82 @@
+# datakit: a data tool for the terminal, in the family of xsv, jq, Miller
+# and a small pandas. It reads tables and documents in CSV, TSV, XLSX, JSON,
+# JSON Lines, YAML, TOML, INI, Java properties, XML, MessagePack, CBOR and
+# BSON into one model, whose numbers are exact decimals and whose dates stay
+# dates; converts between them; selects with JSONPath; filters, groups,
+# aggregates and computes with an expression language of its own; runs SQL
+# over files loaded into SQLite; shows a table in a scrollable full-screen
+# view; and writes a PDF report.
+#
+# Run it for real from the repository's root:
+#
+#     heroes build rebel/examples/datakit/main.hero -o build/datakit/datakit
+#     build/datakit/datakit convert orders.csv -o orders.xlsx
+#     build/datakit/datakit query orders.csv --where "total > 100" --group region --agg "count(), sum(total)"
+#     build/datakit/datakit sql orders.csv customers.csv --query "SELECT ..."
+#     build/datakit/datakit view orders.csv
+#     build/datakit/datakit report orders.csv -o orders.pdf --group region --agg "sum(total)"
+#
+# `datakit --help` lists the commands, `datakit <command> --help` their
+# flags. `datakit demo` runs the scripted session `main.expected` holds: it
+# writes sample files under `build/datakit-demo`, runs some thirty commands
+# over them, reads back what they wrote, and removes the folder.
+#
+# Rebel's packages, and what for:
+#
+# - `csv`, `xlsx`, `json`, `yaml`, `toml`, `ini`, `xml`, `msgpack`, `cbor`,
+#   `bson`: the formats, each read into the model and written from it
+#   (`formats/*_file`); Java properties are read and written here
+#   (`formats/properties_file`), since the program flattens nested lists in
+#   Spring's manner, which Rebel's `java_properties` leaves to its caller.
+# - `json/path`: `--path`, the RFC 9535 queries (`query/selection`).
+# - `big` and `numbers`: the exact decimals of the model, sums and means to
+#   the digit (`model/decimal`, `query/evaluate`, `query/aggregate`).
+# - `stats`: the deviation, the variance and the percentiles
+#   (`query/aggregate`).
+# - `scanner`: the tokens of the expression language of `--where`,
+#   `--select` and `--agg` (`query/expr`).
+# - `sql/sqlite` and `sql/build`: `datakit sql`, the rows inserted as
+#   parameters (`query/database`).
+# - `sql`: the values SQLite is handed and answers (`query/database`).
+# - `tui` and `term`: `datakit view` (`output/viewer`).
+# - `pdf`: `datakit report`, and the report read back (`output/report`,
+#   `output/inspect`).
+# - `flags`: the command line (`commands/cli`).
+# - `io` and `fs`: the standard streams and the files (`commands/session`,
+#   `formats/codec`).
+# - `property`: the property that every format gives back the table it was
+#   given (`formats/codec`'s tests).
+# - `hash`: the digest of a file's content (`model/digest`).
+# - `time`, `unicode/segment`, `strings`, `lists`, `bytes`, `path`, `os`:
+#   moments, widths on a screen, texts, sorting, bytes, paths, the working
+#   folder of the demo.
+
+use <rebel>/flags
+
+use commands/cli
+use commands/session
+use demo/script
+
+# Runs the command the arguments ask, the demo included, and ends with its
+# exit code.
+function main()
+    exit(code: run_program())
+
+# The exit code of the command the program's arguments ask.
+function run_program() -> i64
+    out = session.terminal()
+    arguments: [str] @= []
+
+    for a in args_checked()
+        match a
+            .ok text => arguments @ arguments.push(text)
+            .err e =>
+                session.complain(out, message: f"an argument is not UTF-8: {e.msg}")
+                return 2
+
+    return match cli.parse_command(arguments, out: out)
+        .finished d => d.code
+        .chosen c   => if c.name == "demo"
+            script.run(flags.value_of(c.found, "dir").default(script.DEFAULT_DIR), execute: cli.run)
+        else
+            cli.execute(c.name, found: c.found, out: out)

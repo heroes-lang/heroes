@@ -27,6 +27,44 @@
 #include "heroes_guard_open.h"
 #include <stdio.h>
 #include "heroes_guard_close.h"
+#pragma push_macro("clang")
+#undef clang
+#pragma push_macro("diagnostic")
+#undef diagnostic
+#pragma push_macro("ignored")
+#undef ignored
+#pragma push_macro("pack")
+#undef pack
+#pragma push_macro("float_control")
+#undef float_control
+#pragma push_macro("pop")
+#undef pop
+#pragma push_macro("precise")
+#undef precise
+#pragma push_macro("on")
+#undef on
+#pragma push_macro("GCC")
+#undef GCC
+#pragma push_macro("visibility")
+#undef visibility
+#pragma push_macro("push")
+#undef push
+#pragma push_macro("default")
+#undef default
+#pragma push_macro("section")
+#undef section
+#pragma push_macro("bss")
+#undef bss
+#pragma push_macro("data")
+#undef data
+#pragma push_macro("rodata")
+#undef rodata
+#pragma push_macro("text")
+#undef text
+#pragma push_macro("relro")
+#undef relro
+#pragma push_macro("optimize")
+#undef optimize
 #pragma clang diagnostic ignored "-Wignored-pragmas"
 #pragma pack()
 #pragma float_control(pop)
@@ -34,6 +72,25 @@
 #pragma GCC visibility push(default)
 #pragma clang section bss="" data="" rodata="" text="" relro=""
 #pragma clang optimize on
+#pragma pop_macro("clang")
+#pragma pop_macro("diagnostic")
+#pragma pop_macro("ignored")
+#pragma pop_macro("pack")
+#pragma pop_macro("float_control")
+#pragma pop_macro("pop")
+#pragma pop_macro("precise")
+#pragma pop_macro("on")
+#pragma pop_macro("GCC")
+#pragma pop_macro("visibility")
+#pragma pop_macro("push")
+#pragma pop_macro("default")
+#pragma pop_macro("section")
+#pragma pop_macro("bss")
+#pragma pop_macro("data")
+#pragma pop_macro("rodata")
+#pragma pop_macro("text")
+#pragma pop_macro("relro")
+#pragma pop_macro("optimize")
 #pragma clang diagnostic pop
 #pragma clang diagnostic error "-Wreturn-type"
 #pragma clang diagnostic error "-Wuninitialized"
@@ -55,7 +112,7 @@
 _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compiler");
 #define HERO_TU_LOCAL
 #define HERO_TU_QUIET
-#define HERO_NODEBUG __attribute__((nodebug))
+#define HERO_NODEBUG __attribute__((__nodebug__))
 #ifdef __OPTIMIZE__
 #define HERO_ENTRY_STOP ((void)0)
 #else
@@ -117,28 +174,28 @@ HERO_STR_STATIC(hero_str_d028710, "the bytes of ");
 HERO_STR_STATIC(hero_str_612f4355, " are not UTF-8");
 HERO_STR_STATIC(hero_str_b908f30, "could not read ");
 
-#line 121 "abortavariableforachildwhosevalueholdsanul.c"
+#line 178 "abortavariableforachildwhosevalueholdsanul.c"
 typedef struct h_0opt_f87774a {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroStr ok;
-        HeroFailure err;
-    } as;
+        HeroStr hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_f87774a;
 
 typedef struct h_0opt_a8ea2 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        HeroFailure err;
-    } as;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_a8ea2;
 
 typedef struct h_0opt_e201354 {
-    int64_t tag;
+    int64_t hero_tag;
     union {
-        int64_t ok;
-        HeroFailure err;
-    } as;
+        int64_t hero_ok;
+        HeroFailure hero_err;
+    } hero_as;
 } h_0opt_e201354;
 
 #pragma clang diagnostic error "-Wreturn-type"
@@ -159,35 +216,35 @@ typedef struct h_0opt_e201354 {
 #pragma clang diagnostic error "-Wfloat-conversion"
 #pragma clang diagnostic error "-Wimplicit-int-conversion"
 #line 7 "tests/golden/run/abort-a-variable-for-a-child-whose-value-holds-a-nul.hero"
-__attribute__((unused)) static void hero_ffi_probe_h_abortavariableforachildwhosevalueholdsanul_fopen(const char * a0, const char * a1) { (void)(fopen)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_abortavariableforachildwhosevalueholdsanul_fputc(int32_t a0, void * a1) { (void)(fputc)(a0, a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_abortavariableforachildwhosevalueholdsanul_fclose(void * a0) { (void)(fclose)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_abortavariableforachildwhosevalueholdsanul_fopen(const char * hero_a0, const char * hero_a1) { (void)(fopen)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_abortavariableforachildwhosevalueholdsanul_fputc(int32_t hero_a0, void * hero_a1) { (void)(fputc)(hero_a0, hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_abortavariableforachildwhosevalueholdsanul_fclose(void * hero_a0) { (void)(fclose)(hero_a0); }
 #line 12
-__attribute__((unused)) static void hero_ffi_probe_h_abortavariableforachildwhosevalueholdsanul_hero_run_env(HeroStr a0, HeroStr a1) { (void)(hero_run_env)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_abortavariableforachildwhosevalueholdsanul_hero_run_env(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_run_env)(hero_a0, hero_a1); }
 #line 113 "<heroes library>"
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr a0, int64_t * a1) { (void)(hero_file_read_str)(a0, (void *)a1); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr a0, HeroStr a1) { (void)(hero_file_write_str)(a0, a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_read_str(HeroStr hero_a0, int64_t * hero_a1) { (void)(hero_file_read_str)(hero_a0, (void *)hero_a1); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_file_write_str(HeroStr hero_a0, HeroStr hero_a1) { (void)(hero_file_write_str)(hero_a0, hero_a1); }
 #line 116
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_at(int64_t a0) { (void)(hero_args_at)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t a0) { (void)(hero_args_raw)(a0); }
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_exit(int64_t a0) { (void)(hero_exit)(a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_at(int64_t hero_a0) { (void)(hero_args_at)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(int64_t hero_a0) { (void)(hero_args_raw)(hero_a0); }
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
-__attribute__((unused)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * a0, int64_t * a1) { (void)(hero_str_try_from_cstr)(a0, (void *)a1); }
-#line 177 "abortavariableforachildwhosevalueholdsanul.c"
+__attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
+#line 234 "abortavariableforachildwhosevalueholdsanul.c"
 #pragma clang diagnostic pop
 
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v);
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v);
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b);
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v);
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v);
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b);
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem);
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v);
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v);
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b);
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem);
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b);
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem);
 
 HeroStr h_abortavariableforachildwhosevalueholdsanul_HELD(void);
 HeroStr h_abortavariableforachildwhosevalueholdsanul_held(void);
@@ -197,51 +254,51 @@ int64_t h_library_HERO_OS_NOT_FOUND(void);
 int64_t h_library_HERO_OS_NOT_TEXT(void);
 int64_t h_library_HERO_OS_BAD_NAME(void);
 h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller);
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path);
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path);
 
 #line 14 "tests/golden/run/abort-a-variable-for-a-child-whose-value-holds-a-nul.hero"
-HeroStr h_abortavariableforachildwhosevalueholdsanul_HELD(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto bb0; bb0:
+HeroStr h_abortavariableforachildwhosevalueholdsanul_HELD(void) { HERO_NODEBUG HeroStr t1; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_7ad1b134);
-#line 206 "abortavariableforachildwhosevalueholdsanul.c"
+#line 263 "abortavariableforachildwhosevalueholdsanul.c"
     hero_str_incref(t1);
     return t1;
 }
 
 #line 17 "tests/golden/run/abort-a-variable-for-a-child-whose-value-holds-a-nul.hero"
-HeroStr h_abortavariableforachildwhosevalueholdsanul_held(void) { void * h0_handle; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h4_own4 = {0}, t16, t17, t21, t23, t27, t28; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, t1, t3, t6, t15, t24, t25, t26; HERO_NODEBUG const char *t2, *t4; HERO_NODEBUG void *t5, *t7, *t8, *t11, *t13; HERO_NODEBUG bool t9, t20; HERO_NODEBUG int32_t t10; HERO_NODEBUG int64_t t18, t19; HERO_NODEBUG HeroFailure t22; HERO_ENTRY_STOP; goto bb0; bb0:
-    t1 = h_abortavariableforachildwhosevalueholdsanul_HELD(); t25 = h2_own2; h2_own2 = t1; hero_str_decref(t25); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-a-variable-for-a-child-whose-value-holds-a-nul.hero", "abort-a-variable-for-a-child-whose-value-holds-a-nul.held", 18, 26}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = HERO_STR_LIT(hero_str_3d47); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-a-variable-for-a-child-whose-value-holds-a-nul.hero", "abort-a-variable-for-a-child-whose-value-holds-a-nul.held", 18, 45}; t4 = hero_str_lend_at(t3, &hero_here); } { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-a-variable-for-a-child-whose-value-holds-a-nul.hero", "abort-a-variable-for-a-child-whose-value-holds-a-nul.held", 18, 14}; t5 = (void *)fopen(hero_cstr_nonnull_at(t2, &hero_here), hero_cstr_nonnull_at(t4, &hero_here)); } h0_handle = t5;
-    t6 = HERO_STR_LIT(hero_str_298a6604); t7 = h0_handle; t8 = ((void *)0); t9 = t7 != t8; if (t9) goto bb1; else goto bb2; bb1:
-    t10 = INT64_C(0); t11 = h0_handle; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-a-variable-for-a-child-whose-value-holds-a-nul.hero", "abort-a-variable-for-a-child-whose-value-holds-a-nul.held", 20, 9}; (void)fputc(t10, t11); }
-    t13 = h0_handle; { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-a-variable-for-a-child-whose-value-holds-a-nul.hero", "abort-a-variable-for-a-child-whose-value-holds-a-nul.held", 21, 9}; (void)fclose(t13); }
-    t15 = h_abortavariableforachildwhosevalueholdsanul_HELD(); t26 = h3_own3; h3_own3 = t15; hero_str_decref(t26); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-a-variable-for-a-child-whose-value-holds-a-nul.hero", "abort-a-variable-for-a-child-whose-value-holds-a-nul.held", 22, 12}; t16 = h_library_read_file(t15, &hero_here); } t27 = h4_own4; h4_own4 = t16; h_0opt_f87774a_release(&t27); t28 = h1_f0; h_0opt_f87774a_retain(&t16); h1_f0 = t16; h_0opt_f87774a_release(&t28); t17 = h1_f0; t18 = t17.tag; t19 = INT64_C(0); t20 = t18 == t19; if (t20) goto bb3; else goto bb4; bb2:
-#line 218 "abortavariableforachildwhosevalueholdsanul.c"
+HeroStr h_abortavariableforachildwhosevalueholdsanul_held(void) { void * h0_handle; HERO_NODEBUG h_0opt_f87774a h1_f0 = {0}, h4_own4 = {0}, t16, t17, t21, t23, t27, t28; HERO_NODEBUG HeroStr h2_own2 = {0}, h3_own3 = {0}, t1, t3, t6, t15, t24, t25, t26; HERO_NODEBUG const char *t2, *t4; HERO_NODEBUG void *t5, *t7, *t8, *t11, *t13; HERO_NODEBUG bool t9, t20; HERO_NODEBUG int32_t t10; HERO_NODEBUG int64_t t18, t19; HERO_NODEBUG HeroFailure t22; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+    t1 = h_abortavariableforachildwhosevalueholdsanul_HELD(); t25 = h2_own2; h2_own2 = t1; hero_str_decref(t25); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"abort-a-variable-for-a-child-whose-value-holds-a-nul.hero", "abort-a-variable-for-a-child-whose-value-holds-a-nul.held", 18, 26}; t2 = hero_str_lend_at(t1, &hero_here); } t3 = HERO_STR_LIT(hero_str_3d47); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"abort-a-variable-for-a-child-whose-value-holds-a-nul.hero", "abort-a-variable-for-a-child-whose-value-holds-a-nul.held", 18, 45}; t4 = hero_str_lend_at(t3, &hero_here); } { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"abort-a-variable-for-a-child-whose-value-holds-a-nul.hero", "abort-a-variable-for-a-child-whose-value-holds-a-nul.held", 18, 14}; t5 = (void *)fopen(hero_cstr_nonnull_at(t2, &hero_here), hero_cstr_nonnull_at(t4, &hero_here)); } h0_handle = t5;
+    t6 = HERO_STR_LIT(hero_str_298a6604); t7 = h0_handle; t8 = ((void *)0); t9 = t7 != t8; if (t9) goto hero_bb1; else goto hero_bb2; hero_bb1:
+    t10 = INT64_C(0); t11 = h0_handle; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"abort-a-variable-for-a-child-whose-value-holds-a-nul.hero", "abort-a-variable-for-a-child-whose-value-holds-a-nul.held", 20, 9}; (void)fputc(t10, t11); }
+    t13 = h0_handle; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"abort-a-variable-for-a-child-whose-value-holds-a-nul.hero", "abort-a-variable-for-a-child-whose-value-holds-a-nul.held", 21, 9}; (void)fclose(t13); }
+    t15 = h_abortavariableforachildwhosevalueholdsanul_HELD(); t26 = h3_own3; h3_own3 = t15; hero_str_decref(t26); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"abort-a-variable-for-a-child-whose-value-holds-a-nul.hero", "abort-a-variable-for-a-child-whose-value-holds-a-nul.held", 22, 12}; t16 = h_library_read_file(t15, &hero_here); } t27 = h4_own4; h4_own4 = t16; h_0opt_f87774a_release(&t27); t28 = h1_f0; h_0opt_f87774a_retain(&t16); h1_f0 = t16; h_0opt_f87774a_release(&t28); t17 = h1_f0; t18 = t17.hero_tag; t19 = INT64_C(0); t20 = t18 == t19; if (t20) goto hero_bb3; else goto hero_bb4; hero_bb2:
+#line 275 "abortavariableforachildwhosevalueholdsanul.c"
     hero_panic_assert_shown_at(t6, hero_show_pointer, &t7, &t8, 0, "abort-a-variable-for-a-child-whose-value-holds-a-nul.hero", "abort-a-variable-for-a-child-whose-value-holds-a-nul.held", 19, 12);
     hero_unreachable();
-bb3:
+hero_bb3:
 #line 22 "tests/golden/run/abort-a-variable-for-a-child-whose-value-holds-a-nul.hero"
-    t23 = h1_f0; t24 = t23.as.ok;
-#line 224 "abortavariableforachildwhosevalueholdsanul.c"
+    t23 = h1_f0; t24 = t23.hero_as.hero_ok;
+#line 281 "abortavariableforachildwhosevalueholdsanul.c"
     hero_str_incref(t24);
     h_0opt_f87774a_release(hero_slot_escape(&h1_f0));
     hero_str_release_at(&h2_own2);
     hero_str_release_at(&h3_own3);
     h_0opt_f87774a_release(hero_slot_escape(&h4_own4));
     return t24;
-bb4:
+hero_bb4:
 #line 22 "tests/golden/run/abort-a-variable-for-a-child-whose-value-holds-a-nul.hero"
-    t21 = h1_f0; t22 = t21.as.err;
-#line 234 "abortavariableforachildwhosevalueholdsanul.c"
+    t21 = h1_f0; t22 = t21.hero_as.hero_err;
+#line 291 "abortavariableforachildwhosevalueholdsanul.c"
     hero_panic_must_at(t22, "abort-a-variable-for-a-child-whose-value-holds-a-nul.hero", "abort-a-variable-for-a-child-whose-value-holds-a-nul.held", 22, 12);
     hero_unreachable();
 }
 
 #line 24 "tests/golden/run/abort-a-variable-for-a-child-whose-value-holds-a-nul.hero"
-void h_abortavariableforachildwhosevalueholdsanul_main(void) { HeroStr h0_nul = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_ENTRY_STOP; goto bb0; bb0:
+void h_abortavariableforachildwhosevalueholdsanul_main(void) { HeroStr h0_nul = {0}; HERO_NODEBUG HeroStr h1_own1 = {0}, h2_own2 = {0}, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h_abortavariableforachildwhosevalueholdsanul_held(); t8 = h1_own1; h1_own1 = t1; hero_str_decref(t8); t9 = h0_nul; hero_str_incref(t1); h0_nul = t1; hero_str_decref(t9);
     t2 = HERO_STR_LIT(hero_str_43560e4d); hero_print_str(t2); hero_print_end();
-    t3 = HERO_STR_LIT(hero_str_41); t4 = HERO_STR_LIT(hero_str_31); t5 = h0_nul; t6 = hero_str_concat(t4, t5); t10 = h2_own2; h2_own2 = t6; hero_str_decref(t10); { HERO_NODEBUG __attribute__((unused)) static const HeroPlace hero_here = {"abort-a-variable-for-a-child-whose-value-holds-a-nul.hero", "abort-a-variable-for-a-child-whose-value-holds-a-nul.main", 27, 5}; (void)hero_run_env(t3, t6); }
+    t3 = HERO_STR_LIT(hero_str_41); t4 = HERO_STR_LIT(hero_str_31); t5 = h0_nul; t6 = hero_str_concat(t4, t5); t10 = h2_own2; h2_own2 = t6; hero_str_decref(t10); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"abort-a-variable-for-a-child-whose-value-holds-a-nul.hero", "abort-a-variable-for-a-child-whose-value-holds-a-nul.main", 27, 5}; (void)hero_run_env(t3, t6); }
     t7 = HERO_STR_LIT(hero_str_187ae0ee); hero_print_str(t7); hero_print_end();
-#line 245 "abortavariableforachildwhosevalueholdsanul.c"
+#line 302 "abortavariableforachildwhosevalueholdsanul.c"
     hero_str_release_at(&h0_nul);
     hero_str_release_at(&h1_own1);
     hero_str_release_at(&h2_own2);
@@ -250,22 +307,22 @@ void h_abortavariableforachildwhosevalueholdsanul_main(void) { HeroStr h0_nul = 
 
 #line 109 "<heroes library>"
 int64_t h_library_HERO_OS_OK(void) { return HERO_OS_OK;
-#line 254 "abortavariableforachildwhosevalueholdsanul.c"
+#line 311 "abortavariableforachildwhosevalueholdsanul.c"
 }
 
 #line 110 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_FOUND(void) { return HERO_OS_NOT_FOUND;
-#line 259 "abortavariableforachildwhosevalueholdsanul.c"
+#line 316 "abortavariableforachildwhosevalueholdsanul.c"
 }
 
 #line 111 "<heroes library>"
 int64_t h_library_HERO_OS_NOT_TEXT(void) { return HERO_OS_NOT_TEXT;
-#line 264 "abortavariableforachildwhosevalueholdsanul.c"
+#line 321 "abortavariableforachildwhosevalueholdsanul.c"
 }
 
 #line 112 "<heroes library>"
 int64_t h_library_HERO_OS_BAD_NAME(void) { return HERO_OS_BAD_NAME;
-#line 269 "abortavariableforachildwhosevalueholdsanul.c"
+#line 326 "abortavariableforachildwhosevalueholdsanul.c"
 }
 
 #line 166 "<heroes library>"
@@ -273,27 +330,27 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller
 #line 166
 #define h1_status (*hero_lend_h1_status)
 #line 166
-    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h10_own10 = {0}, h13_own13 = {0}, t8, t14, t22, t32, t37, t38, t41, t42, t44, t46, t49; HERO_NODEBUG HeroStr h4_own4 = {0}, h7_own7 = {0}, h9_own9 = {0}, h11_own11 = {0}, h12_own12 = {0}, t2, t3, t7, t12, t13, t18, t19, t20, t21, t26, t27, t28, t29, t30, t31, t33, t34, t35, t36, t39, t40, t43, t45, t47, t48; HERO_NODEBUG int64_t t1, t4, t5, t9, t10, t15, t16, t23, t24; HERO_NODEBUG bool t6, t11, t17, t25; HERO_ENTRY_STOP; goto bb0; bb0:
+    int64_t *const hero_lend_h1_status = (int64_t *)hero_lend_local(sizeof(int64_t), "library.read_file", "status"); HeroStr h2_text = {0}; HERO_NODEBUG h_0opt_f87774a h3_ret0 = {0}, h5_own5 = {0}, h6_own6 = {0}, h8_own8 = {0}, h10_own10 = {0}, h13_own13 = {0}, t8, t14, t22, t32, t37, t38, t41, t42, t44, t46, t49; HERO_NODEBUG HeroStr h4_own4 = {0}, h7_own7 = {0}, h9_own9 = {0}, h11_own11 = {0}, h12_own12 = {0}, t2, t3, t7, t12, t13, t18, t19, t20, t21, t26, t27, t28, t29, t30, t31, t33, t34, t35, t36, t39, t40, t43, t45, t47, t48; HERO_NODEBUG int64_t t1, t4, t5, t9, t10, t15, t16, t23, t24; HERO_NODEBUG bool t6, t11, t17, t25; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = INT64_C(0); h1_status = t1;
-    t2 = h0_path; { HERO_NODEBUG __attribute__((unused)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_file_read_str", "status"); t3 = hero_file_read_str(t2, (void *)&h1_status); } t39 = h4_own4; h4_own4 = t3; hero_str_decref(t39); t40 = h2_text; hero_str_incref(t3); h2_text = t3; hero_str_decref(t40);
-    t4 = h1_status; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto bb2; else goto bb3; bb1:
+    t2 = h0_path; { HERO_NODEBUG __attribute__((__unused__)) const HeroPlace hero_here = *hero_caller; hero_lend_local_name(hero_lend_h1_status, "hero_file_read_str", "status"); t3 = hero_file_read_str(t2, (void *)&h1_status); } t39 = h4_own4; h4_own4 = t3; hero_str_decref(t39); t40 = h2_text; hero_str_incref(t3); h2_text = t3; hero_str_decref(t40);
+    t4 = h1_status; t5 = h_library_HERO_OS_OK(); t6 = t4 == t5; if (t6) goto hero_bb2; else goto hero_bb3; hero_bb1:
 #line 173
-    t9 = h1_status; t10 = h_library_HERO_OS_BAD_NAME(); t11 = t9 == t10; if (t11) goto bb5; else goto bb6; bb2:
+    t9 = h1_status; t10 = h_library_HERO_OS_BAD_NAME(); t11 = t9 == t10; if (t11) goto hero_bb5; else goto hero_bb6; hero_bb2:
 #line 170
-    t7 = h2_text; hero_str_incref(t7); t8 = (h_0opt_f87774a){.tag = INT64_C(0), .as.ok = t7}; t41 = h5_own5; h5_own5 = t8; h_0opt_f87774a_release(&t41); h3_ret0 = t8; goto bb13; bb3: goto bb1; bb4:
+    t7 = h2_text; hero_str_incref(t7); t8 = (h_0opt_f87774a){.hero_tag = INT64_C(0), .hero_as.hero_ok = t7}; t41 = h5_own5; h5_own5 = t8; h_0opt_f87774a_release(&t41); h3_ret0 = t8; goto hero_bb13; hero_bb3: goto hero_bb1; hero_bb4:
 #line 175
-    t15 = h1_status; t16 = h_library_HERO_OS_NOT_FOUND(); t17 = t15 == t16; if (t17) goto bb8; else goto bb9; bb5:
+    t15 = h1_status; t16 = h_library_HERO_OS_NOT_FOUND(); t17 = t15 == t16; if (t17) goto hero_bb8; else goto hero_bb9; hero_bb5:
 #line 174
-    t12 = HERO_STR_LIT(hero_str_3e46668); t13 = HERO_STR_LIT(hero_str_75aeb685); hero_str_incref(t12); hero_str_incref(t13); t14 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t12, .msg = t13}}; t42 = h6_own6; h6_own6 = t14; h_0opt_f87774a_release(&t42); h3_ret0 = t14; goto bb13; bb6: goto bb4; bb7:
+    t12 = HERO_STR_LIT(hero_str_3e46668); t13 = HERO_STR_LIT(hero_str_75aeb685); hero_str_incref(t12); hero_str_incref(t13); t14 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t12, .msg = t13}}; t42 = h6_own6; h6_own6 = t14; h_0opt_f87774a_release(&t42); h3_ret0 = t14; goto hero_bb13; hero_bb6: goto hero_bb4; hero_bb7:
 #line 180
-    t23 = h1_status; t24 = h_library_HERO_OS_NOT_TEXT(); t25 = t23 == t24; if (t25) goto bb11; else goto bb12; bb8:
+    t23 = h1_status; t24 = h_library_HERO_OS_NOT_TEXT(); t25 = t23 == t24; if (t25) goto hero_bb11; else goto hero_bb12; hero_bb8:
 #line 176
-    t18 = HERO_STR_LIT(hero_str_5b56e076); t19 = HERO_STR_LIT(hero_str_2ae119c5); t20 = h0_path; t21 = hero_str_concat(t19, t20); t43 = h7_own7; h7_own7 = t21; hero_str_decref(t43); hero_str_incref(t18); hero_str_incref(t21); t22 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t18, .msg = t21}}; t44 = h8_own8; h8_own8 = t22; h_0opt_f87774a_release(&t44); h3_ret0 = t22; goto bb13; bb9: goto bb7; bb10:
+    t18 = HERO_STR_LIT(hero_str_5b56e076); t19 = HERO_STR_LIT(hero_str_2ae119c5); t20 = h0_path; t21 = hero_str_concat(t19, t20); t43 = h7_own7; h7_own7 = t21; hero_str_decref(t43); hero_str_incref(t18); hero_str_incref(t21); t22 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t18, .msg = t21}}; t44 = h8_own8; h8_own8 = t22; h_0opt_f87774a_release(&t44); h3_ret0 = t22; goto hero_bb13; hero_bb9: goto hero_bb7; hero_bb10:
 #line 182
-    t33 = HERO_STR_LIT(hero_str_3e46668); t34 = HERO_STR_LIT(hero_str_b908f30); t35 = h0_path; t36 = hero_str_concat(t34, t35); t45 = h9_own9; h9_own9 = t36; hero_str_decref(t45); hero_str_incref(t33); hero_str_incref(t36); t37 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t33, .msg = t36}}; t46 = h10_own10; h10_own10 = t37; h_0opt_f87774a_release(&t46); h3_ret0 = t37; goto bb13; bb11:
+    t33 = HERO_STR_LIT(hero_str_3e46668); t34 = HERO_STR_LIT(hero_str_b908f30); t35 = h0_path; t36 = hero_str_concat(t34, t35); t45 = h9_own9; h9_own9 = t36; hero_str_decref(t45); hero_str_incref(t33); hero_str_incref(t36); t37 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t33, .msg = t36}}; t46 = h10_own10; h10_own10 = t37; h_0opt_f87774a_release(&t46); h3_ret0 = t37; goto hero_bb13; hero_bb11:
 #line 181
-    t26 = HERO_STR_LIT(hero_str_34624695); t27 = HERO_STR_LIT(hero_str_d028710); t28 = h0_path; t29 = hero_str_concat(t27, t28); t47 = h11_own11; h11_own11 = t29; hero_str_decref(t47); t30 = HERO_STR_LIT(hero_str_612f4355); t31 = hero_str_concat(t29, t30); t48 = h12_own12; h12_own12 = t31; hero_str_decref(t48); hero_str_incref(t26); hero_str_incref(t31); t32 = (h_0opt_f87774a){.tag = INT64_C(1), .as.err = {.code = t26, .msg = t31}}; t49 = h13_own13; h13_own13 = t32; h_0opt_f87774a_release(&t49); h3_ret0 = t32; goto bb13; bb12: goto bb10; bb13:
-#line 297 "abortavariableforachildwhosevalueholdsanul.c"
+    t26 = HERO_STR_LIT(hero_str_34624695); t27 = HERO_STR_LIT(hero_str_d028710); t28 = h0_path; t29 = hero_str_concat(t27, t28); t47 = h11_own11; h11_own11 = t29; hero_str_decref(t47); t30 = HERO_STR_LIT(hero_str_612f4355); t31 = hero_str_concat(t29, t30); t48 = h12_own12; h12_own12 = t31; hero_str_decref(t48); hero_str_incref(t26); hero_str_incref(t31); t32 = (h_0opt_f87774a){.hero_tag = INT64_C(1), .hero_as.hero_err = {.code = t26, .msg = t31}}; t49 = h13_own13; h13_own13 = t32; h_0opt_f87774a_release(&t49); h3_ret0 = t32; goto hero_bb13; hero_bb12: goto hero_bb10; hero_bb13:
+#line 354 "abortavariableforachildwhosevalueholdsanul.c"
     t38 = h3_ret0;
     h_0opt_f87774a_retain(&t38);
     hero_str_release_at(&h2_text);
@@ -311,110 +368,110 @@ h_0opt_f87774a h_library_read_file(HeroStr h0_path, const HeroPlace *hero_caller
     return t38;
 }
 #undef h1_status
-__attribute__((unused)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path) {
+__attribute__((__unused__)) h_0opt_f87774a hero_value_h_library_read_file(HeroStr h0_path) {
     HERO_NODEBUG static const HeroPlace hero_here = {"<heroes library>", "library.read_file", 166, 1};
     return h_library_read_file(h0_path, &hero_here);
 }
-HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_incref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_incref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *v) {
-    if (v->tag == INT64_C(0)) {
-        hero_str_decref(v->as.ok);
+HERO_TU_LOCAL void h_0opt_f87774a_release(h_0opt_f87774a *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
+        hero_str_decref(hero_v->hero_as.hero_ok);
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *a, const h_0opt_f87774a *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_str)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_f87774a_eq(const h_0opt_f87774a *hero_a, const h_0opt_f87774a *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_str)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *elem) {
-    const h_0opt_f87774a *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_f87774a_hash(const void *hero_elem) {
+    const h_0opt_f87774a *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_str)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_str)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_retain(const h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_a8ea2_release(h_0opt_a8ea2 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *a, const h_0opt_a8ea2 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
+HERO_TU_LOCAL bool h_0opt_a8ea2_eq(const h_0opt_a8ea2 *hero_a, const h_0opt_a8ea2 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
     return true;
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *elem) {
-    const h_0opt_a8ea2 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_a8ea2_hash(const void *hero_elem) {
+    const h_0opt_a8ea2 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return h;
+    return hero_h;
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_retain(const h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_retain(&v->as.err);
+        hero_failure_retain(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *v) {
-    if (v->tag == INT64_C(0)) {
+HERO_TU_LOCAL void h_0opt_e201354_release(h_0opt_e201354 *hero_v) {
+    if (hero_v->hero_tag == INT64_C(0)) {
         return;
     } else {
-        hero_failure_release(&v->as.err);
+        hero_failure_release(&hero_v->hero_as.hero_err);
     }
 }
 
-HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *a, const h_0opt_e201354 *b) {
-    if (a->tag != b->tag) return false;
-    if (a->tag != INT64_C(0)) return hero_failure_eq(&a->as.err, &b->as.err);
-    return (&hero_desc_int)->eq(&a->as.ok, &b->as.ok);
+HERO_TU_LOCAL bool h_0opt_e201354_eq(const h_0opt_e201354 *hero_a, const h_0opt_e201354 *hero_b) {
+    if (hero_a->hero_tag != hero_b->hero_tag) return false;
+    if (hero_a->hero_tag != INT64_C(0)) return hero_failure_eq(&hero_a->hero_as.hero_err, &hero_b->hero_as.hero_err);
+    return (&hero_desc_int)->eq(&hero_a->hero_as.hero_ok, &hero_b->hero_as.hero_ok);
 }
 
-HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *elem) {
-    const h_0opt_e201354 *v = elem;
-    uint64_t h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)v->tag)
+HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
+    const h_0opt_e201354 *hero_v = hero_elem;
+    uint64_t hero_h = (UINT64_C(0xcbf29ce484222325) ^ (uint64_t)hero_v->hero_tag)
         * UINT64_C(0x100000001b3);
-    if (v->tag != INT64_C(0)) {
-        return (h ^ hero_failure_hash(&v->as.err)) * UINT64_C(0x100000001b3);
+    if (hero_v->hero_tag != INT64_C(0)) {
+        return (hero_h ^ hero_failure_hash(&hero_v->hero_as.hero_err)) * UINT64_C(0x100000001b3);
     }
-    return (h ^ (&hero_desc_int)->hash(&v->as.ok)) * UINT64_C(0x100000001b3);
+    return (hero_h ^ (&hero_desc_int)->hash(&hero_v->hero_as.hero_ok)) * UINT64_C(0x100000001b3);
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("178a2bdf2797a7fb", 16); }
-int main(int argc, char **argv) {
-    hero_args_set(argc, argv);
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("50532abf66bf81a4", 16); }
+int main(int hero_argc, char **hero_argv) {
+    hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("abortavariableforachildwhosevalueholdsanul\tabort-a-variable-for-a-child-whose-value-holds-a-nul\n");
     h_abortavariableforachildwhosevalueholdsanul_main();
     hero_runtime_check_leaks();
