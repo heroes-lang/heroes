@@ -1,0 +1,18 @@
+# Fixed 2026-11-25, defect d-lane-d2745-1, lane-ctx-after: a coroutine frees the heap block
+# holding the context the runner switched to it with, then ends through `uc_link` (on Darwin the
+# block is freed after the switch returns, since Darwin's C library reads the context again when
+# the coroutine ends).
+# Correct C: nothing reads the context again.
+# Symptom: before, on Linux arm64 the runtime read the freed block once the switch had returned
+# (exit 0, and a heap-use-after-free in `swapcontext` under `--sanitize`).
+# Cause: to learn whether the coroutine had ended, the runtime compared the stack pointer in the
+# context switched to with the one it held before the switch, reading a buffer the program may
+# have given back by then.
+# Fix: the context is read after the switch only where it provably lives, and by the kernel; a
+# coroutine is judged ended where its swap returns, no `swapcontext` or `setcontext` was made from
+# its stack since the swap began, and that context did not move.
+extern "fixedbugs-a-coroutine-gives-back-the-context-it-was-switched-to.h"
+    function gb_run(ends: i32, how: i32) -> i64
+
+function main()
+    print("gb_1_1: ", gb_run(ends: 1, how: 1))

@@ -111,6 +111,9 @@
  * its own; an interposer's own installs; a C++ exception out of a handler; a
  * save made where these files do not look that a later jump then resumes
  * after its handler was left on a stack other than the alternate one; a
+ * coroutine left by a switch these files never see, where the context it was
+ * switched to does not provably live, which is judged ended
+ * (`rebind_entries.c`, the life of a range; defect d-lane-d2745-1); a
  * handler left by a jump and then landed in again from a coroutine on another
  * range (no range's bottom is recorded where the thread leaves it, so the
  * landing in the handler's dead frames reads as a coroutine resuming the
@@ -124,6 +127,7 @@
 #include <mach-o/loader.h>
 #include <mach-o/nlist.h>
 #include <mach/mach.h>
+#include <mach/mach_vm.h>
 #include <setjmp.h>
 
 /* libsystem_kernel's own, which no SDK header declares. */

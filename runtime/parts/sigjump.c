@@ -70,7 +70,10 @@
  * the author's ruling C of 2026-11-20, `parts/siglookup.c`; `dlvsym` is not);
  * a handler left by a switch or a jump this file never sees (an inline
  * `__builtin_longjmp`, hand-written assembly, a C++ exception or
- * `_Unwind_*`), which keeps its entry and is told in words that name it; and
+ * `_Unwind_*`), which keeps its entry and is told in words that name it; a
+ * coroutine left by such a switch, where the context it was switched to does
+ * not provably live (a heap block, a mapping), which is judged ended
+ * (`sigentries.c`, the life of a range; defect d-lane-d2745-1); and
  * the one residue panel 255's R3 leaves by design, `rr_2`, a handler left by a
  * jump and landed in again from a coroutine on another range (no range's
  * bottom is recorded where the thread leaves it). A program library defining
@@ -81,6 +84,7 @@
 #include <link.h>
 #include <setjmp.h>
 #include <sys/mman.h>
+#include <sys/uio.h>
 #include <ucontext.h>
 
 typedef int (*hero_jmp_save_fn)(struct __jmp_buf_tag *);

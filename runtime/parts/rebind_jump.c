@@ -23,6 +23,27 @@ static uintptr_t hero_rebind_ctx_sp(const void *uc) {
     return hero_rebind_strip_d(hero_rebind_word((const unsigned char *)uc, HERO_REBIND_CTX_SP));
 }
 
+/* Whether the context a swap switched to names, once the switch has
+ * returned, another stack pointer than `entered`: one witness of its
+ * coroutine's life beside the switches made from its range (a yield through a
+ * switch this route never sees still moves it), read only where the context
+ * provably lives and by the kernel, so a page made unreadable since is an
+ * answer and never a fault; elsewhere nothing is read and the answer is false
+ * (defect d-lane-d2745-1: the word was read wherever the context lay, and a
+ * coroutine that gave it back crashed the program inside the runtime). */
+static bool hero_rebind_ctx_moved(const void *uc, uintptr_t entered) {
+    const unsigned char *at = (const unsigned char *)uc + HERO_REBIND_CTX_SP;
+    uintptr_t word = 0;
+    mach_vm_size_t got = 0;
+    if (!hero_rebind_lives(at, sizeof word)) return false;
+    if (mach_vm_read_overwrite(mach_task_self(), (mach_vm_address_t)(uintptr_t)at, sizeof word,
+                               (mach_vm_address_t)(uintptr_t)&word, &got) != KERN_SUCCESS ||
+        got != sizeof word) {
+        return false;
+    }
+    return hero_rebind_strip_d(word) != entered;
+}
+
 /* Whether `setcontext` would jump to `uc`: it refuses a context whose size
  * word is 0, and returns, and nothing must be judged left by a jump that does
  * not happen. */
@@ -127,13 +148,20 @@ static void hero_rebind_set(const void *uc) {
  * until this frame is resumed, so the wrapper is no tail call; its marks live
  * in its own frame, and only the entries it marked are released, by serial,
  * when the swap returns here (or fails). The target is judged only for a
- * landing in frames already left (rule 6). */
+ * landing in frames already left (rule 6). Once the switch has returned the
+ * context switched to is read only where it provably lives, and by the kernel
+ * (defect d-lane-d2745-1): the end of a range's coroutine is what the switches
+ * made from it while this one waited say, with that word
+ * (`hero_rebind_range_returned`). */
 __attribute__((noinline)) static int hero_rebind_swapcontext(void *from, const void *to) {
     HeroSignalStack *own = hero_rebind_own();
     uint64_t marks[HERO_SIG_DEPTH];
     unsigned gens[HERO_SIG_DEPTH];
     int n = 0;
     uintptr_t entered = 0;
+    int watched = -1;
+    unsigned seq = 0;
+    hero_rebind_range_left((uintptr_t)__builtin_frame_address(0));
     if (own != NULL && from != NULL && hero_rebind_ctx_valid(to)) {
         bool field = hero_rebind_decoding(HERO_REBIND_CTX);
         uintptr_t t = 0;
@@ -142,6 +170,7 @@ __attribute__((noinline)) static int hero_rebind_swapcontext(void *from, const v
         if (field) {
             entered = hero_rebind_ctx_sp(to);
             hero_rebind_range_entered(entered);
+            watched = hero_rebind_range_watch(entered, &seq);
             hero_rebind_landing(own, entered);
         } else {
             hero_rebind_range_switched(to);
@@ -156,7 +185,7 @@ __attribute__((noinline)) static int hero_rebind_swapcontext(void *from, const v
             n += 1;
         }
         if (field) {
-            hero_rebind_reenter(own, hero_rebind_ctx_sp(to));
+            hero_rebind_reenter(own, entered);
         } else {
             /* The C library saves into `from` this frame's own stack pointer,
              * at the call below: `hero_rebind_below` called from here lies
@@ -170,10 +199,14 @@ __attribute__((noinline)) static int hero_rebind_swapcontext(void *from, const v
         }
     }
     int r = atomic_load_explicit(&hero_rebind_real_swapcontext, memory_order_relaxed)(from, to);
-    /* The context switched to came back unchanged: nothing saved a point in
-     * it, so its coroutine ended (or left without a save) and the range holds
-     * no frames of it any more (defect 2706, `rebind_entries.c`). */
-    if (entered != 0 && r == 0 && hero_rebind_ctx_sp(to) == entered) hero_rebind_range_ended(entered);
+    /* Back in this frame: where no switch was made from the range entered
+     * and the context did not move, its coroutine returned through `uc_link`
+     * and the range holds no frames of it any more (defect 2706,
+     * `rebind_entries.c`). */
+    if (watched >= 0) {
+        bool moved = hero_rebind_ctx_moved(to, entered);
+        hero_rebind_range_returned(watched, seq, (uintptr_t)__builtin_frame_address(0), r == 0, moved);
+    }
     if (own != NULL) {
         for (int j = 0; j < n; j += 1) {
             for (int i = 0; i < own->depth; i += 1) {
@@ -210,7 +243,10 @@ __attribute__((noreturn)) static void hero_rebind__longjmp(int *env, int value) 
     __builtin_unreachable();
 }
 
+/* A switch made from this frame leaves the range it lies on, if a swap into
+ * that range waits to return (`rebind_entries.c`, the life of a range). */
 static int hero_rebind_setcontext(const void *context) {
+    hero_rebind_range_left(hero_rebind_below());
     hero_rebind_set(context);
     return atomic_load_explicit(&hero_rebind_real_setcontext, memory_order_relaxed)(context);
 }

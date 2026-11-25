@@ -41,16 +41,27 @@ static _Atomic int hero_rebind_stack_any = 0;
 /* THE LIFE OF A RANGE (defect 2706). A range `makecontext` was given may hold a
  * coroutine's frames only between two events this file sees: a switch INTO it
  * (a `swapcontext` or `setcontext` whose target lies there) and the end of that
- * switch's coroutine, which a `swapcontext` that returns with the context it
- * switched to unchanged saw (a coroutine that yields saves itself into a
- * context, so the one switched to changes; one that returns through
- * `uc_link`, or leaves by a `setcontext` that saves nothing, does not). A
- * range no switch entered, or whose coroutine ended, holds no coroutine's
- * frames: a save point in it was made by the thread's own code in memory a
- * helper's returned frame once lent `makecontext` (panel 257's `fp3` and the
- * critic's `n6`), and a jump to it is judged on the stack it lies on, the
- * thread's own, where a target above a handler leaves it. A switch into the
- * range clears its end again. */
+ * switch's coroutine. The end is seen by a `swapcontext` into the range that
+ * returns while no `swapcontext` or `setcontext` was made FROM the range since
+ * it began: a coroutine leaves its range alive only by such a switch (a yield,
+ * saving into the context it was switched to or into any other, or a
+ * `setcontext` that abandons frames a buffer may still name), and dead only
+ * by returning through `uc_link`, which the C library makes unseen (its
+ * `_ctx_done`, which reads the context again). The context switched to is a
+ * second witness, read after the switch only where it provably lives and by
+ * the kernel (`hero_rebind_ctx_moved`): a yield through a switch this route
+ * never sees still moves its stack pointer. Until defect d-lane-d2745-1 that
+ * word was read wherever the context lay, and a coroutine that saved itself
+ * into another context and gave the first back crashed the program inside the
+ * runtime (a SIGSEGV, a Bus error or a read of freed memory); and it was the
+ * only witness, so such a yield was judged an end. A range no switch entered, or whose coroutine ended, holds no
+ * coroutine's frames: a save point in it was made by the thread's own code in
+ * memory a helper's returned frame once lent `makecontext` (panel 257's `fp3`
+ * and the critic's `n6`), and a jump to it is judged on the stack it lies on,
+ * the thread's own, where a target above a handler leaves it. A switch into
+ * the range clears its end again. A coroutine left by a switch this file
+ * never sees, where the context it was switched to does not provably live, is
+ * judged ended: said in `rebind.c`'s module doc. */
 #define HERO_REBIND_RANGE_ENTERED 1
 #define HERO_REBIND_RANGE_ENDED 2
 /* WHERE CONTEXTS FALL TO ROUTE A (defect 2745) no switch's target is read and
@@ -60,7 +71,12 @@ static _Atomic int hero_rebind_stack_any = 0;
  * pointer compared, never read) enters it as route C's does; a range held and
  * never so entered is told in words of its own. */
 #define HERO_REBIND_RANGE_HELD 4
+/* A switch was made from the range while a swap into it waited to return. */
+#define HERO_REBIND_RANGE_LEFT 8
 static _Atomic int hero_rebind_stack_state[HERO_REBIND_STACKS];
+/* How many swaps into a range wait to return: only while one does is a
+ * switch asked which range it is made from. */
+static _Atomic int hero_rebind_watching = 0;
 static _Atomic uintptr_t hero_rebind_stack_ctx[HERO_REBIND_STACKS];
 
 static void hero_rebind_stack_put(int i, uintptr_t lo, uintptr_t hi) {
@@ -173,12 +189,44 @@ static void hero_rebind_range_entered(uintptr_t at) {
     if (i >= 0) atomic_store_explicit(&hero_rebind_stack_state[i], HERO_REBIND_RANGE_ENTERED, memory_order_relaxed);
 }
 
-/* A `swapcontext` to a context whose stack pointer was `at` returned with
- * that context unchanged: its coroutine ended (or left without a save). */
-static void hero_rebind_range_ended(uintptr_t at) {
+/* A `swapcontext` or `setcontext` made from a frame at `frame`: while a swap
+ * into a range waits to return, the range holding the frame is marked left by
+ * a switch, so the swap's return proves no end of its coroutine. */
+static void hero_rebind_range_left(uintptr_t frame) {
+    if (atomic_load_explicit(&hero_rebind_watching, memory_order_acquire) == 0) return;
+    uintptr_t lo = 0, hi = 0;
+    int i = hero_rebind_range_slot(frame, &lo, &hi);
+    if (i >= 0) atomic_fetch_or_explicit(&hero_rebind_stack_state[i], HERO_REBIND_RANGE_LEFT, memory_order_relaxed);
+}
+
+/* A `swapcontext` whose target's stack pointer `at` lies on a known range,
+ * entered just now, begins to wait: the range's slot and sequence word, -1
+ * where no range holds `at` (nothing is then watched). */
+static int hero_rebind_range_watch(uintptr_t at, unsigned *seq) {
     uintptr_t lo = 0, hi = 0;
     int i = hero_rebind_range_slot(at, &lo, &hi);
-    if (i >= 0) atomic_fetch_or_explicit(&hero_rebind_stack_state[i], HERO_REBIND_RANGE_ENDED, memory_order_relaxed);
+    if (i < 0) return -1;
+    *seq = atomic_load(&hero_rebind_stack_seq[i]);
+    atomic_fetch_and_explicit(&hero_rebind_stack_state[i], ~HERO_REBIND_RANGE_LEFT, memory_order_relaxed);
+    atomic_fetch_add_explicit(&hero_rebind_watching, 1, memory_order_release);
+    return i;
+}
+
+/* The swap watching slot `i` returned in its frame at `here` (`ok`: the C
+ * library's switch succeeded; `moved`: the context it switched to, read where
+ * it provably lives, names another stack pointer since). Its coroutine ended
+ * where the slot still names the range it named, the swap does not run on
+ * that range itself, no switch was made from the range since the swap began,
+ * and the context did not move: the coroutine returned through `uc_link`. */
+static void hero_rebind_range_returned(int i, unsigned seq, uintptr_t here, bool ok, bool moved) {
+    atomic_fetch_sub_explicit(&hero_rebind_watching, 1, memory_order_release);
+    if (!ok || moved || atomic_load(&hero_rebind_stack_seq[i]) != seq) return;
+    uintptr_t lo = atomic_load(&hero_rebind_stack_lo[i]), hi = atomic_load(&hero_rebind_stack_hi[i]);
+    if (atomic_load(&hero_rebind_stack_seq[i]) != seq || (here >= lo && here < hi)) return;
+    int state = atomic_load_explicit(&hero_rebind_stack_state[i], memory_order_relaxed);
+    if ((state & HERO_REBIND_RANGE_LEFT) == 0) {
+        atomic_fetch_or_explicit(&hero_rebind_stack_state[i], HERO_REBIND_RANGE_ENDED, memory_order_relaxed);
+    }
 }
 
 /* The alternate stack registered now, where one is. */
