@@ -1,10 +1,11 @@
 /* fixedbugs-coroutines-switched-by-a-librarys-own-switch.h: up to four coroutines on the heap's stacks, switched by
  * a switch of this header's own, written in assembly as a coroutine library's is: no `makecontext`, no `swapcontext`,
  * nothing the runtime wraps, so the runtime cannot name the stacks. AArch64 and x86-64 System V, run on both (the
- * Linux x86-64 image and this Mac, 2026-11-25); Windows has no switch here, and the `ucontext.h` it lacks skips the
- * case there by name, as every coroutine case's header does. */
+ * Linux x86-64 image and this Mac, 2026-11-25). Windows x64 keeps other registers across a call (`rdi`, `rsi` and
+ * `xmm6` to `xmm15` besides), so this switch is refused there rather than built wrong, and the case is named in
+ * `tests/harness/platform_skips.hero`'s `unbuildable_on_windows`. */
 #if defined(_WIN32)
-#include <ucontext.h>
+#error "this coroutine switch is System V's; Windows keeps other registers across a call"
 #endif
 #include <stdint.h>
 #include <stdlib.h>
