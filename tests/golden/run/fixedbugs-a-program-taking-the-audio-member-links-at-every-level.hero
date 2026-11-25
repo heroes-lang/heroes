@@ -1,0 +1,15 @@
+# Fixed 2026-11-25, beside the coordinator's defect draft d-lane-layer-speed-2
+# (lane linux-ci, listing every member's undefined names in the Linux arm64
+# image). A correct program.
+# Symptom: in that image the build was exit 2 at -O0 and at -O2, `internal
+# error: linking failed`, `undefined reference to sin`.
+# Cause: the audio member and its PulseAudio arm called libm's `sin` for a
+# tone's samples; a Linux link carries libm only where a program writes
+# `link "m"`, and a member cannot write it.
+# Fix: both take the sine of a turn from `runtime/platform/hero_layer_maths.h`,
+# which needs nothing but the C library.
+extern "hero_audio.h"
+    function hero_audio_last_error() -> i64
+
+function main()
+    print(f"audio: {hero_audio_last_error()}")

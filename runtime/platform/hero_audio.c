@@ -42,6 +42,7 @@
 
 #include "hero_handle_tag.h"
 #include "hero_layer_alloc.h"
+#include "hero_layer_maths.h"
 #include "platform/hero_audio_arm.h"
 
 #if defined(_WIN32)
@@ -638,7 +639,7 @@ static void *hero_audio_null_run(void *given)
                 for (size_t f = 0; f < n; f += 1) {
                     uint64_t k = st->null_frame + f;
                     double turn = (double)((k * 440) % (uint64_t)st->rate) / (double)st->rate;
-                    float x = (float)(0.5 * sin(2.0 * 3.14159265358979323846 * turn));
+                    float x = (float)(0.5 * hero_layer_sin_of_turn(turn));
 
                     for (size_t c = 0; c < channels; c += 1) {
                         frames[f * channels + c] = x;

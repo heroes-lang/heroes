@@ -23,11 +23,17 @@
 # program is ever built with a member left out.
 
 use ast
+use cli/flags
 use cli/io
 use cli/layer
 use cli/layer_swift
+use cli/libraries
+use cli/link
+use cli/link_flags
 use cli/process
 use cli/runtime_key
+use cli/strings
+use cli/supplied
 use cli/toolchain
 use emit/externs as emit_externs
 use module/reading
@@ -229,6 +235,136 @@ function has_part(text: str, part: str) -> bool
     return false
 
 ## Tests
+
+# The words that load the archive `path` whole on `target`'s linker, every
+# member taken whether a program calls it or not: GNU ld's and lld's
+# `--whole-archive` around it, Apple's `-force_load`, and on an MSVC target
+# the archive beside `/WHOLEARCHIVE:` of it, as the supplied probes hand a
+# library to both linkers there (`cli/supplied_probe.hero`, measured on the
+# Windows box by its name; by its path, unrun there until the CI's leg).
+function whole_words(target: str, path: str) -> [str]
+    if link_flags.apple(target)
+        return ["-Wl,-force_load," + path]
+
+    if link_flags.msvc(target)
+        return [path, "-Wl,/WHOLEARCHIVE:" + path]
+    return ["-Wl,--whole-archive", path, "-Wl,--no-whole-archive"]
+
+# A `main` of nothing linked with the runtime's object and every member of the
+# layer, the C ones and on an Apple target the Swift ones, by the link every
+# build runs (`link.link_objects`), at `level`, sanitised or not, and then run:
+# "" where it linked and ran at exit 0, else what stopped it, its level named.
+function whole_layer_linked(t: toolchain.Toolchain, dir: str, level: str, sanitize: bool) -> str
+    words = flags.level_words(level: level, sanitize: sanitize)
+    kind: str @= "whole"
+
+    if sanitize
+        kind @ "sanitized"
+    name = kind + level.slice(from: 1, to: level.len())
+    unit = dir + "/" + name + ".c"
+    object = dir + "/" + name + ".o"
+    said = "the layer whole at " + words.join(" ") + ": "
+    assert !write_file(path: unit, text: "int main(void) { return 0; }\n").is_err()
+    line = strings.with_all(
+        list: strings.with_all(list: ["clang"], more: words),
+        more: ["-c", unit, "-I", t.runtime, "-o", object]
+    )
+    assert !toolchain.run_clang(line: line, what: "a test's unit", err_path: dir + "/" + name + ".err.txt").is_err()
+    runtime = toolchain.runtime_object(t, level: level, sanitize: sanitize).must()
+    archived = layer.archive(t, level: level, sanitize: sanitize, swift: layer_swift.members(t).must()).must()
+    assert archived.len() == 1
+    none: [str] = []
+    no_output: str? = fail(code: "none", msg: "no -o")
+    binary = link.link_objects(
+        t,
+        objects: strings.with_all(list: [runtime, object], more: whole_words(target: t.target, path: archived[0])),
+        module: name,
+        output: no_output,
+        level: level,
+        sanitize: sanitize,
+        search_library: none,
+        pkgconfig_flags: none,
+        link_names: none,
+        judging: supplied.nothing()
+    )
+
+    match binary
+        .err e => return said + e.msg
+        .ok path =>
+            ran = process.run(program: path, words: [path], out: process.discard(), err: process.discard())
+
+            if !ran.started || ran.code != 0
+                return said + "linked, and " + path + " did not run at exit 0"
+
+    return ""
+
+# **The reach at its limit: every member of the platform layer links with the
+# runtime, every name it needs found on the link a build runs, at every level**
+# (the coordinator's defect draft `d-lane-layer-speed-2`, 2026-11-25). The
+# link carries the C library and the libraries a program names, and a member
+# can name none (panel 234's R6): on Windows it names its own by `#pragma
+# comment(lib)`, on macOS by the `.linker_option` its object carries, and on
+# Linux a library it needs is opened by `dlopen`, so a member that calls a name
+# the C library lacks links nowhere a program takes it. Measured in the Linux
+# arm64 image that day: `hero_ui_parts_gtk` called `nextafter`, `hero_audio`
+# and `hero_audio_pulse` `sin`, all three libm's, and a program binding
+# `hero_ui_native_here` was `internal error: linking failed` at `-O0` and `-O2`
+# and linked under `--sanitize` alone, whose runtime brings libm; now they call
+# `platform/hero_layer_maths.h`. Every member is taken here, whether a program
+# calls it or not, so a CI leg whose link lacks a name any member needs is red
+# on that name, the linker's words printed.
+test "the runtime and every member of the platform layer, linked whole, find every name they need at -O0, -O2 and sanitised at each"
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    dir = "build/selftest-layer-whole"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+
+    for level in ["-O0", "-O2"]
+        for sanitize in [false, true]
+            said = whole_layer_linked(t, dir: dir, level: level, sanitize: sanitize)
+
+            if said != ""
+                io.eprint(text: said)
+            assert said == ""
+
+    assert !process.remove_tree(dir).is_err()
+
+# What `platform/hero_layer_maths.h` gives the members, held to the C library
+# of this machine: `floor`, `ceil` and `nextafter` bit for bit over numbers of
+# every kind (both zeros, halves, the least subnormal and the least normal,
+# 2^52 either side, the largest finite, the infinities, a NaN), and the sine of
+# a turn within 1e-14 of `sin` of its angle over a sweep of (-1, 1) and every
+# turn PulseAudio's tone gives it; at -O0 and -O2, the probe naming libm where
+# the platform keeps it apart, as a program writes `link "m"`.
+test "the layer's own maths give the C library's floor, ceil and nextafter bit for bit, and its sine within 1e-14"
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    dir = "build/selftest-layer-maths"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    unit = dir + "/maths.c"
+    probe = "#include <float.h>\n#include <math.h>\n#include <stdint.h>\n#include <stdio.h>\n#include <string.h>\n#include \"platform/hero_layer_maths.h\"\n\nstatic int same(double a, double b) {\n    uint64_t x;\n    uint64_t y;\n    memcpy(&x, &a, sizeof x);\n    memcpy(&y, &b, sizeof y);\n    return x == y || (a != a && b != b);\n}\n\nint main(void) {\n    const double v[] = { 0.0, -0.0, 0.25, -0.25, 0.5, -0.5, 0.75, -0.75, 1.0, -1.0, 1.5, -1.5, 2.5, -2.5, 123456.789, -123456.789, 1e-300, -1e-300, 4.9406564584124654e-324, -4.9406564584124654e-324, 2.2250738585072014e-308, -2.2250738585072014e-308, 4503599627370495.5, -4503599627370495.5, 4503599627370496.0, -4503599627370496.0, 9007199254740992.0, DBL_MAX, -DBL_MAX, INFINITY, -INFINITY, NAN };\n    size_t n = sizeof v / sizeof v[0];\n    int wrong = 0;\n    double worst = 0.0;\n    for (size_t i = 0; i < n; i += 1) {\n        wrong += !same(hero_layer_floor(v[i]), floor(v[i]));\n        wrong += !same(hero_layer_ceil(v[i]), ceil(v[i]));\n        for (size_t j = 0; j < n; j += 1) {\n            wrong += !same(hero_layer_next_toward(v[i], v[j]), nextafter(v[i], v[j]));\n        }\n    }\n    for (int k = -100000; k <= 100000; k += 1) {\n        double turn = (double)k / 100000.0;\n        double gap = fabs(hero_layer_sin_of_turn(turn) - sin(6.283185307179586 * turn));\n        worst = gap > worst ? gap : worst;\n    }\n    for (int k = 0; k < 44100; k += 1) {\n        double turn = (double)((880 * k) % 44100) / 44100.0;\n        double gap = fabs(hero_layer_sin_of_turn(turn) - sin(6.283185307179586 * turn));\n        worst = gap > worst ? gap : worst;\n    }\n    printf(\"%d wrong, the sine within %.3g\\n\", wrong, worst);\n    return wrong == 0 && worst <= 1e-14 ? 0 : 1;\n}\n"
+    assert !write_file(path: unit, text: probe).is_err()
+    libm: [str] @= []
+
+    if !libraries.in_the_c_runtime(library: "m")
+        libm @ ["-lm"]
+
+    for level in ["-O0", "-O2"]
+        binary = dir + "/maths" + level + process.exe_suffix()
+        words = strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: false))
+        line = strings.with_all(
+            list: words,
+            more: strings.with_all(list: [unit, "-I", t.runtime, "-o", binary], more: libm)
+        )
+        assert !toolchain.run_clang(line: line, what: "the layer's maths probe", err_path: dir + "/maths.err.txt").is_err()
+        said = dir + "/maths" + level + ".txt"
+        ran = process.run(program: binary, words: [binary], out: said, err: process.discard())
+
+        if !ran.started || ran.code != 0
+            io.eprint(text: "the layer's maths at " + level + ": " + read_file(said).default("no answer"))
+        assert ran.started && ran.code == 0
+
+    assert !process.remove_tree(dir).is_err()
 
 # **A build that links nothing asks the layer nothing** (`--emit-c`): no
 # word for a link it never makes, and no member asked or compiled, so its

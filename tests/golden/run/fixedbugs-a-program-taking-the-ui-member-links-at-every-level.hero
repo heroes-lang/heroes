@@ -1,0 +1,18 @@
+# Fixed 2026-11-25, the coordinator's defect draft d-lane-layer-speed-2, which
+# lane-layer-speed found timing a program that reaches the UI in the Linux
+# arm64 image. A correct program.
+# Symptom: in that image (Debian clang 22.1.8, GNU ld 2.44, glibc 2.41) the
+# build was exit 2 at -O0 and at -O2, `internal error: linking failed`,
+# `hero_ui_parts_gtk.c:1260: undefined reference to nextafter`; it linked
+# under --sanitize alone, whose runtime brings libm.
+# Cause: the platform layer's GTK parts called libm's `nextafter`, and its
+# `floor` and `ceil`, calls on x86-64's baseline; a Linux link carries libm
+# only where a program writes `link "m"`, and a member cannot write it.
+# Fix: the members call `runtime/platform/hero_layer_maths.h`, which needs
+# nothing but the C library, and a test of the compiler links every member
+# whole at every level (`selfhost/cli/layer_reach.hero`).
+extern "hero_ui.h"
+    function hero_ui_native_here() -> i64
+
+function main()
+    print(f"native: {hero_ui_native_here() >= 0}")

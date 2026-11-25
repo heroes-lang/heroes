@@ -394,7 +394,10 @@
  * are the names below under `platform/`, in the order written, each after its
  * own header; the first name is the header the members alone include, the tags
  * of their handle tables, so the key covers it and a copy of the runtime made
- * from this list holds it (named 2026-11-20). A member's own files follow it:
+ * from this list holds it (named 2026-11-20), and the second the other such
+ * header, the few functions of C's maths the members call, written there so
+ * no member needs libm, which a Linux link carries only where a program names
+ * it (named 2026-11-25). A member's own files follow it:
  * the CryptoKit member and the AppKit member written in Swift and their C
  * headers, which the layer compiles on an Apple target alone
  * (`selfhost/cli/layer_swift.hero`, the names under `platform/` that end in
@@ -414,6 +417,7 @@
  * them. */
 #if 0
 #include "platform/hero_handle_tag.h"
+#include "platform/hero_layer_maths.h"
 #include "hero_audio.h"
 #include "platform/hero_audio.c"
 #include "platform/hero_audio_arm.h"

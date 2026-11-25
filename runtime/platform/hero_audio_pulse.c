@@ -57,6 +57,7 @@
 #include <time.h>
 
 #include "hero_layer_alloc.h"
+#include "hero_layer_maths.h"
 
 /* How long a question to the server may take before it is told. */
 #define HERO_AUDIO_PULSE_ASK_NS INT64_C(3000000000)
@@ -570,7 +571,8 @@ static void *hero_audio_pulse_tone(void *given) {
     int error = 0;
 
     for (size_t k = 0; k < 4410; k += 1) {
-        tone[k] = (float)(0.3 * sin(2.0 * 3.14159265358979323846 * 880.0 * (double)k / 44100.0));
+        /* 880 Hz at 44,100 frames a second: the turn of frame k is exact. */
+        tone[k] = (float)(0.3 * hero_layer_sin_of_turn((double)((880 * k) % 44100) / 44100.0));
     }
     if (f->simple_write(simple, tone, sizeof tone, &error) == 0) {
         (void)f->simple_drain(simple, &error);

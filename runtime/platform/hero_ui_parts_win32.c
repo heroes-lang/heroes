@@ -112,6 +112,7 @@
 #include <uiautomation.h>
 
 #include "hero_layer_alloc.h"
+#include "hero_layer_maths.h"
 #include "platform/hero_ui_arm.h"
 
 #include "hero_ui_win32_parts.h"
@@ -461,7 +462,7 @@ static HRESULT hero_ui_parts_posted(const hero_ui_parts_win32 *area, uint32_t nu
 static double hero_ui_parts_step(const hero_ui_win_part *part) {
     double step = (part->most - part->least) / 100.0;
     double magnitude = fabs(part->value);
-    double gap = nextafter(magnitude, INFINITY) - magnitude;
+    double gap = hero_layer_next_toward(magnitude, INFINITY) - magnitude;
 
     return step >= gap ? step : gap;
 }
