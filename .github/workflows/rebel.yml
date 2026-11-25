@@ -285,6 +285,9 @@ jobs:
       - name: rebel/generators/i18n_dates, CLDR 49's calendar table of i18n/dates
         run: ./heroes run rebel/generators/i18n_dates/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
 
+      - name: rebel/generators/i18n_names, CLDR 49's display names table of i18n/names
+        run: ./heroes run rebel/generators/i18n_names/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
+
       # `rebel/generators/cldrkit/cldrkit.hero`'s `COMMON_URL`; `rebel/generators/cldrkit`
       # holds the zip to its `COMMON_SHA256`.
       - name: rebel/generators/i18n_collate, CLDR 49's root collation and tailorings of i18n/collate
