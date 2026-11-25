@@ -608,10 +608,16 @@ test "a probe compiles under a unit's words but their diagnostics, the level and
     # this machine has one (defect 2253): Linux arm64 read this test red until
     # it was named here.
     listed = strings.with_all(list: flags.flags(), more: flags.frame_words())
-    unit = strings.with_all(list: listed, more: ["-O2", "-gline-tables-only", "-fsanitize=address,undefined"])
+    unit = strings.with_all(
+        list: listed,
+        more: ["-O2", "-gline-tables-only", "-fsanitize=address,undefined", "-fno-sanitize=function"]
+    )
     assert unit_words(c) == strings.with_all(list: strings.with_all(list: unit, more: search_words(c)), more: header_region.LINE_WORDS)
     framed = strings.with_all(list: probe_flags(), more: flags.frame_words())
-    probed = strings.with_all(list: framed, more: ["-O2", "-gline-tables-only", "-fsanitize=address,undefined"])
+    probed = strings.with_all(
+        list: framed,
+        more: ["-O2", "-gline-tables-only", "-fsanitize=address,undefined", "-fno-sanitize=function"]
+    )
     assert probe_words(c) == strings.with_all(list: probed, more: search_words(c))
     none = Compiling(
         level: "-O0",
