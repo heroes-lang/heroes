@@ -1,0 +1,99 @@
+# How a name the build's first clang would open, found first as no file
+# clang can read, is told (design.md §4.17, §4.19; defect
+# d-lane-blocking-small-2, 2026-11-25): the name as the file that asks it
+# writes it, that file, the place the search meets first and what stands
+# there, a FIFO, a socket, a device or a link to one, and what to do. The
+# walk that finds each is `cli/include_stands.hero`'s; out of it when it
+# passed §11's 300 lines, at the seam between finding and telling.
+#
+# A file of the runtime's is named as the runtime's, and one of the
+# platform's or the toolchain's as an angled include names it, so a
+# message reads the same on every machine; every other file as it stands.
+
+use cli/given_path
+use cli/include_lines
+use cli/package_reads
+use cli/stands
+
+# A name found first as no file: as asked, where it stands, the file that
+# asks it and how deep that file is, and the group it was reached from.
+record Stop
+    asked: include_lines.Asked
+    place: str
+    includer: str
+    depth: i64
+    group: i64
+
+# A name reached from a group's header, said on the group.
+function of_group(one: Stop, header: str, includer: str) -> str
+    # The group's own header, found so under a package's words, which
+    # `cli/header_stands.hero` does not ask: told as that module tells it.
+    if one.includer.len() == 0
+        return "`" + header + "`, the header this group names, is found first at `" + one.place + "`, where " + stands.said(one.place) + " stands, and clang opens the first place its search finds, where only a file can be read: rename it to keep it, or remove it"
+    who: str @= includer + ", the header this group names,"
+
+    if one.depth > 1
+        who @ includer + ", below `" + header + "`, the header this group names,"
+    return name_said(one) + ", which " + who + " " + verb(one.asked) + ", is found first at `" + one.place + "`, where " + stands.said(one.place) + " stands, and clang opens the first place its search finds, where only a file can be read: rename it to keep it, or remove it"
+
+# A name only the runtime's opening reaches, said with `where` it stands.
+function of_opening(one: Stop, where: str, includer: str) -> str
+    who: str @= "the C this compiler writes"
+
+    if one.includer.len() > 0
+        who @ includer
+    return name_said(one) + ", which " + who + " " + verb(one.asked) + ", is found first at `" + one.place + "`" + where + " where " + stands.said(one.place) + " stands, and clang opens the first place its search finds, where only a file can be read: rename it to keep it, or remove it"
+
+# How a message names the file at `path` that asks a name: a file of the
+# runtime's by its name there; one of a folder clang searches that is the
+# platform's or the toolchain's, absolute and none the build names, as an
+# angled include names it, so a message reads the same on every machine
+# (`cli/system_paths.hero`'s rule); any other as it stands.
+function file_said(path: str, runtime: str, named: [str], search: [str]) -> str
+    at = package_reads.lexical(path)
+    home = package_reads.lexical(runtime)
+
+    if within(place: at, folders: [home])
+        return "the runtime's `" + at.slice(from: home.len() + 1, to: at.len()) + "`"
+    best: str @= ""
+
+    for folder in search
+        if given_path.rooted(folder) && folder.len() > best.len() && within(place: at, folders: [folder]) && !strings_hold(named, one: folder)
+            best @ folder
+
+    if best.len() > 0
+        return "`<" + at.slice(from: best.len() + 1, to: at.len()) + ">`"
+    return "`" + path + "`"
+
+function strings_hold(list: [str], one: str) -> bool
+    for each in list
+        if each == one
+            return true
+
+    return false
+
+function name_said(one: Stop) -> str
+    if one.asked.angled
+        return "`<" + one.asked.name + ">`"
+    return "`" + one.asked.name + "`"
+
+function verb(asked: include_lines.Asked) -> str
+    if asked.question
+        return "asks after"
+
+    if asked.embed
+        return "embeds"
+    return "includes"
+
+# Whether `place` lies in one of `folders`, each read lexically.
+function within(place: str, folders: [str]) -> bool
+    at = package_reads.lexical(place)
+
+    for folder in folders
+        if folder == "." && !given_path.rooted(at) && !(at.len() > 1 && at[0] == '.' && at[1] == '.')
+            return true
+
+        if at.len() > folder.len() && at.slice(from: 0, to: folder.len()) == folder && at[folder.len()] == '/'
+            return true
+
+    return false

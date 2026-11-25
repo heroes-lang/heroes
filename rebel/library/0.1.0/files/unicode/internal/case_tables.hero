@@ -3,7 +3,7 @@
 # characters. `casing.hero` reads them.
 #
 # Generated, never edited by hand: the Heroes program
-# `generators/unicode_tables/` read the Unicode Character Database 17.0.0
+# `rebel/generators/unicode_tables/` read the Unicode Character Database 17.0.0
 # (https://www.unicode.org/Public/17.0.0/ucd/, fetched 2026-11-22), its
 # files `UnicodeData.txt` and `SpecialCasing.txt`, reduced them to ranges,
 # held every lookup to the files' answer for each of the 1,114,112 code points,

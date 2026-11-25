@@ -9,7 +9,7 @@
 # Code points with no entry take UCA's implicit weights.
 #
 # Generated, never edited by hand: the Heroes program
-# `generators/i18n_collate/` read CLDR 49's core data, `cldr-common-49.zip`
+# `rebel/generators/i18n_collate/` read CLDR 49's core data, `cldr-common-49.zip`
 # of https://unicode.org/Public/cldr/49/ (SHA-256
 # 78403d8d6fb1fed6e208bf9001bf5be00bb5abfd9f8110dae062bf49309d6a89,
 # fetched 2026-11-22), its files `common/uca/allkeys_CLDR.txt` and

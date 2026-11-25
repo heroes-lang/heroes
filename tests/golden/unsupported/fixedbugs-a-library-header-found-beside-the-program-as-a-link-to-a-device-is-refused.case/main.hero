@@ -1,0 +1,12 @@
+#~ shadowed_header
+# fixedbugs, defect d-lane-blocking-small-2 (2026-11-24): `stdint.h` beside
+# the program is a link to a device, `/dev/null` (made in the case's copy,
+# `links`), in the folder the build searches before the system's, and the
+# program binds no header: the runtime's own opening reads `<stdint.h>`. A
+# FIFO there hung `heroes build` in clang's first listing until it was
+# killed. Every file the opening reaches is now walked before any clang
+# starts, and the build is refused at the program's first byte, as a file
+# standing in for the library's header is, with what stands there.
+
+function main()
+    print(1)

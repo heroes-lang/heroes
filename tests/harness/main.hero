@@ -23,8 +23,9 @@
 # holds it (`emission` to the programs whose label holds it, `run/loop`,
 # `warnings` to the programs whose name holds it, an example's and a gallery
 # program's as a case's, and `records` to one path, the one check that can judge a file
-# alone, `defects-cited`, the write hook's question), or, written `<i>/<n>`, to shard `i` of `n` of `run`, `control`, `lines`, `lldb` or a
-# golden form, its cases dealt round by their sorted index so that `n` processes
+# alone, `defects-cited`, the write hook's question), or, written `<i>/<n>`, to shard `i` of `n` of `run`, `control`, `lines`, `lldb`, a
+# golden form, or since 2026-11-25 `determinism`, `warnings` and `emission`, each list they walk dealt by the same shard,
+# its cases dealt round by their sorted index so that `n` processes
 # started with `1/n` to `n/n` run each case exactly once (defect 537,
 # `cases.selected`). A shard asks the floor of the whole directory, which it
 # collects whole before it deals its own cases, and its line says so; a suite
@@ -212,12 +213,12 @@ function main()
         exit(2)
 
     # A shard, `<i>/<n>`, binds the suites whose cases are one sorted list, and
-    # only a shard that exists (defect 537). Any other suite that takes a filter
-    # walks more than that list (`annotations` its run roots' groups, `fixes`
-    # its fixtures, `layout` its budgets, `determinism` three golden
-    # directories, `warnings` two and the examples and the gallery), so a shard
-    # of its list would not be a part of the whole, and `n` of them would not
-    # add up to it.
+    # only a shard that exists (defect 537), and the three that deal every list
+    # they walk by the same shard (`takes_shards`). Any other suite that takes a
+    # filter walks more than one list and deals none (`annotations` its run
+    # roots' groups, `fixes` its fixtures, `layout` its budgets), so a shard of
+    # its first list would not be a part of the whole, and `n` of them would
+    # not add up to it.
     if cases.is_shard(pick)
         if !takes_shards(only)
             print(
@@ -729,11 +730,16 @@ function takes_cases(suite: str) -> bool
 
 # The suites a shard binds: the ones whose cases are one sorted list, the eight
 # golden forms, `run` (defect 537), `lldb`, and `lines` since it took the third
-# word (defect 2529), whose walk is `run/`'s list alone. `annotations`, `fixes`,
-# `layout`, `determinism` and `warnings` take a filter and no shard, `main`
-# says why.
+# word (defect 2529), whose walk is `run/`'s list alone; and since 2026-11-25
+# `determinism`, `warnings` and `emission`, which deal each list they walk by
+# the same shard (`cases.selected`, `cases.dealt`), so the `n` shards together
+# walk every case of every list once. On the CI's Windows leg of run
+# 45493660465 determinism had not ended after 351.8 minutes and warnings after
+# 268.0, each in a part GitHub cancelled at six hours, and emission read 189.1:
+# no table of whole suites could keep a part under that ceiling. `annotations`,
+# `fixes` and `layout` take a filter and no shard, `main` says why.
 function takes_shards(suite: str) -> bool
-    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "doc", "doc_refused", "run", "control", "lldb", "lines"]
+    for name in ["check", "ir", "emit", "unsupported", "permissive", "full", "doc", "doc_refused", "run", "control", "lldb", "lines", "determinism", "warnings", "emission"]
         if name == suite
             return true
 
@@ -1422,10 +1428,16 @@ test "a shard binds the suites whose cases are one list, and says why a word nam
         assert takes_shards(name)
         assert takes_cases(name)
 
-    # A suite that takes a filter and walks more than one list takes no shard:
-    # `emission` walks four groups and the examples, `determinism` three golden
+    # The three that walk several lists and deal each by the same shard
+    # (2026-11-25): `emission` its programs, `determinism` three golden
     # directories, `warnings` two and the examples and the gallery.
-    for name in ["annotations", "fixes", "layout", "records", "emission", "determinism", "warnings", ""]
+    for name in ["determinism", "warnings", "emission"]
+        assert takes_shards(name)
+        assert takes_cases(name)
+
+    # A suite that takes a filter and walks more than one list it does not
+    # deal takes no shard.
+    for name in ["annotations", "fixes", "layout", "records", ""]
         assert !takes_shards(name)
 
     assert unsharded(cases.shard_of("5/4")) == "`5/4` names no shard: a shard is `<i>/<n>`, the i-th of n, with 1 <= i <= n"

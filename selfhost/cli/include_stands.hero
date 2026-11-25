@@ -1,0 +1,366 @@
+# Every file the build's first clang would open for the unit's opening and
+# the program's groups' headers, read here first, and every name whose first
+# place in clang's search is no file clang can read, refused before any
+# clang starts (design.md §4.19, §1.12; defect d-lane-blocking-small-2,
+# 2026-11-25).
+#
+# **clang opens the first place its search finds for a name, and a FIFO's
+# open waits for a writer that never comes.** Defect 2572 refused a group's
+# own header found so (`cli/header_stands.hero`); one `#include` below it,
+# `x.h` holding `#include "y.h"` and `y.h` a FIFO, `heroes build` still hung
+# in its first clang, the `-M` listing of the unit's opening
+# (`cli/shadowed.hero`), and so did a FIFO two includes down, one an
+# `#include_next` reaches, one a `__has_include`, an `#import` or an
+# `#embed` names, one at `stdint.h` in an `--include` folder or beside
+# `main.hero`, which the runtime's own opening reads, and one below a
+# `pkg-config` folder's header: each killed by `timeout -s KILL 10` (measured
+# on this Mac). So every file that listing would read is read here, through
+# the compiler's door, which opens a regular file alone and never waits
+# (`module/reading.hero`): the runtime's opening, each group's header and
+# every file they reach, the platform's own headers among them, since one of
+# those can name a file a folder of the program's holds.
+#
+# **Each name is found as clang finds it**: a quoted one from its includer's
+# folder first, then, as an angled one is, through the search clang prints
+# for the unit's own words (`clang -E -v` over an empty file, which opens no
+# header; `package_reads.toolchain_own`); an absolute one where it stands; an
+# `#include_next` from the folder after the one that found its includer. A
+# folder or a link to nothing at a name is passed over, as clang's search
+# passes over it. A file found is read once; one `#embed` names is data and
+# is not read; a FIFO, a socket, a device or a link to one is refused.
+#
+# **Who is told**: a name the walk reached from a group's header is refused
+# on that group, `ffi_header_refused`, as its header is; one only the
+# runtime's opening reaches, in a folder the build names, is a name of the
+# library's or the runtime's that folder holds, refused at the program's
+# first byte, `shadowed_header`, as a file there is (panel 237); one in a
+# folder of the runtime's or the toolchain's is no program's to repair, and
+# the build stops as a tool that cannot run, each in the words
+# `cli/include_told.hero` writes. What the walk cannot read is
+# `cli/include_lines.hero`'s to say.
+
+use ast
+use cli/compile
+use cli/compiling
+use cli/given_path
+use cli/group_file
+use cli/header_stands
+use cli/include_lines
+use cli/include_told
+use cli/named_folders
+use cli/order_trial
+use cli/package_reads
+use cli/package_units
+use cli/process
+use cli/stands
+use cli/toolchain
+use diag
+use module/reading
+use source
+use token
+
+# A file the walk reads: where it stands, the index in the search of the
+# folder that found it (-1 for its includer's folder or an absolute name),
+# the group whose header the walk entered from (-1 for the runtime's
+# opening) and how many includes down from the opening it is.
+record Visit
+    path: str
+    at: i64
+    group: i64
+    depth: i64
+
+# A name's first place in clang's order, `path` "" where it has none.
+record Place
+    path: str
+    at: i64
+    special: bool
+
+# What the walk holds while it reads.
+record Walk
+    search: [str]
+    seen: {str: bool}
+    pending: [Visit]
+    defines: {str: include_lines.Asked}
+    out: [include_told.Stop]
+
+# The build stopped, its refusals told, where a name the build's first clang
+# would open stands as no file; `ok()` where none does. Each group's header is
+# walked under the words its module's unit compiles under
+# (`cli/package_units.hero`): the program's, a `path` package's with its
+# folder searched after them, a fetched package's under its own root; a FIFO
+# below a `path` package's header hung the build in its probes, after this
+# question's first form had passed (measured on this Mac).
+function stopped(t: toolchain.Toolchain, under: compiling.Compiling, groups: [str], s: source.Source, decls: [ast.Decl], permissive: bool) -> ()?
+    heads: {str: [str]} @= {}
+    places: {str: package_units.Place} @= {}
+    heads[""] @ []
+    places[""] @ package_units.Place(folder: "", alias: "", fetched: false)
+
+    for header in groups
+        group = group_file.group_of(s, decls, path: header)
+        place: package_units.Place @= package_units.Place(folder: "", alias: "", fetched: false)
+
+        if !group.is_err()
+            place @ package_units.place_of(s, component: source.component_at(s, group.must().span.start))
+        heads[place.folder] @ heads[place.folder].default([]).push(header)
+        places[place.folder] @ place
+
+    out: [diag.Diagnostic] @= []
+
+    # ORDER: the program's own folder, "", first, then each package's, as
+    # `sort` orders a `str`, so two machines tell one tree in one order.
+    for folder in sort(keys(heads))
+        own = owned_under(under, place: places[folder].must())
+
+        for d in told(t, under: own, headers: heads[folder].must(), s, decls: decls)?
+            if !said_already(out, d: d)
+                out @ out.push(d)
+
+    stop = compile.stage(out, s, permissive: permissive)
+
+    if stop.is_err()
+        return ok()
+    _ = compile.leave(stop.must(), stage_name: "the headers the groups' headers read")?
+    return ok()
+
+# What a unit of the package placed at `place` compiles under, as
+# `package_units.unit_under` says; the program's own words for "".
+function owned_under(under: compiling.Compiling, place: package_units.Place) -> compiling.Compiling
+    if place.fetched
+        return compiling.of_package(under, root: place.folder)
+
+    if place.folder.len() > 0
+        return package_units.searching_after(under, folders: [place.folder])
+    return under
+
+# One refusal per name the walk of `headers` under `under` finds standing as
+# no file: on the group it was reached from, at the program's first byte
+# where only the runtime's opening reaches it in a folder the build names,
+# and the build stopped as a tool that cannot run where that folder is the
+# runtime's or the toolchain's.
+function told(t: toolchain.Toolchain, under: compiling.Compiling, headers: [str], s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]?
+    search = search_of(t, under: under)
+    stops = walked(opening: order_trial.opening(headers, question: ""), groups: headers, search: search)
+    folders = named_folders.named_folders(under)
+    out: [diag.Diagnostic] @= []
+
+    for one in stops
+        includer = include_told.file_said(path: one.includer, runtime: under.runtime, named: folders, search: search)
+
+        if one.group >= 0
+            group = group_file.group_of(s, decls, path: headers[one.group])
+
+            if !group.is_err()
+                out @ out.push(
+                    diag.new_diagnostic(code: "ffi_header_refused", message: include_told.of_group(one, header: headers[one.group], includer: includer), span: group.must().span)
+                )
+        else if include_told.within(place: one.place, folders: folders)
+            out @ out.push(
+                diag.new_diagnostic(code: "shadowed_header", message: include_told.of_opening(one, where: ", in a folder this build names,", includer: includer), span: token.Span(start: 0, end: 0))
+            )
+        else
+            return fail(
+                code: "unreadable",
+                msg: include_told.of_opening(one, where: ", a folder of the runtime's or the toolchain's,", includer: includer) + "; it is no file of the program's: the toolchain's install is what to repair"
+            )
+
+    return ok(out)
+
+function said_already(list: [diag.Diagnostic], d: diag.Diagnostic) -> bool
+    for one in list
+        if one.code == d.code && one.message == d.message && one.span.start == d.span.start
+            return true
+
+    return false
+
+# The folders clang searches for a name under the unit's words, in its
+# order; where clang cannot be asked, the words' own, which come first.
+function search_of(t: toolchain.Toolchain, under: compiling.Compiling) -> [str]
+    own = package_reads.toolchain_own(t.build, words: compiling.probe_words(under))
+
+    if own.is_err()
+        return header_stands.searched(compiling.search_words(under))
+    return own.must().dirs
+
+# Every name the opening and what it reaches ask whose first place is no
+# file, each place told once, by the first walk that reaches it: the
+# opening's lines in their order, the runtime's before the groups'.
+function walked(opening: str, groups: [str], search: [str]) -> [include_told.Stop]
+    w: Walk @= Walk(search: search, seen: {}, pending: [], defines: {}, out: [])
+
+    for asked in include_lines.read(opening).asked
+        entered(@w, asked: asked, from: Visit(path: "", at: -1, group: index_of(groups, name: asked.name), depth: 0))
+
+        while w.pending.len() > 0
+            visit = w.pending[w.pending.len() - 1]
+            w.pending @ w.pending.slice(from: 0, to: w.pending.len() - 1)
+            read(@w, visit: visit)
+
+    return w.out
+
+# Each name `visit`'s file asks, entered.
+function read(@w: Walk, visit: Visit)
+    text = reading.text_of(visit.path)
+
+    if text.is_err()
+        return
+    r = include_lines.read(text.must())
+
+    # ORDER: none — each name is one key, given the one define this file
+    # spells for it, so no order of the walk changes what `w.defines` holds.
+    for name in keys(r.defines)
+        w.defines[name] @ r.defines[name].must()
+
+    for asked in r.asked
+        entered(@w, asked: asked, from: visit)
+
+    for macro in r.macros
+        spelled = w.defines[macro]
+
+        if !spelled.is_err()
+            entered(@w, asked: spelled.must(), from: visit)
+
+# `asked` found from `from`: refused where it stands as no file, read later
+# where it is a file not read yet and no `#embed`'s data.
+function entered(@w: Walk, asked: include_lines.Asked, from: Visit)
+    place = found(asked, from: from, search: w.search)
+
+    if place.path.len() == 0
+        return
+    key = package_reads.lexical(place.path)
+
+    if place.special
+        if w.seen["!" + key].is_err()
+            w.seen["!" + key] @ true
+            w.out @ w.out.push(
+                include_told.Stop(asked: asked, place: place.path, includer: from.path, depth: from.depth, group: from.group)
+            )
+        return
+
+    if asked.embed || !w.seen[key].is_err()
+        return
+    w.seen[key] @ true
+    w.pending @ w.pending.push(Visit(path: place.path, at: place.at, group: from.group, depth: from.depth + 1))
+
+# The first place clang's search meets for `asked` from `from`.
+function found(asked: include_lines.Asked, from: Visit, search: [str]) -> Place
+    if given_path.rooted(asked.name)
+        return place_at(asked.name, at: -1)
+    start: i64 @= 0
+
+    if asked.next && from.at >= 0
+        start @ from.at + 1
+    else if !asked.angled && from.path.len() > 0
+        here = place_at(joined(folder: folder_of(from.path), name: asked.name), at: -1)
+
+        if here.path.len() > 0
+            return here
+
+    for at in range(from: start, to: search.len())
+        one = place_at(joined(folder: search[at], name: asked.name), at: at)
+
+        if one.path.len() > 0
+            return one
+
+    return Place(path: "", at: -1, special: false)
+
+# What stands at `path` as a place the search stops at: a file, or no file
+# clang can read; neither where nothing, a folder or a link to nothing is.
+function place_at(path: str, at: i64) -> Place
+    if stands.is_special(path)
+        return Place(path: path, at: at, special: true)
+
+    if stands.is_file(path)
+        return Place(path: path, at: at, special: false)
+    return Place(path: "", at: -1, special: false)
+
+function index_of(list: [str], name: str) -> i64
+    for at in range(from: 0, to: list.len())
+        if list[at] == name
+            return at
+
+    return -1
+
+function folder_of(path: str) -> str
+    at: i64 @= path.len()
+
+    while at > 0 && path[at - 1] != '/' && path[at - 1] != '\\'
+        at @ at - 1
+
+    if at == 0
+        return "."
+
+    if at == 1
+        return "/"
+    return path.slice(from: 0, to: at - 1)
+
+function joined(folder: str, name: str) -> str
+    if folder.len() > 0 && (folder[folder.len() - 1] == '/' || folder[folder.len() - 1] == '\\')
+        return folder + name
+    return folder + "/" + name
+
+## Tests
+
+test "a name is found where clang's search meets it first, its includer's folder before the search for a quoted one (defect d-lane-blocking-small-2)"
+    dir = "build/selftest-include-stands"
+    assert folder_of("app/x.h") == "app" && folder_of("x.h") == "." && folder_of("/x.h") == "/"
+    assert joined(folder: "app/", name: "y.h") == "app/y.h" && joined(folder: "app", name: "y.h") == "app/y.h"
+    assert include_told.within(place: "app/sub/../y.h", folders: ["app"]) && !include_told.within(place: "apple/y.h", folders: ["app"])
+    assert include_told.within(place: "y.h", folders: ["."]) && !include_told.within(place: "../y.h", folders: ["."])
+    assert include_told.file_said(path: "/r/runtime/heroes_runtime.h", runtime: "/r/runtime/", named: [], search: []) == "the runtime's `heroes_runtime.h`"
+    assert include_told.file_said(path: "/sdk/usr/include/sys/types.h", runtime: "rt", named: [], search: ["/sdk", "/sdk/usr/include"]) == "`<sys/types.h>`"
+    assert include_told.file_said(path: "/opt/inc/x.h", runtime: "rt", named: ["/opt/inc"], search: ["/opt/inc"]) == "`/opt/inc/x.h`"
+    assert include_told.file_said(path: "app/x.h", runtime: "rt", named: ["app"], search: ["app"]) == "`app/x.h`"
+    none = found(
+        include_lines.Asked(name: "none.h", angled: false, next: false, embed: false, question: false),
+        from: Visit(path: "", at: -1, group: -1, depth: 0),
+        search: [dir]
+    )
+    assert none.path == ""
+
+# A FIFO is made by the system's `mkfifo`, and what it made is asked of the
+# name, never of the command's exit: Windows has no FIFO in its file system
+# (`module/standing.hero`'s test says what Git's `mkfifo` makes there), so
+# where none stands the test holds the one reason it may. Git cannot hold a
+# FIFO, so these shapes are this test's and the `unsupported` case holds a
+# link to a device.
+test "a FIFO below a group's header is found before any clang opens it, wherever clang's search meets it first (defect d-lane-blocking-small-2)"
+    dir = "build/selftest-include-stands-fifo"
+    a = dir + "/a"
+    b = dir + "/b"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(a).is_err() && !process.mkdir_all(b).is_err()
+    made = process.run(
+        program: "mkfifo",
+        words: ["mkfifo", a + "/y.h", b + "/n.h", a + "/dead.h", a + "/q.h"],
+        out: process.discard(),
+        err: process.discard()
+    )
+
+    if !made.started || made.code != 0 || !stands.is_special(a + "/y.h")
+        assert process.exe_suffix() == ".exe"
+    else
+        assert !write_file(path: a + "/x.h", text: "#include \"y.h\"\nint x_one(void);\n").is_err()
+        assert !write_file(path: a + "/two.h", text: "#include \"mid.h\"\n").is_err()
+        assert !write_file(path: a + "/mid.h", text: "#include <y.h>\n").is_err()
+        assert !write_file(path: a + "/n.h", text: "#include_next <n.h>\n").is_err()
+        assert !write_file(path: a + "/quiet.h", text: "#if 0\n#include \"dead.h\"\n#endif\n#if __has_include(\"q.h\")\n#endif\n").is_err()
+
+        # One include down, two down, and through `#include_next` into the
+        # folder after the one that found its includer; each told once, on
+        # the group it was reached from.
+        one = walked(opening: "#include \"x.h\"\n", groups: ["x.h"], search: [a])
+        assert one.len() == 1 && one[0].group == 0 && one[0].includer == a + "/x.h" && one[0].place == a + "/y.h" && one[0].depth == 1
+        two = walked(opening: "#include \"two.h\"\n", groups: ["two.h"], search: [a])
+        assert two.len() == 1 && two[0].includer == a + "/mid.h" && two[0].depth == 2 && two[0].asked.angled
+        next = walked(opening: "#include \"n.h\"\n", groups: ["n.h"], search: [a, b])
+        assert next.len() == 1 && next[0].place == b + "/n.h" && next[0].asked.next
+
+        # A block under `#if 0` asks nothing; a `__has_include` opens what
+        # it finds, as clang's search does.
+        quiet = walked(opening: "#include \"quiet.h\"\n", groups: [], search: [a])
+        assert quiet.len() == 1 && quiet[0].place == a + "/q.h" && quiet[0].asked.question && quiet[0].group == -1
+        assert include_told.of_opening(quiet[0], where: ", in a folder this build names,", includer: "`" + a + "/quiet.h`") == "`q.h`, which `" + a + "/quiet.h` asks after, is found first at `" + a + "/q.h`, in a folder this build names, where a FIFO stands, and clang opens the first place its search finds, where only a file can be read: rename it to keep it, or remove it"
+        assert include_told.of_group(one[0], header: "x.h", includer: "`" + a + "/x.h`") == "`y.h`, which `" + a + "/x.h`, the header this group names, includes, is found first at `" + a + "/y.h`, where a FIFO stands, and clang opens the first place its search finds, where only a file can be read: rename it to keep it, or remove it"
+        assert include_told.of_group(two[0], header: "two.h", includer: "`" + a + "/mid.h`").slice(from: 0, to: 9) == "`<y.h>`, "
+    assert !process.remove_tree(dir).is_err()

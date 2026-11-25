@@ -4,7 +4,7 @@
 # the hash of its loose form, UAX #44's rule LM2, in buckets.
 #
 # Generated, never edited by hand: the Heroes program
-# `generators/unicode_names/` read the Unicode Character Database 17.0.0,
+# `rebel/generators/unicode_names/` read the Unicode Character Database 17.0.0,
 # each file held to its SHA-256, packed it into the tables below, and wrote
 # this module whole; its `check` command says whether this module is still
 # what it writes. What it read:

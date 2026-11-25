@@ -107,7 +107,11 @@
  * async-signal-safe, in a handler and in a forked child alike.
  *
  * WHAT IT DOES NOT REACH, said (defect 2522's rows): an installer or a jump
- * reached inside the shared cache; a raw `__sigaction` naming a trampoline of
+ * reached inside the shared cache; one of the names held by an image's static
+ * initializer, a bind of the image's data that no stub's slot holds, so it
+ * keeps the C library's own (`makecontext` so held on this Mac: a coroutine's
+ * stack unseen, 7 printed as 11, defect d-lane-dlsym-make-1); a raw
+ * `__sigaction` naming a trampoline of
  * its own; an interposer's own installs; a C++ exception out of a handler; a
  * save made where these files do not look that a later jump then resumes
  * after its handler was left on a stack other than the alternate one; a

@@ -4,7 +4,7 @@
 # name asked.
 #
 # Generated, never edited by hand: the Heroes program
-# `generators/time_zones/` read every `Zone` and `Link` line of the data
+# `rebel/generators/time_zones/` read every `Zone` and `Link` line of the data
 # files of `tzdata2026f.tar.gz`, held to its SHA-256, and wrote this module
 # whole; its `check` command says whether this module is still what it
 # writes. The data of each name is in `carried_blobs`, which zic wrote.

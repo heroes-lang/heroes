@@ -3,7 +3,7 @@
 # the few other properties the rules and the width of a text read.
 #
 # Generated, never edited by hand: the Heroes program
-# `generators/unicode_segment/` read the Unicode Character Database 17.0.0,
+# `rebel/generators/unicode_segment/` read the Unicode Character Database 17.0.0,
 # each file held to its SHA-256, packed every code point's values into
 # runs, and wrote this module whole; its `check` command says whether this
 # module is still what it writes. What it read:

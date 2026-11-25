@@ -12,7 +12,7 @@
 # hexadecimal, and `^`. An empty column is the column before it. The outcomes
 # are one letter for each operation: `o` answers the text, `e` fails `invalid`.
 #
-# Generated, never edited by hand: the Heroes program `generators/url_idna/`
+# Generated, never edited by hand: the Heroes program `rebel/generators/url_idna/`
 # read the file, fetched 2026-11-22, and wrote this module whole, each outcome
 # the status the file gives the operation, and each text the file's where the
 # operation answers one; its `check` command says whether this module is

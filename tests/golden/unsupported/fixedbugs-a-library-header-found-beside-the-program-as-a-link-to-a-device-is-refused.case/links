@@ -1,0 +1,2 @@
+# `stdint.h` made a link to a device in the case's copy, beside the program, where the runtime's own opening searches for `<stdint.h>` first.
+stdint.h /dev/null

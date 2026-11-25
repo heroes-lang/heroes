@@ -7,7 +7,7 @@
 # ZapfDingbats' by the code of their own built-in encoding; 0 is a code the
 # font has no glyph for.
 #
-# Generated, never edited by hand: the Heroes program `generators/pdf_tables/`
+# Generated, never edited by hand: the Heroes program `rebel/generators/pdf_tables/`
 # read the 14 AFM files, each held to its SHA-256, and wrote this module
 # whole; its `check` command says whether this module is still what it
 # writes.

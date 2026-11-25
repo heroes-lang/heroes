@@ -208,6 +208,13 @@ record Program
 # part of one (defect 2341): the gate of one repair, and the blessing of one new
 # program. A narrowed run is not the whole suite, so it asks none of the whole
 # suite's questions, its floors and its orphans, and `main` says so on its line.
+#
+# **Or it is a shard, `<i>/<n>`, since 2026-11-25** (`cases.dealt`): the
+# programs dealt round by their order, so the `n` shards together compare every
+# program once, and a shard asks the whole suite's questions, its floors of the
+# whole list and its orphans and doubly claimed files over every program's
+# claim (`sweep`), as `run`'s shards ask its floor. Until then the suite took no
+# shard, and it read 189.1 minutes on the CI's Windows leg of run 45493660465.
 function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     programs = collect(scratch)?
     r: report.Report @= report.empty()
@@ -217,7 +224,7 @@ function run_all(scratch: str, compiler: str, only: str) -> report.Report?
     # cases below hand it 1 or 2 over a two-file tree, so a decay check in there
     # would call every test's stub tree outgrown. This is where the REAL floor
     # meets the REAL count, and the refusals meet theirs.
-    if only == ""
+    if cases.asks_floor(only)
         blessed = blessed_among(programs)
         floors.check(@r, label: "emission", found: blessed, floor: LEAST, what: "programs whose emission is blessed")
         floors.check(
@@ -338,14 +345,20 @@ function compared_elsewhere(label: str) -> str
         .err _  => ""
 
 # The programs whose label holds `only`, every one where it is empty: the
-# third word, as `cases.matching` reads it of a case's name.
+# third word, as `cases.matching` reads it of a case's name; or, where the word
+# is a shard, the programs `cases.dealt` gives it by their place in the list.
 function narrowed(programs: [Program], only: str) -> [Program]
     if only == ""
         return programs
     kept: [Program] @= []
 
-    for one in programs
-        if strings.contains(s: one.label, substr: only)
+    for index in range(from: 0, to: programs.len())
+        one = programs[index]
+
+        if cases.is_shard(only)
+            if cases.dealt(index: index, only: only)
+                kept @ kept.push(one)
+        else if strings.contains(s: one.label, substr: only)
             kept @ kept.push(one)
 
     return kept
@@ -356,12 +369,13 @@ function narrowed(programs: [Program], only: str) -> [Program]
 #
 # A narrowed sweep walks the programs `only` names and asks no floor and no
 # orphan, the whole suite's questions (defect 2341): every blessed file of a
-# program it does not walk would read as an orphan, and its count as short.
+# program it does not walk would read as an orphan, and its count as short. A
+# shard asks both, since it reads every program's claim (below, 2026-11-25).
 function sweep(scratch: str, compiler: str, store: str, programs: [Program], update: bool, least: i64, only: str) -> report.Report?
     r: report.Report @= report.empty()
     blessed = blessed_among(programs)
 
-    if only == "" && blessed < least
+    if cases.asks_floor(only) && blessed < least
         report.keep_failure(
             @r,
             label: "emission",
@@ -371,17 +385,34 @@ function sweep(scratch: str, compiler: str, store: str, programs: [Program], upd
     skipped: i64 @= 0
     walked = narrowed(programs: programs, only: only)
 
-    for one in walked
+    # **A shard claims every program's file and compares its own** (2026-11-25):
+    # the files two programs claim and the files no program claims are the
+    # whole list's questions, so a shard reads every program's claim, cheap and
+    # with no build, and tells a file claimed twice where it holds the second
+    # claimant, so the `n` shards tell it once between them. A whole run and a
+    # filter claim the programs they walk, as before.
+    claiming: [Program] @= walked
+
+    if cases.is_shard(only)
+        claiming @ programs
+
+    for index in range(from: 0, to: claiming.len())
+        one = claiming[index]
+        mine = !cases.is_shard(only) || cases.dealt(index: index, only: only)
         earlier = seen[one.stored]
 
         if !earlier.is_err()
-            report.keep_failure(
-                @r,
-                label: "emission/" + one.label,
-                detail: "  " + one.stored + " is claimed by " + earlier.must() + " as well — two programs, one blessed file, and one of the two would stop being compared"
-            )
+            if mine
+                report.keep_failure(
+                    @r,
+                    label: "emission/" + one.label,
+                    detail: "  " + one.stored + " is claimed by " + earlier.must() + " as well — two programs, one blessed file, and one of the two would stop being compared"
+                )
             continue
         seen[one.stored] @ one.label
+
+        if !mine
+            continue
 
         # A program this platform cannot build is skipped here by name before
         # its build, its file seen all the same, so no orphan, and apart from
@@ -487,7 +518,7 @@ function sweep(scratch: str, compiler: str, store: str, programs: [Program], upd
         # copy of the scanner.
         suite_descriptors.judge(@r, label: "emission/" + one.label + " descriptors", c: said.must().out)
 
-    if only == ""
+    if cases.asks_floor(only)
         orphans(@r, scratch: scratch, store: store, seen: seen)
 
     # A skip is not a pass, asked of the programs walked, as `run` asks it of
@@ -1398,6 +1429,75 @@ test "a narrowed sweep compares and blesses only the programs whose label holds 
     assert nothing.must().passed + nothing.must().failed + nothing.must().skips.len() == 0
     assert narrowed(programs: two.must(), only: "").len() == 2
     assert narrowed(programs: two.must(), only: "run/").len() == 2
+    assert !shell.remove_tree(scratch).is_err()
+
+# A shard (2026-11-25): the programs dealt round by their order and every
+# program's claim read, so the two shards compare each program once between
+# them, tell a file two programs claim once, in the shard holding the second
+# claimant, and each ask the whole list's orphans.
+test "the shards of a sweep compare every program once, tell a doubly claimed file once, and each ask the orphans"
+    if !shell.can_run_scripts()
+        return
+    scratch = shell.own_scratch()
+    root = scratch + "/emission-sharded/"
+    assert !planted(root: root, files: ["tests/golden/run/a.hero", "tests/golden/run/b.hero", "tests/golden/run/c.hero"]).is_err()
+    store = root + STORE
+    three = collected(scratch: scratch, root: root)
+    assert !three.is_err()
+    assert three.must().len() == 3
+    proper = "int main(void) { return 0; }\n"
+    stub = emitter(scratch: scratch, name: "stub-emit-sharded.sh", says: proper)
+    assert !stub.is_err()
+
+    for one in three.must()
+        assert !write_file(path: one.stored, text: proper).is_err()
+
+    assert !write_file(path: store + "/run-gone.c", text: proper).is_err()
+    first = three.must()[0]
+    programs = three.must().push(
+        Program(source: first.source, stored: first.stored, label: "run/a-twin", elsewhere: "")
+    )
+    whole = sweep(
+        scratch: scratch,
+        compiler: stub.must(),
+        store: store,
+        programs: programs,
+        update: false,
+        least: 3,
+        only: ""
+    )
+    assert !whole.is_err()
+    assert whole.must().passed == 6
+    passed: i64 @= 0
+    claimed: i64 @= 0
+
+    for word in ["1/2", "2/2"]
+        part = sweep(
+            scratch: scratch,
+            compiler: stub.must(),
+            store: store,
+            programs: programs,
+            update: false,
+            least: 3,
+            only: word
+        )
+        assert !part.is_err()
+        passed @ passed + part.must().passed
+        orphaned: i64 @= 0
+
+        for failure in part.must().failures
+            if strings.contains(s: failure, substr: "claimed by " + first.label + " as well")
+                claimed @ claimed + 1
+
+            if strings.contains(s: failure, substr: "run-gone.c")
+                orphaned @ orphaned + 1
+
+        assert orphaned == 1
+
+    assert passed == whole.must().passed
+    assert claimed == 1
+    assert narrowed(programs: programs, only: "1/2").len() == 2
+    assert narrowed(programs: programs, only: "2/2").len() == 2
     assert !shell.remove_tree(scratch).is_err()
 
 # The blessed one file of a program that fetched a package includes the
