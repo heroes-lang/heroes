@@ -48,11 +48,24 @@
  * nobody can name (a library's own switch onto memory outside the thread's
  * stack, glibc's other architectures) is tagged 0 and never judged gone.
  *
+ * A `makecontext` reached by name is this runtime's on Linux (arm64 run,
+ * x86-64 read) and on Darwin: called, or asked of `dlsym` by any handle that
+ * finds one, of `dlvsym` on Linux and of dyld's legacy lookups on Darwin
+ * (`parts/siglookup.c`, `parts/rebind_image.c`), so a pointer to it names its
+ * stack as a call does (defect d-p259-clerk-1).
+ *
  * WHAT IS NOT SEEN, said: a switch onto a stack carved from the thread's own
- * that no `makecontext` this runtime wraps named (a library's own switch, a
- * call of the C library's `makecontext` through a pointer), or one whose
+ * that no `makecontext` of this runtime's named (a library's own switch; on
+ * Darwin, the C library's `makecontext` held by a static initializer, a bind
+ * in the image's data no rewrite reaches, defect d-lane-dlsym-make-1; one
+ * found by walking an image's symbol table by hand; on glibc's other
+ * architectures, every one, since no wrapper is defined there), or one whose
  * range a later 256 others pushed out of the table, is the thread's own stack
- * to every question here, and R1's healing may give back a live entry there. */
+ * to every question here, and R1's healing may give back a live entry there.
+ * Windows defines none of the C library's names: a fiber's stack is the one
+ * the thread's block names, which `SwitchToFiber` changes, and
+ * `GetProcAddress` on the C runtime's `longjmp` or `setjmp` hands out the
+ * function a call by name reaches (read, unrun). */
 
 #if !defined(_WIN32)
 /* The known range holding `at`, and the known ranges overlapping `[lo, hi)`,

@@ -16,6 +16,10 @@
 #if defined(__APPLE__)
 
 static void *hero_rebind_dlsym(void *handle, const char *name);
+static void *hero_rebind_ns_address(NSSymbol symbol);
+static void hero_rebind_lookup_and_bind(const char *name, void **address, NSModule *module);
+static void hero_rebind_lookup_and_bind_with_hint(const char *name, const char *hint, void **address, NSModule *module);
+static void hero_rebind_lookup_and_bind_fully(const char *name, void **address, NSModule *module);
 
 /* The functions a slot bound to a name (Mach-O's spelling, a leading `_`) is
  * given instead; a save point only for a family whose decode did not verify
@@ -32,6 +36,10 @@ static const struct {
     {"_sigvec", (void *)hero_rebind_sigvec, 0},
     {"_siginterrupt", (void *)hero_rebind_siginterrupt, 0},
     {"_dlsym", (void *)hero_rebind_dlsym, 0},
+    {"_NSAddressOfSymbol", (void *)hero_rebind_ns_address, 0},
+    {"__dyld_lookup_and_bind", (void *)hero_rebind_lookup_and_bind, 0},
+    {"__dyld_lookup_and_bind_with_hint", (void *)hero_rebind_lookup_and_bind_with_hint, 0},
+    {"__dyld_lookup_and_bind_fully", (void *)hero_rebind_lookup_and_bind_fully, 0},
     {"_siglongjmp", (void *)hero_rebind_siglongjmp, 0},
     {"_longjmp", (void *)hero_rebind_longjmp, 0},
     {"__longjmp", (void *)hero_rebind__longjmp, 0},
@@ -102,6 +110,69 @@ static void *hero_rebind_dlsym(void *handle, const char *name) {
     }
     return real(handle, name) != NULL ? ours : NULL;
 }
+
+/* dyld's legacy lookups, which the table rewrites too. */
+typedef void *(*hero_rebind_ns_address_fn)(NSSymbol);
+typedef void (*hero_rebind_bind_fn)(const char *, void **, NSModule *);
+typedef void (*hero_rebind_bind_hint_fn)(const char *, const char *, void **, NSModule *);
+static _Atomic(hero_rebind_ns_address_fn) hero_rebind_real_ns_address = NULL;
+static _Atomic(hero_rebind_bind_fn) hero_rebind_real_bind = NULL;
+static _Atomic(hero_rebind_bind_hint_fn) hero_rebind_real_bind_hint = NULL;
+static _Atomic(hero_rebind_bind_fn) hero_rebind_real_bind_fully = NULL;
+
+/* What `dlsym` answers for the function at `found`, asked by the name its
+ * image gives that address exactly: this file's function for a name the
+ * table rewrites, `found` itself for every other. By the name and not by the
+ * address `dlsym` gave before `main`: under `--sanitize` that address is the
+ * sanitizer's wrapper, and these lookups answer libsystem_c's own (`sigaction`
+ * on this Mac, 2026-11-25). */
+static void *hero_rebind_answer_named(void *found) {
+    Dl_info info;
+    if (found == NULL || dladdr(found, &info) == 0 || info.dli_saddr != found || info.dli_sname == NULL) return found;
+    void *ours = hero_rebind_answer(info.dli_sname);
+    return ours != NULL ? ours : found;
+}
+
+/* What `dlsym` answers for the name `named`, Mach-O's spelling, whose C
+ * library's own is `found`. */
+static void *hero_rebind_answer_spelled(const char *named, void *found) {
+    void *ours = found != NULL && named != NULL ? hero_rebind_replacement(named) : NULL;
+    return ours != NULL ? ours : found;
+}
+
+/* DYLD'S LEGACY LOOKUPS, ANSWERED AS `dlsym` IS (defect d-p259-clerk-1).
+ * `NSLookupAndBindSymbol`, `NSLookupSymbolInImage` and their kin hand out an
+ * opaque symbol whose address `NSAddressOfSymbol` gives, and
+ * `_dyld_lookup_and_bind` and its two kin write the address: each answered the
+ * C library's own of every name the table rewrites, never the rewritten slot,
+ * on this Mac (macOS 26, 2026-11-25), deprecated since 10.5 and still
+ * answered. Each is the C library's own call, its answer then given by name. */
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+static void *hero_rebind_ns_address(NSSymbol symbol) {
+    hero_rebind_ns_address_fn real = atomic_load_explicit(&hero_rebind_real_ns_address, memory_order_relaxed);
+    return real != NULL ? hero_rebind_answer_named(real(symbol)) : NULL;
+}
+
+static void hero_rebind_lookup_and_bind(const char *name, void **address, NSModule *module) {
+    hero_rebind_bind_fn real = atomic_load_explicit(&hero_rebind_real_bind, memory_order_relaxed);
+    if (real != NULL) real(name, address, module);
+    if (address != NULL) *address = hero_rebind_answer_spelled(name, *address);
+}
+
+static void hero_rebind_lookup_and_bind_with_hint(const char *name, const char *hint, void **address,
+                                                  NSModule *module) {
+    hero_rebind_bind_hint_fn real = atomic_load_explicit(&hero_rebind_real_bind_hint, memory_order_relaxed);
+    if (real != NULL) real(name, hint, address, module);
+    if (address != NULL) *address = hero_rebind_answer_spelled(name, *address);
+}
+
+static void hero_rebind_lookup_and_bind_fully(const char *name, void **address, NSModule *module) {
+    hero_rebind_bind_fn real = atomic_load_explicit(&hero_rebind_real_bind_fully, memory_order_relaxed);
+    if (real != NULL) real(name, address, module);
+    if (address != NULL) *address = hero_rebind_answer_spelled(name, *address);
+}
+#pragma clang diagnostic pop
 
 /* Whether an image interposes (an `__interpose` section in any segment): its
  * calls of the C library's names are its own wrappers' way to the C library,
@@ -204,6 +275,11 @@ __attribute__((constructor(0))) static void hero_rebind_start(void) {
     atomic_store(&hero_rebind_real_setcontext, (hero_rebind_set_fn)dlsym(RTLD_DEFAULT, "setcontext"));
     atomic_store(&hero_rebind_real_swapcontext, (hero_rebind_swap_fn)dlsym(RTLD_DEFAULT, "swapcontext"));
     atomic_store(&hero_rebind_real_makecontext, (hero_rebind_make_fn)dlsym(RTLD_DEFAULT, "makecontext"));
+    atomic_store(&hero_rebind_real_ns_address, (hero_rebind_ns_address_fn)dlsym(RTLD_DEFAULT, "NSAddressOfSymbol"));
+    atomic_store(&hero_rebind_real_bind, (hero_rebind_bind_fn)dlsym(RTLD_DEFAULT, "_dyld_lookup_and_bind"));
+    atomic_store(&hero_rebind_real_bind_hint,
+                 (hero_rebind_bind_hint_fn)dlsym(RTLD_DEFAULT, "_dyld_lookup_and_bind_with_hint"));
+    atomic_store(&hero_rebind_real_bind_fully, (hero_rebind_bind_fn)dlsym(RTLD_DEFAULT, "_dyld_lookup_and_bind_fully"));
     for (uint32_t i = 0; i < _dyld_image_count(); i += 1) {
         hero_rebind_regions_of(_dyld_get_image_header(i), _dyld_get_image_vmaddr_slide(i));
     }
