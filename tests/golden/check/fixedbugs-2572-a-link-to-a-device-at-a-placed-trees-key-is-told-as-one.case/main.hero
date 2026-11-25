@@ -1,0 +1,8 @@
+# Defect 2572: a link to a device, `/dev/null` (made in the case's copy,
+# `links`), stands where the package `json`'s tree is placed. A build tells
+# it as what its chain names, as `heroes fetch` would, where it said *a link
+# to a file*, which a device is not.
+use <json>/parse  #~ package_unread
+
+function main()
+    print(parse.value())

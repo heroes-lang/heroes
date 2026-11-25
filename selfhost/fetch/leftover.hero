@@ -36,6 +36,7 @@ use fetch/run_lock
 use fetch/stage_home
 use fetch/staging
 use module/fingerprint
+use module/reading
 
 # `lent`: each call reads the path while it runs and keeps nothing of it.
 extern "hero_os.h"
@@ -116,7 +117,7 @@ function undone(program: str, folder: str) -> bool
     if taken.answer != .held
         run_lock.let_go(@taken, keep: false)
         return false
-    rows = split(read_file(folder + "/" + staging.LEDGER).default(""), byte: 10)
+    rows = split(reading.text_of(folder + "/" + staging.LEDGER).default(""), byte: 10)
     at: i64 @= rows.len() - 1
 
     while at >= 1

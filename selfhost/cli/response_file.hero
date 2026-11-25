@@ -41,6 +41,7 @@ use cli/process
 use cli/publish
 use cli/strings
 use cli/toolchain
+use module/reading
 
 # The rule clang reads the file by, named on the line so that no host's
 # default is asked.
@@ -96,7 +97,7 @@ constant LINK_WORDS: str
 function carried(line: [str], dir: str) -> [str]
     text = text_of(line)
     at = dir + "/words-" + digest.digest(text) + ".rsp"
-    held = read_file(at)
+    held = reading.text_of(at)
 
     if !held.is_err() && held.must() == text
         return ["clang", QUOTING, "@" + at]

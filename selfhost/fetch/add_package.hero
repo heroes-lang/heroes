@@ -38,6 +38,7 @@ use fetch/verb_place
 use module/catalogue
 use module/fingerprint
 use module/listing
+use module/reading
 use module/use_paths
 
 # The widest a `packages` line is written on one line; a longer one is
@@ -187,7 +188,7 @@ function used_in(program: str, entry: str) -> [str]
         inside = path.slice(from: base.len() + 1, to: path.len())
 
         if strings.ends_with(text: inside, suffix: ".hero") && !under(inside, homes: homes)
-            for used in use_paths.uses_of(read_file(path).default(""))
+            for used in use_paths.uses_of(reading.text_of(path).default(""))
                 if strings.starts_with(text: used, prefix: head)
                     out @ with_name(out, name: used.slice(from: head.len(), to: used.len()))
 
@@ -204,7 +205,7 @@ function under(path: str, homes: [str]) -> bool
 # `packages`, written where the catalogue stands.
 function with_line(program: str, name: str, packages: [str]) -> ()?
     path = program + catalogue.FILE
-    text = read_file(path)
+    text = reading.text_of(path)
 
     if text.is_err()
         return fail(code: "cannot_place", msg: "cannot read " + path)

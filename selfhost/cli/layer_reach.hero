@@ -29,6 +29,7 @@ use cli/layer_swift
 use cli/runtime_key
 use cli/toolchain
 use emit/externs as emit_externs
+use module/reading
 use source
 use token
 
@@ -109,7 +110,7 @@ function reached(t: toolchain.Toolchain, named: [str]) -> [str]?
                 read[at] @ true
                 grew @ true
 
-                for name in includes(read_file(file)?)
+                for name in includes(reading.text_of(file)?)
                     reach @ once(reach, name: base_of(name))
             at @ at + 1
 

@@ -39,11 +39,18 @@ use cli/strings
 use cli/supplied_names
 use cli/supplied_windows
 use emit/ffi_lookup
+use module/reading
 
 # Two or more files the link found defining one name.
 record Duplicate
     name: str
     files: [str]
+
+# The link's map at `path`, which the link wrote under `build/`, "" where it
+# would not read: read through the compiler's door (defect 2572), so a FIFO or
+# a device standing at its name is never waited on or read.
+function map_at(path: str) -> str
+    return reading.text_of(path).default("")
 
 # Each traced name's supplier as the linker named it: the map on Apple's
 # linker and on Windows', else the trace's first regular definition, else its

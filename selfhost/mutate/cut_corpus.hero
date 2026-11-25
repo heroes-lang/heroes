@@ -25,6 +25,7 @@
 use bytes
 use cli/process
 use library_source
+use module/reading
 use modules
 
 # Bytes of source a program's `use` closure may hold and be kept.
@@ -82,7 +83,7 @@ function mirrored(tree: str, files: [str], mirror: str) -> [str]?
     unread: [str] @= []
 
     for rel in files
-        text = read_file(tree + "/" + rel)
+        text = reading.text_of(tree + "/" + rel)
 
         if text.is_err()
             unread @ unread.push(rel)
@@ -117,7 +118,7 @@ function folder(path: str) -> str
 # to the mirror, the program first: its `use` closure.
 function closure(mirror: str, rel: str) -> [str]?
     path = mirror + "/" + rel
-    text = read_file(path)
+    text = reading.text_of(path)
 
     if text.is_err()
         return fail(code: "no_corpus", msg: "cannot read " + path)
@@ -136,7 +137,7 @@ function closure_bytes(mirror: str, files: [str]) -> i64?
     total: i64 @= 0
 
     for rel in files
-        text = read_file(mirror + "/" + rel)
+        text = reading.text_of(mirror + "/" + rel)
 
         if text.is_err()
             return fail(code: "no_corpus", msg: "cannot read " + mirror + "/" + rel)
@@ -156,7 +157,7 @@ function frozen(mirror: str, out: str, programs: [str]) -> i64?
 
     # ORDER: none observed; each file is written once, wherever it falls.
     for file in keys(seen)
-        text = read_file(mirror + "/" + file)
+        text = reading.text_of(mirror + "/" + file)
 
         if text.is_err()
             return fail(code: "no_corpus", msg: "cannot read " + mirror + "/" + file)

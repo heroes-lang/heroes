@@ -1,0 +1,22 @@
+$ heroes check <work>/app/main.hero
+exit 1
+stdout:
+stderr:
+error[catalogue_refused]: `use <yaml>/load` reaches a package through the catalogue, and it does not read: `<work>/app/heroes.toml` is a link to a device, where a catalogue is a file: rename it to keep it, or remove it — a catalogue that does not read names no package, the lines above that one included
+  at <work>/app/main.hero:1:5
+    |
+  1 | use <yaml>/load
+    |     ^^^^^^^^^^^
+$ heroes fetch -C <work>/app
+exit 1
+stdout:
+stderr:
+error[catalogue_refused]: `<work>/app/heroes.toml` is a link to a device, where a catalogue is a file: rename it to keep it, or remove it
+$ heroes add json -C <work>/app
+exit 1
+stdout:
+stderr:
+error[catalogue_refused]: `<work>/app/heroes.toml` is a link to a device, where a catalogue is a file: rename it to keep it, or remove it
+heroes.toml:
+heroes.packages:
+(none)

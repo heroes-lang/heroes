@@ -28,6 +28,7 @@ use library_source
 use module/catalogue
 use module/folders
 use module/packages
+use module/reading
 use modules
 use parse
 use source
@@ -203,7 +204,7 @@ test "a folder is shown and written as a `path` entry writes it"
 # read from disk, as the verb notes them, read through the catalogue of
 # `folder`.
 function graph_noted(path: str, folder: str) -> [diag.Diagnostic]
-    s = modules.load_text(path: path, root_text: read_file(path).must(), library: library_source.text()).must()
+    s = modules.load_text(path: path, root_text: reading.text_of(path).must(), library: library_source.text()).must()
     said = modules.errors(s, parse.parse_source(s).uses)
     return noted(said, s: s, target: source.module_at(s, s.files[0].start), folder: folder)
 

@@ -1,0 +1,3 @@
+check <work>/app/main.hero
+fetch -C <work>/app
+add json -C <work>/app

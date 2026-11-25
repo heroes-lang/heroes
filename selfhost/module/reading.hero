@@ -20,6 +20,8 @@ use byte_evidence
 use cli/digest
 use cli/files
 use cli/process
+use cli/stands
+use cli/strings
 use diag
 use not_text
 use source
@@ -58,7 +60,7 @@ function source_text(path: str) -> Text?
         return fail(code: "file_not_found", msg: "no file at " + path)
 
     if status != HERO_OS_OK && status != HERO_OS_NOT_TEXT
-        return fail(code: "read_failed", msg: "could not read " + path)
+        return fail(code: "read_failed", msg: stands.refused(path))
 
     # A file of text has no marks, and comes back as it was read, uncopied.
     if marks == 0
@@ -66,6 +68,33 @@ function source_text(path: str) -> Text?
         return ok(Text(text: got, faults: none))
     shown = got.slice(from: marks, to: got.len())
     return ok(Text(text: shown, faults: not_text.faults_of(marks: got.slice(from: 0, to: marks), text: shown)))
+
+# A file's text through the compiler's door (defect 2572), for every reader
+# of the compiler that reads a file it does not compile: `read_file`'s three
+# answers, the text, `file_not_found` where nothing is there and `not_text`
+# where the bytes are not UTF-8, and `read_failed` where it would not read,
+# told by what stands there. The door opens a regular file alone and never
+# waits to open one (`runtime/parts/os.c`); `read_file` opens a FIFO and
+# waits for a writer, and reads a device until it ends. Until then the
+# compiler's other readers read through `read_file`: a FIFO at a file a
+# build keeps under `build/` hung the build at 21 of the 44 files a build of
+# a program with one `extern` keeps (measured on this Mac 2026-11-24, each
+# killed by `timeout -s KILL 10`). A program's `read_file` is unchanged, and
+# a test below holds every module of the compiler to this door.
+function text_of(path: str) -> str?
+    status: i64 @= 0
+    marks: i64 @= 0
+    got = hero_file_read_shown(path: path.cstr(), status: @status, marks: @marks)
+
+    if status == HERO_OS_OK
+        return ok(got)
+
+    if status == HERO_OS_NOT_FOUND
+        return fail(code: "file_not_found", msg: "no file at " + path)
+
+    if status == HERO_OS_NOT_TEXT
+        return fail(code: "not_text", msg: "the bytes of " + path + " are not UTF-8")
+    return fail(code: "read_failed", msg: stands.refused(path))
 
 # The file at `path` with each byte that is not text kept as one `?`, so an
 # offset in it is the file's own: what `cli/caret_bytes.hero` reads a name
@@ -77,7 +106,7 @@ function bytes_kept(path: str) -> str?
     got = hero_file_read_shown(path: path.cstr(), status: @status, marks: @marks)
 
     if status != HERO_OS_OK && status != HERO_OS_NOT_TEXT
-        return fail(code: "read_failed", msg: "could not read " + path)
+        return fail(code: "read_failed", msg: stands.refused(path))
 
     if marks == 0
         return ok(got)
@@ -143,7 +172,7 @@ function key_of(path: str) -> str?
         return fail(code: "file_not_found", msg: "no file at " + path)
 
     if status != HERO_OS_OK && status != HERO_OS_NOT_TEXT
-        return fail(code: "read_failed", msg: "could not read " + path)
+        return fail(code: "read_failed", msg: stands.refused(path))
     return ok(got)
 
 function keyed(path: str) -> Keyed?
@@ -158,7 +187,7 @@ function keyed(path: str) -> Keyed?
         return ok(Keyed(text: got, key: digest.digest(got)))
 
     if status != HERO_OS_NOT_TEXT
-        return fail(code: "read_failed", msg: "could not read " + path)
+        return fail(code: "read_failed", msg: stands.refused(path))
     return ok(Keyed(text: got.slice(from: marks, to: got.len()), key: "n" + digest.digest(got).slice(from: 1, to: 16)))
 
 # The files whose `use` lines discovery reads next, and this one with them
@@ -210,7 +239,7 @@ function add_fault(@faults: [source.Fault], one: source.Fault)
 function nothing_at(opened: str, named: str) -> ()?
     if absent(opened)
         return ok()
-    return fail(code: "unreadable", msg: "cannot read `" + named + "`")
+    return fail(code: "unreadable", msg: stands.unread_said(opened: opened, named: named))
 
 # Whether no entry is at `opened`, nor can be. The question that fails is
 # asked again of the directory that would hold the path, until one answers:
@@ -269,7 +298,7 @@ test "what is at a module's path decides between absent and cannot read"
         .ok => assert false
         .err e =>
             assert e.code == "unreadable"
-            assert e.msg == "cannot read `adir.hero`"
+            assert e.msg == "cannot read `adir.hero`: a folder stands there, where a source is a file: rename it to keep it, or remove it and put the file there"
 
     assert nothing_at(opened: dir + "/here.hero", named: "here.hero").is_err()
     linked = files.symbolic_link(target: "nowhere.hero", name: dir + "/dangling.hero")
@@ -400,3 +429,209 @@ test "NUL at every other byte is told as UTF-16 with no mark, in either order, a
     elsewhere = told_of(fixtures + "nul-and-latin1.txt")
     assert elsewhere[0].notes[0] == "the file also holds NUL bytes, which no source text holds: it is likely not a text file at all"
     assert byte_evidence.utf16_order(source_text(fixtures + "nul-and-latin1.txt").must().text) == ""
+
+# Defect 2572: each kind of thing that can stand where a file is wanted is
+# told as what it is, a link as what its chain names, and the door answers
+# each at once, never waiting on a FIFO or reading a device. A FIFO is made by
+# the system's `mkfifo` and a socket by Python's `bind`, and what each made is
+# asked of the name, never of the command's exit: Windows has no FIFO and no
+# socket in its file system (Git's `mkfifo` there makes a `.lnk`, read on the
+# box 2026-11-20), and a machine without Python makes no socket. Where this
+# machine makes no link, the links' rows have nothing to hold.
+test "what stands where a file is read is told as what it is, and the door waits on none (defect 2572)"
+    dir = "build/selftest-reading-stands"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/folder").is_err()
+    assert !write_file(path: dir + "/afile", text: "a file\n").is_err()
+    assert stands.said(dir + "/none") == "nothing" && stands.said(dir + "/afile") == "a file"
+    assert stands.said(dir + "/folder") == "a folder" && stands.is_file(dir + "/afile")
+    assert !stands.is_file(dir + "/folder") && !stands.is_special(dir + "/folder") && !stands.is_special(dir + "/none")
+    assert text_of(dir + "/afile").must() == "a file\n"
+
+    match text_of(dir + "/none")
+        .ok _  => assert false
+        .err e => assert e.code == "file_not_found"
+
+    match text_of(dir + "/folder")
+        .ok _  => assert false
+        .err e => assert e.code == "read_failed" && e.msg == "`" + dir + "/folder` is a folder, where a file is read"
+
+    if files.entry("/dev/zero") == .other
+        assert stands.said("/dev/zero") == "a device" && stands.is_special("/dev/zero")
+
+        match text_of("/dev/zero")
+            .ok _  => assert false
+            .err e => assert e.msg == "`/dev/zero` is a device, where a file is read"
+
+    fifo = dir + "/fifo"
+    fifo_made = process.run(program: "mkfifo", words: ["mkfifo", fifo], out: process.discard(), err: process.discard())
+
+    if fifo_made.started && fifo_made.code == 0 && files.entry(fifo) == .other
+        assert stands.said(fifo) == "a FIFO" && stands.is_special(fifo) && !stands.is_file(fifo)
+
+        match text_of(fifo)
+            .ok _  => assert false
+            .err e => assert e.code == "read_failed" && e.msg == "`" + fifo + "` is a FIFO, where a file is read"
+
+        assert stands.unread_said(opened: fifo, named: "app/main.hero") == "cannot read `app/main.hero`: a FIFO stands there, where a source is a file: rename it to keep it, or remove it and put the file there"
+
+    socket = dir + "/socket"
+    bound = ["python3", "-I", "-c", "import socket,sys; socket.socket(socket.AF_UNIX).bind(sys.argv[1])", socket]
+    socket_made = process.run(program: "python3", words: bound, out: process.discard(), err: process.discard())
+
+    if socket_made.started && socket_made.code == 0 && files.entry(socket) == .other
+        assert stands.said(socket) == "a socket"
+        assert text_of(socket).is_err()
+
+    if !files.symbolic_link(target: "nowhere", name: dir + "/to-nothing").is_err()
+        assert stands.said(dir + "/to-nothing") == "a link to nothing" && !stands.is_special(dir + "/to-nothing")
+        assert stands.unread_said(opened: dir + "/to-nothing", named: "m.hero") == "cannot read `m.hero`: a link to nothing stands there, where a source is a file: rename it to keep it, or remove it and put the file there"
+        assert !files.symbolic_link(target: "afile", name: dir + "/to-file").is_err()
+        assert stands.said(dir + "/to-file") == "a link to a file" && stands.is_file(dir + "/to-file")
+        assert text_of(dir + "/to-file").must() == "a file\n"
+        assert !files.symbolic_link(target: "folder", name: dir + "/to-folder").is_err()
+        assert stands.said(dir + "/to-folder") == "a link to a folder" && !stands.is_special(dir + "/to-folder")
+
+        if files.entry("/dev/zero") == .other
+            assert !files.symbolic_link(target: "/dev/zero", name: dir + "/to-device").is_err()
+            assert stands.said(dir + "/to-device") == "a link to a device" && stands.is_special(dir + "/to-device")
+            assert text_of(dir + "/to-device").is_err()
+
+        if files.entry(fifo) == .other
+            assert !files.symbolic_link(target: "fifo", name: dir + "/to-fifo").is_err()
+            assert stands.said(dir + "/to-fifo") == "a link to a FIFO" && stands.is_special(dir + "/to-fifo")
+            assert text_of(dir + "/to-fifo").is_err()
+
+    assert !process.remove_tree(dir).is_err()
+
+# A folder that cannot be made is told by what stands in its way, after the
+# system's own number (defect 2572, defect 346): a file, and where this
+# machine makes them a FIFO, at the first part of the path that is no folder.
+test "a folder that cannot be made names what stands in its way (defect 2572)"
+    dir = "build/selftest-reading-blocked"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/build", text: "a file\n").is_err()
+
+    match process.mkdir_all(dir + "/build/tu")
+        .ok _ => assert false
+        .err e =>
+            assert strings.starts_with(text: e.msg, prefix: "could not create the directory " + dir + "/build/tu: ")
+            assert strings.ends_with(
+                text: e.msg,
+                suffix: "; a file stands at `" + dir + "/build`, where a folder is made: rename it to keep it, or remove it"
+            )
+
+    fifo_made = process.run(
+        program: "mkfifo",
+        words: ["mkfifo", dir + "/fifo"],
+        out: process.discard(),
+        err: process.discard()
+    )
+
+    if fifo_made.started && fifo_made.code == 0 && files.entry(dir + "/fifo") == .other
+        match process.mkdir_all(dir + "/fifo")
+            .ok _  => assert false
+            .err e => assert strings.ends_with(
+                text: e.msg,
+                suffix: "; a FIFO stands at `" + dir + "/fifo`, where a folder is made: rename it to keep it, or remove it"
+            )
+
+    assert !process.remove_tree(dir).is_err()
+
+# The instrument the door rests on (defect 2572): no module of the compiler
+# reads a file through `read_file`, which waits on a FIFO and reads a device
+# until it ends, so a reader added tomorrow is named here before it ships.
+# Read from every module's code under `selfhost/`, its tests, its comments
+# and its strings left out: a test reads its own scratch files, and the
+# library's text spells `read_file` for the programs it is compiled into.
+# The scanner is held first to lines it must see and lines it must pass
+# over, so a green walk is never a blind one; every cut is at a quote or a
+# `#`, one byte each, so none splits a character.
+test "every module of the compiler reads a file through its door, never through read_file (defect 2572)"
+    rows: [[str]] @= [
+        ["    text = read_file(path)", "calls"]
+        ["read_file(at)?", "calls"]
+        ["    é = read_file(p)", "calls"]
+        ["    x = \"#\" + read_file(p).must()", "calls"]
+        ["    x = \"read_file(\"", "passes"]
+        ["    # read_file(x)", "passes"]
+        ["    x = my_read_file(p)", "passes"]
+        ["    x = shell.read_file(p)", "passes"]
+        ["    x = reading.text_of(p)", "passes"]
+        ["    x = \"a \\\" read_file(\"", "passes"]
+    ]
+
+    for path in process.files_under("selfhost").must()
+        if strings.ends_with(text: path, suffix: ".hero")
+            text = read_file(path).must()
+            inside: bool @= false
+            from: i64 @= 0
+
+            for at in range(from: 0, to: text.len() + 1)
+                if at == text.len() || text[at] == '\n'
+                    line = text.slice(from: from, to: at)
+
+                    if strings.starts_with(text: line, prefix: "test \"")
+                        inside @ true
+                    else if inside && line.len() > 0 && line[0] != ' ' && line[0] != '#'
+                        inside @ false
+
+                    if !inside
+                        rows @ rows.push([line, path])
+                    from @ at + 1
+
+    unread: [str] @= []
+
+    for row in rows
+        line = row[0]
+        pieces: [str] @= []
+        quoted: bool @= false
+        from: i64 @= 0
+        at: i64 @= 0
+
+        while at < line.len()
+            if quoted && line[at] == '\\'
+                at @ at + 2
+                continue
+
+            if line[at] == '"'
+                if !quoted
+                    pieces @ pieces.push(line.slice(from: from, to: at))
+                quoted @ !quoted
+                from @ at + 1
+            else if !quoted && line[at] == '#'
+                break
+            at @ at + 1
+
+        if !quoted && at >= line.len()
+            pieces @ pieces.push(line.slice(from: from, to: line.len()))
+        else if !quoted
+            pieces @ pieces.push(line.slice(from: from, to: at))
+        code = pieces.join(" ")
+        needle = "read_file("
+        calls: bool @= false
+        index: i64 @= 0
+
+        while !calls && index + needle.len() <= code.len()
+            after_word: bool @= false
+
+            if index > 0
+                b = code[index - 1]
+                after_word @ b == '_' || b == '.' || b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
+            same: bool @= !after_word
+            k: i64 @= 0
+
+            while same && k < needle.len()
+                same @ code[index + k] == needle[k]
+                k @ k + 1
+
+            calls @ same
+            index @ index + 1
+
+        if row[1] == "calls" || row[1] == "passes"
+            assert calls == (row[1] == "calls")
+        else if calls
+            unread @ unread.push(row[1])
+
+    assert unread == []

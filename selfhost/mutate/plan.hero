@@ -16,6 +16,7 @@
 
 use cli/digest
 use cli/process
+use module/reading
 use mutate/hunks
 use mutate/json_fields
 use mutate/json_read
@@ -112,7 +113,7 @@ function read_plan(dir: str) -> Plan?
     return ok(Plan(singles: singles, pairs: pairs))
 
 function read_text(path: str) -> str?
-    got = read_file(path)
+    got = reading.text_of(path)
 
     if got.is_err()
         return fail(code: "no_plan", msg: "cannot read " + path)

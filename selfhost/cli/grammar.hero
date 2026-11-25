@@ -30,6 +30,7 @@ use cli/io
 use cli/table as cli_table
 use grammar_expr
 use keywords
+use module/reading
 use operand_families
 use operators
 use token
@@ -135,7 +136,7 @@ function power_block() -> str
 # reading the document a second time: a second reader of the spec's text is a
 # second thing that can disagree with it.
 function production_block() -> str
-    text = read_file(SPEC)
+    text = reading.text_of(SPEC)
 
     if text.is_err()
         return "The productions are in `" + SPEC + "`, which is not readable from here.\nThis command reads it relative to the working directory, as `measure` reads its\ntables, so run it from the repository to see them collected."

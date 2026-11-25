@@ -24,6 +24,7 @@
 
 use bytes
 use cli/process
+use module/reading
 use mutate/child
 use mutate/json_fields
 use mutate/json_read
@@ -112,7 +113,7 @@ function mirrored(plan_dir: str, out: str, files: [str]) -> ()?
                 msg: path + " is not a frozen program: the corpus holds `<path>.frozen` alone"
             )
         rel = path.slice(from: root.len(), to: path.len() - suffix.len())
-        text = read_file(path)
+        text = reading.text_of(path)
 
         if text.is_err()
             return fail(code: "no_corpus", msg: "cannot read " + path)
@@ -173,7 +174,7 @@ function phase(out: str, which: i64, count: i64) -> [str]?
 
     for index in range(from: 0, to: workers.JOBS)
         path = workers.records_path(out, phase: which, index: index)
-        text = read_file(path)
+        text = reading.text_of(path)
 
         if text.is_err()
             return fail(code: "worker_failed", msg: "cannot read " + path)
@@ -198,7 +199,7 @@ function phase(out: str, which: i64, count: i64) -> [str]?
         alone: [str] @= []
 
         for index in range(from: 0, to: workers.JOBS)
-            for line in lines_of(read_file(workers.alone_path(out, index: index))?)
+            for line in lines_of(reading.text_of(workers.alone_path(out, index: index))?)
                 alone @ alone.push(line)
 
         written(out + "/work/alone.jsonl", lines: alone)?
@@ -209,7 +210,7 @@ function failures(out: str, which: i64) -> str
     said: [str] @= []
 
     for index in range(from: 0, to: workers.JOBS)
-        got = read_file(workers.failure_path(out, phase: which, index: index))
+        got = reading.text_of(workers.failure_path(out, phase: which, index: index))
 
         if !got.is_err()
             said @ said.push("worker " + index.to_str() + ": " + got.must())

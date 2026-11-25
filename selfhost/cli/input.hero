@@ -20,6 +20,7 @@
 
 use cli/files
 use cli/process
+use cli/stands
 use module/reading
 use modules
 use parse
@@ -74,10 +75,13 @@ function read_root_only(path: str) -> source.Source?
 # a link to nothing, the line a module's path draws (`reading.absent`, defect
 # 236). Every failure was *cannot read*, which sent the reader looking for a
 # permission where a name was misspelled. `heroes measure` names its file too.
+# And where something other than a file stands there, what it is (defect
+# 2572): a FIFO, a socket, a device or a link to nothing, never only *cannot
+# read*, which sent the reader looking for a permission there too.
 function unread(path: str) -> str
     if reading.absent(path)
         return "no file is named `" + path + "`"
-    return "cannot read `" + path + "`"
+    return stands.unread_said(opened: path, named: path)
 
 ## Tests
 
@@ -111,7 +115,7 @@ test "a module that is there and cannot be read fails loud, as the root does"
         .ok => assert false
         .err e =>
             assert e.code == "unreadable"
-            assert e.msg == "cannot read `" + dir + "/geom.hero`"
+            assert e.msg == "cannot read `" + dir + "/geom.hero`: a folder stands there, where a source is a file: rename it to keep it, or remove it and put the file there"
 
     assert !write_file(path: dir + "/below.hero", text: "use bin/geom\n\nfunction main()\n    print(geom.two())\n").is_err()
     below = read_compilation(path: dir + "/below.hero", library: "")
@@ -135,10 +139,10 @@ test "a root that is not there is told so, and one that is there and does not re
         assert message_of(read_compilation(path: missing, library: "")) == "no file is named `" + missing + "`"
         assert message_of(read_root_only(path: missing)) == "no file is named `" + missing + "`"
 
-    assert message_of(read_compilation(path: dir + "/adir.hero", library: "")) == "cannot read `" + dir + "/adir.hero`"
+    assert message_of(read_compilation(path: dir + "/adir.hero", library: "")) == "cannot read `" + dir + "/adir.hero`: a folder stands there, where a source is a file: rename it to keep it, or remove it and put the file there"
 
     if !files.symbolic_link(target: "nowhere.hero", name: dir + "/dangling.hero").is_err()
-        assert message_of(read_root_only(path: dir + "/dangling.hero")) == "cannot read `" + dir + "/dangling.hero`"
+        assert message_of(read_root_only(path: dir + "/dangling.hero")) == "cannot read `" + dir + "/dangling.hero`: a link to nothing stands there, where a source is a file: rename it to keep it, or remove it and put the file there"
 
 function message_of(read: source.Source?) -> str
     match read

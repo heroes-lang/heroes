@@ -267,7 +267,7 @@ function notes_in(dir: str) -> [str]
 
     for path in listed.must()
         if strings.holds(text: path, needle: "failed-")
-            notes @ notes.push(read_file(path).default("a note that cannot be read: " + path))
+            notes @ notes.push(file_reading.text_of(path).default("a note that cannot be read: " + path))
 
     return notes
 

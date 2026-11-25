@@ -38,6 +38,7 @@
 use cli/digest
 use cli/publish
 use cli/strings
+use module/reading
 
 constant SEAL: str
     "heroes-kept "
@@ -49,7 +50,7 @@ function write(path: str, text: str) -> ()?
 # The text a writer kept at `path`, or none: no file, one that would not read,
 # or one that is not whole as its seal says.
 function read(path: str) -> str?
-    kept = read_file(path)?
+    kept = reading.text_of(path)?
     return unsealed(kept)
 
 function sealed(text: str) -> str

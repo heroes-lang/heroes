@@ -62,6 +62,7 @@ use cli/compiling
 use cli/deps
 use cli/digest
 use cli/flags
+use cli/header_stands
 use cli/named_folders
 use cli/order_trial
 use cli/package_reads
@@ -110,6 +111,9 @@ function environment_stopped(t: toolchain.Toolchain, options: compile.Options, s
 function checked(t: toolchain.Toolchain, options: compile.Options, site: settled.Site, art: compile.Artifact, s: source.Source) -> compiling.Compiling?
     under = settled.compiled_under(t, options, site)
     groups = order_trial.theirs(emit_externs.headers(art.program, s, art.decls))
+
+    # Before the first clang opens one (defect 2572, `cli/header_stands.hero`).
+    header_stands.stopped(under, headers: groups, s, decls: art.decls, permissive: options.permissive)?
     stop = compile.stage(
         told(t, under: under, groups: groups, pkgconfigs: site.pkgconfig_words, places: {}),
         s,

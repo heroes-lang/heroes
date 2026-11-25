@@ -53,5 +53,5 @@ function placeable(home: str) -> ()?
         return ok()
     return fail(
         code: "sum_mismatch",
-        msg: "the program's packages would be placed in `" + home + "`, where " + standing.said(blocked) + " stands; it is yours, so nothing was placed there: move it out of the program's folder to keep it, or remove it to have the packages placed"
+        msg: "the program's packages would be placed in `" + home + "`, where " + standing.said(blocked, path: home) + " stands; it is yours, so nothing was placed there: move it out of the program's folder to keep it, or remove it to have the packages placed"
     )

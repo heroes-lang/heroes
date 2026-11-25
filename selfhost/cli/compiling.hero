@@ -55,6 +55,7 @@ use cli/strings
 use emit/c_text
 use emit/clang_place
 use emit/header_region
+use module/reading
 
 # Everything the program's C is compiled under but the words of one run (its
 # input, its output, its listing): the level, whether it is sanitised, the
@@ -744,4 +745,4 @@ function macros(more: [str]) -> str
     words @ strings.with_all(list: words, more: ["-E", "-dM", "-x", "c", empty])
     ran = process.run(program: "clang", words: words, out: said, err: process.discard())
     assert ran.code == 0
-    return read_file(said).must()
+    return reading.text_of(said).must()

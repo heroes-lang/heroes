@@ -1,0 +1,5 @@
+error[ffi_header_refused]: `x.h`, the header this group names, is found first at `tests/golden/unsupported/fixedbugs-2572-a-groups-header-found-as-a-link-to-a-device-is-refused.case/x.h`, where a link to a device stands, and clang reads a header only from a file: rename it to keep it, or remove it
+  at tests/golden/unsupported/fixedbugs-2572-a-groups-header-found-as-a-link-to-a-device-is-refused.case/main.hero:10:8
+     |
+  10 | extern "x.h"  #~ ffi_header_refused
+     |        ^^^^^

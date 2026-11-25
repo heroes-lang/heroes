@@ -24,6 +24,7 @@ use bytes
 use cli/group_file
 use emit/clang_place
 use emit/ffi_lookup
+use module/reading
 
 constant SUFFIX: str
     "_t"
@@ -42,7 +43,7 @@ function declared(path: str, row: i64, runtime: [str]) -> str?
 function line_of(path: str, row: i64, runtime: [str]) -> str?
     for own in runtime
         if group_file.settled(own) == group_file.settled(path)
-            text = read_file(own)?
+            text = reading.text_of(own)?
             rows = ffi_lookup.lines(text: text)
 
             if row < 1 || row > rows.len()

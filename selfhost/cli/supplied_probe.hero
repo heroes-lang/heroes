@@ -34,6 +34,7 @@ use cli/supplied_names
 use cli/supplied_read
 use cli/supplied_windows
 use cli/toolchain
+use module/reading
 
 # What one probe link said: whether it linked, its words (both streams where
 # it linked, its refusal's where it did not), what it printed, and its map.
@@ -294,7 +295,7 @@ function probe(t: toolchain.Toolchain, line: [str], names: [str], tag: str, trac
         out_path: out_path,
         printed: @printed
     )
-    map_read = read_file(map_path).default("")
+    map_read = reading.text_of(map_path).default("")
 
     for path in [binary, map_path, err_path, out_path]
         publish.discard(path)

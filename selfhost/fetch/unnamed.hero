@@ -100,7 +100,7 @@ function said_of(program: str, run: str, e: catalogue.Entry, key: str, serial: i
     keep = "; move it out of `" + staging.PLACED + "/` to keep it, or remove it"
 
     if stands != .tree
-        return kept + standing.said(stands) + " stands there, which no verb places, so it is yours" + keep
+        return kept + standing.said(stands, path: at) + " stands there, which no verb places, so it is yours" + keep
 
     if fingerprint.of(at).default("") != e.sum
         return kept + "it was changed since `" + e.name + "` " + placing.at_said(e) + " was placed there, and the change is yours" + keep
@@ -163,7 +163,7 @@ function swept_one(at: str, run: str, c: catalogue.Catalogue, name: str, serial:
     keep = "; move it out of `" + staging.PLACED + "/` to keep it, or remove it"
 
     if stands != .tree
-        return kept + standing.said(stands) + " stands there, which no verb places, so it is yours" + keep
+        return kept + standing.said(stands, path: at) + " stands there, which no verb places, so it is yours" + keep
     e = written_version(name: name, sum: fingerprint.of(at).default(""))
 
     if e.name.len() == 0

@@ -17,6 +17,7 @@ use fetch/listing_read
 use fetch/staging
 use fetch/transport
 use module/fingerprint
+use module/reading
 
 extern "hero_compiler.h"
     function hero_file_sha256(path: cstr lent, @status: i64) -> str
@@ -52,7 +53,7 @@ function written(tools: transport.Tools, index: address.Address, base: str, s: s
 
     while file.len() > 0
         landed(tools, index: index, base: base, s: s, one: lines[file].must(), what: what)?
-        closure.read(@w, file: file, text: read_file(s.tree + "/" + file).default(""))
+        closure.read(@w, file: file, text: reading.text_of(s.tree + "/" + file).default(""))
         file @ closure.next(@w)
 
     return made(write_file(path: s.tree + "/" + fingerprint.LISTING, text: listing))

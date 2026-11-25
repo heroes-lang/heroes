@@ -192,7 +192,7 @@ function linked(t: toolchain.Toolchain, j: Judging, line: [str], err_path: str) 
 function after_link(t: toolchain.Toolchain, j: Judging, said: str) -> ()?
     if !j.asked
         return ok()
-    listing = read_file(j.map_path).default("")
+    listing = supplied_read.map_at(j.map_path)
     publish.discard(j.map_path)
     apple = link_flags.apple(t.target)
     names = traced(j)

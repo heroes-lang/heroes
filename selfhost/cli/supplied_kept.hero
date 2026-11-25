@@ -54,7 +54,7 @@ function path_of(t: toolchain.Toolchain, line: [str], names: [str]) -> str
 # `opened`, the files of the program's this build's link read, are all among
 # them; an error where there is none or it no longer holds.
 function kept(path: str, opened: [str]) -> supplied_probe.Probes?
-    text = read_file(path)?
+    text = file_reading.text_of(path)?
     lines = supplied_names.byte_lines(text: text, needles: [], stops: [])
 
     if lines.len() == 0 || lines[0] != HEAD
@@ -193,7 +193,7 @@ function runtime_needs(t: toolchain.Toolchain, objects: [str]) -> [str]
 # list an older compiler kept is never read as whole.
 function object_needs(t: toolchain.Toolchain, object: str, what: str) -> [str]
     needs_at = t.build + "/supplied-alone-" + kept_name(object) + ".txt"
-    cached = read_file(needs_at)
+    cached = file_reading.text_of(needs_at)
 
     if !cached.is_err()
         return supplied_names.byte_lines(text: cached.must(), needles: [], stops: [])
@@ -310,7 +310,7 @@ function layer_needs(archive: str) -> [supplied_judged.LayerNeed]
 
     if archive == ""
         return out
-    text = read_file(layer_needs_path(archive)).default("")
+    text = file_reading.text_of(layer_needs_path(archive)).default("")
 
     for line in supplied_names.byte_lines(text: text, needles: [], stops: [])
         f = supplied_names.split_on(field: line, separator: "\t")

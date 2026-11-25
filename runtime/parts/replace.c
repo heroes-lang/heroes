@@ -450,6 +450,34 @@ int64_t hero_fs_kind(const char *path) {
 #endif
 }
 
+/* What a name `hero_fs_kind` calls HERO_FS_OTHER is (defect 2572, declared in
+ * `hero_compiler.h`): the compiler tells an author what stands where a file
+ * was wanted, and *a name that is neither a folder, a file nor a link* named
+ * no thing the author could look for. The name itself is asked and no link
+ * followed, and nothing is opened for reading: `lstat` on POSIX, and on
+ * Windows a handle opened for no access at all, as `hero_fs_kind` opens one,
+ * whose type tells a device (`NUL`, `CON`) and a pipe. */
+int64_t hero_fs_special(const char *path) {
+#if defined(_WIN32)
+    if (hero_fs_is_surrogate(path)) return HERO_FS_OTHER;
+    HANDLE h = CreateFileA(path, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+                           OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    if (h == INVALID_HANDLE_VALUE) return HERO_FS_OTHER;
+    DWORD type = GetFileType(h);
+    CloseHandle(h);
+    if (type == FILE_TYPE_CHAR) return HERO_FS_DEVICE;
+    if (type == FILE_TYPE_PIPE) return HERO_FS_FIFO;
+    return HERO_FS_OTHER;
+#else
+    struct stat info;
+    if (lstat(path, &info) != 0) return HERO_FS_OTHER;
+    if (S_ISFIFO(info.st_mode)) return HERO_FS_FIFO;
+    if (S_ISSOCK(info.st_mode)) return HERO_FS_SOCKET;
+    if (S_ISCHR(info.st_mode) || S_ISBLK(info.st_mode)) return HERO_FS_DEVICE;
+    return HERO_FS_OTHER;
+#endif
+}
+
 /* How many names the file at `path` has, following a link: 1 for an ordinary
  * file, more for one with hard links. -1 where it cannot be asked. */
 int64_t hero_fs_links(const char *path) {

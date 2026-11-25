@@ -7,6 +7,7 @@
 use cli/process
 use fetch/made_repo
 use module/fingerprint
+use module/reading
 
 # `name` at `version` published into the index folder `idx`: `files`, a path
 # and its text in turn, and `raw`, a path and its bytes in hexadecimal in
@@ -33,7 +34,7 @@ function published(idx: str, name: str, version: str, files: [str], raw: [str]) 
 
     write_file(path: base + "/list", text: fingerprint.listing(tree)?)?
     sum = fingerprint.of(tree)?
-    listed = read_file(idx + "/" + name + "/versions").default("")
+    listed = reading.text_of(idx + "/" + name + "/versions").default("")
     write_file(path: idx + "/" + name + "/versions", text: listed + version + " " + sum + "\n")?
     return ok(sum)
 

@@ -34,6 +34,7 @@
 # callable across a module boundary, so these are the route every other
 # module takes.
 
+use cli/stands
 use cli/strings
 use not_text
 
@@ -168,10 +169,40 @@ function exe_suffix() -> str
 # it is looking at. **A refusal carries the operating system's own number**
 # (defect 134): `could not move` alone was one silence for a full disk, a
 # read-only directory and a file another process holds open.
+#
+# **And where a part of the path is something other than a folder, what it
+# is** (defect 2572): `build` a FIFO, a file or a link to a device was told
+# *the operating system's own reason is 17*, a number for what the author can
+# see. The reason is read first, before any question about the path moves it,
+# and said first, as defect 346 has it said.
 function mkdir_all(path: str) -> ()?
     if hero_fs_mkdir_all(path: path.cstr()) != RUN_OK
-        return fail(code: "mkdir_failed", msg: "could not create the directory " + path + because())
+        why = because()
+        blocked = blocker(path)
+
+        if blocked.len() > 0
+            return fail(
+                code: "mkdir_failed",
+                msg: "could not create the directory " + path + why + "; " + stands.said(blocked) + " stands at `" + blocked + "`, where a folder is made: rename it to keep it, or remove it"
+            )
+        return fail(code: "mkdir_failed", msg: "could not create the directory " + path + why)
     return ok()
+
+# The first part of `path`, from its root down, where something stands that
+# is no folder and no link to one, so no folder can be made below it; ""
+# where none is.
+function blocker(path: str) -> str
+    at: i64 @= 1
+
+    while at <= path.len()
+        if at == path.len() || path[at] == '/'
+            part = path.slice(from: 0, to: at)
+
+            if stands.said(part) != "nothing" && !is_directory(path: part)
+                return part
+        at @ at + 1
+
+    return ""
 
 # The clause a refusal here ends with, from this thread's last failed
 # filesystem call (`hero_os.h`, `hero_fs_why`): the system's own number, or

@@ -26,6 +26,7 @@ use cli/process
 use cli/strings
 use module/catalogue
 use module/fingerprint
+use module/reading
 use module/use_paths
 
 # A walk of a version's modules from the listed paths: the files the version
@@ -115,7 +116,7 @@ function narrowed(tree: str, scratch: str, listed: [str], what: str) -> ()?
         to = into + "/" + file
         placed(process.mkdir_all(folder_of(to)))?
         placed(process.rename_over(from: tree + "/" + file, to: to))?
-        read(@w, file: file, text: read_file(to).default(""))
+        read(@w, file: file, text: reading.text_of(to).default(""))
         file @ next(@w)
 
     placed(write_file(path: into + "/" + fingerprint.LISTING, text: whole))?
@@ -141,7 +142,7 @@ function holds_exactly(at: str, listed: [str]) -> bool
     while file.len() > 0
         if present[file].is_err()
             return false
-        read(@w, file: file, text: read_file(at + "/" + file).default(""))
+        read(@w, file: file, text: reading.text_of(at + "/" + file).default(""))
         file @ next(@w)
 
     # ORDER: none — a count, the same in every order.

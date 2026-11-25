@@ -312,7 +312,7 @@ function failed(r: judge.Run) -> str
 # Where the first failure's variant leaves its file, and the variant cut
 # by deleting lines while the same judge still fails it.
 function site(f: judge.Failure) -> str
-    text = read_file(f.path)
+    text = reading.text_of(f.path)
 
     if text.is_err()
         return "  `" + f.path + "` cannot be read again to rebuild the variant\n"
