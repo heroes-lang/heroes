@@ -109,6 +109,7 @@ constant WORDS: [str]
         "-Wl,--whole-archive"
         "-Wl,--no-whole-archive"
         "-Wl,-all_load"
+        "-Wl,-force_load,"
         "-Wl,-undefined,dynamic_lookup"
         "-Wl,--unresolved-symbols=ignore-all"
         "-nostdlib"

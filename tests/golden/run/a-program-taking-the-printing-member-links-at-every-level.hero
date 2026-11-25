@@ -1,0 +1,12 @@
+# Written 2026-11-25 beside the coordinator's defect draft
+# d-lane-layer-speed-2 (lane linux-ci): a program for each family of the
+# platform layer's members, built and run at every level on every leg, since a
+# member calling a name the link does not carry (libm's `nextafter` and `sin`
+# in the UI and audio families) is refused only on the leg that lacks it, at
+# -O0 and -O2 and never under --sanitize. This family linked in the Linux
+# arm64 image before the repair; the case holds it.
+extern "hero_printing.h"
+    function hero_printing_last_error() -> i64
+
+function main()
+    print(f"printing: {hero_printing_last_error()}")

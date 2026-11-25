@@ -25,6 +25,12 @@
 
 #if defined(_WIN32)
 #include <windows.h>
+/* The event log's and the registry's functions are advapi32's, named here as
+ * every member names its own libraries (2026-11-25: until then this member
+ * linked only through the runtime object's own directive, `parts/replace.c`). */
+#if defined(_MSC_VER)
+#pragma comment(lib, "advapi32.lib")
+#endif
 #else
 #include <errno.h>
 #include <fcntl.h>

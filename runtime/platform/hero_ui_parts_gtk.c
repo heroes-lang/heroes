@@ -55,6 +55,7 @@
 #include <string.h>
 
 #include "hero_layer_alloc.h"
+#include "hero_layer_maths.h"
 #include "hero_ui.h"
 #include "hero_ui_arm.h"
 
@@ -362,10 +363,10 @@ static int hero_ui_parts_gtk_part_bounds(void *self, int *x, int *y, int *width,
     }
     /* `hero_ui.c` bounds every number of a part to a binary32's, within an
      * int's reach once floored and ceiled at points this size. */
-    *x = (int)floor(left);
-    *y = (int)floor(top);
-    *width = (int)ceil(right) - *x;
-    *height = (int)ceil(bottom) - *y;
+    *x = (int)hero_layer_floor(left);
+    *y = (int)hero_layer_floor(top);
+    *width = (int)hero_layer_ceil(right) - *x;
+    *height = (int)hero_layer_ceil(bottom) - *y;
     return 1;
 }
 
@@ -1257,7 +1258,7 @@ int64_t hero_ui_parts_gtk_act(void *area, int64_t part, int64_t act, char *words
         /* The setter GTK's Value interface calls for a reader, through the
          * interface GObject holds for the part's class. */
         range = f->type_interface_peek(*(void **)object, f->accessible_range_get_type());
-        if (range == NULL || range->set_current_value(object, nextafter(held->value, act == HERO_UI_PART_INCREASE ? HUGE_VAL : -HUGE_VAL)) == 0) {
+        if (range == NULL || range->set_current_value(object, hero_layer_next_toward(held->value, act == HERO_UI_PART_INCREASE ? HUGE_VAL : -HUGE_VAL)) == 0) {
             return hero_ui_parts_gtk_said(HERO_UI_OTHER, words, room, "GTK's value setter refused a step of the slider");
         }
         return HERO_UI_OK;
