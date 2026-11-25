@@ -364,7 +364,11 @@ is passed to C stays exit 2.
 
 `--sanitize` adds `-fsanitize=address,undefined`, which catches use-after-free
 and double-free. **Leaks are caught by `hero_runtime_check_leaks()`**, because
-ASan's leak detector does not exist on Darwin arm64.
+ASan's leak detector does not exist on Darwin arm64. **And `-fno-sanitize=function`
+since 2026-11-25**: clang's function check, inside `undefined` on x86-64 and AArch64
+Linux, read the eight bytes below a callee before each call through a pointer, so a
+null one was told as a read inside the caller and a function at a page's first byte
+faulted (`selfhost/cli/flags.hero`, `sanitizers`).
 
 **Since 2026-10-07 the `run` suite also sanitises at `-O0`, gives both
 sanitised runs ASan's free fill, and runs the `-O0` binary under Guard Malloc

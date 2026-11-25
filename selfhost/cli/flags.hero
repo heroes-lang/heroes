@@ -250,9 +250,23 @@ function level_words(level: str, sanitize: bool) -> [str]
 # What --sanitize adds — NOT a leak detector: ASan's is missing on
 # Darwin arm64, and leaks are hero_runtime_check_leaks()'s job in the
 # generated main. What these catch is use-after-free and double-free.
+#
+# AND NEVER CLANG'S FUNCTION CHECK, which design.md §4.19 has said
+# `--sanitize` holds none of: since clang 17 `undefined` holds
+# `-fsanitize=function` for C on x86-64 and on AArch64 Linux (not on Darwin
+# arm64), and before each call through a pointer it reads the eight bytes
+# below the callee, a word nothing promises is there. Measured 2026-11-25:
+# the CI's Windows leg (run of fc19cb341) told a call through a header's
+# null pointer as a read at 0xfffffffffffffff8 inside the caller, before
+# the call, so the runtime's witness of a null call, a fault at address 0,
+# never saw it; the Linux arm64 image (clang 22.1.8) said the same, a READ
+# at that address, which a needle of ASan's words could not tell from the
+# null call; and there a correct program calling a function at the first
+# byte of an executable page, the page below it unreadable, was stopped by
+# a SEGV, where with the check left out it printed its answer at exit 0.
 function sanitizers(sanitize: bool) -> [str]
     if sanitize
-        return ["-fsanitize=address,undefined"]
+        return ["-fsanitize=address,undefined", "-fno-sanitize=function"]
     empty: [str] = []
     return empty
 
@@ -286,7 +300,7 @@ test "the array is the fact: nineteen flags, gnu11 named first and panel 204's l
     # And panel 204's R2: a macro two headers define two ways is refused.
     assert got[18] == "-Werror=macro-redefined"
     assert got[3] == "-Wall"
-    assert sanitizers(sanitize: true).len() == 1
+    assert sanitizers(sanitize: true) == ["-fsanitize=address,undefined", "-fno-sanitize=function"]
     assert sanitizers(sanitize: false).len() == 0
 
     # No debug word is the list's: it is the level's (panel 197).
@@ -300,10 +314,11 @@ test "the array is the fact: nineteen flags, gnu11 named first and panel 204's l
     # this machine has one (defect 2253).
     framed = frame_words().len()
     o2 = level_words(level: "-O2", sanitize: true)
-    assert o2.len() == 22 + framed
+    assert o2.len() == 23 + framed
     assert o2[19 + framed] == "-O2"
     assert o2[20 + framed] == "-gline-tables-only"
     assert o2[21 + framed] == "-fsanitize=address,undefined"
+    assert o2[22 + framed] == "-fno-sanitize=function"
     plain: [str] @= flags()
 
     for word in frame_words()

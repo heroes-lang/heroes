@@ -520,7 +520,7 @@ test "an object compiled under one clang answer is never served under another (d
     assert runtime_object(here, level: "-O0", sanitize: false).must() == first
 
     # And so do the sanitizer's flags, which were one bit.
-    assert build_words(level: "-O0", sanitize: true) == "-O0|-g|-fsanitize=address,undefined"
+    assert build_words(level: "-O0", sanitize: true) == "-O0|-g|-fsanitize=address,undefined -fno-sanitize=function"
     assert build_words(level: "-O2", sanitize: false) == "-O2|-gline-tables-only|"
 
 # A keyed object's own words, after its output's (defect 2142): its name for
