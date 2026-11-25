@@ -1,0 +1,5 @@
+error[ffi_header_refused]: `y.h`, which `tests/golden/unsupported/fixedbugs-a-header-one-include-below-a-groups-header-found-as-a-link-to-a-device-is-refused.case/x.h`, the header this group names, includes, is found first at `tests/golden/unsupported/fixedbugs-a-header-one-include-below-a-groups-header-found-as-a-link-to-a-device-is-refused.case/y.h`, where a link to a device stands, and clang opens the first place its search finds, where only a file can be read: rename it to keep it, or remove it
+  at tests/golden/unsupported/fixedbugs-a-header-one-include-below-a-groups-header-found-as-a-link-to-a-device-is-refused.case/main.hero:11:8
+     |
+  11 | extern "x.h"  #~ ffi_header_refused
+     |        ^^^^^

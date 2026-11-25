@@ -4,7 +4,7 @@
 # begins with.
 #
 # Generated, never edited by hand: the Heroes program
-# `generators/tokenizer_tables/` read tiktoken 0.14.0's two tables in
+# `rebel/generators/tokenizer_tables/` read tiktoken 0.14.0's two tables in
 # `tiktoken/model.py` (SHA-256 600f26902d1cf6a1a5f54e37be988b3e0d911f1ff17ba7060bb361f9b5295521,
 # fetched 2026-11-22), and wrote this module whole; its `check` command
 # says whether this module is still what it writes.

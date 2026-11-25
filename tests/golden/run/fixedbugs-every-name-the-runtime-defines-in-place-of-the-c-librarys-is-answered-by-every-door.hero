@@ -1,0 +1,24 @@
+# Fixed 2026-11-25, defect d-p259-clerk-1 (panel 259's clerk): every function
+# the runtime defines or rewrites in place of the C library's, asked of every
+# door by name a program can open, each answer held to the function a call of
+# the name reaches; on Linux the names are read from the executable's own
+# dynamic symbols and the C library's at run time, so a definition added to
+# the runtime is judged here with no row written for it
+# (`fixedbugs-every-name-the-runtime-defines-in-place-of-the-c-librarys-is-answered-by-every-door.h`).
+# Symptom: in Linux arm64, `makecontext`, `dlsym` and `dlvsym` answered the C
+# library's own through `RTLD_NEXT`, the C library's handle and a `dlmopen`
+# handle, the `dlsym` so handed out answered the C library's own of every
+# name, and so did `dlvsym` of every name; on this Mac,
+# `NSLookupAndBindSymbol` and `_dyld_lookup_and_bind` answered the C
+# library's own of every name the rewrite replaces.
+# Cause: `runtime/parts/siglookup.c` answered twenty names, not `makecontext`,
+# `dlsym` or `dlvsym`, and the runtime defined no `dlvsym`; Darwin's rewrite
+# answered `dlsym` alone (`runtime/parts/rebind_image.c`).
+# Fix: the runtime defines `dlvsym` too and answers every name it defines,
+# through both; Darwin's table rewrites dyld's legacy lookups and answers
+# them by the address the C library would have given.
+extern "fixedbugs-every-name-the-runtime-defines-in-place-of-the-c-librarys-is-answered-by-every-door.h"
+    function every_door()
+
+function main()
+    every_door()

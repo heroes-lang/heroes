@@ -3,7 +3,7 @@
 # the joining type and the canonical combining class (RFC 5892, Appendix A).
 # `lookup.hero` reads it.
 #
-# Generated, never edited by hand: the Heroes program `generators/url_idna/`
+# Generated, never edited by hand: the Heroes program `rebel/generators/url_idna/`
 # read the Unicode Character Database 17.0.0 of
 # https://www.unicode.org/Public/17.0.0/ucd/, `extracted/DerivedBidiClass.txt`
 # (SHA-256 4867b4b7f0731ed1...), `extracted/DerivedJoiningType.txt`

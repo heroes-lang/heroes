@@ -66,8 +66,9 @@
  * interceptor would, since a definition here displaces it.
  *
  * WHAT IT DOES NOT REACH, said: a save the runtime never sees, which a
- * program's own `dlvsym` reaches (`dlsym` is answered with this file's since
- * the author's ruling C of 2026-11-20, `parts/siglookup.c`; `dlvsym` is not);
+ * function found by walking an image's symbol table by hand reaches (`dlsym`
+ * and `dlvsym` answer this file's, `parts/siglookup.c`, since the author's
+ * ruling C of 2026-11-20 and defect d-p259-clerk-1);
  * a handler left by a switch or a jump this file never sees (an inline
  * `__builtin_longjmp`, hand-written assembly, a C++ exception or
  * `_Unwind_*`), which keeps its entry and is told in words that name it; and

@@ -10,7 +10,7 @@
 # by U+0001, text 0 the empty one. A block is a list of texts, each named
 # by three characters of `ALPHABET`, its number in base 64.
 #
-# Generated, never edited by hand: the Heroes program `generators/i18n_dates/`
+# Generated, never edited by hand: the Heroes program `rebel/generators/i18n_dates/`
 # read CLDR 49's JSON, `cldr-49.0.0-json-full.zip` of
 # https://github.com/unicode-org/cldr-json/releases/download/49.0.0/
 # (SHA-256

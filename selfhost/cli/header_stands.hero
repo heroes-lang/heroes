@@ -18,14 +18,16 @@
 # nothing at the name is passed over, as clang's search passes over it, so a
 # header found after it is still found.
 #
-# What stays, said: a header the group's header includes is found by clang
-# alone, and a FIFO there still waits (coord's draft of 2026-11-24 beside
-# this defect). The search's last places, clang's own folders and the
-# platform's, are the toolchain's, which no program names.
+# A header the group's header includes, and every file below it, is walked
+# next, before any clang too (`cli/include_stands.hero`, defect
+# d-lane-blocking-small-2, found beside this one). The search's last places,
+# clang's own folders and the platform's, are the toolchain's, which no
+# program names.
 
 use ast
 use cli/compile
 use cli/compiling
+use cli/given_path
 use cli/group_file
 use cli/stands
 use diag
@@ -61,9 +63,10 @@ function stopped(under: compiling.Compiling, headers: [str], s: source.Source, d
     return ok()
 
 # The first place of `folders` where a file or something no file stands at
-# `header`'s name, `header` itself where it is absolute; "" where none is.
+# `header`'s name, `header` itself where it is absolute, on Windows a drive's
+# or a share's too (`cli/given_path`); "" where none is.
 function first_found(header: str, folders: [str]) -> str
-    if header.len() > 0 && header[0] == '/'
+    if given_path.rooted(header)
         if stands.is_file(header) || stands.is_special(header)
             return header
         return ""

@@ -1,0 +1,109 @@
+# Fixed 2026-11-25, defect d-p259-clerk-1 (panel 259's clerk): a function
+# holding a 256 KB record starts two coroutines whose stacks are an array in a
+# frame above it, on the thread's own stack, as
+# `fixedbugs-coroutines-on-stacks-carved-from-the-threads-own-leave-its-large-value-alone`
+# does, its `makecontext` and `swapcontext` the ones
+# the `dlsym` that `dlsym` itself hands out, asked with `RTLD_NEXT` hands out
+# (`fixedbugs-coroutines-made-through-a-door.h`, door 5). A correct
+# program, which reads its own record back unchanged.
+# Symptom: in Linux arm64, a memory fault (SIGSEGV, exit 139) after `door 0`,
+# 3 runs of 3: `dlsym` handed out the C library's own `dlsym`, which answers
+# the C library's own of every name, `swapcontext` too; it ran on this Mac.
+# Cause: a door by name handed out the C library's own `makecontext`, past the
+# runtime's (Linux, `runtime/parts/siglookup.c`, which answered twenty names
+# and not `makecontext`, `dlsym` or `dlvsym`) or past the rewritten slot
+# (Darwin's legacy lookups, `runtime/parts/rebind_image.c`), so no stack was
+# named and the coroutines' frames read as the thread's own.
+# Fix: every door by name answers the runtime's definition of every name it
+# defines or rewrites in place of the C library's, as a call by name reaches.
+extern "fixedbugs-coroutines-made-through-a-door.h"
+    function door_open(how: i32) -> i32
+    function cr_start(k: i64, f: (function(i64) -> i64))
+    function cr_yield()
+    function cr_resume(k: i64) -> i64
+    function cr_host(body: (function(i64) -> i64), n: i64) -> i64
+
+record E0
+    x: i64
+
+record E1
+    a: E0
+    b: E0
+    c: E0
+    d: E0
+    e: E0
+    f: E0
+    g: E0
+    h: E0
+
+record E2
+    a: E1
+    b: E1
+    c: E1
+    d: E1
+    e: E1
+    f: E1
+    g: E1
+    h: E1
+
+record E3
+    a: E2
+    b: E2
+    c: E2
+    d: E2
+    e: E2
+    f: E2
+    g: E2
+    h: E2
+
+record E4
+    a: E3
+    b: E3
+    c: E3
+    d: E3
+    e: E3
+    f: E3
+    g: E3
+    h: E3
+
+record E5
+    a: E4
+    b: E4
+    c: E4
+    d: E4
+    e: E4
+    f: E4
+    g: E4
+    h: E4
+
+function e4(n: i64) -> E4
+    v0 = E0(x: n)
+    v1 = E1(a: v0, b: v0, c: v0, d: v0, e: v0, f: v0, g: v0, h: v0)
+    v2 = E2(a: v1, b: v1, c: v1, d: v1, e: v1, f: v1, g: v1, h: v1)
+    v3 = E3(a: v2, b: v2, c: v2, d: v2, e: v2, f: v2, g: v2, h: v2)
+    return E4(a: v3, b: v3, c: v3, d: v3, e: v3, f: v3, g: v3, h: v3)
+
+function e5(n: i64) -> E5
+    v4 = e4(n)
+    return E5(a: v4, b: v4, c: v4, d: v4, e: v4, f: v4, g: v4, h: v4)
+
+function run(k: i64) -> i64
+    v = e5(k + 10)
+    cr_yield()
+    w = e5(k + 20)
+    return v.a.a.a.a.a.x + w.b.b.b.b.b.x
+
+function body(n: i64) -> i64
+    mine = e5(n)
+    cr_start(k: 0, f: run)
+    cr_start(k: 1, f: run)
+    print("body holds ", mine.a.a.a.a.a.x)
+    b = cr_resume(k: 1)
+    print("body holds ", mine.a.a.a.a.a.x)
+    a = cr_resume(k: 0)
+    print("body holds ", mine.a.a.a.a.a.x, " coroutines ", a, " ", b)
+    return mine.h.h.h.h.h.x
+
+function main()
+    print("door ", door_open(how: 5))
+    print("carved: ", cr_host(body: body, n: 7))

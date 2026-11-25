@@ -3,7 +3,7 @@
 # of them, the full tag it is most likely; for a deprecated or legacy code,
 # the code that replaces it.
 #
-# Generated, never edited by hand: the Heroes program `generators/i18n_core/`
+# Generated, never edited by hand: the Heroes program `rebel/generators/i18n_core/`
 # read CLDR 49's JSON, `cldr-49.0.0-json-full.zip` of
 # https://github.com/unicode-org/cldr-json/releases/download/49.0.0/
 # (SHA-256

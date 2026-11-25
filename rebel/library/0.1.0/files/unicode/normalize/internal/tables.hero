@@ -3,7 +3,7 @@
 # UAX #15, NFKC_Casefold and the soft-dotted letters.
 #
 # Generated, never edited by hand: the Heroes program
-# `generators/unicode_normalize/` read the Unicode Character Database 17.0.0,
+# `rebel/generators/unicode_normalize/` read the Unicode Character Database 17.0.0,
 # each file held to its SHA-256, packed it into the tables below, and wrote
 # this module whole; its `check` command says whether this module is still
 # what it writes. What it read:

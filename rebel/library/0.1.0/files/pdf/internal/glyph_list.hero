@@ -5,7 +5,7 @@
 # hexadecimal, entries apart by `|`; read only by `glyphs`, which searches
 # it by halves.
 #
-# Generated, never edited by hand: the Heroes program `generators/pdf_tables/`
+# Generated, never edited by hand: the Heroes program `rebel/generators/pdf_tables/`
 # read the two lists at commit 4036a9ca80a6 of agl-aglfn, each held to
 # its SHA-256, and wrote this module whole; its `check` command says whether
 # this module is still what it writes.
