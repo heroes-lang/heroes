@@ -78,7 +78,7 @@ function rules_keyed(listing: str, inputs: [str], skip: str, keyed: [str], @memo
     for rule in rules
         if !lists(paths: deps.paths_of(rule), path: inputs[at])
             return fail(code: opening.UNREAD, msg: "the listing's rule " + at.to_str() + " does not name " + inputs[at])
-        one = publish.private_name(listing + "-rule")
+        one = publish.private_name(listing + ".rule")
         written = publish.write_whole(path: one, text: rule, keyed: false)
         rows = deps.rows_keyed(depfile: one, skip: skip, keyed: keyed, @memo)
         publish.discard(one)
