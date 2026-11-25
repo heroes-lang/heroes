@@ -1,0 +1,27 @@
+# Fixed 2026-11-24, defect 2753, lane-panel258-r1 (panel 258's R1): the
+# lease gate's shape of the defect, read and not run by the sitting's critic
+# (F4) and run by its ffi-pragmatist (`pngmsg_lease`): a callback leases a
+# `str` to C, calls C that `longjmp`s over it, and would then have ended the
+# lease. Spec section 13: a lease nobody ends aborts when `main` returns,
+# saying how many, and so this program still does.
+# Symptom: `panic: 1 lease(s) never ended — every .lease() owes one
+# end_lease, and this program is missing that many`, of a program that writes
+# its `end_lease`.
+# Cause and fix: as the first case of defect 2753, on the lease gate.
+extern "fixedbugs-2752-levels.h"
+    function lv_try(cb: (function(i64) -> i64), n: i64) -> i64
+    function lv_throw(up: i64)
+
+extern "string.h"
+    function strlen(s: cstr) -> u64
+
+function body(n: i64) -> i64
+    word = f"{n}-leased"
+    c: cstr @= word.lease()
+    k = strlen(s: c)
+    lv_throw(up: 0)
+    end_lease(@c)
+    return k.to_i64().must()
+
+function main()
+    print("result ", lv_try(cb: body, n: 4))

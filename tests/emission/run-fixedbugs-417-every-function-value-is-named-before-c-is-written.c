@@ -177,7 +177,7 @@ int64_t h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_twice(int64_t h0
 #line 178 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
 }
 
-int64_t h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_twice(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_twice(int64_t h0_n) {
     hero_callback_entered("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.twice", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_twice(h0_n);
     hero_callback_left();
@@ -232,7 +232,7 @@ hero_bb2:
 #line 233 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
 }
 
-int64_t h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1b9a87(int64_t h0_x) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1b9a87(int64_t h0_x) {
     hero_callback_entered("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.ident", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1b9a87(h0_x);
     hero_callback_left();
@@ -246,7 +246,7 @@ int64_t h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1b9a8
 #line 247 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
 }
 
-int64_t h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0outer_1b9a87(int64_t h0_x) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0outer_1b9a87(int64_t h0_x) {
     hero_callback_entered("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.outer", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0outer_1b9a87(h0_x);
     hero_callback_left();
@@ -263,7 +263,7 @@ int64_t h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0outer_1b9a8
     return t4;
 }
 
-HeroStr h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0outer_1e58d9(HeroStr h0_x) {
+__attribute__((__noinline__)) HeroStr h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0outer_1e58d9(HeroStr h0_x) {
     hero_callback_entered("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.outer", __builtin_return_address(0), __builtin_frame_address(0));
     HeroStr hero_result = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0outer_1e58d9(h0_x);
     hero_callback_left();
@@ -283,7 +283,7 @@ HeroStr h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0outer_1e58d
     return t12;
 }
 
-int64_t h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0down_1b9a87(int64_t h0_x, int64_t h1_n) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0down_1b9a87(int64_t h0_x, int64_t h1_n) {
     hero_callback_entered("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.down", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0down_1b9a87(h0_x, h1_n);
     hero_callback_left();
@@ -305,7 +305,7 @@ int64_t h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0down_1b9a87
     return t12;
 }
 
-HeroStr h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0down_1e58d9(HeroStr h0_x, int64_t h1_n) {
+__attribute__((__noinline__)) HeroStr h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0down_1e58d9(HeroStr h0_x, int64_t h1_n) {
     hero_callback_entered("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.down", __builtin_return_address(0), __builtin_frame_address(0));
     HeroStr hero_result = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0down_1e58d9(h0_x, h1_n);
     hero_callback_left();
@@ -350,7 +350,7 @@ HeroStr h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0down_1e58d9
 #line 351 "fixedbugs417everyfunctionvalueisnamedbeforeciswritten.c"
 }
 
-h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_292e47f2(h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P h0_x) {
+__attribute__((__noinline__)) h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_292e47f2(h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P h0_x) {
     hero_callback_entered("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.ident", __builtin_return_address(0), __builtin_frame_address(0));
     h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P hero_result = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_292e47f2(h0_x);
     hero_callback_left();
@@ -365,7 +365,7 @@ h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_P h_0cb_fixedbugs417ever
     return t1;
 }
 
-HeroStr h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1e58d9(HeroStr h0_x) {
+__attribute__((__noinline__)) HeroStr h_0cb_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1e58d9(HeroStr h0_x) {
     hero_callback_entered("fixedbugs417everyfunctionvalueisnamedbeforeciswritten.ident", __builtin_return_address(0), __builtin_frame_address(0));
     HeroStr hero_result = h_fixedbugs417everyfunctionvalueisnamedbeforeciswritten_0ident_1e58d9(h0_x);
     hero_callback_left();

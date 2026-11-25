@@ -74,6 +74,25 @@ function thunk_name(real: str) -> str
 # return. A `@` parameter is forwarded as the pointer it is and its cell is
 # left alone: C cannot call a function that takes one, and a Heroes call
 # through a value never arrives here.
+# A THUNK IS A FRAME OF ITS OWN, NEVER INLINED (panel 258's R1, provisional,
+# author ratification pending; defects 2752 and 2756). Its first line hands
+# the runtime its own frame, and the runtime gives back the large-value room
+# and the lend regions every frame at or below it took, since nothing of the
+# thread's stack there is alive (`runtime/parts/callback.c`, WHICH FRAMES A C
+# JUMP LEFT). Inlined, it named the frame of the function it was inlined
+# into: a header's `static inline` C that calls it is inlined into the
+# program's function at `-O2`, and the thunk with it, and then the runtime
+# gave back that function's own room while it still held it
+# (`run/fixedbugs-2286-c-calls-back-a-function-taking-and-returning-a-large-group-record`
+# at `-O2`, `given back out of order (compiler bug)`, run); read as below the
+# frame only, a callback jumped over in that shape left its regions standing
+# (`lendjump` at `-O2`, 334.7 MB resident, run). C reaches a thunk through a
+# pointer, so no call C makes pays for the word; only a header's inline C,
+# which could have inlined it, keeps the call. Spelled as C reserves it, as
+# `emit/out_of_line.hero`'s word is.
+constant OWN_FRAME: str
+    "__attribute__((__noinline__)) "
+
 function definition(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, guarded_decls: {i64: bool})
     if guarded_decls[f.decl].is_err() || !large_value.crosses(names, f)
         return
@@ -87,7 +106,7 @@ function definition(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: 
 
     writer.blank(@w)
     writer.at_generated(@w)
-    writer.line(@w, text: header(f, c, names, s, decls) + " {")
+    writer.line(@w, text: OWN_FRAME + header(f, c, names, s, decls) + " {")
     writer.line(@w, text: "    " + in_signal(who))
 
     for slot_id in f.params
@@ -376,6 +395,7 @@ test "a thunk's call is followed by the line that ends the count its first line 
 
     got = writer.finish(w)
     assert strings.holds(text: got, needle: ");\n    hero_callback_left();\n}")
+    assert strings.holds(text: got, needle: "__attribute__((__noinline__)) void h_0cb_t_on_signal(int32_t ")
 
 # Defect 2533: the last words of every refusal `in_signal`'s line can give
 # are spec § 13's own sentence (panel 247's R5), and the runtime holds a copy

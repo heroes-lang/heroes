@@ -3,7 +3,7 @@
  * it, and the page that lists Rebel's packages by layer.
  *
  * M-rebel-library's decision 22 (the author, 2026-11-16): the reference pages
- * are in English in both editions of the site, and `examples-rebel/README.md`
+ * are in English in both editions of the site, and `rebel/examples/README.md`
  * § A7 says where they come from, *the site's reference pages are made from
  * that output*. So no page here is written by hand. At every build each face of
  * Rebel, the module a program names (each `.hero` of the newest version's tree
@@ -46,8 +46,14 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { absolute, byBytes, directoriesIn, readText, recordRead, walk } from './repo.ts';
 import { colourMarkdown, assertVerbatim } from './markdown.ts';
 
-const TREE = 'packages/rebel';
-const GUIDE = 'examples-rebel/README.md';
+/**
+ * Rebel's library, from the repository's root: a folder per version, each
+ * holding its `files/`. The site reads the library through this one name
+ * (`filesRoot`, `rebelVersion`), so the day Rebel leaves for a repository of its
+ * own this line alone changes (the author's 1a of 2026-11-23).
+ */
+const LIBRARY = 'rebel/library';
+const GUIDE = 'rebel/examples/README.md';
 const FOLDER = 'site/dist/.reference';
 const VERDICTS = `${FOLDER}/verdicts.json`;
 
@@ -79,10 +85,10 @@ export interface Row {
 
 /** The newest version of Rebel the tree holds, by its numbers. */
 export function rebelVersion(): string {
-  const versions = directoriesIn(TREE)
-    .map((dir) => dir.slice(TREE.length + 1))
+  const versions = directoriesIn(LIBRARY)
+    .map((dir) => dir.slice(LIBRARY.length + 1))
     .filter((name) => /^[0-9]+\.[0-9]+\.[0-9]+$/.test(name));
-  if (versions.length === 0) throw new Error(`${TREE} holds no version folder, \`<major>.<minor>.<patch>\`.`);
+  if (versions.length === 0) throw new Error(`${LIBRARY} holds no version folder, \`<major>.<minor>.<patch>\`.`);
   const key = (v: string) => v.split('.').map(Number);
   versions.sort((a, b) => {
     const [x, y] = [key(a), key(b)];
@@ -92,8 +98,9 @@ export function rebelVersion(): string {
   return versions[versions.length - 1];
 }
 
-function filesRoot(): string {
-  return `${TREE}/${rebelVersion()}/files`;
+/** The source of the newest version, where every face's file stands. */
+export function filesRoot(): string {
+  return `${LIBRARY}/${rebelVersion()}/files`;
 }
 
 /** Every face of the newest version, bytewise. */
@@ -244,7 +251,7 @@ export function assertReferenceWhole(): string {
         `${refusals} refusal(s) of \`heroes doc\` among them:\n    ` +
         owed.map((one) => `<rebel>/${one.face}: ${one.refusals}`).join('\n    ') +
         `\n  Each page is \`heroes doc\`'s output, so a face it refuses has none. The debt is the face's\n` +
-        `  comments (examples-rebel/README.md § A7): run \`heroes doc '<rebel>/<face>'\` beside a catalogue\n` +
+        `  comments (rebel/examples/README.md § A7): run \`heroes doc '<rebel>/<face>'\` beside a catalogue\n` +
         `  that reaches Rebel and write what it asks; this check goes green when every face is accepted.\n`
     );
   }

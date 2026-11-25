@@ -268,7 +268,7 @@ int64_t h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_fi
 }
 #undef h0_h
 
-int64_t h_0cb_ro_value_h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_first(struct fixedbugs_2286_held h0_h) {
+__attribute__((__noinline__)) int64_t h_0cb_ro_value_h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_first(struct fixedbugs_2286_held h0_h) {
     hero_callback_entered("fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.first", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = hero_value_h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_first(h0_h);
     hero_callback_left();
@@ -290,7 +290,7 @@ __attribute__((__noinline__)) void h_fixedbugs2286ccallsbackafunctiontakingandre
 }
 #undef t4
 
-struct fixedbugs_2286_held h_0cb_ro_value_h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_make(int64_t h0_n) {
+__attribute__((__noinline__)) struct fixedbugs_2286_held h_0cb_ro_value_h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_make(int64_t h0_n) {
     hero_callback_entered("fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord.make", __builtin_return_address(0), __builtin_frame_address(0));
     struct fixedbugs_2286_held hero_result = hero_value_h_fixedbugs2286ccallsbackafunctiontakingandreturningalargegrouprecord_make(h0_n);
     hero_callback_left();

@@ -320,7 +320,7 @@ hero_bb6:
 #line 321 "fixedbugs396twothreadslendatonce.c"
 }
 
-int64_t h_0cb_fixedbugs396twothreadslendatonce_worker(int64_t h0_seed) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugs396twothreadslendatonce_worker(int64_t h0_seed) {
     hero_callback_entered("fixedbugs396twothreadslendatonce.worker", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs396twothreadslendatonce_worker(h0_seed);
     hero_callback_left();

@@ -186,7 +186,7 @@ HeroStr h_astrcrossesintoathreadandbackcopiedeachway_grown(HeroStr h0_word) { he
     return t16;
 }
 
-HeroStr h_0cb_astrcrossesintoathreadandbackcopiedeachway_grown(HeroStr h0_word) {
+__attribute__((__noinline__)) HeroStr h_0cb_astrcrossesintoathreadandbackcopiedeachway_grown(HeroStr h0_word) {
     hero_callback_entered("astrcrossesintoathreadandbackcopiedeachway.grown", __builtin_return_address(0), __builtin_frame_address(0));
     HeroStr hero_result = h_astrcrossesintoathreadandbackcopiedeachway_grown(h0_word);
     hero_callback_left();
@@ -201,7 +201,7 @@ HeroStr h_astrcrossesintoathreadandbackcopiedeachway_same(HeroStr h0_word) { her
     return t1;
 }
 
-HeroStr h_0cb_astrcrossesintoathreadandbackcopiedeachway_same(HeroStr h0_word) {
+__attribute__((__noinline__)) HeroStr h_0cb_astrcrossesintoathreadandbackcopiedeachway_same(HeroStr h0_word) {
     hero_callback_entered("astrcrossesintoathreadandbackcopiedeachway.same", __builtin_return_address(0), __builtin_frame_address(0));
     HeroStr hero_result = h_astrcrossesintoathreadandbackcopiedeachway_same(h0_word);
     hero_callback_left();
@@ -221,7 +221,7 @@ HeroStr h_astrcrossesintoathreadandbackcopiedeachway_literal(HeroStr h0_word) { 
     return t7;
 }
 
-HeroStr h_0cb_astrcrossesintoathreadandbackcopiedeachway_literal(HeroStr h0_word) {
+__attribute__((__noinline__)) HeroStr h_0cb_astrcrossesintoathreadandbackcopiedeachway_literal(HeroStr h0_word) {
     hero_callback_entered("astrcrossesintoathreadandbackcopiedeachway.literal", __builtin_return_address(0), __builtin_frame_address(0));
     HeroStr hero_result = h_astrcrossesintoathreadandbackcopiedeachway_literal(h0_word);
     hero_callback_left();
@@ -240,7 +240,7 @@ HeroStr h_astrcrossesintoathreadandbackcopiedeachway_nested(HeroStr h0_word) { h
     return t9;
 }
 
-HeroStr h_0cb_astrcrossesintoathreadandbackcopiedeachway_nested(HeroStr h0_word) {
+__attribute__((__noinline__)) HeroStr h_0cb_astrcrossesintoathreadandbackcopiedeachway_nested(HeroStr h0_word) {
     hero_callback_entered("astrcrossesintoathreadandbackcopiedeachway.nested", __builtin_return_address(0), __builtin_frame_address(0));
     HeroStr hero_result = h_astrcrossesintoathreadandbackcopiedeachway_nested(h0_word);
     hero_callback_left();
@@ -253,7 +253,7 @@ int64_t h_astrcrossesintoathreadandbackcopiedeachway_twice(int64_t h0_n) { hero_
 #line 254 "astrcrossesintoathreadandbackcopiedeachway.c"
 }
 
-int64_t h_0cb_astrcrossesintoathreadandbackcopiedeachway_twice(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_0cb_astrcrossesintoathreadandbackcopiedeachway_twice(int64_t h0_n) {
     hero_callback_entered("astrcrossesintoathreadandbackcopiedeachway.twice", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_astrcrossesintoathreadandbackcopiedeachway_twice(h0_n);
     hero_callback_left();

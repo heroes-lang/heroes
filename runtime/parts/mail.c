@@ -886,7 +886,7 @@ HeroThreadBox *hero_thread_end(int64_t handle, const HeroPlace *where) {
                               "and only that one waits for it",
                         where);
     }
-    return (HeroThreadBox *)(uintptr_t)hero_spawn_join(at, HERO_SPAWN_LANG);
+    return (HeroThreadBox *)(uintptr_t)hero_spawn_join(at, HERO_SPAWN_LANG, where);
 }
 
 /* A thread inside a value crossing between threads: its number; the sender's

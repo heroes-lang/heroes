@@ -279,7 +279,7 @@ __attribute__((__noinline__)) int64_t h_fixedbugs2286apartialrecordreturnedonasp
 #undef h1_h
 #undef t2
 
-int64_t h_0cb_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_worker(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_worker(int64_t h0_n) {
     hero_callback_entered("fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom.worker", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs2286apartialrecordreturnedonaspawnedthreadiswrittenintoitscallersroom_worker(h0_n);
     hero_callback_left();

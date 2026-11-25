@@ -58,7 +58,7 @@ record Wrote
     found: [str]
 
 # The faces of a tree, as their paths under `rebel/`: each `.hero` not under an
-# `internal/` directory (`examples-rebel/README.md` § A2). `rels` are the
+# `internal/` directory (`rebel/examples/README.md` § A2). `rels` are the
 # tree's files, each as a path under it.
 function faces_in(rels: [str]) -> [str]
     out: [str] @= []

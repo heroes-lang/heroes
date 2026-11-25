@@ -253,7 +253,7 @@ __attribute__((__noinline__)) void h_fixedbugs2286thethunkofaconvertedfunctionis
 }
 #undef t2
 
-struct fixedbugs_2286_small h_0cb_ro_value_h_fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue_make(int64_t h0_n) {
+__attribute__((__noinline__)) struct fixedbugs_2286_small h_0cb_ro_value_h_fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue_make(int64_t h0_n) {
     hero_callback_entered("fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue.make", __builtin_return_address(0), __builtin_frame_address(0));
     struct fixedbugs_2286_small hero_result = hero_value_h_fixedbugs2286thethunkofaconvertedfunctionisassertedagainstitsvalue_make(h0_n);
     hero_callback_left();

@@ -368,7 +368,7 @@ int64_t h_theplatformlayerhandsaconnectiontoathreadasanumber_serve(int64_t h0_nu
     return t24;
 }
 
-int64_t h_0cb_theplatformlayerhandsaconnectiontoathreadasanumber_serve(int64_t h0_number) {
+__attribute__((__noinline__)) int64_t h_0cb_theplatformlayerhandsaconnectiontoathreadasanumber_serve(int64_t h0_number) {
     hero_callback_entered("theplatformlayerhandsaconnectiontoathreadasanumber.serve", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_theplatformlayerhandsaconnectiontoathreadasanumber_serve(h0_number);
     hero_callback_left();

@@ -1,0 +1,29 @@
+# Fixed 2026-11-24, defect 2753, lane-panel258-r1 (panel 258's R1): the
+# scratch gate's shape of the defect (the sitting's critic, F4, read and not
+# run): a callback scans the root folder for its folders, a listing kept
+# until `hero_dir_release()`, and C `longjmp`s over it before the release
+# its source writes. The listing is still told at the end of `main`, as
+# before.
+# Symptom: `panic: a directory listing of N name(s) is still held at exit —
+# ... this program did not call it after its last scan`, and nothing about
+# the jump.
+# Cause and fix: as the first case of defect 2753, on the scratch gate,
+# whose words for the listing now name the jump where they named the
+# program.
+extern "fixedbugs-2752-levels.h"
+    function lv_try(cb: (function(i64) -> i64), n: i64) -> i64
+    function lv_throw(up: i64)
+
+extern "hero_os.h"
+    constant HERO_DIR_DIRECTORIES: i64
+    function hero_dir_scan(root: cstr lent, want: i64, recursive: i64) -> i64
+    function hero_dir_release()
+
+function body(n: i64) -> i64
+    count = hero_dir_scan(root: "/".cstr(), want: HERO_DIR_DIRECTORIES, recursive: 0)
+    lv_throw(up: 0)
+    hero_dir_release()
+    return count + n
+
+function main()
+    print("result ", lv_try(cb: body, n: 0) > 0)

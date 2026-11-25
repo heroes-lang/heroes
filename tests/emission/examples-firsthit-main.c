@@ -169,7 +169,7 @@ int64_t h_main_first_in(int64_t h0_index) { hero_thread_guard("main.first_in"); 
     return t18;
 }
 
-int64_t h_0cb_main_first_in(int64_t h0_index) {
+__attribute__((__noinline__)) int64_t h_0cb_main_first_in(int64_t h0_index) {
     hero_callback_entered("main.first_in", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_main_first_in(h0_index);
     hero_callback_left();

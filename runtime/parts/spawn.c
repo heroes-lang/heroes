@@ -239,6 +239,17 @@ typedef struct {
     uint64_t generation;
     /* Where the language's `spawn` stood, for the end of `main` to name. */
     const HeroPlace *place;
+    /* 1 once the function the thread was started with has returned, so
+     * `result` holds its answer; 0 from the start (panel 258's R1, defect
+     * 2754). A thread C ended before that, by `pthread_exit` or a
+     * cancellation in a function it called, never set it, and its wait says
+     * so instead of reading an answer nobody put. Written by the thread, read
+     * by its join after the system's join, which orders the two. */
+    int answered;
+    /* 1 where the thread was seen ending without returning (POSIX's cleanup
+     * handler, below), so the end of `main` tells it as ended rather than
+     * running. */
+    int ended;
     /* The thread that holds a language thread's value, by the runtime's own
      * number (`parts/alloc.c`, `hero_this_thread`): its starter, or the last to
      * receive it, HERO_HELD_IN_TRANSIT while a mailbox carries it, 0 once its
@@ -392,6 +403,30 @@ static void hero_spawn_drain(const HeroSpawnSlot *slot) {
  * `parts/frame.c`: its large values' room (defect 2278). */
 static void hero_lend_thread_leave(void);
 static void hero_frame_thread_leave(void);
+static void hero_spawn_leave(HeroSpawnSlot *slot);
+
+#if !defined(_WIN32)
+/* A THREAD C ENDS BEFORE ITS FUNCTION RETURNS (panel 258's R1, provisional,
+ * author ratification pending; defect 2754): `pthread_exit` or a
+ * cancellation in a C function the thread's function called. No answer was
+ * put, and the end below `slot->body` never ran, so the slot stayed running,
+ * the thread's lend regions, room and alternate stack were never given back,
+ * and `wait` read the answer nobody put: `panic: a null pointer was read
+ * through ... called from h_0take_...`, 3 runs of 3 of `pexit`. POSIX runs a
+ * thread's cleanup handlers on both ways out, and both systems were measured
+ * to (Darwin: a C probe, 2 of 2, and `pexit`'s shapes; glibc, which runs them
+ * in its forced unwind: the same shapes in the Linux arm64 image, 2026-11-24,
+ * the end of `main` telling the thread as ended, 3 runs of 3): this one marks
+ * the slot ended and gives back
+ * what the end below gives back, and `wait` then says the thread ended
+ * without its answer. On Windows a thread C ends by `ExitThread` runs no
+ * handler of this runtime's; its wait says the same from `answered`. */
+static void hero_spawn_ended_unanswered(void *p) {
+    HeroSpawnSlot *slot = (HeroSpawnSlot *)p;
+    slot->ended = 1;
+    hero_spawn_leave(slot);
+}
+#endif
 
 static void hero_spawn_enter(HeroSpawnSlot *slot) {
     hero_thread_claim();
@@ -452,7 +487,20 @@ static void hero_spawn_enter(HeroSpawnSlot *slot) {
         }
     }
 #endif
+#if !defined(_WIN32)
+    pthread_cleanup_push(hero_spawn_ended_unanswered, slot);
+#endif
     slot->result = slot->body(slot->arg);
+#if !defined(_WIN32)
+    pthread_cleanup_pop(0);
+#endif
+    slot->answered = 1;
+    hero_spawn_leave(slot);
+}
+
+/* WHAT A THREAD'S END GIVES BACK, whether its function returned or C ended it
+ * (panel 258's R1). */
+static void hero_spawn_leave(HeroSpawnSlot *slot) {
     /* What callbacks of this thread never finished (a C jump over their frames,
      * defect 2704) joins the sum the leak gate reads (`parts/callback.c`). */
     hero_callback_thread_ends();
@@ -561,6 +609,8 @@ static int64_t hero_spawn_start(HeroThreadBody body, int64_t arg, size_t bytes, 
     hero_spawn_slots[at].generation += 1;
     hero_spawn_slots[at].place = NULL;
     hero_spawn_slots[at].holder = 0;
+    hero_spawn_slots[at].answered = 0;
+    hero_spawn_slots[at].ended = 0;
     hero_spawn_slots[at].want = bytes > hero_spawn_floor ? bytes : hero_spawn_floor;
     int refused = 0;
 #if defined(_WIN32)
@@ -674,7 +724,7 @@ int64_t hero_thread_spawn_sized(HeroThreadBody body, int64_t arg, int64_t bytes,
  * the door of the other kind (`kind`, the door asking). The checks read the
  * slot under the lock and then wait OUTSIDE it, because joining while holding
  * the table would stop every other thread from starting one. */
-static int64_t hero_spawn_join(int64_t handle, int kind) {
+static int64_t hero_spawn_join(int64_t handle, int kind, const HeroPlace *where) {
     if (handle < 0 || handle >= HERO_SPAWN_SLOTS) {
         hero_panic("a thread handle that this program never received was joined");
     }
@@ -704,14 +754,25 @@ static int64_t hero_spawn_join(int64_t handle, int kind) {
 #endif
     HERO_SPAWN_TAKE();
     int64_t out = hero_spawn_slots[handle].result;
+    int answered = hero_spawn_slots[handle].answered;
     hero_spawn_slots[handle].state = 0;
     hero_spawn_slots[handle].body = NULL;
     hero_spawn_slots[handle].kind = HERO_SPAWN_I64;
     HERO_SPAWN_DROP();
+    /* A THREAD C ENDED HAS NO ANSWER, and `wait` says so rather than hand on
+     * the one nobody put (panel 258's R1, defect 2754): the specification
+     * gives `wait` the thread's answer and says nothing of a thread that has
+     * none, and this runtime's reading of that silence is to stop, naming it. */
+    if (!answered) {
+        hero_panic_where("a thread ended without its answer: C ended it (`pthread_exit`, a cancellation, "
+                         "`ExitThread`) inside a function its own function called, before that function "
+                         "returned, so waiting for it has no answer to give",
+                         where);
+    }
     return out;
 }
 
-int64_t hero_thread_join(int64_t handle) { return hero_spawn_join(handle, HERO_SPAWN_I64); }
+int64_t hero_thread_join(int64_t handle) { return hero_spawn_join(handle, HERO_SPAWN_I64, NULL); }
 
 /* How many a program may have running at once, so a Heroes program can ask
  * rather than learn it from a panic. A value, not a form — `hero_word_bits`'s
@@ -782,15 +843,24 @@ static void hero_spawn_check_joined(void) {
         const HeroSpawnSlot *slot = &hero_spawn_slots[i];
 
         if (slot->state == 0) continue;
+        /* ENDED BY C WITHOUT ITS ANSWER (panel 258's R1, defect 2754): POSIX's
+         * cleanup handler marked it; on Windows a thread the system says has
+         * ended while its slot still reads running never reached the end its
+         * function's return leads to, so `ExitThread` ended it. */
+#if defined(_WIN32)
+        int ended = slot->ended || (slot->state == 1 && WaitForSingleObject(slot->handle, 0) == WAIT_OBJECT_0);
+#else
+        int ended = slot->ended;
+#endif
         if (left < HERO_SPAWN_NAMED) {
             handle[left] = i;
-            state[left] = slot->state;
+            state[left] = ended ? 3 : slot->state;
             runs[left] = slot->runs;
             from[left] = slot->from;
             place[left] = slot->place;
         }
         left += 1;
-        if (slot->state == 1) running += 1;
+        if (slot->state == 1 && !ended) running += 1;
     }
     HERO_SPAWN_DROP();
     if (left == 0) return;
@@ -801,7 +871,10 @@ static void hero_spawn_check_joined(void) {
             "program starts is waited for before `main` returns, and this program is missing that many\n",
             (long long)left, (long long)running);
     for (int64_t k = 0; k < left && k < HERO_SPAWN_NAMED; k += 1) {
-        hero_report_printf("  thread %lld, %s", (long long)handle[k], state[k] == 1 ? "still running" : "finished");
+        hero_report_printf("  thread %lld, %s", (long long)handle[k],
+                           state[k] == 1   ? "still running"
+                           : state[k] == 3 ? "ended by C without its answer"
+                                           : "finished");
         /* The language's `spawn` names its own line, which every platform
          * has; a door's thread is named by the stack walk below. */
         if (place[k] != NULL) {

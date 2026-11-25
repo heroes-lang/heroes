@@ -19,7 +19,7 @@
  * `heroes_guard_close.h` after them, and each name below means after them
  * what it meant before: every word `heroes_runtime.h` and `hero_os.h` write,
  * which a runtime macro can put into the unit (`HERO_STR_LIT` writes
- * `HeroStr` and the member `b`); every name C11 gives <stdbool.h> and
+ * `HeroStr` and the member `hero_body`); every name C11 gives <stdbool.h> and
  * <stddef.h>, read before the groups, and <stdint.h> and <math.h>, read after
  * them (`heroes_standard.h`, defect 568), but the macros of those two the
  * unit never writes, which are the headers' own (7.18, 7.19, 7.20, 7.12); and
@@ -259,6 +259,7 @@
 #pragma pop_macro("hero_array_sort")
 #pragma pop_macro("hero_array_sort_at")
 #pragma pop_macro("hero_array_unshare")
+#pragma pop_macro("hero_body")
 #pragma pop_macro("hero_bool_to_str")
 #pragma pop_macro("hero_callback_entered")
 #pragma pop_macro("hero_callback_left")
@@ -338,6 +339,7 @@
 #pragma pop_macro("hero_frame_give")
 #pragma pop_macro("hero_frame_give_at")
 #pragma pop_macro("hero_frame_take")
+#pragma pop_macro("hero_frame_take_in")
 #pragma pop_macro("hero_fs_deny_delete")
 #pragma pop_macro("hero_fs_exists")
 #pragma pop_macro("hero_fs_flagged")
@@ -377,6 +379,7 @@
 #pragma pop_macro("hero_handle_sent")
 #pragma pop_macro("hero_handle_transferring")
 #pragma pop_macro("hero_handle_transferring_at")
+#pragma pop_macro("hero_header")
 #pragma pop_macro("hero_held_release")
 #pragma pop_macro("hero_held_release_at")
 #pragma pop_macro("hero_int_to_f32")
@@ -388,9 +391,11 @@
 #pragma pop_macro("hero_lend_give_at")
 #pragma pop_macro("hero_lend_local")
 #pragma pop_macro("hero_lend_local_give")
+#pragma pop_macro("hero_lend_local_in")
 #pragma pop_macro("hero_lend_local_name")
 #pragma pop_macro("hero_lend_take")
 #pragma pop_macro("hero_lend_take_at")
+#pragma pop_macro("hero_lend_take_in")
 #pragma pop_macro("hero_mail_close")
 #pragma pop_macro("hero_mail_decref")
 #pragma pop_macro("hero_mail_hear_stop")

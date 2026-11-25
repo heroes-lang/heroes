@@ -1,0 +1,143 @@
+# What the tests of a limit many workers share stand on: takers on threads
+# of this test's process and of child processes, each taker on a connection
+# of its own to one schema, each saying what it was granted, so a test
+# counts the grants it was told of and never asks the store. A child is this
+# test's own program started again: a test binary runs the test whose number
+# is its first argument (`heroes test` starts one process per test), so the
+# child runs the same test, finds `ROLE` second among its arguments, plays
+# its takers and ends with its code; no program calls this but the tests of
+# `jobs/postgres_store`. A taker closes its connection on every path, its
+# failures included, so no run ends holding a connection nobody gives back.
+# What both stores' takers share, the child started and waited for and the
+# tally of a taker's takings, is `jobs/internal/takers`'s, written `common`
+# here.
+
+use jobs/internal/takers as common
+use jobs/postgres_store/internal/buckets
+use jobs/postgres_store/internal/live
+use numbers
+use os
+use sql
+use sql/postgres
+use strings
+use threads
+
+# The argument that makes a run a child of a test.
+constant ROLE: str
+    "jobs-limit-takers"
+
+# Whether this run of the program is a child a test started.
+function is_child() -> bool
+    a = common.given()
+    return a.len() >= 7 && a[1] == ROLE
+
+# The work of every taker: on `schema`'s tables, `times` takings of one
+# token of the limit `limit`, each `allow`ed or `reserve`d as `mode` says.
+#
+# - `schema`: the schema the takers share.
+# - `limit`: the limit's name.
+# - `mode`: `allow` or `reserve`.
+# - `times`: how many takings each taker makes.
+# - `here`: how many takers run on threads of this process.
+# - `children`: how many child processes run takers.
+# - `each`: how many takers each child runs, on its own threads.
+#
+# Answers what each taker was granted, one text a taker: the number of its
+# grants for `allow`, the instants its reservations are ready at in
+# nanoseconds, separated by commas, for `reserve`, and `error: ` and the
+# failure where it failed. Fails `limit` where a thread is refused.
+function run(schema: str, limit: str, mode: str, times: i64, here: i64, children: i64, each: i64) -> [str]?
+    jobs_given: [str] @= []
+
+    for _ in range(from: 0, to: here)
+        jobs_given @ jobs_given.push(f"take {schema} {limit} {mode} {times}")
+
+    for _ in range(from: 0, to: children)
+        jobs_given @ jobs_given.push(f"child {schema} {limit} {mode} {times} {each}")
+
+    answers = threads.run_all_text(body: dispatch, values: jobs_given, workers: jobs_given.len())?
+    out: [str] @= []
+
+    for one in answers
+        for part in strings.split(s: one, sep: ";")
+            out @ out.push(part)
+
+    return ok(out)
+
+# One thread's part of `run`: a taker, or a child started and waited for.
+#
+# - `work`: `take` or `child` and the words of `run`'s work.
+function dispatch(work: str) -> str
+    words = strings.split(s: work, sep: " ")
+
+    if words[0] == "child"
+        return common.run_child(role: ROLE, words: words)
+    return take_all(words)
+
+# The child's part: its takers run on threads, their answers written on one
+# line separated by `;`. Answers 0 where every taker answered, 1 where one
+# failed.
+function child() -> i64
+    a = common.given()
+    each = numbers.parse_int(a[6]).default(0)
+    values: [str] @= []
+
+    for _ in range(from: 0, to: each)
+        values @ values.push(f"take {a[2]} {a[3]} {a[4]} {a[5]}")
+
+    match threads.run_all_text(body: dispatch, values: values, workers: each)
+        .err e =>
+            print("error: ", e.code, ": ", e.msg)
+            return 1
+        .ok answers =>
+            print(answers.join(";"))
+
+            for one in answers
+                if strings.has_prefix(s: one, prefix: "error")
+                    return 1
+
+            return 0
+
+# One taker, on a connection of its own, closed whatever the takings
+# answered: its answer as `run` says.
+#
+# - `words`: `take`, the schema, the limit, the mode and the times.
+function take_all(words: [str]) -> str
+    match live.connect_shared(words[1])
+        .err e => return f"error: {e.code}: {e.msg}"
+        .ok first =>
+            db @= first
+            said = takings(@db, limit: words[2], mode: words[3], times: numbers.parse_int(words[4]).default(0))
+            closed = postgres.close(@db)
+
+            match said
+                .err e => return f"error: {e.code}: {e.msg}"
+                .ok text =>
+                    match closed
+                        .err e => return f"error: closing: {e.code}: {e.msg}"
+                        .ok _  => return text
+
+# The takings of one taker, on `db`, which the caller closes.
+#
+# - `db`: the taker's own connection.
+# - `limit`: the limit's name.
+# - `mode`: `allow` or `reserve`.
+# - `times`: how many.
+function takings(@db: postgres.Db, limit: str, mode: str, times: i64) -> str?
+    t @= common.tally(mode)
+
+    for _ in range(from: 0, to: times)
+        common.count(@t, taken: buckets.take(@db, name: limit, n: 1, longest: common.longest(mode), clock: .server)?)?
+
+    return ok(common.answer(t))
+
+test "take_all live: a limit that is not there answers its failure, and the taker's connection is closed"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            db @= first
+            shared = "rebel_jobs_absent_" + to_str(os.pid())
+            said = take_all(["take", shared, "absent", "allow", "3"])
+            assert strings.has_prefix(s: said, prefix: "error: not_found: ")
+            _ = postgres.exec(@db, "DROP SCHEMA " + sql.quote_identifier(shared).must() + " CASCADE", []).must()
+            postgres.close(@db).must()

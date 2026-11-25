@@ -280,7 +280,7 @@ void h_fixedbugs2494aheroesfunctiongiventosignalisrefusedatitsfirstsignal_on_sig
 #line 281 "fixedbugs2494aheroesfunctiongiventosignalisrefusedatitsfirstsignal.c"
 }
 
-void h_0cb_fixedbugs2494aheroesfunctiongiventosignalisrefusedatitsfirstsignal_on_signal(int32_t h0_sig) {
+__attribute__((__noinline__)) void h_0cb_fixedbugs2494aheroesfunctiongiventosignalisrefusedatitsfirstsignal_on_signal(int32_t h0_sig) {
     hero_callback_entered("fixedbugs2494aheroesfunctiongiventosignalisrefusedatitsfirstsignal.on_signal", __builtin_return_address(0), __builtin_frame_address(0));
     h_fixedbugs2494aheroesfunctiongiventosignalisrefusedatitsfirstsignal_on_signal(h0_sig);
     hero_callback_left();

@@ -195,7 +195,7 @@ int64_t h_main_from_column(int64_t h0_col) { hero_thread_guard("main.from_column
     return t4;
 }
 
-int64_t h_0cb_main_from_column(int64_t h0_col) {
+__attribute__((__noinline__)) int64_t h_0cb_main_from_column(int64_t h0_col) {
     hero_callback_entered("main.from_column", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_main_from_column(h0_col);
     hero_callback_left();

@@ -1,0 +1,27 @@
+# Fixed 2026-11-24, defect 2754, lane-panel258-r1 (panel 258's R1,
+# provisional, author ratification pending; the sitting's `pexit`): a thread
+# `spawn` started calls C that ends the thread, `pthread_exit` on POSIX and
+# `ExitThread` on Windows, while `main` waits for it. The thread has no
+# answer to give; the specification gives `wait` the thread's answer and says
+# nothing of a thread that has none, and this runtime's reading of that
+# silence is an abort naming it.
+# Symptom: `panic: a null pointer was read through, at offset 0x38, called
+# from h_0take_...`, 3 runs of 3: `wait` read the answer nobody put.
+# Cause: the thread's start marked nothing when its function returned, so a
+# thread C ended looked to its join like one that had answered.
+# Fix: a thread's slot says whether its function returned, and its wait
+# stops, naming the end C chose, where it did not (`runtime/parts/spawn.c`);
+# on POSIX the thread's cleanup handler gives back what its end owes.
+extern "fixedbugs-2754-thread-end.h"
+    function te_nap(ms: i64)
+    function te_end_after(ms: i64)
+
+function worker(n: i64) -> i64
+    word = f"{n}-held" + "0123456789".repeat(100)
+    te_end_after(ms: 100)
+    return word.len()
+
+function main()
+    t = spawn(worker, 7).must()
+    print("waiting")
+    print("answer ", t.wait())

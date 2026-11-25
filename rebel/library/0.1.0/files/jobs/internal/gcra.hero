@@ -1,0 +1,661 @@
+# The arithmetic of a token bucket kept as one instant: the moment the bucket
+# is, or was, empty. At `t` it holds `(t - empty_at) / every` tokens, no more
+# than its burst, so taking `n` tokens moves that instant `n * every` later
+# than the later of itself and the moment a full bucket would have emptied,
+# and the wait for the tokens is how far it then stands past `t`. Time is
+# always the caller's, every sum is checked, and a call that cannot be told
+# in an `Instant` fails `does_not_fit` and changes nothing.
+
+use jobs
+use jobs/internal/spans
+use time
+
+constant INVALID: str
+    "invalid"
+
+constant DOES_NOT_FIT: str
+    "does_not_fit"
+
+constant TIMEOUT: str
+    "timeout"
+
+# The longest span a bucket's burst of tokens may take to earn, so that the
+# sums of its instants stay inside what an `i64` holds: 2^61 nanoseconds,
+# about 73 years.
+constant MAX_SPAN_NANOSECONDS: i64
+    2_305_843_009_213_693_952
+
+# `at` or the latest time a call named, whichever is later.
+#
+# - `limit`: the bucket.
+# - `at`: the time the caller names.
+function moment(limit: jobs.Bucket, at: time.Instant) -> time.Instant
+    if time.is_before(a: at, b: limit.seen)
+        return limit.seen
+    return at
+
+# The time it takes to earn the whole burst.
+#
+# - `limit`: the bucket.
+function full_span(limit: jobs.Bucket) -> time.Duration?
+    return time.scale(limit.every, by: limit.burst)
+
+# `t` less the span, or the instant itself where that is not an `Instant`.
+#
+# - `t`: the instant.
+# - `span`: the span.
+function before(t: time.Instant, span: time.Duration) -> time.Instant?
+    return time.add(t, time.negate(span)?)
+
+# The instant the bucket would be empty at if nothing were taken: the later of
+# its own and the moment a full bucket stands at `t`.
+#
+# - `limit`: the bucket.
+# - `t`: the moment, already `moment`'s.
+function base_of(limit: jobs.Bucket, t: time.Instant) -> time.Instant?
+    floor = before(t: t, span: full_span(limit)?)?
+
+    if time.is_before(a: limit.empty_at, b: floor)
+        return ok(floor)
+    return ok(limit.empty_at)
+
+# A bucket, full at `at`.
+#
+# - `every`: the time to earn one token.
+# - `burst`: the most tokens it holds.
+# - `at`: the instant it is made.
+function make(every: time.Duration, burst: i64, at: time.Instant) -> jobs.Bucket?
+    if every.nanoseconds < 1
+        return fail(
+            code: INVALID,
+            msg: f"every is {time.format_duration(every)}: a token takes more than nothing to earn"
+        )
+
+    if burst < 1
+        return fail(code: INVALID, msg: f"the burst is {burst}: a bucket holds at least one token")
+
+    if every.nanoseconds > MAX_SPAN_NANOSECONDS / burst
+        return fail(
+            code: INVALID,
+            msg: f"{burst} tokens at one every {time.format_duration(every)} is a longer span than a bucket may take to fill"
+        )
+    made = jobs.Bucket(every: every, burst: burst, empty_at: at, seen: at)
+    return ok(jobs.Bucket(every: every, burst: burst, empty_at: before(t: at, span: full_span(made)?)?, seen: at))
+
+# What taking `n` tokens at `at` would do.
+#
+# - `limit`: the bucket.
+# - `at`: the time.
+# - `n`: how many tokens, from 1 to the burst.
+#
+# Fails `invalid` where `n` is below 1 or past the burst, and `does_not_fit`
+# where the sums leave an `Instant`.
+function reserve(limit: jobs.Bucket, at: time.Instant, n: i64) -> jobs.Reservation?
+    if n < 1 || n > limit.burst
+        return fail(
+            code: INVALID,
+            msg: f"{n} tokens asked of a bucket whose burst is {limit.burst}: from 1 to the burst can be"
+        )
+    t = moment(limit: limit, at: at)
+    finish = time.add(t: base_of(limit: limit, t: t)?, d: time.scale(limit.every, by: n)?)?
+
+    delay = if time.is_after(a: finish, b: t)
+        time.between(from: t, to: finish)?
+    else
+        time.Duration(nanoseconds: 0)
+    return ok(
+        jobs.Reservation(bucket: jobs.Bucket(every: limit.every, burst: limit.burst, empty_at: finish, seen: t), tokens: n, delay: delay, ready: time.add(t: t, d: delay)?, finish: finish)
+    )
+
+# Whether the tokens are there at once; the bucket answers in either case.
+#
+# - `limit`: the bucket.
+# - `at`: the time.
+# - `n`: how many tokens.
+#
+# Fails `invalid` where `n` is below 1, and `does_not_fit` as `reserve` does.
+function allow(limit: jobs.Bucket, at: time.Instant, n: i64) -> jobs.Allowed?
+    if n < 1
+        return fail(code: INVALID, msg: f"{n} tokens asked: at least one")
+
+    if n > limit.burst
+        return ok(jobs.Allowed(granted: false, bucket: limit))
+    taken = reserve(limit: limit, at: at, n: n)?
+
+    if taken.delay.nanoseconds > 0
+        return ok(jobs.Allowed(granted: false, bucket: limit))
+    return ok(jobs.Allowed(granted: true, bucket: taken.bucket))
+
+# The tokens a bucket holds at `at`, counting the debt of reservations as a
+# negative number and a fraction of a token as one.
+#
+# - `limit`: the bucket.
+# - `at`: the time.
+#
+# The whole tokens and the fraction are read on whole numbers, the time held
+# up to 2^64 - 1 ns either way, and only then made a float. A bucket that
+# earns a token in no time, which only a hand-made one does, holds its burst.
+function tokens(limit: jobs.Bucket, at: time.Instant) -> f64
+    if limit.every.nanoseconds < 1
+        return to_f64(limit.burst)
+    held = spans.between(from: limit.empty_at, to: moment(limit: limit, at: at))
+    every = to_u64(limit.every.nanoseconds).must()
+    whole = held.nanoseconds / every
+
+    if held.backwards
+        return -(to_f64(whole) + to_f64(held.nanoseconds % every) / to_f64(every))
+
+    if limit.burst < 1 || whole >= to_u64(limit.burst).must()
+        return to_f64(limit.burst)
+    return to_f64(whole) + to_f64(held.nanoseconds % every) / to_f64(every)
+
+# The whole tokens a bucket holds at `at`, never below none, read on whole
+# numbers.
+#
+# - `limit`: the bucket.
+# - `at`: the time.
+function available(limit: jobs.Bucket, at: time.Instant) -> i64
+    if limit.burst < 1
+        return 0
+
+    if limit.every.nanoseconds < 1
+        return limit.burst
+    held = spans.between(from: limit.empty_at, to: moment(limit: limit, at: at))
+
+    if held.backwards
+        return 0
+    whole = held.nanoseconds / to_u64(limit.every.nanoseconds).must()
+
+    if whole >= to_u64(limit.burst).must()
+        return limit.burst
+    return to_i64(whole).must()
+
+# A reservation given back, as far as no later reservation has used it.
+#
+# - `limit`: the bucket the reservation was made of, or its latest state.
+# - `taken`: the reservation.
+# - `at`: the time it is given back.
+function cancel(limit: jobs.Bucket, taken: jobs.Reservation, at: time.Instant) -> jobs.Bucket?
+    t = moment(limit: limit, at: at)
+
+    if time.is_before(a: taken.ready, b: t)
+        return ok(limit)
+
+    later = if time.is_after(a: limit.empty_at, b: taken.finish)
+        time.between(from: taken.finish, to: limit.empty_at)?
+    else
+        time.Duration(nanoseconds: 0)
+    back = time.difference(a: time.scale(limit.every, by: taken.tokens)?, b: later)?
+
+    if back.nanoseconds <= 0
+        return ok(limit)
+    floor = before(t: t, span: full_span(limit)?)?
+    moved = time.add(t: limit.empty_at, d: time.negate(back)?)?
+
+    if time.is_before(a: moved, b: floor)
+        return ok(jobs.Bucket(every: limit.every, burst: limit.burst, empty_at: floor, seen: t))
+    return ok(jobs.Bucket(every: limit.every, burst: limit.burst, empty_at: moved, seen: t))
+
+# The bucket with another time to earn a token and another burst, holding at
+# `at` the tokens it held, as many as the new burst allows, a debt kept.
+#
+# - `limit`: the bucket.
+# - `at`: the time of the change.
+# - `every`: the new time to earn one token.
+# - `burst`: the new burst.
+#
+# A change keeps the tokens held, a debt and a fraction of a token included,
+# as exactly that many times the new `every`, rounded to the nearest
+# nanosecond, a tie away from nothing: `(t - empty_at) * every / limit.every`
+# on whole numbers, which `spans.scaled` keeps inside a `u64`. Fails `invalid`
+# as `make` does, and where `limit` earns a token in no time or holds fewer
+# than one, as no bucket `make` makes does; `does_not_fit` where the instant
+# it leaves is not an `Instant`.
+function reshape(limit: jobs.Bucket, at: time.Instant, every: time.Duration, burst: i64) -> jobs.Bucket?
+    fresh = make(every: every, burst: burst, at: at)?
+
+    if limit.every.nanoseconds < 1 || limit.burst < 1
+        return fail(
+            code: INVALID,
+            msg: f"the bucket changed holds {limit.burst} tokens at one every {time.format_duration(limit.every)}: a bucket holds at least one token, and a token takes more than nothing to earn"
+        )
+    t = moment(limit: limit, at: at)
+
+    least = if burst < limit.burst
+        burst
+    else
+        limit.burst
+    held = spans.between(from: limit.empty_at, to: t)
+    old_every = to_u64(limit.every.nanoseconds).must()
+
+    kept = if !held.backwards && held.nanoseconds / old_every >= to_u64(least).must()
+        to_u64(least * every.nanoseconds).must()
+    else
+        spans.scaled(n: held.nanoseconds, by: to_u64(every.nanoseconds).must(), over: old_every)?
+    empty = spans.shift(t: t, by: spans.Span(nanoseconds: kept, backwards: !held.backwards))?
+    return ok(jobs.Bucket(every: fresh.every, burst: fresh.burst, empty_at: empty, seen: t))
+
+# Whether the next call of a `Sometimes` is due.
+#
+# - `state`: the `Sometimes`.
+# - `at`: the time of the call.
+function sample(state: jobs.Sometimes, at: time.Instant) -> jobs.Sampled?
+    due: bool @= state.first > 0 && state.count < state.first
+
+    if state.every > 0 && state.count % state.every == 0
+        due @ true
+
+    if state.interval.nanoseconds > 0 && !due
+        match state.last
+            .ok last =>
+                if !time.is_shorter(a: time.between(from: last, to: at)?, b: state.interval)
+                    due @ true
+            .err _ => due @ true
+
+    if state.count == 9223372036854775807
+        return fail(code: DOES_NOT_FIT, msg: "the calls counted fill an i64")
+
+    kept: time.Instant? @= state.last
+
+    if due
+        kept @ ok(at)
+    return ok(
+        jobs.Sampled(due: due, state: jobs.Sometimes(first: state.first, every: state.every, interval: state.interval, count: state.count + 1, last: kept))
+    )
+
+# The instant the tests count from, 2026-11-23T12:00:00Z, the one of the Go program that gave their answers.
+function origin() -> time.Instant
+    return time.from_date_time(
+        time.DateTime(year: 2026, month: 11, day: 23, hour: 12, minute: 0, second: 0, nanosecond: 0)
+    ).must()
+
+# The instant `n` milliseconds after the origin.
+#
+# - `n`: milliseconds, negative before it.
+function at_ms(n: i64) -> time.Instant
+    return time.add(t: origin(), d: time.milliseconds(n).must()).must()
+
+# Whether two numbers agree to a billionth.
+#
+# - `a`: one number.
+# - `b`: the other.
+function close(a: f64, b: f64) -> bool
+    return a - b < 0.000000001 && b - a < 0.000000001
+
+# A bucket of one token every `every_ms` milliseconds, full at the origin.
+#
+# - `every_ms`: milliseconds a token takes.
+# - `burst`: the burst.
+function bucket_of(every_ms: i64, burst: i64) -> jobs.Bucket
+    return make(every: time.milliseconds(every_ms).must(), burst: burst, at: origin()).must()
+
+test "allow: a burst of three at one a second, as golang.org/x/time/rate answers AllowN at the same times"
+    limit @= bucket_of(every_ms: 1000, burst: 3)
+    answers: [bool] @= []
+
+    for ms in [0, 0, 0, 0, 1000, 1500, 2000]
+        got = allow(limit: limit, at: at_ms(ms), n: 1).must()
+        limit @ got.bucket
+        answers @ answers.push(got.granted)
+
+    assert answers == [true, true, true, false, true, false, true]
+    assert close(a: tokens(limit: limit, at: at_ms(2000)), b: 0.0) && close(a: tokens(limit: limit, at: at_ms(2500)), b: 0.5)
+    assert close(a: tokens(limit: limit, at: at_ms(3000)), b: 1.0) && close(a: tokens(limit: limit, at: at_ms(9000)), b: 3.0)
+    assert jobs.available(limit: limit, at: at_ms(2500)) == 0 && jobs.available(limit: limit, at: at_ms(3000)) == 1 && jobs.available(limit: limit, at: at_ms(9000)) == 3
+
+test "allow: more than the burst is never granted, nothing asked is invalid, and a refusal leaves the bucket as it was"
+    limit = bucket_of(every_ms: 1000, burst: 2)
+    assert !allow(limit: limit, at: at_ms(0), n: 3).must().granted
+    assert allow(limit: limit, at: at_ms(0), n: 3).must().bucket == limit
+
+    for n in [0, -1]
+        match allow(limit: limit, at: at_ms(0), n: n)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    taken = allow(limit: limit, at: at_ms(0), n: 2).must()
+    assert taken.granted && !allow(limit: taken.bucket, at: at_ms(0), n: 1).must().granted
+    assert allow(limit: taken.bucket, at: at_ms(0), n: 1).must().bucket == taken.bucket
+
+test "reserve: reservations queue behind one another, and more than the burst is invalid, as x/time/rate's ReserveN delays them"
+    limit @= bucket_of(every_ms: 500, burst: 2)
+    delays: [i64] @= []
+
+    for n in [2, 1, 1]
+        got = reserve(limit: limit, at: at_ms(0), n: n).must()
+        limit @ got.bucket
+        delays @ delays.push(time.to_units(got.delay, .millisecond))
+
+    assert delays == [0, 500, 1000]
+
+    match reserve(limit: limit, at: at_ms(0), n: 3)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    later = reserve(limit: limit, at: at_ms(1000), n: 1).must()
+    assert time.to_units(later.delay, .millisecond) == 500 && later.ready == at_ms(1500)
+    assert close(a: tokens(limit: limit, at: at_ms(1000)), b: -1.0) || close(a: tokens(limit: limit, at: at_ms(1000)), b: 0.0)
+
+test "cancel: a reservation given back, as far as no later one used it, and not once its time has come, as x/time/rate's CancelAt does"
+    limit @= bucket_of(every_ms: 500, burst: 2)
+    limit @ reserve(limit: limit, at: at_ms(0), n: 2).must().bucket
+    limit @ reserve(limit: limit, at: at_ms(0), n: 1).must().bucket
+    limit @ reserve(limit: limit, at: at_ms(0), n: 1).must().bucket
+    r5 = reserve(limit: limit, at: at_ms(1000), n: 1).must()
+    assert close(a: tokens(limit: r5.bucket, at: at_ms(1000)), b: -1.0)
+    assert close(a: tokens(limit: cancel(limit: r5.bucket, taken: r5, at: at_ms(1000)).must(), at: at_ms(1000)), b: 0.0)
+    fast @= bucket_of(every_ms: 250, burst: 4)
+    whole = reserve(limit: fast, at: at_ms(0), n: 4).must()
+    assert time.to_units(whole.delay, .millisecond) == 0 && close(a: tokens(limit: whole.bucket, at: at_ms(0)), b: 0.0)
+    assert close(a: tokens(limit: cancel(limit: whole.bucket, taken: whole, at: at_ms(0)).must(), at: at_ms(0)), b: 4.0)
+    fast @ cancel(limit: whole.bucket, taken: whole, at: at_ms(0)).must()
+    fast @ reserve(limit: fast, at: at_ms(0), n: 4).must().bucket
+    two = reserve(limit: fast, at: at_ms(0), n: 2).must()
+    assert time.to_units(two.delay, .millisecond) == 500 && close(a: tokens(limit: two.bucket, at: at_ms(0)), b: -2.0)
+    back = cancel(limit: two.bucket, taken: two, at: at_ms(400)).must()
+    assert close(a: tokens(limit: back, at: at_ms(400)), b: 1.6)
+    one = reserve(limit: back, at: at_ms(400), n: 1).must()
+    assert time.to_units(one.delay, .millisecond) == 0
+    assert close(a: tokens(limit: cancel(limit: one.bucket, taken: one, at: at_ms(700)).must(), at: at_ms(700)), b: 1.8)
+
+test "with_rate: the tokens held kept across a new rate and burst, a debt kept, and a bucket that cannot be, as x/time/rate's SetLimitAt and SetBurstAt do"
+    limit = bucket_of(every_ms: 1000, burst: 4)
+    emptied = allow(limit: limit, at: at_ms(0), n: 4).must().bucket
+    assert close(a: tokens(limit: emptied, at: at_ms(2000)), b: 2.0)
+    faster = reshape(limit: emptied, at: at_ms(2000), every: time.milliseconds(500).must(), burst: 4).must()
+    assert close(a: tokens(limit: faster, at: at_ms(2000)), b: 2.0) && close(a: tokens(limit: faster, at: at_ms(3000)), b: 4.0)
+    smaller = reshape(limit: faster, at: at_ms(3000), every: time.milliseconds(500).must(), burst: 2).must()
+    assert close(a: tokens(limit: smaller, at: at_ms(3000)), b: 2.0) && close(a: tokens(limit: smaller, at: at_ms(3500)), b: 2.0)
+    debt @= bucket_of(every_ms: 1000, burst: 2)
+    debt @ reserve(limit: debt, at: at_ms(0), n: 2).must().bucket
+    debt @ reserve(limit: debt, at: at_ms(0), n: 2).must().bucket
+    assert close(a: tokens(limit: debt, at: at_ms(0)), b: -2.0) && close(a: tokens(limit: debt, at: at_ms(3000)), b: 1.0) && close(a: tokens(limit: debt, at: at_ms(4000)), b: 2.0)
+    slower = reshape(limit: debt, at: at_ms(1000), every: time.seconds(2).must(), burst: 2).must()
+    assert close(a: tokens(limit: slower, at: at_ms(1000)), b: -1.0)
+    assert time.to_units(reserve(limit: slower, at: at_ms(1000), n: 1).must().delay, .millisecond) == 4000
+
+    match reshape(limit: debt, at: at_ms(0), every: time.milliseconds(0).must(), burst: 2)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "with_rate: the tokens kept to the nanosecond across rates of 1 ns to 2^61 ns, at 2^53 and past it, bursts of 1 to 2^61, a bucket full, half full, empty and in debt, changed at its last taking and 1 ms after, to its own rate, a slower one and a faster one, a tie and a near tie, as Python 3's integers answer"
+    for row in change_rows()
+        assert changed(row) == row
+
+test "with_rate: a debt past an i64 of nanoseconds, which only a change of rate makes, kept at a new rate; a product past 2^64 and an instant past an Instant does_not_fit; and a bucket no rate made invalid"
+    from = time.add(t: time.min_instant(), d: time.nanoseconds(2_305_843_009_213_693_952)).must()
+    owed @= make(every: time.nanoseconds(1), burst: 2_305_843_009_213_693_952, at: from).must()
+
+    for _ in range(from: 0, to: 4)
+        owed @ reserve(limit: owed, at: from, n: 2_305_843_009_213_693_952).must().bucket
+
+    assert owed.empty_at == time.epoch()
+    owed @ reshape(limit: owed, at: from, every: time.nanoseconds(2), burst: 1_152_921_504_606_846_976).must()
+    assert owed.empty_at == time.Instant(unix_nanoseconds: 6_917_529_027_641_081_856)
+    assert reshape(limit: owed, at: from, every: time.nanoseconds(1), burst: 1).must().empty_at == time.epoch()
+    assert reshape(limit: owed, at: from, every: time.nanoseconds(2), burst: 1).must().empty_at == owed.empty_at
+    late = time.add(t: time.max_instant(), d: time.seconds(-5).must()).must()
+    short @= make(every: time.seconds(1).must(), burst: 1, at: late).must()
+    short @ reserve(limit: short, at: late, n: 1).must().bucket
+    short @ reserve(limit: short, at: late, n: 1).must().bucket
+
+    for bad in [reshape(limit: owed, at: from, every: time.nanoseconds(3), burst: 1), reshape(limit: owed, at: from, every: time.nanoseconds(4), burst: 1), reshape(limit: short, at: late, every: time.nanoseconds(2_305_843_009_213_693_952), burst: 1), reshaped([9_007_199_254_740_993, 200, 400, 0, 2_305_843_009_213_693_952, 1]), reshaped([100_000_000_000_000_001, 20, 40, 1_000_000, 2_305_843_009_213_693_952, 1])]
+        match bad
+            .ok _  => assert false
+            .err e => assert e.code == DOES_NOT_FIT
+
+    for made in [jobs.Bucket(every: time.nanoseconds(0), burst: 1, empty_at: origin(), seen: origin()), jobs.Bucket(every: time.nanoseconds(1), burst: 0, empty_at: origin(), seen: origin())]
+        match reshape(limit: made, at: origin(), every: time.nanoseconds(1), burst: 1)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "available and tokens: 1 ns short of three tokens at 2^53 + 1 ns a token holds two, a debt past an i64 none and its count below nothing, a full burst of 2^61 all of it, a hand-made bucket of no rate its burst, and on every row of a change of rate the most allow grants"
+    short @= make(every: time.nanoseconds(9_007_199_254_740_993), burst: 200, at: origin()).must()
+    short @ reserve(limit: short, at: origin(), n: 200).must().bucket
+    almost = time.add(t: origin(), d: time.nanoseconds(27_021_597_764_222_978)).must()
+    assert available(limit: short, at: almost) == 2 && tokens(limit: short, at: almost) > 2.0
+    assert allow(limit: short, at: almost, n: 2).must().granted && !allow(limit: short, at: almost, n: 3).must().granted
+    three = time.add(t: almost, d: time.nanoseconds(1)).must()
+    assert available(limit: short, at: three) == 3 && allow(limit: short, at: three, n: 3).must().granted
+    from = time.add(t: time.min_instant(), d: time.nanoseconds(2_305_843_009_213_693_952)).must()
+    owed @= make(every: time.nanoseconds(1), burst: 2_305_843_009_213_693_952, at: from).must()
+
+    for _ in range(from: 0, to: 4)
+        owed @ reserve(limit: owed, at: from, n: 2_305_843_009_213_693_952).must().bucket
+
+    owed @ reshape(limit: owed, at: from, every: time.nanoseconds(2), burst: 1_152_921_504_606_846_976).must()
+    assert available(limit: owed, at: from) == 0 && tokens(limit: owed, at: from) == to_f64(-6_917_529_027_641_081_856)
+    full = make(every: time.nanoseconds(1), burst: 2_305_843_009_213_693_952, at: origin()).must()
+    assert available(limit: full, at: at_ms(1)) == 2_305_843_009_213_693_952 && tokens(limit: full, at: at_ms(1)) == to_f64(2_305_843_009_213_693_952)
+    free = jobs.Bucket(every: time.nanoseconds(0), burst: 3, empty_at: origin(), seen: origin())
+    assert available(limit: free, at: origin()) == 3 && tokens(limit: free, at: origin()) == 3.0
+    none = jobs.Bucket(every: time.nanoseconds(1), burst: 0, empty_at: at_ms(-1), seen: origin())
+    assert available(limit: none, at: origin()) == 0 && tokens(limit: none, at: origin()) == 0.0
+
+    for row in change_rows()
+        changed_to = reshaped(row).must()
+        most = available(limit: changed_to, at: changed_to.seen)
+
+        if most >= 1
+            assert allow(limit: changed_to, at: changed_to.seen, n: most).must().granted
+
+        if most < changed_to.burst
+            assert !allow(limit: changed_to, at: changed_to.seen, n: most + 1).must().granted
+
+test "bucket: a rate of nothing, a burst of nothing, a burst that takes too long to earn, and an instant at the end of the range"
+    now = origin()
+    zero = time.Duration(nanoseconds: 0)
+    assert make(every: time.seconds(1).must(), burst: 1, at: now).must().burst == 1
+
+    for bad in [make(every: zero, burst: 1, at: now), make(every: time.seconds(-1).must(), burst: 1, at: now), make(every: time.seconds(1).must(), burst: 0, at: now), make(every: time.days(365).must(), burst: 100, at: now)]
+        match bad
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    match make(every: time.seconds(1).must(), burst: 2, at: time.min_instant())
+        .ok _  => assert false
+        .err e => assert e.code == DOES_NOT_FIT
+
+test "reserve: time named earlier than an earlier call is read at that call's time, as x/time/rate answers AllowN after a later time"
+    limit @= bucket_of(every_ms: 1000, burst: 2)
+    first = allow(limit: limit, at: at_ms(5000), n: 2).must()
+    limit @ first.bucket
+    assert first.granted && !allow(limit: limit, at: at_ms(0), n: 1).must().granted
+    assert close(a: tokens(limit: limit, at: at_ms(0)), b: 0.0)
+
+test "sample: the first calls, every third, and an interval, as x/time/rate's Sometimes does them"
+    state @= sometimes_for(first: 2, every: 3, interval_ms: 10000)
+    done: [i64] @= []
+
+    for call in range(from: 1, to: 13)
+        got = sample(state: state, at: at_ms(call)).must()
+        state @ got.state
+
+        if got.due
+            done @ done.push(call)
+
+    assert done == [1, 2, 4, 7, 10]
+    every_four @= sometimes_for(first: 0, every: 4, interval_ms: 0)
+    done @ []
+
+    for call in range(from: 1, to: 13)
+        got = sample(state: every_four, at: at_ms(call)).must()
+        every_four @ got.state
+
+        if got.due
+            done @ done.push(call)
+
+    assert done == [1, 5, 9]
+    spaced @= sometimes_for(first: 0, every: 0, interval_ms: 40)
+    done @ []
+
+    for call in range(from: 0, to: 6)
+        got = sample(state: spaced, at: at_ms(call * 25)).must()
+        spaced @ got.state
+
+        if got.due
+            done @ done.push(call + 1)
+
+    assert done == [1, 3, 5]
+    once @= sometimes_for(first: 1, every: 0, interval_ms: 0)
+    done @ []
+
+    for call in range(from: 1, to: 6)
+        got = sample(state: once, at: at_ms(call)).must()
+        once @ got.state
+
+        if got.due
+            done @ done.push(call)
+
+    assert done == [1]
+
+# A `Sometimes` of the numbers given, the interval in milliseconds.
+#
+# - `first`: the first calls due.
+# - `every`: every so manyth call due.
+# - `interval_ms`: the span in milliseconds.
+function sometimes_for(first: i64, every: i64, interval_ms: i64) -> jobs.Sometimes
+    return jobs.sometimes(first: first, every: every, interval: time.milliseconds(interval_ms).must()).must()
+
+# A bucket of a token every `row[0]` nanoseconds and a burst of `row[1]`,
+# full at the origin and `row[2]` tokens reserved there, changed `row[3]`
+# nanoseconds later to a token every `row[4]` nanoseconds and a burst of
+# `row[5]`: what `reshape` answers.
+#
+# - `row`: the six numbers, and any after them.
+function reshaped(row: [i64]) -> jobs.Bucket?
+    limit @= make(every: time.nanoseconds(row[0]), burst: row[1], at: origin()).must()
+
+    for n in change_reservations(row).must()
+        limit @ reserve(limit: limit, at: origin(), n: n).must().bucket
+
+    return reshape(limit: limit, at: change_at(row).must(), every: time.nanoseconds(row[4]), burst: row[5])
+
+# A row of a test of `reshape`, as `reshaped` reads it: its six numbers and
+# the instant the change leaves the bucket empty at, in nanoseconds after the
+# origin.
+#
+# - `row`: the six numbers, and any after them.
+function changed(row: [i64]) -> [i64]
+    return change_answer(row, after: reshaped(row).must()).must()
+
+# The reservations a row of `change_rows` makes at the origin, in the order
+# made: `row[2]` tokens, a burst, `row[1]`, at a time and the rest last. The
+# one copy of a row's takings, which `reshaped` and both stores' `changed`
+# make.
+#
+# - `row`: the six numbers, and any after them.
+#
+# Empty where `row[2]` is 0 or below. Fails `invalid` where `row[1]` is
+# below 1, a burst no bucket has.
+function change_reservations(row: [i64]) -> [i64]?
+    if row[1] < 1
+        return fail(code: INVALID, msg: f"the burst is {row[1]}: a bucket holds at least one token")
+
+    out: [i64] @= []
+    left @= row[2]
+
+    while left > 0
+        n = if left < row[1]
+            left
+        else
+            row[1]
+        out @ out.push(n)
+        left @ left - n
+
+    return ok(out)
+
+# The instant a row of `change_rows` changes its bucket at: `row[3]`
+# nanoseconds after the origin.
+#
+# - `row`: the six numbers, and any after them.
+#
+# Fails `does_not_fit` where it is outside an `Instant`.
+function change_at(row: [i64]) -> time.Instant?
+    return time.add(t: origin(), d: time.nanoseconds(row[3]))
+
+# A row of `change_rows` as a bucket its change left answers it: the row's
+# six numbers and the instant `after` is empty at, in nanoseconds after the
+# origin. The one copy of what `changed` and both stores' `changed` answer.
+#
+# - `row`: the six numbers, and any after them.
+# - `after`: the bucket the change left.
+#
+# Fails `does_not_fit` where that span is outside a `Duration`.
+function change_answer(row: [i64], after: jobs.Bucket) -> [i64]?
+    return ok(row.slice(from: 0, to: 6).push(time.between(from: origin(), to: after.empty_at)?.nanoseconds))
+
+# The rows the tests of a change of rate share, `jobs.with_rate`'s here and
+# both stores': each a bucket's every and burst in nanoseconds, the tokens
+# reserved at the origin, how long after them the change comes, the new
+# every and burst, and the instant the change leaves the bucket empty at, in
+# nanoseconds after the origin, as Python 3's integers answered on
+# 2026-11-24, the tokens kept being `(2 * |n| * every + old) // (2 * old)`
+# with the sign of `n`, the time held.
+function change_rows() -> [[i64]]
+    return [
+        [1, 1_000_000, 0, 0, 1, 1_000_000, -1_000_000]
+        [1, 1_000_000, 0, 1_000_000, 4, 1_000_000, -3_000_000]
+        [1, 1_000_000, 500_000, 0, 1, 1_000_000, -500_000]
+        [1, 1_000_000, 500_000, 1_000_000, 1, 1, 999_999]
+        [1, 1_000_000, 1_000_000, 0, 9_007_199_254_740_993, 200, 0]
+        [1, 1_000_000, 1_000_000, 1_000_000, 2_305_843_009_213_693_952, 1, -2_305_843_009_212_693_952]
+        [1, 1_000_000, 2_000_000, 0, 1, 2_305_843_009_213_693_952, 1_000_000]
+        [1, 1_000_000, 2_000_000, 1_000_000, 1, 1_000_000, 1_000_000]
+        [1, 2_305_843_009_213_693_952, 0, 0, 1, 2_305_843_009_213_693_952, -2_305_843_009_213_693_952]
+        [1, 2_305_843_009_213_693_952, 0, 1_000_000, 1, 1, 999_999]
+        [1, 2_305_843_009_213_693_952, 1_152_921_504_606_846_976, 0, 9_007_199_254_740_993, 200, -1_801_439_850_948_198_600]
+        [1, 2_305_843_009_213_693_952, 1_152_921_504_606_846_976, 1_000_000, 2_305_843_009_213_693_952, 1, -2_305_843_009_212_693_952]
+        [1, 2_305_843_009_213_693_952, 2_305_843_009_213_693_952, 0, 1, 2_305_843_009_213_693_952, 0]
+        [1, 2_305_843_009_213_693_952, 2_305_843_009_213_693_952, 1_000_000, 4, 576_460_752_303_423_488, -3_000_000]
+        [1, 2_305_843_009_213_693_952, 4_611_686_018_427_387_904, 0, 1, 2_305_843_009_213_693_952, 2_305_843_009_213_693_952]
+        [1, 2_305_843_009_213_693_952, 4_611_686_018_427_387_904, 1_000_000, 1, 1, 2_305_843_009_213_693_952]
+        [333, 50, 0, 0, 111, 50, -5_550]
+        [333, 50, 0, 1_000_000, 1, 1, 999_999]
+        [333, 50, 25, 0, 9_007_199_254_740_993, 200, -225_179_981_368_524_825]
+        [333, 50, 25, 1_000_000, 2_305_843_009_213_693_952, 1, -2_305_843_009_212_693_952]
+        [333, 50, 50, 0, 1, 2_305_843_009_213_693_952, 0]
+        [333, 50, 50, 1_000_000, 333, 50, 983_350]
+        [333, 50, 100, 0, 1_000, 50, 50_000]
+        [333, 50, 100, 1_000_000, 111, 50, 994_450]
+        [7_000_000_000, 2, 0, 0, 1, 1, -1]
+        [7_000_000_000, 2, 0, 1_000_000, 9_007_199_254_740_993, 200, -18_014_398_508_481_986]
+        [7_000_000_000, 2, 1, 0, 2_305_843_009_213_693_952, 1, -2_305_843_009_213_693_952]
+        [7_000_000_000, 2, 1, 1_000_000, 1, 2_305_843_009_213_693_952, 999_999]
+        [7_000_000_000, 2, 2, 0, 7_000_000_000, 2, 0]
+        [7_000_000_000, 2, 2, 1_000_000, 21_000_000_001, 2, -2_000_000]
+        [7_000_000_000, 2, 4, 0, 2_333_333_333, 2, 4_666_666_666]
+        [7_000_000_000, 2, 4, 1_000_000, 1, 1, 1_000_002]
+        [9_007_199_254_740_992, 200, 0, 0, 9_007_199_254_740_993, 200, -1_801_439_850_948_198_600]
+        [9_007_199_254_740_992, 200, 0, 1_000_000, 2_305_843_009_213_693_952, 1, -2_305_843_009_212_693_952]
+        [9_007_199_254_740_992, 200, 100, 0, 1, 2_305_843_009_213_693_952, -100]
+        [9_007_199_254_740_992, 200, 100, 1_000_000, 9_007_199_254_740_992, 200, -900_719_925_474_099_200]
+        [9_007_199_254_740_992, 200, 200, 0, 27_021_597_764_222_977, 85, 0]
+        [9_007_199_254_740_992, 200, 200, 1_000_000, 3_002_399_751_580_330, 200, 666_667]
+        [9_007_199_254_740_992, 200, 400, 0, 1, 1, 200]
+        [9_007_199_254_740_992, 200, 400, 1_000_000, 9_007_199_254_740_993, 200, 1_801_439_850_948_198_600]
+        [9_007_199_254_740_993, 200, 0, 0, 2_305_843_009_213_693_952, 1, -2_305_843_009_213_693_952]
+        [9_007_199_254_740_993, 200, 0, 1_000_000, 1, 2_305_843_009_213_693_952, 999_800]
+        [9_007_199_254_740_993, 200, 100, 0, 9_007_199_254_740_993, 200, -900_719_925_474_099_300]
+        [9_007_199_254_740_993, 200, 100, 1_000_000, 27_021_597_764_222_980, 85, -2_296_835_809_957_953_300]
+        [9_007_199_254_740_993, 200, 200, 0, 3_002_399_751_580_331, 200, 0]
+        [9_007_199_254_740_993, 200, 200, 1_000_000, 1, 1, 1_000_000]
+        [9_007_199_254_740_993, 200, 400, 1_000_000, 1, 2_305_843_009_213_693_952, 1_000_200]
+        [2_305_843_009_213_693_952, 1, 0, 0, 9_007_199_254_740_993, 200, -9_007_199_254_740_993]
+        [2_305_843_009_213_693_952, 1, 0, 1_000_000, 1, 2_305_843_009_213_693_952, 999_999]
+        [2_305_843_009_213_693_952, 1, 1, 0, 2_305_843_009_213_693_952, 1, 0]
+        [2_305_843_009_213_693_952, 1, 1, 1_000_000, 768_614_336_404_564_650, 1, 666_667]
+        [2_305_843_009_213_693_952, 1, 2, 0, 1, 1, 1]
+        [2_305_843_009_213_693_952, 1, 2, 1_000_000, 9_007_199_254_740_993, 200, 9_007_199_255_737_087]
+        [100_000_000_000_000_001, 20, 0, 0, 2_305_843_009_213_693_952, 1, -2_305_843_009_213_693_952]
+        [100_000_000_000_000_001, 20, 0, 1_000_000, 1, 2_305_843_009_213_693_952, 999_980]
+        [100_000_000_000_000_001, 20, 10, 0, 100_000_000_000_000_001, 20, -1_000_000_000_000_000_010]
+        [100_000_000_000_000_001, 20, 10, 1_000_000, 300_000_000_000_000_004, 7, -2_099_999_999_999_000_028]
+        [100_000_000_000_000_001, 20, 20, 0, 33_333_333_333_333_333, 20, 0]
+        [100_000_000_000_000_001, 20, 20, 1_000_000, 1, 1, 1_000_000]
+        [100_000_000_000_000_001, 20, 40, 0, 9_007_199_254_740_993, 200, 180_143_985_094_819_860]
+        [1, 1_000_000, 0, 1_000_000_000, 9_007_199_254_740_993, 200, -1_801_439_849_948_198_600]
+        [1, 1_000_000, 0, 1_000_000_000, 9_007_199_254_740_992, 200, -1_801_439_849_948_198_400]
+        [7_000_000_000, 2, 4, 83_001_685, 700_000_000, 5, 1_474_701_517]
+        [100_000_000_000_000_001, 20, 10, 50_000_000_000_000_000, 1, 20, 49_999_999_999_999_990]
+    ]

@@ -437,7 +437,7 @@ test "a variant's line builds each case, and its proof builds each as the line d
     assert case_written(face.choices[0].cases[1]) == ".number(value: f64)"
     assert choice_line(face.choices[0]) == "`variant Value`, one of `.nothing`, `.number(value: f64)` or `.array(items: [Value])`: A value."
 
-# A floor's card (`examples-rebel/README.md` § A2): what its group gives a
+# A floor's card (`rebel/examples/README.md` § A2): what its group gives a
 # program to name under the header's own heading, each as the program writes
 # it, its handle used by a function's signature through the binding in the
 # proof, and every constant of the group named there.

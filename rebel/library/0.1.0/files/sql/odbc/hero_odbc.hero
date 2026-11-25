@@ -1,0 +1,732 @@
+# The platform layer's ODBC, `hero_odbc.h`, bound thin: one function per C
+# function, each answering what C answers, in C's order. Where a call fails
+# its handle is `nullptr` or its count -1, and `last_error` then names the
+# kind; where the driver manager or the driver refused, `last_state` gives
+# the SQLSTATE, `last_os_error` the driver's native number and
+# `last_message` the words. The floor of Rebel's `sql/odbc`
+# (`rebel/examples/README.md` § A2): no policy stands here, and the face
+# above it turns every kind into a code.
+#
+# The layer is C of the language's own beside the runtime, so this group
+# names its header and no `link`: the member loads the system's driver
+# manager when a program first asks, `odbc32.dll` on Windows and unixODBC's
+# or iODBC's library elsewhere, so the same lines bind it everywhere, and on
+# a machine with none every call answers `HERO_ODBC_UNSUPPORTED`.
+#
+# Bytes cross by the fill form: a call that answers bytes is handed a list
+# and the count of bytes C may write, and answers how many the whole answer
+# has; above the count, the list was short and nothing in it is the answer.
+# A text handed to C as a `cstr` aborts on a zero byte (spec § 13), so the
+# face refuses one before it calls.
+
+extern "hero_odbc.h"
+    # A connection to a data source, a handle the layer issues and checks:
+    # one closed already, `nullptr`, or one it never issued is
+    # `HERO_ODBC_NOT_OPEN`, never a read of freed memory.
+    record Connection tag hero_odbc_connection
+    # A statement of a connection, issued and checked as a connection is;
+    # closing its connection ends it too.
+    record Statement tag hero_odbc_statement
+    # The kinds of failure `last_error` answers, the same numbers on every
+    # platform.
+    constant HERO_ODBC_OK: i64
+    constant HERO_ODBC_INVALID: i64
+    constant HERO_ODBC_NOT_OPEN: i64
+    constant HERO_ODBC_LIMIT: i64
+    constant HERO_ODBC_UNSUPPORTED: i64
+    constant HERO_ODBC_DRIVER: i64
+    constant HERO_ODBC_OTHER: i64
+    # The kinds a cell is read as.
+    constant HERO_ODBC_AS_BOOLEAN: i64
+    constant HERO_ODBC_AS_INTEGER: i64
+    constant HERO_ODBC_AS_FLOAT: i64
+    constant HERO_ODBC_AS_TEXT: i64
+    constant HERO_ODBC_AS_BYTES: i64
+    constant HERO_ODBC_AS_TIMESTAMP: i64
+    # How many parts a timestamp has, and the most bytes a text handed to
+    # the layer may hold.
+    constant HERO_ODBC_TIMESTAMP_PARTS: u64
+    constant HERO_ODBC_TEXT_MOST: i64
+    # ODBC's numbers for the SQL types a column is described with.
+    constant HERO_ODBC_TYPE_CHAR: i64
+    constant HERO_ODBC_TYPE_NUMERIC: i64
+    constant HERO_ODBC_TYPE_DECIMAL: i64
+    constant HERO_ODBC_TYPE_INTEGER: i64
+    constant HERO_ODBC_TYPE_SMALLINT: i64
+    constant HERO_ODBC_TYPE_FLOAT: i64
+    constant HERO_ODBC_TYPE_REAL: i64
+    constant HERO_ODBC_TYPE_DOUBLE: i64
+    constant HERO_ODBC_TYPE_DATE: i64
+    constant HERO_ODBC_TYPE_TIME: i64
+    constant HERO_ODBC_TYPE_TIMESTAMP: i64
+    constant HERO_ODBC_TYPE_VARCHAR: i64
+    constant HERO_ODBC_TYPE_TYPE_DATE: i64
+    constant HERO_ODBC_TYPE_TYPE_TIME: i64
+    constant HERO_ODBC_TYPE_TYPE_TIMESTAMP: i64
+    constant HERO_ODBC_TYPE_LONGVARCHAR: i64
+    constant HERO_ODBC_TYPE_BINARY: i64
+    constant HERO_ODBC_TYPE_VARBINARY: i64
+    constant HERO_ODBC_TYPE_LONGVARBINARY: i64
+    constant HERO_ODBC_TYPE_BIGINT: i64
+    constant HERO_ODBC_TYPE_TINYINT: i64
+    constant HERO_ODBC_TYPE_BIT: i64
+    constant HERO_ODBC_TYPE_WCHAR: i64
+    constant HERO_ODBC_TYPE_WVARCHAR: i64
+    constant HERO_ODBC_TYPE_WLONGVARCHAR: i64
+    constant HERO_ODBC_TYPE_GUID: i64
+    # What `info` answers, each an item of `SQLGetInfo`.
+    constant HERO_ODBC_INFO_DBMS_NAME: i64
+    constant HERO_ODBC_INFO_DBMS_VERSION: i64
+    constant HERO_ODBC_INFO_DRIVER_NAME: i64
+    constant HERO_ODBC_INFO_DRIVER_VERSION: i64
+    constant HERO_ODBC_INFO_DRIVER_ODBC_VERSION: i64
+    constant HERO_ODBC_INFO_MANAGER_VERSION: i64
+    constant HERO_ODBC_INFO_DATA_SOURCE_NAME: i64
+    constant HERO_ODBC_INFO_DATABASE_NAME: i64
+    constant HERO_ODBC_INFO_SERVER_NAME: i64
+    constant HERO_ODBC_INFO_USER_NAME: i64
+    constant HERO_ODBC_INFO_IDENTIFIER_QUOTE: i64
+    constant HERO_ODBC_INFO_SEARCH_ESCAPE: i64
+    constant HERO_ODBC_INFO_KEYWORDS: i64
+    constant HERO_ODBC_INFO_MULTIPLE_RESULTS: i64
+    constant HERO_ODBC_INFO_READ_ONLY: i64
+    constant HERO_ODBC_INFO_TRANSACTIONS: i64
+    constant HERO_ODBC_INFO_DEFAULT_ISOLATION: i64
+    constant HERO_ODBC_INFO_ISOLATIONS: i64
+    # The attributes of a connection `set_attribute` sets and `attribute`
+    # reads.
+    constant HERO_ODBC_ATTR_AUTOCOMMIT: i64
+    constant HERO_ODBC_ATTR_ISOLATION: i64
+    constant HERO_ODBC_ATTR_READ_ONLY: i64
+    constant HERO_ODBC_ATTR_CONNECTION_TIMEOUT: i64
+    constant HERO_ODBC_ATTR_DEAD: i64
+    # The isolation levels, as ODBC numbers them.
+    constant HERO_ODBC_READ_UNCOMMITTED: i64
+    constant HERO_ODBC_READ_COMMITTED: i64
+    constant HERO_ODBC_REPEATABLE_READ: i64
+    constant HERO_ODBC_SERIALIZABLE: i64
+    # The catalog's questions, `catalog`'s `which`.
+    constant HERO_ODBC_CATALOG_TABLES: i64
+    constant HERO_ODBC_CATALOG_COLUMNS: i64
+    constant HERO_ODBC_CATALOG_PRIMARY_KEYS: i64
+    constant HERO_ODBC_CATALOG_FOREIGN_KEYS: i64
+    constant HERO_ODBC_CATALOG_INDEXES: i64
+    constant HERO_ODBC_CATALOG_UNIQUE_INDEXES: i64
+    constant HERO_ODBC_CATALOG_PROCEDURES: i64
+    constant HERO_ODBC_CATALOG_PROCEDURE_COLUMNS: i64
+    constant HERO_ODBC_CATALOG_TYPES: i64
+    constant HERO_ODBC_CATALOG_ROW_ID_COLUMNS: i64
+    constant HERO_ODBC_CATALOG_ROW_VERSION_COLUMNS: i64
+    constant HERO_ODBC_CATALOG_TABLE_PRIVILEGES: i64
+    constant HERO_ODBC_CATALOG_COLUMN_PRIVILEGES: i64
+    # Which data sources `data_sources` lists.
+    constant HERO_ODBC_SOURCES_ALL: i64
+    constant HERO_ODBC_SOURCES_USER: i64
+    constant HERO_ODBC_SOURCES_SYSTEM: i64
+    # The two calls that end a handle's life, which every mark below names.
+    #
+    # - `c`: the connection ended, its statements with it.
+    function hero_odbc_disconnect(c: Connection consumes) -> i64
+    function hero_odbc_statement_close(s: Statement consumes) -> i64
+    function hero_odbc_last_error() -> i64
+    function hero_odbc_last_os_error() -> i64
+    function hero_odbc_last_state(@buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_odbc_last_message(@buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_odbc_manager(@buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_odbc_drivers(@buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_odbc_data_sources(which: i64, @buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_odbc_connect(text: cstr lent, login_seconds: i64) -> Connection acquires hero_odbc_disconnect
+    function hero_odbc_connect_dsn(dsn: cstr lent, user: cstr lent, password: cstr lent, login_seconds: i64) -> Connection acquires hero_odbc_disconnect
+    function hero_odbc_info(c: Connection, which: i64, @buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_odbc_set_attribute(c: Connection, which: i64, value: i64) -> i64
+    function hero_odbc_attribute(c: Connection, which: i64, @value: i64) -> i64
+    function hero_odbc_end_transaction(c: Connection, commit: i64) -> i64
+    function hero_odbc_statement_open(c: Connection) -> Statement acquires hero_odbc_statement_close
+    function hero_odbc_belongs(s: Statement, c: Connection) -> i64
+    function hero_odbc_set_timeout(s: Statement, seconds: i64) -> i64
+    function hero_odbc_prepare(s: Statement, text: cstr lent) -> i64
+    function hero_odbc_parameter_count(s: Statement) -> i64
+    function hero_odbc_bind_null(s: Statement, index: u64) -> i64
+    function hero_odbc_bind_boolean(s: Statement, index: u64, value: i64) -> i64
+    function hero_odbc_bind_integer(s: Statement, index: u64, value: i64) -> i64
+    function hero_odbc_bind_float(s: Statement, index: u64, value: f64) -> i64
+    function hero_odbc_bind_text(s: Statement, index: u64, @bytes: [u8] counted_by count lent, count: u64) -> i64
+    function hero_odbc_bind_bytes(s: Statement, index: u64, @bytes: [u8] counted_by count lent, count: u64) -> i64
+    function hero_odbc_bind_timestamp(s: Statement, index: u64, @parts: [i64] counted_by count lent, count: u64) -> i64
+    function hero_odbc_unbind(s: Statement) -> i64
+    function hero_odbc_execute(s: Statement) -> i64
+    function hero_odbc_execute_direct(s: Statement, text: cstr lent) -> i64
+    function hero_odbc_catalog(s: Statement, which: i64, a: cstr lent, b: cstr lent, c: cstr lent, d: cstr lent, e: cstr lent, f: cstr lent, given: i64) -> i64
+    function hero_odbc_column_count(s: Statement) -> i64
+    function hero_odbc_column_name(s: Statement, column: u64, @buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_odbc_column_type(s: Statement, column: u64, @sql_type: i64) -> i64
+    function hero_odbc_column_type_name(s: Statement, column: u64, @buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_odbc_row_count(s: Statement, @rows: i64) -> i64
+    function hero_odbc_fetch(s: Statement) -> i64
+    function hero_odbc_more_results(s: Statement) -> i64
+    function hero_odbc_close_cursor(s: Statement) -> i64
+    function hero_odbc_read(s: Statement, column: u64, kind: i64) -> i64
+    function hero_odbc_cell_integer(s: Statement, @value: i64) -> i64
+    function hero_odbc_cell_float(s: Statement, @value: f64) -> i64
+    function hero_odbc_cell_bytes(s: Statement, @buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_odbc_cell_timestamp(s: Statement, @parts: [i64] counted_by count lent, count: u64) -> i64
+
+# The kind of the last call's failure on this thread, `HERO_ODBC_OK` after a
+# call that did not fail.
+function last_error() -> i64
+    return hero_odbc_last_error()
+
+# The native error of the last failure's first diagnostic record, the
+# driver's own number; 0 where there was none.
+function last_os_error() -> i64
+    return hero_odbc_last_os_error()
+
+# The length of the last failure's SQLSTATE, written into `buffer`'s first
+# `count` bytes where it fits; 0 where there was none.
+#
+# - `buffer`: where the SQLSTATE, five characters is written, where it fits;
+#   left `count` long.
+# - `count`: the bytes `buffer` holds; an answer above it says `buffer` was
+#   short and nothing in it is the answer.
+function last_state(@buffer: [u8], count: u64) -> i64
+    return hero_odbc_last_state(@buffer, count: count)
+
+# The length of the last failure's words, written into `buffer`'s first
+# `count` bytes where they fit.
+#
+# - `buffer`: where the words, the first diagnostic record's and each other's
+#   after `; ` is written, where it fits; left `count` long.
+# - `count`: the bytes `buffer` holds; an answer above it says `buffer` was
+#   short and nothing in it is the answer.
+function last_message(@buffer: [u8], count: u64) -> i64
+    return hero_odbc_last_message(@buffer, count: count)
+
+# The length of the name of the driver manager's library this process
+# loaded, written into `buffer` where it fits, or -1 with
+# `HERO_ODBC_UNSUPPORTED` where none would load.
+#
+# - `buffer`: where the library's name is written, where it fits; left `count`
+#   long.
+# - `count`: the bytes `buffer` holds; an answer above it says `buffer` was
+#   short and nothing in it is the answer.
+function manager(@buffer: [u8], count: u64) -> i64
+    return hero_odbc_manager(@buffer, count: count)
+
+# The length of the drivers' lines, each a name and its attributes after
+# tabs, written into `buffer` where they fit, or -1.
+#
+# - `buffer`: where the drivers' lines, each ended by `\n` is written, where
+#   it fits; left `count` long.
+# - `count`: the bytes `buffer` holds; an answer above it says `buffer` was
+#   short and nothing in it is the answer.
+function drivers(@buffer: [u8], count: u64) -> i64
+    return hero_odbc_drivers(@buffer, count: count)
+
+# The length of the data sources' lines `which` names, each a name, a tab
+# and its driver, written into `buffer` where they fit, or -1.
+#
+# - `which`: `HERO_ODBC_SOURCES_ALL`, `HERO_ODBC_SOURCES_USER` or
+#   `HERO_ODBC_SOURCES_SYSTEM`.
+# - `buffer`: where the sources' lines, each ended by `\n` is written, where
+#   it fits; left `count` long.
+# - `count`: the bytes `buffer` holds; an answer above it says `buffer` was
+#   short and nothing in it is the answer.
+function data_sources(which: i64, @buffer: [u8], count: u64) -> i64
+    return hero_odbc_data_sources(which, @buffer, count: count)
+
+# A connection made from the connection string `text`, waiting at most
+# `login_seconds` to log in, 0 as long as the driver waits, or `nullptr`.
+# Aborts where `text` holds a zero byte.
+#
+# - `text`: the connection string, read with no prompt, at most
+#   `HERO_ODBC_TEXT_MOST` bytes; it aborts where it holds a zero byte.
+# - `login_seconds`: the most seconds to wait to log in, 0 to 4,294,967,295; 0
+#   waits as long as the driver does, outside the range is
+#   `HERO_ODBC_INVALID`.
+function connect(text: str, login_seconds: i64) -> Connection
+    return hero_odbc_connect(text.cstr(), login_seconds: login_seconds)
+
+# A connection made to the data source `dsn` as `user` with `password`, ""
+# leaving each to the data source, or `nullptr`. Aborts where one holds a
+# zero byte.
+#
+# - `dsn`: the data source's name; it aborts where it holds a zero byte.
+# - `user`: the user's name, "" leaving it to the data source; it aborts where
+#   it holds a zero byte.
+# - `password`: the password, "" leaving it to the data source; it aborts
+#   where it holds a zero byte.
+# - `login_seconds`: the most seconds to wait to log in, 0 to 4,294,967,295; 0
+#   waits as long as the driver does, outside the range is
+#   `HERO_ODBC_INVALID`.
+function connect_dsn(dsn: str, user: str, password: str, login_seconds: i64) -> Connection
+    return hero_odbc_connect_dsn(
+        dsn: dsn.cstr(),
+        user: user.cstr(),
+        password: password.cstr(),
+        login_seconds: login_seconds
+    )
+
+# 0, or -1 where `c` was not open or the driver refused to disconnect; `c`
+# is given back either way, its statements with it.
+#
+# - `c`: the connection ended and given back, its statements closed and a
+#   transaction still open rolled back.
+function disconnect(@c: Connection) -> i64
+    return hero_odbc_disconnect(c)
+
+# The length of `SQLGetInfo`'s answer for `which`, a number as its digits,
+# written into `buffer` where it fits, or -1.
+#
+# - `c`: the connection; it stays open.
+# - `which`: one of `HERO_ODBC_INFO_*`, the texts first, then the numbers.
+# - `buffer`: where the answer, a number as its decimal digits is written,
+#   where it fits; left `count` long.
+# - `count`: the bytes `buffer` holds; an answer above it says `buffer` was
+#   short and nothing in it is the answer.
+function info(c: Connection, which: i64, @buffer: [u8], count: u64) -> i64
+    return hero_odbc_info(c, which: which, buffer: @buffer, count: count)
+
+# 0 where the attribute `which` of `c` is now `value`, or -1.
+#
+# - `c`: the connection; it stays open.
+# - `which`: one of `HERO_ODBC_ATTR_*`.
+# - `value`: 1 or 0 for autocommit and reading only, an isolation level
+#   (`HERO_ODBC_READ_UNCOMMITTED` to `HERO_ODBC_SERIALIZABLE`), seconds for
+#   the connection's timeout.
+function set_attribute(c: Connection, which: i64, value: i64) -> i64
+    return hero_odbc_set_attribute(c, which: which, value: value)
+
+# 0 with the attribute `which` of `c` in `value`, or -1.
+#
+# - `c`: the connection; it stays open.
+# - `which`: one of `HERO_ODBC_ATTR_*`.
+# - `value`: set to the attribute's value, in `set_attribute`'s numbers.
+function attribute(c: Connection, which: i64, @value: i64) -> i64
+    return hero_odbc_attribute(c, which: which, value: @value)
+
+# 0 where `c`'s transaction ended, committed where `commit` is 1 and rolled
+# back where it is 0, or -1.
+#
+# - `c`: the connection; it stays open.
+# - `commit`: 1 commits, 0 rolls back; any other value is `HERO_ODBC_INVALID`.
+function end_transaction(c: Connection, commit: i64) -> i64
+    return hero_odbc_end_transaction(c, commit: commit)
+
+# A new statement of `c`, or `nullptr`.
+#
+# - `c`: the connection the statement belongs to, whose close ends it too; it
+#   stays open.
+function statement_open(c: Connection) -> Statement
+    return hero_odbc_statement_open(c)
+
+# 0, or -1 where `s` was not open; `s` is given back either way.
+#
+# - `s`: the statement ended and given back.
+function statement_close(@s: Statement) -> i64
+    return hero_odbc_statement_close(s)
+
+# 1 where `s` is a statement of `c`, 0 where it is another's, -1 where
+# either is not open.
+#
+# - `s`: the statement asked about; it stays the caller's.
+# - `c`: the connection asked about; it stays open.
+function belongs(s: Statement, c: Connection) -> i64
+    return hero_odbc_belongs(s, c)
+
+# 0 where a run of `s` is stopped after `seconds`, 0 for none, or -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+# - `seconds`: how long a run of `s` goes before the driver stops it, 0 to
+#   4,294,967,295; 0 is no limit, outside the range `HERO_ODBC_INVALID`.
+function set_timeout(s: Statement, seconds: i64) -> i64
+    return hero_odbc_set_timeout(s, seconds: seconds)
+
+# 0 where the driver read `text` to run it later, or -1. Aborts where
+# `text` holds a zero byte.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+# - `text`: the statement read once, to be run by `execute`, at most
+#   `HERO_ODBC_TEXT_MOST` bytes; it aborts where it holds a zero byte.
+function prepare(s: Statement, text: str) -> i64
+    return hero_odbc_prepare(s, text: text.cstr())
+
+# The parameters the prepared statement takes, or -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+function parameter_count(s: Statement) -> i64
+    return hero_odbc_parameter_count(s)
+
+# 0 where the parameter at `index`, from 1, is SQL's NULL, or -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+# - `index`: the parameter's number, 1 to 65535, else `HERO_ODBC_INVALID`; its
+#   value is kept until `unbind`.
+function bind_null(s: Statement, index: u64) -> i64
+    return hero_odbc_bind_null(s, index: index)
+
+# 0 where the parameter at `index` is the truth value `value`, 1 or 0, or
+# -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+# - `index`: the parameter's number, 1 to 65535, else `HERO_ODBC_INVALID`; its
+#   value is kept until `unbind`.
+# - `value`: 1 for true, 0 for false.
+function bind_boolean(s: Statement, index: u64, value: i64) -> i64
+    return hero_odbc_bind_boolean(s, index: index, value: value)
+
+# 0 where the parameter at `index` is the integer `value`, or -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+# - `index`: the parameter's number, 1 to 65535, else `HERO_ODBC_INVALID`; its
+#   value is kept until `unbind`.
+# - `value`: the integer bound.
+function bind_integer(s: Statement, index: u64, value: i64) -> i64
+    return hero_odbc_bind_integer(s, index: index, value: value)
+
+# 0 where the parameter at `index` is the float `value`, or -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+# - `index`: the parameter's number, 1 to 65535, else `HERO_ODBC_INVALID`; its
+#   value is kept until `unbind`.
+# - `value`: the float bound.
+function bind_float(s: Statement, index: u64, value: f64) -> i64
+    return hero_odbc_bind_float(s, index: index, value: value)
+
+# 0 where the parameter at `index` is the first `count` bytes of `bytes` as
+# UTF-8 text, or -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+# - `index`: the parameter's number, 1 to 65535, else `HERO_ODBC_INVALID`; its
+#   value is kept until `unbind`.
+# - `bytes`: the text's UTF-8 bytes, copied by the layer; left as it was
+#   handed.
+# - `count`: how many of `bytes`' first bytes, at most `HERO_ODBC_TEXT_MOST`.
+function bind_text(s: Statement, index: u64, @bytes: [u8], count: u64) -> i64
+    return hero_odbc_bind_text(s, index: index, bytes: @bytes, count: count)
+
+# 0 where the parameter at `index` is the first `count` bytes of `bytes`,
+# or -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+# - `index`: the parameter's number, 1 to 65535, else `HERO_ODBC_INVALID`; its
+#   value is kept until `unbind`.
+# - `bytes`: the bytes bound, copied by the layer; left as it was handed.
+# - `count`: how many of `bytes`' first bytes, at most `HERO_ODBC_TEXT_MOST`.
+function bind_bytes(s: Statement, index: u64, @bytes: [u8], count: u64) -> i64
+    return hero_odbc_bind_bytes(s, index: index, bytes: @bytes, count: count)
+
+# 0 where the parameter at `index` is the timestamp of the first `count`
+# parts of `parts`, year to nanosecond, or -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+# - `index`: the parameter's number, 1 to 65535, else `HERO_ODBC_INVALID`; its
+#   value is kept until `unbind`.
+# - `parts`: year 1 to 9999, month 1 to 12, day 1 to 31, hour 0 to 23, minute
+#   and second 0 to 59, nanosecond 0 to 999,999,999, in that order; a part
+#   outside its range is `HERO_ODBC_INVALID`.
+# - `count`: how many of `parts`' first numbers are read, at least
+#   `HERO_ODBC_TIMESTAMP_PARTS`, else `HERO_ODBC_INVALID`.
+function bind_timestamp(s: Statement, index: u64, @parts: [i64], count: u64) -> i64
+    return hero_odbc_bind_timestamp(s, index: index, parts: @parts, count: count)
+
+# 0 where every parameter's value is forgotten, or -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+function unbind(s: Statement) -> i64
+    return hero_odbc_unbind(s)
+
+# 0 where the prepared statement ran with the values bound, or -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection. Every parameter from 1 to the highest bound must have
+#   a value, a gap being `HERO_ODBC_INVALID`.
+function execute(s: Statement) -> i64
+    return hero_odbc_execute(s)
+
+# 0 where `text` ran once with the values bound, or -1. Aborts where `text`
+# holds a zero byte.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+# - `text`: the statement run once, at most `HERO_ODBC_TEXT_MOST` bytes; it
+#   aborts where it holds a zero byte.
+function execute_direct(s: Statement, text: str) -> i64
+    return hero_odbc_execute_direct(s, text: text.cstr())
+
+# 0 where the catalog's question `which` ran on `s` with the names `a` to
+# `f`, each one whose bit of `given` is 0 read as every one, or -1. Aborts
+# where a name holds a zero byte.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection. Its rows are then read as a query's.
+# - `which`: one of `HERO_ODBC_CATALOG_*`.
+# - `a`: the first name in ODBC's order, a catalog, or for foreign keys the
+#   primary table's catalog; it aborts where it holds a zero byte.
+# - `b`: the second, a schema; it aborts where it holds a zero byte.
+# - `c`: the third, a table or a procedure; it aborts where it holds a zero
+#   byte.
+# - `d`: the fourth, a column, a procedure's column or the table's kinds, or
+#   for foreign keys the foreign table's catalog; it aborts where it holds a
+#   zero byte.
+# - `e`: the fifth, for foreign keys the foreign table's schema; it aborts
+#   where it holds a zero byte.
+# - `f`: the sixth, for foreign keys the foreign table; it aborts where it
+#   holds a zero byte.
+# - `given`: bit `k`, from 0, says the `k`-th name is given; one not given is
+#   no name, which ODBC reads as every one, and a question reads none past its
+#   own.
+function catalog(s: Statement, which: i64, a: str, b: str, c: str, d: str, e: str, f: str, given: i64) -> i64
+    return hero_odbc_catalog(
+        s,
+        which: which,
+        a: a.cstr(),
+        b: b.cstr(),
+        c: c.cstr(),
+        d: d.cstr(),
+        e: e.cstr(),
+        f: f.cstr(),
+        given: given
+    )
+
+# The columns of the statement's current result, 0 where it answers no
+# rows, or -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+function column_count(s: Statement) -> i64
+    return hero_odbc_column_count(s)
+
+# The length of the name of the column at `column`, from 1, written into
+# `buffer` where it fits, or -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+# - `column`: the column's number, 1 to 65535, else `HERO_ODBC_INVALID`.
+# - `buffer`: where the column's name is written, where it fits; left `count`
+#   long.
+# - `count`: the bytes `buffer` holds; an answer above it says `buffer` was
+#   short and nothing in it is the answer.
+function column_name(s: Statement, column: u64, @buffer: [u8], count: u64) -> i64
+    return hero_odbc_column_name(s, column: column, buffer: @buffer, count: count)
+
+# 0 with the SQL type of the column at `column` in `sql_type`, or -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+# - `column`: the column's number, 1 to 65535, else `HERO_ODBC_INVALID`.
+# - `sql_type`: set to the column's SQL type, one of `HERO_ODBC_TYPE_*` or a
+#   number of the driver's own.
+function column_type(s: Statement, column: u64, @sql_type: i64) -> i64
+    return hero_odbc_column_type(s, column: column, sql_type: @sql_type)
+
+# The length of the database's name for the column's type, written into
+# `buffer` where it fits, or -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+# - `column`: the column's number, 1 to 65535, else `HERO_ODBC_INVALID`.
+# - `buffer`: where the database's name for the type is written, where it
+#   fits; left `count` long.
+# - `count`: the bytes `buffer` holds; an answer above it says `buffer` was
+#   short and nothing in it is the answer.
+function column_type_name(s: Statement, column: u64, @buffer: [u8], count: u64) -> i64
+    return hero_odbc_column_type_name(s, column: column, buffer: @buffer, count: count)
+
+# 0 with the rows the statement changed in `rows`, -1 there where the
+# driver does not say, or -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+# - `rows`: set to the rows inserted, changed or deleted, -1 where the driver
+#   does not say.
+function row_count(s: Statement, @rows: i64) -> i64
+    return hero_odbc_row_count(s, rows: @rows)
+
+# 1 where the statement moved to its next row, 0 where none is left, or
+# -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+function fetch(s: Statement) -> i64
+    return hero_odbc_fetch(s)
+
+# 1 where the statement moved to its next result, 0 where none is left, or
+# -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+function more_results(s: Statement) -> i64
+    return hero_odbc_more_results(s)
+
+# 0 where what is left of the statement's results is dropped, or -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+function close_cursor(s: Statement) -> i64
+    return hero_odbc_close_cursor(s)
+
+# 1 where the column at `column` of the current row was read as `kind`, 0
+# where it is SQL's NULL, or -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+# - `column`: the column's number, 1 to 65535, of the current row; a row's
+#   columns are read in ascending order, each once.
+# - `kind`: one of `HERO_ODBC_AS_*`, how the cell is read; another is
+#   `HERO_ODBC_INVALID`.
+function read(s: Statement, column: u64, kind: i64) -> i64
+    return hero_odbc_read(s, column: column, kind: kind)
+
+# 0 with the cell's integer, or its truth value as 1 or 0, in `value`, or
+# -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+# - `value`: set to the cell's integer, or its truth value as 1 or 0.
+function cell_integer(s: Statement, @value: i64) -> i64
+    return hero_odbc_cell_integer(s, value: @value)
+
+# 0 with the cell's float in `value`, or -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+# - `value`: set to the cell's float.
+function cell_float(s: Statement, @value: f64) -> i64
+    return hero_odbc_cell_float(s, value: @value)
+
+# The length of the cell's text or bytes, written into `buffer` where they
+# fit, or -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+# - `buffer`: where the cell's text, UTF-8 as the driver gave it, or its bytes
+#   is written, where it fits; left `count` long.
+# - `count`: the bytes `buffer` holds; an answer above it says `buffer` was
+#   short and nothing in it is the answer.
+function cell_bytes(s: Statement, @buffer: [u8], count: u64) -> i64
+    return hero_odbc_cell_bytes(s, buffer: @buffer, count: count)
+
+# 0 with the cell's timestamp in the first `count` parts of `parts`, or -1.
+#
+# - `s`: the statement; it stays the caller's, ended by `statement_close` or
+#   with its connection.
+# - `parts`: set to the cell's year, month, day, hour, minute, second and
+#   nanosecond, in that order; left `count` long.
+# - `count`: the numbers `parts` holds, at least `HERO_ODBC_TIMESTAMP_PARTS`,
+#   else -1.
+function cell_timestamp(s: Statement, @parts: [i64], count: u64) -> i64
+    return hero_odbc_cell_timestamp(s, parts: @parts, count: count)
+
+## Tests
+
+# Whether this machine has a driver manager, by the floor's own answer.
+function has_manager() -> bool
+    buffer: [u8] @= []
+    return manager(@buffer, count: 0) >= 0
+
+# The kind a call on a handle that is none answers here: `NOT_OPEN` where a
+# manager is loaded, `UNSUPPORTED` where none is, since then nothing is
+# looked at.
+function none_kind() -> i64
+    if has_manager()
+        return HERO_ODBC_NOT_OPEN
+    return HERO_ODBC_UNSUPPORTED
+
+test "manager: a name where a manager loads, and -1 unsupported naming every library tried where none does"
+    buffer: [u8] @= []
+    length = manager(@buffer, count: 256)
+
+    if length >= 0
+        assert length > 0 && last_error() == HERO_ODBC_OK
+    else
+        assert last_error() == HERO_ODBC_UNSUPPORTED
+        words: [u8] @= []
+        said = last_message(@words, count: 1024)
+        assert said > 0 && said <= 1024
+        assert words.slice(from: 0, to: 2) == [110, 111]
+
+test "connect and connect_dsn of nothing there: nullptr, and the kind says why"
+    c = connect("Driver={Rebel No Such Driver};Database=x", login_seconds: 1)
+    said = last_error()
+    state: [u8] @= []
+    state_length = last_state(@state, count: 8)
+    assert c == nullptr
+
+    if has_manager()
+        assert said == HERO_ODBC_DRIVER && state_length == 5
+    else
+        assert said == HERO_ODBC_UNSUPPORTED && state_length == 0
+
+    d = connect_dsn(dsn: "rebel-no-such-source", user: "", password: "", login_seconds: 1)
+    assert d == nullptr
+    assert last_error() == HERO_ODBC_DRIVER || last_error() == HERO_ODBC_UNSUPPORTED
+    assert connect("", login_seconds: -1) == nullptr
+
+test "a connection and a statement that are none: every call fails not open, never a fault"
+    none_c: Connection @= nullptr
+    none_s: Statement @= nullptr
+    kind = none_kind()
+    buffer: [u8] @= []
+    value: i64 @= 0
+    x: f64 @= 0.0
+    parts: [i64] @= []
+    assert info(none_c, which: HERO_ODBC_INFO_DBMS_NAME, buffer: @buffer, count: 16) == -1 && last_error() == kind
+    assert set_attribute(none_c, which: HERO_ODBC_ATTR_AUTOCOMMIT, value: 1) == -1 && last_error() == kind
+    assert attribute(none_c, which: HERO_ODBC_ATTR_AUTOCOMMIT, value: @value) == -1 && last_error() == kind
+    assert end_transaction(none_c, commit: 1) == -1 && last_error() == kind
+    assert statement_open(none_c) == nullptr && last_error() == kind
+    assert belongs(none_s, none_c) == -1
+    assert set_timeout(none_s, seconds: 1) == -1 && last_error() == kind
+    assert prepare(none_s, "SELECT 1") == -1 && last_error() == kind
+    assert parameter_count(none_s) == -1 && last_error() == kind
+    assert bind_null(none_s, index: 1) == -1 && last_error() == kind
+    assert bind_integer(none_s, index: 1, value: 1) == -1 && last_error() == kind
+    assert bind_float(none_s, index: 1, value: 1.0) == -1 && last_error() == kind
+    assert unbind(none_s) == -1 && last_error() == kind
+    assert execute(none_s) == -1 && last_error() == kind
+    assert execute_direct(none_s, "SELECT 1") == -1 && last_error() == kind
+    assert column_count(none_s) == -1 && last_error() == kind
+    assert column_type(none_s, column: 1, sql_type: @value) == -1 && last_error() == kind
+    assert row_count(none_s, rows: @value) == -1 && last_error() == kind
+    assert fetch(none_s) == -1 && last_error() == kind
+    assert more_results(none_s) == -1 && last_error() == kind
+    assert close_cursor(none_s) == -1 && last_error() == kind
+    assert read(none_s, column: 1, kind: HERO_ODBC_AS_TEXT) == -1 && last_error() == kind
+    assert cell_integer(none_s, value: @value) == -1 && last_error() == kind
+    assert cell_float(none_s, value: @x) == -1 && last_error() == kind
+    assert cell_bytes(none_s, buffer: @buffer, count: 16) == -1 && last_error() == kind
+    assert cell_timestamp(none_s, parts: @parts, count: HERO_ODBC_TIMESTAMP_PARTS) == -1 && last_error() == kind
+    assert statement_close(@none_s) == -1 && last_error() == kind
+    assert disconnect(@none_c) == -1 && last_error() == kind
+
+test "the layer's own refusals: a boolean of 2, a timestamp's month 13 and too few parts, before any handle is read"
+    none_s: Statement = nullptr
+    assert bind_boolean(none_s, index: 1, value: 2) == -1 && last_error() == HERO_ODBC_INVALID
+    month13: [i64] @= [2006, 13, 2, 15, 4, 5, 0]
+    assert bind_timestamp(none_s, index: 1, parts: @month13, count: HERO_ODBC_TIMESTAMP_PARTS) == -1 && last_error() == HERO_ODBC_INVALID
+    short: [i64] @= [2006, 1, 2]
+    assert bind_timestamp(none_s, index: 1, parts: @short, count: 3) == -1 && last_error() == HERO_ODBC_INVALID
+    empty: [u8] @= []
+    assert bind_text(none_s, index: 1, bytes: @empty, count: 0) == -1 && last_error() == none_kind()
+
+test "drivers and data_sources: lines where a manager loads, -1 unsupported where none does, and a list of no such kind refused"
+    buffer: [u8] @= []
+    listed = drivers(@buffer, count: 0)
+
+    if has_manager()
+        assert listed >= 0
+        assert data_sources(HERO_ODBC_SOURCES_ALL, buffer: @buffer, count: 0) >= 0
+        assert data_sources(9, buffer: @buffer, count: 0) == -1 && last_error() == HERO_ODBC_INVALID
+    else
+        assert listed == -1 && last_error() == HERO_ODBC_UNSUPPORTED

@@ -250,7 +250,7 @@ int64_t h_fixedbugs2606aruntimepanicissaidwhileathreadkeepsstderrslockoneverypla
 #line 251 "fixedbugs2606aruntimepanicissaidwhileathreadkeepsstderrslockoneveryplatform.c"
 }
 
-int64_t h_0cb_fixedbugs2606aruntimepanicissaidwhileathreadkeepsstderrslockoneveryplatform_keep(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugs2606aruntimepanicissaidwhileathreadkeepsstderrslockoneveryplatform_keep(int64_t h0_n) {
     hero_callback_entered("fixedbugs2606aruntimepanicissaidwhileathreadkeepsstderrslockoneveryplatform.keep", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs2606aruntimepanicissaidwhileathreadkeepsstderrslockoneveryplatform_keep(h0_n);
     hero_callback_left();

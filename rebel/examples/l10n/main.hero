@@ -1,0 +1,94 @@
+# l10n: a translation management tool in gettext's family, for a program
+# written in Heroes with HTML templates beside it. It extracts the messages
+# the sources ask `i18n` to translate and the templates ask Jinja's gettext
+# forms for; keeps a gettext catalogue for each language, merged with the
+# sources as they change, its plural forms computed from CLDR's rules; checks
+# what a reader would see wrong; shows each message as a reader of a
+# language sees it, dates, money, sorted lists and link hosts included;
+# reviews the changes between versions; reports coverage; imports and
+# exports catalogues as CSV, XLSX, JSON and YAML, in whatever encoding a
+# translator's tool wrote them; and compiles them to the `.mo` files gettext
+# reads.
+#
+# Run it for real from the repository's root:
+#
+#     heroes build rebel/examples/l10n/main.hero -o build/l10n/l10n
+#     cd my-project && ../build/l10n/l10n init --domain shop --locales de,fr,ja
+#     l10n extract && l10n merge && l10n export --locale de -o de.xlsx
+#     l10n import de.xlsx --locale de && l10n check && l10n compile
+#
+# `l10n --help` lists the commands, `l10n <command> --help` their flags.
+# `l10n demo` runs the scripted session `main.expected` holds: it writes a
+# sample shop under `build/l10n/demo`, runs some thirty commands over it at
+# one fixed moment, and removes the folder.
+#
+# Rebel's packages, and what for:
+#
+# - `i18n`: the gettext catalogues read and written as `.po` and `.mo`, the
+#   CLDR plural rules and their samples, the `Plural-Forms` checked by
+#   gettext's own evaluator, tags and `Accept-Language` read
+#   (`catalog/*`, `plural/*`, `project/locale_tags`).
+# - `i18n/locales`: canonical tags (`iw` is `he`), the likely script and
+#   region behind a currency and a page's direction (`project/locale_tags`).
+# - `i18n/numbers`, `i18n/dates`, `i18n/collate`: the previews' numbers,
+#   money, dates and relative times, and lists in each language's order
+#   (`preview/samples`); the reports' own numbers (`project/session`).
+# - `url/idna`: a link's host checked as DNS needs it, and written in ASCII
+#   in a rendered page (`check/text_checks`, `preview/render`).
+# - `unicode`, `unicode/normalize`, `unicode/encodings`: texts put in NFC
+#   on import and checked for it, a pseudo-translation's accents composed,
+#   final punctuation in any script, and a file's encoding found and read
+#   (`formats/rows`, `check/text_checks`, `preview/pseudo`,
+#   `formats/text_decode`).
+# - `unicode/segment`: a report's columns aligned by a terminal's widths
+#   (`review/table`).
+# - `regex`: the templates' gettext forms, placeholders, tags and links
+#   (`extract/templates`, `check/*`, `preview/*`).
+# - `diff`: a merge's guesses by similarity, and a review's word and unified
+#   diffs (`catalog/merge`, `review/changes`).
+# - `csv`, `xlsx`, `json`, `yaml`: the formats translators work in
+#   (`formats/*`); `yaml` reads the settings too (`project/config`).
+# - `sets`, `maps`, `lists`: coverage by set arithmetic, multisets of
+#   placeholders and tags, orders kept (`review/coverage`, `check/*`).
+# - `flags`, `io`, `fs`, `path`, `os`, `time`, `bytes`: the command line,
+#   the streams, the files, the demo's folder and its fixed clock.
+
+use <rebel>/flags
+
+use commands/cli
+use demo/script
+use project/session
+
+# Runs the command the arguments ask, the demo included, and ends with its
+# exit code.
+function main()
+    exit(code: run_program())
+
+# The exit code of the command the program's arguments ask: 2 where an
+# argument is not text, which no command could read, told by its place.
+function run_program() -> i64
+    s = match session.terminal()
+        .ok found => found
+        .err e =>
+            print(f"l10n: {e.msg}")
+            return 1
+
+    arguments: [str] @= []
+    at @= 0
+
+    for a in args_checked()
+        at @ at + 1
+
+        match a
+            .ok text => arguments @ arguments.push(text)
+            .err e =>
+                session.complain(s, message: f"argument {at} is not UTF-8 text, and no command reads it: {e.msg}")
+                return 2
+
+    return match cli.parse_command(arguments, s: s)
+        .finished d => d.code
+        .chosen c =>
+            if c.name == "demo"
+                script.run_demo(flags.value_of(c.found, "dir").default("build/l10n/demo"), execute: cli.run)
+            else
+                cli.execute(c.name, found: c.found, s: s)

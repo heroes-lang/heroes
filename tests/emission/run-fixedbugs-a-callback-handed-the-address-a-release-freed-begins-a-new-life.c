@@ -266,7 +266,7 @@ int64_t h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_again(in
 #line 267 "fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.c"
 }
 
-int64_t h_0cb_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_again(int64_t h0_offset) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_again(int64_t h0_offset) {
     hero_callback_entered("fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.again", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_again(h0_offset);
     hero_callback_left();
@@ -282,7 +282,7 @@ int64_t h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_found(in
 #line 283 "fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.c"
 }
 
-int64_t h_0cb_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_found(int64_t h0_offset) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_found(int64_t h0_offset) {
     hero_callback_entered("fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife.found", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugsacallbackhandedtheaddressareleasefreedbeginsanewlife_found(h0_offset);
     hero_callback_left();

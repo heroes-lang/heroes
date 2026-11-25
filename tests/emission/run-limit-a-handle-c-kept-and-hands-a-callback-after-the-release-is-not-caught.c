@@ -254,7 +254,7 @@ int64_t h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen(node
 #line 255 "limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.c"
 }
 
-int64_t h_0cb_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen(node * h0_n) {
+__attribute__((__noinline__)) int64_t h_0cb_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen(node * h0_n) {
     hero_callback_entered("limitahandleckeptandhandsacallbackafterthereleaseisnotcaught.seen", __builtin_return_address(0), __builtin_frame_address(0));
     hero_handle_lent(h0_n);
     int64_t hero_result = h_limitahandleckeptandhandsacallbackafterthereleaseisnotcaught_seen(h0_n);

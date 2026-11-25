@@ -1,0 +1,104 @@
+# The twin of `examples/adventure/`: a text adventure played from a script,
+# written with Rebel. It prints byte for byte what `examples/adventure/`
+# prints from the same arguments, so that program's `main.expected` is this
+# one's test too.
+#
+#     heroes run rebel/examples/adventure/main.hero -- examples/adventure/walkthrough.txt
+#
+#     main.hero    the program: the script, the transcript, no `exit`
+#     game.hero    one turn: a state in, a state and some lines out
+#     world.hero   the map: rooms, the ways between them, what lies about
+#
+# What Rebel does here that `examples/adventure/` writes for itself:
+#
+# - `strings.lines`, `strings.trim` and `strings.split_once` read the script's
+#   commands and cut a verb from the rest of its line, in place of that
+#   program's `strings.hero` (`split_lines`, `trim_space`, `space_ending`,
+#   `space_at`) and its `first_word` and `rest_after`;
+# - `graphs.reachable_from` walks the map from the start for the test that
+#   every room can be reached, in place of its breadth-first `reachable`;
+# - `maps.values` gives a room's exits as the graph's edges.
+#
+# What stays this program's own is the game: a turn is a value, a `Game` in and
+# a `Turn` out, and the program ends by running off the end of `main` rather
+# than by `exit`, so the runtime's count of what was never freed is asked at
+# its end.
+
+use <rebel>/strings
+
+use game
+use world
+
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program ends as its
+# other usage errors do, where `args()` would abort.
+function text_arguments() -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                print(f"adventure: argument {given.len() + 1} is not UTF-8")
+                exit(code: 2)
+
+    return given
+
+function main()
+    given = text_arguments()
+
+    if given.len() == 0
+        print("usage: adventure <walkthrough.txt>")
+        return
+
+    match read_file(given[0])
+        .err e     => print("cannot read ", given[0], ": ", e.code)
+        .ok script => run(script)
+
+# The script played from the start, its transcript printed, then the moves
+# and how the game ended.
+#
+# - `script`: the walkthrough's text.
+function run(script: str)
+    w = world.make()
+    turn = game.play_all(w, commands(script))
+
+    for said in turn.said
+        print(said)
+
+    print("")
+    print(turn.next.moves, " moves, ", ending_of(turn.next))
+
+# The last words of a transcript: whether the stair was opened.
+#
+# - `g`: the game as the script left it.
+function ending_of(g: game.Game) -> str
+    if g.won
+        return "and the stair is open."
+    return "and the stair is still shut."
+
+# One command per line, its white space trimmed, with blank lines and `#`
+# comments dropped.
+#
+# - `script`: the walkthrough's text.
+function commands(script: str) -> [str]
+    out: [str] @= []
+
+    for line in strings.lines(script)
+        head = strings.trim(line)
+
+        if head == "" || strings.has_prefix(s: head, prefix: "#")
+            continue
+        out @ out.push(head)
+
+    return out
+
+test "the walkthrough on disk wins the game"
+    script = read_file("examples/adventure/walkthrough.txt").must()
+    turn = game.play_all(world.make(), commands(script))
+    assert turn.next.won == true
+    assert ending_of(turn.next) == "and the stair is open."
+
+test "comments and blank lines are not commands"
+    assert commands("go north\n\n# a note\n  take  \n") == ["go north", "take"]
+    assert commands("") == []

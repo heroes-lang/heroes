@@ -282,7 +282,7 @@ int64_t h_fixedbugs2522ahandlerthatjumpswithinitselfbylongjmpthencallsdeepisrefu
 #line 283 "fixedbugs2522ahandlerthatjumpswithinitselfbylongjmpthencallsdeepisrefused.c"
 }
 
-int64_t h_0cb_fixedbugs2522ahandlerthatjumpswithinitselfbylongjmpthencallsdeepisrefused_answer(int64_t h0_sig) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugs2522ahandlerthatjumpswithinitselfbylongjmpthencallsdeepisrefused_answer(int64_t h0_sig) {
     hero_callback_entered("fixedbugs2522ahandlerthatjumpswithinitselfbylongjmpthencallsdeepisrefused.answer", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs2522ahandlerthatjumpswithinitselfbylongjmpthencallsdeepisrefused_answer(h0_sig);
     hero_callback_left();

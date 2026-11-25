@@ -1,0 +1,9 @@
+[dependencies.rebel]
+path = "../../library/0.1.0/files"
+packages = ["json", "strings"]
+
+[dependencies.tablekit]
+path = "../tablekit"
+
+[dependencies.cldrkit]
+path = "../cldrkit"

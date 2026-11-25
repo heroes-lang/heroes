@@ -58,6 +58,7 @@
 # anything else fails.
 
 use floors
+use package_rules
 use report
 use shell
 use strings
@@ -250,12 +251,16 @@ function trees() -> [Tree]
     # functions it calls in modules of its own: 144 seeds and 1296 variants,
     # read by this suite's own run that day, where the trees' 493 copies and
     # the driver had stood.
+    # **The packages row walks Rebel's library at its new folder since
+    # 2026-11-24** (the author's 1a of 2026-11-23): `packages/` left the tree,
+    # and the row reads the library where every instrument reads it,
+    # `package_rules.LIBRARY`, its name following its root.
     none: [str] = []
     return [
         Tree(name: "selfhost, multi", root: "selfhost", seeds: 758, floor: Floor(family: "multi", generated: 6822, parsing: 6822), known: none)
         Tree(name: "tests, multi", root: "tests", seeds: 2332, floor: Floor(family: "multi", generated: 20988, parsing: 20988), known: none)
         Tree(name: "examples, multi", root: "examples", seeds: 144, floor: Floor(family: "multi", generated: 1296, parsing: 1296), known: none)
-        Tree(name: "packages, multi", root: "packages", seeds: 29, floor: Floor(family: "multi", generated: 261, parsing: 261), known: none)
+        Tree(name: package_rules.LIBRARY + ", multi", root: package_rules.LIBRARY, seeds: 29, floor: Floor(family: "multi", generated: 261, parsing: 261), known: none)
     ]
 
 function run_all(scratch: str, compiler: str) -> report.Report?

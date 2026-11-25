@@ -1,0 +1,225 @@
+# The twin of `examples/ini/`: a configuration file read into sections, and
+# the four ways a configuration file lies, written with Rebel. It prints byte
+# for byte what `examples/ini/` prints, so that program's `main.expected` is
+# this one's test too.
+#
+#     heroes run rebel/examples/ini/main.hero
+#
+# What Rebel does here that `examples/ini/` writes for itself:
+#
+# - `strings.lines`, `trim`, `has_prefix`, `between` and `split_once` read a
+#   line, cut its white space, tell a header and a comment and cut a key from
+#   its value, in place of that program's `strings.hero` (`split_lines`,
+#   `trim_space`, `space_ending`, `space_at`, `has_prefix`, `has_suffix`,
+#   `first_at`, `holds_at`, `split_once` and its `Halves`).
+#
+# What stays this program's own is the reader and its four answers: a key
+# before any section goes into `""`, the empty section, so it is reachable
+# rather than lost; a repeated key is a FAILURE, because the writer meant one
+# of them and nobody can tell which; a repeated section MERGES; and a line that
+# parses as nothing is a failure with its line number.
+#
+# WHY NOT REBEL'S `ini`. Rebel reads INI as Python's `configparser` does, where
+# a section given twice and a key given twice are merged or refused together,
+# by one option (`ini.ReadOptions.duplicates`, Python's `strict`). This program
+# merges the one and refuses the other, which no option of `ini` asks for:
+# read merging, `host = a` then `host = b` is read, the last winning; read
+# refusing, the sample's repeated `[server]` is refused. Both readers are right
+# by their own rule, so the rule stays this program's, written over `strings`.
+
+use <rebel>/strings
+
+# A configuration: each section's keys and their values. The keys before any
+# header stand in the section `""`.
+record Config
+    # Section names to their keys and values.
+    sections: {str: {str: str}}
+
+# The configuration `text` holds.
+#
+# - `text`: the file's text, its lines ended by line feeds or CR LF.
+#
+# Fails `not_a_line` where a line is neither a section, a comment nor a key,
+# `empty_key` where a value has no key, `repeated_key` where a section sets a
+# key twice, and as `section_name` fails on a header.
+function parse(text: str) -> Config?
+    sections: {str: {str: str}} @= {}
+    current: str @= ""
+    empty: {str: str} = {}
+    sections[current] @ empty
+    number: i64 @= 0
+
+    for line in strings.lines(text)
+        number @ number + 1
+        trimmed = strings.trim(line)
+
+        if trimmed.len() == 0
+            continue
+
+        if strings.has_prefix(s: trimmed, prefix: "#") || strings.has_prefix(s: trimmed, prefix: ";")
+            continue
+
+        if strings.has_prefix(s: trimmed, prefix: "[")
+            current @ section_name(trimmed)?
+
+            # Merging rather than replacing: the section may already exist,
+            # and every format in use does this.
+            if sections[current].is_err()
+                sections[current] @ empty
+            continue
+
+        assignment = match strings.split_once(s: trimmed, sep: "=")
+            .ok halves => halves
+            .err _ => return fail(code: "not_a_line", msg: f"line {number} is neither a section, a comment, nor a key")
+
+        key = strings.trim(assignment.before)
+        value = strings.trim(assignment.after)
+
+        if key.len() == 0
+            return fail(code: "empty_key", msg: f"line {number} has a value and no key")
+        inner: {str: str} @= sections[current].default(empty)
+
+        if !inner[key].is_err()
+            return fail(
+                code: "repeated_key",
+                msg: "`" + key + "` is set twice in section `" + current + "`, and only the writer knows which was meant"
+            )
+        inner[key] @ value
+        sections[current] @ inner
+
+    return ok(Config(sections: sections))
+
+# The name a header line gives its section.
+#
+# - `line`: a line opening with `[`, its white space trimmed.
+#
+# Fails `unclosed_section` where it does not close with `]`, and
+# `empty_section` where the brackets hold nothing but white space.
+function section_name(line: str) -> str?
+    inner = match strings.between(s: line, prefix: "[", suffix: "]")
+        .ok within => strings.trim(within)
+        .err _     => return fail(code: "unclosed_section", msg: "a `[` with no `]`")
+
+    if inner.len() == 0
+        return fail(code: "empty_section", msg: "`[]` names nothing")
+
+    return ok(inner)
+
+# The value of `key` in the section `section` of `c`.
+#
+# - `c`: the configuration.
+# - `section`: the section's name, `""` for the keys before any header.
+# - `key`: the key.
+#
+# Fails `missing_key` where the section or the key is not there.
+function value_of(c: Config, section: str, key: str) -> str?
+    empty: {str: str} = {}
+    return c.sections[section].default(empty)[key]
+
+# Every section that holds at least one key, sorted.
+#
+# - `c`: the configuration.
+#
+# ORDER: sort(keys(c.sections)), since the caller prints the list. The empty
+# section is dropped when it holds nothing, which is why this is not just
+# `keys`.
+function section_names(c: Config) -> [str]
+    out: [str] @= []
+
+    for name in sort(keys(c.sections))
+        if c.sections[name].must().len() > 0
+            out @ out.push(name)
+
+    return out
+
+# The configuration the demonstration reads: a key before any header, a
+# comment, and the section `server` given twice.
+constant SAMPLE: str
+    "verbose = true\n\n[server]\nhost = localhost\nport = 8080\n\n# a comment\n[client]\nretries = 3\n\n[server]\ntimeout = 30\n"
+
+function main()
+    c = parse(SAMPLE).must()
+    print(join(section_names(c), ","))
+    print(value_of(c, section: "server", key: "host").must())
+    print(value_of(c, section: "server", key: "port").must())
+    print(value_of(c, section: "server", key: "timeout").must())
+    print(value_of(c, section: "client", key: "retries").must())
+
+    # A key before any section is reachable rather than lost.
+    print(value_of(c, section: "", key: "verbose").must())
+
+    # And the four refusals.
+    print(parse("host = a\nhost = b\n").is_err())
+    print(parse("[unclosed\n").is_err())
+    print(parse("[]\n").is_err())
+    print(parse("nonsense\n").is_err())
+
+test "the ordinary case, with sections and keys"
+    c = parse("[a]\nx = 1\n[b]\ny = 2\n").must()
+    assert value_of(c, section: "a", key: "x").must() == "1"
+    assert value_of(c, section: "b", key: "y").must() == "2"
+    assert section_names(c) == ["a", "b"]
+
+test "spaces around a key or a value are not part of it"
+    c = parse("[a]\n  x   =   1  \n").must()
+    assert value_of(c, section: "a", key: "x").must() == "1"
+
+test "a value may be empty, and a key may not"
+    c = parse("[a]\nx =\n").must()
+    assert value_of(c, section: "a", key: "x").must() == ""
+    assert parse("[a]\n= 1\n").is_err()
+
+test "a value may contain an equals sign, because only the first one counts"
+    c = parse("[a]\nx = y=z\n").must()
+    assert value_of(c, section: "a", key: "x").must() == "y=z"
+
+test "a key before any section lands in the empty section rather than nowhere"
+    c = parse("global = yes\n[a]\nx = 1\n").must()
+    assert value_of(c, section: "", key: "global").must() == "yes"
+    assert value_of(c, section: "a", key: "x").must() == "1"
+    assert section_names(c) == ["", "a"]
+
+test "a repeated section merges rather than replacing"
+    c = parse("[a]\nx = 1\n[b]\ny = 2\n[a]\nz = 3\n").must()
+    assert value_of(c, section: "a", key: "x").must() == "1"
+    assert value_of(c, section: "a", key: "z").must() == "3"
+    assert value_of(c, section: "b", key: "y").must() == "2"
+    assert section_names(c) == ["a", "b"]
+
+test "a repeated key is a failure, which is the choice this file argues for"
+    assert parse("[a]\nx = 1\nx = 2\n").is_err()
+    assert parse("x = 1\nx = 2\n").is_err()
+
+    # Across a repeated section too, since the two merge.
+    assert parse("[a]\nx = 1\n[b]\n[a]\nx = 2\n").is_err()
+
+    # The same key in two DIFFERENT sections is not a repeat.
+    assert !parse("[a]\nx = 1\n[b]\nx = 2\n").is_err()
+
+test "comments and blank lines are skipped, in both spellings"
+    c = parse("# one\n; two\n\n[a]\nx = 1\n\n").must()
+    assert value_of(c, section: "a", key: "x").must() == "1"
+    assert section_names(c) == ["a"]
+
+test "a line that is nothing at all is refused, with its number"
+    match parse("[a]\nfine = 1\nnonsense\n")
+        .ok _  => assert false
+        .err e => assert e.code == "not_a_line" && e.msg == "line 3 is neither a section, a comment, nor a key"
+
+    for pair in [["[unclosed\n", "unclosed_section"], ["[]\n", "empty_section"], ["[  ]\n", "empty_section"], ["[a]\n= 1\n", "empty_key"]]
+        match parse(pair[0])
+            .ok _  => assert false
+            .err e => assert e.code == pair[1]
+
+test "an empty file is an empty config and not a failure"
+    c = parse("").must()
+    assert section_names(c) == []
+    assert value_of(c, section: "a", key: "x").is_err()
+    assert value_of(c, section: "", key: "x").is_err()
+
+test "the sample's repeated section is merged and its early key is reachable"
+    c = parse(SAMPLE).must()
+    assert value_of(c, section: "server", key: "host").must() == "localhost"
+    assert value_of(c, section: "server", key: "timeout").must() == "30"
+    assert value_of(c, section: "", key: "verbose").must() == "true"
+    assert section_names(c) == ["", "client", "server"]

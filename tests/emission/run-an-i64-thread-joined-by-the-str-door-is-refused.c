@@ -128,7 +128,7 @@ int64_t h_ani64threadjoinedbythestrdoorisrefused_twice(int64_t h0_n) { hero_thre
 #line 129 "ani64threadjoinedbythestrdoorisrefused.c"
 }
 
-int64_t h_0cb_ani64threadjoinedbythestrdoorisrefused_twice(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_0cb_ani64threadjoinedbythestrdoorisrefused_twice(int64_t h0_n) {
     hero_callback_entered("ani64threadjoinedbythestrdoorisrefused.twice", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_ani64threadjoinedbythestrdoorisrefused_twice(h0_n);
     hero_callback_left();

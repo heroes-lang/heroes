@@ -295,7 +295,7 @@ hero_bb4:
 #line 296 "deadhandleinacallbackresultrecordnamesitsfield.c"
 }
 
-struct pair h_0cb_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0_k) {
+__attribute__((__noinline__)) struct pair h_0cb_deadhandleinacallbackresultrecordnamesitsfield_give(int32_t h0_k) {
     hero_callback_entered("deadhandleinacallbackresultrecordnamesitsfield.give", __builtin_return_address(0), __builtin_frame_address(0));
     struct pair hero_result = h_deadhandleinacallbackresultrecordnamesitsfield_give(h0_k);
     hero_callback_left();

@@ -53,7 +53,16 @@
  * COUNTS CROSS THREADS ONLY AS A SUM. A callback entered on one thread may
  * return on another (a coroutine resumed on a different thread), so one
  * thread's count may be negative and another's positive: a thread's end adds
- * its own, and the gate reads the sum with the main thread's. */
+ * its own, and the gate reads the sum with the main thread's.
+ *
+ * AND THIS FILE IS WHERE THE RUNTIME LEARNS WHICH FRAMES A JUMP LEFT (panel
+ * 258's R1, below): the gates' words for a count above zero, and the frame
+ * each entry of the room and the lend regions was taken by. Needs
+ * `parts/stack.c`'s `hero_stack_measure` and `parts/panic.c`. */
+
+#if defined(_WIN32)
+#include <windows.h>
+#endif
 
 static _Thread_local int64_t hero_callbacks_inside = 0;
 static _Atomic int64_t hero_callbacks_unfinished_by_ended = 0;
@@ -74,6 +83,103 @@ static void hero_callback_thread_ends(void) {
  * finished. */
 static int64_t hero_callbacks_unfinished(void) {
     return hero_callbacks_inside + atomic_load_explicit(&hero_callbacks_unfinished_by_ended, memory_order_relaxed);
+}
+
+/* THE GATES' WORDS WHERE A CALLBACK NEVER RETURNED (panel 258's R1,
+ * provisional, author ratification pending; defects 2753 and 2756). The
+ * handle, lease and scratch gates of `hero_runtime_check_leaks`
+ * (`parts/alloc.c`) keep the aborts spec § 13 promises (*"a lease nobody ends,
+ * like a handle nobody consumes or a thread nobody waits for, aborts when
+ * `main` returns, saying how many"*), and where this count is above zero they
+ * say the cause they can see instead of *this program is missing that many*,
+ * which accused a correct program of a release its source writes and C's jump
+ * skipped (`handlejump`, 3 runs of 3 before this). Neither gate can tell which
+ * of what it counts the abandoned frames held, so the words name both: the
+ * count, and that a release those frames would have run never ran. */
+#define HERO_CALLBACKS_LEFT                                                                                       \
+    "%lld callback(s) of this program never returned: C jumped over their frames (`longjmp`, `siglongjmp`, a " \
+    "signal handler's jump) or ended their thread, and "
+
+/* WHICH FRAMES A C JUMP LEFT (panel 258's R1, provisional, author ratification
+ * pending; defects 2752 and 2756). Two more stacks of this runtime are kept in
+ * step with the program's frames, one each thread: the room a large value
+ * takes off its function's frame (`parts/frame.c`) and the regions a buffer
+ * or a local is lent to C from (`parts/lend.c`). The function that took an
+ * entry gives it back at its one exit, so a jump over that function leaves the
+ * entry standing with nothing to give it back: the room was then given back
+ * out of order and said *compiler bug* (`room_order`, exit 134, 3 runs of 3),
+ * and the regions climbed one depth a jump (`lendjump`, 334.7 MB resident
+ * after 20,000 jumps against 3.0 MB where C returns).
+ *
+ * So each entry remembers the frame that took it, the taking function's own
+ * `__builtin_frame_address(0)`, which `heroes_runtime.h`'s macros hand in
+ * from the program's own C (the emitted calls are written as before), and the
+ * two stacks HEAL: where a function takes an entry, or a thunk is entered,
+ * every entry of a frame deeper than the one asking, on this thread's stack,
+ * belongs to a frame that is gone, since the one asking is the deepest alive;
+ * it is given back first. A frame's address is the same for its whole call
+ * and lower than every caller's, wherever its function was inlined, on every
+ * platform: the builtin makes the function keep a frame pointer. The thunk's
+ * entry is what catches a frame jumped over and then called again at the same
+ * address (the loop of `lendjump`), which no take of the new frame can tell
+ * from its own.
+ *
+ * ON THIS THREAD'S OWN STACK, AND ONLY THERE. A coroutine runs on a stack of
+ * its own, above or below this one, and its frames are no deeper than this
+ * one's for being at lower addresses: an entry or a frame outside the thread's
+ * own stack, measured once (Windows asks the thread's block, which a fiber's
+ * switch changes), is never judged gone, and its entries keep the order they
+ * had before this repair.
+ *
+ * WHAT IT DOES NOT DO, said: nothing here releases a value a frame held (a
+ * `str`, an array, a handle); those stay leaked, the heap-block audit forgiven
+ * as above (panel 258's R2 is the release, pending a spec sentence). */
+#if !defined(_WIN32)
+static _Thread_local uintptr_t hero_heal_lo = 0;
+static _Thread_local uintptr_t hero_heal_hi = 0;
+static _Thread_local int hero_heal_measured = 0;
+#endif
+
+/* Whether `deeper` is the address of a frame below `frame`, both on this
+ * thread's own stack. */
+static bool hero_frame_is_below(uintptr_t deeper, uintptr_t frame) {
+    if (deeper >= frame) return false;
+#if defined(_WIN32)
+    const NT_TIB *tib = (const NT_TIB *)NtCurrentTeb();
+    uintptr_t lo = (uintptr_t)tib->StackLimit;
+    uintptr_t hi = (uintptr_t)tib->StackBase;
+#else
+    if (!hero_heal_measured) {
+        hero_stack_measure(&hero_heal_lo, &hero_heal_hi);
+        hero_heal_measured = 1;
+    }
+    uintptr_t lo = hero_heal_lo;
+    uintptr_t hi = hero_heal_hi;
+#endif
+    return deeper >= lo && frame < hi;
+}
+
+/* `parts/frame.c` and `parts/lend.c`, later in this unit: each gives back the
+ * entries of frames below `frame`. */
+static void hero_frame_heal_below(uintptr_t frame);
+static void hero_lend_heal_below(uintptr_t frame);
+
+/* A thunk is entered at `frame`: nothing of this thread's stack below it is
+ * alive (`sigguard.c`'s `hero_callback_entered`, after its question), and
+ * nothing AT it either, since this is the thunk's first line and it has taken
+ * nothing yet. The second half is what catches a callback inlined into its
+ * thunk, as clang does at `-O2`: its takes name the thunk's own frame, and a
+ * jump over it and the next call of the thunk at the same address left them
+ * standing at exactly that frame (`lendjump` at `-O2`, 334.7 MB resident, run,
+ * while this line said *below*). So every entry at or below `frame`. It rests
+ * on the thunk being a frame of its own, which `emit/callback_thunk.hero`'s
+ * `OWN_FRAME` makes it: a thunk inlined into the function a header's inline C
+ * was inlined into named that function's frame, and this line then gave back
+ * the room that function still held (defect 2286's case at `-O2`, run). */
+static void hero_callback_heal(void *frame) {
+    uintptr_t above = (uintptr_t)frame + 1;
+    hero_frame_heal_below(above);
+    hero_lend_heal_below(above);
 }
 
 #if defined(__linux__) && defined(__has_feature)

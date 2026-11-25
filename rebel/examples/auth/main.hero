@@ -1,0 +1,162 @@
+# auth: an identity server, a small Keycloak. People sign up with a password
+# and prove their address by a mailed link, add TOTP from a QR code and
+# passkeys (WebAuthn), and log in to the applications registered in its
+# configuration by OpenID Connect: the authorization code with PKCE, ID and
+# access tokens as JWTs signed by a key the system's keyring keeps and
+# published as a JWK set, refresh tokens rotated with replay detection,
+# revocation and introspection. People of the organisation's LDAP directory
+# are imported every night and log in with their directory password; a
+# service account logs in by SCRAM-SHA-256 over HTTP to run the import.
+#
+#     heroes build rebel/examples/auth/main.hero -o auth
+#     auth serve auth.toml          # serve, the configuration `core/settings` shows
+#     auth import auth.toml         # run the directory import once
+#     auth verifier directory-sync  # a service account's SCRAM verifier, the password on stdin
+#     auth demo build/auth/demo     # the demonstration, its folder made and removed
+#
+# The demonstration runs every flow once on loopback, against stand-ins of a
+# mail server and a directory it carries, with a fixed clock and seeded
+# draws, and prints what each step asked and what came back.
+#
+# Rebel's packages, and what for:
+#
+# - `web` routes the server's requests; `http` reads and writes them, and is
+#   the client of the demonstration's browser and service account;
+# - `oauth2` is the demonstration's relying party (discovery, PKCE, the code's
+#   exchange, the ID token's verification, refresh, revocation,
+#   introspection), and computes the server's own S256 check;
+# - `jose` signs and verifies every JWT and writes the JWK set;
+#   `crypto/keypairs` makes the authenticator's keys sign; `crypto` hashes
+#   (Argon2id for passwords, SHA-256, HMAC and PBKDF2 for SCRAM, TOTP);
+# - `webauthn` verifies passkey registrations and assertions; `x509` checks an
+#   attestation's certificate chain; `asn1` writes the authenticator vendor's
+#   certificates and the directory stand-in's BER; `cbor` the authenticator's
+#   attestation objects; `pem` the certificates' files;
+# - `keyring` keeps the signing key and the SMTP and LDAP passwords; `mail`
+#   writes the verification message and reads it back; `mail/smtp` submits it;
+#   `ldap` reads the directory and binds as a person to check a password;
+#   `scram` is the service account's client; `qr` draws the TOTP enrolment;
+# - `random` and `uuid` make every identifier and token, `time` the clock and
+#   the import's cron schedule; `toml` reads the configuration; `json`, `fs`,
+#   `path`, `net`, `io`, `threads`, `os`, `url`, `strings`, `bytes`,
+#   `numbers` and `maps` do the rest.
+
+use <rebel>/io
+use <rebel>/net
+use <rebel>/os
+use <rebel>/strings
+
+use accounts/accounts
+use api/service_api
+use core/ids
+use core/settings
+use core/vault
+use demo/stage
+use oauth/signing
+use server/serve
+use server/state
+use service/scram_server
+
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program ends as its
+# other usage errors do, where `args()` would abort.
+function text_arguments() -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                print(f"auth: argument {given.len() + 1} is not UTF-8")
+                exit(code: 2)
+
+    return given
+
+function main()
+    words = text_arguments()
+
+    done = if words.len() == 2 && words[0] == "demo"
+        stage.run(words[1])
+    else if words.len() == 2 && words[0] == "serve"
+        serve_config(words[1])
+    else if words.len() == 2 && words[0] == "import"
+        import_once(words[1])
+    else if words.len() == 2 && words[0] == "verifier"
+        verifier(words[1])
+    else
+        usage()
+
+    match done
+        .ok _ => _ = 0
+        .err e =>
+            print(f"auth: {e.code}: {e.msg}")
+            exit(code: 1)
+
+# What the command line takes.
+function usage() -> ()?
+    print("usage: auth serve <config.toml> | auth import <config.toml> | auth verifier <name> | auth demo <folder>")
+    return fail(code: "invalid", msg: "no command")
+
+# The server of the configuration `file`, opened as a served instance opens
+# it: the wall clock, the system's generator, the system's keyring.
+#
+# - `file`: the configuration file.
+# - `listening`: the listener, whose address names the issuer where the configuration names none.
+function opened(file: str, listening: net.Listener) -> state.State?
+    s = settings.parse(read_file(file)?)?
+
+    issuer = if s.issuer == ""
+        f"http://{s.listen_host}:{listening.address.port}"
+    else
+        s.issuer
+    v: vault.Vault = .system(service: s.keyring_service)
+    return state.open(s, issuer: issuer, c: .wall, g: ids.system_generator()?, v: v)
+
+# `auth serve`: serves until Ctrl-C or SIGTERM, then returns.
+#
+# - `file`: the configuration file.
+function serve_config(file: str) -> ()?
+    s = settings.parse(read_file(file)?)?
+    os.catch_stop()?
+    l @= net.listen(s.listen_host, port: s.listen_port)?
+    st @= opened(file, listening: l)?
+    print(f"auth: issuer {st.issuer}, listening on {net.format_address(l.address)}")
+    print(vault.describe(st.vault))
+    print(signing.describe(st.keys))
+    print(
+        f"accounts: {accounts.all_users(st.directory).len()}, clients: {st.settings.clients.len()}, service accounts: {st.settings.service_accounts.len()}"
+    )
+    looped = serve.serve(@st, l: l, mode: serve.Mode(scheduled: true, logged: true))
+    net.close_listener(@l)?
+    looped?
+    print(f"auth: stopped after {st.answered} requests")
+    return ok()
+
+# `auth import`: the directory import, once.
+#
+# - `file`: the configuration file.
+function import_once(file: str) -> ()?
+    l @= net.listen("127.0.0.1", port: 0)?
+    st @= opened(file, listening: l)?
+    net.close_listener(@l)?
+    s = service_api.run_import(@st)?
+    print(
+        f"read {s.read}, created {s.created.len()}, updated {s.updated.len()}, unchanged {s.unchanged.len()}, disabled {s.disabled.len()}, skipped {s.skipped.len()}"
+    )
+
+    for why in s.skipped
+        print(f"skipped {why}")
+
+    return ok()
+
+# `auth verifier`: the SCRAM-SHA-256 verifier of the password on standard
+# input, as a service account's `verifier` holds it.
+#
+# - `name`: the service account's name, written into the lines printed.
+function verifier(name: str) -> ()?
+    r @= io.reader(io.stdin())
+    password = strings.trim(io.read_line(@r)?)
+    g @= ids.system_generator()?
+    v = scram_server.make_verifier(password: password, salt: ids.draw(@g, count: 16), iterations: scram_server.MIN_ITERATIONS)?
+    print(f"[[service_accounts]]\nname = \"{name}\"\nverifier = \"{scram_server.format_verifier(v)}\"")
+    return ok()

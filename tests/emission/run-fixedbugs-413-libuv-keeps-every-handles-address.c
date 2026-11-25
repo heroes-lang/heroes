@@ -337,7 +337,7 @@ void h_fixedbugs413libuvkeepseveryhandlesaddress_seen(struct uv_handle_s * h0_h,
 #line 338 "fixedbugs413libuvkeepseveryhandlesaddress.c"
 }
 
-void h_0cb_fixedbugs413libuvkeepseveryhandlesaddress_seen(struct uv_handle_s * h0_h, void * h1_arg) {
+__attribute__((__noinline__)) void h_0cb_fixedbugs413libuvkeepseveryhandlesaddress_seen(struct uv_handle_s * h0_h, void * h1_arg) {
     hero_callback_entered("fixedbugs413libuvkeepseveryhandlesaddress.seen", __builtin_return_address(0), __builtin_frame_address(0));
     hero_handle_lent(h0_h);
     h_fixedbugs413libuvkeepseveryhandlesaddress_seen(h0_h, h1_arg);

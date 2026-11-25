@@ -1,0 +1,128 @@
+# What the tests of a limit many workers share stand on in both stores,
+# `jobs/postgres_store`'s and `jobs/redis_store`'s, each of which keeps its
+# own takers beside it (`<store>/internal/takers`): a child process started
+# and waited for, and the tally of one taker's takings. A child is this
+# test's own program started again: a test binary runs the test whose number
+# is its first argument (`heroes test` starts one process per test), so the
+# child runs the same test, finds its store's role second among its
+# arguments, plays its takers and ends with its code. No program calls this
+# but the tests of the two stores. What stays in each store is what names it:
+# its role, its words, its connection, and the loop that hands each of its
+# takings to `count`, since a function with an `@` parameter is no value
+# (spec § 9) and so no module both stores may use can call a store's `take`.
+
+use jobs/internal/taking
+use os
+use process
+use strings
+use time
+
+# The longest a child runs before the system ends it, in nanoseconds, so a
+# test that fails before it waits for its child leaves none running.
+constant CHILD_LIMIT_NS: i64
+    120_000_000_000
+
+# The program's arguments as text, one that is not UTF-8 read as the empty
+# text: no word of a child's role is empty, so such a run is no child.
+function given() -> [str]
+    out: [str] @= []
+
+    for one in args_checked()
+        out @ out.push(one.default(""))
+
+    return out
+
+# A child started with `role` and the words of `words` after its first,
+# waited for: its takers' answers separated by `;`, or one `error: ` answer.
+#
+# - `role`: the argument that makes a run a child, its store's own.
+# - `words`: `child` and the words the child reads after `role`, in order.
+#
+# The child is this program, its first argument the test's number this run
+# was given, ended by the system after `CHILD_LIMIT_NS`.
+function run_child(role: str, words: [str]) -> str
+    program = match os.executable_path()
+        .ok p  => p
+        .err e => return f"error: {e.code}: {e.msg}"
+
+    arguments @= [given()[0], role]
+
+    for w in words.slice(from: 1, to: words.len())
+        arguments @ arguments.push(w)
+
+    c = process.with_output(
+        process.with_time_limit(process.command(program, arguments: arguments), limit: time.nanoseconds(CHILD_LIMIT_NS)),
+        to: .pipe
+    )
+
+    match process.run(c)
+        .err e => return f"error: {e.code}: {e.msg}"
+        .ok done =>
+            said = strings.trim(done.output.validated_bytes().default("the child wrote bytes that are not UTF-8"))
+
+            if !process.is_success(done.status)
+                return f"error: the child ended with a failure: {said}"
+            return said
+
+# What one taker's takings came to, each counted as it was answered: made
+# by `tally`, counted by `count`, told by `answer`.
+record Tally
+    # How the taker takes: `allow`, or `reserve` for any other word.
+    mode: str
+    # How many of its takings were granted, where `mode` is `allow`.
+    granted: i64
+    # The instants its reservations are ready at, in nanoseconds since the
+    # Unix epoch, in the order it reserved them, where `mode` is `reserve`.
+    ready: [str]
+
+# A tally of no takings yet.
+#
+# - `mode`: `allow` or `reserve`, as the taker takes.
+function tally(mode: str) -> Tally
+    return Tally(mode: mode, granted: 0, ready: [])
+
+# The wait a taking of one token asks of its store: none for `allow`, the
+# longest there is for `reserve`.
+#
+# - `mode`: `allow` or `reserve`; any word but `allow` is read as `reserve`.
+function longest(mode: str) -> time.Duration
+    if mode == "allow"
+        return time.Duration(nanoseconds: 0)
+    return time.max_duration()
+
+# Counts one taking into `t` as `jobs.allow` or `jobs.reserve_within` would
+# answer it: a grant adds one to its grants, a reservation its instant to its
+# instants.
+#
+# - `t`: the tally; changed only where the taking is counted.
+# - `taken`: what the store found, asked with the wait `longest` gives for
+#   `t.mode`.
+#
+# Fails where `taking.allowed` or `taking.reserved` fails, with its code,
+# `t` unchanged.
+function count(@t: Tally, taken: taking.Taken) -> ()?
+    if t.mode == "allow"
+        if taking.allowed(taken)?.granted
+            t.granted @ t.granted + 1
+        return ok()
+
+    r = taking.reserved(taken, within: time.max_duration())?
+    add_instant(@t.ready, nanoseconds: r.ready.unix_nanoseconds)
+    return ok()
+
+# Adds one instant to `ready`, in place.
+#
+# - `ready`: the instants so far, as text; grows by one.
+# - `nanoseconds`: the instant, in nanoseconds since the Unix epoch.
+function add_instant(@ready: [str], nanoseconds: i64)
+    ready @ ready.push(to_str(nanoseconds))
+
+# What a taker answers of its takings: the number of its grants for
+# `allow`, the instants its reservations are ready at, separated by commas,
+# for `reserve`.
+#
+# - `t`: the tally.
+function answer(t: Tally) -> str
+    if t.mode == "allow"
+        return to_str(t.granted)
+    return t.ready.join(",")

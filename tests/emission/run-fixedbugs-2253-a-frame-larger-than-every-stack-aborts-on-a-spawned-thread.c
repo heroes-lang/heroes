@@ -277,7 +277,7 @@ __attribute__((__noinline__)) int64_t h_fixedbugs2253aframelargerthaneverystacka
 #undef t2
 #undef t3
 
-int64_t h_0cb_fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread_worker(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread_worker(int64_t h0_n) {
     hero_callback_entered("fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread.worker", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs2253aframelargerthaneverystackabortsonaspawnedthread_worker(h0_n);
     hero_callback_left();

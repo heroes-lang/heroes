@@ -131,7 +131,7 @@ HeroStr h_astrthreadjoinedbythei64doorisrefused_same(HeroStr h0_word) { hero_thr
     return t1;
 }
 
-HeroStr h_0cb_astrthreadjoinedbythei64doorisrefused_same(HeroStr h0_word) {
+__attribute__((__noinline__)) HeroStr h_0cb_astrthreadjoinedbythei64doorisrefused_same(HeroStr h0_word) {
     hero_callback_entered("astrthreadjoinedbythei64doorisrefused.same", __builtin_return_address(0), __builtin_frame_address(0));
     HeroStr hero_result = h_astrthreadjoinedbythei64doorisrefused_same(h0_word);
     hero_callback_left();

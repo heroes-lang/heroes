@@ -147,7 +147,7 @@ int64_t h_main_band(int64_t h0_index) { hero_thread_guard("main.band"); int64_t 
 #line 148 "main.c"
 }
 
-int64_t h_0cb_main_band(int64_t h0_index) {
+__attribute__((__noinline__)) int64_t h_0cb_main_band(int64_t h0_index) {
     hero_callback_entered("main.band", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_main_band(h0_index);
     hero_callback_left();
@@ -172,7 +172,7 @@ int64_t h_main_deep(int64_t h0_levels) { hero_thread_guard("main.deep"); HERO_NO
 #line 173 "main.c"
 }
 
-int64_t h_0cb_main_deep(int64_t h0_levels) {
+__attribute__((__noinline__)) int64_t h_0cb_main_deep(int64_t h0_levels) {
     hero_callback_entered("main.deep", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_main_deep(h0_levels);
     hero_callback_left();

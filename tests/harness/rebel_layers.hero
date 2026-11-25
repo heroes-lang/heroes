@@ -1,6 +1,6 @@
 # Two instruments of the coherence review over where Rebel's modules stand
 # (M-rebel-library's item 31), each asked of the table of packages in layers,
-# `examples-rebel/README.md` § A1, and of the files README § A2 says a package holds:
+# `rebel/examples/README.md` § A1, and of the files README § A2 says a package holds:
 #
 #   layers    **a package whose `use` lines break the layers**: every module,
 #             its private modules and its floors included, is its package's
@@ -254,7 +254,7 @@ test "a row whose column may use is not what its modules use is found"
     named: {str: [str]} = {"bytes": [], "compress": ["bytes", "hash"], "compress/zstd": [], "io": ["bytes"]}
     found = undeclared(rows: rows_fixture(), named: named, modules: modules)
     assert found.len() == 1 && found[0].key == "may use compress"
-    assert told(found[0]) == "examples-rebel/README.md:2: the row `compress` names in its column \"may use\" `hash` that no module of it uses, and not `io` that its modules use"
+    assert told(found[0]) == "rebel/examples/README.md:2: the row `compress` names in its column \"may use\" `hash` that no module of it uses, and not `io` that its modules use"
 
 # A folder's shared module (README § A2) has the lowest layer of the rows
 # under the folder: using a package below it passes, one at its layer is told.

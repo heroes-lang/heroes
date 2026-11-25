@@ -288,7 +288,7 @@ void h_fixedbugs2494aheroesatexitfunctionachandlerreachesthroughexitisrefused_at
     return;
 }
 
-void h_0cb_fixedbugs2494aheroesatexitfunctionachandlerreachesthroughexitisrefused_at_end(void) {
+__attribute__((__noinline__)) void h_0cb_fixedbugs2494aheroesatexitfunctionachandlerreachesthroughexitisrefused_at_end(void) {
     hero_callback_entered("fixedbugs2494aheroesatexitfunctionachandlerreachesthroughexitisrefused.at_end", __builtin_return_address(0), __builtin_frame_address(0));
     h_fixedbugs2494aheroesatexitfunctionachandlerreachesthroughexitisrefused_at_end();
     hero_callback_left();

@@ -230,6 +230,79 @@ function code_words(text: str, reserved: bool) -> {str: bool}
 
     return out
 
+# A name a `#define` writes: the macro, and the name its replacement list
+# holds.
+record MacroWord
+    macro: str
+    word: str
+
+# Every name the replacement list of each `#define` of `text` writes, its
+# continuation lines joined, once per macro and name: its own parameters
+# left out, which C replaces by the argument where the macro is expanded
+# (C11 6.10.3.1), and a string, a character, a comment and `defined` passed
+# over as `code_words` passes them. What the runtime's headers put into a
+# unit wherever it expands one of their macros, after its groups' headers
+# (defect d-lane-macro-members-1).
+function macro_words(text: str) -> [MacroWord]
+    joined: [str] @= []
+    pieces: [str] @= []
+
+    for line in lines_of(text)
+        if line.len() > 0 && line[line.len() - 1] == 92
+            pieces @ pieces.push(line.slice(from: 0, to: line.len() - 1))
+            continue
+        joined @ joined.push(pieces.push(line).join(" "))
+        pieces @ []
+
+    out: [MacroWord] @= []
+
+    for line in joined
+        at: i64 @= past_blanks(text: line, at: 0)
+
+        if at >= line.len() || line[at] != 35
+            continue
+        at @ past_blanks(text: line, at: at + 1)
+
+        if !holds_at(text: line, at: at, word: "define ")
+            continue
+        at @ past_blanks(text: line, at: at + 7)
+        start = at
+
+        while at < line.len() && in_word(line[at])
+            at @ at + 1
+
+        name = line.slice(from: start, to: at)
+        params: {str: bool} @= {}
+
+        if at < line.len() && line[at] == 40
+            close: i64 @= at
+
+            while close < line.len() && line[close] != 41
+                close @ close + 1
+
+            words_into(@params, text: line.slice(from: at + 1, to: close))
+            at @ close + 1
+        body = line.slice(from: at, to: line.len())
+
+        # ORDER: by name within a macro, as `sort` orders a `str`, the
+        # macros in the order the text defines them, which a test's joined
+        # list of stray names observes.
+        for written in [used(body), reserved_used(body)]
+            for word in sort(keys(written))
+                if params[word].is_err()
+                    out @ out.push(MacroWord(macro: name, word: word))
+
+    return out
+
+# The first byte of `text` at or after `at` that is no space or tab.
+function past_blanks(text: str, at: i64) -> i64
+    i: i64 @= at
+
+    while i < text.len() && (text[i] == 32 || text[i] == 9)
+        i @ i + 1
+
+    return i
+
 ## Tests
 
 test "a C text's reserved names are read apart from its others, its literals, comments and macro parameters left out"
@@ -242,6 +315,15 @@ test "a C text's reserved names are read apart from its others, its literals, co
     assert others["__builtin_strlen"].is_err()
     assert others["__VA_ARGS__"].is_err()
     assert is_reserved("__a") && is_reserved("_A") && !is_reserved("_a") && !is_reserved("_") && !is_reserved("a_")
+
+test "the names a macro's replacement list writes are read, its parameters, literals and comments left out (defect d-lane-macro-members-1)"
+    text = "#define BLOCK(name, text) \\\n    static const struct { Hdr h; char b[sizeof(text)]; } name = {{-1}, text}\n#  define LIT(name) ((Str){(name).b, (int64_t)\"h\"}) /* a comment's h_note */\nint not_a_macro;\n"
+    got: [str] @= []
+
+    for written in macro_words(text)
+        got @ got.push(written.macro + ":" + written.word)
+
+    assert got.join(" ") == "BLOCK:Hdr BLOCK:b BLOCK:char BLOCK:const BLOCK:h BLOCK:sizeof BLOCK:static BLOCK:struct LIT:Str LIT:b LIT:int64_t"
 
 test "a module's test blocks are taken out and its code kept"
     text = "function f()\n    g(\"__a\")\n\ntest \"t\"\n    assert x(\"__b\")\n\n    y()\nfunction h()\n"

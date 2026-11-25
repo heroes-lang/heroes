@@ -284,7 +284,7 @@ int64_t h_fixedbugs2522acallbackafterasiglongjmpoutofahandleronanalternatestacks
 #line 285 "fixedbugs2522acallbackafterasiglongjmpoutofahandleronanalternatestackshallowfirstruns.c"
 }
 
-int64_t h_0cb_fixedbugs2522acallbackafterasiglongjmpoutofahandleronanalternatestackshallowfirstruns_answer(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_0cb_fixedbugs2522acallbackafterasiglongjmpoutofahandleronanalternatestackshallowfirstruns_answer(int64_t h0_n) {
     hero_callback_entered("fixedbugs2522acallbackafterasiglongjmpoutofahandleronanalternatestackshallowfirstruns.answer", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_fixedbugs2522acallbackafterasiglongjmpoutofahandleronanalternatestackshallowfirstruns_answer(h0_n);
     hero_callback_left();

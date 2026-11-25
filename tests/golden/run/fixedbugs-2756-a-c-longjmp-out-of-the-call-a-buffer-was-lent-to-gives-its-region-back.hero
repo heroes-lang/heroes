@@ -1,0 +1,34 @@
+# Fixed 2026-11-24, defect 2756, lane-panel258-r1 (panel 258's R1,
+# provisional, author ratification pending; the sitting's `lendjump`): a
+# callback lends a buffer to C, `@md: [u8] counted_by 4096 lent`, and C
+# `longjmp`s out of the call it was lent to, 20,000 times. A correct program.
+# Symptom: exit 0 holding 334,741,504 bytes resident against 2,998,272 where
+# C returns: each jump left its region mapped and the next lend mapped one a
+# depth higher, outside every gate.
+# Cause: a region is given back by the lending function after the call,
+# which the jump skipped, and nothing else ever gave it back.
+# Fix: each region remembers the lending function's frame
+# (`runtime/parts/lend.c`, `runtime/parts/callback.c`), and a lend, a thunk's
+# entry or a give below the newest region first gives back the regions of
+# frames below its own. The resident size is not this case's to judge; its
+# output and its end are, and the shapes beside it below.
+extern "fixedbugs-2752-levels.h"
+    function lv_try(cb: (function(i64) -> i64), n: i64) -> i64
+    function lv_fill_throw(@md: [u8] counted_by 4096 lent) -> i32
+
+function body(n: i64) -> i64
+    md: [u8] @= []
+    print_nothing(n: lv_fill_throw(@md))
+    return md.len() + n
+
+function print_nothing(n: i32)
+    if n == 99
+        print("never")
+
+function main()
+    total: i64 @= 0
+
+    for _ in range(from: 0, to: 20000)
+        total @ total + lv_try(cb: body, n: 1)
+
+    print("jumped, sum ", total)

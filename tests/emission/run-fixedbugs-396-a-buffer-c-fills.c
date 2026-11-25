@@ -342,7 +342,7 @@ void h_fixedbugs396abuffercfills_inner(void) { hero_thread_guard("fixedbugs396ab
     return;
 }
 
-void h_0cb_fixedbugs396abuffercfills_inner(void) {
+__attribute__((__noinline__)) void h_0cb_fixedbugs396abuffercfills_inner(void) {
     hero_callback_entered("fixedbugs396abuffercfills.inner", __builtin_return_address(0), __builtin_frame_address(0));
     h_fixedbugs396abuffercfills_inner();
     hero_callback_left();

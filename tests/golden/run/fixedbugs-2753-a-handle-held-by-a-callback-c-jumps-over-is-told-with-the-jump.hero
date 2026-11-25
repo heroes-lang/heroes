@@ -1,0 +1,32 @@
+# Fixed 2026-11-24, defect 2753, lane-panel258-r1 (panel 258's R1,
+# provisional, author ratification pending; the sitting's `handlejump`): a
+# callback opens a C handle marked `acquires slot_close`, calls C that
+# `longjmp`s over it, and would then have closed it. The program's source
+# writes the release; the jump skipped it. Spec section 13: a handle nobody
+# consumes aborts when `main` returns, saying how many, and so this program
+# still does.
+# Symptom: the abort said `this program is missing that many`, accusing the
+# program of a release it writes.
+# Cause: the handle gate read the count of handles alone, and not the count
+# of callbacks entered and never left, which defect 2704 made the heap-block
+# gate read.
+# Fix: the handle, lease and scratch gates keep their aborts and, where a
+# callback never returned, say so: how many, and that a release those frames
+# would have run never ran (`runtime/parts/alloc.c`).
+extern "fixedbugs-2753-handlejump.h"
+    record Slot tag Slot
+    function slot_open(n: i64) -> Slot acquires slot_close
+    function slot_close(s: Slot consumes)
+    function slot_value(s: Slot) -> i64
+    function hj_try(cb: (function(i64) -> i64)) -> i64
+    function hj_throw()
+
+function body(n: i64) -> i64
+    a = slot_open(n: n)
+    v = slot_value(s: a)
+    hj_throw()
+    slot_close(a)
+    return v
+
+function main()
+    print("result ", hj_try(cb: body))

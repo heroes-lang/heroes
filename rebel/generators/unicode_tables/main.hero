@@ -1,0 +1,284 @@
+# The generator of `unicode`'s four tables of Unicode 17.0.0,
+# `unicode/internal/category_table.hero`, `property_tables.hero`,
+# `case_tables.hero` and `fold_tables.hero`, each written byte for byte, or
+# checked against the table in the tree.
+#
+# Its input is five files of the Unicode Character Database 17.0.0, which the
+# Unicode Consortium serves under a folder named for the version and never
+# changes, fetched from `UCD_URL` into one folder under the names they are
+# served by and each held to its SHA-256 below. Run from the repository's
+# root:
+#
+#     heroes run rebel/generators/unicode_tables/main.hero -- write <folder>
+#     heroes run rebel/generators/unicode_tables/main.hero -- check <folder>
+#
+# `write` writes the tables. `check` reads them and exits 0 where each is
+# exactly what `write` would write, and 1 where one is not, naming its first
+# line that differs. Either exits 2 where its words are not these, where a
+# file's digest is not the pinned one, or where a line of a file is not what
+# UAX #44 says the file holds.
+
+use <tablekit>/tablekit
+use <ucdkit>/ucdkit
+
+use data
+use tables
+
+constant UCD_URL: str
+    "https://www.unicode.org/Public/17.0.0/ucd/"
+
+# The day the files were read for the digests below.
+constant FETCHED: str
+    "2026-11-22"
+
+constant UNICODE_DATA_SHA256: str
+    "2e1efc1dcb59c575eedf5ccae60f95229f706ee6d031835247d843c11d96470c"
+
+constant PROP_LIST_SHA256: str
+    "130dcddcaadaf071008bdfce1e7743e04fdfbc910886f017d9f9ac931d8c64dd"
+
+constant DERIVED_CORE_SHA256: str
+    "24c7fed1195c482faaefd5c1e7eb821c5ee1fb6de07ecdbaa64b56a99da22c08"
+
+constant CASE_FOLDING_SHA256: str
+    "ff8d8fefbf123574205085d6714c36149eb946d717a0c585c27f0f4ef58c4183"
+
+constant SPECIAL_CASING_SHA256: str
+    "efc25faf19de21b92c1194c111c932e03d2a5eaf18194e33f1156e96de4c9588"
+
+# The folder of the tables, from the repository's root.
+constant TABLES: str
+    tablekit.SOURCE + "/unicode/internal/"
+
+# The sets of `property_tables`, each the code points of a property whose
+# general category does not already say so.
+#
+# Fails as reading the two files fails.
+function sets(characters: data.Characters lent, props: str, core: str) -> [tables.Set]?
+    lowercase = ucdkit.property_set(text: core, name: "Lowercase")?
+    uppercase = ucdkit.property_set(text: core, name: "Uppercase")?
+    alphabetic = ucdkit.property_set(text: core, name: "Alphabetic")?
+    ignorable = ucdkit.property_set(text: core, name: "Case_Ignorable")?
+    other_lower: [bool] @= []
+    other_upper: [bool] @= []
+    other_alpha: [bool] @= []
+    other_ignorable: [bool] @= []
+    at @= 0
+
+    while at < ucdkit.POINTS
+        category = characters.categories[at]
+        letter = category == "Lu" || category == "Ll" || category == "Lt" || category == "Lm" || category == "Lo"
+        passed = category == "Mn" || category == "Me" || category == "Cf" || category == "Lm" || category == "Sk"
+        other_lower @ other_lower.push(lowercase[at] && category != "Ll")
+        other_upper @ other_upper.push(uppercase[at] && category != "Lu")
+        other_alpha @ other_alpha.push(alphabetic[at] && !letter && category != "Nl")
+        other_ignorable @ other_ignorable.push(ignorable[at] && !passed)
+        at @ at + 1
+
+    return ok(
+        [tables.Set(name: "WHITE_SPACE", comment: ["# The code points of Unicode's White_Space property."], members: ucdkit.property_set(text: props, name: "White_Space")?), tables.Set(name: "OTHER_LOWERCASE", comment: ["# The code points that are lower case, Unicode's Lowercase property, and whose", "# general category is not `Ll`."], members: other_lower), tables.Set(name: "OTHER_UPPERCASE", comment: ["# The code points that are upper case, Unicode's Uppercase property, and whose", "# general category is not `Lu`."], members: other_upper), tables.Set(name: "OTHER_ALPHABETIC", comment: ["# The code points that are alphabetic, Unicode's Alphabetic property, and", "# whose general category is neither a letter's nor `Nl`."], members: other_alpha), tables.Set(name: "OTHER_CASE_IGNORABLE", comment: ["# The code points passed over in casing, Unicode's Case_Ignorable property,", "# whose general category is none of `Mn`, `Me`, `Cf`, `Lm` and `Sk`, which are", "# all passed over."], members: other_ignorable)]
+    )
+
+# Every code point, itself.
+function identity() -> [i64]
+    out: [i64] @= []
+    at @= 0
+
+    while at < ucdkit.POINTS
+        out @ out.push(at)
+        at @ at + 1
+
+    return out
+
+# The text of `case_tables`.
+#
+# Fails as reading `SpecialCasing.txt` and packing fail.
+function case_text(characters: data.Characters lent, special: str) -> str?
+    none: {i64: [i64]} = {}
+    same = identity()
+    maps = [
+        tables.named(tables.deltas_where(mapped: characters.upper, against: same, skip: none), name: "UPPER", ranges_comment: ["# The ranges of code points that have an upper case of one code point other", "# than themselves."])
+        tables.named(tables.deltas_where(mapped: characters.lower, against: same, skip: none), name: "LOWER", ranges_comment: ["# The ranges of code points that have a lower case of one code point other", "# than themselves."])
+        tables.named(tables.deltas_where(mapped: characters.title, against: characters.upper, skip: none), name: "TITLE", ranges_comment: ["# The ranges of code points whose title case of one code point is not their", "# upper case."])
+    ]
+    specials = [
+        tables.Special(name: "UPPER", from_comment: ["# The code points whose upper case is several characters, in ascending order."], mapped: data.special(text: special, field: 3)?)
+        tables.Special(name: "LOWER", from_comment: ["# The code points whose lower case is several characters, in ascending order."], mapped: data.special(text: special, field: 1)?)
+        tables.Special(name: "TITLE", from_comment: ["# The code points whose title case is several characters, in ascending order."], mapped: data.special(text: special, field: 2)?)
+    ]
+    head: [str] @= [
+        "# The case of every code point, in Unicode 17.0.0: the one-to-one mappings to"
+        "# upper, lower and title case, and the characters whose case is several"
+        "# characters. `casing.hero` reads them."
+        "#"
+    ]
+
+    for line in tables.generated_lines(files: ["# files `UnicodeData.txt` and `SpecialCasing.txt`, reduced them to ranges,", "# held every lookup to the files' answer for each of the 1,114,112 code points,", "# and wrote this module whole; its `check` command says whether this module is", "# still what it writes."], fetched: FETCHED)
+        head @ head.push(line)
+
+    for line in tables.range_lines()
+        head @ head.push(line)
+
+    parts: [str] @= []
+
+    for one in maps
+        for constant_text in tables.delta_constants(one)?
+            parts @ parts.push(constant_text)
+
+    for one in specials
+        for constant_text in tables.special_constants(one)?
+            parts @ parts.push(constant_text)
+
+    parts @ parts.push(tables.range_tests(maps: maps, specials: specials))
+    return ok(tables.module_text(head: head, parts: parts))
+
+# The text of `fold_tables`.
+#
+# Fails as reading `CaseFolding.txt` and packing fail.
+function fold_text(characters: data.Characters lent, folding: str) -> str?
+    common = data.foldings(text: folding, status: "C")?
+    simple_only = data.foldings(text: folding, status: "S")?
+    full = data.foldings(text: folding, status: "F")?
+    folded: [i64] @= []
+    simple: [i64] @= []
+    at @= 0
+
+    while at < ucdkit.POINTS
+        one = match common[at]
+            .ok found => found[0]
+            .err _    => at
+
+        folded @ folded.push(one)
+        simple @ simple.push(simple_only[at].default([one])[0])
+        at @ at + 1
+
+    classes: {i64: [i64]} @= {}
+    at @ 0
+
+    while at < ucdkit.POINTS
+        if simple[at] != at
+            members = classes[simple[at]].default([simple[at]])
+            classes[simple[at]] @ members.push(at)
+        at @ at + 1
+
+    up: [i64] @= []
+    down: [i64] @= []
+
+    for _ in range(from: 0, to: ucdkit.POINTS)
+        up @ up.push(0)
+        down @ down.push(0)
+
+    for key in keys(classes)
+        members = sort(classes[key].must())
+
+        if members.len() > 1
+            step @= 0
+
+            while step < members.len()
+                if step + 1 < members.len()
+                    up[members[step]] @ members[step + 1]
+                else
+                    down[members[step]] @ members[0]
+                step @ step + 1
+
+    none: {i64: [i64]} = {}
+    up_points = orbit(up)
+    down_points = orbit(down)
+    maps = [
+        tables.named(tables.deltas_where(mapped: folded, against: characters.lower, skip: full), name: "FOLD", ranges_comment: ["# The ranges of code points whose folded form is one code point and not their", "# lower case."])
+        tables.named(tables.deltas_where(mapped: up_points, against: identity(), skip: none), name: "ORBIT_UP", ranges_comment: ["# The ranges of code points whose next code point of the same letter, ignoring", "# case, is above them."])
+        tables.named(tables.deltas_where(mapped: down_points, against: identity(), skip: none), name: "ORBIT_DOWN", ranges_comment: ["# The ranges of code points whose next code point of the same letter, ignoring", "# case, is below them: the last of each set, which goes back to the first."])
+    ]
+    specials = [
+        tables.Special(name: "FOLD", from_comment: ["# The code points whose folded form is several characters, in ascending order."], mapped: full)
+    ]
+    head: [str] @= [
+        "# How every code point folds, in Unicode 17.0.0: the folded form texts are"
+        "# compared by ignoring case, and the next code point of the same letter."
+        "# `casing.hero` reads them."
+        "#"
+    ]
+
+    for line in tables.generated_lines(files: ["# files `CaseFolding.txt` and `UnicodeData.txt`, reduced them to ranges, held", "# every lookup to the files' answer for each of the 1,114,112 code points, and", "# wrote this module whole; its `check` command says whether this module is", "# still what it writes."], fetched: FETCHED)
+        head @ head.push(line)
+
+    for line in tables.range_lines()
+        head @ head.push(line)
+
+    parts: [str] @= []
+
+    for constant_text in tables.delta_constants(maps[0])?
+        parts @ parts.push(constant_text)
+
+    for constant_text in tables.special_constants(specials[0])?
+        parts @ parts.push(constant_text)
+
+    for one in maps.slice(from: 1, to: maps.len())
+        for constant_text in tables.delta_constants(one)?
+            parts @ parts.push(constant_text)
+
+    parts @ parts.push(tables.range_tests(maps: maps, specials: specials))
+    return ok(tables.module_text(head: head, parts: parts))
+
+# Each code point's next in its orbit where `next` names one, else itself;
+# `next` holds 0 for a code point in no orbit, and U+0000 is in none.
+function orbit(next: [i64] lent) -> [i64]
+    out: [i64] @= []
+    at @= 0
+
+    while at < next.len()
+        if next[at] == 0
+            out @ out.push(at)
+        else
+            out @ out.push(next[at])
+        at @ at + 1
+
+    return out
+
+# The text of the file `name` in `folder`, held to `sha256`.
+function source(folder: str, name: str, sha256: str) -> str?
+    return tablekit.pinned_text(path: folder + "/" + name, sha256: sha256)
+
+# Does what `command` asks with every table, reading the files in `folder`,
+# and answers the worst code it reached.
+#
+# Fails as reading a file, making a table and writing or reading a table
+# fail.
+function run(command: str, folder: str) -> i64?
+    characters = data.characters(source(folder: folder, name: "UnicodeData.txt", sha256: UNICODE_DATA_SHA256)?)?
+    property_sets = sets(characters, props: source(folder: folder, name: "PropList.txt", sha256: PROP_LIST_SHA256)?, core: source(folder: folder, name: "DerivedCoreProperties.txt", sha256: DERIVED_CORE_SHA256)?)?
+    category = tables.category_text(characters, fetched: FETCHED)?
+    property = tables.property_text(property_sets, fetched: FETCHED)?
+    casing = case_text(characters, special: source(folder: folder, name: "SpecialCasing.txt", sha256: SPECIAL_CASING_SHA256)?)?
+    folding = fold_text(characters, folding: source(folder: folder, name: "CaseFolding.txt", sha256: CASE_FOLDING_SHA256)?)?
+    code @= tablekit.settle(command: command, path: TABLES + "category_table.hero", text: category)?
+    code @ tablekit.worst(
+        a: code,
+        b: tablekit.settle(command: command, path: TABLES + "property_tables.hero", text: property)?
+    )
+    code @ tablekit.worst(
+        a: code,
+        b: tablekit.settle(command: command, path: TABLES + "case_tables.hero", text: casing)?
+    )
+    code @ tablekit.worst(
+        a: code,
+        b: tablekit.settle(command: command, path: TABLES + "fold_tables.hero", text: folding)?
+    )
+    return ok(code)
+
+function main()
+    words = tablekit.command_words("unicode_tables")
+
+    if words.len() != 2 || words[0] != "write" && words[0] != "check"
+        print(
+            "usage, from the repository's root: heroes run rebel/generators/unicode_tables/main.hero -- write|check <folder of the files of ",
+            UCD_URL,
+            ">"
+        )
+        exit(code: 2)
+
+    match run(command: words[0], folder: words[1])
+        .ok code => exit(code: code)
+        .err e =>
+            print("error: ", e.code, ": ", e.msg)
+            exit(code: 2)

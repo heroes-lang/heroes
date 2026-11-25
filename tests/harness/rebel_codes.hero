@@ -1,5 +1,5 @@
 # The coherence review's sixth instrument (M-rebel-library's item 31): **an
-# error code outside README § A4's closed list** (`examples-rebel/README.md` § A4,
+# error code outside README § A4's closed list** (`rebel/examples/README.md` § A4,
 # the list `package_codes.CLOSED`). Every module of Rebel is read outside its
 # `test` blocks, and every code a `fail` call writes is judged: a literal,
 # `fail(code: "invalid", ...)`, by its text; a constant, `fail(code:

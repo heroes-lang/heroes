@@ -43,7 +43,9 @@ static void hero_rebind_reenter_by_record(HeroSignalStack *own, const void *buf)
 
 /* A jump of the setjmp family to `env`: its target decoded at every jump,
  * inside a handler or not (one word of a buffer the C library reads next), so
- * a landing in frames already left is seen wherever it happens. */
+ * a landing in frames already left is seen wherever it happens. A jump that
+ * leaves every handler the thread stood in is asked whether it abandons this
+ * runtime's allocator (`parts/sigguard.c`, panel 258's R1). */
 static void hero_rebind_jump(const void *env) {
     HeroSignalStack *own = hero_rebind_own();
     if (own == NULL || env == NULL) return;
@@ -58,6 +60,7 @@ static void hero_rebind_jump(const void *env) {
     } else {
         hero_rebind_reenter_by_record(own, env);
     }
+    if (standing && !hero_rebind_standing(own)) hero_signal_jump_checked();
 }
 
 /* Rule 6 for `setcontext` to `uc`: a target on a coroutine's stack (a known
@@ -88,6 +91,7 @@ static void hero_rebind_set(const void *uc) {
     } else {
         hero_rebind_reenter_by_record(own, uc);
     }
+    if (standing && !hero_rebind_standing(own)) hero_signal_jump_checked();
 }
 
 /* Rule 5: a swap made while a handler stands suspends every standing entry

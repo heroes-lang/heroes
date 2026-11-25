@@ -1,7 +1,7 @@
 ---
 paths:
-  - "packages/rebel/**"
-  - "examples-rebel/**"
+  - "rebel/library/**"
+  - "rebel/examples/**"
   - "examples/**"
   - "selfhost/**"
 ---
@@ -12,7 +12,7 @@ Home of the two rules the author's decision 14 of 2026-11-15 put into the
 contract (`docs/roadmap/milestones/M-rebel-library.md`, the author's decisions,
 14 with 6 and 7). Rebel is a package a program takes or leaves, never the
 language's (CLAUDE.md § 13, design.md §1.11); how it is made and how its code
-is written is `examples-rebel/README.md`.
+is written is `rebel/examples/README.md`.
 
 ## The compiler does not use the library to write itself
 
@@ -31,10 +31,10 @@ panel 242's ruler binds what it takes (design.md §1.11).
   library, neither Rebel nor any other package, and stay a fairly complete set
   of what Heroes writes; a program there that needs a library's function
   carries its own, written from its contract.
-- **`examples-rebel/`** holds the programs that use Rebel, each package's
-  driver among them (`examples-rebel/README.md` § A2). Decision 7 gives Rebel
+- **`rebel/examples/`** holds the programs that use Rebel, each package's
+  driver among them (`rebel/examples/README.md` § A2). Decision 7 gives Rebel
   a CI pipeline of its own, which compiles and tests Rebel and nothing else
   and starts only when a push touches it.
 
 A program moves between the groups whole: one that takes Rebel leaves
-`examples/` for `examples-rebel/`, and never takes it where it stands.
+`examples/` for `rebel/examples/`, and never takes it where it stands.

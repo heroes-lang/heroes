@@ -6,7 +6,7 @@
  * (`site/src/html/rebel.html` and its Italian twin), put through `page()` so
  * its figures, claims and nod are checked as theirs are; where it says
  * `{{packages}}` the build writes the packages by layer, read from
- * `examples-rebel/README.md` § A1 (`reference.ts`), each name opening its
+ * `rebel/examples/README.md` § A1 (`reference.ts`), each name opening its
  * reference or marked owed. A count of packages or layers on the page is that
  * reading's, never typed (`site/CLAUDE.md` § A number on the page).
  *
@@ -131,7 +131,7 @@ export async function referenceFaces(): Promise<string[]> {
 /** The row of § A1 a face stands in. */
 function rowOf(face: string): Row {
   const found = rows().find((row) => row.faces.includes(face));
-  if (found === undefined) throw new Error(`the face \`${face}\` stands in no row of examples-rebel/README.md § A1.`);
+  if (found === undefined) throw new Error(`the face \`${face}\` stands in no row of rebel/examples/README.md § A1.`);
   return found;
 }
 

@@ -248,7 +248,7 @@ int64_t h_abortcallsthroughacallbackfromc_pick(int64_t h0_at) { hero_thread_guar
     return t7;
 }
 
-int64_t h_0cb_abortcallsthroughacallbackfromc_pick(int64_t h0_at) {
+__attribute__((__noinline__)) int64_t h_0cb_abortcallsthroughacallbackfromc_pick(int64_t h0_at) {
     hero_callback_entered("abortcallsthroughacallbackfromc.pick", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_abortcallsthroughacallbackfromc_pick(h0_at);
     hero_callback_left();

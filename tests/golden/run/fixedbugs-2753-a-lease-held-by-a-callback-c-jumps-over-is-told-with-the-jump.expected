@@ -1,0 +1,2 @@
+result 7
+!panic: 1 lease(s) never ended — every `.lease()` owes one `end_lease`, and 1 callback(s) of this program never returned: C jumped over their frames (`longjmp`, `siglongjmp`, a signal handler's jump) or ended their thread, and an `end_lease` those frames would have run never ran

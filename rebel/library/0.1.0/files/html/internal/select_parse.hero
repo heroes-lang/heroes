@@ -1,0 +1,650 @@
+# CSS selectors read (Selectors Level 4, the part a static tree can answer):
+# type and `*`, `#id`, `.class`, attribute tests with their `i` and `s`
+# flags, the four combinators, the structural pseudo-classes, `:not()`,
+# `:is()` and `:where()`, and lists joined by `,`. A selector is held flat:
+# a nested list is a number into `groups`, so no record holds itself.
+#
+# Nesting is read with recursion bounded by `MAX_NESTING`, and a refusal says
+# the byte index where reading stopped and what stood there.
+
+use html/internal/ascii
+use unicode
+
+# The kinds of test a compound holds.
+constant TYPE: i64
+    1
+
+constant ID: i64
+    2
+
+constant CLASS: i64
+    3
+
+constant HAS_ATTRIBUTE: i64
+    4
+
+constant ATTRIBUTE: i64
+    5
+
+constant NTH: i64
+    6
+
+constant ONLY: i64
+    7
+
+constant EMPTY: i64
+    8
+
+constant ROOT: i64
+    9
+
+constant NOT: i64
+    10
+
+constant IS: i64
+    11
+
+# The attribute operators: `=`, `~=`, `|=`, `^=`, `$=` and `*=`.
+constant EQUALS: i64
+    1
+
+constant INCLUDES: i64
+    2
+
+constant DASH: i64
+    3
+
+constant PREFIX: i64
+    4
+
+constant SUFFIX: i64
+    5
+
+constant SUBSTRING: i64
+    6
+
+# The combinators, between two compounds.
+constant DESCENDANT: i64
+    1
+
+constant CHILD: i64
+    2
+
+constant NEXT: i64
+    3
+
+constant LATER: i64
+    4
+
+# How deep `:not()`, `:is()` and `:where()` may nest.
+constant MAX_NESTING: i64
+    16
+
+# One test of a compound.
+record Test
+    # One of the kinds above.
+    kind: i64
+    # The type's, the id's, the class's or the attribute's name.
+    name: str
+    # The value an attribute is compared with.
+    value: str
+    # The attribute operator.
+    op: i64
+    # 0 where the attribute's own rule says, 1 for the `i` flag, 2 for `s`.
+    case_flag: i64
+    # An `an+b`'s `a` and `b`; `ONLY`'s and `NTH`'s from the end where
+    # `last`, among elements of the same type where `of_type`.
+    a: i64
+    b: i64
+    last: bool
+    of_type: bool
+    # The list a `NOT` or an `IS` holds, a number into `Selector.groups`.
+    group: i64
+
+# The tests one element must pass, and the compound's number for memos.
+record Compound
+    tests: [Test]
+    id: i64
+
+# Compounds joined by combinators, left to right: `combinators[i]` stands
+# between `compounds[i]` and `compounds[i + 1]`.
+record Complex
+    compounds: [Compound]
+    combinators: [i64]
+
+# A selector read: its lists, the whole one at `top`, and how many compounds
+# they hold.
+record Selector
+    groups: [[Complex]]
+    top: i64
+    compounds: i64
+
+# The reading's state.
+record Reader
+    text: str
+    at: i64
+    groups: [[Complex]]
+    compounds: i64
+    depth: i64
+
+# The selector `text` writes. Fails `invalid` where it cannot be read.
+function parse(text: str) -> Selector?
+    complexes: [[Complex]] = []
+    r: Reader @= Reader(text: text, at: 0, groups: complexes, compounds: 0, depth: 0)
+    top = list(@r)?
+    _ = skip_white(@r)
+
+    if r.at < r.text.len()
+        return refuse(r, "a combinator, `,` or the end")
+    return ok(Selector(groups: r.groups, top: top, compounds: r.compounds))
+
+# A refusal at the reader's place: what was expected, and what stood there.
+function refuse(r: Reader lent, expected: str) -> Selector?
+    return fail(code: "invalid", msg: message(r, expected))
+
+# The message of a refusal at the reader's place.
+function message(r: Reader lent, expected: str) -> str
+    found = if r.at >= r.text.len()
+        "the end"
+    else
+        "`" + r.text.slice(from: r.at, to: r.at + width(r)) + "`"
+    return f"selector \"{r.text}\", byte {r.at}: expected {expected}, found {found}"
+
+# How many bytes the character under the reader's place takes.
+function width(r: Reader lent) -> i64
+    if r.text[r.at] < 0x80
+        return 1
+    return unicode.len_at(r.text, r.at)
+
+# Moves past ASCII white space; whether there was any.
+function skip_white(@r: Reader) -> bool
+    start = r.at
+    r.at @ ascii.skip_white(r.text, r.at)
+    return r.at > start
+
+# Whether the byte at the reader's place is `b`.
+function at_byte(r: Reader lent, b: u8) -> bool
+    return r.at < r.text.len() && r.text[r.at] == b
+
+# A selector list, `,` between its complexes; its number in `groups`.
+function list(@r: Reader) -> i64?
+    complexes: [Complex] @= []
+
+    while true
+        _ = skip_white(@r)
+        complexes @ complexes.push(complex(@r)?)
+        _ = skip_white(@r)
+
+        if !at_byte(r, ',')
+            break
+        r.at @ r.at + 1
+
+    add_group(groups: @r.groups, complexes: complexes)
+    return ok(r.groups.len() - 1)
+
+# Adds `complexes` at the end of `groups`, the reader's own list: lent as an
+# `@` parameter the list grows in place, where a push through the field would
+# copy it whole each time (`rebel/examples/README.md` § B1).
+function add_group(@groups: [[Complex]], complexes: [Complex])
+    groups @ groups.push(complexes)
+
+# A complex selector: compounds and the combinators between them.
+function complex(@r: Reader) -> Complex?
+    compounds: [Compound] @= [compound(@r)?]
+    combinators: [i64] @= []
+
+    while true
+        spaced = skip_white(@r)
+
+        if r.at >= r.text.len() || at_byte(r, ',') || at_byte(r, ')')
+            break
+        b = r.text[r.at]
+
+        kind = if b == '>'
+            CHILD
+        else if b == '+'
+            NEXT
+        else if b == '~'
+            LATER
+        else if spaced
+            DESCENDANT
+        else
+            0
+
+        if kind == 0
+            return fail(code: "invalid", msg: message(r, "a combinator, `,` or the end"))
+
+        if kind != DESCENDANT
+            r.at @ r.at + 1
+            _ = skip_white(@r)
+        combinators @ combinators.push(kind)
+        compounds @ compounds.push(compound(@r)?)
+
+    return ok(Complex(compounds: compounds, combinators: combinators))
+
+# A compound selector: a type or `*`, then ids, classes, attribute tests and
+# pseudo-classes, none of them apart by white space.
+function compound(@r: Reader) -> Compound?
+    tests: [Test] @= []
+    started: bool @= false
+
+    if at_byte(r, '*')
+        r.at @ r.at + 1
+        started @ true
+    else if is_ident_start(r)
+        tests @ tests.push(test_of(TYPE, ident(@r)?))
+        started @ true
+
+    if at_byte(r, '|')
+        return fail(code: "invalid", msg: message(r, "no namespace prefix, which a selector here does not read"))
+
+    while r.at < r.text.len()
+        b = r.text[r.at]
+
+        if b == '#'
+            r.at @ r.at + 1
+
+            if r.at >= r.text.len() || !is_name_byte(r.text[r.at])
+                return fail(code: "invalid", msg: message(r, "an identifier after `#`"))
+            tests @ tests.push(test_of(ID, name_run(@r)?))
+        else if b == '.'
+            r.at @ r.at + 1
+
+            if !is_ident_start(r)
+                return fail(code: "invalid", msg: message(r, "a class name after `.`"))
+            tests @ tests.push(test_of(CLASS, ident(@r)?))
+        else if b == '['
+            tests @ tests.push(attribute(@r)?)
+        else if b == ':'
+            tests @ tests.push(pseudo(@r)?)
+        else
+            break
+        started @ true
+
+    if !started
+        return fail(code: "invalid", msg: message(r, "a selector"))
+    id = r.compounds
+    r.compounds @ r.compounds + 1
+    return ok(Compound(tests: tests, id: id))
+
+# A test of `kind` about `name`, the rest empty.
+function test_of(kind: i64, name: str) -> Test
+    return Test(
+        kind: kind,
+        name: name,
+        value: "",
+        op: 0,
+        case_flag: 0,
+        a: 0,
+        b: 0,
+        last: false,
+        of_type: false,
+        group: -1
+    )
+
+# Whether `b` may stand in an identifier: a letter, a digit, `-`, `_`, a
+# byte of a character past ASCII, or `\` beginning an escape.
+function is_name_byte(b: u8) -> bool
+    return ascii.is_alnum(b) || b == '-' || b == '_' || b >= 0x80 || b == '\\'
+
+# Whether an identifier begins at the reader's place: not a digit, nor `-`
+# and a digit.
+function is_ident_start(r: Reader lent) -> bool
+    if r.at >= r.text.len() || !is_name_byte(r.text[r.at]) || ascii.is_digit(r.text[r.at])
+        return false
+
+    if r.text[r.at] == '-' && r.at + 1 < r.text.len() && ascii.is_digit(r.text[r.at + 1])
+        return false
+    return !(r.text[r.at] == '-' && r.at + 1 >= r.text.len())
+
+# An identifier, its escapes read.
+function ident(@r: Reader) -> str?
+    if !is_ident_start(r)
+        return fail(code: "invalid", msg: message(r, "an identifier"))
+    return name_run(@r)
+
+# A run of identifier characters, its escapes read; at least one.
+function name_run(@r: Reader) -> str?
+    pieces: [str] @= []
+
+    while r.at < r.text.len() && is_name_byte(r.text[r.at])
+        if r.text[r.at] == '\\'
+            pieces @ pieces.push(escape(@r)?)
+        else
+            start = r.at
+
+            while r.at < r.text.len() && is_name_byte(r.text[r.at]) && r.text[r.at] != '\\'
+                r.at @ r.at + 1
+
+            pieces @ pieces.push(r.text.slice(from: start, to: r.at))
+
+    if pieces.len() == 0
+        return fail(code: "invalid", msg: message(r, "an identifier"))
+    return ok(pieces.join(""))
+
+# An escape at the reader's place, `\`: up to six hexadecimal digits and one
+# white space after them, or any other character as itself.
+function escape(@r: Reader) -> str?
+    r.at @ r.at + 1
+
+    if r.at >= r.text.len() || r.text[r.at] == '\n'
+        return fail(code: "invalid", msg: message(r, "a character after `\\`"))
+
+    if !ascii.is_hex(r.text[r.at])
+        piece = r.text.slice(from: r.at, to: r.at + width(r))
+        r.at @ r.at + width(r)
+        return ok(piece)
+    code: i64 @= 0
+    digits: i64 @= 0
+
+    while digits < 6 && r.at < r.text.len() && ascii.is_hex(r.text[r.at])
+        b = r.text[r.at]
+
+        value = if ascii.is_digit(b)
+            to_i64(b - '0').must()
+        else if b >= 'a'
+            to_i64(b - 'a').must() + 10
+        else
+            to_i64(b - 'A').must() + 10
+        code @ code * 16 + value
+        digits @ digits + 1
+        r.at @ r.at + 1
+
+    if r.at < r.text.len() && ascii.is_white(r.text[r.at])
+        r.at @ r.at + 1
+
+    if code == 0 || code >= 0xd800 && code <= 0xdfff || code > 0x10ffff
+        return ok(unicode.REPLACEMENT_CHARACTER)
+    return ok(unicode.from_code_point(code).must())
+
+# An attribute test, `[name]` or `[name op value flag]`.
+function attribute(@r: Reader) -> Test?
+    r.at @ r.at + 1
+    _ = skip_white(@r)
+    named = ident(@r)?
+
+    if at_byte(r, '|') && !(r.at + 1 < r.text.len() && r.text[r.at + 1] == '=')
+        return fail(code: "invalid", msg: message(r, "no namespace prefix, which a selector here does not read"))
+    _ = skip_white(@r)
+
+    if at_byte(r, ']')
+        r.at @ r.at + 1
+        return ok(test_of(HAS_ATTRIBUTE, named))
+    op: i64 @= 0
+
+    if at_byte(r, '=')
+        op @ EQUALS
+        r.at @ r.at + 1
+    else if r.at + 1 < r.text.len() && r.text[r.at + 1] == '='
+        b = r.text[r.at]
+
+        op @ if b == '~'
+            INCLUDES
+        else if b == '|'
+            DASH
+        else if b == '^'
+            PREFIX
+        else if b == '$'
+            SUFFIX
+        else if b == '*'
+            SUBSTRING
+        else
+            0
+
+        if op != 0
+            r.at @ r.at + 2
+
+    if op == 0
+        return fail(code: "invalid", msg: message(r, "`]` or an operator, `=`, `~=`, `|=`, `^=`, `$=` or `*=`"))
+    _ = skip_white(@r)
+
+    value = if at_byte(r, '"') || at_byte(r, '\'')
+        quoted(@r)?
+    else
+        ident(@r)?
+    _ = skip_white(@r)
+    flag: i64 @= 0
+
+    if at_byte(r, 'i') || at_byte(r, 'I')
+        flag @ 1
+        r.at @ r.at + 1
+    else if at_byte(r, 's') || at_byte(r, 'S')
+        flag @ 2
+        r.at @ r.at + 1
+    _ = skip_white(@r)
+
+    if !at_byte(r, ']')
+        return fail(code: "invalid", msg: message(r, "`]`"))
+    r.at @ r.at + 1
+    t: Test @= test_of(ATTRIBUTE, named)
+    t.value @ value
+    t.op @ op
+    t.case_flag @ flag
+    return ok(t)
+
+# A string between `"` or `'`, its escapes read.
+function quoted(@r: Reader) -> str?
+    quote = r.text[r.at]
+    r.at @ r.at + 1
+    pieces: [str] @= []
+
+    while true
+        if r.at >= r.text.len() || r.text[r.at] == '\n'
+            return fail(code: "invalid", msg: message(r, "the closing quote"))
+        b = r.text[r.at]
+
+        if b == quote
+            r.at @ r.at + 1
+            return ok(pieces.join(""))
+
+        if b == '\\'
+            if r.at + 1 < r.text.len() && r.text[r.at + 1] == '\n'
+                r.at @ r.at + 2
+            else
+                pieces @ pieces.push(escape(@r)?)
+        else
+            start = r.at
+
+            while r.at < r.text.len() && r.text[r.at] != quote && r.text[r.at] != '\\' && r.text[r.at] != '\n'
+                r.at @ r.at + 1
+
+            pieces @ pieces.push(r.text.slice(from: start, to: r.at))
+
+# A pseudo-class, `:name` or `:name(...)`.
+function pseudo(@r: Reader) -> Test?
+    r.at @ r.at + 1
+
+    if at_byte(r, ':')
+        return fail(code: "invalid", msg: message(r, "a pseudo-class; a pseudo-element matches no node"))
+    called = ascii.to_lower(ident(@r)?)
+
+    if !at_byte(r, '(')
+        return match called
+            "first-child"   => ok(nth(a: 0, b: 1, last: false, of_type: false))
+            "last-child"    => ok(nth(a: 0, b: 1, last: true, of_type: false))
+            "only-child"    => ok(only(false))
+            "first-of-type" => ok(nth(a: 0, b: 1, last: false, of_type: true))
+            "last-of-type"  => ok(nth(a: 0, b: 1, last: true, of_type: true))
+            "only-of-type"  => ok(only(true))
+            "empty"         => ok(test_of(EMPTY, ""))
+            "root"          => ok(test_of(ROOT, ""))
+            _ => fail(
+                code: "invalid",
+                msg: f"selector \"{r.text}\": no pseudo-class `:{called}` is read; the ones read are listed in `html.select`'s documentation"
+            )
+    r.at @ r.at + 1
+
+    if called == "not" || called == "is" || called == "where"
+        if r.depth >= MAX_NESTING
+            return fail(code: "invalid", msg: message(r, f"no deeper nesting than {MAX_NESTING}"))
+        r.depth @ r.depth + 1
+        inner = list(@r)?
+        r.depth @ r.depth - 1
+        _ = skip_white(@r)
+
+        if !at_byte(r, ')')
+            return fail(code: "invalid", msg: message(r, "`)`"))
+        r.at @ r.at + 1
+
+        kind = if called == "not"
+            NOT
+        else
+            IS
+        t: Test @= test_of(kind, "")
+        t.group @ inner
+        return ok(t)
+    last = called == "nth-last-child" || called == "nth-last-of-type"
+    of_type = called == "nth-of-type" || called == "nth-last-of-type"
+
+    if !(last || of_type || called == "nth-child")
+        return fail(code: "invalid", msg: f"selector \"{r.text}\": no pseudo-class `:{called}()` is read")
+    start = r.at
+
+    while r.at < r.text.len() && r.text[r.at] != ')'
+        r.at @ r.at + 1
+
+    if r.at >= r.text.len()
+        return fail(code: "invalid", msg: message(r, "`)`"))
+    formula = r.text.slice(from: start, to: r.at)
+    r.at @ r.at + 1
+    read = an_plus_b(ascii.trim_white(formula))
+
+    if read.len() != 2
+        return fail(
+            code: "invalid",
+            msg: f"selector \"{r.text}\", byte {start}: expected `an+b`, `odd` or `even`, found `{formula}`"
+        )
+    return ok(nth(a: read[0], b: read[1], last: last, of_type: of_type))
+
+# An `NTH` test of `an+b`.
+function nth(a: i64, b: i64, last: bool, of_type: bool) -> Test
+    t: Test @= test_of(NTH, "")
+    t.a @ a
+    t.b @ b
+    t.last @ last
+    t.of_type @ of_type
+    return t
+
+# An `ONLY` test, among elements of one type where `of_type`.
+function only(of_type: bool) -> Test
+    t: Test @= test_of(ONLY, "")
+    t.of_type @ of_type
+    return t
+
+# `a` and `b` of the formula `s`, `odd`, `even`, `2n+1`, `-n + 3`, `5`; empty
+# where it is none, or a number past nine digits.
+function an_plus_b(s: str) -> [i64]
+    lower = ascii.to_lower(s)
+
+    if lower == "odd"
+        return [2, 1]
+
+    if lower == "even"
+        return [2, 0]
+    n_at: i64 @= -1
+
+    for i in range(from: 0, to: lower.len())
+        if lower[i] == 'n'
+            n_at @ i
+            break
+
+    if n_at < 0
+        b = signed(lower)
+
+        if b.len() == 0
+            return []
+        return [0, b[0]]
+    head = lower.slice(from: 0, to: n_at)
+
+    a: [i64] = if head == "" || head == "+"
+        [1]
+    else if head == "-"
+        [-1]
+    else
+        signed(head)
+
+    if a.len() == 0
+        return []
+    tail = ascii.trim_white(lower.slice(from: n_at + 1, to: lower.len()))
+
+    if tail == ""
+        return [a[0], 0]
+
+    if tail[0] != '+' && tail[0] != '-'
+        return []
+    digits = ascii.trim_white(tail.slice(from: 1, to: tail.len()))
+
+    if digits == "" || digits[0] == '+' || digits[0] == '-'
+        return []
+    b = signed(digits)
+
+    if b.len() == 0
+        return []
+
+    if tail[0] == '-'
+        return [a[0], -b[0]]
+    return [a[0], b[0]]
+
+# The integer `s` writes, a sign then one to nine digits; empty where it is
+# none.
+function signed(s: str) -> [i64]
+    if s == ""
+        return []
+    start: i64 @= 0
+    negative = s[0] == '-'
+
+    if s[0] == '+' || s[0] == '-'
+        start @ 1
+
+    if s.len() - start < 1 || s.len() - start > 9
+        return []
+    value: i64 @= 0
+
+    for i in range(from: start, to: s.len())
+        if !ascii.is_digit(s[i])
+            return []
+        value @ value * 10 + to_i64(s[i] - '0').must()
+
+    if negative
+        return [-value]
+    return [value]
+
+## Tests
+
+test "parse: a type, a class, an id and an attribute in one compound, and two complexes"
+    s = parse("div.note#top[href^=\"/\" i], p > a").must()
+    top = s.groups[s.top]
+    assert top.len() == 2 && top[0].compounds[0].tests.len() == 4 && top[1].combinators == [CHILD]
+    t = top[0].compounds[0].tests[3]
+    assert t.kind == ATTRIBUTE && t.name == "href" && t.op == PREFIX && t.value == "/" && t.case_flag == 1
+
+test "parse: the four combinators, white space around them, and a descendant by white space alone"
+    s = parse("a b>c + d ~e").must()
+    assert s.groups[s.top][0].combinators == [DESCENDANT, CHILD, NEXT, LATER] && s.compounds == 5
+
+test "parse: nested lists numbered, and nesting past the limit refused"
+    s = parse(":not(.a, :is(b))").must()
+    assert s.groups.len() == 3 && s.groups[s.top][0].compounds[0].tests[0].kind == NOT
+    deep = repeat(":not(", 17) + "a" + repeat(")", 17)
+    assert parse(deep).is_err() && !parse(repeat(":not(", 16) + "a" + repeat(")", 16)).is_err()
+
+test "parse: what cannot be read, each with its byte"
+    for text in ["", "a,", ",a", "a >", "[", "[a", "[a=]", "[a=b", "#", ".1a", "::before", ":hover", "a|b", "a:nth-child(x)", "a:not(b", "'a'", "a  )"]
+        match parse(text)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    match parse("p >> a")
+        .ok _  => assert false
+        .err e => assert e.msg == "selector \"p >> a\", byte 3: expected a selector, found `>`"
+
+test "an_plus_b and signed: odd, even, the forms of the standard, white space, and what is none"
+    assert an_plus_b("odd") == [2, 1] && an_plus_b("EVEN") == [2, 0] && an_plus_b("2n+1") == [2, 1] && an_plus_b("-n + 3") == [-1, 3]
+    assert an_plus_b("n") == [1, 0] && an_plus_b("+5") == [0, 5] && an_plus_b("-2n- 1") == [-2, -1] && an_plus_b("3n") == [3, 0]
+    assert an_plus_b("") == [] && an_plus_b("n+") == [] && an_plus_b("2n+-1") == [] && an_plus_b("1234567890") == [] && an_plus_b("x") == []
+    assert signed("-12") == [-12] && signed("+") == [] && signed("1a") == []
+
+test "escape and quoted: hexadecimal, a character as itself, and a string's own quote"
+    assert parse(".\\31 a").must().groups[0][0].compounds[0].tests[0].name == "1a"
+    assert parse("[a=\"x\\\"y\"]").must().groups[0][0].compounds[0].tests[0].value == "x\"y"
+    assert parse("#\\é").must().groups[0][0].compounds[0].tests[0].name == "é"

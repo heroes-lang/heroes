@@ -938,7 +938,7 @@ int64_t h_main_connection(int64_t h0_number) { hero_thread_guard("main.connectio
     return t21;
 }
 
-int64_t h_0cb_main_connection(int64_t h0_number) {
+__attribute__((__noinline__)) int64_t h_0cb_main_connection(int64_t h0_number) {
     hero_callback_entered("main.connection", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_main_connection(h0_number);
     hero_callback_left();
@@ -961,7 +961,7 @@ h_http_Response h_main_answer(h_http_Request h0_request) { hero_thread_guard("ma
     return t12;
 }
 
-h_http_Response h_0cb_main_answer(h_http_Request h0_request) {
+__attribute__((__noinline__)) h_http_Response h_0cb_main_answer(h_http_Request h0_request) {
     hero_callback_entered("main.answer", __builtin_return_address(0), __builtin_frame_address(0));
     h_http_Response hero_result = h_main_answer(h0_request);
     hero_callback_left();
@@ -1022,7 +1022,7 @@ int64_t h_main_client(int64_t h0_port) { hero_thread_guard("main.client"); HERO_
     return t68;
 }
 
-int64_t h_0cb_main_client(int64_t h0_port) {
+__attribute__((__noinline__)) int64_t h_0cb_main_client(int64_t h0_port) {
     hero_callback_entered("main.client", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_main_client(h0_port);
     hero_callback_left();
@@ -1892,7 +1892,7 @@ h_http_Response h_http_echo(h_http_Request h0_request) { hero_thread_guard("http
     return t10;
 }
 
-h_http_Response h_0cb_http_echo(h_http_Request h0_request) {
+__attribute__((__noinline__)) h_http_Response h_0cb_http_echo(h_http_Request h0_request) {
     hero_callback_entered("http.echo", __builtin_return_address(0), __builtin_frame_address(0));
     h_http_Response hero_result = h_http_echo(h0_request);
     hero_callback_left();
@@ -1918,7 +1918,7 @@ int64_t h_http_served_one(int64_t h0_n) { hero_thread_guard("http.served_one"); 
     return t21;
 }
 
-int64_t h_0cb_http_served_one(int64_t h0_n) {
+__attribute__((__noinline__)) int64_t h_0cb_http_served_one(int64_t h0_n) {
     hero_callback_entered("http.served_one", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_http_served_one(h0_n);
     hero_callback_left();

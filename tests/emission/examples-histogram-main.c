@@ -164,7 +164,7 @@ int64_t h_main_count_of(int64_t h0_digit) { hero_thread_guard("main.count_of"); 
 #line 165 "main.c"
 }
 
-int64_t h_0cb_main_count_of(int64_t h0_digit) {
+__attribute__((__noinline__)) int64_t h_0cb_main_count_of(int64_t h0_digit) {
     hero_callback_entered("main.count_of", __builtin_return_address(0), __builtin_frame_address(0));
     int64_t hero_result = h_main_count_of(h0_digit);
     hero_callback_left();

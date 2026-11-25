@@ -584,7 +584,7 @@ function main()
     # its net using none since. Its rules stay in `package_rules.hero`.
 
     # Rebel's coherence, measured (M-rebel-library's item 31): the review's
-    # instruments over the newest version of `packages/rebel` and the rules
+    # instruments over the newest version of `rebel/library` and the rules
     # page, every finding repaired or kept with its reason in
     # `rebel_kept.hero`. Reads files, and runs the compiler for `heroes doc`
     # over every face and floor (README § A7's check, since 2026-11-21).
@@ -831,8 +831,8 @@ constant REVIEW_PROGRAM: str
     "tests/harness/rebel_review.hero"
 
 # **AND THE EIGHTH, the check of Rebel's programs** (M-rebel-library,
-# `examples-rebel/README.md` § A10): `rebel_apps.hero` and the modules only it
-# reaches, which find, build, run and judge the programs of `examples-rebel/`
+# `rebel/examples/README.md` § A10): `rebel_apps.hero` and the modules only it
+# reaches, which find, build, run and judge the programs of `rebel/examples/`
 # and ask the applications' coverage of Rebel's faces. Tested the same way,
 # one test for the root.
 constant APPS_PROGRAM: str

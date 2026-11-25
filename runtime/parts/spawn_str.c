@@ -117,7 +117,7 @@ int64_t hero_thread_spawn_str_sized(HeroThreadBodyStr body, HeroStr arg, int64_t
 }
 
 HeroStr hero_thread_join_str(int64_t handle) {
-    HeroSpawnStrBox *out = (HeroSpawnStrBox *)(uintptr_t)hero_spawn_join(handle, HERO_SPAWN_STR);
+    HeroSpawnStrBox *out = (HeroSpawnStrBox *)(uintptr_t)hero_spawn_join(handle, HERO_SPAWN_STR, NULL);
     HeroStr answer = hero_str_from_bytes(out->bytes, out->len);
     hero_free_raw(out);
     return answer;

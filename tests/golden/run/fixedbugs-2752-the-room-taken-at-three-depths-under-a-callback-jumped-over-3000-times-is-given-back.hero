@@ -1,0 +1,100 @@
+# Fixed 2026-11-24, defect 2752, lane-panel258-r1 (panel 258's R1): the room
+# taken at three depths under a callback, by the callback, a function it calls
+# and the deepest, which C jumps out of, 3,000 times; `main` holds a value in
+# the room across the loop and takes another after it. A correct program.
+# Symptom: about 800 KB a jump stood in the room, and the program aborted
+# with `panic: stack exhausted in room_depths.e5: the room large values take
+# off the stack is full, 1 GiB for the whole program`, of a program holding
+# less than 600 KB at once.
+# Cause and fix: as the first case of defect 2752; every take of the frames a
+# jump left is given back at the next take of a frame above them.
+extern "fixedbugs-2752-levels.h"
+    function lv_try(cb: (function(i64) -> i64), n: i64) -> i64
+    function lv_throw(up: i64)
+
+record E0
+    x: i64
+
+record E1
+    a: E0
+    b: E0
+    c: E0
+    d: E0
+    e: E0
+    f: E0
+    g: E0
+    h: E0
+
+record E2
+    a: E1
+    b: E1
+    c: E1
+    d: E1
+    e: E1
+    f: E1
+    g: E1
+    h: E1
+
+record E3
+    a: E2
+    b: E2
+    c: E2
+    d: E2
+    e: E2
+    f: E2
+    g: E2
+    h: E2
+
+record E4
+    a: E3
+    b: E3
+    c: E3
+    d: E3
+    e: E3
+    f: E3
+    g: E3
+    h: E3
+
+record E5
+    a: E4
+    b: E4
+    c: E4
+    d: E4
+    e: E4
+    f: E4
+    g: E4
+    h: E4
+
+function e4(n: i64) -> E4
+    v0 = E0(x: n)
+    v1 = E1(a: v0, b: v0, c: v0, d: v0, e: v0, f: v0, g: v0, h: v0)
+    v2 = E2(a: v1, b: v1, c: v1, d: v1, e: v1, f: v1, g: v1, h: v1)
+    v3 = E3(a: v2, b: v2, c: v2, d: v2, e: v2, f: v2, g: v2, h: v2)
+    return E4(a: v3, b: v3, c: v3, d: v3, e: v3, f: v3, g: v3, h: v3)
+
+function e5(n: i64) -> E5
+    v4 = e4(n)
+    return E5(a: v4, b: v4, c: v4, d: v4, e: v4, f: v4, g: v4, h: v4)
+
+function leaf(n: i64) -> i64
+    v = e5(n)
+    lv_throw(up: 0)
+    return v.a.a.a.a.a.x
+
+function mid(n: i64) -> i64
+    v = e4(n)
+    return leaf(n) + v.h.h.h.h.x
+
+function body(n: i64) -> i64
+    v = e5(n)
+    return mid(n) + v.b.b.b.b.b.x
+
+function main()
+    w = e4(2)
+    total: i64 @= 0
+
+    for i in range(from: 0, to: 3000)
+        total @ total + lv_try(cb: body, n: i)
+
+    after = e5(3)
+    print("jumped, sum ", total, " main holds ", w.a.a.a.a.x, " after ", after.c.c.c.c.c.x)

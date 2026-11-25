@@ -1,0 +1,294 @@
+# The twin of `examples/ledger/`: a ledger kept in SQLite, and every number
+# checked twice, written with Rebel. It prints byte for byte what
+# `examples/ledger/` prints, so that program's `main.expected` is this one's
+# test too.
+#
+#     heroes run rebel/examples/ledger/main.hero
+#
+#     main.hero           the program: the database, the queries, the check
+#     book/entry.hero     the book, the accounts, and the arithmetic in cents
+#     report/lines.hero   the report's text
+#
+# HOW IT IS CHECKED. There is no published answer for a book somebody
+# invented, so the second opinion is built: **every total is computed twice,
+# by two routes that share no line**, once by SQLite's own
+# `sum(...) group by ...` and once by Heroes over the same rows, and the
+# program prints `yes` only where they match cent for cent.
+#
+# What Rebel does here that `examples/ledger/` writes for itself:
+#
+# - `sql/sqlite` opens the database in memory, runs a statement with its
+#   values bound to placeholders, prepares one statement and runs it many
+#   times, and answers a query's rows as `sql.Row`s, in place of that
+#   program's `db/sqlite.hero` (its eighteen bindings of `sqlite3.h`, its
+#   handles, its cell reader, and its care that a statement is finalized and
+#   an error message freed on every path);
+# - `sql.integer_at`, `sql.text_at` and `sql.value_at` read a row's values by
+#   their type, refusing a text read as a number rather than answering zero;
+# - `strings.pad_end` and `strings.pad_start` pad a column, in place of the
+#   loops in its `report/lines.hero`; `strings.contains`, in the tests, in
+#   place of its `strings.hero`.
+#
+# What stays this program's own is the book, the money in cents, the report,
+# and the check that holds SQLite's answers to Heroes' own.
+
+use <rebel>/sql
+use <rebel>/sql/sqlite
+use <rebel>/strings
+
+use book/entry
+use report/lines
+
+function main()
+    match sqlite.open_memory()
+        .err e =>
+            print("sqlite would not open a database: ", e.msg)
+            exit(code: 1)
+        .ok opened =>
+            db: sqlite.Db @= opened
+
+            match build(@db)
+                .err e =>
+                    print("the ledger could not be built: ", e.msg)
+                    given_back(@db)
+                    exit(code: 1)
+                .ok _ => _ = 0
+
+            match show(@db)
+                .err e =>
+                    print("the ledger could not be read back: ", e.msg)
+                    given_back(@db)
+                    exit(code: 1)
+                .ok _ => _ = 0
+
+            given_back(@db)
+
+# The connection given back, or the program stopped saying why SQLite kept it
+# open: a refused close followed by `exit` with nothing printed would be a
+# silence, since `exit` ends the program before the runtime counts what was
+# never given back.
+#
+# - `db`: the connection; emptied.
+function given_back(@db: sqlite.Db)
+    match sqlite.close(@db)
+        .ok _ => _ = 0
+        .err e =>
+            print("sqlite would not close the database: ", e.msg)
+            exit(code: 1)
+
+# The schema, the accounts and the entries, the entries through ONE prepared
+# statement run ten times.
+#
+# **EVERY PREPARED STATEMENT IS CLOSED ON EVERY PATH, the refused ones too.**
+# `sqlite.close` refuses while one is owed, and a `?` between `prepare` and
+# `close_statement` is a path that leaves one: so what can be refused works in
+# a function of its own, its answer is kept, the statement closed, and only
+# then the answer handed on.
+#
+# - `db`: the connection; gains the two tables and their rows.
+function build(@db: sqlite.Db) -> ()?
+    _ = sqlite.exec(@db, statement: "create table account(name text primary key, kind text not null)", params: [])?
+    _ = sqlite.exec(@db, statement: "create table entry(id integer primary key, account text not null, memo text not null, cents integer not null)", params: [])?
+
+    # A transaction, so the inserts are one unit.
+    sqlite.begin(@db)?
+    accounts: sqlite.Statement @= sqlite.prepare(@db, statement: "insert into account(name, kind) values (?1, ?2)")?
+    put_accounts = inserted_accounts(@db, accounts)
+    sqlite.close_statement(@db, @accounts)?
+    put_accounts?
+    rows: sqlite.Statement @= sqlite.prepare(@db, statement: "insert into entry(id, account, memo, cents) values (?1, ?2, ?3, ?4)")?
+    put_entries = inserted_entries(@db, rows)
+    sqlite.close_statement(@db, @rows)?
+    put_entries?
+    sqlite.commit(@db)?
+    return ok()
+
+# Every account through the one statement `build` prepared and closes.
+#
+# - `db`: the connection.
+# - `accounts`: the prepared insert.
+function inserted_accounts(@db: sqlite.Db, accounts: sqlite.Statement) -> ()?
+    for a in entry.accounts()
+        _ = sqlite.exec_prepared(@db, prepared: accounts, params: [.text(v: a.name), .text(v: a.kind)])?
+
+    return ok()
+
+# Every entry through the one statement `build` prepared and closes.
+#
+# - `db`: the connection.
+# - `rows`: the prepared insert.
+function inserted_entries(@db: sqlite.Db, rows: sqlite.Statement) -> ()?
+    for e in entry.book()
+        _ = sqlite.exec_prepared(@db, prepared: rows, params: [.integer(v: e.id), .text(v: e.account), .text(v: e.memo), .integer(v: e.amount.cents)])?
+
+    return ok()
+
+# The report, and the check. Four queries: the balances, the whole total, the
+# rows, the average (the one float in the program) and the join.
+#
+# - `db`: the connection, the book in it.
+function show(@db: sqlite.Db) -> ()?
+    print("the book, as Heroes reads it")
+
+    for line in lines.book_lines(entry.book(), entry.accounts())
+        print(line)
+
+    print("")
+    print("balances, joined to each account's kind")
+    print(lines.BALANCE_HEADING)
+    from_db = queried_balances(@db)?
+    mine = entry.balances(entry.book())
+
+    for b in from_db
+        kind = entry.kind_of(b.account, entry.accounts())?
+        print(lines.balance_line(b, kind))
+
+    print("")
+
+    # THE CHECK. SQLite grouped and summed the rows; Heroes grouped and summed
+    # the same rows without sharing a line with it. A difference here is a
+    # real disagreement about arithmetic, not a formatting accident, which is
+    # why it prints a verdict and not a number.
+    print("sqlite and heroes, over the same rows")
+    print("  balances agree   ", verdict(from_db == mine))
+    db_total = queried_int(@db, statement: "select sum(cents) from entry")?
+    print("  total agrees     ", verdict(db_total == entry.total(entry.book()).cents))
+    print("  total            ", entry.shown(entry.Amount(cents: db_total)))
+    db_rows = queried_int(@db, statement: "select count(*) from entry")?
+    print("  rows agree       ", verdict(db_rows == entry.book().len()))
+
+    # SQLite's `avg` is a double. It is compared with a tolerance, and the
+    # comparison says so, rather than asking two floats to be equal.
+    average = queried_float(@db, statement: "select avg(cents) from entry")?
+    mine_average = to_f64(entry.total(entry.book()).cents) / to_f64(entry.book().len())
+    print("  average agrees   ", verdict(near(a: average, b: mine_average)))
+    print("  average          ", entry.shown(entry.Amount(cents: to_i64(average).must())))
+
+    # The join, asked of the database this time, so the two routes meet on the
+    # same question rather than on the same table.
+    print("")
+    print("living expenses, from the join")
+    living = queried_int(@db, statement: "select sum(cents) from entry join account on account.name = entry.account where account.kind = 'living'")?
+    mine_living: i64 @= 0
+
+    for e in entry.book()
+        if entry.kind_of(e.account, entry.accounts())? == "living"
+            mine_living @ mine_living + e.amount.cents
+
+    print("  ", entry.shown(entry.Amount(cents: living)), "   agree ", verdict(living == mine_living))
+    return ok()
+
+# The balances SQLite computes, in the order `entry.balances` gives: `order
+# by` in the query, because a database's row order is no more promised than a
+# map's key order.
+#
+# - `db`: the connection.
+#
+# Fails where SQLite refuses the query or a column is not of its type.
+function queried_balances(@db: sqlite.Db) -> [entry.Balance]?
+    answer = sqlite.query(@db, statement: "select account, count(*), sum(cents) from entry group by account order by account", params: [])?
+    out: [entry.Balance] @= []
+
+    for row in answer.rows
+        out @ out.push(
+            entry.Balance(account: sql.text_at(row, index: 0)?, entries: sql.integer_at(row, index: 1)?, total: entry.Amount(cents: sql.integer_at(row, index: 2)?))
+        )
+
+    return ok(out)
+
+# One integer: the first column of the first row, read as a whole number, so a
+# query edited to answer text does not answer zero.
+#
+# - `db`: the connection.
+# - `statement`: a query answering one row.
+#
+# Fails `not_found` where it answers no row, `invalid` where the value is no
+# integer, and where SQLite refuses it.
+function queried_int(@db: sqlite.Db, statement: str) -> i64?
+    return sql.integer_at(sqlite.query_one(@db, statement: statement, params: [])?, index: 0)
+
+# One float: the first column of the first row, a whole number widened.
+#
+# - `db`: the connection.
+# - `statement`: a query answering one row.
+#
+# Fails `not_found` where it answers no row, `invalid` where the value is
+# neither a float nor an integer, and where SQLite refuses it.
+function queried_float(@db: sqlite.Db, statement: str) -> f64?
+    return match sql.value_at(sqlite.query_one(@db, statement: statement, params: [])?, index: 0)?
+        .float f   => ok(f.v)
+        .integer i => ok(to_f64(i.v))
+        .null_value | .boolean _ | .text _ | .blob _ | .instant _ =>
+            fail(code: sql.INVALID, msg: statement + " answered no number")
+
+# Two floats within a hundredth of a cent. A tolerance and not `==`, because
+# SQLite's `avg` divides in binary floating point and so does the line beside
+# it, and asking those to be bit-identical is asking for a flaky program.
+#
+# - `a`: one average.
+# - `b`: the other.
+function near(a: f64, b: f64) -> bool
+    d = a - b
+
+    if d < 0.0
+        return -d < 0.01
+    return d < 0.01
+
+# `yes` or `no`, as the report writes a check.
+#
+# - `holds`: whether the two routes agreed.
+function verdict(holds: bool) -> str
+    if holds
+        return "yes"
+    return "no"
+
+# A database with the book in it, for the tests below.
+function built() -> sqlite.Db
+    db: sqlite.Db @= sqlite.open_memory().must()
+    build(@db).must()
+    return db
+
+test "the book goes into the database and comes back unchanged"
+    db: sqlite.Db @= built()
+    assert queried_balances(@db).must() == entry.balances(entry.book())
+    sqlite.close(@db).must()
+
+test "sqlite's total and heroes' total are the same number"
+    db: sqlite.Db @= built()
+    assert queried_int(@db, statement: "select sum(cents) from entry").must() == entry.total(entry.book()).cents
+    assert queried_int(@db, statement: "select count(*) from entry").must() == entry.book().len()
+    sqlite.close(@db).must()
+
+test "a statement the database refuses is a refusal here, with sqlite's own words"
+    db: sqlite.Db @= sqlite.open_memory().must()
+
+    match sqlite.exec(@db, statement: "select * from nothing_at_all", params: [])
+        .ok _  => assert false
+        .err e => assert strings.contains(s: e.msg, substr: "no such table")
+
+    sqlite.close(@db).must()
+
+test "a column read at the wrong type is a refusal and not a zero"
+    db: sqlite.Db @= built()
+    row = sqlite.query_one(@db, statement: "select memo from entry where id = 1", params: []).must()
+    assert sql.text_at(row, index: 0).must() == "september"
+    assert sql.integer_at(row, index: 0).is_err()
+    assert queried_int(@db, statement: "select memo from entry where id = 1").is_err()
+    assert queried_float(@db, statement: "select abs(-9223372036854775808)").is_err()
+    sqlite.close(@db).must()
+
+test "a close with a statement still prepared is refused, and the connection still closes after"
+    db: sqlite.Db @= sqlite.open_memory().must()
+    statement: sqlite.Statement @= sqlite.prepare(@db, statement: "select 1").must()
+    assert sqlite.close(@db).is_err()
+    sqlite.close_statement(@db, @statement).must()
+    sqlite.close(@db).must()
+
+test "the prepared statement really is reused: ten entries, one statement"
+    db: sqlite.Db @= built()
+
+    # Two tables made, four accounts and ten entries inserted, each insert
+    # counting its one row.
+    assert sqlite.total_changes(db).must() == 14
+    assert queried_int(@db, statement: "select count(*) from entry").must() == 10
+    sqlite.close(@db).must()

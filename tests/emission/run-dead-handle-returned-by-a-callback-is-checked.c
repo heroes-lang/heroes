@@ -255,7 +255,7 @@ node * h_deadhandlereturnedbyacallbackischecked_give(int32_t h0_k) { hero_thread
 #line 256 "deadhandlereturnedbyacallbackischecked.c"
 }
 
-node * h_0cb_deadhandlereturnedbyacallbackischecked_give(int32_t h0_k) {
+__attribute__((__noinline__)) node * h_0cb_deadhandlereturnedbyacallbackischecked_give(int32_t h0_k) {
     hero_callback_entered("deadhandlereturnedbyacallbackischecked.give", __builtin_return_address(0), __builtin_frame_address(0));
     node * hero_result = h_deadhandlereturnedbyacallbackischecked_give(h0_k);
     hero_callback_left();
