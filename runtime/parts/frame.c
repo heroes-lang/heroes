@@ -8,7 +8,9 @@
  * SPDX's own registry and this one is not in it. */
 
 /* parts/frame.c — the room of a large value, off its function's frame (defect
- * 2278; panel 233, provisional, author ratification pending).
+ * 2278; panel 233, provisional, author ratification pending), and the one
+ * bound it shares with the buffers lent to C (panel 259's R1, provisional,
+ * author ratification pending; design.md §1.12).
  *
  * A value of a program's own type larger than the emitter's threshold
  * (`selfhost/emit/large_value.hero`, 4,096 bytes as it counts them) is not a
@@ -20,51 +22,41 @@
  * measured 314 billion instructions and 12.3 GB at `-O2` for a 4 MiB record,
  * 0.44 billion and 12 MB with this room).
  *
- * THE ORDER IS THE STACK'S. A function gives back what it took before it
- * returns, the last taken first, so the room is a stack of its own on each
- * thread: a bump pointer in chunks of a mebibyte or of the value, whichever is
- * larger, the newest chunk on top and one emptied chunk kept for the next. A
- * give that is not of the newest take is the compiler's error, never the
- * program's, and stops loudly rather than lose a value.
+ * EVERY TAKE IS A BLOCK OF ITS OWN, GIVEN BACK BY ITS OWN GIVE, in any order
+ * and on any thread, and NOTHING HERE IS EVER JUDGED GIVEN BACK BY ITS FRAME'S
+ * ADDRESS (panel 259's R1, route E). Until that sitting the room was a stack
+ * of its own on each thread, and a C jump over a callback left takes on top
+ * of it that nobody gave back, so panel 258's R1 healed it by address: a
+ * take, a thunk's entry or a give first gave back every take of a frame below
+ * its own on the thread's stack, and step 181a stood a coroutine's takes
+ * aside where the runtime could name its stack. An order of addresses is a
+ * fact a switch of stacks C makes can falsify, seen or not: a coroutine
+ * library's own switch onto memory carved from the thread's stack (one
+ * coroutine was enough), Boost.Context 1.92's own switch, and the designs that
+ * copy a coroutine's frames out and back in (greenlet's on the thread's stack,
+ * Tencent libco's on the heap, one over `makecontext` and `swapcontext` with
+ * every switch seen) each put a live frame where the order said *gone*, and
+ * the heal handed its room to another frame: 11 printed for a record holding
+ * 7 on this Mac, SIGSEGV with nothing said on Linux arm64 and x86-64 (the
+ * sitting's cells). A block of its own is right under every one of those
+ * switches, since no other block's life is ever read from where its frame
+ * stood.
  *
- * BUT A C JUMP LEAVES TAKES NOBODY GIVES BACK (panel 258's R1, provisional,
- * author ratification pending; defect 2752). A callback C `longjmp`s over
- * never reaches its exit, so its takes stood on top of the room and the next
- * give of a live frame below them was told *given back out of order
- * (compiler bug)*, of a correct program (`room_order`, exit 134, 3 runs of 3);
- * left alone they would also have filled the room's gibibyte, about 1,260
- * jumps of that program's 832 KB. So each take is MARKED with the frame that
- * took it (`parts/callback.c`, WHICH FRAMES A C JUMP LEFT), and the marks heal
- * the room: a take first gives back every take of a frame below its own, a
- * thunk's entry every take below the thunk, and a give of a take that is not
- * the newest first gives back the takes above it when every one of them is of
- * a frame below the giver's, since the giver is the deepest frame alive. A
- * take above it of the giver's own frame, or of no frame this thread's stack
- * holds, is still the compiler's error and stops as it did. The marks are
- * this room's machinery, an array of the same raw `malloc` as its chunks.
+ * WHAT IT COSTS, said. A take C leaves without its give (a jump over a
+ * callback, an exception through one, a coroutine nobody resumes) keeps its
+ * block until the program ends, seen or not, since nothing here tells a frame
+ * left for good from one suspended, and a loop of such leaving ends at the
+ * bound below, where panel 258's heal gave the blocks back. And every take and
+ * give goes through one lock of the process and the raw `malloc`: at `-O2`
+ * about 1,932 instructions more a 32 KB take than the stack of chunks before it
+ * (+32%, panel 259's synthesis, `cost_room`), a price of this list and not of
+ * the route.
  *
- * AND ONLY THE THREAD'S OWN STACK TAKES HERE (the defect lane panel258-r1
- * found beside 2752; `parts/stack_lane.c`). Two coroutines on one thread
- * interleave their frames, so one room for both gave back out of order and
- * said *compiler bug* of a correct program (`co_room`, exit 134); a take of a
- * frame on any other stack is a block of its own (`parts/frame_aside.c`),
- * counted against the same bound, and its give finds it there.
- *
- * The chunks come from
- * the one `malloc` neither counter weighs and go back through its mate
- * (`hero_malloc_raw`, which stops at `out of memory` rather than return NULL,
- * and `hero_free_raw`, both in `parts/alloc.c` where Part 7.13's single point
- * puts every such call), so the leak gate counts what the program owns and not
- * this room. */
-
-typedef struct HeroFrameChunk {
-    struct HeroFrameChunk *below;
-    size_t size; /* bytes after the header */
-    size_t used;
-} HeroFrameChunk;
-
-#define HERO_FRAME_CHUNK ((size_t)1 << 20)
-#define HERO_FRAME_HEADER ((sizeof(HeroFrameChunk) + 15) & ~(size_t)15)
+ * The blocks come from the one `malloc` neither counter weighs and go back
+ * through its mate (`hero_malloc_raw`, which stops at `out of memory` rather
+ * than return NULL, and `hero_free_raw`, both in `parts/alloc.c` where Part
+ * 7.13's single point puts every such call), so the leak gate counts what the
+ * program owns and not this room. */
 
 /* THE ROOM IS BOUNDED ONCE FOR THE WHOLE PROCESS, AND RUNNING OUT OF IT ABORTS
  * AS RUNNING OUT OF STACK DOES (spec § 9: *running out of stack aborts*).
@@ -75,23 +67,32 @@ typedef struct HeroFrameChunk {
  * aborts at the same depth everywhere: panel 233's 128 MiB shapes held at most
  * 616 MB in it. Until the critic's second pass of that sitting it was a
  * gibibyte a THREAD, and three runaway threads held 3.29 GB before the first
- * bound fired. */
+ * bound fired.
+ *
+ * AND THE BUFFERS LENT TO C COUNT AGAINST THE SAME GIBIBYTE (panel 259's R1,
+ * the coordinator's amendment): every region a buffer or a local is lent from
+ * (`parts/lend.c`), by the bytes it maps, its guard page included, from its
+ * lend to its give, live and left alike. A lend C leaves without its give is
+ * held as a take is, and nothing else bounded those regions: 20,000 jumps over
+ * a 4 KiB lend held 209 to 337 MB resident with no end in sight (`lendjump`,
+ * the synthesis's run), which a longer loop ends where the system refuses a
+ * mapping or, on Linux, by an out-of-memory kill with nothing said. A region
+ * given back and kept for the next lend counts no longer. */
 #define HERO_FRAME_ROOM ((size_t)1 << 30)
 
-static _Thread_local HeroFrameChunk *hero_frame_top = NULL;
-static _Thread_local HeroFrameChunk *hero_frame_spare = NULL;
 static _Atomic size_t hero_frame_held = 0;
 
 /* THE MESSAGE OPENS AS THE STACK GUARD'S DOES AND SAYS WHICH ROOM RAN OUT:
  * `panic: stack exhausted in <module.function>`, the function whose prologue
- * asked, named as the guard names one where the platform's guard names any
- * (`parts/stack.c`, POSIX by `hero_stack_symbol` on the return address, a
- * generic instance's `static` copy included since defect 2371, Windows the
- * first sentence alone), then that the room large values take off the stack
- * is full, since the stack itself may be nearly empty. One thread tells it, through
- * the guard's own flag (`hero_stack_tell_first`, defect 2287): a second that
- * runs out while the first is telling, of its room or of its stack, waits for
- * the process to end, so two messages never interleave. */
+ * asked or that lent, named as the guard names one where the platform's guard
+ * names any (`parts/stack.c`, POSIX by `hero_stack_symbol` on the return
+ * address, a generic instance's `static` copy included since defect 2371,
+ * Windows the first sentence alone), then that the room large values take off
+ * the stack is full, since the stack itself may be nearly empty. One thread
+ * tells it, through the guard's own flag (`hero_stack_tell_first`, defect
+ * 2287): a second that runs out while the first is telling, of its room or of
+ * its stack, waits for the process to end, so two messages never interleave.
+ */
 static _Noreturn void hero_frame_exhausted(void *caller) {
     hero_report_begin();
 #if !defined(_WIN32)
@@ -110,161 +111,99 @@ static _Noreturn void hero_frame_exhausted(void *caller) {
 #endif
 }
 
-/* A take and the frame that took it (the head's BUT A C JUMP). */
-typedef struct {
-    void *at;
-    uintptr_t frame;
-} HeroFrameMark;
-
-static _Thread_local HeroFrameMark *hero_frame_marks = NULL;
-static _Thread_local size_t hero_frame_marked = 0;
-static _Thread_local size_t hero_frame_mark_cap = 0;
-
-static void *hero_frame_take_raw(size_t bytes, void *caller) {
+/* `bytes` more held against the bound, or the abort, `caller` naming the
+ * function that asked; and `bytes` given back. */
+static void hero_frame_room_hold(size_t bytes, void *caller) {
     if (bytes > HERO_FRAME_ROOM) hero_frame_exhausted(caller);
-    size_t need = (bytes + 15) & ~(size_t)15;
-    size_t before = atomic_fetch_add(&hero_frame_held, need);
-    if (before > HERO_FRAME_ROOM - need) {
-        atomic_fetch_sub(&hero_frame_held, need);
+    size_t before = atomic_fetch_add(&hero_frame_held, bytes);
+    if (before > HERO_FRAME_ROOM - bytes) {
+        atomic_fetch_sub(&hero_frame_held, bytes);
         hero_frame_exhausted(caller);
     }
-    HeroFrameChunk *top = hero_frame_top;
-    if (top == NULL || top->size - top->used < need) {
-        HeroFrameChunk *fresh = NULL;
-        if (hero_frame_spare != NULL && hero_frame_spare->size >= need) {
-            fresh = hero_frame_spare;
-            hero_frame_spare = NULL;
-        } else {
-            size_t size = need > HERO_FRAME_CHUNK ? need : HERO_FRAME_CHUNK;
-            fresh = (HeroFrameChunk *)hero_malloc_raw(HERO_FRAME_HEADER + size);
-            fresh->size = size;
-        }
-        fresh->below = top;
-        fresh->used = 0;
-        hero_frame_top = fresh;
-        top = fresh;
-    }
-    char *at = (char *)top + HERO_FRAME_HEADER + top->used;
-    top->used += need;
-    return at;
 }
 
-static _Noreturn void hero_frame_out_of_order(void) {
-    hero_panic("internal error: a large value's room was given back out of order (compiler bug)");
+static void hero_frame_room_free(size_t bytes) { atomic_fetch_sub(&hero_frame_held, bytes); }
+
+/* THE LOCK OF THE BLOCKS AND OF THE LEND REGIONS' RECORDS. A block may be
+ * given back on another thread than took it, a coroutine resumed there, and so
+ * may a region (`parts/lend_aside.c`), so both are the process's, under one
+ * lock each. */
+#if defined(_WIN32)
+typedef SRWLOCK hero_aside_mutex;
+#define HERO_ASIDE_LOCK_INIT SRWLOCK_INIT
+static void hero_aside_take(hero_aside_mutex *m) { AcquireSRWLockExclusive(m); }
+static void hero_aside_drop(hero_aside_mutex *m) { ReleaseSRWLockExclusive(m); }
+#else
+typedef pthread_mutex_t hero_aside_mutex;
+#define HERO_ASIDE_LOCK_INIT PTHREAD_MUTEX_INITIALIZER
+static void hero_aside_take(hero_aside_mutex *m) { pthread_mutex_lock(m); }
+static void hero_aside_drop(hero_aside_mutex *m) { pthread_mutex_unlock(m); }
+#endif
+
+/* One block's header. `newer` and `older` link every block standing, the
+ * newest first, under the lock; `need` is what it holds against the bound. */
+typedef struct HeroFrameBlock {
+    struct HeroFrameBlock *newer;
+    struct HeroFrameBlock *older;
+    size_t need;
+} HeroFrameBlock;
+
+#define HERO_FRAME_HEADER ((sizeof(HeroFrameBlock) + 15) & ~(size_t)15)
+
+static hero_aside_mutex hero_frame_lock = HERO_ASIDE_LOCK_INIT;
+static HeroFrameBlock *hero_frame_newest = NULL;
+
+static _Noreturn void hero_frame_unknown(void) {
+    hero_panic("internal error: a large value's room was given back that this runtime never handed out, or "
+               "handed back already (compiler bug)");
 }
 
-static void hero_frame_give_raw(void *p) {
-    HeroFrameChunk *top = hero_frame_top;
-    char *base = top == NULL ? NULL : (char *)top + HERO_FRAME_HEADER;
-    if (top == NULL || (char *)p < base || (char *)p >= base + top->used) hero_frame_out_of_order();
-    atomic_fetch_sub(&hero_frame_held, top->used - (size_t)((char *)p - base));
-    top->used = (size_t)((char *)p - base);
-    if (top->used > 0) return;
-    hero_frame_top = top->below;
-    if (hero_frame_spare == NULL || hero_frame_spare->size < top->size) {
-        hero_free_raw(hero_frame_spare);
-        hero_frame_spare = top;
-    } else {
-        hero_free_raw(top);
-    }
-}
-
-/* The newest take given back, its mark with it. */
-static void hero_frame_pop(void) {
-    hero_frame_marked -= 1;
-    hero_callback_held(-1);
-    hero_frame_give_raw(hero_frame_marks[hero_frame_marked].at);
-}
-
-/* Every newest take of a frame below `frame` on this thread's stack, given
- * back: those frames are gone, left by a C jump (the head's BUT A C JUMP). */
-static void hero_frame_heal_below(uintptr_t frame) {
-    while (hero_frame_marked > 0 && hero_frame_is_below(hero_frame_marks[hero_frame_marked - 1].frame, frame)) {
-        hero_frame_pop();
-    }
-}
-
-/* `parts/frame_aside.c`, later in this unit: a take of a frame on another
- * stack than the thread's own, and the give of one. */
-static void *hero_frame_aside_take(size_t bytes, uintptr_t frame, uintptr_t stack, void *caller);
-static void hero_frame_aside_give(void *p);
-
-/* The taking function's frame is read from where this was called
- * (`parts/callback.c`'s HERO_CALLER_FRAME), so this is never inlined; the
- * caller named where the room runs out is the taking function's code. */
+/* The function taking the room is named where the bound stops it, read from
+ * where this was called, so this is never inlined. */
 __attribute__((noinline)) void *hero_frame_take(size_t bytes) {
-    uintptr_t own = HERO_CALLER_FRAME();
-    uintptr_t stack = 0;
-    if (!hero_stack_lane(own, &stack)) return hero_frame_aside_take(bytes, own, stack, __builtin_return_address(0));
-    hero_frame_heal_below(own);
-    if (hero_frame_marked == hero_frame_mark_cap) {
-        size_t cap = hero_frame_mark_cap == 0 ? 64 : hero_frame_mark_cap * 2;
-        HeroFrameMark *grown = (HeroFrameMark *)hero_malloc_raw(cap * sizeof(HeroFrameMark));
-        if (hero_frame_marked > 0) memcpy(grown, hero_frame_marks, hero_frame_marked * sizeof(HeroFrameMark));
-        hero_free_raw(hero_frame_marks);
-        hero_frame_marks = grown;
-        hero_frame_mark_cap = cap;
-    }
-    void *at = hero_frame_take_raw(bytes, __builtin_return_address(0));
-    hero_frame_marks[hero_frame_marked].at = at;
-    hero_frame_marks[hero_frame_marked].frame = own;
-    hero_frame_marked += 1;
-    hero_callback_held(1);
-    return at;
+    void *caller = __builtin_return_address(0);
+    if (bytes > HERO_FRAME_ROOM) hero_frame_exhausted(caller);
+    size_t need = (bytes + 15) & ~(size_t)15;
+    hero_frame_room_hold(need, caller);
+    HeroFrameBlock *b = (HeroFrameBlock *)hero_malloc_raw(HERO_FRAME_HEADER + need);
+    b->need = need;
+    b->newer = NULL;
+    hero_aside_take(&hero_frame_lock);
+    b->older = hero_frame_newest;
+    if (b->older != NULL) b->older->newer = b;
+    hero_frame_newest = b;
+    hero_aside_drop(&hero_frame_lock);
+    return (char *)b + HERO_FRAME_HEADER;
 }
 
-/* The newest take is `p`'s, the common case; otherwise `p`'s mark lies below
- * the newest, and the takes above it are given back first where each is of a
- * frame below `p`'s own taker, which is giving `p` back at its exit and so is
- * the deepest frame alive. `p`'s own mark names that frame, never the frame
- * this call came from: a give is the last call of its function and may be
- * reached by a tail call from the function's caller. A `p` no mark holds was
- * taken on another stack, aside, or is the compiler's error, which the aside's
- * give tells. */
+/* The give of `p`: its block found in the list by the address it handed out
+ * before a byte of the block is read, so a wrong pointer is the compiler's
+ * error told and never a header read from where nothing was taken. The search
+ * is as long as the blocks standing newer than `p`, every thread's, and a
+ * function gives back at its exit what it took last, so the common case is the
+ * first block it reads. */
 void hero_frame_give(void *p) {
-    if (hero_frame_marked > 0 && hero_frame_marks[hero_frame_marked - 1].at == p) {
-        hero_frame_pop();
-        return;
+    hero_aside_take(&hero_frame_lock);
+    HeroFrameBlock *b = hero_frame_newest;
+    while (b != NULL && (char *)b + HERO_FRAME_HEADER != (char *)p) b = b->older;
+    if (b == NULL) {
+        hero_aside_drop(&hero_frame_lock);
+        hero_frame_unknown();
     }
-    size_t at = hero_frame_marked;
-    while (at > 0 && hero_frame_marks[at - 1].at != p) at -= 1;
-    if (at == 0) {
-        hero_frame_aside_give(p);
-        return;
-    }
-    uintptr_t giver = hero_frame_marks[at - 1].frame;
-    for (size_t above = at; above < hero_frame_marked; above += 1) {
-        if (!hero_frame_is_below(hero_frame_marks[above].frame, giver)) hero_frame_out_of_order();
-    }
-    while (hero_frame_marked >= at) hero_frame_pop();
+    if (b->newer != NULL) b->newer->older = b->older;
+    else hero_frame_newest = b->older;
+    if (b->older != NULL) b->older->newer = b->newer;
+    hero_aside_drop(&hero_frame_lock);
+    hero_frame_room_free(b->need);
+    hero_free_raw(b);
 }
 
 /* The same, for `__attribute__((__cleanup__))`, which hands the address of
  * the pointer and runs after a `return` has copied its value: a function that
  * returns a group's record out of this room by C's convention gives its
  * regions back through here (`selfhost/emit/large_value.hero`'s
- * `taken_to_exit`, defect 2316). Given back before the `return`, the chunk
- * the value stood in was freed above whenever a spare at least as large was
- * already kept, and the return's copy read freed memory. */
+ * `taken_to_exit`, defect 2316). Given back before the `return`, the block
+ * the value stood in would be freed before the return's copy read it. */
 void hero_frame_give_at(void *slot) {
     hero_frame_give(*(void **)slot);
-}
-
-/* A spawned thread's room goes back with the thread (`parts/spawn.c`), as its
- * lend regions do: every function it ran has returned, or was left by a C
- * jump, so what is left is the kept chunk, the takes of frames a jump left,
- * and the marks. */
-static void hero_frame_thread_leave(void) {
-    while (hero_frame_top != NULL) {
-        HeroFrameChunk *below = hero_frame_top->below;
-        hero_free_raw(hero_frame_top);
-        hero_frame_top = below;
-    }
-    hero_free_raw(hero_frame_spare);
-    hero_frame_spare = NULL;
-    hero_free_raw(hero_frame_marks);
-    hero_frame_marks = NULL;
-    hero_callback_held(-(int64_t)hero_frame_marked);
-    hero_frame_marked = 0;
-    hero_frame_mark_cap = 0;
 }

@@ -13,22 +13,22 @@
  * 2026-11-20; panel 251's R1; defect d-p259-clerk-1; design.md §1.12, §4.19).
  *
  * WHAT IT IS FOR. `parts/siginstall.c`, `parts/sigjump_save.c` and
- * `parts/sigjump_make.c` define the C library's installers, its save points
- * and jumps, and `makecontext`, so every call of them by name reaches this
- * runtime, and the thunk can ask whether a handler of C's is running
- * (`parts/sigguard.c`'s fourth question) and which stack a frame is on
- * (`parts/stack_lane.c`). A library that asks `dlsym` for one of those names,
- * with the C library's own handle or with `RTLD_NEXT`, was answered the C
- * library's own and went around them: a handler a `sigaction` so found
- * installed called the program's function through 24 frames of its own, and
- * the function ran inside the signal, 20 runs of 20 at `-O0` and at `-O2` in
- * Linux arm64 (lane-signals' `r2522dl`, 2026-11-20); and a `makecontext` so
- * found named no stack, so two coroutines on stacks carved from the thread's
- * own were read as the thread's and a correct program was refused in the
- * words of a signal handler it does not have, 3 runs of 3 in Linux arm64
- * (`unseen_carved`, panel 259's clerk, 2026-11-25). So this runtime defines
- * `dlsym` and `dlvsym` too, and answers its own definition for those names,
- * which is what a call of them by name reaches.
+ * `parts/sigjump_make.c` define the C library's installers, its save points and
+ * jumps, and `makecontext`, so every call of them by name reaches this runtime,
+ * and the thunk can ask whether a handler of C's is running
+ * (`parts/sigguard.c`'s fourth question) and which ranges `makecontext` was
+ * given, which the jump records read (`parts/sigentries.c`). A library that
+ * asks `dlsym` for one of those names, with the C library's own handle or with
+ * `RTLD_NEXT`, was answered the C library's own and went around them: a handler
+ * a `sigaction` so found installed called the program's function through 24
+ * frames of its own, and the function ran inside the signal, 20 runs of 20 at
+ * `-O0` and at `-O2` in Linux arm64 (lane-signals' `r2522dl`, 2026-11-20); and
+ * a `makecontext` so found named no stack, so two coroutines on stacks carved
+ * from the thread's own were read as the thread's and a correct program was
+ * refused in the words of a signal handler it does not have, 3 runs of 3 in
+ * Linux arm64 (`unseen_carved`, panel 259's clerk, 2026-11-25). So this runtime
+ * defines `dlsym` and `dlvsym` too, and answers its own definition for those
+ * names, which is what a call of them by name reaches.
  *
  * THE NAMES (`hero_dl_ours`) are every function this runtime defines that the
  * C library also exports, enumerated from the objects (`nm` of the runtime's

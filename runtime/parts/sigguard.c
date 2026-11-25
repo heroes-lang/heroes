@@ -637,13 +637,11 @@ static void hero_callback_asked(const char *what, void *ret, void *frame);
 
 /* The thunk's first line: the question, then the count (`parts/callback.c`):
  * the count is begun only for a call the question let through, which the
- * thunk's own last line then ends. Then what frames below the thunk's own a
- * C jump left in the room and the lend regions is given back (panel 258's
- * R1): nothing of this thread's stack below the thunk is alive. */
+ * thunk's own last line then ends. Nothing is judged given back by the
+ * thunk's address (panel 259's R1, `parts/frame.c`). */
 void hero_callback_entered(const char *what, void *ret, void *frame) {
     hero_callback_asked(what, ret, frame);
     hero_callback_in();
-    hero_callback_heal(frame);
 }
 
 static void hero_callback_asked(const char *what, void *ret, void *frame) {
@@ -708,8 +706,8 @@ void hero_signal_learn(void) {}
 void hero_callback_entered(const char *what, void *ret, void *frame) {
     (void)what;
     (void)ret;
+    (void)frame;
     hero_callback_in();
-    hero_callback_heal(frame);
 }
 
 static void hero_signal_measure(void) {}

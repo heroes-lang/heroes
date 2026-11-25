@@ -399,10 +399,9 @@ static void hero_spawn_drain(const HeroSpawnSlot *slot) {
  * must let a Heroes function run on it. Claiming before the body and not inside
  * it is deliberate — the body is the author's Heroes function and it must not
  * have to know that any of this exists. */
-/* `parts/lend.c`, later in this translation unit: the thread's lend regions;
- * `parts/frame.c`: its large values' room (defect 2278). */
+/* `parts/lend.c`, later in this translation unit: the audit of the lend
+ * regions given back and the thread's quarantine of them. */
 static void hero_lend_thread_leave(void);
-static void hero_frame_thread_leave(void);
 static void hero_spawn_leave(HeroSpawnSlot *slot);
 
 #if !defined(_WIN32)
@@ -535,11 +534,10 @@ static void hero_spawn_leave(HeroSpawnSlot *slot) {
     /* The alternate stack goes back to the OS with the thread that took it: a
      * slot is reused (a bound on threads ALIVE, above), so a mapping kept per
      * spawn would grow without bound in a program that spawns in a loop. And
-     * the regions its buffers were lent from (panel 196's R4), for the same
-     * reason and under the sanitizer too, where the guard's two doors are
-     * empty and these mappings are still the thread's. */
+     * the lend regions given back are audited, and under the sanitizer the
+     * thread's quarantine of them unmapped, for the same reason; the regions
+     * themselves are the process's (panel 259's R1, `parts/lend_aside.c`). */
     hero_lend_thread_leave();
-    hero_frame_thread_leave();
     hero_stack_guard_leave();
 }
 
