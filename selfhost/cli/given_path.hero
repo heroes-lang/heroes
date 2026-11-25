@@ -1,0 +1,93 @@
+# A path the author gives from the program's folder, `add`'s `--path` and a
+# catalogue's `path`, as a verb reads it and as a message names it
+# (design.md §4.17, §1.12; defect d-lane-blocking-small-1, 2026-11-25).
+#
+# **A path that names its folder from a root of the machine is read as
+# written, never joined under the program's folder.** Until then `heroes add
+# -C app --path /abs/lib` looked for `app//abs/lib` and said *there is no
+# folder* while the folder stood at the path given, the build reading the
+# same entry from `/abs/lib` at exit 0; and an entry so written, its own
+# catalogue read from the joined place, lost its requirements in silence.
+# What is rooted is the host's question: `/…` everywhere, and on Windows also
+# `\…`, a drive, `C:…`, and a share, `\\server\…`, each of which Windows reads
+# from no folder of the program's (unrun on Windows: every measurement of
+# this file is this Mac's).
+#
+# **A message names the path the author wrote, and the folder it is read
+# from beside it**: `../lib` from the program's folder `app/`, never
+# `app/../lib`, a path nobody wrote. A shell's `~` is no root here: it
+# reaches the compiler only where the shell left it, quoted or inside a
+# word, and is then a folder named `~`, told as written.
+
+use cli/process
+
+# Whether `path` names its place from a root of this machine rather than
+# from a folder: `/…`, and on Windows `\…`, `C:…` and `\\server\…`.
+function rooted(path: str) -> bool
+    if path.len() > 0 && path[0] == '/'
+        return true
+
+    if process.exe_suffix() != ".exe"
+        return false
+    return path.len() > 0 && path[0] == '\\' || drive_first(path)
+
+# Whether `path` opens with a drive's letter and its `:`.
+function drive_first(path: str) -> bool
+    return path.len() >= 2 && (path[0] >= 'a' && path[0] <= 'z' || path[0] >= 'A' && path[0] <= 'Z') && path[1] == ':'
+
+# Where `path`, given from `folder` ("" for the current one, else a folder
+# ending with `/`), is read: `path` itself where it is rooted.
+function read_from(folder: str, path: str) -> str
+    if rooted(path)
+        return path
+    return folder + path
+
+# `path` as a message names it, in backticks: as written, and where it is
+# read from the program's folder `folder` and that is not the current one,
+# that folder beside it.
+function said(folder: str, path: str) -> str
+    if rooted(path) || folder.len() == 0
+        return "`" + path + "`"
+    return "`" + path + "` from the program's folder `" + folder + "`"
+
+# The last part of `path`, its trailing separators left out: `/` everywhere,
+# and `\` on Windows.
+function last_part(path: str) -> str
+    end: i64 @= path.len()
+
+    while end > 0 && separator(path[end - 1])
+        end @ end - 1
+
+    at: i64 @= end
+
+    while at > 0 && !separator(path[at - 1])
+        at @ at - 1
+
+    return path.slice(from: at, to: end)
+
+function separator(b: u8) -> bool
+    return b == '/' || b == '\\' && process.exe_suffix() == ".exe"
+
+## Tests
+
+test "a rooted path is read as written, any other from the program's folder, and told as written (defect d-lane-blocking-small-1)"
+    assert rooted("/abs/lib") && rooted("//share/lib")
+    assert !rooted("lib") && !rooted("../lib") && !rooted("./lib") && !rooted("~/lib") && !rooted("")
+    assert read_from(folder: "app/", path: "/abs/lib") == "/abs/lib"
+    assert read_from(folder: "app/", path: "../lib") == "app/../lib"
+    assert read_from(folder: "", path: "../lib") == "../lib"
+    assert said(folder: "app/", path: "/abs/lib") == "`/abs/lib`"
+    assert said(folder: "app/", path: "../lib/") == "`../lib/` from the program's folder `app/`"
+    assert said(folder: "", path: "~/lib") == "`~/lib`"
+    assert last_part("/abs/lib/") == "lib" && last_part("../lib") == "lib" && last_part("lib") == "lib" && last_part("/") == ""
+
+    # A drive, a share and a root of the current drive are Windows' own;
+    # elsewhere each is a name like any other, read from the folder.
+    windows = process.exe_suffix() == ".exe"
+    assert rooted("C:/x/lib") == windows && rooted("C:\\x\\lib") == windows && rooted("\\\\server\\share") == windows
+    assert rooted("\\x") == windows && rooted("C:lib") == windows
+
+    if windows
+        assert last_part("C:\\x\\lib") == "lib"
+    else
+        assert last_part("C:\\x\\lib") == "C:\\x\\lib"

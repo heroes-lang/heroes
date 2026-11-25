@@ -30,6 +30,7 @@
 # Each package walked is placed as it is read (`fetch/placing.hero`), so the
 # catalogue it holds is read from a tree held to its sum.
 
+use cli/given_path
 use fetch/address
 use fetch/address_form
 use fetch/index_source
@@ -128,7 +129,7 @@ function required_id(r: catalogue.Entry, own: catalogue.Catalogue, of: catalogue
 # program's, the two joined and their `.` and `..` taken out; any other as it
 # is.
 function from_program(r: catalogue.Entry, of: catalogue.Entry) -> catalogue.Entry
-    if r.path.len() == 0 || r.path[0] == '/'
+    if r.path.len() == 0 || given_path.rooted(r.path)
         return r
     moved: catalogue.Entry @= r
     moved.path @ sums.folded(of.path + "/" + r.path)

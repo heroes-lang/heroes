@@ -1,0 +1,10 @@
+# Defect d-lane-blocking-small-1 (2026-11-24): `heroes add -C app --path`
+# given a folder's absolute path looked for it under the program's folder,
+# `app//<abs>/lib`, and said there was no folder there; the build already read
+# such an entry from the path as written. The folder is now asked where the
+# build reads it, the package its own catalogue names is added beside it, and
+# a folder that is not there is told by the path the author wrote.
+use <lib>/lib
+
+function main()
+    print(lib.x().to_str())
