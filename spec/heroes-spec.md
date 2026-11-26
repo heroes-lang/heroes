@@ -398,7 +398,7 @@ reports what belongs there (the expected type, what is in scope). A program
 with holes type-checks everything else but produces no binary.
 
 ## 13. FFI
-Anything beyond this document comes from packages or C libraries; processes and files from the language's `hero_os.h`, and sockets and clocks from its platform layer's `hero_net.h` and `hero_time.h`, linked where a group names one. A group names its header, and `link` a library when the symbols need one; C
+Anything beyond this document comes from packages or C libraries; processes and files from the language's `hero_os.h`, and sockets, clocks and the rest from its platform layer: `hero_net.h`, `hero_time.h` and every other `hero_` header it provides but the compiler's `hero_compiler.h`. A group whose header is one of these or includes a file of the layer at any depth, or whose library calls the layer, must say `layer` after its header, and no other group may; a name one of these declares is bound only by a group whose header is or includes it, and a build links the layer only where a module it compiles holds a group saying `layer`. A group names its header, and `link` a library when the symbols need one; C
 reads a module's headers in the order its groups are written: one that needs
 another's names comes after it, and one defining `_GNU_SOURCE` first. clang
 checks every result type, constant and record field against that header, and a result may be
@@ -505,7 +505,7 @@ else they are errors.
 Instead of `link`, `extern "raylib.h" pkgconfig "raylib"`
 asks the system where its headers and libraries are.
 
-    Extern = "extern" string [ ( "link" | "pkgconfig" ) string ] NEWLINE
+    Extern = "extern" string [ "layer" ] [ ( "link" | "pkgconfig" ) string ] NEWLINE
              INDENT { Member } DEDENT .
     Member = "function" ident "(" [ CParam { "," CParam } ] ")"
                [ "->" Type [ "owned" ident ] [ ( "acquires" | "retains" ) ident { "|" ident } | "borrows" ]
