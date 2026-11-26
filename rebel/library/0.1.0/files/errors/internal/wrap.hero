@@ -1,6 +1,6 @@
 # A failure changed on its way up, and several joined into one: context
-# written before a message, a code replaced, a value dropped, a list of
-# results joined or collected. A value passes through every function as it
+# written before a message, a code replaced, a value dropped, a result dropped
+# whole, a list of results joined or collected. A value passes through every function as it
 # is; only a failure is rebuilt.
 
 # `r` with `what` and `": "` written before its message, where it fails.
@@ -27,6 +27,13 @@ function discard_value<T>(r: T?) -> ()?
     return match r
         .ok _  => ok()
         .err e => fail(code: e.code, msg: e.msg)
+
+# Nothing: the failure `r` may hold, dropped. A `()?` alone, so no value
+# travels with it, nor a failure inside a value.
+function ignore(r: ()?)
+    match r
+        .ok _  => _ = 0
+        .err _ => _ = 0
 
 # The message of the failures whose codes are `codes` and whose messages are
 # `msgs`, two lists of one length: the one message where there is one, else
@@ -140,6 +147,15 @@ test "discard_value: a value of a list, a failure of a record's type"
         .err e =>
             assert e.code == "closed"
             assert e.msg == "the pipe closed"
+
+test "ignore: a value and a failure of nothing, each left as it was"
+    closed: ()? = ok()
+    refused: ()? = fail(code: "closed", msg: "the pipe closed")
+    gone: ()? = fail(code: "file_not_found", msg: "no \"scéne.tmp\"")
+    ignore(closed)
+    ignore(refused)
+    ignore(gone)
+    assert !closed.is_err() && refused.is_err() && gone.is_err()
 
 test "joined_message: one failure, two, and a message holding a quoted mark"
     assert joined_message(codes: ["invalid"], msgs: ["no digit"]) == "no digit"
