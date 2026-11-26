@@ -495,9 +495,9 @@ function fenced(program: str) -> str
 # step 55a the tests read the net's own catalogue and the tree it placed,
 # which left with the package they named.
 function package_tree(dir: str) -> ()?
-    placed = dir + "/heroes.packages/rebel@0.1.0-80b84a13e2192a79"
+    placed = dir + "/heroes.packages/rebel@0.1.0-aa35cfb82535ac06"
     shell.mkdir_all(placed + "/net")?
-    write_file(path: dir + "/heroes.toml", text: "index = \"file://../packages\"\n\n[dependencies.rebel]\nversion = \"0.1.0\"\nsum = \"sha256-80da19cde73f3d182880b9a05e0ff2dfb610090338474736073bba080b2ab406\"\n")?
+    write_file(path: dir + "/heroes.toml", text: "index = \"file://../packages\"\n\n[dependencies.rebel]\nversion = \"0.1.0\"\nsum = \"sha256-5edfcf7e3e23e928708f3489a161808250f3645bf5b7c30f4d22ebfcdea6f82e\"\n")?
     write_file(path: placed + "/strings.hero", text: FIELDS)?
     write_file(path: placed + "/strings.md", text: "# strings: `use <rebel>/strings`\n")?
     write_file(path: placed + "/net/hero_net.hero", text: FLOOR)?
