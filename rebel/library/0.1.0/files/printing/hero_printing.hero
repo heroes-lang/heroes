@@ -14,7 +14,7 @@
 # A name and a title cross as `cstr`, so one holding a zero byte aborts at
 # `.cstr()` before C runs: the face refuses one first, `invalid`.
 
-extern "hero_printing.h"
+extern "hero_printing.h" layer
     # The kinds of failure `last_error` answers, the same numbers on every
     # platform.
     constant HERO_PRINTING_OK: i64

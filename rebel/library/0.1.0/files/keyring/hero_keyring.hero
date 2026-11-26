@@ -17,7 +17,7 @@
 use bytes
 use os
 
-extern "hero_keyring.h"
+extern "hero_keyring.h" layer
     # The kinds of failure `last_error` answers, the same numbers on every
     # platform.
     constant HERO_KEYRING_OK: i64

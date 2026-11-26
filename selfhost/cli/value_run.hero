@@ -190,8 +190,13 @@ function linked_and_run(t: toolchain.Toolchain, dir: str, object: str, total: i6
     runtime = toolchain.runtime_object(t, level: level, sanitize: false)?
 
     # The members written in Swift the probed unit's headers reach, as a
-    # build's link holds them (`cli/layer_reach.hero`, defect 2625).
-    layer_words = layer.archive(t, level: level, sanitize: false, swift: layer_reach.reached(t, named: layer_reach.includes(unit))?)?
+    # build's link holds them (`cli/layer_reach.hero`, defect 2625); and the
+    # layer only where the program says `layer`, as its own link does (panel
+    # 260).
+    layer_words: [str] @= []
+
+    if t.layered
+        layer_words @ layer.archive(t, level: level, sanitize: false, swift: layer_reach.reached(t, named: layer_reach.includes(unit))?)?
     binary = publish.private_name(dir + "/probe") + process.exe_suffix()
     line: [str] @= strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: false))
     line @ strings.with_all(list: line, more: link_flags.target_words(t.target))

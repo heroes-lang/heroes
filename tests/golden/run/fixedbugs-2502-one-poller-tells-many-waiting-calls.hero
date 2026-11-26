@@ -11,7 +11,7 @@
 # ends when its own way is ready, the send then ended by the close. The
 # waiting threads are C's, in the header beside this file. Each line prints 1
 # where every step held, else the step that did not.
-extern "fixedbugs-2502-waiters.h"
+extern "fixedbugs-2502-waiters.h" layer
     function many_waiters_each_get_their_byte(n: i64) -> i64
     function both_ways_on_one_socket() -> i64
 

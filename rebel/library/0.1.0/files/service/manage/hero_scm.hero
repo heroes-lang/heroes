@@ -14,7 +14,7 @@
 
 use os
 
-extern "hero_scm.h"
+extern "hero_scm.h" layer
     # The kinds of failure `last_error` answers, the same numbers on every
     # platform.
     constant HERO_SCM_OK: i64

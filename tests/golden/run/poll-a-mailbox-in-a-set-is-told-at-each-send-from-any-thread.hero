@@ -6,7 +6,7 @@
 # stood in the mailbox; there is none, and every value is taken. Once closed
 # and empty the mailbox is told still, so a loop's receive answers `closed`.
 
-extern "hero_poll.h"
+extern "hero_poll.h" layer
     record Set tag hero_poll_set
     function hero_poll_make(most: i64) -> Set acquires hero_poll_close
     function hero_poll_add_mailbox(set: Set, number: i64) -> i64

@@ -17,7 +17,7 @@
 # socket. The C is in the headers beside
 # this file. Each line prints 1 where every step held, else the step that did
 # not.
-extern "the-platform-layer-deadline.h"
+extern "the-platform-layer-deadline.h" layer
     function deadline_ends_a_quiet_wait() -> i64
     function deadline_lets_an_early_byte_through() -> i64
     function deadline_reaches_a_call_already_waiting() -> i64

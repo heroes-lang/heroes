@@ -19,7 +19,7 @@
 # (`fixedbugs-2554-a-closed-listener-lets-its-port-go.h`). On POSIX both
 # held before the repair; they are Windows' falsifiers.
 
-extern "fixedbugs-2554-a-closed-listener-lets-its-port-go.h"
+extern "fixedbugs-2554-a-closed-listener-lets-its-port-go.h" layer
     function port_after_waiting_accept(rounds: i64) -> i64
     function port_after_timed_out_accept(rounds: i64) -> i64
 

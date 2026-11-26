@@ -4,7 +4,7 @@
 # life, the door's, and begins the socket's again by its own mark, `acquires
 # hero_net_close | hero_net_number`; never closed, it is a life a mark began,
 # and the sentence names the mark alone, as it did before the door existed.
-extern "hero_net.h"
+extern "hero_net.h" layer
     record Socket tag hero_net_socket
     function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
     function hero_net_connect(address: cstr lent, port: i64) -> Socket acquires hero_net_close

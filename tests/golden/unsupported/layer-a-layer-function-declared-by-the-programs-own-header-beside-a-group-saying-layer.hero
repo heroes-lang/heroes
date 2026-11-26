@@ -1,0 +1,11 @@
+# Panel 260, the residue: one group says `layer` (the sockets' constant), and another, saying nothing, binds the
+# layer's clock through a header of the program's own that declares it and includes none of the layer's headers.
+extern "hero_net.h" layer
+    constant HERO_NET_INVALID: i64
+
+extern "layer-a-layer-function-declared-by-the-programs-own-header-beside-a-group-saying-layer.h"
+    function hero_time_monotonic_ns() -> i64  #~ ffi_layer_redeclared
+
+function main()
+    print(HERO_NET_INVALID)
+    print(hero_time_monotonic_ns() > 0)

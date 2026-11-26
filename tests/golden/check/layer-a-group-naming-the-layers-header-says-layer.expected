@@ -1,0 +1,3 @@
+tests/golden/check/layer-a-group-naming-the-layers-header-says-layer.hero:10:8: error[ffi_layer_undeclared]: `hero_time.h` is the platform layer's header, and this group does not say `layer`: write `extern "hero_time.h" layer`
+tests/golden/check/layer-a-group-naming-the-layers-header-says-layer.hero:13:8: error[ffi_layer_undeclared]: `./hero_net.h` is the platform layer's header, and this group does not say `layer`: write `extern "./hero_net.h" layer`
+tests/golden/check/layer-a-group-naming-the-layers-header-says-layer.hero:16:8: error[ffi_layer_undeclared]: `platform/hero_audio_arm.h` is the platform layer's header, and this group does not say `layer`: write `extern "platform/hero_audio_arm.h" layer`

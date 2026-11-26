@@ -9,12 +9,12 @@
 # 2 = 130, what it printed before written out; the leak check never runs, as
 # under any signal's own end. Judged on POSIX: on Windows a second console
 # event ends the process by the system's own handler, in its own status.
-extern "hero_net.h"
+extern "hero_net.h" layer
     function hero_net_catch_stop() -> i64
     function hero_net_ask_stop()
     function hero_net_stop_asked() -> i64
 
-extern "the-platform-layer-stop.h"
+extern "the-platform-layer-stop.h" layer
     constant STOP_INTERRUPT: i64
     function stop_begin(interrupt_ignored: i64) -> i64
     function stop_send_now(what: i64) -> i64

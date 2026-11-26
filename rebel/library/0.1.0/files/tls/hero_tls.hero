@@ -25,7 +25,7 @@ use threads/hero_os as threads_floor
 use time/hero_time
 use tls/internal/fixture
 
-extern "hero_tls.h"
+extern "hero_tls.h" layer
     # A socket listening for TLS connections. It is a handle the layer issues
     # and checks: one closed already, `nullptr`, or one it never issued is
     # `HERO_TLS_NOT_OPEN`, never a read of freed memory.

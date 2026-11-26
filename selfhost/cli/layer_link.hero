@@ -1,0 +1,97 @@
+# A refused link missing a name the platform layer's headers declare, told as
+# what it is (design.md §1.11, §4.19, §4.17; panel 260's R2,
+# provisional, author ratification pending), asked before every other reader
+# of a refused link (`cli/whose.hero`).
+#
+# **A program none of whose groups says `layer` links none of the layer**, so
+# its link misses the name wherever something it links calls the layer
+# without a group saying so: told at the binding that names it, or at the
+# group whose header is the program's
+# own and puts the call in its code. Never as `internal error: linking
+# failed`, and never as a name no group says which library has.
+#
+# **A program one of whose groups says `layer` links the archive**: a layer
+# name its link misses is left to the other readers.
+
+use ast
+use check/layer_header
+use cli/layer_bound
+use cli/link_report
+use cli/runtime_bound
+use cli/toolchain
+use diag
+use source
+use token
+
+# The diagnostics for a refused link's `message`: one per name it reports that
+# a header of the layer declares, each told once; none where it reports none,
+# the other readers' then.
+function told(message: str, s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+    refs = link_report.references(message)
+
+    if refs.len() == 0
+        return out
+
+    if layer_header.declared(decls)
+        return out
+    names = layer_bound.declared_names(t.runtime)
+    told_names: {str: bool} @= {}
+
+    for one in refs
+        header = names[one.symbol]
+
+        if header.is_err() || !told_names[one.symbol].is_err()
+            continue
+        told_names[one.symbol] @ true
+
+        at = binding_of(s, decls, name: one.symbol)
+
+        if !at.is_err()
+            out @ out.push(missing(name: one.symbol, header: header.must(), span: at.must(), bound: true))
+            continue
+        own = first_group(decls, said: false)
+
+        if !own.is_err()
+            out @ out.push(missing(name: one.symbol, header: header.must(), span: own.must(), bound: false))
+
+    return out
+
+function missing(name: str, header: str, span: token.Span, bound: bool) -> diag.Diagnostic
+    how: str @= "this group binds it"
+
+    if !bound
+        how @ "this group's header puts a call to it in the program's own code"
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: layer_header.UNDECLARED,
+        message: "`" + name + "` is the platform layer's, declared by its `" + header + "`, and " + how + " through a header that includes none of the layer's, so no group of this program says `layer` and its link carries none of the layer: name `" + header + "` in this group, or include it in the group's header, and say `layer` after the header",
+        span: span
+    )
+    d.notes @ d.notes.push(layer_header.WHY)
+    d.notes @ d.notes.push(layer_bound.REDECLARED)
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "name the layer's header and say `layer`", replacement: "\"" + header + "\" layer", span: span, certainty: .guess)
+    )
+    return d
+
+# The header string of the group binding the C name `name`, where one does.
+function binding_of(s: source.Source, decls: [ast.Decl], name: str) -> token.Span?
+    for decl in decls
+        bound = runtime_bound.bound(decl)
+        head = layer_header.head_of(decl)
+
+        if !bound.is_err() && !head.header.is_err() && source.span_text(s, bound.must()) == name
+            return head.header
+
+    return fail(code: "none", msg: "no group binds it")
+
+# The header string of the first group saying `layer` where `said`, or of the
+# first group at all where not.
+function first_group(decls: [ast.Decl], said: bool) -> token.Span?
+    for decl in decls
+        head = layer_header.head_of(decl)
+
+        if !head.header.is_err() && (!said || !head.layer.is_err())
+            return head.header
+
+    return fail(code: "none", msg: "no group")

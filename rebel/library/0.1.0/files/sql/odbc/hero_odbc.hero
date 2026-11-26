@@ -19,7 +19,7 @@
 # A text handed to C as a `cstr` aborts on a zero byte (spec § 13), so the
 # face refuses one before it calls.
 
-extern "hero_odbc.h"
+extern "hero_odbc.h" layer
     # A connection to a data source, a handle the layer issues and checks:
     # one closed already, `nullptr`, or one it never issued is
     # `HERO_ODBC_NOT_OPEN`, never a read of freed memory.

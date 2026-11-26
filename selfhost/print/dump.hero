@@ -82,7 +82,7 @@ function declaration(tree: ast.Ast, s: source.Source, decl: ast.Decl) -> str
             # a reader must tell a constant whose value is in a header
             # from one whose value is in this file.
             rows: [str] @= [
-                "  " + extern_prefix(s, header: k.header, library: k.library) + "constant " + name + ": " + types.render_type(tree, k.ty, s) + "\n"
+                "  " + extern_prefix(s, header: k.header, library: k.library, layer: k.layer) + "constant " + name + ": " + types.render_type(tree, k.ty, s) + "\n"
             ]
             rows @ rows.push(docs(s, doc: decl.doc))
 
@@ -114,7 +114,7 @@ function declaration(tree: ast.Ast, s: source.Source, decl: ast.Decl) -> str
             if rec.partial
                 marker @ " partial"
             rows: [str] @= [
-                "  " + extern_prefix(s, header: rec.header, library: rec.library) + "record " + name + tag_text + marker + "\n"
+                "  " + extern_prefix(s, header: rec.header, library: rec.library, layer: rec.layer) + "record " + name + tag_text + marker + "\n"
             ]
             rows @ rows.push(docs(s, doc: decl.doc))
 
@@ -154,10 +154,13 @@ function render_signature(tree: ast.Ast, s: source.Source, name: str, f: ast.Fun
 # — §4.19, panel 036); fmt re-groups, because it hands the author
 # their own program back. One writer for both member kinds, so a
 # constant and a function in one group cannot print it two ways.
-function extern_prefix(s: source.Source, header: token.Span?, library: ast.Library?) -> str
+function extern_prefix(s: source.Source, header: token.Span?, library: ast.Library?, layer: token.Span?) -> str
     if header.is_err()
         return ""
     out: str @= "extern " + source.span_text(s, header.must())
+
+    if !layer.is_err()
+        out @ out + " " + source.span_text(s, layer.must())
 
     if !library.is_err()
         match library.must()
@@ -166,7 +169,7 @@ function extern_prefix(s: source.Source, header: token.Span?, library: ast.Libra
     return out + " "
 
 function signature(tree: ast.Ast, s: source.Source, name: str, f: ast.FunctionDecl) -> str
-    out: str = extern_prefix(s, header: f.header, library: f.library) + "function " + name + sig.generics_text(s, f.generics)
+    out: str = extern_prefix(s, header: f.header, library: f.library, layer: f.layer) + "function " + name + sig.generics_text(s, f.generics)
     rendered: [str] @= []
 
     for param in f.params

@@ -13,7 +13,7 @@
 
 use io/hero_stream
 
-extern "hero_serial.h"
+extern "hero_serial.h" layer
     # The kinds of failure `last_error` answers, the same numbers on every
     # platform and the stream's numbers where `hero_stream.h` has the kind.
     constant HERO_SERIAL_OK: i64

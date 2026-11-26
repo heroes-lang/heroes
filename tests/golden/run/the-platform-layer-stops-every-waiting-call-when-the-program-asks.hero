@@ -9,16 +9,16 @@
 # median of the times from the ask to their return under 10 ms. Then a first
 # interrupt comes, from the program itself, and the program goes on to its
 # last line and its leak check. The C is in the headers beside this file.
-extern "hero_net.h"
+extern "hero_net.h" layer
     function hero_net_catch_stop() -> i64
     function hero_net_stop_asked() -> i64
 
-extern "the-platform-layer-stop.h"
+extern "the-platform-layer-stop.h" layer
     constant STOP_INTERRUPT: i64
     function stop_begin(interrupt_ignored: i64) -> i64
     function stop_send_now(what: i64) -> i64
 
-extern "the-platform-layer-ask-stop.h"
+extern "the-platform-layer-ask-stop.h" layer
     function ask_stops_every_wait() -> i64
 
 function main()

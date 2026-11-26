@@ -11,7 +11,7 @@
 # asks again with that many. A list is fields of text, each followed by a zero
 # byte, in the form the header gives.
 
-extern "hero_acl.h"
+extern "hero_acl.h" layer
     # The kinds of failure `last_error` answers, the same numbers on every
     # platform; the header says what each means.
     constant HERO_ACL_OK: i64

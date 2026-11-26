@@ -245,7 +245,7 @@ function record_decl_named(name_start: i64, name_end: i64) -> ast.Decl
         name: span,
         doc: doc,
         span: span,
-        kind: .record_decl(fields: fields, header: fail(code: "absent", msg: "plain"), library: fail(code: "absent", msg: "plain"), partial: false, tag: fail(code: "absent", msg: "plain"))
+        kind: .record_decl(fields: fields, header: fail(code: "absent", msg: "plain"), library: fail(code: "absent", msg: "plain"), layer: fail(code: "absent", msg: "plain"), partial: false, tag: fail(code: "absent", msg: "plain"))
     )
 
 test "the three namespaces answer in order: primitive, generic, declaration"
@@ -298,6 +298,7 @@ test "a value in type position is named for what it is"
         is_extern: false,
         header: fail(code: "absent", msg: "none"),
         library: fail(code: "absent", msg: "none"),
+        layer: fail(code: "absent", msg: "no layer"),
         owned_result: fail(code: "none", msg: "nothing to free"),
         acquires_result: fail(code: "none", msg: "nothing to give back"),
         retains_result: fail(code: "none", msg: "nothing to give back"),

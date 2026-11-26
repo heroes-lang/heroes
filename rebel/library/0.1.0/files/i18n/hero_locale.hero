@@ -11,7 +11,7 @@
 # answers `HERO_LOCALE_UNSUPPORTED`, so the same line binds it on every
 # platform.
 
-extern "hero_locale.h"
+extern "hero_locale.h" layer
     # The kinds of result, the high 32 bits of what `settings` answers, the
     # same numbers on every platform.
     constant HERO_LOCALE_OK: i64

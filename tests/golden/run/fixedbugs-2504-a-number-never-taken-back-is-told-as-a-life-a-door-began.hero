@@ -7,7 +7,7 @@
 # standing, a door's place naming no line of the program, and names those
 # and no one else (`runtime/parts/alloc.c`, `parts/panic.c`'s
 # `hero_place_is_a_door`). Here a door's life stands alone.
-extern "hero_net.h"
+extern "hero_net.h" layer
     record Socket tag hero_net_socket
     function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
     function hero_net_connect(address: cstr lent, port: i64) -> Socket acquires hero_net_close

@@ -1,0 +1,11 @@
+# Panel 260 (provisional, author ratification pending): a group that says
+# `layer` and whose header is none of the platform layer's and includes none of
+# them binds nothing of the layer, and would make every program reaching it
+# compile and link the layer for nothing: refused at the word, told at `build`,
+# which follows the header's includes. The fix takes the word out.
+
+extern "layer-a-group-saying-layer-whose-header-reaches-none-of-it.h" layer  #~ ffi_layer_unreached
+    function answer() -> i64
+
+function main()
+    print(answer())

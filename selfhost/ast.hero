@@ -495,6 +495,11 @@ record FunctionDecl
     # nowhere else, so a declaration's index stays function identity.
     header: token.Span?
     library: Library?
+    # `layer` after the header (panel 260): the group says its header is, or
+    # reaches, the platform layer's, so a build of the program links the
+    # layer. The word's span, which a refusal of a group that reaches none of
+    # the layer points at; absent where the head line does not say it.
+    layer: token.Span?
     # `-> cstr owned sqlite3_free` — the C function that frees the string this
     # one hands back, named by the declaration itself (§4.19, panel 109).
     # A SPAN and not a name, because a diagnostic about the freer has to point
@@ -532,6 +537,7 @@ variant DeclKind
         body: Block?
         header: token.Span?
         library: Library?
+        layer: token.Span?
     function_decl
         value: FunctionDecl
     # `record Point` + fields — or, in a group, a struct the HEADER declares
@@ -542,6 +548,7 @@ variant DeclKind
         fields: [Field]
         header: token.Span?
         library: Library?
+        layer: token.Span?
         partial: bool
         tag: token.Span?
     variant_decl
@@ -662,6 +669,7 @@ test "a declaration owns its members directly, no arena"
         is_extern: true,
         header: ok(zero),
         library: fail(code: "absent", msg: "none"),
+        layer: fail(code: "absent", msg: "no layer"),
         owned_result: fail(code: "none", msg: "nothing to free"),
         acquires_result: fail(code: "none", msg: "nothing to give back"),
         retains_result: fail(code: "none", msg: "nothing to give back"),
@@ -686,6 +694,7 @@ test "a group's record carries what the head line said"
         fields: fields,
         header: ok(zero),
         library: ok(.link(name: zero)),
+        layer: ok(zero),
         partial: true,
         tag: fail(code: "absent", msg: "no tag")
     )

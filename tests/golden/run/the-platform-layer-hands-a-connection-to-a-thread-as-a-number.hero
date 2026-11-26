@@ -10,7 +10,7 @@
 # given up names nothing and the one taken back is new. The silent ending
 # holds that the leak check after `main` found every handle and every
 # number given back.
-extern "hero_net.h"
+extern "hero_net.h" layer
     record Socket tag hero_net_socket
     constant HERO_NET_NOT_OPEN: i64
     function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
@@ -28,7 +28,7 @@ extern "hero_os.h"
     function hero_thread_spawn(body: (function(x: i64) -> i64), arg: i64) -> i64
     function hero_thread_join(handle: i64) -> i64
 
-extern "the-platform-layer-hands-a-connection-to-a-thread-as-a-number.h"
+extern "the-platform-layer-hands-a-connection-to-a-thread-as-a-number.h" layer
     function given_up_names_nothing() -> i64
     function never_given_is_refused() -> i64
 

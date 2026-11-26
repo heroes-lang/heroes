@@ -292,20 +292,20 @@ test "all three clauses are load-bearing, and a record with fields is never a ha
     one: [ast.Field] = [ast.Field(name: token.Span(start: 4, end: 5), ty: 0, doc: [])]
 
     assert is_handle_record(
-        .record_decl(fields: empty, header: header, library: none_library(), partial: false, tag: tag)
+        .record_decl(fields: empty, header: header, library: none_library(), layer: fail(code: "absent", msg: "no layer"), partial: false, tag: tag)
     )
 
     # Outside a group there is no header to leave a type opaque.
-    assert !is_handle_record(.record_decl(fields: empty, header: none, library: none_library(), partial: false, tag: tag))
+    assert !is_handle_record(.record_decl(fields: empty, header: none, library: none_library(), layer: fail(code: "absent", msg: "no layer"), partial: false, tag: tag))
 
     # Without a tag the C type has no name.
-    assert !is_handle_record(.record_decl(fields: empty, header: header, library: none_library(), partial: false, tag: none))
+    assert !is_handle_record(.record_decl(fields: empty, header: header, library: none_library(), layer: fail(code: "absent", msg: "no layer"), partial: false, tag: none))
 
     # `partial` names SOME fields; with none it names nothing.
-    assert !is_handle_record(.record_decl(fields: empty, header: header, library: none_library(), partial: true, tag: tag))
+    assert !is_handle_record(.record_decl(fields: empty, header: header, library: none_library(), layer: fail(code: "absent", msg: "no layer"), partial: true, tag: tag))
 
     # A group record WITH fields is the header's struct, by value, as before.
-    assert !is_handle_record(.record_decl(fields: one, header: header, library: none_library(), partial: false, tag: tag))
+    assert !is_handle_record(.record_decl(fields: one, header: header, library: none_library(), layer: fail(code: "absent", msg: "no layer"), partial: false, tag: tag))
 
     # And nothing else is a record at all.
     assert !is_handle_record(.test_decl(body: ast.Block(span: token.Span(start: 0, end: 0), stmts: [])))

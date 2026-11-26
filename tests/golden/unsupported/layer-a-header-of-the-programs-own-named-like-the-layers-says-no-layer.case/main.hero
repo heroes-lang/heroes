@@ -1,0 +1,10 @@
+# Panel 260's R2 (provisional, author ratification pending): a header of the
+# program's own named `hero_util.h` is none of the platform layer's files,
+# which are the runtime's own list by path, so a group over it saying `layer`
+# binds nothing of the layer and is refused at the word, the fix taking it out
+# (the critic's `ownnamed`, declared).
+extern "hero_util.h" layer  #~ ffi_layer_unreached
+    function util_answer() -> i64
+
+function main()
+    print(util_answer())

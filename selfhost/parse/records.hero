@@ -144,7 +144,7 @@ function record_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: s
     if fields.len() > 0
         finish @ fields[fields.len() - 1].name
     decls @ decls.push(
-        ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .record_decl(fields: fields, header: tails.linkage_header(linkage), library: tails.linkage_library(linkage), partial: partial, tag: tag))
+        ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .record_decl(fields: fields, header: tails.linkage_header(linkage), library: tails.linkage_library(linkage), layer: tails.linkage_layer(linkage), partial: partial, tag: tag))
     )
 
 # A record's or a variant's block that holds a declaration, `function f()`

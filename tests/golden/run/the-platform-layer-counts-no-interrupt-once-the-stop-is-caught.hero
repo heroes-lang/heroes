@@ -5,7 +5,7 @@
 # did, the program going on, the stop asked, nothing counted. On Windows the
 # request to end is the console's Ctrl-Break, which the stop takes too
 # (unrun there).
-extern "hero_net.h"
+extern "hero_net.h" layer
     constant HERO_NET_INVALID: i64
     function hero_net_count_signal(sig: i32) -> i64
     function hero_net_catch_stop() -> i64
@@ -20,7 +20,7 @@ extern "hero_os.h"
 extern "signal.h"
     constant SIGTERM: i32
 
-extern "the-platform-layer-stop.h"
+extern "the-platform-layer-stop.h" layer
     constant STOP_INTERRUPT: i64
     function stop_begin(interrupt_ignored: i64) -> i64
     function stop_send_now(what: i64) -> i64

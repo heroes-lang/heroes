@@ -8,7 +8,7 @@
 # inherited ignore the same way): an interrupt sent then asks no stop, and
 # the request to end after it does. The signals are sent by a thread of the
 # program's own (the header beside it says how on each platform).
-extern "hero_net.h"
+extern "hero_net.h" layer
     record Socket tag hero_net_socket
     constant HERO_NET_STOPPED: i64
     function hero_net_catch_stop() -> i64
@@ -23,7 +23,7 @@ extern "hero_os.h"
     function hero_thread_spawn(body: (function(x: i64) -> i64), arg: i64) -> i64
     function hero_thread_join(handle: i64) -> i64
 
-extern "the-platform-layer-stop.h"
+extern "the-platform-layer-stop.h" layer
     constant STOP_INTERRUPT: i64
     constant STOP_REQUEST: i64
     function stop_begin(interrupt_ignored: i64) -> i64

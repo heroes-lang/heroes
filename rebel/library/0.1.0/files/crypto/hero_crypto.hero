@@ -25,7 +25,7 @@
 
 use bytes
 
-extern "hero_crypto.h"
+extern "hero_crypto.h" layer
     # A key, secret, private or public. It is a handle the layer issues and
     # checks: one closed already, `nullptr`, or one it never issued is
     # `HERO_CRYPTO_NOT_OPEN`, never a read of freed memory.

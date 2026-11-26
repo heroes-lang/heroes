@@ -16,7 +16,7 @@
 use net/hero_net
 use os
 
-extern "hero_service.h"
+extern "hero_service.h" layer
     # The kinds of failure `last_error` answers, the same numbers on every
     # platform.
     constant HERO_SERVICE_OK: i64

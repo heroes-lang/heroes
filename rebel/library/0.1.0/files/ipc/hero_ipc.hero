@@ -15,7 +15,7 @@
 use io/hero_stream
 use threads/hero_os as threads_floor
 
-extern "hero_ipc.h"
+extern "hero_ipc.h" layer
     # A listening channel the layer holds open. Each of the four is a handle
     # the layer issues and checks: one closed already, `nullptr`, or one it
     # never issued is `HERO_IPC_NOT_OPEN`, never a read of freed memory.

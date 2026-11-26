@@ -140,6 +140,7 @@ test "the two ends and the words between print as the one-line form does"
         is_extern: true,
         header: none,
         library: fail(code: "absent", msg: "none"),
+        layer: fail(code: "absent", msg: "no layer"),
         owned_result: none,
         acquires_result: none,
         retains_result: none,

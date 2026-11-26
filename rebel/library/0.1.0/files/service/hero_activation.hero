@@ -23,7 +23,7 @@ use ipc/hero_ipc
 use os
 use time
 
-extern "hero_activation.h"
+extern "hero_activation.h" layer
     # The kinds of failure `last_error` answers, the same numbers on every
     # platform.
     constant HERO_ACTIVATION_OK: i64

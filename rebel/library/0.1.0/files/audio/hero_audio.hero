@@ -14,7 +14,7 @@ use io/hero_stream
 use math
 use net/hero_net
 
-extern "hero_audio.h"
+extern "hero_audio.h" layer
     # A stream the layer holds open. It is a handle the layer issues and
     # checks: one closed already, `nullptr`, or one it never issued is
     # `HERO_AUDIO_NOT_OPEN`, never a read of freed memory.

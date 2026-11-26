@@ -4,7 +4,7 @@
 # the interrupt that comes changes nothing and is not counted, and the stop
 # is refused all the same, the program having chosen the count. On Windows a
 # console that ignores Ctrl-C sends it to no handler (unrun there).
-extern "hero_net.h"
+extern "hero_net.h" layer
     function hero_net_count_signal(sig: i32) -> i64
     function hero_net_catch_stop() -> i64
 
@@ -13,7 +13,7 @@ extern "hero_os.h"
     function hero_signal_number(name: i32) -> i32
     function hero_signal_take(sig: i32) -> i64
 
-extern "the-platform-layer-stop.h"
+extern "the-platform-layer-stop.h" layer
     constant STOP_INTERRUPT: i64
     function stop_begin(interrupt_ignored: i64) -> i64
     function stop_send_now(what: i64) -> i64

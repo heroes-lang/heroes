@@ -1,0 +1,30 @@
+# Panel 260 (provisional, author ratification pending): the platform layer is
+# linked only into a program one of whose groups says `layer`, so a group
+# naming one of the layer's headers without the word is refused at its own
+# string, at `check`, where the package's writer runs it. The layer's headers
+# are `hero_<word>.h` but the runtime's own `hero_os.h` and `hero_compiler.h`,
+# and `platform/hero_<word>.h`; each fix inserts the word after the header,
+# and the program it writes builds with the layer on its link. A group naming
+# `hero_os.h`, and one that says the word, are not told.
+
+extern "hero_time.h"  #~ ffi_layer_undeclared
+    function hero_time_monotonic_ns() -> i64
+
+extern "./hero_net.h"  #~ ffi_layer_undeclared
+    constant HERO_NET_INVALID: i64
+
+extern "platform/hero_audio_arm.h"  #~ ffi_layer_undeclared
+    function hero_audio_arm_permission(limit_ns: i64) -> i64
+
+extern "hero_poll.h" layer
+    function hero_poll_last_error() -> i64
+
+extern "hero_os.h"
+    function hero_os_pid() -> i64
+
+function main()
+    print(hero_time_monotonic_ns() > 0)
+    print(HERO_NET_INVALID)
+    print(hero_audio_arm_permission(limit_ns: 0) == 12345)
+    print(hero_poll_last_error() >= 0)
+    print(hero_os_pid() > 0)

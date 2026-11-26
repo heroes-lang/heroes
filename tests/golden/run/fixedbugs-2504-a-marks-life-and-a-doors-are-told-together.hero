@@ -3,7 +3,7 @@
 # a listener a mark began, `acquires hero_net_close`, never closed, and a
 # socket given up for a number the platform layer's door began a life for,
 # never taken back; so the sentence names both, the mark and the door.
-extern "hero_net.h"
+extern "hero_net.h" layer
     record Socket tag hero_net_socket
     function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
     function hero_net_connect(address: cstr lent, port: i64) -> Socket acquires hero_net_close

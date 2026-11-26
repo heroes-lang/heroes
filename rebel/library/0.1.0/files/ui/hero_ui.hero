@@ -18,7 +18,7 @@
 
 use poll/hero_poll
 
-extern "hero_ui.h"
+extern "hero_ui.h" layer
     # An app open on the layer. It is a handle the layer issues and checks:
     # one closed already, `nullptr`, or one it never issued is
     # `HERO_UI_NOT_OPEN`, never a read of freed memory.

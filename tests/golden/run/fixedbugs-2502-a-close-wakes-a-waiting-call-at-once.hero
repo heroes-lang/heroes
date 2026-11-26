@@ -9,7 +9,7 @@
 # 10 ms, which slices of 50 ms pass with a chance near 1 in 400. The waiting
 # threads are C's, in the header beside this file. It prints 1 where every
 # step held, else the step that did not.
-extern "fixedbugs-2502-waiters.h"
+extern "fixedbugs-2502-waiters.h" layer
     function close_wakes_at_once(n: i64) -> i64
 
 function main()

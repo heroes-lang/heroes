@@ -10,7 +10,7 @@
 
 use io/hero_stream
 
-extern "hero_term.h"
+extern "hero_term.h" layer
     # The kinds of failure `last_error` answers, the same numbers on every
     # platform.
     constant HERO_TERM_OK: i64

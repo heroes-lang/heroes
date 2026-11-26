@@ -1,0 +1,7 @@
+error[ffi_layer_unreached]: this group says `layer`, and `sizes.h` is none of the platform layer's headers and includes none of them, so nothing it binds is the layer's: take the word out, or name the layer's header that declares what this group binds
+  at tests/golden/unsupported/layer-a-header-including-the-runtimes-vendored-c-says-no-layer.case/main.hero:6:18
+    |
+  6 | extern "sizes.h" layer  #~ ffi_layer_unreached
+    |                  ^^^^^
+  note: the platform layer's members are compiled and linked only for a program whose groups say `layer`; a program none of whose groups says it links nothing of the layer, so its build asks nothing of it; a word that binds nothing makes every program reaching this group pay for the layer
+  fix (certain): take `layer` out

@@ -28,7 +28,7 @@ use strings
 
 # The clock a build's and a run's seconds are read on, which no setting of
 # the system's time moves (`runtime/hero_time.h`).
-extern "hero_time.h"
+extern "hero_time.h" layer
     function hero_time_monotonic_ns() -> i64
 
 # The group of programs this check judges.

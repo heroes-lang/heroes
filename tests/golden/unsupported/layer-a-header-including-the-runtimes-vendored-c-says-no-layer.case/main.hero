@@ -1,0 +1,10 @@
+# Panel 260's R2 (provisional, author ratification pending): the runtime's
+# `vendor/` is no file of the platform layer, so a group whose own header
+# includes only the vendored Monocypher header binds nothing of the layer, and
+# saying `layer` is refused at the word, the fix taking it out (the critic's
+# `vendorinc`, declared).
+extern "sizes.h" layer  #~ ffi_layer_unreached
+    function sizes_answer() -> i64
+
+function main()
+    print(sizes_answer() > 0)

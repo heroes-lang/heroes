@@ -47,11 +47,13 @@ use cli/group_file
 use cli/header_stands
 use cli/include_lines
 use cli/include_told
+use cli/layer_bound
 use cli/named_folders
 use cli/order_trial
 use cli/package_reads
 use cli/package_units
 use cli/process
+use cli/runtime_key
 use cli/stands
 use cli/toolchain
 use diag
@@ -75,13 +77,19 @@ record Place
     at: i64
     special: bool
 
-# What the walk holds while it reads.
+# What the walk holds while it reads; and, for what a group binds of the
+# platform layer (panel 260, `cli/layer_bound.hero`), every file each file
+# read was found to ask, read lexically, and the file each group's header was
+# found at, so a group is judged by what its own header reaches, whichever
+# group's walk read a file first.
 record Walk
     search: [str]
     seen: {str: bool}
     pending: [Visit]
     defines: {str: include_lines.Asked}
     out: [include_told.Stop]
+    edges: {str: [str]}
+    roots: {i64: str}
 
 # The build stopped, its refusals told, where a name the build's first clang
 # would open stands as no file; `ok()` where none does. Each group's header is
@@ -106,15 +114,23 @@ function stopped(t: toolchain.Toolchain, under: compiling.Compiling, groups: [st
         places[place.folder] @ place
 
     out: [diag.Diagnostic] @= []
+    reaches: {i64: layer_bound.Reach} @= {}
 
     # ORDER: the program's own folder, "", first, then each package's, as
     # `sort` orders a `str`, so two machines tell one tree in one order.
     for folder in sort(keys(heads))
         own = owned_under(under, place: places[folder].must())
 
-        for d in told(t, under: own, headers: heads[folder].must(), s, decls: decls)?
+        for d in told(t, under: own, headers: heads[folder].must(), s, decls: decls, reaches: @reaches)?
             if !said_already(out, d: d)
                 out @ out.push(d)
+
+    # What each group's header reaches of the platform layer, judged against
+    # the word its head line says, once every folder's walk is read (panel
+    # 260, `cli/layer_bound.hero`).
+    for d in layer_bound.told(s, decls: decls, reaches: reaches, t: t)
+        if !said_already(out, d: d)
+            out @ out.push(d)
 
     stop = compile.stage(out, s, permissive: permissive)
 
@@ -138,11 +154,25 @@ function owned_under(under: compiling.Compiling, place: package_units.Place) -> 
 # where only the runtime's opening reaches it in a folder the build names,
 # and the build stopped as a tool that cannot run where that folder is the
 # runtime's or the toolchain's.
-function told(t: toolchain.Toolchain, under: compiling.Compiling, headers: [str], s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]?
+function told(t: toolchain.Toolchain, under: compiling.Compiling, headers: [str], s: source.Source, decls: [ast.Decl], @reaches: {i64: layer_bound.Reach}) -> [diag.Diagnostic]?
     search = search_of(t, under: under)
-    stops = walked(opening: order_trial.opening(headers, question: ""), groups: headers, search: search)
+    w = walk_of(opening: order_trial.opening(headers, question: ""), groups: headers, search: search)
+    stops = w.out
     folders = named_folders.named_folders(under)
     out: [diag.Diagnostic] @= []
+
+    # What each group's header reaches of the platform layer, by the
+    # runtime's own list of its files (panel 260's R2).
+    layer_bound.reach_each(
+        s,
+        decls,
+        headers: headers,
+        edges: w.edges,
+        roots: w.roots,
+        runtime: t.runtime,
+        files: runtime_key.layer_files(t.runtime).default([]),
+        reaches: @reaches
+    )
 
     for one in stops
         includer = include_told.file_said(path: one.includer, runtime: under.runtime, named: folders, search: search)
@@ -186,7 +216,11 @@ function search_of(t: toolchain.Toolchain, under: compiling.Compiling) -> [str]
 # file, each place told once, by the first walk that reaches it: the
 # opening's lines in their order, the runtime's before the groups'.
 function walked(opening: str, groups: [str], search: [str]) -> [include_told.Stop]
-    w: Walk @= Walk(search: search, seen: {}, pending: [], defines: {}, out: [])
+    return walk_of(opening: opening, groups: groups, search: search).out
+
+# The walk `walked` makes, whole: its stops, its edges and its roots.
+function walk_of(opening: str, groups: [str], search: [str]) -> Walk
+    w: Walk @= Walk(search: search, seen: {}, pending: [], defines: {}, out: [], edges: {}, roots: {})
 
     for asked in include_lines.read(opening).asked
         entered(@w, asked: asked, from: Visit(path: "", at: -1, group: index_of(groups, name: asked.name), depth: 0))
@@ -196,7 +230,7 @@ function walked(opening: str, groups: [str], search: [str]) -> [include_told.Sto
             w.pending @ w.pending.slice(from: 0, to: w.pending.len() - 1)
             read(@w, visit: visit)
 
-    return w.out
+    return w
 
 # Each name `visit`'s file asks, entered.
 function read(@w: Walk, visit: Visit)
@@ -236,6 +270,14 @@ function entered(@w: Walk, asked: include_lines.Asked, from: Visit)
                 include_told.Stop(asked: asked, place: place.path, includer: from.path, depth: from.depth, group: from.group)
             )
         return
+
+    if !asked.embed
+        if from.path.len() == 0
+            if from.group >= 0
+                w.roots[from.group] @ key
+        else
+            includer = package_reads.lexical(from.path)
+            w.edges[includer] @ w.edges[includer].default([]).push(key)
 
     if asked.embed || !w.seen[key].is_err()
         return

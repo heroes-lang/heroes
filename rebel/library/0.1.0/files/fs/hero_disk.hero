@@ -9,7 +9,7 @@
 use io/hero_stream
 use os/hero_disk as os_disk
 
-extern "hero_disk.h"
+extern "hero_disk.h" layer
     # The two locks `lock` asks for.
     constant HERO_DISK_LOCK_SHARED: i64
     constant HERO_DISK_LOCK_EXCLUSIVE: i64

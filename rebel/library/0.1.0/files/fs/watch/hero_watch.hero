@@ -16,7 +16,7 @@ use net/hero_net
 use path as paths
 use time
 
-extern "hero_watch.h"
+extern "hero_watch.h" layer
     # A watch the layer holds open. It is a handle the layer issues and checks:
     # one closed already, `nullptr`, or one it never issued is
     # `HERO_WATCH_NOT_OPEN`, never a read of freed memory.

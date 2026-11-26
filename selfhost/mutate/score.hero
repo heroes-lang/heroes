@@ -25,6 +25,7 @@
 
 use check/state
 use checker
+use cli/layer_said
 use diag
 use modules
 use mutate/ops
@@ -140,7 +141,7 @@ function fate(name: str, text: str, library: str, permissive: bool) -> Fate
     if reports(diagnostics: out.diagnostics, permissive: permissive)
         return .killed
 
-    if reports(diagnostics: c.diagnostics, permissive: permissive)
+    if reports(diagnostics: layer_said.with_layer(c.diagnostics, s, parsed.decls), permissive: permissive)
         return .killed
     return .survived
 

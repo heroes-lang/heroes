@@ -12,7 +12,7 @@
 # macOS and the Event Log on Windows; every other call answers
 # `HERO_SYSLOG_UNSUPPORTED`.
 
-extern "hero_syslog.h"
+extern "hero_syslog.h" layer
     # The kinds of failure `last_error` answers, the same numbers on every
     # platform.
     constant HERO_SYSLOG_OK: i64

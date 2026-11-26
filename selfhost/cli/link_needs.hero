@@ -122,7 +122,8 @@ test "a link is told where every name it reports is answered by one reader, and 
         compiler_key: "",
         compiler_banner: "",
         target: "",
-        asked_answer: ""
+        asked_answer: "",
+        layered: false
     )
     library = "Undefined symbols for architecture arm64:\n  \"_base_helper\", referenced from:\n      _top_value in libtop.a[2](top.o)\n"
     alone = told(library, s, decls, t, asking: [], linked: [])

@@ -1,0 +1,215 @@
+# A group naming the platform layer's header says so with `layer`, told where
+# it does not at its own string (design.md §1.11, §4.19; panel 260,
+# provisional, author ratification pending).
+#
+# **The layer is linked only into a program that says it needs it.** Its
+# members, C of the language's own beside the runtime (`cli/layer.hero`), are
+# compiled, asked and archived for a build only where a group of the program,
+# or of a package it reaches, says `layer` (`cli/layer_reach.hero`); a
+# program that says it nowhere links nothing of the layer and asks nothing of
+# it. So a group binding the layer without the word is refused, at the
+# package's own `check`, where its writer runs it, never left to a link that
+# cannot find the layer's names.
+#
+# **The layer's files are the runtime's own list, never a name** (R2): the
+# files `runtime.c` names as the layer's (`runtime_key.layer_files`), by
+# their paths in the runtime's folder. `heroes check`, which reads no header,
+# asks a group's own string, its escapes decoded and a leading `./` passed
+# over, whether it is one of those headers (`cli/check.hero` hands the list
+# in, the runtime located as a build locates it); a build's unit searches the
+# runtime's folder before any other, so the file clang reads for such a
+# string is the runtime's and the fix is `certain`. A header of the
+# program's own whose name looks like the layer's (`hero_util.h`) is none of
+# it, and so is the C under the runtime's `vendor/`. What only the header's
+# includes show, a header of the program's own reaching the layer's, a group
+# saying `layer` whose header reaches none of it, and the library a group
+# links calling the layer, is told at `build` (`cli/layer_bound.hero`).
+
+use ast
+use diag
+use escape
+use keywords
+use source
+use token
+
+constant UNDECLARED: str
+    "ffi_layer_undeclared"
+
+constant UNREACHED: str
+    "ffi_layer_unreached"
+
+# A function of the layer's bound through a header of the program's own that
+# declares it and includes none of the layer's (`cli/layer_bound.hero`).
+constant REDECLARED: str
+    "ffi_layer_redeclared"
+
+# What a program that binds the layer pays and what one that does not is
+# spared, said by every refusal of this class: §4.17's fix, which names no
+# file the reader must open to find it.
+constant WHY: str
+    "the platform layer's members are compiled and linked only for a program whose groups say `layer`; a program none of whose groups says it links nothing of the layer, so its build asks nothing of it"
+
+# Each group whose string names one of the layer's headers `files` and does
+# not say `layer`, told once, at its string.
+function refused(s: source.Source, decls: [ast.Decl], files: [str]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+    told: {i64: bool} @= {}
+
+    for decl in decls
+        head = head_of(decl)
+
+        if head.header.is_err() || !head.layer.is_err()
+            continue
+        span = head.header.must()
+
+        if !told[span.start].is_err() || !names_layer(escape.unescape(source.span_text(s, span)), files: files)
+            continue
+        told[span.start] @ true
+        out @ out.push(
+            undeclared(header: source.span_text(s, span), span: span, through: "", library: written_library(s, head.library))
+        )
+
+    return out
+
+# The refusal of a group whose header is, or reaches through `through`, the
+# layer's, at the group's string, with the word inserted after it as its
+# certain fix: the word repairs exactly what is told, and the program it
+# writes builds with the layer on its link. `library` is the head line's
+# library as written after the header, ` link "now"`, "" for none.
+function undeclared(header: str, span: token.Span, through: str, library: str) -> diag.Diagnostic
+    what: str @= "`" + bare(header) + "` is the platform layer's header"
+
+    if through.len() > 0
+        what @ "`" + bare(header) + "` reaches the platform layer's " + through
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: UNDECLARED,
+        message: what + ", and this group does not say `" + keywords.WORD_LAYER + "`: write `extern " + header + " " + keywords.WORD_LAYER + library + "`",
+        span: span
+    )
+    d.notes @ d.notes.push(WHY)
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "say `" + keywords.WORD_LAYER + "` after the header", replacement: " " + keywords.WORD_LAYER, span: token.Span(start: span.end, end: span.end), certainty: .certain)
+    )
+    return d
+
+# The refusal of a group saying `layer` whose header is not the layer's and
+# reaches none of its files, at the word, with the word taken out as its
+# certain fix.
+function unreached(header: str, word: token.Span, from: i64) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: UNREACHED,
+        message: "this group says `" + keywords.WORD_LAYER + "`, and `" + bare(header) + "` is none of the platform layer's headers and includes none of them, so nothing it binds is the layer's: take the word out, or name the layer's header that declares what this group binds",
+        span: word
+    )
+    d.notes @ d.notes.push(
+        WHY + "; a word that binds nothing makes every program reaching this group pay for the layer"
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "take `" + keywords.WORD_LAYER + "` out", replacement: "", span: token.Span(start: from, end: word.end), certainty: .certain)
+    )
+    return d
+
+# A head line's library as written after the header, ` link "now"` or
+# ` pkgconfig "raylib"`; "" for none.
+function written_library(s: source.Source, library: ast.Library?) -> str
+    if library.is_err()
+        return ""
+
+    match library.must()
+        .link l       => return " " + keywords.WORD_LINK + " " + source.span_text(s, l.name)
+        .pkgconfig pk => return " " + keywords.WORD_PKGCONFIG + " " + source.span_text(s, pk.name)
+
+    return ""
+
+# A header's string as a message names it: its quotes taken off.
+function bare(spelled: str) -> str
+    if spelled.len() >= 2 && spelled[0] == '"' && spelled[spelled.len() - 1] == '"'
+        return spelled.slice(from: 1, to: spelled.len() - 1)
+    return spelled
+
+# Whether a group's header, as its escapes decode it and a leading `./`
+# passed over, names a header among the layer's files `files`, the paths
+# `runtime.c` names relative to the runtime's folder: a name, never a
+# pattern, so a header of the program's own named like the layer's is none.
+function names_layer(header: str, files: [str]) -> bool
+    at: i64 @= 0
+
+    while at + 1 < header.len() && header[at] == '.' && header[at + 1] == '/'
+        at @ at + 2
+
+    name = header.slice(from: at, to: header.len())
+
+    if name.len() < 3 || name.slice(from: name.len() - 2, to: name.len()) != ".h"
+        return false
+
+    for one in files
+        if one == name
+            return true
+
+    return false
+
+# A group member's head line: the header it names, its `layer` and its
+# library, each absent outside a group.
+record Head
+    header: token.Span?
+    layer: token.Span?
+    library: ast.Library?
+
+function head_of(decl: ast.Decl) -> Head
+    none_h: token.Span? = fail(code: "none", msg: "no header")
+    none_w: token.Span? = fail(code: "none", msg: "no layer")
+    none_l: ast.Library? = fail(code: "none", msg: "no library")
+
+    match decl.kind
+        .function_decl fd => return Head(header: fd.value.header, layer: fd.value.layer, library: fd.value.library)
+        .constant_decl k => return Head(header: k.header, layer: k.layer, library: k.library)
+        .record_decl rec => return Head(header: rec.header, layer: rec.layer, library: rec.library)
+        .variant_decl | .test_decl => return Head(header: none_h, layer: none_w, library: none_l)
+
+    return Head(header: none_h, layer: none_w, library: none_l)
+
+# Whether any group of `decls` says `layer`: the program's link carries the
+# layer exactly then.
+function declared(decls: [ast.Decl]) -> bool
+    for decl in decls
+        if !head_of(decl).layer.is_err()
+            return true
+
+    return false
+
+## Tests
+
+test "a group's string names the layer's header only where the runtime's list holds it (panel 260)"
+    files = [
+        "hero_time.h"
+        "platform/hero_time.c"
+        "hero_net.h"
+        "platform/hero_ui_appkit.h"
+        "platform/hero_ui_appkit.swift"
+    ]
+
+    for name in ["hero_time.h", "./hero_time.h", "././hero_net.h", "platform/hero_ui_appkit.h", "./platform/hero_ui_appkit.h"]
+        assert names_layer(name, files: files)
+
+    for other in ["hero_util.h", "hero_os.h", "Hero_Time.h", "my/hero_time.h", "platform/hero_time.c", "platform/hero_ui_appkit.swift", "hero_time.hh", "", ".", "./"]
+        assert !names_layer(other, files: files)
+
+test "a group's head says layer only where its line wrote the word (panel 260)"
+    zero = token.Span(start: 0, end: 1)
+    fields: [ast.Field] = []
+    said: ast.Decl = ast.Decl(
+        name: zero,
+        doc: [],
+        span: zero,
+        kind: .record_decl(fields: fields, header: ok(zero), library: fail(code: "absent", msg: "none"), layer: ok(zero), partial: false, tag: fail(code: "absent", msg: "none"))
+    )
+    unsaid: ast.Decl = ast.Decl(
+        name: zero,
+        doc: [],
+        span: zero,
+        kind: .record_decl(fields: fields, header: ok(zero), library: fail(code: "absent", msg: "none"), layer: fail(code: "absent", msg: "none"), partial: false, tag: fail(code: "absent", msg: "none"))
+    )
+    assert declared([unsaid, said])
+    assert !declared([unsaid])
+    none: [ast.Decl] = []
+    assert !declared(none)
