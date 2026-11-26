@@ -43,7 +43,7 @@ function app(router: web.Router, r: http.Request) -> http.Response
                 "home" => return http.respond_text(http.STATUS_OK, text: "home")
                 "user" => return http.respond_text(
                     http.STATUS_OK,
-                    text: "user " + web.param_of(found, name: "id").default("")
+                    text: "user " + web.param_of(found, name: "id")
                 )
                 _ => return web.error_response(
                     router.errors,

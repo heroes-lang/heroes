@@ -1,0 +1,35 @@
+# Panel 261's R4 (f) (2026-11-26, ratified), found beside the sitting by its
+# synthesis: a C function of an `extern` group that takes a callback, called
+# through a function value, handed C the program's function with no thunk
+# between, where a call by name hands it through `hero_callback_of`. C's own
+# fresh node, at an address the program gave back a moment before, then
+# reached the callback with the mark of a dead handle on it: exit 134, *a C
+# handle reached the argument `n` of `node_peek` at an address a call marked
+# `consumes` ... ended*, false. Such a function's value is now its adapter,
+# which hands every function argument through its thunk. Prints 11, 11, 42.
+extern "function-type-marks-an-extern-taking-a-callback-through-its-value.h"
+    record Node tag node
+    function node_new() -> Node acquires node_free
+    function node_free(n: Node consumes)
+    function node_peek(n: Node) -> i64
+    function hand_fresh(cb: (function(h: Node) -> i32)) -> i64
+    function call_val(cb: (function(i64) -> i64)) -> i64
+
+function peek(h: Node) -> i32
+    if node_peek(n: h) == 1
+        return 1
+    return 0
+
+function inc(n: i64) -> i64
+    return n + 1
+
+function main()
+    gone: Node = node_new()
+    node_free(n: gone)
+    print(hand_fresh(peek))
+    again: Node = node_new()
+    node_free(n: again)
+    f = hand_fresh
+    print(f(peek))
+    g = call_val
+    print(g(inc))

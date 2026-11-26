@@ -1,0 +1,368 @@
+# The instructions of RV32IM this machine runs, each with its mnemonic, its
+# format and the fixed fields of its encoding: the base integer ISA (RV32I,
+# chapter 2 of the unprivileged specification), the M extension (chapter 7),
+# Zicsr's six CSR instructions (chapter 9), and the privileged `mret` and
+# `wfi`. One table, `specs`, says all of it: the assembler reads a mnemonic
+# from it, the encoder its fields, the disassembler and the debugger a name.
+#
+# A case's name is not a `str` the program can read (spec § 9 gives a
+# field's name, `Point::x`, and nothing for a case), and nothing lists a
+# variant's cases, so each case is named once more, by hand, in the table.
+# What holds the two lists together: `spec_of` aborts on a case with no row,
+# and `isa/decode.hero`'s round trip runs every row through the decoder's
+# exhaustive reading.
+
+## Instructions
+
+# An instruction of RV32IM, by its mnemonic.
+variant Op
+    # Load upper immediate.
+    lui
+    # Add upper immediate to the pc.
+    auipc
+    # Jump and link.
+    jal
+    # Jump and link through a register.
+    jalr
+    # Branch if equal.
+    beq
+    # Branch if not equal.
+    bne
+    # Branch if less, signed.
+    blt
+    # Branch if greater or equal, signed.
+    bge
+    # Branch if less, unsigned.
+    bltu
+    # Branch if greater or equal, unsigned.
+    bgeu
+    # Load a byte, sign-extended.
+    lb
+    # Load a half-word, sign-extended.
+    lh
+    # Load a word.
+    lw
+    # Load a byte, zero-extended.
+    lbu
+    # Load a half-word, zero-extended.
+    lhu
+    # Store a byte.
+    sb
+    # Store a half-word.
+    sh
+    # Store a word.
+    sw
+    # Add an immediate.
+    addi
+    # Set if less than an immediate, signed.
+    slti
+    # Set if less than an immediate, unsigned.
+    sltiu
+    # Exclusive or with an immediate.
+    xori
+    # Or with an immediate.
+    ori
+    # And with an immediate.
+    andi
+    # Shift left by an immediate.
+    slli
+    # Shift right by an immediate, zeros in.
+    srli
+    # Shift right by an immediate, the sign in.
+    srai
+    # Add.
+    add
+    # Subtract.
+    sub
+    # Shift left.
+    sll
+    # Set if less, signed.
+    slt
+    # Set if less, unsigned.
+    sltu
+    # Exclusive or.
+    xor
+    # Shift right, zeros in.
+    srl
+    # Shift right, the sign in.
+    sra
+    # Or.
+    or
+    # And.
+    and
+    # Order memory; one hart and no cache make it do nothing here.
+    fence
+    # Call the environment.
+    ecall
+    # Stop for a debugger.
+    ebreak
+    # Return from a machine trap.
+    mret
+    # Wait for an interrupt.
+    wfi
+    # Read a CSR and write a register to it.
+    csrrw
+    # Read a CSR and set the bits a register holds.
+    csrrs
+    # Read a CSR and clear the bits a register holds.
+    csrrc
+    # Read a CSR and write a five-bit immediate to it.
+    csrrwi
+    # Read a CSR and set the bits of a five-bit immediate.
+    csrrsi
+    # Read a CSR and clear the bits of a five-bit immediate.
+    csrrci
+    # Multiply, the low word.
+    mul
+    # Multiply signed, the high word.
+    mulh
+    # Multiply signed by unsigned, the high word.
+    mulhsu
+    # Multiply unsigned, the high word.
+    mulhu
+    # Divide, signed.
+    div
+    # Divide, unsigned.
+    divu
+    # Remainder, signed.
+    rem
+    # Remainder, unsigned.
+    remu
+
+# How an instruction's operands are written and encoded.
+variant Format
+    # `rd, rs1, rs2`.
+    r
+    # `rd, rs1, imm`, a 12-bit signed immediate.
+    i
+    # `rd, rs1, shamt`, a shift count of five bits, `funct7` above it.
+    shift
+    # `rd, imm(rs1)`, a load.
+    load
+    # `rs2, imm(rs1)`, a store.
+    s
+    # `rs1, rs2, label`, a branch by a 13-bit even offset.
+    b
+    # `rd, imm`, a 20-bit upper immediate.
+    u
+    # `rd, label`, a jump by a 21-bit even offset.
+    j
+    # `rd, imm(rs1)` or `rd, rs1, imm`: `jalr`.
+    jalr
+    # No operand; the whole word is fixed.
+    system
+    # `rd, csr, rs1`.
+    csr
+    # `rd, csr, uimm`, an immediate of five bits in the `rs1` field.
+    csri
+    # `fence`, its operands read and left as all of them.
+    fence
+
+# One instruction's row of the table.
+record Spec
+    # Which instruction.
+    op: Op
+    # Its mnemonic, in lower case.
+    name: str
+    # How it is written and encoded.
+    format: Format
+    # The seven bits of its opcode.
+    opcode: i64
+    # The three bits of its `funct3`, 0 where the format has none.
+    funct3: i64
+    # The bits above its other fields: `funct7` for `r` and `shift`, the
+    # twelve bits of the immediate for `system`, 0 elsewhere.
+    funct7: i64
+
+## The opcodes
+
+# `lui`'s opcode.
+constant OP_LUI: i64
+    0x37
+
+# `auipc`'s opcode.
+constant OP_AUIPC: i64
+    0x17
+
+# `jal`'s opcode.
+constant OP_JAL: i64
+    0x6f
+
+# `jalr`'s opcode.
+constant OP_JALR: i64
+    0x67
+
+# The branches' opcode.
+constant OP_BRANCH: i64
+    0x63
+
+# The loads' opcode.
+constant OP_LOAD: i64
+    0x03
+
+# The stores' opcode.
+constant OP_STORE: i64
+    0x23
+
+# The opcode of the operations on a register and an immediate.
+constant OP_IMM: i64
+    0x13
+
+# The opcode of the operations on two registers, the M extension's too.
+constant OP_REG: i64
+    0x33
+
+# `fence`'s opcode.
+constant OP_FENCE: i64
+    0x0f
+
+# The opcode of `ecall`, `ebreak`, `mret`, `wfi` and the CSR instructions.
+constant OP_SYSTEM: i64
+    0x73
+
+## The table
+
+# Every instruction of the machine, in the order the variant declares them.
+function specs() -> [Spec]
+    return [
+        Spec(op: .lui, name: "lui", format: .u, opcode: OP_LUI, funct3: 0, funct7: 0)
+        Spec(op: .auipc, name: "auipc", format: .u, opcode: OP_AUIPC, funct3: 0, funct7: 0)
+        Spec(op: .jal, name: "jal", format: .j, opcode: OP_JAL, funct3: 0, funct7: 0)
+        Spec(op: .jalr, name: "jalr", format: .jalr, opcode: OP_JALR, funct3: 0, funct7: 0)
+        Spec(op: .beq, name: "beq", format: .b, opcode: OP_BRANCH, funct3: 0, funct7: 0)
+        Spec(op: .bne, name: "bne", format: .b, opcode: OP_BRANCH, funct3: 1, funct7: 0)
+        Spec(op: .blt, name: "blt", format: .b, opcode: OP_BRANCH, funct3: 4, funct7: 0)
+        Spec(op: .bge, name: "bge", format: .b, opcode: OP_BRANCH, funct3: 5, funct7: 0)
+        Spec(op: .bltu, name: "bltu", format: .b, opcode: OP_BRANCH, funct3: 6, funct7: 0)
+        Spec(op: .bgeu, name: "bgeu", format: .b, opcode: OP_BRANCH, funct3: 7, funct7: 0)
+        Spec(op: .lb, name: "lb", format: .load, opcode: OP_LOAD, funct3: 0, funct7: 0)
+        Spec(op: .lh, name: "lh", format: .load, opcode: OP_LOAD, funct3: 1, funct7: 0)
+        Spec(op: .lw, name: "lw", format: .load, opcode: OP_LOAD, funct3: 2, funct7: 0)
+        Spec(op: .lbu, name: "lbu", format: .load, opcode: OP_LOAD, funct3: 4, funct7: 0)
+        Spec(op: .lhu, name: "lhu", format: .load, opcode: OP_LOAD, funct3: 5, funct7: 0)
+        Spec(op: .sb, name: "sb", format: .s, opcode: OP_STORE, funct3: 0, funct7: 0)
+        Spec(op: .sh, name: "sh", format: .s, opcode: OP_STORE, funct3: 1, funct7: 0)
+        Spec(op: .sw, name: "sw", format: .s, opcode: OP_STORE, funct3: 2, funct7: 0)
+        Spec(op: .addi, name: "addi", format: .i, opcode: OP_IMM, funct3: 0, funct7: 0)
+        Spec(op: .slti, name: "slti", format: .i, opcode: OP_IMM, funct3: 2, funct7: 0)
+        Spec(op: .sltiu, name: "sltiu", format: .i, opcode: OP_IMM, funct3: 3, funct7: 0)
+        Spec(op: .xori, name: "xori", format: .i, opcode: OP_IMM, funct3: 4, funct7: 0)
+        Spec(op: .ori, name: "ori", format: .i, opcode: OP_IMM, funct3: 6, funct7: 0)
+        Spec(op: .andi, name: "andi", format: .i, opcode: OP_IMM, funct3: 7, funct7: 0)
+        Spec(op: .slli, name: "slli", format: .shift, opcode: OP_IMM, funct3: 1, funct7: 0x00)
+        Spec(op: .srli, name: "srli", format: .shift, opcode: OP_IMM, funct3: 5, funct7: 0x00)
+        Spec(op: .srai, name: "srai", format: .shift, opcode: OP_IMM, funct3: 5, funct7: 0x20)
+        Spec(op: .add, name: "add", format: .r, opcode: OP_REG, funct3: 0, funct7: 0x00)
+        Spec(op: .sub, name: "sub", format: .r, opcode: OP_REG, funct3: 0, funct7: 0x20)
+        Spec(op: .sll, name: "sll", format: .r, opcode: OP_REG, funct3: 1, funct7: 0x00)
+        Spec(op: .slt, name: "slt", format: .r, opcode: OP_REG, funct3: 2, funct7: 0x00)
+        Spec(op: .sltu, name: "sltu", format: .r, opcode: OP_REG, funct3: 3, funct7: 0x00)
+        Spec(op: .xor, name: "xor", format: .r, opcode: OP_REG, funct3: 4, funct7: 0x00)
+        Spec(op: .srl, name: "srl", format: .r, opcode: OP_REG, funct3: 5, funct7: 0x00)
+        Spec(op: .sra, name: "sra", format: .r, opcode: OP_REG, funct3: 5, funct7: 0x20)
+        Spec(op: .or, name: "or", format: .r, opcode: OP_REG, funct3: 6, funct7: 0x00)
+        Spec(op: .and, name: "and", format: .r, opcode: OP_REG, funct3: 7, funct7: 0x00)
+        Spec(op: .fence, name: "fence", format: .fence, opcode: OP_FENCE, funct3: 0, funct7: 0)
+        Spec(op: .ecall, name: "ecall", format: .system, opcode: OP_SYSTEM, funct3: 0, funct7: 0x000)
+        Spec(op: .ebreak, name: "ebreak", format: .system, opcode: OP_SYSTEM, funct3: 0, funct7: 0x001)
+        Spec(op: .mret, name: "mret", format: .system, opcode: OP_SYSTEM, funct3: 0, funct7: 0x302)
+        Spec(op: .wfi, name: "wfi", format: .system, opcode: OP_SYSTEM, funct3: 0, funct7: 0x105)
+        Spec(op: .csrrw, name: "csrrw", format: .csr, opcode: OP_SYSTEM, funct3: 1, funct7: 0)
+        Spec(op: .csrrs, name: "csrrs", format: .csr, opcode: OP_SYSTEM, funct3: 2, funct7: 0)
+        Spec(op: .csrrc, name: "csrrc", format: .csr, opcode: OP_SYSTEM, funct3: 3, funct7: 0)
+        Spec(op: .csrrwi, name: "csrrwi", format: .csri, opcode: OP_SYSTEM, funct3: 5, funct7: 0)
+        Spec(op: .csrrsi, name: "csrrsi", format: .csri, opcode: OP_SYSTEM, funct3: 6, funct7: 0)
+        Spec(op: .csrrci, name: "csrrci", format: .csri, opcode: OP_SYSTEM, funct3: 7, funct7: 0)
+        Spec(op: .mul, name: "mul", format: .r, opcode: OP_REG, funct3: 0, funct7: 0x01)
+        Spec(op: .mulh, name: "mulh", format: .r, opcode: OP_REG, funct3: 1, funct7: 0x01)
+        Spec(op: .mulhsu, name: "mulhsu", format: .r, opcode: OP_REG, funct3: 2, funct7: 0x01)
+        Spec(op: .mulhu, name: "mulhu", format: .r, opcode: OP_REG, funct3: 3, funct7: 0x01)
+        Spec(op: .div, name: "div", format: .r, opcode: OP_REG, funct3: 4, funct7: 0x01)
+        Spec(op: .divu, name: "divu", format: .r, opcode: OP_REG, funct3: 5, funct7: 0x01)
+        Spec(op: .rem, name: "rem", format: .r, opcode: OP_REG, funct3: 6, funct7: 0x01)
+        Spec(op: .remu, name: "remu", format: .r, opcode: OP_REG, funct3: 7, funct7: 0x01)
+    ]
+
+# The row of the instruction whose mnemonic is `name`.
+#
+# - `name`: the mnemonic, in lower case.
+#
+# Fails `not_found` where no instruction of the machine is so named: a
+# pseudo-instruction is the assembler's, not this table's.
+function spec_named(name: str) -> Spec?
+    for s in specs()
+        if s.name == name
+            return ok(s)
+
+    return fail(code: "not_found", msg: f"no instruction is named \"{name}\"")
+
+# The row of `op`.
+#
+# - `op`: the instruction.
+#
+# Every case stands in the table, which `test "specs: ..."` holds; an `op`
+# not found would be a row missing, so it aborts.
+function spec_of(op: Op) -> Spec
+    for s in specs()
+        if s.op == op
+            return s
+
+    assert false
+
+# How `op` is written and encoded: an exhaustive reading, so the compiler
+# refuses a case added to `Op` and left out here, and the table's `format`
+# column is held to it by `test "format_of: ..."`.
+#
+# - `op`: the instruction.
+function format_of(op: Op) -> Format
+    return match op
+        .lui | .auipc                                                       => .u
+        .jal                                                                => .j
+        .jalr                                                               => .jalr
+        .beq | .bne | .blt | .bge | .bltu | .bgeu                           => .b
+        .lb | .lh | .lw | .lbu | .lhu                                       => .load
+        .sb | .sh | .sw                                                     => .s
+        .addi | .slti | .sltiu | .xori | .ori | .andi                       => .i
+        .slli | .srli | .srai                                               => .shift
+        .add | .sub | .sll | .slt | .sltu | .xor | .srl | .sra | .or | .and => .r
+        .mul | .mulh | .mulhsu | .mulhu | .div | .divu | .rem | .remu       => .r
+        .fence                                                              => .fence
+        .ecall | .ebreak | .mret | .wfi                                     => .system
+        .csrrw | .csrrs | .csrrc                                            => .csr
+        .csrrwi | .csrrsi | .csrrci                                         => .csri
+
+# The mnemonic of `op`, `addi`.
+#
+# - `op`: the instruction.
+function name_of(op: Op) -> str
+    return spec_of(op).name
+
+## Tests
+
+test "specs: one row per case, every name once, every encoding once"
+    rows = specs()
+    assert rows.len() == 56
+    seen: {str: bool} @= {}
+    fields: {str: bool} @= {}
+
+    for s in rows
+        assert seen[s.name].is_err()
+        seen[s.name] @ true
+        key = f"{s.opcode}/{s.funct3}/{s.funct7}"
+        assert fields[key].is_err()
+        fields[key] @ true
+
+test "spec_named: a mnemonic, the M extension, and a pseudo-instruction refused"
+    assert spec_named("addi").must().opcode == OP_IMM
+    assert spec_named("mulhsu").must().funct7 == 1
+    assert spec_named("li").is_err()
+    assert spec_named("").is_err()
+
+test "name_of: the first, the last, and a word another language reserves"
+    assert name_of(.lui) == "lui"
+    assert name_of(.remu) == "remu"
+    assert name_of(.and) == "and"
+
+test "format_of: the table's format column agrees with the exhaustive reading"
+    for s in specs()
+        assert format_of(s.op) == s.format

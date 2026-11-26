@@ -13,6 +13,7 @@
 # broker is down, because `amqp`'s calls work on its place through `@`.
 
 use <rebel>/amqp
+use <rebel>/errors
 use <rebel>/time
 
 use config/settings
@@ -83,7 +84,7 @@ function declare(@c: amqp.Connection, s: settings.AmqpSettings, outputs: [str]) 
 function connect(s: settings.AmqpSettings, name: str, outputs: [str]) -> amqp.Connection?
     opts @= amqp.parse_url(s.url)?
     opts.connection_name @ name
-    opts.wait @ time.seconds(5)?
+    opts.wait @ time.seconds(5)
     c @= amqp.connect(opts)?
 
     outcome: ()? = match amqp.open_channel(@c)
@@ -96,7 +97,7 @@ function connect(s: settings.AmqpSettings, name: str, outputs: [str]) -> amqp.Co
     match outcome
         .ok _ => return ok(c)
         .err e =>
-            _ = amqp.close(@c).is_err()
+            errors.ignore(amqp.close(@c))
             return fail(code: e.code, msg: e.msg)
 
 # Whether the link is up.
@@ -163,7 +164,7 @@ function send(@l: Link, exchange: str, key: str, body: [u8]) -> ()?
     m.app_id @ "iothub"
     publishing = amqp.Channel(id: PUBLISHING)
     _ = amqp.publish(@l.connections[0], channel: publishing, exchange_name: exchange, routing_key: key, m: m, mandatory: false)?
-    return amqp.wait_confirms(@l.connections[0], channel: publishing, wait: time.seconds(5)?)
+    return amqp.wait_confirms(@l.connections[0], channel: publishing, wait: time.seconds(5))
 
 # Why the broker closed the connection, as its reply said: `320
 # CONNECTION_FORCED - ...`; "" where it said nothing.
@@ -183,7 +184,7 @@ function closing_text(l: Link lent) -> str
 # - `l`: the link.
 function close(@l: Link)
     if l.connections.len() > 0 && !amqp.is_closed(l.connections[0])
-        _ = amqp.close(@l.connections[0]).is_err()
+        errors.ignore(amqp.close(@l.connections[0]))
 
     l.connections @ []
     l.key @ -1

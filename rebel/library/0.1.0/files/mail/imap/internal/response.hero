@@ -327,7 +327,7 @@ function esearch(@s: wire.Session) -> Searched?
 
 test "read: RFC 3501's SELECT answer, a tagged status, a continuation, CAPABILITY, LIST with a NIL delimiter"
     two = net.pair(deadline_ms: 5000).must()
-    s @= wire.over(two.first.stream, link: .plain, deadline: time.seconds(5).must(), max_bytes: 100000)
+    s @= wire.over(two.first.stream, link: .plain, deadline: time.seconds(5), max_bytes: 100000)
     server @= two.second.stream
     io.write_text(
         server,
@@ -370,7 +370,7 @@ test "read: RFC 3501's SELECT answer, a tagged status, a continuation, CAPABILIT
 
 test "read: STATUS, SEARCH, ESEARCH from RFC 9051's examples, an unknown kind with a literal passed over"
     two = net.pair(deadline_ms: 5000).must()
-    s @= wire.over(two.first.stream, link: .plain, deadline: time.seconds(5).must(), max_bytes: 100000)
+    s @= wire.over(two.first.stream, link: .plain, deadline: time.seconds(5), max_bytes: 100000)
     server @= two.second.stream
     io.write_text(
         server,
@@ -390,7 +390,7 @@ test "read: STATUS, SEARCH, ESEARCH from RFC 9051's examples, an unknown kind wi
 
 test "read: a tag with no status, an expunge of 0, data past its end, a delimiter of two bytes, a status not OK, NO or BAD"
     two = net.pair(deadline_ms: 5000).must()
-    s @= wire.over(two.first.stream, link: .plain, deadline: time.seconds(5).must(), max_bytes: 100000)
+    s @= wire.over(two.first.stream, link: .plain, deadline: time.seconds(5), max_bytes: 100000)
     server @= two.second.stream
     io.write_text(
         server,

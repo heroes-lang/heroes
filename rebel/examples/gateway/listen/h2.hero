@@ -5,6 +5,7 @@
 # every other request asked of that thread as HTTP (`core/owner`), until
 # the client sends GOAWAY or closes the connection.
 
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/http2
 use <rebel>/io
@@ -25,7 +26,7 @@ function serve(asks: (mailbox owner.Ask), @conn: net.Conn) -> i64
 
     match http2.server(@conn.stream, options: http2.default_options())
         .err _ =>
-            _ = io.close(@conn.stream).is_err()
+            errors.ignore(io.close(@conn.stream))
             return 0
         .ok made =>
             h2 @= made
@@ -43,7 +44,7 @@ function serve(asks: (mailbox owner.Ask), @conn: net.Conn) -> i64
                         answered @ answered + 1
 
             if held
-                _ = http2.close(@h2).is_err()
+                errors.ignore(http2.close(@h2))
             return answered
 
 # Whether `r` is a gRPC call: its content type `application/grpc`, alone or
@@ -68,12 +69,14 @@ function asked(asks: (mailbox owner.Ask), @h2: http2.Conn, r: http2.Request, rem
     match http.from_h2_request(r, remote: remote)
         .err e =>
             refusal = http.respond_text(400, text: e.msg + "\n")
-            _ = http2.answer(@h2, stream: r.stream, response: http.to_h2_response(refusal, method: r.method)).is_err()
+            errors.ignore(http2.answer(@h2, stream: r.stream, response: http.to_h2_response(refusal, method: r.method)))
         .ok request =>
             response = owner.answer(asks, r: request, protocol: "h2").default(
                 http.respond_text(503, text: "the gateway is stopping\n")
             )
-            _ = http2.answer(@h2, stream: r.stream, response: http.to_h2_response(response, method: r.method)).is_err()
+            errors.ignore(
+                http2.answer(@h2, stream: r.stream, response: http.to_h2_response(response, method: r.method))
+            )
 
 test "is_grpc: the gRPC content types and no other"
     head = http2.Request(

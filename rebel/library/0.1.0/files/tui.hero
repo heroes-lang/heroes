@@ -3519,7 +3519,7 @@ test "read_event_within: a tenth of a second"
         screen: screen.Screen(shown: grid.new(x: 0, y: 0, width: 2, height: 1), whole: false, columns: 2, rows: 1, mouse: false, motion: false, paste: false, focus: false, active: true)
     )
 
-    match read_event_within(@t, limit: time.milliseconds(100).must())
+    match read_event_within(@t, limit: time.milliseconds(100))
         .ok _  => _ = 0
         .err e => assert e.code == TIMEOUT || e.code == UNSUPPORTED || e.code == CLOSED
 

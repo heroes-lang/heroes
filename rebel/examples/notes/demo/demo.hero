@@ -9,6 +9,7 @@
 # and the log hold, and removes the folder.
 
 use <rebel>/config
+use <rebel>/errors as failures
 use <rebel>/fs
 use <rebel>/json
 use <rebel>/net
@@ -65,12 +66,12 @@ function run() -> i64
         .ok code => code
         .err e =>
             print(f"demo: failed: {e.code}: {e.msg}")
-            _ = fs.remove_all(FOLDER).is_err()
+            failures.ignore(fs.remove_all(FOLDER))
             1
 
 # The demo's steps.
 function demo() -> i64?
-    _ = fs.remove_all(FOLDER).is_err()
+    failures.ignore(fs.remove_all(FOLDER))
     fs.make_dir_all(FOLDER)?
     assets.write_static(FOLDER + "/static")?
     text = settings.sample_config(cookie_key: DEMO_COOKIE_KEY, token_key: DEMO_TOKEN_KEY, changes: changes(FOLDER))?

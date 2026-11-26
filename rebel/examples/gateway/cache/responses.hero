@@ -7,6 +7,7 @@
 # is answered 304 from the cache without the upstream being asked.
 
 use <rebel>/containers/cache
+use <rebel>/errors
 use <rebel>/hash
 use <rebel>/http
 use <rebel>/numbers
@@ -90,7 +91,9 @@ function lookup(@store: Store, key: str, now_ms: i64) -> http.Response?
     age_ms = now_ms - entry.stored_ms
 
     if age_ms >= entry.fresh_ms
-        _ = cache.remove(@store.shape, @store.key_list, @store.value_list, @store.lookup, key: key).is_err()
+        errors.ignore(
+            errors.discard_value(cache.remove(@store.shape, @store.key_list, @store.value_list, @store.lookup, key: key))
+        )
         return fail(code: NOT_FOUND, msg: f"the answer kept for {key} went stale {age_ms - entry.fresh_ms} ms ago")
     headers = http.with_header(entry.headers, name: "Age", value: f"{age_ms / 1000}")
     return ok(http.Response(status: entry.status, reason: "", headers: headers, body: entry.body, closing: false))

@@ -315,9 +315,9 @@ record Client
 function default_reconnect() -> Reconnect
     return Reconnect(
         attempts: 60,
-        wait: time.milliseconds(250).must(),
-        most_wait: time.seconds(4).must(),
-        jitter: time.milliseconds(100).must()
+        wait: time.milliseconds(250),
+        most_wait: time.seconds(4),
+        jitter: time.milliseconds(100)
     )
 
 # The options of a connection to `servers`, with no login, no TLS asked but
@@ -338,9 +338,9 @@ function options(urls: [str]) -> Options
         tls_first: false,
         name: "",
         echo: true,
-        connect_timeout: time.seconds(5).must(),
-        write_timeout: time.seconds(10).must(),
-        ping_interval: time.minutes(2).must(),
+        connect_timeout: time.seconds(5),
+        write_timeout: time.seconds(10),
+        ping_interval: time.minutes(2),
         pings_outstanding: 2,
         reconnect: default_reconnect(),
         inbox_prefix: "_INBOX",
@@ -991,7 +991,7 @@ function new_user_seed() -> str?
 test "options: the defaults, every one"
     o = options(["nats://h"])
     assert o.servers == ["nats://h"] && o.auth == .none && o.roots == "" && !o.tls && !o.tls_first && o.echo
-    assert o.connect_timeout == time.seconds(5).must() && o.write_timeout == time.seconds(10).must() && o.ping_interval == time.minutes(2).must() && o.pings_outstanding == 2
+    assert o.connect_timeout == time.seconds(5) && o.write_timeout == time.seconds(10) && o.ping_interval == time.minutes(2) && o.pings_outstanding == 2
     assert o.reconnect == default_reconnect() && o.inbox_prefix == "_INBOX" && o.pending_messages == 65536
     assert o.pending_bytes == 67108864 && o.discovered && !o.randomize
 
@@ -1042,9 +1042,9 @@ test "connect live, against the server REBEL_NATS_URL names: INFO, headers, a ro
                 @c,
                 m: with_header(message("live.h", data: [0, 255, 13, 10]), name: "K", value: "v1")
             ).must()
-            one = next_message_of(@c, sid: sid, wait: time.seconds(5).must()).must()
+            one = next_message_of(@c, sid: sid, wait: time.seconds(5)).must()
             assert one.subject == "live.a" && one.data == bytes.from_text("città") && one.sid == sid
-            two = next_message(@c, wait: time.seconds(5).must()).must()
+            two = next_message(@c, wait: time.seconds(5)).must()
             assert two.data == [0, 255, 13, 10] && header_of(two, name: "K").must() == "v1"
             big: [u8] @= []
 
@@ -1052,7 +1052,7 @@ test "connect live, against the server REBEL_NATS_URL names: INFO, headers, a ro
                 big @ big.push(to_u8(at % 251).must())
 
             publish(@c, subject: "live.big", data: big).must()
-            assert next_message(@c, wait: time.seconds(10).must()).must().data == big
+            assert next_message(@c, wait: time.seconds(10)).must().data == big
             past: [u8] @= big
 
             for _ in range(from: 0, to: i.max_payload)
@@ -1065,16 +1065,16 @@ test "connect live, against the server REBEL_NATS_URL names: INFO, headers, a ro
             for n in range(from: 0, to: 10000)
                 publish(@c, subject: "live.many", data: bytes.from_text(to_str(n))).must()
 
-            flush(@c, wait: time.seconds(10).must()).must()
+            flush(@c, wait: time.seconds(10)).must()
             assert pending_of(c, sid: sid).must() == 10000 && delivered_of(c, sid: sid).must() == 10003
             count: i64 @= 0
 
             while count < 10000
-                m = next_message(@c, wait: time.seconds(5).must()).must()
+                m = next_message(@c, wait: time.seconds(5)).must()
                 assert m.data == bytes.from_text(to_str(count))
                 count @ count + 1
 
-            match next_message(@c, wait: time.milliseconds(50).must())
+            match next_message(@c, wait: time.milliseconds(50))
                 .ok _  => assert false
                 .err e => assert e.code == "timeout"
 
@@ -1082,31 +1082,31 @@ test "connect live, against the server REBEL_NATS_URL names: INFO, headers, a ro
             q2 @= connect(parse_url(url).must()).must()
             s1 = queue_subscribe(@q1, subject: "work.x", queue: "workers").must()
             s2 = queue_subscribe(@q2, subject: "work.x", queue: "workers").must()
-            flush(@q1, wait: time.seconds(5).must()).must()
-            flush(@q2, wait: time.seconds(5).must()).must()
+            flush(@q1, wait: time.seconds(5)).must()
+            flush(@q2, wait: time.seconds(5)).must()
 
             for _ in range(from: 0, to: 100)
                 publish(@c, subject: "work.x", data: [1]).must()
 
-            flush(@c, wait: time.seconds(5).must()).must()
-            flush(@q1, wait: time.seconds(5).must()).must()
-            flush(@q2, wait: time.seconds(5).must()).must()
+            flush(@c, wait: time.seconds(5)).must()
+            flush(@q1, wait: time.seconds(5)).must()
+            flush(@q2, wait: time.seconds(5)).must()
             assert pending_of(q1, sid: s1).must() + pending_of(q2, sid: s2).must() == 100
             close(@q1).must()
             close(@q2).must()
 
-            match request(@c, subject: "nobody.listens", data: [], wait: time.seconds(5).must())
+            match request(@c, subject: "nobody.listens", data: [], wait: time.seconds(5))
                 .ok _  => assert false
                 .err e => assert e.code == "not_found"
 
             ready = subscribe(@c, "svc.ready").must()
             t @= threads.start_text(body: live.responder, arg: url).must()
-            _ = next_message_of(@c, sid: ready, wait: time.seconds(10).must()).must()
+            _ = next_message_of(@c, sid: ready, wait: time.seconds(10)).must()
             answer = request(
                 @c,
                 subject: "svc.echo",
                 data: bytes.from_text("ping"),
-                wait: time.seconds(10).must()
+                wait: time.seconds(10)
             ).must()
             assert answer.data == bytes.from_text("ping!") && header_of(answer, name: "Seen").must() == "yes"
             assert threads.wait_text(@t) == "answered"
@@ -1118,18 +1118,18 @@ test "connect live, against the server REBEL_NATS_URL names: INFO, headers, a ro
             for _ in range(from: 0, to: 5)
                 publish(@c, subject: "once.x", data: [7]).must()
 
-            flush(@c, wait: time.seconds(5).must()).must()
-            assert next_message_of(@c, sid: once, wait: time.seconds(1).must()).must().data == [7]
-            assert next_message_of(@c, sid: once, wait: time.seconds(1).must()).must().data == [7]
-            assert next_message_of(@c, sid: once, wait: time.milliseconds(100).must()).is_err()
+            flush(@c, wait: time.seconds(5)).must()
+            assert next_message_of(@c, sid: once, wait: time.seconds(1)).must().data == [7]
+            assert next_message_of(@c, sid: once, wait: time.seconds(1)).must().data == [7]
+            assert next_message_of(@c, sid: once, wait: time.milliseconds(100)).is_err()
             unsubscribe(@c, sid: ready).must()
-            assert rtt(@c, wait: time.seconds(5).must()).must().nanoseconds > 0
+            assert rtt(@c, wait: time.seconds(5)).must().nanoseconds > 0
             reconnect(@c).must()
             assert stats_of(c).reconnects == 1 && subscriptions_of(c) == [sid]
             publish(@c, subject: "live.after", data: [9]).must()
-            assert next_message(@c, wait: time.seconds(5).must()).must().data == [9]
+            assert next_message(@c, wait: time.seconds(5)).must().data == [9]
             publish(@c, subject: "live.last", data: [8]).must()
-            drain(@c, wait: time.seconds(5).must()).must()
+            drain(@c, wait: time.seconds(5)).must()
             assert is_closed(c) && next_message(@c, wait: time.nanoseconds(0)).must().data == [8]
             assert next_message(@c, wait: time.nanoseconds(0)).is_err() && take_errors(@c) == []
             print(f"connect live: {i.version}, 1 MB, 10000 messages, 100 in a queue group, a request, a reconnection")
@@ -1142,8 +1142,8 @@ test "connect live, many clients on one thread: two clients' streams waited on b
             b @= connect(parse_url(url).must()).must()
             sa = subscribe(@a, "poll.a").must()
             sb = subscribe(@b, "poll.b").must()
-            flush(@a, wait: time.seconds(5).must()).must()
-            flush(@b, wait: time.seconds(5).must()).must()
+            flush(@a, wait: time.seconds(5)).must()
+            flush(@b, wait: time.seconds(5)).must()
             set @= poll.make(4).must()
 
             match poll.add_stream(set, s: stream_of(a).must(), interest: .read)
@@ -1152,8 +1152,8 @@ test "connect live, many clients on one thread: two clients' streams waited on b
                     kb = poll.add_stream(set, s: stream_of(b).must(), interest: .read).must()
                     publish(@a, subject: "poll.b", data: [2]).must()
                     publish(@b, subject: "poll.a", data: [1]).must()
-                    flush(@a, wait: time.seconds(5).must()).must()
-                    flush(@b, wait: time.seconds(5).must()).must()
+                    flush(@a, wait: time.seconds(5)).must()
+                    flush(@b, wait: time.seconds(5)).must()
                     got: [i64] @= []
                     tries: i64 @= 0
 
@@ -1166,7 +1166,7 @@ test "connect live, many clients on one thread: two clients' streams waited on b
                             for m in read_ready(@b).must()
                                 got @ got.push(m.sid * 10 + to_i64(m.data[0]).must())
 
-                        for ev in poll.wait(set, limit: time.milliseconds(500).must()).must()
+                        for ev in poll.wait(set, limit: time.milliseconds(500)).must()
                             if ev.key == ka
                                 for m in read_ready(@a).must()
                                     got @ got.push(m.sid * 10 + to_i64(m.data[0]).must())
@@ -1188,7 +1188,7 @@ test "connect live, a login by the token REBEL_NATS_TOKEN_URL names, and a wrong
         .err _ => skip_test(reason: "REBEL_NATS_TOKEN_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
-            flush(@c, wait: time.seconds(5).must()).must()
+            flush(@c, wait: time.seconds(5)).must()
             close(@c).must()
             wrong @= parse_url(url).must()
             wrong.auth @ .token(token: "wrong")
@@ -1203,7 +1203,7 @@ test "connect live, a login by the user and password REBEL_NATS_USER_URL names, 
         .ok url =>
             c @= connect(parse_url(url).must()).must()
             publish(@c, subject: "forbidden.x", data: [1]).must()
-            flush(@c, wait: time.seconds(5).must()).must()
+            flush(@c, wait: time.seconds(5)).must()
             errors = take_errors(@c)
             assert errors.len() == 1 && strings.has_prefix(s: errors[0], prefix: "Permissions Violation for Publish")
             close(@c).must()
@@ -1224,7 +1224,7 @@ test "connect live, a login by the NKey REBEL_NATS_NKEY_URL and REBEL_NATS_NKEY_
             match connect(o)
                 .ok first =>
                     c @= first
-                    flush(@c, wait: time.seconds(5).must()).must()
+                    flush(@c, wait: time.seconds(5)).must()
                     close(@c).must()
                 .err e => assert e.code == "unsupported"
 
@@ -1242,7 +1242,7 @@ test "connect live over TLS after INFO, against the server REBEL_NATS_TLS_URL na
             c @= connect(o).must()
             sid = subscribe(@c, "tls.x").must()
             publish(@c, subject: "tls.x", data: [5]).must()
-            assert next_message_of(@c, sid: sid, wait: time.seconds(5).must()).must().data == [5]
+            assert next_message_of(@c, sid: sid, wait: time.seconds(5)).must().data == [5]
             close(@c).must()
             o.roots @ ""
 
@@ -1258,7 +1258,7 @@ test "connect live over TLS from the first byte, against the server REBEL_NATS_T
             o.roots @ tls.TEST_ROOT
             o.tls_first @ true
             c @= connect(o).must()
-            flush(@c, wait: time.seconds(5).must()).must()
+            flush(@c, wait: time.seconds(5)).must()
             close(@c).must()
 
 test "connect live over a WebSocket, a message of 200,000 bytes, against the server REBEL_NATS_WS_URL names"
@@ -1273,7 +1273,7 @@ test "connect live over a WebSocket, a message of 200,000 bytes, against the ser
                 data @ data.push(to_u8(at % 256).must())
 
             publish(@c, subject: "ws.x", data: data).must()
-            assert next_message_of(@c, sid: sid, wait: time.seconds(5).must()).must().data == data
+            assert next_message_of(@c, sid: sid, wait: time.seconds(5)).must().data == data
             close(@c).must()
 
 ## Examples
@@ -1287,7 +1287,7 @@ test "options: a local server, more attempts"
 # The reconnection's defaults.
 test "default_reconnect: what a client tries after a loss"
     r = default_reconnect()
-    assert r.attempts == 60 && r.wait == time.milliseconds(250).must() && r.most_wait == time.seconds(4).must()
+    assert r.attempts == 60 && r.wait == time.milliseconds(250) && r.most_wait == time.seconds(4)
 
 # The options a cluster's URLs name, with a user's login.
 test "parse_url: two servers and a login"
@@ -1320,7 +1320,7 @@ test "drain: subscriptions ended, messages kept"
             c @= first
             _ = subscribe(@c, "ex.drain").must()
             publish(@c, subject: "ex.drain", data: [1]).must()
-            drain(@c, wait: time.seconds(2).must()).must()
+            drain(@c, wait: time.seconds(2)).must()
             assert next_message(@c, wait: time.nanoseconds(0)).must().data == [1]
 
 # Whether a client is closed.
@@ -1449,7 +1449,7 @@ test "flush: a round trip"
         .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
-            flush(@c, wait: time.seconds(2).must()).must()
+            flush(@c, wait: time.seconds(2)).must()
             close(@c).must()
 
 # The time of a round trip.
@@ -1458,7 +1458,7 @@ test "rtt: under two seconds"
         .err e => skip_test(reason: f"no NATS server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
-            assert rtt(@c, wait: time.seconds(2).must()).must().nanoseconds < 2000000000
+            assert rtt(@c, wait: time.seconds(2)).must().nanoseconds < 2000000000
             close(@c).must()
 
 # A subscription with a wildcard.
@@ -1520,7 +1520,7 @@ test "next_message: a message published to itself"
             c @= first
             _ = subscribe(@c, "ex.next").must()
             publish(@c, subject: "ex.next", data: [42]).must()
-            assert next_message(@c, wait: time.seconds(2).must()).must().data == [42]
+            assert next_message(@c, wait: time.seconds(2)).must().data == [42]
             close(@c).must()
 
 # The next message of one subscription.
@@ -1531,7 +1531,7 @@ test "next_message_of: one subscription's"
             c @= first
             sid = subscribe(@c, "ex.one").must()
             publish(@c, subject: "ex.one", data: [1]).must()
-            assert next_message_of(@c, sid: sid, wait: time.seconds(2).must()).must().subject == "ex.one"
+            assert next_message_of(@c, sid: sid, wait: time.seconds(2)).must().subject == "ex.one"
             close(@c).must()
 
 # What a client holds once its stream is readable.
@@ -1542,7 +1542,7 @@ test "read_ready: the messages that came"
             c @= first
             _ = subscribe(@c, "ex.ready").must()
             publish(@c, subject: "ex.ready", data: [1]).must()
-            flush(@c, wait: time.seconds(2).must()).must()
+            flush(@c, wait: time.seconds(2)).must()
             assert read_ready(@c).must().len() == 1
             close(@c).must()
 
@@ -1554,7 +1554,7 @@ test "pending_of: one held"
             c @= first
             sid = subscribe(@c, "ex.pending").must()
             publish(@c, subject: "ex.pending", data: [1]).must()
-            flush(@c, wait: time.seconds(2).must()).must()
+            flush(@c, wait: time.seconds(2)).must()
             assert pending_of(c, sid: sid).must() == 1
             close(@c).must()
 
@@ -1576,7 +1576,7 @@ test "delivered_of: one"
             c @= first
             sid = subscribe(@c, "ex.delivered").must()
             publish(@c, subject: "ex.delivered", data: [1]).must()
-            flush(@c, wait: time.seconds(2).must()).must()
+            flush(@c, wait: time.seconds(2)).must()
             assert delivered_of(c, sid: sid).must() == 1
             close(@c).must()
 
@@ -1596,7 +1596,7 @@ test "request: no responders"
         .ok first =>
             c @= first
 
-            match request(@c, subject: "ex.nobody", data: [], wait: time.seconds(2).must())
+            match request(@c, subject: "ex.nobody", data: [], wait: time.seconds(2))
                 .ok _  => assert false
                 .err e => assert e.code == "not_found"
 
@@ -1609,7 +1609,7 @@ test "request_message: a header sent"
         .ok first =>
             c @= first
             m = with_header(message("ex.nobody", data: []), name: "Id", value: "7")
-            assert request_message(@c, m: m, wait: time.seconds(2).must()).is_err()
+            assert request_message(@c, m: m, wait: time.seconds(2)).is_err()
             close(@c).must()
 
 # A reply to a request, here one the client asks of itself.
@@ -1623,9 +1623,9 @@ test "respond: to a message's reply subject"
             m @= message("ex.ask", data: [1])
             m.reply @ "ex.answer"
             publish_message(@c, m: m).must()
-            asked = next_message(@c, wait: time.seconds(2).must()).must()
+            asked = next_message(@c, wait: time.seconds(2)).must()
             respond(@c, m: asked, data: [2]).must()
-            assert next_message_of(@c, sid: answers, wait: time.seconds(2).must()).must().data == [2]
+            assert next_message_of(@c, sid: answers, wait: time.seconds(2)).must().data == [2]
             close(@c).must()
 
 # A header read.

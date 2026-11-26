@@ -11,6 +11,7 @@
 # so a change told twice, late, or of the explorer's own doing changes
 # nothing the second time.
 
+use <rebel>/errors
 use <rebel>/fs/watch
 use <rebel>/path as paths
 use <rebel>/time
@@ -86,7 +87,7 @@ function new_controller(app: ui.App, ex: explorer.Explorer) -> Controller?
     made = match window_parts(@held)
         .ok parts => parts
         .err x =>
-            _ = ui.close(@held).is_err()
+            errors.ignore(ui.close(@held))
             return fail(code: x.code, msg: x.msg)
 
     no_asks: [dialogs.Ask] = []
@@ -130,7 +131,7 @@ record Parts
 function window_parts(@app: ui.App) -> Parts?
     w = window.make_window(@app)?
     menus = window.make_menus(@app, w: w.window)?
-    timer = ui.timer(@app, every: time.milliseconds(TICK_MS)?)?
+    timer = ui.timer(@app, every: time.milliseconds(TICK_MS))?
     return ok(Parts(w: w, menus: menus, timer: timer))
 
 # Draws the main window again from the state, follows the folder shown with
@@ -145,7 +146,7 @@ function redraw(@c: Controller)
         .err x => c.ex.status @ f"the window could not be drawn: {x.msg}"
 
     if c.progress.len() > 0 && c.ex.running.len() > 0
-        _ = dialogs.show_progress(@c.app, p: c.progress[0], j: c.ex.running[0]).is_err()
+        errors.ignore(dialogs.show_progress(@c.app, p: c.progress[0], j: c.ex.running[0]))
 
 # Moves the watch onto the folder shown where it changed; a folder that
 # cannot be watched is shown without one.
@@ -168,7 +169,7 @@ function follow_folder(@c: Controller)
 function stop_watching(@c: Controller)
     if c.watches.len() > 0
         held @= c.watches[0]
-        _ = watch.close(@held).is_err()
+        errors.ignore(watch.close(@held))
 
     c.watches @ []
     c.watched @ ""
@@ -202,7 +203,7 @@ function poll_disk(@c: Controller, limit: time.Duration) -> explorer.Changes
             .created | .removed | .changed | .attributes => names @ named_here(names, folder: c.ex.folder, at: e.path)
 
     if again
-        _ = explorer.refresh(@c.ex).is_err()
+        errors.ignore(explorer.refresh(@c.ex))
 
     if names.len() == 0
         return nothing
@@ -292,7 +293,7 @@ function work(@j: jobs.Job, clock_of: clock.Clock)
         return
 
     began = time.mark().default(time.Mark(nanoseconds: 0))
-    budget = time.milliseconds(WORK_MS).default(time.nanoseconds(0))
+    budget = time.milliseconds(WORK_MS)
 
     while !j.finished
         jobs.step(@j, now: clock.now(clock_of))
@@ -328,7 +329,7 @@ function finish_job(@c: Controller)
 # - `c`: the controller.
 function close_progress(@c: Controller)
     if c.progress.len() > 0
-        _ = ui.destroy(@c.app, widget: c.progress[0].window).is_err()
+        errors.ignore(ui.destroy(@c.app, widget: c.progress[0].window))
 
     c.progress @ []
 
@@ -337,7 +338,7 @@ function close_progress(@c: Controller)
 # - `c`: the controller.
 function close_digests(@c: Controller)
     if c.digests.len() > 0
-        _ = ui.destroy(@c.app, widget: c.digests[0].window).is_err()
+        errors.ignore(ui.destroy(@c.app, widget: c.digests[0].window))
 
     c.digests @ []
 
@@ -346,7 +347,7 @@ function close_digests(@c: Controller)
 # - `c`: the controller.
 function close_ask(@c: Controller)
     if c.asks.len() > 0
-        _ = ui.destroy(@c.app, widget: c.asks[0].window).is_err()
+        errors.ignore(ui.destroy(@c.app, widget: c.asks[0].window))
 
     c.asks @ []
 
@@ -361,7 +362,7 @@ function stop(@c: Controller)
         c.ex.running @ []
 
     stop_watching(@c)
-    _ = ui.close(@c.app).is_err()
+    errors.ignore(ui.close(@c.app))
 
 test "named_here: an entry of the folder once, one below it or elsewhere left out"
     names = named_here([], folder: "r/docs", at: "r/docs/a.txt")

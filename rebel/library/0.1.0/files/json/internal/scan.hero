@@ -129,6 +129,13 @@ function with_article(kind: str) -> str
         return "an object"
     return "a " + kind
 
+# `r` with the member `key` it was read from named before its message, where
+# it fails; its code kept.
+function at_member<T>(r: T?, key: str) -> T?
+    return match r
+        .ok _  => r
+        .err e => fail(code: e.code, msg: f"the member \"{key}\": {e.msg}")
+
 # The keys `names` for a message: `no keys`, or up to eight of them quoted and
 # how many more there are.
 function keys_named(names: [str]) -> str

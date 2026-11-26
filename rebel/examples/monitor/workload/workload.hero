@@ -13,6 +13,7 @@
 # (`monitor workload notify --file alerts.txt`) it reads the alert the
 # monitor writes on its input and appends one line of it to the file.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/io
 use <rebel>/json
@@ -88,7 +89,7 @@ function serve(name: str) -> i64
 
     # Its input is gone: it runs until the system ends it.
     while true
-        time.sleep(time.milliseconds(100).default(time.nanoseconds(1)))
+        time.sleep(time.milliseconds(100))
 
 # The second word of `words`, `absent` where there is none.
 #
@@ -134,7 +135,7 @@ function line_of(text: str) -> str?
 #
 # - `message`: what went wrong.
 function complain(message: str) -> i64
-    _ = io.write_line(io.stderr(), line: "monitor workload: " + message).is_err()
+    errors.ignore(io.write_line(io.stderr(), line: "monitor workload: " + message))
     return 1
 
 test "piece: 64 KiB of letters, the same on every run"

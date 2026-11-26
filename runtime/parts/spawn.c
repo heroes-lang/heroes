@@ -108,6 +108,11 @@
  * that gets fewer threads than it asked for computes a wrong answer quietly. */
 #define HERO_SPAWN_SLOTS 256
 
+/* A count of callbacks per slot and one for `main`'s thread
+ * (`parts/callback.c`, defect 2854). */
+_Static_assert(HERO_CALLBACK_THREADS == 1 + HERO_SPAWN_SLOTS,
+               "parts/callback.c keeps one count for main's thread and one per slot of the spawn table");
+
 /* THE FLOOR IS THE THREAD THAT RAN `main` (panel 115, 2026-09-06). A thread this
  * runtime starts never gets less stack than the thread the program started on.
  *
@@ -428,7 +433,10 @@ static void hero_spawn_ended_unanswered(void *p) {
 #endif
 
 static void hero_spawn_enter(HeroSpawnSlot *slot) {
-    hero_thread_claim();
+    /* The slot's own count of callbacks, which the thread before it in this
+     * slot left as it ended, ordered before this one by the join that freed
+     * the slot (`parts/callback.c`). */
+    hero_thread_claim(1 + (size_t)(slot - hero_spawn_slots));
     /* AND THE STACK GUARD IS CLAIMED HERE TOO, which is the whole of
      * `M-thread-stacks`' door (panel 107). Its bounds and its alternate stack
      * are the calling thread's, so a worker that recurses to the end of its
@@ -501,8 +509,8 @@ static void hero_spawn_enter(HeroSpawnSlot *slot) {
  * (panel 258's R1). */
 static void hero_spawn_leave(HeroSpawnSlot *slot) {
     /* What callbacks of this thread never finished (a C jump over their frames,
-     * defect 2704) joins the sum the leak gate reads (`parts/callback.c`). */
-    hero_callback_thread_ends();
+     * defect 2704) stays in the slot's count, which every reader sums
+     * (`parts/callback.c`): nothing is moved at a thread's end. */
     /* A print span the body left open is given back before anything else
      * ends, so stdout's lock never outlives its holder (`parts/panic.c`). */
     hero_print_thread_leave();

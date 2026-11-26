@@ -105,7 +105,7 @@ function browse_on(arg: str) -> str
     match strings.split_once(s: arg, sep: "\n")
         .err _ => return "no type in the argument"
         .ok named =>
-            match mdns.browse(named.after, wait: time.milliseconds(BROWSE_MS).must(), interfaces: [named.before])
+            match mdns.browse(named.after, wait: time.milliseconds(BROWSE_MS), interfaces: [named.before])
                 .err e => return e.code
                 .ok found =>
                     out: [str] @= []
@@ -157,7 +157,7 @@ function announce_on(arg: str) -> str
 # Every round of announcements on `line`, then the goodbye; "" or the first
 # failure's words.
 function rounds(line: transport.Transport, suffix: str) -> str
-    pause = time.milliseconds(PAUSE_MS).must()
+    pause = time.milliseconds(PAUSE_MS)
 
     for _ in range(from: 0, to: ROUNDS)
         said = say(line, suffix: suffix, ttl_kept: true)

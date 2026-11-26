@@ -1,0 +1,330 @@
+# A function of the platform layer's that a header of the program's own
+# declares itself, held to the layer's own declaration before any unit
+# compiles (design.md §1.11, §4.19, §1.12; spec § 13, *a name one of these
+# declares is bound only by a group whose header is or includes it*; panel
+# 260's R2, provisional, author ratification pending; defect 2856,
+# 2026-11-26).
+#
+# **clang checks a binding against the header its group names**, so where a
+# header of the program's own declares a function of the layer's and
+# includes none of the layer's headers, nothing holds that declaration to the
+# one the layer's function is compiled against. Bound by its own name, R2
+# refuses it before the first clang (`cli/layer_bound.hero`). Reached through
+# a macro a bound name stands for, or a body a bound name reaches
+# (`cli/layer_route.hero`), the name bound is the program's own, and where
+# another group says `layer` the link finds the layer's function:
+# `mixedown`'s `now.h`, declaring `double hero_time_monotonic_ns(void)` where
+# `hero_time.h` says `int64_t`, built and printed `6.3659874347e-314` at exit
+# 0 on this Mac, and other numbers in Linux arm64, until then.
+#
+# **What is held is clang's.** The names a module's header list declares
+# (`-ast-list`), each one's canonical type, linkage and place, asked in the
+# list and in the layer's header that declares it (`cli/two_ways_ask.hero`,
+# the question panel 202's C1 asks of two modules' lists). A name is the
+# layer's where its header declares it, by clang's place, in a file of the
+# runtime's list (`layer_bound.layer_path`), and the program's own where the
+# list's place for it stands outside the runtime's folder. A list that reads
+# the layer's header itself is passed over for that name: its unit holds the
+# two declarations together, and clang refuses two that disagree
+# (`ffi_header_refused`).
+#
+# Told `ffi_layer_redeclared` (`cli/layer_declared_words.hero`):
+#
+# - at the binding whose macro or body reaches the name, whatever the two
+#   declarations say, as R2 tells one bound by its own name, and with both
+#   types where they differ;
+# - where nothing bound reaches it and the two differ, at the group whose
+#   header holds the program's declaration, both declarations named: C takes
+#   one function declared with two types as undefined, called or not (C11
+#   6.2.7), and a body the header defines outside `static` calls it from the
+#   program's own object.
+#
+# Where the two agree and nothing bound reaches it, nothing is told: a
+# declaration as the layer writes it, which no binding goes through. **A
+# program whose groups say `layer` nowhere links none of the layer**, so its
+# link tells a name reached this way (`cli/layer_link.hero`) and nothing here
+# is asked; nor is any list in a program that binds no header of its own.
+
+use ast
+use check/layer_header
+use cli/bound_names
+use cli/compiling
+use cli/layer_bound
+use cli/layer_declared_words as words
+use cli/layer_route
+use cli/package_units
+use cli/probing
+use cli/runtime_key
+use cli/toolchain
+use cli/two_ways
+use cli/two_ways_ask
+use diag
+use emit/clang_place
+use emit/externs as emit_externs
+use parse
+use source
+use token
+
+# The diagnostics of every module's header list in a build whose groups say
+# `layer` somewhere, in the order of the lists and of the names, one at each
+# place.
+function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+
+    if !layer_header.declared(decls)
+        return out
+    files = runtime_key.layer_files(t.runtime).default([])
+
+    if files.len() == 0
+        return out
+    names = layer_bound.declared_names(t.runtime)
+    told_at: {i64: bool} @= {}
+
+    for one in two_ways.own_headers(probings)
+        if all_layer(headers: bound_names.groups_of(one.headers), files: files)
+            continue
+        pairs = paired(t, probe: one.probe.must(), names: names, files: files)
+
+        if pairs.len() == 0
+            continue
+        reading = layer_route.read(t, probe: one.probe.must())
+        bindings = layer_route.bindings_of(s, decls, headers: bound_names.groups_of(one.headers), modules: one.modules)
+
+        for pair in pairs
+            side = two_ways.side_of(one, name: pair.name, answer: pair.own, s: s, decls: decls)
+            found = layer_route.route_to(reading, bindings: bindings, name: pair.name)
+
+            if !found.is_err()
+                if told_at[found.must().binding.span.start].is_err()
+                    told_at[found.must().binding.span.start] @ true
+                    out @ out.push(
+                        words.through(found.must(), pair: pair, own_file: side.file, says_layer: says_layer(decls, group: found.must().binding.header))
+                    )
+            else if !two_ways.same_type(one: pair.own.type, other: pair.layer.type) && told_at[side.span.start].is_err()
+                told_at[side.span.start] @ true
+                out @ out.push(words.disagreeing(pair, own_file: side.file, span: side.span))
+
+    return out
+
+# `told`, `cli/layer_bound.hero`'s, with each `ffi_layer_unreached` asked
+# first whether it is true (defect 2856): its group says `layer`,
+# its header reaches none of the layer's and it binds no name of it by its
+# own, so it was told *nothing it binds is the layer's*, and `fix (certain):
+# take layer out`; where a binding of the group reaches, through a macro or
+# a body, a function of the layer's its own headers declare, it is told as
+# that binding (`through_group`) and the sentence and its fix are never said.
+# Read in the folder the group's module stands in, as its unit reads it.
+function unreached_read(t: toolchain.Toolchain, under: compiling.Compiling, s: source.Source, decls: [ast.Decl], judged: [diag.Diagnostic]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+
+    for d in judged
+        group = group_saying(decls, word: d.span)
+
+        if d.code != layer_header.UNREACHED || group.is_err()
+            out @ out.push(d)
+            continue
+        place = package_units.place_of(s, component: source.component_at(s, group.must().start))
+        own: compiling.Compiling @= under
+
+        if place.fetched
+            own @ compiling.of_package(under, root: place.folder)
+        else if place.folder.len() > 0
+            own @ package_units.searching_after(under, folders: [place.folder])
+        through = through_group(t, under: own, s: s, decls: decls, group: group.must())
+
+        if through.is_err()
+            out @ out.push(d)
+        else
+            out @ out.push(through.must())
+
+    return out
+
+# Whether the group whose header string stands at `group` says `layer`.
+function says_layer(decls: [ast.Decl], group: token.Span) -> bool
+    for decl in decls
+        head = layer_header.head_of(decl)
+
+        if !head.header.is_err() && head.header.must().start == group.start
+            return !head.layer.is_err()
+
+    return false
+
+# The header string of the group whose `layer` stands at `word`.
+function group_saying(decls: [ast.Decl], word: token.Span) -> token.Span?
+    for decl in decls
+        head = layer_header.head_of(decl)
+
+        if !head.header.is_err() && !head.layer.is_err() && head.layer.must().start == word.start
+            return head.header
+
+    return fail(code: "none", msg: "no group says `layer` there")
+
+# One group saying `layer` whose header reaches none of the layer's and
+# binds no name of it by its own: the binding of its own whose macro or body
+# reaches a function of the layer's its headers declare themselves, told;
+# absent where none does, and then nothing it binds is the layer's. Its
+# unit's headers are read as the module's groups name them, up to its own.
+function through_group(t: toolchain.Toolchain, under: compiling.Compiling, s: source.Source, decls: [ast.Decl], group: token.Span) -> diag.Diagnostic?
+    files = runtime_key.layer_files(t.runtime).default([])
+    headers = headers_up_to(s, decls, group: group)
+
+    if files.len() == 0 || headers.len() == 0
+        return fail(code: "none", msg: "no layer, or no header")
+    probe = compiling.probe(t.build, under: under, headers: headers)
+
+    if probe.read.is_err()
+        return fail(code: "none", msg: "the headers were not read")
+    pairs = paired(t, probe: probe, names: layer_bound.declared_names(t.runtime), files: files)
+
+    if pairs.len() == 0
+        return fail(code: "none", msg: "the headers declare none of the layer's functions themselves")
+    reading = layer_route.read(t, probe: probe)
+    spelled = emit_externs.unquoted(s, span: group)
+    bindings = layer_route.bindings_of(s, decls, headers: [spelled], modules: [source.component_at(s, group.start)])
+
+    for pair in pairs
+        found = layer_route.route_to(reading, bindings: bindings, name: pair.name)
+
+        if !found.is_err()
+            shown = clang_place.shown(
+                path: pair.own.path,
+                directory: clang_place.found_in(path: pair.own.path, spelled: spelled)
+            )
+            return ok(
+                words.through(found.must(), pair: pair, own_file: shown, says_layer: says_layer(decls, group: group))
+            )
+
+    return fail(code: "none", msg: "no binding of the group reaches a function of the layer's")
+
+# Whether every header a list's groups name is one of the layer's, which a
+# build's unit reads from the runtime's folder whatever else is searched
+# (`check/layer_header.hero`): such a list declares nothing of the layer's
+# but as the layer does, and clang is asked nothing of it.
+function all_layer(headers: [str], files: [str]) -> bool
+    for header in headers
+        if !layer_header.names_layer(header, files: files)
+            return false
+
+    return true
+
+# The headers the module holding `group` names in its groups, in the order
+# they stand, up to and with `group`'s own, each once.
+function headers_up_to(s: source.Source, decls: [ast.Decl], group: token.Span) -> [str]
+    component = source.component_at(s, group.start)
+    out: [str] @= []
+    seen: {str: bool} @= {}
+
+    for decl in decls
+        head = layer_header.head_of(decl)
+
+        if head.header.is_err() || source.component_at(s, head.header.must().start) != component
+            continue
+        header = emit_externs.unquoted(s, span: head.header.must())
+
+        if seen[header].is_err()
+            seen[header] @ true
+            out @ out.push(header)
+
+        if head.header.must().start == group.start
+            return out
+
+    return out
+
+# The names `probe`'s list declares itself that a header of the layer's
+# declares too, the list's declaration outside the runtime's folder and the
+# layer's in a file of the layer's the list does not read, each with both
+# answers, in the order of the names.
+function paired(t: toolchain.Toolchain, probe: compiling.Probe, names: {str: str}, files: [str]) -> [words.Pair]
+    out: [words.Pair] @= []
+    listed = two_ways_ask.listed(t, probe)
+    read_files = layer_files_read(runtime: t.runtime, read: probe.read.default(""), files: files)
+    asked: [str] @= []
+
+    # ORDER: by name, `asked` sorted below before anything reads it.
+    for name in keys(listed)
+        header = names[name]
+
+        if !header.is_err() && read_files[header.must()].is_err()
+            asked @ asked.push(name)
+
+    if asked.len() == 0
+        return out
+    asked @ sort(asked)
+    layer_headers: [str] @= []
+    seen: {str: bool} @= {}
+
+    for name in asked
+        header = names[name].must()
+
+        if seen[header].is_err()
+            seen[header] @ true
+            layer_headers @ layer_headers.push(header)
+
+    memo: {str: str} @= probe.digests
+    layer_probe = compiling.Probe(
+        words: probe.words,
+        headers: layer_headers,
+        read: compiling.reads(t.build, words: probe.words, headers: layer_headers, @memo),
+        digests: memo
+    )
+
+    if layer_probe.read.is_err()
+        return out
+    own = two_ways_ask.answers(t, probe, names: asked)
+    theirs = two_ways_ask.answers(t, layer_probe, names: asked)
+
+    for name in asked
+        mine = own[name]
+        layer = theirs[name]
+
+        if mine.is_err() || layer.is_err() || !mine.must().external || !layer.must().external
+            continue
+        layer_file = layer_bound.layer_path(runtime: t.runtime, path: layer.must().path, files: files)
+
+        if layer_file.len() == 0 || layer_bound.runtime_inside(runtime: t.runtime, path: mine.must().path).len() > 0
+            continue
+        out @ out.push(words.Pair(name: name, own: mine.must(), layer: layer.must(), layer_file: layer_file))
+
+    return out
+
+# The files of the layer's a probe's reads name: its rows after the first,
+# each `<digest> <path>`.
+function layer_files_read(runtime: str, read: str, files: [str]) -> {str: bool}
+    out: {str: bool} @= {}
+    rows = two_ways_ask.rows_of(read)
+
+    for at in range(from: 1, to: rows.len())
+        row = rows[at]
+        space = two_ways_ask.found(text: row, needle: " ")
+
+        if space.is_err()
+            continue
+        inside = layer_bound.layer_path(
+            runtime: runtime,
+            path: row.slice(from: space.must() + 1, to: row.len()),
+            files: files
+        )
+
+        if inside.len() > 0
+            out[inside] @ true
+
+    return out
+
+## Tests
+
+# The files of the layer's a probe read, from its rows `<digest> <path>`
+# after the first line, its own digest.
+test "the layer's files a list reads are its reads' rows in the runtime's folder (defect 2856)"
+    files = ["hero_time.h", "hero_net.h"]
+    read = "d0\nd1 rt/hero_time.h\nd2 own/now.h\nd3 rt/vendor/m.h\n"
+    got = layer_files_read(runtime: "rt", read: read, files: files)
+    assert !got["hero_time.h"].is_err()
+    assert got["hero_net.h"].is_err()
+    assert keys(got).len() == 1
+
+test "a group's unit reads its module's headers up to its own (defect 2856)"
+    text = "extern \"a.h\"\n    function fa() -> i64\n\nextern \"now.h\" layer\n    function now_ns() -> i64\n\nextern \"b.h\"\n    function fb() -> i64\n"
+    s = source.new_source(name: "main.hero", text: text)
+    decls = parse.parse(text).decls
+    group = layer_header.head_of(decls[1]).header.must()
+    assert headers_up_to(s, decls, group: group) == ["a.h", "now.h"]

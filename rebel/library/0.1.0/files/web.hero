@@ -388,19 +388,27 @@ function not_routed(router: Router, r: http.Request) -> http.Response
         out.headers @ http.with_header(out.headers, name: "Allow", value: m.allow.join(", "))
     return out
 
-# The value of the parameter `name` of `found`.
+# The value of the parameter `name` of `found`, which its route's pattern
+# declares: a value every request the route takes holds, so it is read with
+# no failure to answer.
 #
 # - `found`: the route found.
-# - `name`: the parameter's name, as the pattern writes it.
+# - `name`: the parameter's name, as the pattern writes it, `slug` for
+#   `:slug` or `*slug`.
 #
-# Fails `not_found` where the route has no such parameter. A number or an
-# identifier is read from the text by `numbers.parse_int` or `uuid.parse`.
-function param_of(found: Found, name: str) -> str?
+# Aborts where the route declares no parameter `name`: a route's pattern is
+# the program's own, so asking a route for a name it does not write is a
+# mistake in the program, as an index past a list's end is, never something a
+# request can cause (README § A4); a program whose routes come from outside
+# asks `found.params` first. A number or an identifier is read from the text
+# by `numbers.parse_int` or `uuid.parse`.
+function param_of(found: Found, name: str) -> str
     for p in found.params
         if p.name == name
-            return ok(p.value)
+            return p.value
 
-    return fail(code: NOT_FOUND, msg: f"the route \"{found.name}\" has no parameter \"{name}\"")
+    missing: str? = fail(code: NOT_FOUND, msg: f"the route \"{found.name}\" declares no parameter \"{name}\"")
+    return missing.must()
 
 # Whether `found` was added in the group `name`, or in a group inside it.
 #
@@ -1475,7 +1483,7 @@ function default_cookie_options(name: str, ring: [[u8]]) -> CookieOptions
         name: name,
         path: "/",
         domain: "",
-        max_age: time.days(30).must(),
+        max_age: time.days(30),
         secure: true,
         http_only: true,
         same_site: "Lax",
@@ -1576,7 +1584,9 @@ function secure_cookie_of(r: http.Request, options: CookieOptions, now: time.Ins
 function with_secure_cookie(response: http.Response, options: CookieOptions, value: str, now: time.Instant) -> http.Response?
     max_age_seconds = webhooks.whole_seconds(options.max_age)
     assert max_age_seconds >= 1
-    expires = time.add(now, d: time.seconds(max_age_seconds).default(time.max_duration())).default(time.max_instant())
+    expires = time.add(now, d: time.seconds_checked(max_age_seconds).default(time.max_duration())).default(
+        time.max_instant()
+    )
     written: str @= ""
 
     if options.sealing.len() > 0
@@ -1842,7 +1852,7 @@ record SecurityHeaders
 function default_security_headers() -> SecurityHeaders
     return SecurityHeaders(
         content_security_policy: "default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
-        strict_transport_security: format_hsts(max_age: time.days(365).must(), subdomains: true, preload: false),
+        strict_transport_security: format_hsts(max_age: time.days(365), subdomains: true, preload: false),
         content_type_options: "nosniff",
         frame_options: "SAMEORIGIN",
         referrer_policy: "no-referrer",
@@ -2198,7 +2208,7 @@ function health_response(r: http.Request, checks: [Check], detail: bool) -> http
 # How far a webhook's timestamp may stand from the clock that reads it,
 # either way: five minutes, as the specification's libraries allow.
 function default_webhook_tolerance() -> time.Duration
-    return time.minutes(5).must()
+    return time.minutes(5)
 
 # A new secret for signing webhooks: `whsec_` and the standard base 64 of 32
 # bytes the system's generator draws.
@@ -2319,9 +2329,9 @@ test "route: a fixed segment before a parameter before a wildcard, parameters un
     assert route(rt, fixture.request_of(method: "GET", target: "/users/new", headers: [])).must().name == "new_user"
     one = route(rt, fixture.request_of(method: "GET", target: "/users/a%2Fb", headers: [])).must()
     assert one.name == "user" && one.params == [Param(name: "id", value: "a/b")]
-    assert param_of(route(rt, fixture.request_of(method: "GET", target: "/files/a/b%20c", headers: [])).must(), name: "path").must() == "a/b c"
-    assert param_of(route(rt, fixture.request_of(method: "GET", target: "/files/", headers: [])).must(), name: "path").must() == ""
-    assert param_of(route(rt, fixture.request_of(method: "GET", target: "/files", headers: [])).must(), name: "path").must() == ""
+    assert param_of(route(rt, fixture.request_of(method: "GET", target: "/files/a/b%20c", headers: [])).must(), name: "path") == "a/b c"
+    assert param_of(route(rt, fixture.request_of(method: "GET", target: "/files/", headers: [])).must(), name: "path") == ""
+    assert param_of(route(rt, fixture.request_of(method: "GET", target: "/files", headers: [])).must(), name: "path") == ""
     assert route(rt, fixture.request_of(method: "GET", target: "/users/", headers: [])).is_err()
 
 test "route: HEAD taken by GET, every method last, a dirty path and a bad escape refused"
@@ -3098,7 +3108,7 @@ test "with_secure_cookie and secure_cookie_of: read back, Max-Age and Expires wr
         headers: [http.Header(name: "Cookie", value: f"s={cookie.value}")]
     )
     assert secure_cookie_of(r, options: options, now: now).must() == "v"
-    later = time.add(now, d: time.seconds(2_592_000).must()).must()
+    later = time.add(now, d: time.seconds(2_592_000)).must()
     assert secure_cookie_of(r, options: options, now: later).is_err()
     assert with_secure_cookie(
         http.respond_status(http.STATUS_OK),
@@ -3120,7 +3130,7 @@ test "secure_cookie_of: no cookie not_found, a cookie of another key or name inv
         [fixture.ring()[1]],
         name: "s",
         value: "old",
-        expires: time.add(now, d: time.seconds(60).must()).must()
+        expires: time.add(now, d: time.seconds(60)).must()
     )
     old = fixture.request_of(
         method: "GET",
@@ -3157,7 +3167,7 @@ test "session_of and with_session: values of more than one byte read back, a coo
         fixture.ring(),
         name: "session",
         value: "[1]",
-        expires: time.add(now, d: time.seconds(60).must()).must()
+        expires: time.add(now, d: time.seconds(60)).must()
     )
     bad = fixture.request_of(
         method: "GET",
@@ -3179,7 +3189,7 @@ test "without_cookie: an empty value, Max-Age=0, an end in 1970"
 
 test "seal_value and open_value through the face: read back before its end and refused at it, where the platform seals"
     now = fixture.clock().must()
-    later = time.add(now, d: time.seconds(60).must()).must()
+    later = time.add(now, d: time.seconds(60)).must()
 
     if !seal.is_available(.aes_256_gcm)
         skip_test(reason: "this platform's cryptography offers no AES-256-GCM to seal")
@@ -3244,7 +3254,7 @@ test "with_security_headers: every field written where none stands, a handler's 
 
 test "format_hsts: forgetting, every part, and none"
     assert format_hsts(max_age: time.nanoseconds(0), subdomains: false, preload: false) == "max-age=0"
-    assert format_hsts(max_age: time.hours(17520).must(), subdomains: true, preload: true) == "max-age=63072000; includeSubDomains; preload"
+    assert format_hsts(max_age: time.hours(17520), subdomains: true, preload: true) == "max-age=63072000; includeSubDomains; preload"
 
 test "trusted_networks: addresses and networks of both families, a mapped address, what reads as neither"
     got = trusted_networks(["10.0.0.1", "::1", "192.168.0.0/16", "fd00::/8", "::ffff:10.0.0.2"]).must()
@@ -3404,8 +3414,8 @@ test "verify_webhook: signed and verified, a rotated secret, the tolerance's edg
     assert verify_webhook(headers, payload: payload, secrets: [new_secret, old_secret], now: sent, tolerance: default_webhook_tolerance()).must() == "msg_1"
     late = time.from_unix(whole_seconds: 1614265330 + 300, extra_nanoseconds: 0).must()
     early = time.from_unix(whole_seconds: 1614265330 - 300, extra_nanoseconds: 0).must()
-    assert verify_webhook(headers, payload: payload, secrets: [old_secret], now: late, tolerance: time.minutes(5).must()).must() == "msg_1"
-    assert verify_webhook(headers, payload: payload, secrets: [old_secret], now: early, tolerance: time.minutes(5).must()).must() == "msg_1"
+    assert verify_webhook(headers, payload: payload, secrets: [old_secret], now: late, tolerance: time.minutes(5)).must() == "msg_1"
+    assert verify_webhook(headers, payload: payload, secrets: [old_secret], now: early, tolerance: time.minutes(5)).must() == "msg_1"
     too_late = time.from_unix(whole_seconds: 1614265330 + 301, extra_nanoseconds: 0).must()
     too_early = time.from_unix(whole_seconds: 1614265330 - 301, extra_nanoseconds: 0).must()
     two = [
@@ -3413,16 +3423,16 @@ test "verify_webhook: signed and verified, a rotated secret, the tolerance's edg
         http.Header(name: "webhook-timestamp", value: "1614265330")
         http.Header(name: "webhook-signature", value: "v1a,x v1,AAAA " + http.value_of(headers, name: "webhook-signature").must())
     ]
-    assert verify_webhook(two, payload: payload, secrets: [old_secret], now: sent, tolerance: time.minutes(5).must()).must() == "msg_1"
+    assert verify_webhook(two, payload: payload, secrets: [old_secret], now: sent, tolerance: time.minutes(5)).must() == "msg_1"
     refused = [
-        verify_webhook(headers, payload: payload, secrets: [old_secret], now: too_late, tolerance: time.minutes(5).must())
-        verify_webhook(headers, payload: payload, secrets: [old_secret], now: too_early, tolerance: time.minutes(5).must())
-        verify_webhook(headers, payload: bytes.from_text("{\"a\":2}"), secrets: [old_secret], now: sent, tolerance: time.minutes(5).must())
-        verify_webhook(headers, payload: payload, secrets: [new_secret], now: sent, tolerance: time.minutes(5).must())
-        verify_webhook([headers[0], headers[1]], payload: payload, secrets: [old_secret], now: sent, tolerance: time.minutes(5).must())
-        verify_webhook([headers[0], headers[1], http.Header(name: "webhook-signature", value: "v1a,abc")], payload: payload, secrets: [old_secret], now: sent, tolerance: time.minutes(5).must())
-        verify_webhook([headers[0], http.Header(name: "webhook-timestamp", value: "+1614265330"), headers[2]], payload: payload, secrets: [old_secret], now: sent, tolerance: time.minutes(5).must())
-        verify_webhook(headers, payload: payload, secrets: ["whsec_"], now: sent, tolerance: time.minutes(5).must())
+        verify_webhook(headers, payload: payload, secrets: [old_secret], now: too_late, tolerance: time.minutes(5))
+        verify_webhook(headers, payload: payload, secrets: [old_secret], now: too_early, tolerance: time.minutes(5))
+        verify_webhook(headers, payload: bytes.from_text("{\"a\":2}"), secrets: [old_secret], now: sent, tolerance: time.minutes(5))
+        verify_webhook(headers, payload: payload, secrets: [new_secret], now: sent, tolerance: time.minutes(5))
+        verify_webhook([headers[0], headers[1]], payload: payload, secrets: [old_secret], now: sent, tolerance: time.minutes(5))
+        verify_webhook([headers[0], headers[1], http.Header(name: "webhook-signature", value: "v1a,abc")], payload: payload, secrets: [old_secret], now: sent, tolerance: time.minutes(5))
+        verify_webhook([headers[0], http.Header(name: "webhook-timestamp", value: "+1614265330"), headers[2]], payload: payload, secrets: [old_secret], now: sent, tolerance: time.minutes(5))
+        verify_webhook(headers, payload: payload, secrets: ["whsec_"], now: sent, tolerance: time.minutes(5))
     ]
 
     for one in refused
@@ -3476,7 +3486,7 @@ test "route: a user's route and its id"
     rt @= new_router()
     add(@rt, method: http.METHOD_GET, pattern: "/users/:id", name: "user").must()
     found = route(rt, fixture.request_of(method: "GET", target: "/users/42", headers: [])).must()
-    assert found.name == "user" && param_of(found, name: "id").must() == "42"
+    assert found.name == "user" && param_of(found, name: "id") == "42"
 
 # The methods a path allows.
 test "allowed_of: GET and the two this package adds"
@@ -3494,7 +3504,7 @@ test "not_routed: 405 for a method no route of the path takes"
 # A parameter's value by its name.
 test "param_of: the id of a found route"
     found = Found(name: "user", pattern: "/users/:id", groups: [], params: [Param(name: "id", value: "7")])
-    assert param_of(found, name: "id").must() == "7"
+    assert param_of(found, name: "id") == "7"
 
 # Whether a route stands in a group, for a step the group asks.
 test "is_in_group: a route of the admin group"
@@ -3838,7 +3848,7 @@ test "route: a program's own loop, its state passed with @"
             .err _  => break
 
         response = match route(rt, r)
-            .ok found => fixture.visit(@hits, name: found.name, id: param_of(found, name: "id").default(""))
+            .ok found => fixture.visit(@hits, name: found.name, id: param_of(found, name: "id"))
             .err _    => not_routed(rt, r)
 
         http.write_answer(reader.stream, r: r, response: response).must()
@@ -3910,7 +3920,7 @@ test "write_retry: ten seconds"
     reader @= io.reader(p.reader)
     started = http.read_response_head(@reader, method: http.METHOD_GET, limits: http.default_limits()).must()
     events @= http.event_reader(started, limits: http.default_limits()).must()
-    assert http.read_event(@reader, @events).is_err() && events.retry == time.seconds(10).must()
+    assert http.read_event(@reader, @events).is_err() && events.retry == time.seconds(10)
     io.close(@reader.stream).must()
 
 # A comment a reader skips, written where no event is said for long.
@@ -3946,7 +3956,7 @@ test "allow: a burst of two, the third refused, one back after a second"
     assert allow(@limiter, key: "203.0.113.7", now: start)
     assert !allow(@limiter, key: "203.0.113.7", now: start)
     assert allow(@limiter, key: "198.51.100.1", now: start)
-    assert allow(@limiter, key: "203.0.113.7", now: time.add(start, d: time.seconds(1).must()).must())
+    assert allow(@limiter, key: "203.0.113.7", now: time.add(start, d: time.seconds(1)).must())
 
 # How long a refused client waits for its next token.
 test "wait_of: a quarter of a second at four a second"
@@ -3954,7 +3964,7 @@ test "wait_of: a quarter of a second at four a second"
     now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
     assert wait_of(limiter, key: "a", now: now).nanoseconds == 0
     assert allow(@limiter, key: "a", now: now)
-    assert wait_of(limiter, key: "a", now: now) == time.milliseconds(250).must()
+    assert wait_of(limiter, key: "a", now: now) == time.milliseconds(250)
 
 # A program's loop limiting each client by its address: the second request
 # of a client within its second is answered 429, with the seconds to wait.
@@ -3976,7 +3986,7 @@ test "limit_rate: 429 and Retry-After past one request a second"
 # The options of a session's cookie.
 test "default_cookie_options: a month, secure, the path /"
     options = default_cookie_options("session", ring: fixture.ring())
-    assert options.max_age == time.days(30).must() && options.secure && options.http_only && options.same_site == "Lax" && options.path == "/"
+    assert options.max_age == time.days(30) && options.secure && options.http_only && options.same_site == "Lax" && options.path == "/"
 
 # A value signed for a cookie, then verified.
 test "sign_value: a user's name kept by the client, unchangeable"
@@ -3985,7 +3995,7 @@ test "sign_value: a user's name kept by the client, unchangeable"
         fixture.ring(),
         name: "user",
         value: "ada",
-        expires: time.add(now, d: time.seconds(3_600).must()).must()
+        expires: time.add(now, d: time.seconds(3_600)).must()
     )
     assert verify_value(fixture.ring(), name: "user", signed: signed, now: now).must() == "ada"
 
@@ -3996,7 +4006,7 @@ test "verify_value: one byte changed is refused"
         fixture.ring(),
         name: "user",
         value: "ada",
-        expires: time.add(now, d: time.seconds(60).must()).must()
+        expires: time.add(now, d: time.seconds(60)).must()
     )
     assert verify_value(
         fixture.ring(),
@@ -4014,7 +4024,7 @@ test "seal_value: a secret kept by the client, unreadable"
     k @= seal.generate(.aes_128_gcm).must()
     other @= seal.generate(.aes_128_gcm).must()
     now = fixture.clock().must()
-    expires = time.add(now, d: time.seconds(60).must()).must()
+    expires = time.add(now, d: time.seconds(60)).must()
     secret = "a secret the client keeps and never reads"
     sealed = seal_value([k], name: "c", value: secret, expires: expires).must()
     data = bytes.parse_base64_url_unpadded(sealed).must()
@@ -4050,7 +4060,7 @@ test "secure_cookie_of: the value of a cookie this server set"
         options.keys,
         name: "theme",
         value: "dark",
-        expires: time.add(now, d: time.seconds(60).must()).must()
+        expires: time.add(now, d: time.seconds(60)).must()
     )
     r = fixture.request_of(method: "GET", target: "/", headers: [http.Header(name: "Cookie", value: f"theme={value}")])
     assert secure_cookie_of(r, options: options, now: now).must() == "dark"
@@ -4149,7 +4159,7 @@ test "minimal_security_headers: nosniff for a page"
 
 # A two-year HSTS value for a site in browsers' preload lists.
 test "format_hsts: two years, subdomains, preload"
-    assert format_hsts(max_age: time.hours(17520).must(), subdomains: true, preload: true) == "max-age=63072000; includeSubDomains; preload"
+    assert format_hsts(max_age: time.hours(17520), subdomains: true, preload: true) == "max-age=63072000; includeSubDomains; preload"
 
 # A response given helmet's fields, a policy of the program's own among them.
 test "with_security_headers: a stricter frame policy"
@@ -4209,7 +4219,7 @@ test "serve_until_stopped: a listener with no client, its deadline passed"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     net.set_accept_deadline(l, deadline_ms: 100).must()
 
-    match serve_until_stopped(http.default_server(), l: l, router: new_router(), handler: not_routed, grace: time.seconds(1).must())
+    match serve_until_stopped(http.default_server(), l: l, router: new_router(), handler: not_routed, grace: time.seconds(1))
         .ok _  => assert false
         .err e => assert e.code == "timeout"
 
@@ -4225,7 +4235,7 @@ test "health_response: a readiness probe with a database down"
 
 # How far a webhook's timestamp may stand from the clock by default.
 test "default_webhook_tolerance: five minutes either way"
-    assert default_webhook_tolerance() == time.minutes(5).must()
+    assert default_webhook_tolerance() == time.minutes(5)
 
 # A new secret, as a sender gives one to each receiver.
 test "new_webhook_secret: a secret to share with a receiver"

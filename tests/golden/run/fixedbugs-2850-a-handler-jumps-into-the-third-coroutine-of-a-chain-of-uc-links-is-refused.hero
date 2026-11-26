@@ -1,0 +1,24 @@
+# Fixed 2026-11-26, defect 2850, lane sig-family (step 199b).
+# The third coroutine of a chain of `uc_link`s, on the runner's frame: refused.
+# Symptom: before, a handler's jump into a coroutine the C library started
+# through another's `uc_link`, on a stack carved from the thread's own, ran the
+# Heroes function inside the signal at exit 0, plain on this Mac and on Linux
+# arm64 (refused under `--sanitize` on this Mac only by the frame walk); on
+# the heap it was refused in words naming causes the program has none of.
+# Cause: a range `makecontext` was given is entered only by a switch the
+# runtime sees, and the C library's own switch to `uc_link` at a coroutine's
+# end is none, so the linked range was judged the thread's own memory.
+# Fix: the link is learned where `makecontext` reads it; a range entered holds
+# every range down its chain of links entered with it, and their end is seen
+# where the swap into the first returns, each whose context still names what
+# it named when the swap began and from which no switch was made.
+extern "fixedbugs-2850-coroutines-the-c-library-starts-through-uc-link.h"
+    function ul_run(form: i32, cb: (function(i64) -> i64)) -> i64
+    function ul_reuse(cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("ul_3: ", ul_run(form: 3, cb: answer))

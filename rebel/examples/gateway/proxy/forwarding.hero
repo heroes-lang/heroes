@@ -10,6 +10,7 @@
 # may have changed something, so only an idempotent method (RFC 9110
 # § 9.2.2) is tried again, and anything else is answered as it stands.
 
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/io
 use <rebel>/math
@@ -225,7 +226,7 @@ function exchange(e: instances.Endpoint, r: http.Request, target: str, connect_m
         .ok made =>
             conn: net.Conn @= made
             answer = sent(conn, r: r, target: target)
-            _ = io.close(@conn.stream).is_err()
+            errors.ignore(io.close(@conn.stream))
 
             return match answer
                 .ok response => .answered(response: response)

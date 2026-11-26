@@ -13,6 +13,7 @@
 # answered `-ERR` and the connection closed, as the NATS server does.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/json
 use <rebel>/nats
@@ -107,8 +108,8 @@ function drop_peer(@s: Server, set: poll.Set, i: i64)
         return
 
     # A connection ends here whatever its socket answers.
-    _ = poll.remove(set, key: s.peers[i].key).is_err()
-    _ = io.close(@s.peers[i].stream).is_err()
+    errors.ignore(poll.remove(set, key: s.peers[i].key))
+    errors.ignore(io.close(@s.peers[i].stream))
     s.peers[i].open @ false
 
 # Answers peer `i` with `-ERR` and closes it, as the server does for a
@@ -415,7 +416,7 @@ function accept(@s: Server, set: poll.Set, l: net.Listener lent)
     key = match poll.add_stream(set, s: conn.stream, interest: .read)
         .ok k => k
         .err _ =>
-            _ = io.close(@conn.stream).is_err()
+            errors.ignore(io.close(@conn.stream))
             return
 
     peers @= s.peers
@@ -435,29 +436,29 @@ function serve_on(to: (mailbox told.Told)) -> str?
     l @= match net.listen(host: "127.0.0.1", port: 0)
         .ok got => got
         .err e =>
-            _ = told.failed(to, why: e.msg).is_err()
+            errors.ignore(told.failed(to, why: e.msg))
             return fail(code: e.code, msg: e.msg)
 
     set @= match poll.make(256)
         .ok got => got
         .err e =>
-            _ = net.close_listener(@l).is_err()
-            _ = told.failed(to, why: e.msg).is_err()
+            errors.ignore(net.close_listener(@l))
+            errors.ignore(told.failed(to, why: e.msg))
             return fail(code: e.code, msg: e.msg)
 
     listening = match poll.add_listener(set, l: l)
         .ok key => key
         .err e =>
-            _ = poll.close(@set).is_err()
-            _ = net.close_listener(@l).is_err()
-            _ = told.failed(to, why: e.msg).is_err()
+            errors.ignore(poll.close(@set))
+            errors.ignore(net.close_listener(@l))
+            errors.ignore(told.failed(to, why: e.msg))
             return fail(code: e.code, msg: e.msg)
 
     told.ready(to, listening: l.address.port)?
     s @= Server(peers: [], published: 0, delivered: 0, port: l.address.port, turns: {})
 
     while true
-        events = match poll.wait(set, limit: time.hours(1).must())
+        events = match poll.wait(set, limit: time.hours(1))
             .ok got => got
             .err _  => break
 

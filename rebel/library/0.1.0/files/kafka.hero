@@ -436,8 +436,8 @@ function options(brokers: [str]) -> Options
         client_id: "rebel",
         security: .plain,
         sasl: .none,
-        connect_timeout: time.seconds(10).must(),
-        wait: time.seconds(10).must(),
+        connect_timeout: time.seconds(10),
+        wait: time.seconds(10),
         most_response_bytes: 104857600,
         acks: .leader,
         compression: .none,
@@ -1041,11 +1041,11 @@ function group_options(group_id: str, topics: [str]) -> GroupOptions
     return GroupOptions(
         group_id: group_id,
         topics: topics,
-        session_timeout: time.seconds(45).must(),
-        rebalance_timeout: time.minutes(5).must(),
-        heartbeat_interval: time.seconds(3).must(),
+        session_timeout: time.seconds(45),
+        rebalance_timeout: time.minutes(5),
+        heartbeat_interval: time.seconds(3),
         start: .earliest,
-        auto_commit_interval: time.seconds(5).must(),
+        auto_commit_interval: time.seconds(5),
         instance_id: ""
     )
 
@@ -1353,7 +1353,7 @@ test "options, group_options, message, with_key, with_header: the defaults and a
     o = options(["localhost:9092"])
     assert o.client_id == "rebel" && o.acks == .leader && o.compression == .none && o.most_fetch_bytes == 1048576 && !o.auto_create_topics
     g = group_options("g", topics: ["t"])
-    assert g.session_timeout == time.seconds(45).must() && g.heartbeat_interval == time.seconds(3).must() && g.start == .earliest && g.auto_commit_interval == time.seconds(5).must()
+    assert g.session_timeout == time.seconds(45) && g.heartbeat_interval == time.seconds(3) && g.start == .earliest && g.auto_commit_interval == time.seconds(5)
     m = message([1]).with_key([]).with_header(key: "h", value: [2])
     assert m.key.must() == [] && m.headers == [Header(key: "h", value: [2])] && m.partition == -1 && m.timestamp.is_err()
 
@@ -1380,7 +1380,7 @@ test "connect: an option out of range refused before anything is sent, a broker 
     o @= options(["localhost"])
     assert connect(o).is_err()
     o.brokers @ [f"127.0.0.1:{live.silent_port()}"]
-    o.connect_timeout @ time.seconds(2).must()
+    o.connect_timeout @ time.seconds(2)
 
     match connect(o)
         .ok _  => assert false
@@ -1438,7 +1438,7 @@ test "connect live, against the brokers REBEL_KAFKA_BROKERS names: topics made a
                 topic: topic,
                 partition: 0,
                 offset: produced.base_offset,
-                wait: time.seconds(1).must()
+                wait: time.seconds(1)
             ).must()
             assert got.messages.len() == 2 && got.messages[0].headers == plain.headers && time.unix_milliseconds(got.messages[0].timestamp.must()) == 1700000000000
             assert got.messages[1].value.is_err() && got.messages[1].key.must() == [3] && got.next_offset == produced.base_offset + 2 && got.high_watermark == produced.base_offset + 2
@@ -1470,7 +1470,7 @@ test "connect live, against the brokers REBEL_KAFKA_BROKERS names: topics made a
 
             many @ many.push(message(big))
             put = produce(@z, topic: other, partition: 0, messages: many).must()
-            back = fetch(@z, topic: other, partition: 0, offset: put.base_offset, wait: time.seconds(1).must()).must()
+            back = fetch(@z, topic: other, partition: 0, offset: put.base_offset, wait: time.seconds(1)).must()
             assert back.messages.len() == 51 && back.messages[50].value.must() == big && back.messages[3].value.must() == bytes.from_text("zipped 3")
             close(@z).must()
             assert delete_records(@c, topic: topic, partition: 0, before: 5).must() == 5
@@ -1518,9 +1518,9 @@ test "subscribe live: a consumer of a group joined, its partitions assigned, rea
 
             _ = send(@c, messages: first).must()
             g @= group_options(group, topics: [topic])
-            g.session_timeout @ time.seconds(6).must()
-            g.rebalance_timeout @ time.seconds(6).must()
-            g.heartbeat_interval @ time.milliseconds(500).must()
+            g.session_timeout @ time.seconds(6)
+            g.rebalance_timeout @ time.seconds(6)
+            g.heartbeat_interval @ time.milliseconds(500)
             g.auto_commit_interval @ time.max_duration()
             k @= subscribe(o, group: g).must()
             assert assignment_of(k) == [TopicPartition(topic: topic, partition: 0), TopicPartition(topic: topic, partition: 1)]
@@ -1529,7 +1529,7 @@ test "subscribe live: a consumer of a group joined, its partitions assigned, rea
             rounds: i64 @= 0
 
             while read < 100 && rounds < 50
-                read @ read + poll(@k, wait: time.milliseconds(500).must()).must().len()
+                read @ read + poll(@k, wait: time.milliseconds(500)).must().len()
                 rounds @ rounds + 1
 
             assert read == 100
@@ -1548,7 +1548,7 @@ test "subscribe live: a consumer of a group joined, its partitions assigned, rea
             seek(@k, topic: topic, partition: 0, offset: 0).must()
             assert position_of(k, topic: topic, partition: 0).must() == 0
             pause(@k, topic: topic, partition: 1).must()
-            again = poll(@k, wait: time.milliseconds(500).must()).must()
+            again = poll(@k, wait: time.milliseconds(500)).must()
             assert again.len() == p0 && again[0].partition == 0
             resume(@k, topic: topic, partition: 1).must()
             assert pause(@k, topic: "nowhere", partition: 0).is_err() && seek(@k, topic: topic, partition: 9, offset: 0).is_err()
@@ -1567,7 +1567,7 @@ test "subscribe live: a consumer of a group joined, its partitions assigned, rea
             tries: i64 @= 0
 
             while fresh < 10 && tries < 30
-                fresh @ fresh + poll(@j, wait: time.milliseconds(500).must()).must().len()
+                fresh @ fresh + poll(@j, wait: time.milliseconds(500)).must().len()
                 tries @ tries + 1
 
             assert fresh == 10
@@ -1587,7 +1587,7 @@ test "subscribe live: a consumer of a group joined, its partitions assigned, rea
 
             while spins < 80
                 spins @ spins + 1
-                mine @ mine + poll(@j, wait: time.milliseconds(200).must()).must().len()
+                mine @ mine + poll(@j, wait: time.milliseconds(200)).must().len()
 
                 if assignment_of(j).len() == 1
                     shared @ true
@@ -1643,7 +1643,7 @@ test "connect live over TLS, against the brokers REBEL_KAFKA_TLS_BROKERS names, 
             topic = f"rebel-tls-{os.pid()}"
             create_topics(@c, topics: [new_topic(topic, partitions: 1)]).must()
             p = produce(@c, topic: topic, partition: 0, messages: [message([42])]).must()
-            assert fetch(@c, topic: topic, partition: 0, offset: p.base_offset, wait: time.seconds(1).must()).must().messages[0].value.must() == [42]
+            assert fetch(@c, topic: topic, partition: 0, offset: p.base_offset, wait: time.seconds(1)).must().messages[0].value.must() == [42]
             delete_topics(@c, names: [topic]).must()
             close(@c).must()
             untrusted @= options([text])
@@ -1834,7 +1834,7 @@ test "fetch: from the offset 0"
             name = f"rebel-example-{os.pid()}-h"
             create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
             _ = produce(@c, topic: name, partition: 0, messages: [message([1])]).must()
-            assert fetch(@c, topic: name, partition: 0, offset: 0, wait: time.milliseconds(500).must()).must().messages[0].value.must() == [1]
+            assert fetch(@c, topic: name, partition: 0, offset: 0, wait: time.milliseconds(500)).must().messages[0].value.must() == [1]
             delete_topics(@c, names: [name]).must()
             close(@c).must()
 
@@ -1949,7 +1949,7 @@ test "poll: what the partitions hold"
             create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
             _ = produce(@c, topic: name, partition: 0, messages: [message([1])]).must()
             k @= subscribe(options(["localhost:9092"]), group: group_options(name, topics: [name])).must()
-            assert poll(@k, wait: time.seconds(1).must()).must().len() == 1
+            assert poll(@k, wait: time.seconds(1)).must().len() == 1
             close_consumer(@k).must()
             delete_topics(@c, names: [name]).must()
             close(@c).must()
@@ -1963,7 +1963,7 @@ test "commit: after a poll"
             name = f"rebel-example-{os.pid()}-n"
             create_topics(@c, topics: [new_topic(name, partitions: 1)]).must()
             k @= subscribe(options(["localhost:9092"]), group: group_options(name, topics: [name])).must()
-            _ = poll(@k, wait: time.milliseconds(100).must()).must()
+            _ = poll(@k, wait: time.milliseconds(100)).must()
             commit(@k).must()
             close_consumer(@k).must()
             delete_topics(@c, names: [name]).must()

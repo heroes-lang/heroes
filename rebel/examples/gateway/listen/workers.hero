@@ -11,6 +11,7 @@
 # a connection still queued then is served first, its reads answering the
 # stop at once, so none is dropped unclosed (spec § 11's drain).
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/net
 use <rebel>/tls
@@ -55,6 +56,6 @@ function work(start: Start) -> i64
                     answered @ answered + h2.serve(start.asks, @conn)
                 else
                     answered @ answered + h1.serve(start.asks, conn: conn)
-                    _ = io.close(@conn.stream).is_err()
+                    errors.ignore(io.close(@conn.stream))
 
     return answered

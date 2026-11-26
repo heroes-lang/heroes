@@ -12,6 +12,7 @@
 # reads whole once it is ready, bounded by a deadline, answers and closes.
 
 use <rebel>/compress
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/io
 use <rebel>/maps
@@ -98,11 +99,11 @@ function serve(@c: Collector, set: poll.Set, key: i64) -> ()?
         .ok r =>
             answer @= answer_of(@c, r: r)
             answer.closing @ true
-            _ = http.write_answer(conn.stream, r: r, response: answer).is_err()
+            errors.ignore(http.write_answer(conn.stream, r: r, response: answer))
         .err _ => c.refused @ c.refused + 1
 
-    _ = poll.remove(set, key: key).is_err()
-    _ = io.close(@conn.stream).is_err()
+    errors.ignore(poll.remove(set, key: key))
+    errors.ignore(io.close(@conn.stream))
     c.conns @ maps.remove(c.conns, key: key)
     return ok()
 
@@ -180,9 +181,9 @@ function answer_of(@c: Collector, r: http.Request) -> http.Response
 function close(@c: Collector, set: poll.Set)
     for key in keys(c.conns)
         conn @= c.conns[key].must()
-        _ = poll.remove(set, key: key).is_err()
-        _ = io.close(@conn.stream).is_err()
+        errors.ignore(poll.remove(set, key: key))
+        errors.ignore(io.close(@conn.stream))
 
     c.conns @ {}
-    _ = poll.remove(set, key: c.listen_key).is_err()
-    _ = net.close_listener(@c.listener).is_err()
+    errors.ignore(poll.remove(set, key: c.listen_key))
+    errors.ignore(net.close_listener(@c.listener))

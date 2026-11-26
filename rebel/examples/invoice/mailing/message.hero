@@ -144,7 +144,7 @@ function send(server: settings.Mail, local_name: str, out: Outgoing) -> smtp.Rep
         return fail(code: INVALID, msg: "the configuration names no mail server: add [smtp] with its host")
     opts @= smtp.options(server.host, security: server.security)
     opts.port @ server.port
-    opts.deadline @ time.seconds(STEP_SECONDS)?
+    opts.deadline @ time.seconds(STEP_SECONDS)
 
     if local_name != ""
         opts.local_name @ local_name

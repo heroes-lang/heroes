@@ -240,7 +240,7 @@ function serve_tls(arg: str) -> str
         server: tls.Server(chain: chain, key: key, protocols: ["http/1.1"])
     ).must()
     tell(control: control, port: l.port)
-    tls.set_accept_deadline(l, deadline: time.seconds(10).must()).must()
+    tls.set_accept_deadline(l, deadline: time.seconds(10)).must()
     answering = parts.len() > 3 && parts[3] != ""
     seen: [str] @= []
     at: i64 @= 3
@@ -248,7 +248,7 @@ function serve_tls(arg: str) -> str
     passed: i64 @= 0
 
     while taken < accepts && passed < 10
-        match tls.accept(l, deadline: time.seconds(10).must())
+        match tls.accept(l, deadline: time.seconds(10))
             .err _ =>
                 if answering
                     passed @ passed + 1
@@ -291,7 +291,7 @@ function ask_tls(arg: str) -> str
     halves = strings.split_once(s: arg, sep: SEPARATOR).must()
     port = syntax.decimal(s: halves.before, what: "the port").must()
 
-    match tls.connect("localhost", port: port, deadline: time.seconds(10).must(), client: tls.Client(roots: tls.TEST_ROOT, protocols: ["http/1.1"]))
+    match tls.connect("localhost", port: port, deadline: time.seconds(10), client: tls.Client(roots: tls.TEST_ROOT, protocols: ["http/1.1"]))
         .err e => return e.code + ": " + e.msg
         .ok made =>
             stream @= made.stream

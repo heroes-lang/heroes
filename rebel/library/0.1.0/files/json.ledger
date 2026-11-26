@@ -168,6 +168,13 @@ capability json/read-out  a member by its key, an element by its index, and what
   python  dict[key], list[i], isinstance
   note    absent is `not_found`, the wrong kind is `invalid`, and each message says what was there instead; Go's assertion panics and Python raises KeyError, IndexError or TypeError
 
+capability json/typed-member  a member of an object read as a text, an integer, a boolean or a list, its key named where it fails
+  heroes  json.text_at, json.int_at, json.bool_at, json.items_at
+  go      -
+  rust    -
+  python  -
+  note    `member` then the kind's reader, its code kept and the key written before its message, `the member "port": expected a text, found a number`, as `config.text_of` reads a setting; the reader Rebel's programs each wrote for themselves before it; Go fills a struct by reflection and Python indexes a dict, so neither has a function
+
 capability json/pointer  a value reached by a path of keys and indices
   heroes  json.value_at, json.pointer_of, json.pointer_tokens
   go      jsontext.Pointer, jsontext.Pointer.IsValid, jsontext.Pointer.Tokens, jsontext.Pointer.AppendToken, jsontext.Pointer.Parent, jsontext.Pointer.LastToken, jsontext.Pointer.Contains, jsontext.Decoder.StackPointer, jsontext.Encoder.StackPointer

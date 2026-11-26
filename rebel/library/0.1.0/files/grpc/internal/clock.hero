@@ -19,7 +19,7 @@ function now_ms() -> i64
 function tls_deadline(ms: i64) -> time.Duration?
     if ms == 0
         return ok(time.max_duration())
-    return ok(time.milliseconds(ms).default(time.max_duration()))
+    return ok(time.milliseconds_checked(ms).default(time.max_duration()))
 
 # Makes every read and write of `stream` end by `ms` milliseconds from now,
 # 0 for no end, a TLS stream's or a socket's alike (`tls.set_deadline`).

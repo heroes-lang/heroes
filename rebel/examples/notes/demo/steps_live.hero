@@ -2,6 +2,7 @@
 # the form, what the author's WebSocket is told of each, a note's comments,
 # and at the end the server asked to stop and the WebSocket's close.
 
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/strings
 use <rebel>/websocket
@@ -85,4 +86,4 @@ function closed(@ws: websocket.Conn)
                 )
                 .err _ => print("  alice's WebSocket: still open")
 
-    _ = websocket.drop(@ws).is_err()
+    errors.ignore(websocket.drop(@ws))

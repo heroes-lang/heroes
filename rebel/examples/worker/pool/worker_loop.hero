@@ -86,7 +86,7 @@ function run(arg: str) -> events.Report?
     worker.poll @ s.poll
     worker.backoff @ policy
     client @= http.default_client()
-    client.deadline @ time.seconds(10)?
+    client.deadline @ time.seconds(10)
     client.max_redirects @ 0
     attempts: [events.Attempt] @= []
     problem: str @= ""
@@ -121,8 +121,8 @@ function run(arg: str) -> events.Report?
             if problem == ""
                 problem @ f"spans not exported: {e.code}"
 
-    _ = journal.close(@log_file).is_err()
-    _ = redis.close(@c).is_err()
+    errors.ignore(journal.close(@log_file))
+    errors.ignore(redis.close(@c))
     return ok(events.Report(worker: name, attempts: attempts, problem: problem))
 
 # `t` in microseconds since 1970.
@@ -204,7 +204,7 @@ function attempt(@c: redis.Client, @tr: tracing.Tracer, @log_file: journal.Journ
                 tracing.record_error(@span, message: a.error, at: time.from_unix_microseconds(ended).default(began))
                 tracing.set_status(@span, code: .error, message: a.error)
 
-            _ = tracing.end(@tr, span: span).is_err()
+            errors.ignore(tracing.end(@tr, span: span))
         .err _ => _ = 0
 
     _ = journal.write(

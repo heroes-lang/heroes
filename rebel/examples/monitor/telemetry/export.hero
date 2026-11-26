@@ -85,7 +85,7 @@ function new_tracer(c: settings.Config lent) -> tracing.Tracer?
 function to(ex: Exporter lent, path: str) -> otlp.Exporter
     e @= otlp.exporter_to(ex.base + path)
     e.gzip @ ex.gzip
-    e.client.deadline @ time.seconds(10).default(e.client.deadline)
+    e.client.deadline @ time.seconds(10)
     return e
 
 # Sends the registry's values, the tracer's ended spans and `records`, and

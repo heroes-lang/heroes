@@ -22,8 +22,13 @@ static void hero_rebind_lookup_and_bind_with_hint(const char *name, const char *
 static void hero_rebind_lookup_and_bind_fully(const char *name, void **address, NSModule *module);
 
 /* The functions a slot bound to a name (Mach-O's spelling, a leading `_`) is
- * given instead; a save point only for a family whose decode did not verify
- * (rule 3), decided before the first image is rewritten. */
+ * given instead, every one on either route: a save point records only for a
+ * family whose decode did not verify (rule 3), decided before the first image
+ * is rewritten, and on either route tells where the thread runs (defect
+ * 2855: a span of a handler's frames left by a jump shrinks there, and
+ * until then a save the route did not record was seen by nothing, so a
+ * coroutine's escape to such a save inside an old span read as re-entering
+ * it). */
 static const struct {
     const char *name;
     void *with;
@@ -53,8 +58,8 @@ static const struct {
 };
 
 static bool hero_rebind_wanted(size_t i) {
-    int family = hero_rebind_table[i].family;
-    return family == 0 || !hero_rebind_decoding(family);
+    (void)i;
+    return true;
 }
 
 /* The function a slot bound to `name`, Mach-O's spelling, is given instead,

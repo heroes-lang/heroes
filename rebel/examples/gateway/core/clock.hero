@@ -98,7 +98,7 @@ function next_fraction(chance: Chance) -> f64?
 
 test "now: a fixed clock answers its start, then a step later at each reading"
     start = time.from_unix(whole_seconds: 1_800_000_000, extra_nanoseconds: 0).must()
-    c @= fixed_from(start: start, step: time.milliseconds(5).must()).must()
+    c @= fixed_from(start: start, step: time.milliseconds(5)).must()
     assert now(@c).must() == start
     assert millis(now(@c).must()) == 1_800_000_000_005
     assert millis(now(@c).must()) == 1_800_000_000_010

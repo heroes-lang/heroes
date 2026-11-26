@@ -1,0 +1,16 @@
+# Fixed 2026-11-26, defect 2856 (d-p260-mixedown), lane room-mixedown: the
+# correct programs beside the refusal, which keep building. A header of the
+# program's own that includes the layer's `hero_time.h` and reaches its clock
+# through a macro and a `static inline` body, its group saying `layer`; and a
+# macro for the clock in a second header that declares nothing, read in the
+# same unit after the first, so every call is held to the layer's own
+# declaration.
+extern "fixedbugs-2856-a-header-including-the-layers-reaches-its-function-through-a-macro-or-a-body-and-builds.h" layer
+    function now_ns() -> i64
+    function now_inline() -> i64
+
+extern "fixedbugs-2856-alias.h"
+    function now_alias() -> i64
+
+function main()
+    print(now_ns() > 0, " ", now_inline() > 0, " ", now_alias() > 0)

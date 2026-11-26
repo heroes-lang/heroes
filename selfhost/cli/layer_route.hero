@@ -1,0 +1,222 @@
+# How a binding of the program's reaches a function the program's own
+# header declares (design.md §4.19; defect 2856, 2026-11-26):
+# through the object-like macro the bound name stands for, or a body the
+# header list defines, from the bound name or the macro's end, through each
+# function those bodies name. `cli/layer_declared.hero` asks it of a function
+# of the platform layer's before any unit compiles; a refused link asks the
+# same of a name nothing defines (`cli/header_needs.hero`).
+#
+# **The reading is clang's**: the list's macros as the unit reads them, the
+# seeds and the guard's opening above its own headers (`-E -dM`,
+# `reach_ask.table_of`'s text), walked by `reach_ask.walk`; and the bodies
+# its `-ast-dump` writes (`cli/header_bodies.hero`). Unanswered where clang
+# read neither, and then no route is claimed.
+
+use ast
+use check/layer_header
+use cli/bound_ask
+use cli/bound_names
+use cli/bound_said
+use cli/compiling
+use cli/defined_twice
+use cli/header_bodies
+use cli/reach_ask
+use cli/runtime_bound
+use cli/strings
+use cli/toolchain
+use emit/c_text
+use emit/externs as emit_externs
+use emit/macro_guard
+use source
+use token
+
+# What one header list's text says: its macros by name and the bodies it
+# defines, or unanswered where clang read neither.
+record Reading
+    defines: {str: bound_said.Define}
+    bodies: [header_bodies.Body]
+    answered: bool
+
+# A name a group of the program binds: its C name, where it is bound, and
+# the group's header string.
+record Binding
+    name: str
+    span: token.Span
+    header: token.Span
+
+# How a binding reaches a function: the function, the name the binding's
+# macro ends at ("" where it stands for none), and the body naming the
+# function, with its file ("" where the macro itself ends at it).
+record Route
+    binding: Binding
+    name: str
+    macro: str
+    body: str
+    file: str
+
+# What `probe`'s list's text says.
+function read(t: toolchain.Toolchain, probe: compiling.Probe) -> Reading
+    none = Reading(defines: {}, bodies: [], answered: false)
+    lines: [str] @= [macro_guard.FIRST_LINE]
+    lines @ strings.with_all(list: lines, more: c_text.includes(emit_externs.SEEDS))
+    lines @ lines.push(macro_guard.OPEN_LINE)
+    lines @ strings.with_all(list: lines, more: c_text.includes(bound_names.groups_of(probe.headers)))
+    said = bound_ask.preprocessed(t, probe: probe, text: lines.join("\n") + "\n", mode: ["-E", "-dM"])
+    dumped = defined_twice.dump_of(t, probe)
+
+    if said.is_err() || dumped.is_err()
+        return none
+    return Reading(
+        defines: bound_said.defines(said.must()),
+        bodies: header_bodies.of_dump(dumped.must()),
+        answered: true
+    )
+
+# The names the groups of `modules` (every module where it is empty) bind
+# from `headers`, in the order they stand.
+function bindings_of(s: source.Source, decls: [ast.Decl], headers: [str], modules: [str]) -> [Binding]
+    out: [Binding] @= []
+
+    for decl in decls
+        head = layer_header.head_of(decl)
+        bound = runtime_bound.bound(decl)
+
+        if head.header.is_err() || bound.is_err()
+            continue
+
+        if modules.len() > 0 && !has(modules, one: source.component_at(s, decl.span.start))
+            continue
+
+        if has(headers, one: emit_externs.unquoted(s, span: head.header.must()))
+            out @ out.push(
+                Binding(name: source.span_text(s, bound.must()), span: bound.must(), header: head.header.must())
+            )
+
+    return out
+
+# The first binding, in their order, whose macro ends at `name` or whose
+# body, or its macro's, reaches a body naming it; absent where none does.
+# A binding of `name` itself is R2's, told before the first clang
+# (`cli/layer_bound.hero`).
+function route_to(reading: Reading, bindings: [Binding], name: str) -> Route?
+    if !reading.answered
+        return fail(code: "none", msg: "the headers' text was not read")
+
+    for b in bindings
+        if b.name == name
+            continue
+        start: str @= b.name
+        macro: str @= ""
+        walked = reach_ask.walk(reading.defines, from: b.name)
+
+        if !walked.is_err()
+            macro @ walked.must().name
+            start @ macro
+
+            if macro == name
+                return ok(Route(binding: b, name: name, macro: macro, body: "", file: ""))
+        body = reaching(reading.bodies, from: start, name: name)
+
+        if !body.is_err()
+            return ok(Route(binding: b, name: name, macro: macro, body: body.must().name, file: body.must().file))
+
+    return fail(code: "none", msg: "no binding reaches it")
+
+# The body `from` reaches through the bodies the list defines, itself first,
+# that names `name`, breadth first.
+function reaching(bodies: [header_bodies.Body], from: str, name: str) -> header_bodies.Body?
+    queue: [str] @= [from]
+    seen: {str: bool} @= {}
+    seen[from] @ true
+    at: i64 @= 0
+
+    while at < queue.len()
+        body = header_bodies.body_of(bodies, name: queue[at])
+        at @ at + 1
+
+        if body.is_err()
+            continue
+
+        if header_bodies.refers(body.must(), name: name)
+            return body
+
+        for callee in body.must().calls
+            if seen[callee].is_err()
+                seen[callee] @ true
+                queue @ queue.push(callee)
+
+    return fail(code: "none", msg: "no body it reaches names it")
+
+function has(list: [str], one: str) -> bool
+    for each in list
+        if each == one
+            return true
+
+    return false
+
+## Tests
+
+# **What reaches a function is the binding's macro or the bodies from it**
+# (defect 2856): a macro that ends at it, a macro that ends at a
+# body naming it, a body naming it through another body, and a binding of
+# the function by its own name left to R2.
+test "a binding reaches a function through its macro or the bodies it names (defect 2856)"
+    at = token.Span(start: 0, end: 0)
+    defines: {str: bound_said.Define} @= {}
+    defines["now_ns"] @ bound_said.Define(params: {}, body: "hero_time_monotonic_ns", line: "")
+    defines["now_alias"] @ bound_said.Define(params: {}, body: "now_inline", line: "")
+    inline = header_bodies.Body(
+        name: "now_inline",
+        file: "now.h",
+        line: 7,
+        inline: true,
+        calls: ["hero_time_monotonic_ns"],
+        objects: [],
+        reads: [],
+        writes: []
+    )
+    outer = header_bodies.Body(
+        name: "now_outer",
+        file: "now.h",
+        line: 9,
+        inline: true,
+        calls: ["now_inline"],
+        objects: [],
+        reads: [],
+        writes: []
+    )
+    reading = Reading(defines: defines, bodies: [inline, outer], answered: true)
+    macro = route_to(
+        reading,
+        bindings: [Binding(name: "now_ns", span: at, header: at)],
+        name: "hero_time_monotonic_ns"
+    ).must()
+    assert macro.macro == "hero_time_monotonic_ns" && macro.body == ""
+    aliased = route_to(
+        reading,
+        bindings: [Binding(name: "now_alias", span: at, header: at)],
+        name: "hero_time_monotonic_ns"
+    ).must()
+    assert aliased.macro == "now_inline" && aliased.body == "now_inline"
+    deep = route_to(
+        reading,
+        bindings: [Binding(name: "now_outer", span: at, header: at)],
+        name: "hero_time_monotonic_ns"
+    ).must()
+    assert deep.body == "now_inline" && deep.macro == ""
+    assert route_to(
+        reading,
+        bindings: [Binding(name: "hero_time_monotonic_ns", span: at, header: at)],
+        name: "hero_time_monotonic_ns"
+    ).is_err()
+    assert route_to(
+        reading,
+        bindings: [Binding(name: "answer", span: at, header: at)],
+        name: "hero_time_monotonic_ns"
+    ).is_err()
+    unread = Reading(defines: defines, bodies: [inline], answered: false)
+    assert route_to(
+        unread,
+        bindings: [Binding(name: "now_ns", span: at, header: at)],
+        name: "hero_time_monotonic_ns"
+    ).is_err()

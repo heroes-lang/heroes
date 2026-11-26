@@ -10,6 +10,7 @@
 # (spec § 11), and serves one connection after another until the program is
 # asked to stop; its thread then answers what it served.
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/net
 
@@ -67,7 +68,7 @@ function served(start: Start) -> smtp_session.Tally?
 
     match start.ready.send(listener.address.port)
         .err e =>
-            _ = net.close_listener(@listener).is_err()
+            errors.ignore(net.close_listener(@listener))
             return fail(code: e.code, msg: e.msg)
         .ok _ => _ = 0
 
@@ -85,9 +86,9 @@ function served(start: Start) -> smtp_session.Tally?
                     refused: total.refused + t.refused,
                     logins_refused: total.logins_refused + t.logins_refused
                 )
-                _ = io.close(@conn.stream).is_err()
+                errors.ignore(io.close(@conn.stream))
 
-    _ = net.close_listener(@listener).is_err()
+    errors.ignore(net.close_listener(@listener))
     return ok(total)
 
 test "counted: one, none and many"

@@ -1,0 +1,129 @@
+# The environment a program with no trap handler calls with `ecall`, as a
+# simulator's proxy kernel answers one: the call's number in `a7`, its
+# arguments in `a0` to `a2`, its answer in `a0`, a failure being minus an
+# error number. The numbers are Linux's on RISC-V (`asm-generic/unistd.h`:
+# `read` 63, `write` 64, `exit` 93, `exit_group` 94) and so are the errors
+# (`EBADF` 9, `EFAULT` 14, `ENOSYS` 38), so a program written for the one
+# runs here. Standard output and standard error are both the console the
+# UART writes to; standard input is the UART's input.
+
+use <rebel>/bytes
+use <rebel>/math
+
+use cpu/bus
+use cpu/machine
+use isa/word
+
+## The calls
+
+# `read(fd, buf, count)`.
+constant SYS_READ: i64
+    63
+
+# `write(fd, buf, count)`.
+constant SYS_WRITE: i64
+    64
+
+# `exit(code)`.
+constant SYS_EXIT: i64
+    93
+
+# `exit_group(code)`, the same here: one hart, one thread.
+constant SYS_EXIT_GROUP: i64
+    94
+
+# A descriptor the call cannot use.
+constant EBADF: i64
+    9
+
+# A buffer outside the RAM.
+constant EFAULT: i64
+    14
+
+# A call this environment does not answer.
+constant ENOSYS: i64
+    38
+
+# What a call does to the program.
+variant Answer
+    # It returns `value` in `a0`, and the program goes on.
+    returned
+        # The word `a0` takes: a count, or minus an error number.
+        value: i64
+    # It ends the program.
+    exited
+        # The status, `a0`'s low byte as Linux keeps it.
+        code: i64
+
+# Answers the call the machine's registers make.
+#
+# - `m`: the machine; a `write` sends bytes to its console, a `read` takes
+#   its input into its RAM.
+function call(@m: machine.Machine) -> Answer
+    number = machine.reg(m, n: 17)
+    fd = machine.reg(m, n: 10)
+    buffer = machine.reg(m, n: 11)
+    count = machine.reg(m, n: 12)
+
+    if number == SYS_EXIT || number == SYS_EXIT_GROUP
+        return .exited(code: fd & 0xff)
+
+    if number == SYS_WRITE
+        if fd != 1 && fd != 2
+            return failed(EBADF)
+        data = bus.peek(m.bus, at: buffer, count: count)
+
+        if data.is_err()
+            return failed(EFAULT)
+        bytes.push_all(to: @m.bus.uart.sent, from: data.must())
+        return .returned(value: count)
+
+    if number == SYS_READ
+        if fd != 0
+            return failed(EBADF)
+        left = m.bus.uart.input.len() - m.bus.uart.taken
+        n = math.min_i64(a: count, b: left)
+        data = m.bus.uart.input.slice(from: m.bus.uart.taken, to: m.bus.uart.taken + n)
+
+        if bus.place(@m.bus, at: buffer, data: data).is_err()
+            return failed(EFAULT)
+        m.bus.uart.taken @ m.bus.uart.taken + n
+        return .returned(value: n)
+    return failed(ENOSYS)
+
+function failed(error: i64) -> Answer
+    return .returned(value: word.wrap(-error))
+
+## Tests
+
+test "call: write to the console, exit's low byte, and an unknown call"
+    m @= machine.new_machine(ram_size: 64, input: [])
+    bus.place(@m.bus, at: bus.RAM_BASE, data: [0x68, 0x69]).must()
+    machine.set_reg(@m, n: 17, value: SYS_WRITE)
+    machine.set_reg(@m, n: 10, value: 1)
+    machine.set_reg(@m, n: 11, value: bus.RAM_BASE)
+    machine.set_reg(@m, n: 12, value: 2)
+    assert call(@m) == .returned(value: 2)
+    assert m.bus.uart.sent == [0x68, 0x69]
+    machine.set_reg(@m, n: 17, value: SYS_EXIT)
+    machine.set_reg(@m, n: 10, value: 0x1ff)
+    assert call(@m) == .exited(code: 0xff)
+    machine.set_reg(@m, n: 17, value: 1000)
+    assert call(@m) == .returned(value: word.wrap(-ENOSYS))
+
+test "call: a buffer past the RAM, a bad descriptor, and a read past the input"
+    m @= machine.new_machine(ram_size: 64, input: [0x61, 0x62, 0x63])
+    machine.set_reg(@m, n: 17, value: SYS_WRITE)
+    machine.set_reg(@m, n: 10, value: 1)
+    machine.set_reg(@m, n: 11, value: bus.RAM_BASE + 60)
+    machine.set_reg(@m, n: 12, value: word.MASK)
+    assert call(@m) == .returned(value: word.wrap(-EFAULT))
+    machine.set_reg(@m, n: 10, value: 5)
+    assert call(@m) == .returned(value: word.wrap(-EBADF))
+    machine.set_reg(@m, n: 17, value: SYS_READ)
+    machine.set_reg(@m, n: 10, value: 0)
+    machine.set_reg(@m, n: 11, value: bus.RAM_BASE)
+    machine.set_reg(@m, n: 12, value: 10)
+    assert call(@m) == .returned(value: 3)
+    assert bus.peek(m.bus, at: bus.RAM_BASE, count: 3).must() == [0x61, 0x62, 0x63]
+    assert call(@m) == .returned(value: 0)

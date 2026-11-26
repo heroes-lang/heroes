@@ -55,8 +55,8 @@ function finalize(@s: objects.State, a: authority.Authority, r: http.Request, id
         .err e  => return objects.problem_response(kind: e.code, detail: e.msg)
 
     serial = objects.serial_drawn(@s)
-    not_before = time.add(s.now, d: time.hours(-1).must()).default(s.now)
-    not_after = time.add(not_before, d: time.difference(a: time.days(VALID_DAYS).must(), b: time.seconds(1).must()).must()).default(
+    not_before = time.add(s.now, d: time.hours(-1)).default(s.now)
+    not_after = time.add(not_before, d: time.difference(a: time.days(VALID_DAYS), b: time.seconds(1)).must()).default(
         not_before
     )
     domains: [str] @= []
@@ -231,13 +231,13 @@ function renewal_info(s: objects.State, id: str) -> http.Response
             lifetime = time.between(from: c.not_before, to: c.not_after).default(time.nanoseconds(0))
 
             start = if c.revoked
-                time.add(s.now, d: time.hours(-1).must()).default(s.now)
+                time.add(s.now, d: time.hours(-1)).default(s.now)
             else
                 time.add(c.not_before, d: time.scale(time.divide(lifetime, by: 3).default(lifetime), by: 2).default(lifetime)).default(
                     s.now
                 )
 
-            end = time.add(start, d: time.days(10).must()).default(start)
+            end = time.add(start, d: time.days(10)).default(start)
             window: {str: json.Value} = {"start": objects.stamp(start), "end": objects.stamp(end)}
             members: {str: json.Value} = {"suggestedWindow": .object(members: window)}
             out @= http.respond_json(200, value: .object(members: members)).default(http.respond_status(500))

@@ -5,6 +5,7 @@
 # the gateway answers from two upstreams and one it refuses as invalid.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/graphql
 use <rebel>/grpc
 use <rebel>/http
@@ -41,7 +42,7 @@ function channel_over(conn: http2.Conn, authority: str) -> grpc.Channel
 #
 # - `channel`: the channel.
 function closed(@channel: grpc.Channel)
-    _ = grpc.close(@channel).is_err()
+    errors.ignore(grpc.close(@channel))
 
 ## The calls
 
@@ -202,4 +203,4 @@ function upstream_of(headers: [grpc.Entry]) -> str
 
 # How long a call may take.
 function seconds() -> time.Duration
-    return time.seconds(10).default(time.max_duration())
+    return time.seconds(10)

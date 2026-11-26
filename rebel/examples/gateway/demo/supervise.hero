@@ -12,6 +12,7 @@
 # times and keys.
 
 use <rebel>/dns
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/net
 use <rebel>/os
@@ -179,7 +180,7 @@ function served(s: settings.Settings, identity: certs.Identity, started: [Starte
         graphql: s.graphql
     )
     start = time.from_unix(whole_seconds: START_SECONDS, extra_nanoseconds: 0).default(time.epoch())
-    ticks = clock.fixed_from(start: start, step: time.milliseconds(1).default(time.nanoseconds(1_000_000))).default(
+    ticks = clock.fixed_from(start: start, step: time.milliseconds(1)).default(
         .wall
     )
     spread = clock.fixed_chance(0.5).default(.drawn)
@@ -210,12 +211,12 @@ function gateway_served(local: settings.Settings, ticks: clock.Clock, spread: cl
 
             match spawn(client.run, client.Start(port: listener.port, roots: identity.roots))
                 .err e =>
-                    _ = tls.close_listener(@listener).is_err()
+                    errors.ignore(tls.close_listener(@listener))
                     print("demo: the client: " + e.msg)
                     return 1
                 .ok session =>
                     outcome = accept.serve(local, ticks: ticks, spread: spread, listener: listener)
-                    _ = tls.close_listener(@listener).is_err()
+                    errors.ignore(tls.close_listener(@listener))
                     print(session.wait())
                     print("== what each service served")
 

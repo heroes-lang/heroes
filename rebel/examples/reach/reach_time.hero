@@ -7,4 +7,4 @@ use <rebel>/time
 function main()
     leap_day = time.date(year: 2000, month: 2, day: 29).must()
     print(time.weekday_name(time.weekday_of(leap_day)))
-    print(time.format_duration(time.minutes(90).must()))
+    print(time.format_duration(time.minutes(90)))

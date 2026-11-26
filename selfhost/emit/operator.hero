@@ -66,8 +66,6 @@ function binary(@w: writer.Writer, s: source.Source, c: state.Checked, names: ct
         return
     name = target.must()
 
-    # The no-op the fall-through arms mutate: name is =-bound.
-    fall: bool @= false
     l = mangle.value(left)
     r = mangle.value(right)
     left_ty = containers.value_type(f, left)
@@ -83,9 +81,9 @@ function binary(@w: writer.Writer, s: source.Source, c: state.Checked, names: ct
         .str =>
             str_binary(@w, name: name, l: l, r: r, op: op)
             return
-        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit                   => fall @ fall
-        .fixed | .function_ty | .generic | .error | .thread_ty | .mailbox_ty => fall @ fall
-        .array | .map | .fallible | .failure | .named | .case_ty             => fall @ fall
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit                   => _ = 0
+        .fixed | .function_ty | .generic | .error | .thread_ty | .mailbox_ty => _ = 0
+        .array | .map | .fallible | .failure | .named | .case_ty             => _ = 0
 
     # This test is why the width lives inside the variant (panel 042):
     # as `operands == int` it decided whether to emit the overflow
@@ -199,7 +197,7 @@ function binary(@w: writer.Writer, s: source.Source, c: state.Checked, names: ct
                 )
                 writer.line(@w, text: "    " + name + " = " + l + " " + operator + " " + r + ";")
                 return
-        .eq | .ne => fall @ fall
+        .eq | .ne => _ = 0
 
     # % on two floats is C's fmod, not C's %, which takes integers only —
     # t3 = t1 % t2 on doubles is a clang error on a program the spec

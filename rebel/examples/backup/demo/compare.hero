@@ -11,6 +11,7 @@
 
 use <rebel>/bytes
 use <rebel>/crypto
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/path
 
@@ -76,8 +77,8 @@ function content_of(root: str, rel: str) -> str?
 test "differences: a folder agrees with its copy; a changed, a missing and an extra file are told"
     a = "build/backup-tests/compare-a"
     b = "build/backup-tests/compare-b"
-    _ = fs.remove_all(a).is_err()
-    _ = fs.remove_all(b).is_err()
+    errors.ignore(fs.remove_all(a))
+    errors.ignore(fs.remove_all(b))
     fs.make_dir_all(a + "/d").must()
     fs.make_dir_all(b + "/d").must()
     write_file(path: a + "/d/x", text: "one").must()

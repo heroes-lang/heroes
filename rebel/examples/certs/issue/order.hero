@@ -11,6 +11,7 @@
 
 use <rebel>/acme
 use <rebel>/crypto/keypairs
+use <rebel>/errors
 use <rebel>/net
 use <rebel>/time
 use <rebel>/x509
@@ -68,7 +69,7 @@ function key_name(name: str) -> str
 function obtain(@client: acme.Client, s: settings.Settings, store: vault.Store, lineage: settings.Lineage, c: clock.Clock) -> Obtained?
     key @= keypairs.generate(.p256)?
     got = with_key(@client, s: s, store: store, lineage: lineage, c: c, key: key)
-    _ = keypairs.close_private(@key).is_err()
+    errors.ignore(keypairs.close_private(@key))
     return got
 
 # `obtain`'s work once the certificate's key is made, so the caller closes
@@ -90,7 +91,7 @@ function with_key(@client: acme.Client, s: settings.Settings, store: vault.Store
         authorization = acme.fetch_authorization(@client, url: url)?
         proofs @ proofs.push(solve.prove(@client, s: s, store: store, lineage: lineage, authorization: authorization)?)
 
-    ready = acme.wait_order(@client, url: placed.url, timeout: time.seconds(WAIT_SECONDS)?)?
+    ready = acme.wait_order(@client, url: placed.url, timeout: time.seconds(WAIT_SECONDS))?
 
     if ready.status != "ready"
         return fail(
@@ -99,7 +100,7 @@ function with_key(@client: acme.Client, s: settings.Settings, store: vault.Store
         )
     csr = request.make(lineage.domains, key: key)?
     finalized = acme.finalize(@client, order: ready, csr: csr)?
-    valid = acme.wait_order(@client, url: finalized.url, timeout: time.seconds(WAIT_SECONDS)?)?
+    valid = acme.wait_order(@client, url: finalized.url, timeout: time.seconds(WAIT_SECONDS))?
 
     if valid.certificate == ""
         return fail(code: INVALID, msg: "the order is valid and names no certificate")

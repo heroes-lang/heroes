@@ -92,7 +92,7 @@ function served(setup: Setup) -> pg_state.Shared?
     sessions: [pg_state.Session] @= []
 
     while true
-        match serve.wait(@loop, limit: time.milliseconds(IDLE_MS).default(time.nanoseconds(0)))
+        match serve.wait(@loop, limit: time.milliseconds(IDLE_MS))
             .err _ => break
             .ok moved =>
                 for peer in moved

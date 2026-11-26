@@ -331,9 +331,9 @@ test "read: a run's options, a job to enqueue, a queue to pause"
         ["run", "--queue", "webhooks", "--queue", "default", "--workers", "8", "--poll", "250ms", "--schedule", "purge_finished@*/15 * * * *"]
     ).must()
     assert run.action == "run" && run.settings.workers == 8 && run.settings.queues == ["webhooks", "default"]
-    assert run.settings.poll == time.milliseconds(250).must() && run.schedules == ["purge_finished@*/15 * * * *"]
+    assert run.settings.poll == time.milliseconds(250) && run.schedules == ["purge_finished@*/15 * * * *"]
     job = read(["enqueue", "checksum", "{\"path\": \"a.bin\"}", "--priority", "1", "--in", "10m"]).must()
-    assert job.kind == "checksum" && job.priority == 1 && job.delay == time.minutes(10).must()
+    assert job.kind == "checksum" && job.priority == 1 && job.delay == time.minutes(10)
     assert read(["pause", "webhooks"]).must().queue == "webhooks"
 
 test "read: a duration that is none, a count of workers out of bounds, an unknown subcommand"

@@ -6,6 +6,7 @@
 # it is read back and checked again here before it leaves.
 
 use <rebel>/crypto/keypairs
+use <rebel>/errors
 use <rebel>/net
 use <rebel>/x509
 
@@ -110,7 +111,7 @@ test "make: a request x509 reads back, signed, its names in order, its subject t
     key @= keypairs.generate(.p256).must()
     der = make(["www.example.org", "127.0.0.1", "example.org"], key: key).must()
     request = x509.decode_request(der).must()
-    _ = keypairs.close_private(@key).is_err()
+    errors.ignore(keypairs.close_private(@key))
     assert x509.is_request_signed(request).must()
     assert names_asked(request) == ["www.example.org", "127.0.0.1", "example.org"]
     assert x509.text_of(request.subject, oid: x509.COMMON_NAME).must() == "www.example.org"
@@ -118,7 +119,7 @@ test "make: a request x509 reads back, signed, its names in order, its subject t
 test "make: no domain is refused"
     key @= keypairs.generate(.p256).must()
     refused = make([], key: key).is_err()
-    _ = keypairs.close_private(@key).is_err()
+    errors.ignore(keypairs.close_private(@key))
     assert refused
 
 test "subject_name: an address passed over, a name too long for a common name, none"

@@ -87,8 +87,8 @@ function run(@p: pipeline.Pipeline, catch_up: bool, @scrapes: [exporter.Exporter
     consumer @= errors.context(kafka.subscribe(opts, group: group), what: f"joining the group {group.group_id}")?
     producer @= errors.context(kafka.connect(opts), what: "connecting the dead-letter topic's producer")?
     outcome = looped(@p, consumer: @consumer, producer: @producer, catch_up: catch_up, scrapes: @scrapes)
-    _ = kafka.close(@producer).is_err()
-    _ = kafka.close_consumer(@consumer).is_err()
+    errors.ignore(kafka.close(@producer))
+    errors.ignore(kafka.close_consumer(@consumer))
     return outcome
 
 # The loop itself, between the consumer's start and its close.
@@ -100,7 +100,7 @@ function run(@p: pipeline.Pipeline, catch_up: bool, @scrapes: [exporter.Exporter
 # - `scrapes`: where to answer scrapes.
 function looped(@p: pipeline.Pipeline, @consumer: kafka.Consumer, @producer: kafka.Client, catch_up: bool, @scrapes: [exporter.Exporter]) -> ()?
     ends = ends_of(@producer, assigned: kafka.assignment_of(consumer))?
-    wait = time.milliseconds(POLL_MS)?
+    wait = time.milliseconds(POLL_MS)
 
     while true
         if catch_up && caught_up(consumer, ends: ends)

@@ -25,7 +25,7 @@ function main()
     if !service.is_service()
         print("a throwaway service for `sc.exe`: sc create, sc start <log file>")
         return
-    svc = service.start("heroes-demo", limit: time.seconds(30).must()).must()
+    svc = service.start("heroes-demo", limit: time.seconds(30)).must()
     given = service.arguments(svc).must()
     path @= "C:\\w\\gap-service\\svc.log"
 
@@ -34,7 +34,7 @@ function main()
     lines: [str] @= [f"started with {given.len()} parameters"]
     set = poll.make(4).must()
     _ = service.add_to(set, svc).must()
-    tick = poll.add_timer(set, first: time.seconds(1).must(), every: time.seconds(1).must()).must()
+    tick = poll.add_timer(set, first: time.seconds(1), every: time.seconds(1)).must()
     ticks @= 0
     service.report_running(
         svc,
@@ -46,7 +46,7 @@ function main()
     exit_code @= 0
 
     while !done
-        for e in poll.wait(set, limit: time.seconds(60).must()).must()
+        for e in poll.wait(set, limit: time.seconds(60)).must()
             if e.key == tick
                 ticks @ ticks + 1
 
@@ -58,11 +58,11 @@ function main()
                 .shutdown    => done @ true
                 .preshutdown => done @ true
                 .pause =>
-                    service.report_pending(svc, state: .pause_pending, wait_hint: time.seconds(5).must()).must()
+                    service.report_pending(svc, state: .pause_pending, wait_hint: time.seconds(5)).must()
                     service.report_paused(svc, accepts: [.pause_resume, .stop]).must()
                     lines @ lines.push("paused")
                 .resume =>
-                    service.report_pending(svc, state: .resume_pending, wait_hint: time.seconds(5).must()).must()
+                    service.report_pending(svc, state: .resume_pending, wait_hint: time.seconds(5)).must()
                     service.report_running(svc, accepts: [.stop, .pause_resume]).must()
                     lines @ lines.push("running")
                 .user =>
@@ -76,7 +76,7 @@ function main()
 
         write_log(path, lines)
 
-    service.report_pending(svc, state: .stop_pending, wait_hint: time.seconds(5).must()).must()
+    service.report_pending(svc, state: .stop_pending, wait_hint: time.seconds(5)).must()
     lines @ lines.push(f"ticks seen: {ticks > 0}")
     lines @ lines.push(f"ended with {exit_code}")
     write_log(path, lines)

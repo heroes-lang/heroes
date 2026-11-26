@@ -15,6 +15,7 @@
 # still and moves a minute a scene, and every path is below the working
 # folder, so the transcript is the same on every run.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/strings
 use <rebel>/time
@@ -45,7 +46,7 @@ function run() -> i64
                     return 1
         .err x =>
             print(f"the demo stopped: {x.msg}")
-            _ = demo_tree.remove_all().is_err()
+            errors.ignore(demo_tree.remove_all())
             return 1
 
 # Writes the tree, opens the explorer, plays the scenes, and stops the
@@ -95,7 +96,7 @@ function scenes(@c: controller.Controller) -> ()?
 # Fails as the settings, the bookmarks, the folder or `ui` fail.
 function open_explorer() -> controller.Controller?
     s = settings.read(demo_tree.at_state("explorer.toml"), base: settings.defaults())?
-    zone = time.fixed_zone(name: "CET", offset: time.hours(1)?)?
+    zone = time.fixed_zone(name: "CET", offset: time.hours(1))?
     f = formats.formats_of(s.locale, zone: zone)?
     marks = bookmarks.load(s.bookmarks)?
     ex = explorer.open_at(demo_tree.ROOT, s: s, f: f, c: clock.fixed_clock(demo_tree.opening_time()), b: marks)?
@@ -106,7 +107,7 @@ function open_explorer() -> controller.Controller?
 #
 # - `c`: the controller.
 function minute(@c: controller.Controller)
-    clock.advance(@c.ex.clock, by: time.minutes(1).must())
+    clock.advance(@c.ex.clock, by: time.minutes(1))
 
 # Prints a step's heading, then what it changed.
 #

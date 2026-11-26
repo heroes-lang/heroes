@@ -11,6 +11,7 @@
 # a monitor that died is found by connecting to it, nothing answering, and
 # removed; one where a monitor answers is another monitor's, and refused.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/io
 use <rebel>/ipc
@@ -58,7 +59,7 @@ function open(path: str) -> Server?
             match ipc.connect(path, within: time.nanoseconds(0))
                 .ok other =>
                     held @= other
-                    _ = io.close(@held).is_err()
+                    errors.ignore(io.close(@held))
                     return fail(code: "exists", msg: f"another monitor answers at \"{path}\"")
                 .err _ =>
                     fs.remove(path)?
@@ -88,7 +89,7 @@ function next(@srv: Server, within: time.Duration) -> Incoming?
 
     while true
         s = ipc.accept(l, within: within)?
-        _ = ipc.set_deadline(s, deadline: time.milliseconds(DEADLINE_MS)?).is_err()
+        errors.ignore(ipc.set_deadline(s, deadline: time.milliseconds(DEADLINE_MS)))
 
         match peer_allowed(s)
             .err e =>
@@ -131,8 +132,8 @@ function peer_allowed(s: io.Stream) -> ()?
 function refuse(@srv: Server, s: io.Stream, a: protocol.Answer)
     srv.refused @ srv.refused + 1
     held @= s
-    _ = ipc.write_message(held, data: protocol.encode_answer(a)).is_err()
-    _ = io.close(@held).is_err()
+    errors.ignore(ipc.write_message(held, data: protocol.encode_answer(a)))
+    errors.ignore(io.close(@held))
 
 # Answers `incoming` with `a` and closes its connection; a client that went
 # away is no failure of the monitor's.
@@ -143,8 +144,8 @@ function refuse(@srv: Server, s: io.Stream, a: protocol.Answer)
 function answer(@srv: Server, incoming: Incoming, a: protocol.Answer)
     srv.served @ srv.served + 1
     s @= incoming.stream
-    _ = ipc.write_message(s, data: protocol.encode_answer(a)).is_err()
-    _ = io.close(@s).is_err()
+    errors.ignore(ipc.write_message(s, data: protocol.encode_answer(a)))
+    errors.ignore(io.close(@s))
 
 # Closes the server, which removes its socket file.
 #
@@ -153,7 +154,7 @@ function close(@srv: Server)
     match srv.listeners[srv.path]
         .ok listening =>
             l @= listening
-            _ = ipc.close_listener(@l).is_err()
+            errors.ignore(ipc.close_listener(@l))
         .err _ => _ = 0
 
     srv.listeners @ {}

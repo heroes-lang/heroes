@@ -22,6 +22,7 @@
 
 use <rebel>/bytes
 use <rebel>/crypto
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/os
 use <rebel>/sql/odbc
@@ -81,7 +82,7 @@ function run() -> i64
             return 1
         .ok folder =>
             code = in_folder(folder)
-            _ = fs.remove_all(folder).is_err()
+            errors.ignore(fs.remove_all(folder))
             return code
 
 # A new work folder under `build/`.
@@ -231,10 +232,10 @@ function store_run(name: str, folder: str, toml: str, env: {str: str}) -> Run
 
             match ran_day(@s, folder: folder)
                 .err e =>
-                    _ = store.close(@s).is_err()
+                    errors.ignore(store.close(@s))
                     return Run(line: f"{name}: {e.msg}", account: [])
                 .ok got =>
-                    _ = store.close(@s).is_err()
+                    errors.ignore(store.close(@s))
                     digest = bytes.format_hex(crypto.sha256_text(got.account.join("\n"))).slice(from: 0, to: 12)
                     t = got.tally
                     line = f"{name}: {t.requests} requests: {t.applied} moved stock, {t.refused} refused, {t.confirmed} confirmed; account {digest}, {got.account.len()} lines"
@@ -303,7 +304,7 @@ function bad_rows_and_export(folder: str, toml: str, env: {str: str}) -> i64
                     print("demo: " + e.msg)
                     1
 
-            _ = store.close(@s).is_err()
+            errors.ignore(store.close(@s))
             return code
 
 # The imports and the exports of `bad_rows_and_export`.

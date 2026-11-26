@@ -12,6 +12,7 @@
 # so no thread outlives the serving and nothing is left half written
 # (panel 254's R4: a stop drains what was queued, then holds).
 
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/io
 use <rebel>/net
@@ -115,7 +116,7 @@ function accepted(l: net.Listener, conns: (mailbox net.Conn), deadline_ms: i64) 
                     .err _ =>
                         # Not sent, the workers' mailbox having answered the
                         # stop: the connection is still this thread's.
-                        _ = io.close(@conn.stream).is_err()
+                        errors.ignore(io.close(@conn.stream))
 
 # What a worker's thread is handed, whole.
 record Worker
@@ -168,7 +169,7 @@ function serve_connection(asks: (mailbox owner.Ask), conn: net.Conn, limits: htt
         if r.closing || response.closing
             break
 
-    _ = io.close(@reader.stream).is_err()
+    errors.ignore(io.close(@reader.stream))
 
 # The absolute URL clients reach a server listening at `address` at, where
 # the settings name none: `http://127.0.0.1:8470/`.

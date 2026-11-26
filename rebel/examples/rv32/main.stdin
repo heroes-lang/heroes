@@ -1,0 +1,17 @@
+help
+list fib 8
+break fib_done
+continue
+regs
+trace
+delete fib_done
+break fib+0x38
+continue
+x sp 16
+step 5
+csrs
+breaks
+delete fib+0x38
+continue
+step
+quit

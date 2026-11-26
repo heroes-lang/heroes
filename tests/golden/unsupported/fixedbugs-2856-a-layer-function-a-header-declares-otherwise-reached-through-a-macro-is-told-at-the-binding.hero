@@ -1,0 +1,22 @@
+# Fixed 2026-11-26, defect 2856 (d-p260-mixedown), lane room-mixedown: a
+# function of the platform layer's, declared otherwise by a header of the
+# program's own that includes none of the layer's, bound through a macro for
+# it while another group says `layer`.
+# Symptom: the program built and called the layer's `void` function as one
+# returning `int`, at exit 0 (the sitting's `mixedown`, `double` for
+# `int64_t`, printed `6.3659874347e-314`): clang checked the binding
+# against the program's declaration alone, and the link found the layer's.
+# Cause and fix: nothing held the program's declaration to the layer's. Each
+# module's header list is asked before any unit compiles which of the
+# layer's functions it declares itself, and a binding whose macro or body
+# reaches one is told, with both declarations' types where they differ
+# (`selfhost/cli/layer_declared.hero`).
+extern "hero_time.h" layer
+    function hero_time_wall_ns() -> i64
+
+extern "fixedbugs-2856-a-layer-function-a-header-declares-otherwise-reached-through-a-macro-is-told-at-the-binding.h"
+    function stop_now() -> i32  #~ ffi_layer_redeclared
+
+function main()
+    print(hero_time_wall_ns() > 0)
+    print(stop_now())

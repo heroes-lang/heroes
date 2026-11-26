@@ -169,33 +169,37 @@ function ufcs_on_mutable(name: str, span: token.Span) -> diag.Diagnostic
         span: span
     )
 
-# A function with an `@` parameter, named where a VALUE stands (defect 398).
-# No function type carries an `@` — `(function(@i64) -> ())` is
-# `expected_type` at its `@`, measured — so the value would have a type it
-# does not have, and the build died on it in clang. No fix: the repair is a
-# different function, and which one is the author's.
+# A function of an `extern` group with an `@` parameter, named where a VALUE
+# stands (defect 398; panel 261's R5). A function of the program is a value
+# of the type its signature writes, its marks included (spec § 9), but a
+# group's `@` is C's out-parameter, the place C writes, and a group's
+# parameter may carry words no function type carries (`counted_by`,
+# `consumes`, `transfers`, `owned`, ...), so a call through such a value
+# would skip what the call by name does. No fix: which function of the
+# program calls it is the author's.
 function mutable_parameter_as_value(name: str, param: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "mutable_parameter_as_value",
-        message: "`" + name + "` changes its argument `" + param + "` through `@`, and a function value cannot: no function type carries an `@` (§ 9), so `" + name + "` is only called by name, its `" + param + "` marked `@` at the call",
+        message: "`" + name + "` is a C function of an `extern` group, and its `@" + param + "` is C's out-parameter, the place C writes: a function of a group with an `@` parameter, or a record `lent`, is no value, its marks being C's (§ 9, § 13), so `" + name + "` is called by name",
         span: span
     )
     d.notes @ d.notes.push(
-        "spec § 9: the `@` is written at the call too, so a call that changes an argument never looks like one that reads it, and a value called `f(x)` would hide it. To hand the work around as a value, write a function without `@` that returns the new value — `function next(n: i64) -> i64` — and assign what it returns"
+        "to hand the work around as a value, write a function of the program that calls `" + name + "` by name, its `" + param + "` marked `@` at that call: a function of the program is a value of the type its signature writes, `@` included"
     )
     return d
 
-# A function whose parameter is lent read-only, named as a value (panel
-# 217's R2): the parameter is handed its caller's place, which no function
-# type says.
+# A function of an `extern` group whose parameter is lent to C in place, a
+# record's pointer to const (panel 217's R2; panel 261's R5): the same reason
+# as an `@` one. A `cstr` or a `ptr` declared `lent` crosses as the pointer
+# it is, and that function is a value (`check/markers.hero`).
 function lent_parameter_as_value(name: str, param: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "lent_parameter_as_value",
-        message: "`" + name + "` reads its argument `" + param + "` in place through `lent`, and a function value cannot: no function type carries `lent` (§ 9), so `" + name + "` is only called by name",
+        message: "`" + name + "` is a C function of an `extern` group, and its `" + param + "` is lent to C in place, C's pointer to const: a function of a group with a parameter `lent` so, or one `@`, is no value, its marks being C's (§ 9, § 13), so `" + name + "` is called by name",
         span: span
     )
     d.notes @ d.notes.push(
-        "to hand the work around as a value, write a function that takes `" + param + "` without `lent` and call the lending one inside it, where the value may be copied"
+        "to hand the work around as a value, write a function of the program that calls `" + name + "` by name, taking `" + param + ": … lent` itself: a function of the program is a value of the type its signature writes, `lent` included"
     )
     return d
 
@@ -207,19 +211,6 @@ function lent_beside_at(parameter: str, function_name: str, span: token.Span) ->
         message: "`lent` on `@" + parameter + "` of `" + function_name + "` is a word nothing reads — `@` hands the caller's place to change it and `lent` hands it to read, so write one: `@" + parameter + "` where the function changes it, `" + parameter + ": … lent` where it only reads it",
         span: span
     )
-
-# An `@` at a call through a function VALUE (defect 398, the shape beside it):
-# such a value never changes an argument, since its type cannot say it does.
-function marker_through_a_value(span: token.Span) -> diag.Diagnostic
-    d: diag.Diagnostic @= diag.new_diagnostic(
-        code: "marker_mismatch",
-        message: "a function value does not change this argument — the `@` says it does",
-        span: span
-    )
-    d.notes @ d.notes.push(
-        "no function type carries an `@` (§ 9), so a value is always called with plain arguments; a function that changes its argument is called by name, `f(@x)`"
-    )
-    return d
 
 ## Patterns
 

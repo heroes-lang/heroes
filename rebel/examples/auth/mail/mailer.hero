@@ -67,7 +67,7 @@ function submit(s: settings.Smtp, password: str, to: str, m: mail.Message) -> Se
     opts @= smtp.options(s.host, security: security_of(s.security)?)
     opts.port @ s.port
     opts.local_name @ "auth.localhost"
-    opts.deadline @ time.seconds(20)?
+    opts.deadline @ time.seconds(20)
 
     auth: smtp.Auth = if s.user == ""
         .none

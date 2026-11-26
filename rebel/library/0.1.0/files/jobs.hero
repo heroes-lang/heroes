@@ -799,16 +799,16 @@ test "parse_state and state_name: every state both ways, and a name of none"
 test "check_worker: no queue, an empty queue, a lease under a second and a poll below zero refused"
     w = new_worker(["default", "mail"])
     check_worker(w).must()
-    assert w.name != "" && w.lease == time.minutes(30).must() && w.poll == time.seconds(1).must()
+    assert w.name != "" && w.lease == time.minutes(30) && w.poll == time.seconds(1)
     bad @= w
     bad.queues @ []
     assert check_worker(bad).is_err()
     bad.queues @ ["a", ""]
     assert check_worker(bad).is_err()
     bad @ w
-    bad.lease @ time.milliseconds(999).must()
+    bad.lease @ time.milliseconds(999)
     assert check_worker(bad).is_err()
-    bad.lease @ time.seconds(1).must()
+    bad.lease @ time.seconds(1)
     check_worker(bad).must()
     bad.poll @ time.Duration(nanoseconds: -1)
     assert check_worker(bad).is_err()
@@ -824,22 +824,22 @@ test "retry_wait: the first wait within a fifth of 15 s, the tenth capped near a
         assert late.nanoseconds >= 69_120 * 1_000_000_000
 
     assert retry_wait(policy, attempt: 0).is_err()
-    plain = retries.backoff(first: time.seconds(2).must(), multiplier: 3.0, longest: time.hours(1).must()).must()
-    assert retry_wait(plain, attempt: 3).must() == time.seconds(18).must()
+    plain = retries.backoff(first: time.seconds(2), multiplier: 3.0, longest: time.hours(1)).must()
+    assert retry_wait(plain, attempt: 3).must() == time.seconds(18)
 
 test "retry_wait_with: a wait spread a fifth either way at the low end, the middle and the high end, the same twice, the cap, and the refusals"
     policy = retries.with_jitter(
-        retries.backoff(first: time.seconds(10).must(), multiplier: 2.0, longest: time.hours(1).must()).must(),
+        retries.backoff(first: time.seconds(10), multiplier: 2.0, longest: time.hours(1)).must(),
         .spread(factor: 0.2)
     ).must()
-    assert retry_wait_with(policy, attempt: 1, fraction: 0.5).must() == time.seconds(10).must()
-    assert retry_wait_with(policy, attempt: 3, fraction: 0.5).must() == time.seconds(40).must()
-    assert retry_wait_with(policy, attempt: 3, fraction: 0.0).must() == time.seconds(32).must()
-    assert retry_wait_with(policy, attempt: 3, fraction: 1.0).must() == time.seconds(48).must()
+    assert retry_wait_with(policy, attempt: 1, fraction: 0.5).must() == time.seconds(10)
+    assert retry_wait_with(policy, attempt: 3, fraction: 0.5).must() == time.seconds(40)
+    assert retry_wait_with(policy, attempt: 3, fraction: 0.0).must() == time.seconds(32)
+    assert retry_wait_with(policy, attempt: 3, fraction: 1.0).must() == time.seconds(48)
     assert retry_wait_with(policy, attempt: 3, fraction: 0.3).must() == retry_wait_with(policy, attempt: 3, fraction: 0.3).must()
-    assert retry_wait_with(policy, attempt: 40, fraction: 0.5).must() == time.hours(1).must()
-    plain = retries.backoff(first: time.seconds(2).must(), multiplier: 3.0, longest: time.hours(1).must()).must()
-    assert retry_wait_with(plain, attempt: 3, fraction: 0.9).must() == time.seconds(18).must()
+    assert retry_wait_with(policy, attempt: 40, fraction: 0.5).must() == time.hours(1)
+    plain = retries.backoff(first: time.seconds(2), multiplier: 3.0, longest: time.hours(1)).must()
+    assert retry_wait_with(plain, attempt: 3, fraction: 0.9).must() == time.seconds(18)
     assert retry_wait_with(policy, attempt: 0, fraction: 0.5).is_err()
     assert retry_wait_with(policy, attempt: 1, fraction: -0.1).is_err()
     assert retry_wait_with(policy, attempt: 1, fraction: 1.5).is_err()
@@ -848,7 +848,7 @@ test "new_periodic and next_due: a nightly schedule, a zone's clocks, and the re
     p @= new_periodic(name: "nightly", cron: "0 3 * * *", job: new_job("report", .null_value)).must()
     after = time.parse("2026-11-18T10:00:00Z", .rfc3339).must()
     assert next_due(p, after: after).must() == time.parse("2026-11-19T03:00:00Z", .rfc3339).must()
-    p.zone @ time.fixed_zone(name: "CET", offset: time.hours(1).must()).must()
+    p.zone @ time.fixed_zone(name: "CET", offset: time.hours(1)).must()
     assert next_due(p, after: after).must() == time.parse("2026-11-19T02:00:00Z", .rfc3339).must()
     assert new_periodic(name: "", cron: "0 3 * * *", job: new_job("report", .null_value)).is_err()
     assert new_periodic(name: "n", cron: "61 * * * *", job: new_job("report", .null_value)).is_err()
@@ -948,7 +948,7 @@ test "info_of: a job just enqueued"
 # A worker of two queues, its lease made longer for long jobs.
 test "new_worker: two queues and a lease of two hours"
     w @= new_worker(["default", "mail"])
-    w.lease @ time.hours(2).must()
+    w.lease @ time.hours(2)
     assert w.queues.len() == 2
 
 # A worker checked before it claims.
@@ -958,21 +958,21 @@ test "check_worker: a worker of the default queue"
 # The waits failed attempts follow unless a worker names others.
 test "default_backoff: 15 s first, at most a day"
     policy = default_backoff()
-    assert policy.first == time.seconds(15).must() && policy.longest == time.hours(24).must()
+    assert policy.first == time.seconds(15) && policy.longest == time.hours(24)
 
 # The wait after a job's third attempt failed, without jitter.
 test "retry_wait: 2 s tripled twice"
-    policy = retries.backoff(first: time.seconds(2).must(), multiplier: 3.0, longest: time.hours(1).must()).must()
-    assert retry_wait(policy, attempt: 3).must() == time.seconds(18).must()
+    policy = retries.backoff(first: time.seconds(2), multiplier: 3.0, longest: time.hours(1)).must()
+    assert retry_wait(policy, attempt: 3).must() == time.seconds(18)
 
 # The wait after a third failure spread by a fraction the program drew from
 # a generator it seeded, so the same seed gives the same wait.
 test "retry_wait_with: a fraction of the program's own"
     policy = retries.with_jitter(
-        retries.backoff(first: time.seconds(10).must(), multiplier: 2.0, longest: time.hours(1).must()).must(),
+        retries.backoff(first: time.seconds(10), multiplier: 2.0, longest: time.hours(1)).must(),
         .spread(factor: 0.2)
     ).must()
-    assert retry_wait_with(policy, attempt: 3, fraction: 0.75).must() == time.seconds(44).must()
+    assert retry_wait_with(policy, attempt: 3, fraction: 0.75).must() == time.seconds(44)
 
 # A report enqueued every night at three.
 test "new_periodic: a nightly report"
@@ -988,13 +988,13 @@ test "next_due: every fifteen minutes"
 # A bucket of five attempts a second with a burst of ten: ten go at once.
 test "bucket: five a second, ten at once"
     now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
-    limit = bucket(every: time.milliseconds(200).must(), burst: 10, at: now).must()
+    limit = bucket(every: time.milliseconds(200), burst: 10, at: now).must()
     assert limit.burst == 10 && available(limit: limit, at: now) == 10
 
 # An attempt granted while the tokens last, and refused after.
 test "allow: two tokens, three attempts"
     now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
-    limit @= bucket(every: time.seconds(1).must(), burst: 2, at: now).must()
+    limit @= bucket(every: time.seconds(1), burst: 2, at: now).must()
     granted: [bool] @= []
 
     for _ in range(from: 0, to: 3)
@@ -1007,24 +1007,24 @@ test "allow: two tokens, three attempts"
 # The wait a worker owes for the third token of a bucket of two.
 test "reserve: the wait for a token that is not there"
     now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
-    limit @= bucket(every: time.seconds(1).must(), burst: 2, at: now).must()
+    limit @= bucket(every: time.seconds(1), burst: 2, at: now).must()
     limit @ reserve(limit: limit, at: now, n: 2).must().bucket
-    assert reserve(limit: limit, at: now, n: 1).must().delay == time.seconds(1).must()
+    assert reserve(limit: limit, at: now, n: 1).must().delay == time.seconds(1)
 
 # A wait longer than the worker accepts.
 test "reserve_within: a wait of a second where half of one is allowed"
     now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
-    limit @= bucket(every: time.seconds(1).must(), burst: 1, at: now).must()
+    limit @= bucket(every: time.seconds(1), burst: 1, at: now).must()
     limit @ reserve(limit: limit, at: now, n: 1).must().bucket
 
-    match reserve_within(limit: limit, at: now, n: 1, within: time.milliseconds(500).must())
+    match reserve_within(limit: limit, at: now, n: 1, within: time.milliseconds(500))
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT
 
 # A reservation given back before its time comes.
 test "cancel: the token comes back"
     now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
-    limit = bucket(every: time.seconds(1).must(), burst: 1, at: now).must()
+    limit = bucket(every: time.seconds(1), burst: 1, at: now).must()
     taken = reserve(limit: limit, at: now, n: 1).must()
     back = cancel(limit: taken.bucket, taken: taken, at: now).must()
     assert available(limit: back, at: now) == 1
@@ -1032,27 +1032,27 @@ test "cancel: the token comes back"
 # The tokens a bucket holds, in tenths.
 test "tokens: half a token after half a second"
     now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
-    limit = bucket(every: time.seconds(1).must(), burst: 3, at: now).must()
+    limit = bucket(every: time.seconds(1), burst: 3, at: now).must()
     emptied = allow(limit: limit, at: now, n: 3).must().bucket
-    later = time.add(t: now, d: time.milliseconds(500).must()).must()
+    later = time.add(t: now, d: time.milliseconds(500)).must()
     assert tokens(limit: emptied, at: later) == 0.5
 
 # The whole tokens a bucket holds.
 test "available: none, then one"
     now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
-    limit = bucket(every: time.seconds(1).must(), burst: 3, at: now).must()
+    limit = bucket(every: time.seconds(1), burst: 3, at: now).must()
     emptied = allow(limit: limit, at: now, n: 3).must().bucket
     assert available(limit: emptied, at: now) == 0
-    assert available(limit: emptied, at: time.add(t: now, d: time.seconds(1).must()).must()) == 1
+    assert available(limit: emptied, at: time.add(t: now, d: time.seconds(1)).must()) == 1
 
 # A bucket whose rate is doubled keeps the tokens it holds.
 test "with_rate: a faster rate with the tokens it had"
     now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
-    limit = bucket(every: time.seconds(1).must(), burst: 4, at: now).must()
+    limit = bucket(every: time.seconds(1), burst: 4, at: now).must()
     emptied = allow(limit: limit, at: now, n: 4).must().bucket
-    later = time.add(t: now, d: time.seconds(2).must()).must()
-    faster = with_rate(limit: emptied, at: later, every: time.milliseconds(500).must(), burst: 4).must()
-    assert available(limit: faster, at: later) == 2 && available(limit: faster, at: time.add(t: later, d: time.seconds(1).must()).must()) == 4
+    later = time.add(t: now, d: time.seconds(2)).must()
+    faster = with_rate(limit: emptied, at: later, every: time.milliseconds(500), burst: 4).must()
+    assert available(limit: faster, at: later) == 2 && available(limit: faster, at: time.add(t: later, d: time.seconds(1)).must()) == 4
 
 test "with_rate: a full bucket of a token every nanosecond changed to one every 2^53 + 1 nanoseconds and a burst of 200 holds 200 of them to the nanosecond, and a debt of 13,916,998,315 ns at 7 s a token moved to 0.7 s rounds its tie away from nothing"
     made = time.Instant(unix_nanoseconds: 1_795_435_200_000_000_000)
@@ -1064,27 +1064,27 @@ test "with_rate: a full bucket of a token every nanosecond changed to one every 
         burst: 200
     ).must()
     assert slow.empty_at == time.Instant(unix_nanoseconds: -6_004_649_948_198_600)
-    owed @= bucket(every: time.seconds(7).must(), burst: 2, at: made).must()
+    owed @= bucket(every: time.seconds(7), burst: 2, at: made).must()
     owed @ reserve(limit: owed, at: made, n: 2).must().bucket
     owed @ reserve(limit: owed, at: made, n: 2).must().bucket
     assert owed.empty_at == time.Instant(unix_nanoseconds: 1_795_435_214_000_000_000)
     moved = with_rate(
         limit: owed,
         at: time.Instant(unix_nanoseconds: 1_795_435_200_083_001_685),
-        every: time.milliseconds(700).must(),
+        every: time.milliseconds(700),
         burst: 5
     ).must()
     assert moved.empty_at == time.Instant(unix_nanoseconds: 1_795_435_201_474_701_517)
 
 # Something done on the first call and every third.
 test "sometimes: the first call and every third"
-    state = sometimes(first: 1, every: 3, interval: time.milliseconds(0).must()).must()
+    state = sometimes(first: 1, every: 3, interval: time.milliseconds(0)).must()
     assert state.count == 0 && state.first == 1
 
 # Whether a call is due.
 test "sometimes_due: the first call is due"
     now = time.from_unix(whole_seconds: 1_700_000_000, extra_nanoseconds: 0).must()
-    state = sometimes(first: 1, every: 0, interval: time.milliseconds(0).must()).must()
+    state = sometimes(first: 1, every: 0, interval: time.milliseconds(0)).must()
     got = sometimes_due(state: state, at: now).must()
     assert got.due && got.state.count == 1
     assert !sometimes_due(state: got.state, at: now).must().due

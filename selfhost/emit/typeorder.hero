@@ -19,6 +19,12 @@
 # before the children is safe where the bootstrap's post-marking
 # needed an `open` belt: the checker refuses a by-value cycle (panel
 # 023), so the graph is a DAG either way.
+#
+# Corrected 2026-11-26 (panel 261's R8, found by its compiler-engineer): it is
+# not, where a record holds a function value taking the record, whose typedef
+# names the struct that holds it; `write_item` writes such a cycle with the
+# struct declared ahead (`emit/typedef_write.hero`), and every other program's
+# order as it stood.
 
 use ast
 use check/state
@@ -30,6 +36,7 @@ use emit/ffi_lookup
 use emit/synth
 use emit/tu_local
 use emit/type_needs
+use emit/typedef_write
 use emit/types
 use emit/writer
 use ir/lower
@@ -82,35 +89,12 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s:
     # A struct typedef ends with its own blank line and a
     # function-pointer typedef does not, so the group owes one exactly
     # when the last thing written was the latter.
-    owed_blank: bool @= false
+    at: typedef_write.Written @= typedef_write.Written(done: {}, entered: {}, forwarded: {}, owed_blank: false)
 
     for item in out
-        if item % 2 == 0
-            types.declared(@w, c, names, s, decls, decl: item / 2)
-            owed_blank @ false
-        else
-            ty = item / 2
+        typedef_write.write_item(@w, @at, c, names, s, decls, graph: graph, item: item)
 
-            match table.get(c.types, ty)
-                .fallible o =>
-                    types.option(@w, c, names, name: ctype.option_of(names, ty: ty), payload: o.payload)
-                    owed_blank @ false
-                .function_ty fn_ty =>
-                    types.function_type(
-                        @w,
-                        c,
-                        names,
-                        name: names.funcs[ty].must(),
-                        params: fn_ty.params,
-                        modes: fn_ty.modes,
-                        result: fn_ty.result
-                    )
-                    owed_blank @ true
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => continue
-                .array | .fixed | .map | .named | .thread_ty | .mailbox_ty => continue
-                .case_ty | .failure | .generic | .error                    => continue
-
-    if owed_blank
+    if at.owed_blank
         writer.blank(@w)
 
     if deepest(c, names, decls, out: out, graph: graph) > IN_ORDER_FROM
@@ -173,34 +157,13 @@ function in_order(@w: writer.Writer, c: state.Checked, names: ctype.Names, decls
     writer.line(@w, text: "__attribute__((__used__)) static void hero_tu_type_order(void *hero_at) {")
 
     for item in out
-        spelled = struct_named(c, names, decls, item: item)
+        spelled = typedef_write.struct_named(c, names, decls, item: item)
 
         if spelled.len() > 0
             writer.line(@w, text: "    (void)((" + spelled + " *)hero_at + 1);")
 
     writer.line(@w, text: "}")
     writer.blank(@w)
-
-# The C struct an item's typedef defines, or "" where this unit defines none:
-# a function type's typedef is a pointer, and a group's record is the header's.
-function struct_named(c: state.Checked, names: ctype.Names, decls: [ast.Decl], item: i64) -> str
-    if item % 2 == 1
-        ty = item / 2
-
-        match table.get(c.types, ty)
-            .fallible                                                          => return ctype.option_of(names, ty: ty)
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return ""
-            .array | .fixed | .map | .named | .function_ty                     => return ""
-            .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return ""
-    decl = item / 2
-
-    match decls[decl].kind
-        .record_decl rec =>
-            if rec.header.is_err()
-                return ctype.of(names, decl: decl)
-            return ""
-        .variant_decl                                => return ctype.of(names, decl: decl)
-        .constant_decl | .function_decl | .test_decl => return ""
 
 # How many of this unit's own structs the deepest item holds by value,
 # itself included (defect 170), read off the walk's order: post-order, so
@@ -214,7 +177,7 @@ function deepest(c: state.Checked, names: ctype.Names, decls: [ast.Decl], out: [
     for item in out
         held: i64 @= 0
 
-        if struct_named(c, names, decls, item: item).len() > 0
+        if typedef_write.struct_named(c, names, decls, item: item).len() > 0
             for need in graph[item].must()
                 below = depth[need].default(0)
 

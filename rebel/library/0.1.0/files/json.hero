@@ -9,8 +9,9 @@
 # past what arrived.
 #
 # A record is not filled from JSON by its field names, since the language has
-# no reflection: a program reads each member out of the tree and builds its own
-# type from it.
+# no reflection: a program reads each member out of the tree, `text_at`,
+# `int_at`, `bool_at` and `items_at` naming the key where one fails, and
+# builds its own type from it.
 #
 # `Value` is the tree the packages beside this one read and answer: a query
 # by JSONPath is `json/path`'s, a patch and a merge patch `json/patch`'s, a
@@ -817,6 +818,55 @@ function member(v: Value, key: str) -> Value?
         .err _ =>
             return fail(code: NOT_FOUND, msg: f"no key \"{key}\" in an object holding {scan.keys_named(keys(members))}")
 
+# The text of the member `key` of the object `v`: `member`, then `text_of`.
+#
+# - `v`: the value read, expected to be an object.
+# - `key`: the member's key, compared byte for byte.
+#
+# Fails `not_found` where the object holds no such key, and the message names
+# the keys it holds, as `member` does. Fails `invalid` where `v` is not an
+# object, or the member is not a text, and the message names the key and the
+# kind found. See also `int_at`, `bool_at`, `items_at`.
+function text_at(v: Value, key: str) -> str?
+    return scan.at_member(text_of(member(v, key: key)?), key: key)
+
+# The integer of the member `key` of the object `v`: `member`, then
+# `int_of`.
+#
+# - `v`: the value read, expected to be an object.
+# - `key`: the member's key, compared byte for byte.
+#
+# Fails `not_found` where the object holds no such key, as `member` does.
+# Fails `invalid` where `v` is not an object, or the member is not a number
+# with no fraction, and `does_not_fit` where it is past `MAX_EXACT_INT`, each
+# message naming the key. See also `text_at`.
+function int_at(v: Value, key: str) -> i64?
+    return scan.at_member(int_of(member(v, key: key)?), key: key)
+
+# The boolean of the member `key` of the object `v`: `member`, then
+# `bool_of`.
+#
+# - `v`: the value read, expected to be an object.
+# - `key`: the member's key, compared byte for byte.
+#
+# Fails `not_found` where the object holds no such key, as `member` does.
+# Fails `invalid` where `v` is not an object, or the member is not a boolean,
+# and the message names the key and the kind found. See also `text_at`.
+function bool_at(v: Value, key: str) -> bool?
+    return scan.at_member(bool_of(member(v, key: key)?), key: key)
+
+# The elements of the list in the member `key` of the object `v`, in order:
+# `member`, then `items_of`.
+#
+# - `v`: the value read, expected to be an object.
+# - `key`: the member's key, compared byte for byte.
+#
+# Fails `not_found` where the object holds no such key, as `member` does.
+# Fails `invalid` where `v` is not an object, or the member is not a list, and
+# the message names the key and the kind found. See also `text_at`.
+function items_at(v: Value, key: str) -> [Value]?
+    return scan.at_member(items_of(member(v, key: key)?), key: key)
+
 # The element of the list `v` at `index`.
 #
 # - `v`: the value read, expected to be a list.
@@ -1237,6 +1287,49 @@ test "member and element: found, absent with what is there, and the wrong kind"
         .ok _  => assert false
         .err e => assert e.code == "invalid"
 
+test "text_at, int_at, bool_at, items_at: found, absent, the wrong kind, and not an object"
+    doc = parse(
+        "{\"name\": \"Zoë\", \"port\": 8080, \"tls\": false, \"tags\": [\"a\"], \"ratio\": 0.5, \"big\": 1e300}"
+    ).must()
+    assert text_at(doc, key: "name").must() == "Zoë"
+    assert int_at(doc, key: "port").must() == 8080
+    assert !bool_at(doc, key: "tls").must()
+    assert items_at(doc, key: "tags").must() == [.text(v: "a")]
+    assert items_at(parse("{\"e\": []}").must(), key: "e").must() == []
+    assert text_at(parse("{\"\": \"\"}").must(), key: "").must() == ""
+
+    match text_at(doc, key: "host")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "not_found"
+            assert e.msg == "no key \"host\" in an object holding the keys \"name\", \"port\", \"tls\", \"tags\", \"ratio\", \"big\""
+
+    match text_at(doc, key: "port")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the member \"port\": expected a text, found a number"
+
+    match int_at(doc, key: "ratio")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the member \"ratio\": expected an integer, found 0.5, which has a fraction"
+
+    match int_at(doc, key: "big")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == "does_not_fit"
+            assert e.msg == "the member \"big\": the number 1e+300 is past 9007199254740991, the largest integer an f64 holds exactly"
+
+    match bool_at(doc, key: "tags")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the member \"tags\": expected a boolean, found a list"
+
+    match items_at(doc, key: "name")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the member \"name\": expected a list, found a text"
+
+    match int_at(.list(items: []), key: "port")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "expected an object, found a list"
+
 test "value_at: the whole value, keys, indices, escapes, and each way a path fails"
     doc = parse("{\"users\": [{\"name\": \"Ana\"}], \"a/b\": 1, \"m~n\": 2, \"\": 3}").must()
     assert value_at(doc, "").must() == doc
@@ -1514,6 +1607,24 @@ test "member: a key held and one missing"
     v = parse("{\"a\": 1}").must()
     assert member(v, "a").must() == .number(v: 1.0)
     assert member(v, "b").is_err()
+
+# A record's fields read from an object, each by its key and kind.
+test "text_at: a user's name and port read from a settings object"
+    v = parse("{\"name\": \"Ada\", \"port\": 8080}").must()
+    assert text_at(v, key: "name").must() == "Ada"
+    assert int_at(v, key: "port").must() == 8080
+
+# A port read as an integer.
+test "int_at: a port that is a number"
+    assert int_at(parse("{\"port\": 443}").must(), key: "port").must() == 443
+
+# A flag read from an object.
+test "bool_at: a switch turned on"
+    assert bool_at(parse("{\"debug\": true}").must(), key: "debug").must()
+
+# The elements of a list held in a member.
+test "items_at: the tags of a note"
+    assert items_at(parse("{\"tags\": [\"a\", \"b\"]}").must(), key: "tags").must().len() == 2
 
 # An element read by its index.
 test "element: the second of three"

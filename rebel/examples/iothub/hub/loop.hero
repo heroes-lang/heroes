@@ -7,6 +7,7 @@
 # It ends when the program's stop is asked: Ctrl-C, or the demo's end.
 
 use <rebel>/amqp
+use <rebel>/errors
 use <rebel>/mqtt
 use <rebel>/nats
 use <rebel>/path
@@ -380,7 +381,7 @@ function turn(@h: state.Hub, limit: time.Duration) -> bool
 #
 # - `h`: the hub.
 function serve(@h: state.Hub)
-    while turn(@h, limit: time.seconds(1).must())
+    while turn(@h, limit: time.seconds(1))
         _ = 0
 
 # The settings the file at `config` holds, its paths read from its folder.
@@ -413,11 +414,11 @@ function run(start: Start) -> str
     h @= match begun
         .ok got => got
         .err e =>
-            _ = told.failed(start.to, why: e.msg).is_err()
+            errors.ignore(told.failed(start.to, why: e.msg))
             return f"the hub could not begin: {e.msg}"
 
     start_links(@h)
-    _ = told.ready(start.to, listening: server.port_of(h.feed)).is_err()
+    errors.ignore(told.ready(start.to, listening: server.port_of(h.feed)))
     serve(@h)
     return state.end(@h)
 

@@ -229,8 +229,8 @@ test "menus inside menus, check and radio items: on the native side made, chosen
     bar = ui.check_item(@app, into: view, text: "Show Bar", checked: true).must()
     ui.inject(@app, input: .choose_menu(item: by_date)).must()
     ui.inject(@app, input: .choose_menu(item: bar)).must()
-    first = ui.wait(@app, within: time.seconds(2).must()).must()
-    second = ui.wait(@app, within: time.seconds(2).must()).must()
+    first = ui.wait(@app, within: time.seconds(2)).must()
+    second = ui.wait(@app, within: time.seconds(2)).must()
     assert first == .menu_chosen(item: by_date) && second == .menu_chosen(item: bar)
     assert ui.is_checked(app, widget: by_date).must() && !ui.is_checked(app, widget: by_name).must()
     assert !ui.is_checked(app, widget: bar).must()
@@ -249,7 +249,7 @@ test "context_menu: refused on a menu, a menu's item, a timer, a page and a widg
     assert fixture.code_of(ui.context_menu(@app, widget: files)) == ui.INVALID
     assert fixture.code_of(ui.context_menu(@app, widget: bar)) == ui.INVALID
     assert fixture.code_of(ui.context_menu(@app, widget: actions)) == ui.INVALID
-    assert fixture.code_of(ui.context_menu(@app, widget: ui.timer(@app, every: time.seconds(1).must()).must())) == ui.INVALID
+    assert fixture.code_of(ui.context_menu(@app, widget: ui.timer(@app, every: time.seconds(1)).must())) == ui.INVALID
     open_file = ui.menu_item(@app, into: actions, text: "Open").must()
     _ = ui.menu_separator(@app, into: actions).must()
     hidden = ui.check_item(@app, into: actions, text: "Show Hidden", checked: false).must()
@@ -305,7 +305,7 @@ test "context_menu: on the native side made on a list, a text area and a window,
     ui.inject(@app, input: .choose_menu(item: editor)).must()
     ui.inject(@app, input: .choose_menu(item: clear)).must()
     ui.inject(@app, input: .choose_menu(item: refresh)).must()
-    came = give.events_of(@app, within: time.milliseconds(300).must())
+    came = give.events_of(@app, within: time.milliseconds(300))
     assert came == [.menu_chosen(item: open_file), .menu_chosen(item: editor), .menu_chosen(item: clear), .menu_chosen(item: refresh)]
     ui.destroy(@app, widget: actions).must()
     again = ui.context_menu(@app, widget: files).must()
@@ -362,7 +362,7 @@ test "tray: on the native side a status item of the menu bar with its words, an 
     ui.set_text(@app, widget: icon, text: "Synced").must()
     ui.inject(@app, input: .choose_menu(item: now)).must()
     ui.inject(@app, input: .choose_menu(item: hourly)).must()
-    came = give.events_of(@app, within: time.milliseconds(300).must())
+    came = give.events_of(@app, within: time.milliseconds(300))
     assert came == [.menu_chosen(item: now), .menu_chosen(item: hourly)]
     docked = ui.set_docked(@app, on: false)
 

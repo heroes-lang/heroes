@@ -16,6 +16,7 @@
 use <rebel>/archive
 use <rebel>/bytes
 use <rebel>/compress
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/io
 use <rebel>/path as paths
@@ -97,7 +98,7 @@ record Stamp
 function format_of(archive_path: str) -> Format?
     s @= fs.open(archive_path)?
     first = io.read(s, n: 512)
-    _ = io.close(@s).is_err()
+    errors.ignore(io.close(@s))
     head = first?
     lower = strings.to_lower(archive_path)
 
@@ -406,7 +407,7 @@ function finish(@u: Unpacking, made: time.Instant) -> ()?
 # - `u`: the extraction; its streams are closed.
 function abandon(@u: Unpacking)
     close_all(@u)
-    _ = fs.remove_all(u.into).is_err()
+    errors.ignore(fs.remove_all(u.into))
 
 # Closes the archive and the member's file where they are open.
 #
@@ -414,13 +415,13 @@ function abandon(@u: Unpacking)
 function close_all(@u: Unpacking)
     if u.writing.len() > 0
         held @= u.writing[0]
-        _ = io.close(@held).is_err()
+        errors.ignore(io.close(@held))
 
     u.writing @ []
 
     if u.stream.len() > 0
         held @= u.stream[0]
-        _ = io.close(@held).is_err()
+        errors.ignore(io.close(@held))
 
     u.stream @ []
 
@@ -433,7 +434,7 @@ test "target_name: each archive's extension taken off, any case, and a name that
 
 test "start and step: a ZIP file extracted beside itself, a member named outside the folder passed over"
     base = "build/explorer-tests/unpacking"
-    _ = fs.remove_all(base).is_err()
+    errors.ignore(fs.remove_all(base))
     fs.make_dir_all(base).must()
     good = archive.zip_entry("ok.txt", kind: .file)
     bad = archive.zip_entry("../escaped.txt", kind: .file)
@@ -457,7 +458,7 @@ test "start and step: a ZIP file extracted beside itself, a member named outside
 
 test "start and step: a gzip-compressed tar extracted with its folder and its times, and a lone gzip file decompressed"
     base = "build/explorer-tests/untar"
-    _ = fs.remove_all(base).is_err()
+    errors.ignore(fs.remove_all(base))
     fs.make_dir_all(base).must()
     folder = archive.tar_entry("kept", kind: .directory)
     file @= archive.tar_entry("kept/a.txt", kind: .file)

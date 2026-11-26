@@ -114,7 +114,8 @@ function every_branch(branches: [Branch]) -> Leaves
 #
 # The first branch that produces a value sets the type; every later one
 # is checked against it, which keeps the error where the DISAGREEMENT is
-# rather than blaming the last branch for the first one's choice.
+# rather than blaming the last branch for the first one's choice. A later
+# one that only widens a function value's runs widens it (panel 261's R3).
 # Port note: Rust calls this `join`, and Heroes reserves that name for
 # the string builtin -- the fifteenth reservation to review its own port.
 function join_branches(@c: state.Checker, s: source.Source, decls: [ast.Decl], branches: [Branch]) -> i64?
@@ -130,7 +131,21 @@ function join_branches(@c: state.Checker, s: source.Source, decls: [ast.Decl], b
             continue
         expected = result.must()
 
-        if ty != expected && !table.poisoned(c.out.types, ty) && !table.poisoned(c.out.types, expected) && !type_fit.unnamed_shadow(c.out.types, c.out.written_types, a: expected, b: ty)
+        if ty == expected || table.poisoned(c.out.types, ty) || table.poisoned(c.out.types, expected)
+            continue
+
+        # A nameless written type refused where it is written keeps its
+        # shadow quiet and the first branch's type (defect 554).
+        if type_fit.unnamed_shadow(c.out.types, c.out.written_types, a: expected, b: ty)
+            continue
+
+        # Two function values that differ in their runs alone take the type
+        # both fit, in either order (panel 261's R3, `type_fit.joined_type`).
+        wider = type_fit.joined_type(@c.out.types, a: expected, b: ty)
+
+        if !wider.is_err()
+            result @ ok(wider.must())
+        else
             a = state.show(c, s, decls, expected)
             b = state.show(c, s, decls, ty)
             state.push_diagnostic(@c, value_errors.mismatch(expected: a, got: b, span: branch.span))

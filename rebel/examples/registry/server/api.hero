@@ -27,6 +27,7 @@
 # past which a publisher is answered 429 with `Retry-After`.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/time
 use <rebel>/web
@@ -89,7 +90,7 @@ function handle(@state: serving.State, r: http.Request) -> http.Response
         .err _    => web.not_routed(state.router, r: r)
 
     state.answered @ state.answered + 1
-    _ = web.log_request(state.logger, r: r, response: response, started: now).is_err()
+    errors.ignore(web.log_request(state.logger, r: r, response: response, started: now))
     return response
 
 # The answer of the handler `found` names.
@@ -99,25 +100,35 @@ function handle(@state: serving.State, r: http.Request) -> http.Response
 # - `found`: the route that takes it, and its parameters.
 # - `now`: the moment the request is answered.
 function dispatch(@state: serving.State, r: http.Request, found: web.Found, now: time.Instant) -> http.Response
-    name = web.param_of(found, name: "name").default("")
-    version = web.param_of(found, name: "version").default("")
-
     answered: http.Response? = match found.name
-        "health"         => ok(reads.health(state))
-        "packages"       => reads.list_packages(@state)
-        "package"        => reads.show_package(@state, name: name)
-        "resolve"        => reads.resolve_range(@state, r: r, name: name)
-        "changes"        => reads.show_changes(@state, r: r, name: name)
-        "version"        => reads.show_version(@state, name: name, version: version)
-        "archive"        => reads.serve_archive(@state, r: r, name: name, version: version)
-        "signature"      => reads.show_signature(@state, name: name, version: version)
+        "health"   => ok(reads.health(state))
+        "packages" => reads.list_packages(@state)
+        "package"  => reads.show_package(@state, name: web.param_of(found, name: "name"))
+        "resolve"  => reads.resolve_range(@state, r: r, name: web.param_of(found, name: "name"))
+        "changes"  => reads.show_changes(@state, r: r, name: web.param_of(found, name: "name"))
+        "version" => reads.show_version(
+            @state,
+            name: web.param_of(found, name: "name"),
+            version: web.param_of(found, name: "version")
+        )
+        "archive" => reads.serve_archive(
+            @state,
+            r: r,
+            name: web.param_of(found, name: "name"),
+            version: web.param_of(found, name: "version")
+        )
+        "signature" => reads.show_signature(
+            @state,
+            name: web.param_of(found, name: "name"),
+            version: web.param_of(found, name: "version")
+        )
         "search"         => reads.search_packages(@state, r: r)
         "suggest"        => reads.suggest(state, r: r)
-        "key"            => reads.show_key(@state, id: web.param_of(found, name: "id").default(""))
-        "publisher_keys" => reads.publisher_keys(@state, name: name)
-        "index"          => reads.show_index(@state, name: name)
-        "blob"           => reads.serve_blob(@state, r: r, d: web.param_of(found, name: "digest").default(""))
-        _                => guarded(@state, r: r, found: found, name: name, version: version, now: now)
+        "key"            => reads.show_key(@state, id: web.param_of(found, name: "id"))
+        "publisher_keys" => reads.publisher_keys(@state, name: web.param_of(found, name: "name"))
+        "index"          => reads.show_index(@state, name: web.param_of(found, name: "name"))
+        "blob"           => reads.serve_blob(@state, r: r, d: web.param_of(found, name: "digest"))
+        _                => guarded(@state, r: r, found: found, now: now)
 
     return match answered
         .ok response => response
@@ -128,13 +139,12 @@ function dispatch(@state: serving.State, r: http.Request, found: web.Found, now:
 #
 # - `state`: the server's state.
 # - `r`: the request.
-# - `found`: the route.
-# - `name`: the route's package name, "" where it has none.
-# - `version`: the route's version, "" where it has none.
+# - `found`: the route, whose pattern holds the package's name and version
+#   where it publishes or yanks.
 # - `now`: the moment the request is answered.
 #
 # Fails as the handler does.
-function guarded(@state: serving.State, r: http.Request, found: web.Found, name: str, version: str, now: time.Instant) -> http.Response?
+function guarded(@state: serving.State, r: http.Request, found: web.Found, now: time.Instant) -> http.Response?
     scope = match found.name
         "publish"         => tokens.SCOPE_PUBLISH
         "yank" | "unyank" => tokens.SCOPE_YANK
@@ -149,13 +159,32 @@ function guarded(@state: serving.State, r: http.Request, found: web.Found, name:
             .answer a => return ok(a.response)
             .go_on _  => _ = 0
 
-        return writes.publish_version(@state, r: r, grant: grant, name: name, version: version, now: now)
+        return writes.publish_version(
+            @state,
+            r: r,
+            grant: grant,
+            name: web.param_of(found, name: "name"),
+            version: web.param_of(found, name: "version"),
+            now: now
+        )
 
     if found.name == "yank"
-        return writes.set_yanked(@state, grant: grant, name: name, version: version, yanked: true)
+        return writes.set_yanked(
+            @state,
+            grant: grant,
+            name: web.param_of(found, name: "name"),
+            version: web.param_of(found, name: "version"),
+            yanked: true
+        )
 
     if found.name == "unyank"
-        return writes.set_yanked(@state, grant: grant, name: name, version: version, yanked: false)
+        return writes.set_yanked(
+            @state,
+            grant: grant,
+            name: web.param_of(found, name: "name"),
+            version: web.param_of(found, name: "version"),
+            yanked: false
+        )
     return writes.add_key(@state, r: r, grant: grant, now: now)
 
 ## Tokens
@@ -219,7 +248,7 @@ test "router: every route found by its pattern"
     rt = router().must()
     r = http.request(method: http.METHOD_GET, target: "/api/v1/packages/textkit/1.0.0/archive").must()
     found = web.route(rt, r: r).must()
-    assert found.name == "archive" && web.param_of(found, name: "version").must() == "1.0.0"
+    assert found.name == "archive" && web.param_of(found, name: "version") == "1.0.0"
     resolve_request = http.request(method: http.METHOD_GET, target: "/api/v1/packages/textkit/resolve?req=%5E1").must()
     assert web.route(rt, r: resolve_request).must().name == "resolve"
     put_request = http.request(method: http.METHOD_PUT, target: "/api/v1/packages/textkit/1.0.0").must()

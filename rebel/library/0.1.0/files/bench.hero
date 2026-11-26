@@ -84,8 +84,8 @@ function default_settings() -> Settings
     return Settings(
         warmups: 1,
         rounds: 20,
-        most: time.seconds(10).must(),
-        round: time.milliseconds(100).must(),
+        most: time.seconds(10),
+        round: time.milliseconds(100),
         waiting: 0.1,
         floor: 0.005
     )
@@ -507,12 +507,12 @@ test "with_rounds: five rounds"
 
 # A measurement for two seconds: many rounds, stopped by the time.
 test "with_time: two seconds"
-    s = with_time(with_rounds(default_settings(), rounds: 1000000), most: time.seconds(2).must())
+    s = with_time(with_rounds(default_settings(), rounds: 1000000), most: time.seconds(2))
     assert s.most.nanoseconds == 2000000000
 
 # Rounds of a millisecond, for a work that is cheap.
 test "with_round: rounds of a millisecond"
-    assert with_round(default_settings(), round: time.milliseconds(1).must()).round.nanoseconds == 1000000
+    assert with_round(default_settings(), round: time.milliseconds(1)).round.nanoseconds == 1000000
 
 # Every round kept, for a work that waits on a disk by nature.
 test "with_waiting: every round kept"
@@ -524,7 +524,7 @@ test "with_floor: a floor of 1 %"
 
 # A sum of a thousand numbers, measured over five short rounds.
 test "measure: a sum of a thousand numbers"
-    settings = with_rounds(with_round(default_settings(), round: time.milliseconds(1).must()), rounds: 5)
+    settings = with_rounds(with_round(default_settings(), round: time.milliseconds(1)), rounds: 5)
     report = measure(work: samples.sum_to, input: 1000, settings: settings).must()
     assert report.summary.count >= 1
     assert report.summary.best <= report.summary.median
@@ -532,7 +532,7 @@ test "measure: a sum of a thousand numbers"
 
 # A loop against Gauss's formula: the formula is faster.
 test "compare_versions: a loop against a formula"
-    settings = with_rounds(with_round(default_settings(), round: time.milliseconds(1).must()), rounds: 8)
+    settings = with_rounds(with_round(default_settings(), round: time.milliseconds(1)), rounds: 8)
     comparison = compare_versions(
         before: samples.sum_to,
         after: samples.sum_by_formula,

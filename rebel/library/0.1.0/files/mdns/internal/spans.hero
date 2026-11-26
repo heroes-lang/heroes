@@ -24,9 +24,9 @@ function checked(port: i64, priority: i64, weight: i64, host: str) -> ()?
     return ok()
 
 test "millis_of: a wait in milliseconds, and a negative one refused"
-    assert millis_of(time.seconds(2).must()).must() == 2000
-    assert millis_of(time.milliseconds(0).must()).must() == 0
-    assert millis_of(time.milliseconds(-1).must()).is_err()
+    assert millis_of(time.seconds(2)).must() == 2000
+    assert millis_of(time.milliseconds(0)).must() == 0
+    assert millis_of(time.milliseconds(-1)).is_err()
 
 test "checked: the ends of the ranges and a host that is no name"
     checked(port: 0, priority: 65535, weight: 65535, host: "").must()

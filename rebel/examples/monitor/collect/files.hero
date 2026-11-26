@@ -12,6 +12,7 @@
 # the monitor started. A watch that cannot be opened, or whose folder is
 # removed, is told and tried again at the next collection.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/fs/watch
 use <rebel>/maps
@@ -188,7 +189,7 @@ function reopen(@f: Files, i: i64)
             match scan(spec)
                 .err e =>
                     held @= w
-                    _ = watch.close(@held).is_err()
+                    errors.ignore(watch.close(@held))
                     f.watched[i].trouble @ f"{e.code}: {e.msg}"
                 .ok snapshot =>
                     f.watches[spec.name] @ w
@@ -206,13 +207,13 @@ function close_one(@f: Files, i: i64, trouble: str)
     name = f.watched[i].spec.name
 
     if f.watched[i].key >= 0
-        _ = poll.remove(f.set, key: f.watched[i].key).is_err()
+        errors.ignore(poll.remove(f.set, key: f.watched[i].key))
         f.watched[i].key @ -1
 
     match f.watches[name]
         .ok w =>
             held @= w
-            _ = watch.close(@held).is_err()
+            errors.ignore(watch.close(@held))
             f.watches @ maps.remove(f.watches, key: name)
         .err _ => _ = 0
 
@@ -289,7 +290,7 @@ function take_settled(@f: Files, i: i64, within: time.Duration) -> [Change]
     began = time.mark().default(time.Mark(nanoseconds: 0))
 
     while true
-        changes = take(@f, i: i, limit: time.milliseconds(100).default(within))
+        changes = take(@f, i: i, limit: time.milliseconds(100))
 
         if changes.len() > 0
             return changes
@@ -335,7 +336,7 @@ test "diff: created, changed and removed, sorted by path"
 
 test "take_settled: a file written in a watched folder is told, and a path not there is trouble"
     dir = "build/monitor-test-files"
-    _ = fs.remove_all(dir).is_err()
+    errors.ignore(fs.remove_all(dir))
     fs.make_dir_all(dir).must()
     set @= poll.make(8).must()
     specs = [
@@ -345,7 +346,7 @@ test "take_settled: a file written in a watched folder is told, and a path not t
     f @= open_all(specs, set: set)
     assert f.watched[0].trouble == "" && f.watched[1].trouble != ""
     write_file(path: dir + "/a.txt", text: "hello").must()
-    changes = take_settled(@f, i: 0, within: time.seconds(10).must())
+    changes = take_settled(@f, i: 0, within: time.seconds(10))
     assert changes == [Change(path: "a.txt", kind: "created", size: 5)]
     assert f.watched[0].bytes == 5 && f.watched[0].changes == 1
     close_all(@f)

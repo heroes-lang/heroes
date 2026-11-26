@@ -202,7 +202,7 @@ function after(now: time.Instant, seconds: i64) -> time.Instant
     if seconds < 0
         return time.max_instant()
 
-    match time.seconds(seconds)
+    match time.seconds_checked(seconds)
         .err _ => return time.max_instant()
         .ok d =>
             match time.add(now, d: d)
@@ -287,7 +287,7 @@ function poll(transport: http.Client, endpoint: str, auth: Auth, device_code: st
         if e.error == ""
             return refused(response)
         wait @ next_interval(e.error, interval: wait)?
-        time.sleep(time.seconds(wait).must())
+        time.sleep(time.seconds(wait))
 
 test "scopes_of: none, one, several, spaces at either end and doubled"
     assert scopes_of("") == []

@@ -25,6 +25,7 @@
 use ast
 use diag
 use resolve/errors
+use resolve/self_writes
 use resolve/state
 use resolve/unused_sweep
 use resolved
@@ -62,8 +63,30 @@ function verdict(a: ast.Ast, s: source.Source, decls: [ast.Decl], out: resolved.
     local = out.locals[at]
 
     if local.kind == .cell
-        return errors.never_rebound(source.span_text(s, local.name), span: local.name, symbol: local.symbol)
+        d = errors.never_rebound(source.span_text(s, local.name), span: local.name, symbol: local.symbol)
+        return by_itself(a, s, out: out, at: at, d: d)
     return told(a, s, decls, out: out, at: at)
+
+# A local whose one write is of its place with itself (panel 261's R3,
+# `resolve/self_writes.hero`) is told so, and no repair is `certain`: the
+# line stays, so `=` leaves it a write to a binding and the `@` taken away
+# leaves it a write to a copy, each refused in turn.
+function by_itself(a: ast.Ast, s: source.Source, out: resolved.Resolved, at: i64, d: diag.Diagnostic) -> diag.Diagnostic
+    place = self_writes.written_by_itself(a, s, out: out, at: at)
+
+    if place.is_err()
+        return d
+    said: diag.Diagnostic @= d
+    said.notes @ said.notes.push(
+        "`" + place.must() + " @ " + place.must() + "` writes the place with what it already holds, which is no write (spec § 5): take that line away with the repair"
+    )
+    fixes: [diag.Fix] @= []
+
+    for fix in said.fixes
+        fixes @ fixes.push(diag.Fix(title: fix.title, replacement: fix.replacement, span: fix.span, certainty: .guess))
+
+    said.fixes @ fixes
+    return said
 
 # `function f(@_: i64)`: `_` binds nothing (spec § 5), so the `@` marks a
 # parameter nothing can ever write, the rule's own shape at the one name no
@@ -111,7 +134,7 @@ function told(a: ast.Ast, s: source.Source, decls: [ast.Decl], out: resolved.Res
         d.fixes @ d.fixes.push(
             diag.Fix(title: "remove the `@`: `" + name + "` is read, never written", replacement: "", span: marker, certainty: .guess)
         )
-    return d
+    return by_itself(a, s, out: out, at: at, d: d)
 
 # The parameter taken read-only in place, `@c: T` rewritten `c: T lent`
 # (panel 217's R4): what a body that only reads it wants, and the one route a

@@ -37,7 +37,7 @@ function tick(@c: Clock) -> time.Instant?
         return time.now()
 
     at = c.next
-    c.next @ time.add(at, d: time.seconds(1)?)?
+    c.next @ time.add(at, d: time.seconds(1))?
     return ok(at)
 
 test "tick: a stepped clock gives its start, then one second more each time"

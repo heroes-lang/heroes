@@ -751,7 +751,7 @@ test "point and press_key: on the native side a press, a drag and a release sent
                 ui.close(@app).must()
                 skip_test(reason: e.msg)
 
-        told @ told.push(ui.wait(@app, within: time.seconds(2).must()).must())
+        told @ told.push(ui.wait(@app, within: time.seconds(2)).must())
 
     assert told[0] == .pointer(widget: area, phase: .down, x: 12.5, y: 7.25, button: left, clicks: 1, primary: false, shift: true, alt: false)
     assert told[1] == .pointer(widget: area, phase: .drag, x: 40.0, y: 30.0, button: left, clicks: 0, primary: false, shift: false, alt: false)
@@ -780,7 +780,7 @@ test "point and press_key: on the native side a press, a drag and a release sent
     # The release of a key pressed with Command held is a keyUp AppKit gives
     # no view, so five events come and not six.
     for _ in range(from: 0, to: 5)
-        pressed @ pressed.push(ui.wait(@app, within: time.seconds(2).must()).must())
+        pressed @ pressed.push(ui.wait(@app, within: time.seconds(2)).must())
 
     assert pressed[0] == .key(widget: area, phase: .pressed, shortcut: ui.Shortcut(key: "a", primary: false, shift: true, alt: false), typed: "A")
     assert pressed[1] == .key(widget: area, phase: .released, shortcut: ui.Shortcut(key: "a", primary: false, shift: true, alt: false), typed: "A")

@@ -79,7 +79,7 @@ function accepted_tls(told: str) -> io.Stream?
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: [])
     ).must()
     tell(told: told, port: l.port)
-    accepted = tls.accept(l, deadline: time.seconds(10).must())
+    accepted = tls.accept(l, deadline: time.seconds(10))
     tls.close_listener(@l).must()
     return ok(accepted?.stream)
 

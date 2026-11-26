@@ -190,3 +190,94 @@ run of t1's jobs and t2's six on this Mac and in the Linux arm64 image. **No lan
 compiler-engineer's patch (`programs/compiler-engineer/route.patch`, `sources 2ac05d2a50ea1fb7` as the critic built it)
 is not the adopted resolution (its R2 reading of the layer's files, R3 and R4 are unbuilt), so by § What the synthesis
 adds before any session, *"where the landed build does not exist the run waits"*.
+
+## Written 2026-11-26, after the landing
+
+By the blind run's session, as the clerk owed it, **before any session**: none is drawn and none has run (the area
+`.claude/worktrees/260-llm-ergonomist/` held no session folder when this section was written). Written in the detached
+worktree `.claude/worktrees/panel260-blind` (`main` at `1e56b5da5`, which holds `a60dfb77f`, the landing of steps
+197a to 197h). No line above is changed.
+
+**t2's task and six programs**, in the adopted spelling and label-stripped (no file of them holds a comment):
+`blind/task-t2.md` and `blind/programs/p1/` to `p6/`, 20 files. Against `llm-ergonomist.md` § The tasks' six:
+
+| t2 | what it is |
+|---|---|
+| (1) `p1` | a package `ticks` whose module `clock` binds `hero_time_monotonic_ns` in a group saying `layer`; the program uses it through its catalogue's `path` entry |
+| (2) `p2` | `p1` with the word taken out |
+| (3) `p3` | the package's module `clock` binds nothing and uses the package's module `raw`, whose group over `hero_time.h` says `layer` |
+| (4) `p4` | `p1`'s package, and a program that holds a group of its own over `hero_os.h` and says the word nowhere |
+| (5) `p5` | the package's group names its own header `myclock.h`, which includes `hero_time.h` and calls the clock in a `static inline` body, and says nothing |
+| (6) `p6` | a package `num` whose group names `stdlib.h`, says `layer` and binds `abs` |
+
+Two choices the clerk made, and why. **(4)** has a group of its own over `hero_os.h`, so the program holds a group it
+does not declare: a program importing `p1`'s package and holding no group would be `p1` again. **(6)** names a C
+library's header, **not `hero_os.h`**: under the landed build `extern "hero_os.h" layer` builds and runs at exit 0, and
+`heroes check` passes it, on this Mac and in the Linux arm64 image, three builds each (`panel260-blind-scratch/probe6/b`
+and `key/probe-os-layer`), while both arms' text says *"and no other group may"*. A program over `hero_os.h` would have
+had a key the text contradicts; so (6) uses a header the text and the build read alike, and the disagreement is
+reported as found beside, not keyed. The two grader's rows it touches stand as written above (W2 *declares nothing*):
+a reader who writes `layer` in W2 is declared-wrong and, by that build, built.
+
+| file (under `blind/`) | sha256 |
+|---|---|
+| `task-t2.md` (1,658 bytes) | `93d91f7266adecfe5965b75c6daedec78fc7baf24454d313c1ef725c4b26c62e` |
+| `programs/p1/heroes.toml` | `c8efd32b4257679e458ecba3d1d52e81a5b2af553b18fe81e5e4483e945c7f59` |
+| `programs/p1/main.hero` | `ac72ca78bb89fed4ef96bbbae80af1019b74a67896a1b38f8c26bf3057c08b9e` |
+| `programs/p1/ticks/clock.hero` | `67b33882a4c07cc7bf2a2e58331d9529f9417b446e04b32c335063f2237dd158` |
+| `programs/p2/heroes.toml` | `c8efd32b4257679e458ecba3d1d52e81a5b2af553b18fe81e5e4483e945c7f59` |
+| `programs/p2/main.hero` | `ac72ca78bb89fed4ef96bbbae80af1019b74a67896a1b38f8c26bf3057c08b9e` |
+| `programs/p2/ticks/clock.hero` | `f4169b4bb46c21079d343358d3121089080716b684715e80e0d3a53f5ea8e7a5` |
+| `programs/p3/heroes.toml` | `c8efd32b4257679e458ecba3d1d52e81a5b2af553b18fe81e5e4483e945c7f59` |
+| `programs/p3/main.hero` | `ac72ca78bb89fed4ef96bbbae80af1019b74a67896a1b38f8c26bf3057c08b9e` |
+| `programs/p3/ticks/clock.hero` | `f600d34346bf8d0415308313af851e03c0d419d6a821ea604628db0603cbbf38` |
+| `programs/p3/ticks/raw.hero` | `84e854f0512859bc052b37a65431059eb36057ea9f3c64ed776ad9b14387c1a2` |
+| `programs/p4/heroes.toml` | `c8efd32b4257679e458ecba3d1d52e81a5b2af553b18fe81e5e4483e945c7f59` |
+| `programs/p4/main.hero` | `06f0b35b099cd76883099e571d5e33a44b8d19c8e709e4890114aa2f7a7edb6e` |
+| `programs/p4/ticks/clock.hero` | `67b33882a4c07cc7bf2a2e58331d9529f9417b446e04b32c335063f2237dd158` |
+| `programs/p5/heroes.toml` | `c8efd32b4257679e458ecba3d1d52e81a5b2af553b18fe81e5e4483e945c7f59` |
+| `programs/p5/main.hero` | `ac72ca78bb89fed4ef96bbbae80af1019b74a67896a1b38f8c26bf3057c08b9e` |
+| `programs/p5/ticks/clock.hero` | `f4b432676570103ab71748020ab43088ba5aae21296679c9921c511894eeeac5` |
+| `programs/p5/ticks/myclock.h` | `18eaf2110a6f66b865ebf617d72e37661fedb0d6101ed00798e73e9d69a32983` |
+| `programs/p6/heroes.toml` | `e6ef29f563da1511e592cea27ca1c31f510370474d21693c0b80331d68286a45` |
+| `programs/p6/main.hero` | `5a38d6b33de9ea3fa4d6d82044721126decb3aa3f6585ab59f0663ee6db5a277` |
+| `programs/p6/num/ops.hero` | `ae5ebb881febf97609f813d32a6d2b85d5882f25d2f10a5d000acfd5c5df2793` |
+
+Every `.hero` of them is canonical by the landed build's `heroes fmt`. Every input of the first table was re-hashed
+here before this section and holds: the three arms, rebuilt from `c3885b81b`'s `spec/heroes-spec.md` with
+`patch -p1` (`now` `c915f0f2…`, `adopted` `70b8e497…`, `rival` `abe96488…`), both diffs and both texts, and
+`task-t1.md` (`3d71ca51…`).
+
+**The key, run.** The landed build on this Mac is `.claude/worktrees/gate-push4/heroes-next`, stage 3 of `a60dfb77f`,
+`sources 6e60cb9f65cc1298`, run by its absolute path, never rebuilt (Apple clang 21.0.0); in the Linux arm64 image
+(`heroes-linux-arm64:latest`, no pull, one container, removed when the key was done) a stage 2 built from
+`a60dfb77f`'s seed (`git archive a60dfb77f seed runtime selfhost`; clang on the seed exit 0, stage 2 exit 0, 13:08:12
+to 13:09:53 UTC; Debian clang 22.1.8), whose `--version` reads **the same `sources 6e60cb9f65cc1298`**. Each program
+built **three times**, each build in a fresh copy of its folder with its own `build/`, and every binary a build wrote
+run **three times** (`timeout 60`), `key.sh`, this Mac 13:00:57 to 13:03:21 UTC, Linux 13:10:07 to 13:11:50 UTC; the
+file a refusal names is the first `at <path>:` line of the build's output:
+
+| t2 | this Mac | Linux arm64 | the key |
+|---|---|---|---|
+| (1) `p1` | builds 3 of 3; 9 runs `true`, exit 0 | the same | **builds** |
+| (2) `p2` | exit 1, 3 of 3, `ffi_layer_undeclared` at `ticks/clock.hero:1:8` | the same | **refused, `ticks/clock.hero`** |
+| (3) `p3` | builds 3 of 3; 9 runs `true`, exit 0 | the same | **builds** |
+| (4) `p4` | builds 3 of 3; 9 runs `true` `true`, exit 0 | the same | **builds** |
+| (5) `p5` | exit 1, 3 of 3, `ffi_layer_undeclared` at `ticks/clock.hero:1:8` (*"`myclock.h` reaches the platform layer's `hero_time.h`"*) | the same | **refused, `ticks/clock.hero`** |
+| (6) `p6` | exit 1, 3 of 3, `ffi_layer_unreached` at `num/ops.hero:1:19` | the same | **refused, `num/ops.hero`** |
+
+**The two platforms agree on all six**, so every program has a key and all six are in D3. The importer's file for (2)
+and (5) is `main.hero`. **t1's key is the readers' own files**, built after the sessions by the same two compilers
+(§ The key, on both graded platforms); before any session the `now` reference (`blind/reference-t1/`, the sources in
+`.claude/worktrees/panel260`, the commit holding only its `results.txt`) was built once by the landed build on this Mac
+as a baseline: W1, W3 and W4 refused, `ffi_layer_undeclared` at `ticks/clock.hero:1:8`, `main.hero:1:8` and
+`main.hero:1:8`, W2 built and printed `true`.
+
+**What the runner pins** (`registration-runner.md`, written beside this file before any session, every changed file's
+`diff -u` against panel 256's committed bytes): the session brief `brief-session.md`, sha256
+`ca8e20776dfdb6253ccf101e30f9e829ec2401d3d184ba2d95c6d389bd058beb` (274 words), panel 257's bytes with the two lines
+§ Every session's folder rewrites (its change 1, `spec.md`, being 257's own) and no other; the spec-warden's
+`## Predictions registered before the blind run`, sha256 `818747c952c3fddf1966862747e0549d245bd9e2fa2b73b91ff47755f77dd7ea`
+(the section's lines, `awk` from its heading to the next `## `), copied when the runner starts; `claude --version`
+`2.1.323 (Claude Code)` (14:09). The spend before this section: **0.00 USD** (no session had run; the blind run's first
+start was cut at 14:07 by the coordinator's restart, before any area existed).

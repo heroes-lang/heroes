@@ -9,6 +9,7 @@
 # are listed in an `Opened` and closed once the command ends, a temporary
 # file removed with its stream.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/io
 use <rebel>/process
@@ -177,10 +178,10 @@ function close_all(@opened: Opened)
     streams @= opened.streams
 
     for i in range(from: 0, to: streams.len())
-        _ = io.close(@streams[i]).is_err()
+        errors.ignore(io.close(@streams[i]))
 
     for t in opened.temps
-        _ = fs.remove(t).is_err()
+        errors.ignore(fs.remove(t))
 
     opened.streams @ []
     opened.temps @ []

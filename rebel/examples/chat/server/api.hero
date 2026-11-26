@@ -267,7 +267,7 @@ function history(@srv: state.Server, found: web.Found, r: http.Request) -> http.
         .ok u  => u
         .err e => return error_of(http.STATUS_UNAUTHORIZED, message: e.msg)
 
-    room = web.param_of(found, name: "room").default("")
+    room = web.param_of(found, name: "room")
     rooms = database.rooms_of(@srv.db, member: user).default([])
 
     if !holds(rooms, room: room)
@@ -330,7 +330,7 @@ test "new_router: each route found by its method and path"
     r = new_router()
     asked = http.request(method: http.METHOD_GET, target: "/rooms/general/messages?limit=3").must()
     found = web.route(r, r: asked).must()
-    assert found.name == "history" && web.param_of(found, name: "room").must() == "general"
+    assert found.name == "history" && web.param_of(found, name: "room") == "general"
     assert web.route(r, r: http.request(method: http.METHOD_POST, target: "/login").must()).must().name == "login"
     assert web.route(r, r: http.request(method: http.METHOD_GET, target: "/login").must()).is_err()
 

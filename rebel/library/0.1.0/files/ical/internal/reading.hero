@@ -416,7 +416,7 @@ test "calendar_from: the fields of the sample calendar as python-icalendar reads
     assert cal.zones.len() == 1 && cal.zones[0].name == "Customized Time Zone"
     winter = time.offset_at(zone: cal.zones[0], t: time.date(year: 2026, month: 1, day: 15).must())
     summer = time.offset_at(zone: cal.zones[0], t: time.date(year: 2026, month: 7, day: 15).must())
-    assert winter.from_utc == time.hours(1).must() && summer.from_utc == time.hours(2).must() && summer.abbreviation == "CEST"
+    assert winter.from_utc == time.hours(1) && summer.from_utc == time.hours(2) && summer.abbreviation == "CEST"
 
 test "calendar_from: a document written again reads as the same calendar"
     cal = ical.parse_calendar(samples.calendar_lines().join("\r\n") + "\r\n").must()

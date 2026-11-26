@@ -4,6 +4,7 @@ packages = [
     "bytes",
     "config",
     "crypto",
+    "errors",
     "flags",
     "fs",
     "html",

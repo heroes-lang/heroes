@@ -6,6 +6,7 @@
 # last server, on a thread of its own, reading its certificate the way a
 # web server restarted after a renewal reads it.
 
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/net
 use <rebel>/time
@@ -76,14 +77,14 @@ function serve(s: settings.Settings, store: vault.Store, name: str, host: str, p
 
     match ready.tell(told, said: ready.Ready(service: "https", port: listener.port, https_root: ""))
         .err e =>
-            _ = tls.close_listener(@listener).is_err()
+            errors.ignore(tls.close_listener(@listener))
             return fail(code: e.code, msg: e.msg)
         .ok _ => _ = 0
 
     server @= http.default_server()
-    server.deadline @ time.seconds(10)?
+    server.deadline @ time.seconds(10)
     served = http.serve_tls_with(server, l: listener, state: identity.page, handler: answer)
-    _ = tls.close_listener(@listener).is_err()
+    errors.ignore(tls.close_listener(@listener))
     return served
 
 # The address and port of `[serve] listen`.
@@ -162,7 +163,7 @@ record Visit
 function visit(host: str, port: i64, roots: str) -> Visit?
     client @= http.default_client()
     client.roots @ roots
-    client.deadline @ time.seconds(15)?
+    client.deadline @ time.seconds(15)
     response = http.get(client, target: f"https://{host}:{port}/")?
     return ok(Visit(status: response.status, body: http.text_of(response).default("")))
 

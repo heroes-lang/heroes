@@ -7,6 +7,7 @@
 # the Kafka commits. Their names follow Prometheus's conventions: a unit in
 # the name, `_total` on a counter. `exporter` serves them.
 
+use <rebel>/errors
 use <rebel>/metrics
 
 ## Names
@@ -102,7 +103,7 @@ function register_all(@r: metrics.Registry) -> ()?
 # - `name`: the family.
 # - `labels`: the labels' values, in the family's order.
 function count(@r: metrics.Registry, name: str, labels: [str])
-    _ = metrics.inc(@r, name: name, labels: labels).is_err()
+    errors.ignore(metrics.inc(@r, name: name, labels: labels))
 
 # Adds `amount` to `name` under `labels`.
 #
@@ -111,7 +112,7 @@ function count(@r: metrics.Registry, name: str, labels: [str])
 # - `labels`: the labels' values.
 # - `amount`: 0 or more.
 function add(@r: metrics.Registry, name: str, labels: [str], amount: i64)
-    _ = metrics.add(@r, name: name, labels: labels, amount: to_f64(amount)).is_err()
+    errors.ignore(metrics.add(@r, name: name, labels: labels, amount: to_f64(amount)))
 
 # Records a batch written to `tier`: one batch, its bytes, its ratio.
 #
@@ -125,7 +126,7 @@ function batch_written(@r: metrics.Registry, tier: str, raw_bytes: i64, stored_b
     add(@r, name: STORED_BYTES, labels: [tier], amount: stored_bytes)
 
     if raw_bytes > 0
-        _ = metrics.observe(@r, name: RATIO, labels: [tier], value: to_f64(stored_bytes) / to_f64(raw_bytes)).is_err()
+        errors.ignore(metrics.observe(@r, name: RATIO, labels: [tier], value: to_f64(stored_bytes) / to_f64(raw_bytes)))
 
 test "new, count, batch_written: families described and counted"
     r @= new().must()

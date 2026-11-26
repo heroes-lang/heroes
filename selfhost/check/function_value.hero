@@ -90,9 +90,20 @@ function signature_of(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: so
 # Each parameter's mode as its function type carries it (panel 261): `@`
 # where the signature marks it, `lent` where it is lent read-only
 # (`read_lend.read_only`, which leaves panel 171's `lent` on a C pointer by
-# value), else by value.
+# value), else by value. An `extern`'s signature interns no mark (panel 261's
+# R8): its `@` and its `lent` record are C's words, which no function type
+# carries, so such a function is no value (`check/markers.hero`), and a
+# marked type interned for it would only move the ids of the types interned
+# after it, and with them the order of a mark-free program's typedefs
+# (`fixedbugs-417`, the embedded library's two externs with `@status`).
 function declared_modes(a: ast.Ast, s: source.Source, f: ast.FunctionDecl) -> [str]
     out: [str] @= []
+
+    if f.is_extern
+        for _ in f.params
+            out @ out.push("")
+
+        return out
 
     for p in f.params
         if p.mutable

@@ -24,6 +24,7 @@
 # what the workers had asked answered `stopping`, every worker waited for,
 # every WebSocket told 1001.
 
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/io
 use <rebel>/log
@@ -157,7 +158,7 @@ function looped(@app: state.App, set: poll.Set, l: net.Listener, conns: (mailbox
             by @ "api"
             break
 
-        events = match poll.wait(set, limit: time.seconds(1)?)
+        events = match poll.wait(set, limit: time.seconds(1))
             .ok got => got
             .err e =>
                 if e.code == poll.STOPPED
@@ -195,7 +196,7 @@ function looped(@app: state.App, set: poll.Set, l: net.Listener, conns: (mailbox
                 .ok ask => answered(@app, set: set, ask: ask)
 
     for key in [listening, ticker, asked, controlled, signals]
-        _ = poll.remove(set, key: key).is_err()
+        errors.ignore(poll.remove(set, key: key))
 
     return ok(Looped(connections: accepted, by: by))
 
@@ -217,7 +218,7 @@ function handed(app: state.App lent, l: net.Listener, conns: (mailbox net.Conn))
         .err _ =>
             # Not sent, the program stopping: the connection is still this
             # thread's.
-            _ = io.close(@conn.stream).is_err()
+            errors.ignore(io.close(@conn.stream))
             return false
 
 # The answer to one ask, on this thread: a request handled by the pipeline
@@ -249,7 +250,7 @@ function drained(asks: (mailbox workers.Ask))
                     .request q => workers.answer(q.back, reply: .stopping)
                     .adopt a =>
                         reader @= a.reader
-                        _ = io.close(@reader.stream).is_err()
+                        errors.ignore(io.close(@reader.stream))
 
 # Takes each of `keys_gone` out of `set`; one already out is no failure.
 #
@@ -257,7 +258,7 @@ function drained(asks: (mailbox workers.Ask))
 # - `keys_gone`: the keys of sockets the hub let go.
 function drop_keys(set: poll.Set, keys_gone: [i64])
     for key in keys_gone
-        _ = poll.remove(set, key: key).is_err()
+        errors.ignore(poll.remove(set, key: key))
 
 # The limits a request is read with: the usual ones, its body bounded by the
 # settings.
@@ -282,22 +283,22 @@ function adopted(@app: state.App, set: poll.Set, @reader: io.Reader, r: http.Req
     conn = match websocket.upgrade(@reader, r: r, server: websocket.default_server())
         .ok c => c
         .err _ =>
-            _ = io.close(@reader.stream).is_err()
+            errors.ignore(io.close(@reader.stream))
             return
 
-    _ = net.set_deadline(conn.stream, deadline_ms: net.FOREVER).is_err()
+    errors.ignore(net.set_deadline(conn.stream, deadline_ms: net.FOREVER))
 
     key = match poll.add_stream(set, s: conn.stream, interest: .read)
         .ok k => k
         .err _ =>
             dropped @= conn
-            _ = websocket.drop(@dropped).is_err()
+            errors.ignore(websocket.drop(@dropped))
             return
 
     if realtime.admit(@app.hub, key: key, conn: conn, user_id: user_id, user: user).is_err()
-        _ = poll.remove(set, key: key).is_err()
+        errors.ignore(poll.remove(set, key: key))
         dropped @= conn
-        _ = websocket.drop(@dropped).is_err()
+        errors.ignore(websocket.drop(@dropped))
         return
 
     ops.gauge(@app.registry, name: ops.SOCKETS, value: realtime.count(app.hub))
@@ -316,5 +317,5 @@ function on_socket(@app: state.App, set: poll.Set, key: i64)
     match realtime.on_readable(@app.hub, key: key)
         .open => _ = 0
         .closed _ =>
-            _ = poll.remove(set, key: key).is_err()
+            errors.ignore(poll.remove(set, key: key))
             ops.gauge(@app.registry, name: ops.SOCKETS, value: realtime.count(app.hub))

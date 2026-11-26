@@ -91,7 +91,7 @@ test "check: one audience, several with azp and without, a nonce right and wrong
     now = time.from_unix(whole_seconds: 1000, extra_nanoseconds: 0).must()
     none = time.nanoseconds(0)
     one = json.members_of(json.parse("{\"aud\":\"c\",\"nonce\":\"n\",\"auth_time\":900}").must()).must()
-    assert !check(one, alg: "RS256", client_id: "c", nonce: "n", max_age: time.seconds(100).must(), access_token: "", leeway: none, now: now).is_err()
+    assert !check(one, alg: "RS256", client_id: "c", nonce: "n", max_age: time.seconds(100), access_token: "", leeway: none, now: now).is_err()
     assert check(
         one,
         alg: "RS256",
@@ -107,7 +107,7 @@ test "check: one audience, several with azp and without, a nonce right and wrong
         alg: "RS256",
         client_id: "c",
         nonce: "",
-        max_age: time.seconds(50).must(),
+        max_age: time.seconds(50),
         access_token: "",
         leeway: none,
         now: now

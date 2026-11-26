@@ -14,6 +14,7 @@
 # wait on its connection ends at once. No byte is written to wake anyone, so
 # none can be forgotten or written before its ask.
 
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/io
 use <rebel>/net
@@ -88,7 +89,7 @@ record Worked
 # - `back`: the worker's mailbox for the answer.
 # - `reply`: the answer.
 function answer(back: (mailbox Reply), reply: Reply)
-    _ = back.send(reply).is_err()
+    errors.ignore(back.send(reply))
 
 ## The worker
 
@@ -117,7 +118,7 @@ function work(w: Start) -> Worked
                                 if served(w, set: set, stop_key: stop_key, conn: conn)
                                     done.idle_closed @ done.idle_closed + 1
 
-            _ = poll.close(@set).is_err()
+            errors.ignore(poll.close(@set))
 
     return done
 
@@ -134,12 +135,12 @@ function served(w: Start, set: poll.Set, stop_key: i64, conn: net.Conn) -> bool
         .ok k => k
         .err _ =>
             stream @= conn.stream
-            _ = io.close(@stream).is_err()
+            errors.ignore(io.close(@stream))
             return false
 
     requests @= http.request_reader(io.reader(conn.stream))
     remote = net.format_address(conn.remote)
-    idle = time.milliseconds(w.idle_ms).default(time.seconds(30).default(time.nanoseconds(0)))
+    idle = time.milliseconds_checked(w.idle_ms).default(time.seconds(30))
 
     while true
         # No event is the idle bound passed, or the program's stop; the stop
@@ -155,16 +156,16 @@ function served(w: Start, set: poll.Set, stop_key: i64, conn: net.Conn) -> bool
                 rang @ true
 
         if rang || events.len() == 0
-            _ = poll.remove(set, key: key).is_err()
-            _ = io.close(@requests.reader.stream).is_err()
+            errors.ignore(poll.remove(set, key: key))
+            errors.ignore(io.close(@requests.reader.stream))
             return rang
 
         while true
             read = match http.read_ready(@requests, limits: w.limits)
                 .ok got => got
                 .err _ =>
-                    _ = poll.remove(set, key: key).is_err()
-                    _ = io.close(@requests.reader.stream).is_err()
+                    errors.ignore(poll.remove(set, key: key))
+                    errors.ignore(io.close(@requests.reader.stream))
                     return false
 
             r: http.Request @= match read
@@ -176,16 +177,16 @@ function served(w: Start, set: poll.Set, stop_key: i64, conn: net.Conn) -> bool
             match asked(w, r: r)
                 .respond rs =>
                     if http.write_answer(requests.reader.stream, r: r, response: rs.response).is_err() || r.closing || rs.response.closing
-                        _ = poll.remove(set, key: key).is_err()
-                        _ = io.close(@requests.reader.stream).is_err()
+                        errors.ignore(poll.remove(set, key: key))
+                        errors.ignore(io.close(@requests.reader.stream))
                         return false
                 .upgrade u =>
-                    _ = poll.remove(set, key: key).is_err()
+                    errors.ignore(poll.remove(set, key: key))
                     handed_over(w, @requests.reader, r: r, user_id: u.user_id, user: u.user)
                     return false
                 .stopping =>
-                    _ = poll.remove(set, key: key).is_err()
-                    _ = io.close(@requests.reader.stream).is_err()
+                    errors.ignore(poll.remove(set, key: key))
+                    errors.ignore(io.close(@requests.reader.stream))
                     return false
 
     return false
@@ -218,4 +219,4 @@ function handed_over(w: Start, @reader: io.Reader, r: http.Request, user_id: i64
         .ok _ => _ = 0
         .err _ =>
             # Not sent, so the connection is still this worker's.
-            _ = io.close(@reader.stream).is_err()
+            errors.ignore(io.close(@reader.stream))

@@ -22,6 +22,7 @@ use cli/bound_macro
 use cli/compile
 use cli/compiling
 use cli/defined_twice
+use cli/layer_declared
 use cli/locks
 use cli/pointee_ask
 use cli/pragma_ask
@@ -236,11 +237,14 @@ function round(t: toolchain.Toolchain, options: compile.Options, art: compile.Ar
     # ways, told before any unit compiles (panel 202's C1,
     # `cli/two_ways.hero`): the author's, said here, and no round after it.
     # And a name the units of two modules would each define (panel 202's C2,
-    # `cli/defined_twice.hero`), but those told already.
+    # `cli/defined_twice.hero`), but those told already. And first, a
+    # function of the platform layer's a header of the program's own
+    # declares itself, held to the layer's declaration
+    # (`cli/layer_declared.hero`, defect 2856).
     two = two_ways.told(t, planned.probings, s: s, decls: art.decls)
     disagreeing = joined(
-        first: two.diagnostics,
-        more: defined_twice.told(t, planned.probings, s: s, decls: art.decls, skip: two.names)
+        first: layer_declared.told(t, planned.probings, s: s, decls: art.decls),
+        more: joined(first: two.diagnostics, more: defined_twice.told(t, planned.probings, s: s, decls: art.decls, skip: two.names))
     )
 
     if disagreeing.len() > 0

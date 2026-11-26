@@ -297,7 +297,7 @@ function retry_of(v: json.Value) -> RetrySettings?
         .ok _  => ok(int_of(r, key: "seed", otherwise: 0)?)
 
     return ok(
-        RetrySettings(first: time.milliseconds(first_ms)?, multiplier: multiplier, longest: time.milliseconds(longest_ms)?, seed: seed)
+        RetrySettings(first: time.milliseconds_checked(first_ms)?, multiplier: multiplier, longest: time.milliseconds_checked(longest_ms)?, seed: seed)
     )
 
 # The settings `text` holds, its paths read from `folder`.
@@ -423,8 +423,8 @@ test "parse: every section, paths read from the folder, and the defaults"
     assert s.mqtt.must().client_id == "iothub" && s.amqp.must().prefetch == 16
     assert s.nats.is_err()
     assert s.serial == [PortSettings(name: "bench", port: "/dev/ttyUSB0", baud: 4800)]
-    assert s.retry.first == time.milliseconds(50).must() && s.retry.seed.must() == 7
-    assert s.retry.longest == time.seconds(30).must()
+    assert s.retry.first == time.milliseconds(50) && s.retry.seed.must() == 7
+    assert s.retry.longest == time.seconds(30)
     assert s.clock.must() == time.parse("2026-11-22T09:00:00Z", layout: .rfc3339).must()
     assert output_exchanges(s) == ["alerts"]
 

@@ -7,6 +7,7 @@
 # anything of the walk.
 
 use ast
+use check/generic_runs
 use check/state
 use check/table
 use check/type_fit
@@ -27,6 +28,10 @@ function compare(@c: state.Checker, s: source.Source, decls: [ast.Decl], expecte
     a_text = state.show(c, s, decls, expected)
     b_text = state.show(c, s, decls, got)
     d: diag.Diagnostic @= value_errors.mismatch(expected: a_text, got: b_text, span: span)
+    marks = generic_runs.marks_note(c, expected: expected, got: got)
+
+    if !marks.is_err()
+        d.notes @ d.notes.push(marks.must())
 
     # A T? where a T was wanted has one obvious repair, and it is a GUESS
     # (panel 043): .must() aborts on the error case, and whether that is

@@ -5,6 +5,7 @@
 # is refused), each waiting migration applied in its own transaction with
 # its version recorded, and the lock let go whatever happened.
 
+use <rebel>/errors
 use <rebel>/sql
 use <rebel>/sql/migrate
 use <rebel>/sql/postgres
@@ -26,7 +27,7 @@ function migrate_up(@db: postgres.Db) -> [str]?
     _ = postgres.query(@db, lock.text, lock.params)?
     applied = applying(@db, opts: opts)
     unlock = migrate.unlock_statement(opts)?
-    _ = postgres.query(@db, unlock.text, unlock.params).is_err()
+    errors.ignore(errors.discard_value(postgres.query(@db, unlock.text, unlock.params)))
     return applied
 
 # The steps planned and applied, under the lock.
@@ -50,7 +51,7 @@ function applying(@db: postgres.Db, opts: migrate.Options) -> [str]?
                     postgres.commit(@db)?
             .err e =>
                 if step.in_transaction
-                    _ = postgres.rollback(@db).is_err()
+                    errors.ignore(postgres.rollback(@db))
                 return fail(code: e.code, msg: f"migration {step.version} {step.name}: {e.msg}")
 
         names @ names.push(f"{step.version} {step.name}")

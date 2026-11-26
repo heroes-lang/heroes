@@ -12,6 +12,7 @@
 # thread prints each whole once its step is collected.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/path
 use <rebel>/process
@@ -217,7 +218,7 @@ function work(w: Work) -> Done
 
     # A send fails only once the mailbox has answered a stop; the scheduler
     # then waits for its workers by their threads alone.
-    _ = w.ended.send(w.ticket).is_err()
+    errors.ignore(w.ended.send(w.ticket))
     return d
 
 # A worker thread started on `o`, which sends `ticket` on `ended` as it ends
@@ -254,5 +255,5 @@ test "program_of: a name stays, an absolute path stays, a relative path is read 
     assert program_of(word: "tools/mill", dir: ".") == path.from_slash("tools/mill")
 
 test "ended_words: a time limit says how long it was, an exit says its code"
-    assert ended_words(.timed_out, limit: ok(time.milliseconds(300).must())) == "ran past its time limit of 300ms and was ended"
+    assert ended_words(.timed_out, limit: ok(time.milliseconds(300))) == "ran past its time limit of 300ms and was ended"
     assert ended_words(.exited(code: 2), limit: fail(code: "not_found", msg: "none")) == "exited with code 2"

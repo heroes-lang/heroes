@@ -191,7 +191,7 @@ function run(@app: ui.App) -> ()?
     closing @= false
 
     while !closing
-        event = ui.wait(@app, within: time.seconds(5)?)?
+        event = ui.wait(@app, within: time.seconds(5))?
         print(told(ws, event: event))
 
         match event
@@ -212,7 +212,7 @@ function run(@app: ui.App) -> ()?
     print("done: " + ui.value_of(app, widget: ws.done)?.to_str())
     ui.inject(@app, input: .answer(answer: .yes))?
     asked = ui.message(@app, over: ws.window, title: "Quit?", text: "Close the window?", tone: .info, buttons: .yes_no)?
-    answered = ui.wait(@app, within: time.seconds(5)?)?
+    answered = ui.wait(@app, within: time.seconds(5))?
     print(told(ws, event: answered))
     print("answered: " + (answered == .dialog_answered(dialog: asked, answer: .yes)).to_str())
     ui.destroy(@app, widget: ws.window)?
@@ -265,7 +265,7 @@ test "the driver: the session on the headless side, every event and the state le
     lines: [str] @= []
 
     while true
-        match ui.wait(@app, within: time.seconds(1).must())
+        match ui.wait(@app, within: time.seconds(1))
             .ok event => lines @ lines.push(told(ws, event: event))
             .err e =>
                 assert e.code == ui.CLOSED
@@ -295,7 +295,7 @@ test "the driver: the session on the system's own widgets, the same events and t
     closing @= false
 
     while !closing
-        event = ui.wait(@app, within: time.seconds(5).must()).must()
+        event = ui.wait(@app, within: time.seconds(5)).must()
         lines @ lines.push(told(ws, event: event))
 
         match event

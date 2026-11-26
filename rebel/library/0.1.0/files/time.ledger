@@ -185,11 +185,11 @@ capability duration/units  the length of one unit
   note    a unit is the closed variant `time.Unit`, nanosecond to week; a constant cannot hold a record in Heroes, so the lengths are a function's answer
 
 capability duration/from-count  a duration of so many units
-  heroes  time.nanoseconds, time.microseconds, time.milliseconds, time.seconds, time.minutes, time.hours, time.days, time.weeks
+  heroes  time.nanoseconds, time.microseconds, time.milliseconds, time.seconds, time.minutes, time.hours, time.days, time.weeks, time.microseconds_checked, time.milliseconds_checked, time.seconds_checked, time.minutes_checked, time.hours_checked, time.days_checked, time.weeks_checked
   go      time.Duration (a count times a unit constant)
   rust    Duration::from_nanos, Duration::from_micros, Duration::from_millis, Duration::from_secs, Duration::from_mins, Duration::from_hours, Duration::from_days, Duration::from_weeks, Duration::new
   python  datetime.timedelta (its days, seconds, microseconds, milliseconds, minutes, hours and weeks)
-  note    each fails `does_not_fit` past the range, where Rust panics; Rust's `new(secs, nanos)` and Python's several arguments are `sum` of two of these
+  note    each aborts past the range, as Rust's panic and as the language's own arithmetic aborts on an overflow, so a count the program writes, `seconds(30)`, needs no unwrapping; each `_checked` twin fails `does_not_fit` there instead, for a count read from outside the program; Rust's `new(secs, nanos)` and Python's several arguments are `sum` of two of these
 
 capability duration/from-float  a duration from a float of seconds
   heroes  time.from_seconds_float
@@ -418,7 +418,7 @@ capability calendar/add-days  an instant moved by days
   go      Time.AddDate (days)
   rust    -
   python  datetime.timedelta (days)
-  note    a day in UTC is always 24 hours, so `add(t, days(n)?)` is it
+  note    a day in UTC is always 24 hours, so `add(t, days(n))` is it
 
 capability calendar/ordinal  a day as its count from 0001-01-01
   heroes  refused: an instant does not reach the year 1; the days between two instants are `to_units(between(...)?, .day)`

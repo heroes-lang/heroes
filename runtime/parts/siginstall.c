@@ -165,6 +165,7 @@ __attribute__((no_sanitize("function"))) static void hero_sig_wrapper(int sig, s
     if (own != NULL) {
         hero_jmp_observe(own);
         uintptr_t me = (uintptr_t)__builtin_frame_address(0);
+        hero_sig_relived(own, me);
         uintptr_t al = 0, ah = 0;
         if (!hero_sig_alt_now(&al, &ah) || me < al || me >= ah) al = ah = 0;
         if (!hero_sig_push(own, me, al, ah, 0, &mine)) {

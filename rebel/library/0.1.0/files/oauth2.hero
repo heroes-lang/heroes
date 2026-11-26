@@ -535,7 +535,7 @@ function start_device(c: Config) -> DeviceAuthorization?
     if interval < 0
         interval @ 5
     return ok(
-        DeviceAuthorization(device_code: device_code, user_code: user_code, verification_uri: verification, verification_uri_complete: wire.text_member(members, name: "verification_uri_complete")?, expiry: wire.after(now, seconds: lasts), interval: time.seconds(interval).default(time.max_duration()))
+        DeviceAuthorization(device_code: device_code, user_code: user_code, verification_uri: verification, verification_uri_complete: wire.text_member(members, name: "verification_uri_complete")?, expiry: wire.after(now, seconds: lasts), interval: time.seconds_checked(interval).default(time.max_duration()))
     )
 
 # The token the user's approval gives, the token endpoint asked at the
@@ -572,7 +572,7 @@ function poll_device(c: Config, device: DeviceAuthorization) -> Token?
         if e.error == ""
             return wire.refused(response)
         wait @ wire.next_interval(e.error, interval: wait)?
-        time.sleep(time.seconds(wait)?)
+        time.sleep(time.seconds_checked(wait)?)
 
 ## Tokens
 
@@ -606,7 +606,7 @@ function is_expired(token: Token, now: time.Instant) -> bool
     if token.expiry == time.max_instant()
         return false
 
-    match time.add(now, d: time.seconds(10).must())
+    match time.add(now, d: time.seconds(10))
         .ok early => return !time.is_before(a: early, b: token.expiry)
         .err _    => return true
 
@@ -1075,7 +1075,7 @@ function id_token_rules(metadata: Metadata, client_id: str, nonce: str) -> IdTok
     if metadata.id_token_signing_alg_values_supported.len() == 0
         accepted @ [.rs256]
     return ok(
-        IdTokenRules(issuer: metadata.issuer, client_id: client_id, nonce: nonce, algorithms: accepted, leeway: time.seconds(60)?, now: time.now()?, max_age: time.max_duration(), access_token: "")
+        IdTokenRules(issuer: metadata.issuer, client_id: client_id, nonce: nonce, algorithms: accepted, leeway: time.seconds(60), now: time.now()?, max_age: time.max_duration(), access_token: "")
     )
 
 # The ID token `id_token` verified by one of `trusted` and checked by

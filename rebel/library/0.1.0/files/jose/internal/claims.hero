@@ -193,7 +193,7 @@ test "check: RFC 7519 § 3.1's claims before and after their exp, a leeway, a ne
     none = time.nanoseconds(0)
     assert !check(claims, issuer: "joe", audience: "", subject: "", required: ["exp"], leeway: none, now: before).is_err()
     assert check(claims, issuer: "joe", audience: "", subject: "", required: [], leeway: none, now: at).is_err()
-    assert !check(claims, issuer: "", audience: "", subject: "", required: [], leeway: time.seconds(1).must(), now: at).is_err()
+    assert !check(claims, issuer: "", audience: "", subject: "", required: [], leeway: time.seconds(1), now: at).is_err()
     assert check(
         claims,
         issuer: "",
@@ -216,7 +216,7 @@ test "check: nbf and iat in the future, with and without a leeway, a time that i
         leeway: time.nanoseconds(0),
         now: at
     ).is_err()
-    assert !check(claims, issuer: "", audience: "", subject: "", required: [], leeway: time.seconds(2).must(), now: at).is_err()
+    assert !check(claims, issuer: "", audience: "", subject: "", required: [], leeway: time.seconds(2), now: at).is_err()
     text = json.members_of(json.parse("{\"exp\":\"tomorrow\"}").must()).must()
     assert check(
         text,

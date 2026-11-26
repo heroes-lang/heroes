@@ -9,6 +9,7 @@
 # and Python's lossy readers do, so no output of a service is ever refused.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/log/files
 use <rebel>/path
@@ -113,7 +114,7 @@ function close(@c: Capture, at: time.Instant) -> ()?
 
 test "take: lines written as their ends come, the rest kept for the next piece, bytes no text replaced"
     dir = "build/monitor-test-output"
-    _ = fs.remove_all(dir).is_err()
+    errors.ignore(fs.remove_all(dir))
     logs = settings.Logs(dir: dir, max_bytes: 0, keep: 0, daily: false, compress: false)
     c @= open(logs, name: "svc").must()
     t0 = time.from_unix(whole_seconds: 1_764_000_000, extra_nanoseconds: 0).must()

@@ -48,7 +48,7 @@ function stamp(@c: Clock) -> str?
 test "now: a fixed clock answers its start, then moves on by its step"
     c @= fixed(
         start: time.from_unix(whole_seconds: 1767225600, extra_nanoseconds: 0).must(),
-        step: time.minutes(1).must()
+        step: time.minutes(1)
     )
     assert stamp(@c).must() == "2026-01-01T00:00:00Z"
     assert stamp(@c).must() == "2026-01-01T00:01:00Z"

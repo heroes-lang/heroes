@@ -382,7 +382,7 @@ function answer(stream: io.Stream, @w: State, id: i64, response: http2.Response)
 function linger(stream: io.Stream)
     # A stream that takes no deadline is not waited on, so a peer that never
     # closes cannot hold the server here.
-    if tls.set_deadline(stream, deadline: time.seconds(1).must()).is_err()
+    if tls.set_deadline(stream, deadline: time.seconds(1)).is_err()
         return
 
     for _ in range(from: 0, to: 64)

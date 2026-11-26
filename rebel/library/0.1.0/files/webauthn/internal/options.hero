@@ -163,7 +163,7 @@ test "creation: the JSON a browser parses, and the refusals"
         user_name: "ada",
         display_name: "Ada",
         challenge: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        timeout: time.minutes(1).must(),
+        timeout: time.minutes(1),
         algorithms: [-7, -257],
         exclude: [Named(id: [9], transports: ["usb"])],
         attestation: "none",
@@ -176,17 +176,17 @@ test "creation: the JSON a browser parses, and the refusals"
     assert text == "{\"rp\":{\"name\":\"Example\",\"id\":\"example.org\"},\"user\":{\"id\":\"AQID\",\"name\":\"ada\",\"displayName\":\"Ada\"},\"challenge\":\"AAAAAAAAAAAAAAAAAAAAAA\",\"pubKeyCredParams\":[{\"type\":\"public-key\",\"alg\":-7},{\"type\":\"public-key\",\"alg\":-257}],\"timeout\":60000,\"excludeCredentials\":[{\"type\":\"public-key\",\"id\":\"CQ\",\"transports\":[\"usb\"]}],\"authenticatorSelection\":{\"residentKey\":\"preferred\",\"requireResidentKey\":false,\"userVerification\":\"preferred\"},\"attestation\":\"none\",\"extensions\":{\"credProps\":true}}"
     empty: [u8] = []
     assert creation(
-        Creation(rp_id: "a", rp_name: "a", user_id: empty, user_name: "a", display_name: "a", challenge: c.challenge, timeout: time.milliseconds(1).must(), algorithms: [-7], exclude: nothing, attestation: "none", attachment: "", resident_key: "preferred", user_verification: "preferred", hints: none)
+        Creation(rp_id: "a", rp_name: "a", user_id: empty, user_name: "a", display_name: "a", challenge: c.challenge, timeout: time.milliseconds(1), algorithms: [-7], exclude: nothing, attestation: "none", attachment: "", resident_key: "preferred", user_verification: "preferred", hints: none)
     ).is_err()
     assert creation(
-        Creation(rp_id: "a", rp_name: "a", user_id: [1], user_name: "a", display_name: "a", challenge: [1], timeout: time.milliseconds(1).must(), algorithms: [-7], exclude: nothing, attestation: "none", attachment: "", resident_key: "preferred", user_verification: "preferred", hints: none)
+        Creation(rp_id: "a", rp_name: "a", user_id: [1], user_name: "a", display_name: "a", challenge: [1], timeout: time.milliseconds(1), algorithms: [-7], exclude: nothing, attestation: "none", attachment: "", resident_key: "preferred", user_verification: "preferred", hints: none)
     ).is_err()
 
 test "request: the JSON a browser parses, allowed credentials and hints"
     text = request(
         rp_id: "example.org",
         challenge: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        timeout: time.minutes(1).must(),
+        timeout: time.minutes(1),
         allow: [Named(id: [1, 2], transports: [])],
         user_verification: "required",
         hints: ["security-key"]
@@ -196,7 +196,7 @@ test "request: the JSON a browser parses, allowed credentials and hints"
     assert request(
         rp_id: "a",
         challenge: [1, 2],
-        timeout: time.milliseconds(1).must(),
+        timeout: time.milliseconds(1),
         allow: none,
         user_verification: "preferred",
         hints: []

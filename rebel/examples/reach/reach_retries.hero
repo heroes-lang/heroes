@@ -8,7 +8,7 @@ use <rebel>/time
 
 function main()
     policy = retries.with_attempts(
-        retries.backoff(first: time.milliseconds(100).must(), multiplier: 2.0, longest: time.seconds(10).must()).must(),
+        retries.backoff(first: time.milliseconds(100), multiplier: 2.0, longest: time.seconds(10)).must(),
         attempts: 4
     ).must()
     loop: retries.Retry @= retries.new_retry(policy)

@@ -1,0 +1,16 @@
+# Panel 261's R4 (2026-11-26, ratified): a callback type of an `extern` whose
+# positions carry a mark, `@` or `lent`, is refused where the extern declares
+# it, `ffi_type`, at any depth of the callback's type. C calls a function of
+# the program through a thunk, and the sitting measured what its thunk lets
+# through a marked slot on three platforms: a handle C freed written back at
+# exit 0 (`heap-use-after-free` under `--sanitize`), one pointer in two `@`
+# slots, a null slot blamed on the program. Until the thunk carries the
+# duties the sitting named, the mark does not cross; the same callbacks with
+# no mark do.
+extern "stdlib.h"
+    function qsort(base: ptr, count: u64, size: u64, compare: (function(@a: i64, @b: i64) -> i32))  #~ ffi_type
+    function bsearch(key: ptr, base: ptr, count: u64, size: u64, compare: (function(a: i64 lent, b: i64 lent) -> i32)) -> ptr  #~ ffi_type
+    function atexit(f: (function((function(@n: i64) -> ())) -> ())) -> i32  #~ ffi_type
+
+function main()
+    print(0)

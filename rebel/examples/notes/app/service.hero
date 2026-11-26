@@ -5,6 +5,7 @@
 # Each answers what happened as a value the caller turns into its own kind of
 # answer: a page with the form again, or JSON with each field's problem.
 
+use <rebel>/errors as failures
 use <rebel>/log
 use <rebel>/time
 use <rebel>/uuid
@@ -121,7 +122,9 @@ function sign_in(@app: state.App, name: str, password: str) -> model.User?
         return fail(code: INVALID, msg: "wrong name or password")
 
     if passwords.needs_rehash(user.password, params: app.costs)
-        _ = log.info(app.logger, msg: "password hash renewed", fields: [log.text(key: "user", value: name)]).is_err()
+        failures.ignore(
+            log.info(app.logger, msg: "password hash renewed", fields: [log.text(key: "user", value: name)])
+        )
 
     return ok(user)
 

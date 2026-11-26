@@ -12,6 +12,7 @@
 # frames them and routes what is published.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/math
 use <rebel>/mqtt
@@ -244,7 +245,7 @@ function peer_of(b: mqtt_routes.Broker lent, key: i64) -> i64
 # - `listening`: the listener's key in the set.
 function serve(@b: mqtt_routes.Broker, set: poll.Set, l: net.Listener lent, listening: i64)
     while true
-        events = match poll.wait(set, limit: time.hours(1).must())
+        events = match poll.wait(set, limit: time.hours(1))
             .ok got => got
             .err _  => break
 
@@ -277,7 +278,7 @@ function accept(@b: mqtt_routes.Broker, set: poll.Set, l: net.Listener lent)
         .ok k => k
         .err _ =>
             # A set with no room refuses the connection: it is closed unserved.
-            _ = io.close(@conn.stream).is_err()
+            errors.ignore(io.close(@conn.stream))
             return
 
     peers @= b.peers
@@ -300,8 +301,8 @@ function serve_on(told_port: i64) -> str?
     set @= match poll.make(256)
         .ok got => got
         .err e =>
-            _ = net.close_listener(@l).is_err()
-            _ = told.failed(port: told_port, why: e.msg).is_err()
+            errors.ignore(net.close_listener(@l))
+            errors.ignore(told.failed(port: told_port, why: e.msg))
             return fail(code: e.code, msg: e.msg)
 
     listening = match poll.add_listener(set, l: l)

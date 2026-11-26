@@ -618,6 +618,31 @@ compiler on this Mac or in Linux arm64 (`math` repaired), **or by one program th
 writes freed memory, aborts with a false message, or hands one place to two `@` parameters** among R4's shapes, on any
 of the three legs (`--sanitize` where it reads memory).
 
+## The blind reading, run 2026-11-26
+
+Added the same afternoon, after this sitting's commit (`e74a3ed7f`): the registered reading ran on the author's
+authorisation (*ok a 20 dollars*), its report `261-reports/llm-ergonomist-blind.md`, the sessions' answers
+`261-reports/llm-ergonomist-blind-answers.tar.xz` (text only), the runner as it was adapted and as it ran, with its two
+repairs after sessions had run, `261-reports/registration-runner-as-run.md`. **31 sessions, all counted, 8.78 USD of
+the 20.00** (8.771908 by the 31 sessions' own JSON and 0.003128 recorded by one session cut mid-run and rerun; the
+runner's own count, which takes that cut session's empty file at 0.50, is 9.27); no session voided, every one `success`,
+`is_error` false, `completed`. **By the registration's own rules the resolution stands as adopted**: D1 holds (`adopted`:
+t1 5 of 5, t2 5 of 5, and t3 5 of 5), D2 (no program wrong under either arm, 0 against 0), D3 (0 of the 10 `adopted` t2
+and t3 programs refused for a mode, every read-only function in an `@` table written `lent`), D4 (0 lost updates under
+each arm, and no program anywhere writes a place to itself), and D5's counts (15 choice points about a mode under `now`,
+6 citing one section; 29 under `adopted`, 7 citing one section). **What it measures is the form each reader chose, not a
+difference in correctness, which none of the 30 got wrong**: all 15 `now` readers passed the state by value and answered
+the new state, all 15 `adopted` readers wrote `@` for changing functions and `lent` for read-only ones. The warden's
+directions and ranges hold, the point predictions low because the warden expected readers to fail. **What it found that
+it was not built to measure**: the base compiler already runs `route.handler(...)` as a field call (design.md §4.11),
+which spec § 9's text reads as `f(x, y)`; all 5 `now` readers of t1 avoided that call on that reading, and under
+`adopted` 3 of 5 wrote it directly: the field-first sentence the spec-warden priced at +19 tokens is owed whatever is
+adopted. **The run's own limits, in its report**: the `adopted` judge is the route compiler (`sources
+7cc4a75a5a7c6bf1`, with the seat's `heroes-261-v4` beside it), no landed build existing yet, and the landed compiler's
+answer on the 15 `adopted` programs is owed; the verdict session told the arms apart from the marks in the programs, so
+the label blinding failed at that session, and the scorer read the key before grading; the 14:06 restart cut one
+session four seconds in, its rerun counted and its set-aside file's spend kept in the ceiling's sum.
+
 ## Author's verdict
 
 **Pending.** The decision's draft is `docs/panel/261-reports/decision-draft.md`, filed with this sitting as `panel 261`.

@@ -117,7 +117,7 @@ test "milliseconds_of: zero, a part of a millisecond waits the whole one, and a 
     assert milliseconds_of(time.nanoseconds(999999)) == 1
     assert milliseconds_of(time.nanoseconds(1000000)) == 1
     assert milliseconds_of(time.nanoseconds(1000001)) == 2
-    assert milliseconds_of(time.seconds(30).must()) == 30000
+    assert milliseconds_of(time.seconds(30)) == 30000
     assert milliseconds_of(time.nanoseconds(3999999999999999)) == 4000000000
     assert milliseconds_of(time.nanoseconds(4000000000000000)) == -1
     assert milliseconds_of(time.max_duration()) == -1

@@ -238,7 +238,7 @@ function instant_of(p: Parts) -> time.Instant?
         return fail(code: INVALID, msg: f"the time {format(p)} has no date, so it names no instant")
 
     local = time.from_date_time(date_time_of(p))?
-    shift = time.minutes(-p.offset_minutes)?
+    shift = time.minutes_checked(-p.offset_minutes)?
     return time.add(local, shift)
 
 # The moment text of the instant `t`, in UTC, its fraction as long as it must

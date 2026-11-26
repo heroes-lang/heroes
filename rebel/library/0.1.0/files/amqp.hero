@@ -335,14 +335,14 @@ function options(host: str) -> Options
         username: "guest",
         password: "guest",
         mechanism: .plain,
-        heartbeat: time.minutes(1).must(),
+        heartbeat: time.minutes(1),
         frame_max: 131072,
         channel_max: 2047,
         connection_name: "",
         properties: [],
         locale: "en_US",
-        connect_timeout: time.seconds(10).must(),
-        wait: time.seconds(10).must(),
+        connect_timeout: time.seconds(10),
+        wait: time.seconds(10),
         most_body_bytes: 134217728,
         most_held: 65536
     )
@@ -427,13 +427,13 @@ function parse_url(text: str) -> Options?
                     .err _  => return fail(code: INVALID, msg: f"the value of \"{p.key}\" in \"{text}\" is no number")
 
                 if p.key == "heartbeat" && n >= 0 && n <= 65535
-                    opts.heartbeat @ time.seconds(n).must()
+                    opts.heartbeat @ time.seconds(n)
                 else if p.key == "frame_max" && (n == 0 || n >= 4096 && n <= 4294967295)
                     opts.frame_max @ n
                 else if p.key == "channel_max" && n >= 0 && n <= 65535
                     opts.channel_max @ n
                 else if p.key == "connection_timeout" && n >= 1 && n <= 9223372036854
-                    opts.connect_timeout @ time.milliseconds(n).must()
+                    opts.connect_timeout @ time.milliseconds(n)
                 else if p.key == "heartbeat" || p.key == "frame_max" || p.key == "channel_max" || p.key == "connection_timeout"
                     return fail(code: INVALID, msg: f"the value {n} of \"{p.key}\" in \"{text}\" is out of its range")
                 else
@@ -536,7 +536,7 @@ function server_of(c: Connection) -> Server
         version_minor: v.version_minor,
         channel_max: v.channel_max,
         frame_max: v.frame_max,
-        heartbeat: time.seconds(v.heartbeat_s).must()
+        heartbeat: time.seconds(v.heartbeat_s)
     )
 
 # Whether the server holds the connection's publishes back now, and why.
@@ -1906,7 +1906,7 @@ test "parse_url: RabbitMQ's defaults, a login, a virtual host escaped, the query
         "amqps://u:p@h:1234/vh?heartbeat=5&channel_max=9&frame_max=4096&connection_timeout=300&auth_mechanism=amqplain"
     ).must()
     assert full.security == .checked(roots: "") && full.host == "h" && full.port == 1234 && full.username == "u" && full.password == "p" && full.vhost == "vh"
-    assert full.heartbeat == time.seconds(5).must() && full.channel_max == 9 && full.frame_max == 4096 && full.connect_timeout == time.milliseconds(300).must() && full.mechanism == .amqplain
+    assert full.heartbeat == time.seconds(5) && full.channel_max == 9 && full.frame_max == 4096 && full.connect_timeout == time.milliseconds(300) && full.mechanism == .amqplain
     escaped = parse_url("amqp://u%40x:p%3a@h").must()
     assert escaped.username == "u@x" && escaped.password == "p:"
     assert parse_url("amqp://[::1]:99/x").must().host == "::1"
@@ -1923,11 +1923,11 @@ test "parse_url: another scheme, a port of 0, a path of two segments, a fragment
 
 test "connect: an option out of range is refused before anything is sent, and nothing listening is closed"
     o @= options("127.0.0.1")
-    o.heartbeat @ time.seconds(70000).must()
+    o.heartbeat @ time.seconds(70000)
     assert connect(o).is_err()
     o @ options("127.0.0.1")
     o.port @ 1
-    o.connect_timeout @ time.seconds(2).must()
+    o.connect_timeout @ time.seconds(2)
 
     match connect(o)
         .ok _  => assert false
@@ -1943,14 +1943,14 @@ test "wait_confirms, held_of, read_ready: a delivery read behind the confirmatio
         w.peer,
         data: bytes.concat([fixture.method(channel: 1, class_id: 60, method_id: 80, fields: acked), fixture.delivery(channel: 1, tag: 1, body: [7])])
     ).must()
-    wait_confirms(@c, channel: Channel(id: 1), wait: time.seconds(2).must()).must()
+    wait_confirms(@c, channel: Channel(id: 1), wait: time.seconds(2)).must()
     assert held_of(c) == 1
     set @= poll.make(2).must()
     _ = poll.add_stream(set, s: stream_of(c).must(), interest: .read).must()
     got: [i64] @= []
 
     for _ in range(from: 0, to: 3)
-        if held_of(c) == 0 && poll.wait(set, limit: time.milliseconds(100).must()).must().len() > 0
+        if held_of(c) == 0 && poll.wait(set, limit: time.milliseconds(100)).must().len() > 0
             read_ready(@c).must()
 
         while held_of(c) > 0
@@ -1976,7 +1976,7 @@ test "connect live, against the server REBEL_AMQP_URL names: the handshake, a qu
             c @= connect(o).must()
             info = server_of(c)
             assert value_of(info.properties, name: "product").must() == .text(v: "RabbitMQ")
-            assert info.version_major == 0 && info.version_minor == 9 && info.frame_max == 131072 && info.heartbeat == time.minutes(1).must()
+            assert info.version_major == 0 && info.version_minor == 9 && info.frame_max == 131072 && info.heartbeat == time.minutes(1)
             assert !is_closed(c) && !blocked_of(c).active && closing_of(c).is_err()
             ch = open_channel(@c).must()
             assert ch.id == 1 && is_channel_open(c, channel: ch)
@@ -2037,13 +2037,13 @@ test "connect live, against the server REBEL_AMQP_URL names: the handshake, a qu
                 ).must()
 
             for n in range(from: 0, to: 2000)
-                d = next_delivery(@c, wait: time.seconds(5).must()).must()
+                d = next_delivery(@c, wait: time.seconds(5)).must()
                 assert d.message.body == [to_u8(n % 256).must()] && d.consumer_tag == "rebel-consumer"
 
                 if n % 100 == 99
                     ack(@c, d: d, multiple: true).must()
 
-            match next_delivery(@c, wait: time.milliseconds(200).must())
+            match next_delivery(@c, wait: time.milliseconds(200))
                 .ok _  => assert false
                 .err e => assert e.code == "timeout"
 
@@ -2054,7 +2054,7 @@ test "connect live, against the server REBEL_AMQP_URL names: the handshake, a qu
             assert delete_queue(@c, ch, name: declared.name, if_unused: false, if_empty: false).must() == 0
             close_channel(@c, channel: ch).must()
             assert !is_channel_open(c, channel: ch) && close_channel(@c, channel: ch).is_err()
-            idle(@c, wait: time.milliseconds(50).must()).must()
+            idle(@c, wait: time.milliseconds(50)).must()
             close(@c).must()
             assert is_closed(c) && close(@c).is_err() && open_channel(@c).is_err()
 
@@ -2073,9 +2073,9 @@ test "connect live, confirms, returns, a channel the server closes, exchanges of
             for n in range(from: 1, to: 501)
                 assert publish(@c, ch, exchange_name: "", routing_key: name, m: message([1]), mandatory: false).must() == n
 
-            wait_confirms(@c, ch, wait: time.seconds(10).must()).must()
+            wait_confirms(@c, ch, wait: time.seconds(10)).must()
             assert publish(@c, ch, exchange_name: "", routing_key: name, m: message([2]), mandatory: false).must() == 501
-            first = next_confirmation(@c, ch, wait: time.seconds(5).must()).must()
+            first = next_confirmation(@c, ch, wait: time.seconds(5)).must()
             assert first.tag == 501 && first.ack && first.channel == ch
 
             match next_confirmation(@c, ch, wait: time.nanoseconds(0))
@@ -2091,9 +2091,9 @@ test "connect live, confirms, returns, a channel the server closes, exchanges of
                 m: message([3]),
                 mandatory: true
             ).must()
-            back = next_return(@c, wait: time.seconds(5).must()).must()
+            back = next_return(@c, wait: time.seconds(5)).must()
             assert back.code == REPLY_NO_ROUTE && back.text == "NO_ROUTE" && back.routing_key == "rebel-nowhere" && back.message.body == [3]
-            wait_confirms(@c, ch, wait: time.seconds(5).must()).must()
+            wait_confirms(@c, ch, wait: time.seconds(5)).must()
             assert next_return(@c, wait: time.nanoseconds(0)).is_err()
             x = open_channel(@c).must()
             declare_exchange(@c, x, e: exchange(name: "rebel-topic", kind: TOPIC)).must()
@@ -2218,7 +2218,7 @@ test "connect live, confirms, returns, a channel the server closes, exchanges of
             _ = declare_queue(@c, u, q: doomed).must()
             _ = consume(@c, u, k: consumer("rebel-doomed")).must()
             _ = delete_queue(@c, ch, name: "rebel-doomed", if_unused: false, if_empty: false).must()
-            idle(@c, wait: time.milliseconds(300).must()).must()
+            idle(@c, wait: time.milliseconds(300)).must()
             gone = cancellations_of(c)
             assert gone.len() == 1 && gone[0].channel == u
             flow(@c, u, active: true).must()
@@ -2271,7 +2271,7 @@ test "connect live, many connections waited on by poll, each read when ready"
             while seen.len() < 2 && rounds < 50
                 rounds @ rounds + 1
 
-                for ev in poll.wait(set, limit: time.milliseconds(500).must()).must()
+                for ev in poll.wait(set, limit: time.milliseconds(500)).must()
                     if ev.key == key_a
                         read_ready(@a).must()
 
@@ -2350,7 +2350,7 @@ test "connect live over TLS, against the server REBEL_AMQP_TLS_URL names, its ce
 # The options of a local server, with a heartbeat of 10 seconds.
 test "options: a local server"
     o @= options("localhost")
-    o.heartbeat @ time.seconds(10).must()
+    o.heartbeat @ time.seconds(10)
     assert o.port == 5672 && o.vhost == "/" && o.username == "guest"
 
 # The options a URL names.
@@ -2428,7 +2428,7 @@ test "idle: a tenth of a second"
         .err e => skip_test(reason: f"no AMQP server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
-            idle(@c, wait: time.milliseconds(100).must()).must()
+            idle(@c, wait: time.milliseconds(100)).must()
             close(@c).must()
 
 # The stream a program gives `poll`.
@@ -2711,7 +2711,7 @@ test "next_confirmation: the first publish taken"
             ch = open_channel(@c).must()
             select_confirms(@c, ch).must()
             _ = publish(@c, ch, exchange_name: "amq.fanout", routing_key: "", m: message([1]), mandatory: false).must()
-            assert next_confirmation(@c, ch, wait: time.seconds(5).must()).must().ack
+            assert next_confirmation(@c, ch, wait: time.seconds(5)).must().ack
             close(@c).must()
 
 # Every publish confirmed.
@@ -2733,7 +2733,7 @@ test "wait_confirms: three publishes taken"
                     mandatory: false
                 ).must()
 
-            wait_confirms(@c, ch, wait: time.seconds(5).must()).must()
+            wait_confirms(@c, ch, wait: time.seconds(5)).must()
             close(@c).must()
 
 # A mandatory message no queue took, handed back.
@@ -2751,7 +2751,7 @@ test "next_return: a key no queue is bound by"
                 m: message([1]),
                 mandatory: true
             ).must()
-            assert next_return(@c, wait: time.seconds(5).must()).must().code == REPLY_NO_ROUTE
+            assert next_return(@c, wait: time.seconds(5)).must().code == REPLY_NO_ROUTE
             close(@c).must()
 
 # A consumer that acknowledges by itself.
@@ -2799,7 +2799,7 @@ test "next_delivery: one message read and acknowledged"
             name = declare_queue(@c, ch, q: q).must().name
             _ = consume(@c, ch, k: consumer(name)).must()
             _ = publish(@c, ch, exchange_name: "", routing_key: name, m: message([1]), mandatory: false).must()
-            d = next_delivery(@c, wait: time.seconds(5).must()).must()
+            d = next_delivery(@c, wait: time.seconds(5)).must()
             ack(@c, d: d, multiple: false).must()
             close(@c).must()
 

@@ -9,6 +9,7 @@
 # makes no reconnection inside a call, which would hold the server's whole
 # loop; the loop calls `relink` on a timer instead.
 
+use <rebel>/errors
 use <rebel>/mqtt
 use <rebel>/nats
 use <rebel>/time
@@ -90,7 +91,7 @@ function link_mqtt(@b: Bridge) -> ()?
     opts @= mqtt.parse_url(b.mqtt_url)?
     opts.client_id @ b.name
     opts.reconnect.attempts @ 0
-    opts.connect_timeout @ time.seconds(LINK_SECONDS)?
+    opts.connect_timeout @ time.seconds(LINK_SECONDS)
     client @= mqtt.connect(opts)?
     wanted: [mqtt.Subscription] @= []
 
@@ -107,7 +108,7 @@ function link_mqtt(@b: Bridge) -> ()?
             b.mqtt_clients @ [client]
             return ok()
         .err e =>
-            _ = mqtt.close(@client).is_err()
+            errors.ignore(mqtt.close(@client))
             return fail(code: e.code, msg: e.msg)
 
 # Connects the NATS client where a mirror uses NATS, echo off, and subscribes
@@ -125,7 +126,7 @@ function link_nats(@b: Bridge) -> ()?
     opts.name @ b.name
     opts.echo @ false
     opts.reconnect.attempts @ 0
-    opts.connect_timeout @ time.seconds(LINK_SECONDS)?
+    opts.connect_timeout @ time.seconds(LINK_SECONDS)
     client @= nats.connect(opts)?
 
     for m in b.mirrors
@@ -134,7 +135,7 @@ function link_nats(@b: Bridge) -> ()?
                 match nats.subscribe(@client, subject: s.subject)
                     .ok _ => _ = 0
                     .err e =>
-                        _ = nats.close(@client).is_err()
+                        errors.ignore(nats.close(@client))
                         return fail(code: e.code, msg: e.msg)
             .mqtt _ => _ = 0
 
@@ -172,13 +173,13 @@ function close(@b: Bridge)
     while i < b.mqtt_clients.len()
         # Closing writes DISCONNECT; where the broker is gone the connection
         # is closed all the same, which is all that is wanted here.
-        _ = mqtt.close(@b.mqtt_clients[i]).is_err()
+        errors.ignore(mqtt.close(@b.mqtt_clients[i]))
         i @ i + 1
 
     i @ 0
 
     while i < b.nats_clients.len()
-        _ = nats.close(@b.nats_clients[i]).is_err()
+        errors.ignore(nats.close(@b.nats_clients[i]))
         i @ i + 1
 
     b.mqtt_clients @ []

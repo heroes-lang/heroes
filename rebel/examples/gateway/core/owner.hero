@@ -19,6 +19,7 @@
 # every worker has ended, or when the program's stop finds its mailbox
 # empty: a stop drains what was already asked, then holds (spec § 11).
 
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/http2
 
@@ -98,12 +99,12 @@ function own(start: Start) -> i64
 
     match made
         .err e =>
-            _ = start.begun.send(.failed(msg: e.msg)).is_err()
+            errors.ignore(start.begun.send(.failed(msg: e.msg)))
             start.begun.close()
             return 0
         .ok first =>
             gw @= first
-            _ = start.begun.send(.ready).is_err()
+            errors.ignore(start.begun.send(.ready))
             start.begun.close()
             return served(@gw, asks: start.asks)
 
@@ -124,7 +125,7 @@ function served(@gw: state.Gateway, asks: (mailbox Ask)) -> i64
                     .connected c => telemetry.connected(@gw.registry, protocol: c.protocol)
                     .request q =>
                         answered @ answered + 1
-                        _ = q.back.send(pipeline.handle(@gw, r: q.r, protocol: q.protocol)).is_err()
+                        errors.ignore(q.back.send(pipeline.handle(@gw, r: q.r, protocol: q.protocol)))
                     .call c =>
                         answered @ answered + 1
                         conn @= c.conn
@@ -137,7 +138,7 @@ function served(@gw: state.Gateway, asks: (mailbox Ask)) -> i64
                                 # The worker no longer waits, the program
                                 # being stopped: the connection is still the
                                 # owner's, and the owner ends it.
-                                _ = http2.close(@given.conn).is_err()
+                                errors.ignore(http2.close(@given.conn))
 
     return answered
 
@@ -191,7 +192,7 @@ function relayed(owner: (mailbox Ask), @conn: http2.Conn, r: http2.Request, remo
 # - `protocol`: `h2` or `http/1.1`.
 function connected(owner: (mailbox Ask), protocol: str)
     ask: Ask @= .connected(protocol: protocol)
-    _ = owner.send(@ask).is_err()
+    errors.ignore(owner.send(@ask))
 
 # Tells the owner every worker has ended, so it ends; nothing where it has
 # ended already, the program's stop having found its mailbox empty.
@@ -199,4 +200,4 @@ function connected(owner: (mailbox Ask), protocol: str)
 # - `owner`: the owner's mailbox of asks.
 function stop(owner: (mailbox Ask))
     ask: Ask @= .stop
-    _ = owner.send(@ask).is_err()
+    errors.ignore(owner.send(@ask))

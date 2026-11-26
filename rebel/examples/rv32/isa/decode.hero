@@ -1,0 +1,257 @@
+# An instruction word read into the instruction it encodes: its opcode,
+# `funct3` and `funct7` tell which, and its format which fields are its
+# operands. The executor and the disassembler both read this, so the machine
+# runs exactly what the disassembler shows. A word no instruction of the
+# machine encodes fails `illegal`, which the hart answers with the illegal
+# instruction trap (cause 2), as the privileged specification asks.
+
+use isa/encoding
+use isa/ops
+use isa/word
+
+## The decoded instruction
+
+# One instruction, its operands read from its word.
+record Decoded
+    # Which instruction.
+    op: ops.Op
+    # The word it was read from.
+    raw: i64
+    # The destination register, 0 where the format has none.
+    rd: i64
+    # The first source register, or a CSR instruction's five-bit immediate.
+    rs1: i64
+    # The second source register, 0 where the format has none.
+    rs2: i64
+    # The immediate as a word, sign-extended where the format's is; a shift's
+    # count; a CSR's number; 0 where the format has none.
+    imm: i64
+
+# The code `decode` fails with.
+constant ILLEGAL: str
+    "illegal"
+
+## Decoding
+
+# The instruction `w` encodes.
+#
+# - `w`: the word, 0 to 2^32 - 1.
+#
+# Fails `illegal` where no instruction of RV32IM, Zicsr, `mret` or `wfi`
+# is encoded so, the all-zero word among them, which the specification
+# keeps illegal so that a jump into zeroed memory stops.
+function decode(w: i64) -> Decoded?
+    op = op_of(w)?
+    format = ops.format_of(op)
+
+    imm = match format
+        .r | .system | .fence => 0
+        .i | .load | .jalr    => encoding.imm_i(w)
+        .shift                => encoding.rs2_of(w)
+        .s                    => encoding.imm_s(w)
+        .b                    => encoding.imm_b(w)
+        .u                    => encoding.imm_u(w)
+        .j                    => encoding.imm_j(w)
+        .csr | .csri          => encoding.imm_12(w)
+
+    rs2 = match format
+        .r | .s | .b                                                            => encoding.rs2_of(w)
+        .i | .shift | .load | .u | .j | .jalr | .system | .csr | .csri | .fence => 0
+
+    return ok(Decoded(op: op, raw: w, rd: encoding.rd_of(w), rs1: encoding.rs1_of(w), rs2: rs2, imm: imm))
+
+# Which instruction `w` encodes, by its opcode, then `funct3`, then the bits
+# above.
+function op_of(w: i64) -> ops.Op?
+    f3 = encoding.funct3_of(w)
+    f7 = encoding.funct7_of(w)
+    code = encoding.opcode_of(w)
+
+    if code == ops.OP_LUI
+        return ok(.lui)
+
+    if code == ops.OP_AUIPC
+        return ok(.auipc)
+
+    if code == ops.OP_JAL
+        return ok(.jal)
+
+    if code == ops.OP_JALR && f3 == 0
+        return ok(.jalr)
+
+    if code == ops.OP_BRANCH
+        return branch_of(w: w, f3: f3)
+
+    if code == ops.OP_LOAD
+        return load_of(w: w, f3: f3)
+
+    if code == ops.OP_STORE
+        return store_of(w: w, f3: f3)
+
+    if code == ops.OP_IMM
+        return immediate_of(w: w, f3: f3, f7: f7)
+
+    if code == ops.OP_REG
+        return register_of(w: w, f3: f3, f7: f7)
+
+    if code == ops.OP_FENCE && f3 == 0
+        return ok(.fence)
+
+    if code == ops.OP_SYSTEM
+        return system_of(w: w, f3: f3)
+    return illegal(w)
+
+function branch_of(w: i64, f3: i64) -> ops.Op?
+    return match f3
+        0 => ok(.beq)
+        1 => ok(.bne)
+        4 => ok(.blt)
+        5 => ok(.bge)
+        6 => ok(.bltu)
+        7 => ok(.bgeu)
+        _ => illegal(w)
+
+function load_of(w: i64, f3: i64) -> ops.Op?
+    return match f3
+        0 => ok(.lb)
+        1 => ok(.lh)
+        2 => ok(.lw)
+        4 => ok(.lbu)
+        5 => ok(.lhu)
+        _ => illegal(w)
+
+function store_of(w: i64, f3: i64) -> ops.Op?
+    return match f3
+        0 => ok(.sb)
+        1 => ok(.sh)
+        2 => ok(.sw)
+        _ => illegal(w)
+
+function immediate_of(w: i64, f3: i64, f7: i64) -> ops.Op?
+    return match f3
+        0 => ok(.addi)
+        2 => ok(.slti)
+        3 => ok(.sltiu)
+        4 => ok(.xori)
+        6 => ok(.ori)
+        7 => ok(.andi)
+        1 => shift_left_of(w: w, f7: f7)
+        5 => shift_right_of(w: w, f7: f7)
+        _ => illegal(w)
+
+function shift_left_of(w: i64, f7: i64) -> ops.Op?
+    if f7 == 0
+        return ok(.slli)
+    return illegal(w)
+
+function shift_right_of(w: i64, f7: i64) -> ops.Op?
+    if f7 == 0
+        return ok(.srli)
+
+    if f7 == 0x20
+        return ok(.srai)
+    return illegal(w)
+
+function register_of(w: i64, f3: i64, f7: i64) -> ops.Op?
+    if f7 == 0x01
+        return ok(multiply_of(f3))
+
+    if f7 == 0x20
+        return match f3
+            0 => ok(.sub)
+            5 => ok(.sra)
+            _ => illegal(w)
+
+    if f7 != 0
+        return illegal(w)
+
+    plain: ops.Op = match f3
+        0 => .add
+        1 => .sll
+        2 => .slt
+        3 => .sltu
+        4 => .xor
+        5 => .srl
+        6 => .or
+        _ => .and
+
+    return ok(plain)
+
+# The M extension's instruction of `funct3`, all eight being used.
+function multiply_of(f3: i64) -> ops.Op
+    return match f3
+        0 => .mul
+        1 => .mulh
+        2 => .mulhsu
+        3 => .mulhu
+        4 => .div
+        5 => .divu
+        6 => .rem
+        _ => .remu
+
+function system_of(w: i64, f3: i64) -> ops.Op?
+    if f3 == 0
+        if encoding.rd_of(w) != 0 || encoding.rs1_of(w) != 0
+            return illegal(w)
+
+        return match encoding.imm_12(w)
+            0x000 => ok(.ecall)
+            0x001 => ok(.ebreak)
+            0x302 => ok(.mret)
+            0x105 => ok(.wfi)
+            _     => illegal(w)
+
+    return match f3
+        1 => ok(.csrrw)
+        2 => ok(.csrrs)
+        3 => ok(.csrrc)
+        5 => ok(.csrrwi)
+        6 => ok(.csrrsi)
+        7 => ok(.csrrci)
+        _ => illegal(w)
+
+function illegal(w: i64) -> ops.Op?
+    return fail(code: ILLEGAL, msg: f"{word.hex_literal(w)} encodes no instruction of RV32IM")
+
+## Tests
+
+# Every row of the table, encoded with registers and an immediate that fit
+# its format, reads back as itself: the encoder and this decoder agree, and
+# no case of `ops.Op` lacks a row.
+test "decode: every row of the table round-trips"
+    for s in ops.specs()
+        w = match s.format
+            .r                 => encoding.encode_r(spec: s, rd: 5, rs1: 6, rs2: 7)
+            .i | .load | .jalr => encoding.encode_i(spec: s, rd: 5, rs1: 6, imm: -3).must()
+            .shift             => encoding.encode_shift(spec: s, rd: 5, rs1: 6, shamt: 9).must()
+            .s                 => encoding.encode_s(spec: s, rs1: 6, rs2: 7, imm: -3).must()
+            .b                 => encoding.encode_b(spec: s, rs1: 6, rs2: 7, offset: -8).must()
+            .u                 => encoding.encode_u(spec: s, rd: 5, imm20: 0xabcde).must()
+            .j                 => encoding.encode_j(spec: s, rd: 5, offset: 2048).must()
+            .system | .fence   => encoding.encode_fixed(s)
+            .csr | .csri       => encoding.encode_csr(spec: s, rd: 5, csr: 0x341, source: 6).must()
+
+        d = decode(w).must()
+        assert d.op == s.op
+        assert d.raw == w
+
+test "decode: the operands of a load, a store, a branch and a shift"
+    lw = decode(0x00c1_2083).must()
+    assert lw.op == .lw
+    assert lw.rd == 1
+    assert lw.rs1 == 2
+    assert lw.imm == 12
+    sw = decode(0x0011_2623).must()
+    assert sw.op == .sw
+    assert sw.rs2 == 1
+    assert sw.imm == 12
+    srai = decode(0x4032_d293).must()
+    assert srai.op == .srai
+    assert srai.imm == 3
+
+test "decode: the zero word, all ones, a reserved funct7 and a reserved system code"
+    assert decode(0).is_err()
+    assert decode(word.MASK).is_err()
+    assert decode(0x0400_0033).is_err()
+    assert decode(0x0020_0073).is_err()
+    assert decode(0x0010_00f3).is_err()

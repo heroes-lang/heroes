@@ -67,7 +67,7 @@ function ctl(inv: command_line.Invocation) -> protocol.Answer?
     else
         reading.read(inv.config)?.control
     request = protocol.Request(command: inv.words[0], args: inv.words.slice(from: 1, to: inv.words.len()))
-    return client.ask(path, request: request, within: time.seconds(CTL_SECONDS)?)
+    return client.ask(path, request: request, within: time.seconds(CTL_SECONDS))
 
 # The lines of `monitor bench`: each work with its median, best and spread,
 # the folder snapshotted the configuration's first watched path, or the

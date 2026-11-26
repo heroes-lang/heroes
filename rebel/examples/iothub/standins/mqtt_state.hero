@@ -4,6 +4,7 @@
 # lower of the two qualities of service. `mqtt_broker` reads the packets and
 # answers them with what this module holds.
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/math
 use <rebel>/mqtt
@@ -103,8 +104,8 @@ function drop_peer(@b: Broker, set: poll.Set, i: i64)
 
     # A connection ends here whatever its socket answers: a failure to take
     # it out of the set or to close it leaves nothing better to do.
-    _ = poll.remove(set, key: b.peers[i].key).is_err()
-    _ = io.close(@b.peers[i].stream).is_err()
+    errors.ignore(poll.remove(set, key: b.peers[i].key))
+    errors.ignore(io.close(@b.peers[i].stream))
     b.peers[i].open @ false
 
 # The highest QoS a subscription of `peer` matching `topic` grants, -1

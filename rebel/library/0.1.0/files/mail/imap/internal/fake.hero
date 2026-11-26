@@ -24,7 +24,7 @@ function play(script: str, capabilities: [str], rev2: bool) -> Played
     two = net.pair(deadline_ms: 5000).must()
     server = two.second.stream
     io.write_text(server, text: script).must()
-    w = wire.over(two.first.stream, link: .plain, deadline: time.seconds(5).must(), max_bytes: 1_000_000)
+    w = wire.over(two.first.stream, link: .plain, deadline: time.seconds(5), max_bytes: 1_000_000)
     c = flow.Conn(
         wire: w,
         host: "127.0.0.1",

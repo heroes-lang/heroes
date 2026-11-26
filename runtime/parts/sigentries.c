@@ -41,9 +41,10 @@
  *    handler through `uc_link`), whether or not a save was seen; any other
  *    `setcontext` is a jump. A jump that leaves the alternate stack an entry
  *    was pushed on leaves it. A jump that lands on the alternate stack from
- *    outside it, or below the frame making it on its own range, re-enters a
- *    handler's frames and stands as an entry of its own. A landing at or below
- *    a standing entry on its range is that handler running again.
+ *    outside it, or inside the frames of a handler a jump left that the
+ *    thread has not run in since (defect 2855), re-enters a handler's frames
+ *    and stands as an entry of its own. A landing at or below a standing
+ *    entry on its range is that handler running again.
  * 7. The known stacks are learned where `makecontext` is called (a wrapper in
  *    `sigjump_make.c` on every architecture, since defect d-lane-ctx-after-1:
  *    the C library reads `uc_stack` nowhere else), and nothing tells this
@@ -109,20 +110,41 @@ static _Atomic int hero_sig_stack_any = 0;
  * saving into the context it was switched to or into any other, or a
  * `setcontext` that abandons frames a buffer may still name), and dead only
  * by returning through `uc_link`, which the C library makes unseen. The
- * context switched to is a second witness, read after the switch only where
- * it provably lives and by the kernel (`hero_jmp_context_moved`): a yield
- * through a switch this file never sees still moves its stack pointer. Until
- * defect d-lane-d2745-1 that word was read wherever the context lay, and a
+ * context switched to is a second witness, copied after the switch by the
+ * kernel wherever it is mapped (`hero_jmp_context_moved`): a yield through a
+ * switch this file never sees still moves its stack pointer, and a context
+ * that cannot be read proves no end (defect 2851). Until defect
+ * d-lane-d2745-1 that word was loaded wherever the context lay, and a
  * coroutine that gave its context back crashed the program inside the
  * runtime; and it was the only witness, so a yield saving into another
- * context than the one switched to was judged an end. A range no switch entered, or whose coroutine ended,
+ * context than the one switched to was judged an end; from then until defect
+ * 2851 it was read only where the context provably lived, and a heap
+ * context's coroutine yielding unseen was judged ended. A range no switch entered, or whose coroutine ended,
  * holds no coroutine's frames: a save point in it was made by the thread's own
  * code in memory a helper's returned frame once lent `makecontext` (panel
  * 257's `fp3` and the critic's `n6`), and a jump to it is judged on the stack
  * it lies on, the thread's own, where a target above a handler leaves it. A
  * switch into the range clears its end again. A coroutine left by a switch
- * this file never sees, where the context it was switched to does not
- * provably live, is judged ended: said in `sigjump.c`'s module doc.
+ * this file never sees that saves into another context than the one it was
+ * switched to, leaving that one as it was, is judged ended: said in
+ * `sigjump.c`'s module doc.
+ *
+ * A COROUTINE THE C LIBRARY STARTS THROUGH ANOTHER'S `uc_link` (defect 2850)
+ * is entered by no switch this file sees: when the coroutine of a range ends,
+ * the C library itself switches to the context its `uc_link` named, which may
+ * be one `makecontext` was handed for another range. So the link is learned
+ * where `makecontext` reads it (`hero_sig_stack_link`), and a range whose
+ * coroutine is entered holds every range down its chain of links entered with
+ * it, a range made after the context naming it as well: a coroutine started
+ * that way may hold frames from the moment its linker may end. Its end is seen
+ * where the swap into the first range of the chain returns: every range down
+ * the chain from which no switch was made while the swap waited, and whose
+ * context still names the stack pointer it named when the swap began (read
+ * by the kernel, `hero_jmp_context_word`), ended, until the first that did
+ * not; one whose context cannot be read stays entered. Until this defect such
+ * a range was never entered, so a handler's jump into its coroutine, on a
+ * stack carved from the thread's own, ran the program's function inside the
+ * signal.
  *
  * WHERE CONTEXTS FALL TO ROUTE A (defect 2745) no switch's target is read and
  * no coroutine's end is seen, so a range is HELD from its `makecontext` on:
@@ -141,6 +163,15 @@ static _Atomic int hero_sig_stack_state[HERO_SIG_STACKS];
  * switch asked which range it is made from. */
 static _Atomic int hero_sig_watching = 0;
 static _Atomic uintptr_t hero_sig_stack_ctx[HERO_SIG_STACKS];
+/* The context each range's `uc_link` named when `makecontext` was handed it
+ * (0 for none), and the stack pointer each context down a watched chain named
+ * when the swap began (0 where it could not be read). */
+static _Atomic uintptr_t hero_sig_stack_link[HERO_SIG_STACKS];
+static _Atomic uintptr_t hero_sig_stack_start[HERO_SIG_STACKS];
+
+/* `sigjump_record.c`: the stack-pointer word of the context at `context`,
+ * read by the kernel wherever it is mapped; false where it cannot be read. */
+static bool hero_jmp_context_word(const void *context, uintptr_t *word);
 
 static void hero_sig_stack_put(int i, uintptr_t lo, uintptr_t hi) {
     atomic_fetch_add(&hero_sig_stack_seq[i], 1);
@@ -148,6 +179,8 @@ static void hero_sig_stack_put(int i, uintptr_t lo, uintptr_t hi) {
     atomic_store(&hero_sig_stack_hi[i], hi);
     atomic_fetch_add(&hero_sig_stack_seq[i], 1);
 }
+
+static void hero_sig_range_links(int i);
 
 void hero_sig_known_stack(const void *context, bool held);
 void hero_sig_known_stack(const void *context, bool held) {
@@ -164,11 +197,52 @@ void hero_sig_known_stack(const void *context, bool held) {
         if (atomic_load(&hero_sig_stack_ctx[i]) == (uintptr_t)context) atomic_store(&hero_sig_stack_ctx[i], 0);
     }
     unsigned at = atomic_fetch_add(&hero_sig_stack_next, 1) % HERO_SIG_STACKS;
-    atomic_store_explicit(&hero_sig_stack_state[at], held ? HERO_SIG_RANGE_HELD : 0, memory_order_relaxed);
+    int state = held ? HERO_SIG_RANGE_HELD : 0;
+    /* A context another range's `uc_link` names, that range entered: the C
+     * library may start this one whenever that coroutine ends. */
+    for (int i = 0; i < HERO_SIG_STACKS; i += 1) {
+        if ((unsigned)i == at || atomic_load(&hero_sig_stack_link[i]) != (uintptr_t)context) continue;
+        int other = atomic_load_explicit(&hero_sig_stack_state[i], memory_order_relaxed);
+        if ((other & HERO_SIG_RANGE_ENTERED) != 0 && (other & HERO_SIG_RANGE_ENDED) == 0) {
+            state |= HERO_SIG_RANGE_ENTERED;
+        }
+    }
+    atomic_store_explicit(&hero_sig_stack_state[at], state, memory_order_relaxed);
     atomic_store(&hero_sig_stack_ctx[at], (uintptr_t)context);
+    atomic_store(&hero_sig_stack_link[at], (uintptr_t)uc->uc_link);
+    atomic_store(&hero_sig_stack_start[at], 0);
     hero_sig_stack_put((int)at, lo, hi);
     atomic_store_explicit(&hero_sig_stack_any, 1, memory_order_release);
     atomic_store(&hero_sig_stack_writing, 0);
+    if ((state & HERO_SIG_RANGE_ENTERED) != 0) hero_sig_range_links((int)at);
+}
+
+/* The slot of the range `makecontext` was handed `context` for, -1 where none
+ * stands. */
+static int hero_sig_slot_of(uintptr_t context) {
+    if (context == 0) return -1;
+    for (int i = 0; i < HERO_SIG_STACKS; i += 1) {
+        if (atomic_load(&hero_sig_stack_ctx[i]) != context) continue;
+        if (atomic_load(&hero_sig_stack_hi[i]) > atomic_load(&hero_sig_stack_lo[i])) return i;
+    }
+    return -1;
+}
+
+/* The ranges down the chain of links from slot `i`, entered with it: the C
+ * library starts each when the one before ends. A link already entered and not
+ * ended, its own chain was entered when it was. */
+static void hero_sig_range_links(int i) {
+    for (int step = 0; step < HERO_SIG_STACKS; step += 1) {
+        int next = hero_sig_slot_of(atomic_load(&hero_sig_stack_link[i]));
+        if (next < 0 || next == i) return;
+        int was = atomic_fetch_or_explicit(&hero_sig_stack_state[next], HERO_SIG_RANGE_ENTERED, memory_order_relaxed);
+        if ((was & HERO_SIG_RANGE_ENDED) != 0) {
+            atomic_fetch_and_explicit(&hero_sig_stack_state[next], ~HERO_SIG_RANGE_ENDED, memory_order_relaxed);
+        } else if ((was & HERO_SIG_RANGE_ENTERED) != 0) {
+            return;
+        }
+        i = next;
+    }
 }
 
 /* Route A's switch to `context`: the range `makecontext` was handed it for,
@@ -183,6 +257,7 @@ static int hero_sig_range_switched(const void *context) {
             made = i;
         }
     }
+    if (made >= 0) hero_sig_range_links(made);
     return made;
 }
 
@@ -236,7 +311,9 @@ static bool hero_sig_live_range(uintptr_t at, uintptr_t *lo, uintptr_t *hi) { re
 static void hero_sig_range_entered(uintptr_t at) {
     uintptr_t lo = 0, hi = 0;
     int i = hero_sig_range_slot(at, &lo, &hi);
-    if (i >= 0) atomic_store_explicit(&hero_sig_stack_state[i], HERO_SIG_RANGE_ENTERED, memory_order_relaxed);
+    if (i < 0) return;
+    atomic_store_explicit(&hero_sig_stack_state[i], HERO_SIG_RANGE_ENTERED, memory_order_relaxed);
+    hero_sig_range_links(i);
 }
 
 /* A `swapcontext` or `setcontext` made from a frame at `frame`: while a swap
@@ -258,13 +335,24 @@ static int hero_sig_range_watch(uintptr_t at, unsigned *seq) {
     if (i < 0) return -1;
     *seq = atomic_load(&hero_sig_stack_seq[i]);
     atomic_fetch_and_explicit(&hero_sig_stack_state[i], ~HERO_SIG_RANGE_LEFT, memory_order_relaxed);
+    /* Down its chain of links, what each context names now (defect 2850). */
+    int j = i;
+    for (int step = 0; step < HERO_SIG_STACKS; step += 1) {
+        int next = hero_sig_slot_of(atomic_load(&hero_sig_stack_link[j]));
+        if (next < 0 || next == i) break;
+        uintptr_t word = 0;
+        atomic_fetch_and_explicit(&hero_sig_stack_state[next], ~HERO_SIG_RANGE_LEFT, memory_order_relaxed);
+        atomic_store(&hero_sig_stack_start[next],
+                     hero_jmp_context_word((const void *)atomic_load(&hero_sig_stack_ctx[next]), &word) ? word : 0);
+        j = next;
+    }
     atomic_fetch_add_explicit(&hero_sig_watching, 1, memory_order_release);
     return i;
 }
 
 /* The swap watching slot `i` returned in its frame at `here` (`ok`: the C
- * library's switch succeeded; `moved`: the context it switched to, read where
- * it provably lives, names another stack pointer since). Its coroutine ended
+ * library's switch succeeded; `moved`: the context it switched to, copied by
+ * the kernel, names another stack pointer since, or cannot be read). Its coroutine ended
  * where the slot still names the range it named, the swap does not run on
  * that range itself, no switch was made from the range since the swap began,
  * and the context did not move: the coroutine returned through `uc_link`. */
@@ -274,8 +362,21 @@ static void hero_sig_range_returned(int i, unsigned seq, uintptr_t here, bool ok
     uintptr_t lo = atomic_load(&hero_sig_stack_lo[i]), hi = atomic_load(&hero_sig_stack_hi[i]);
     if (atomic_load(&hero_sig_stack_seq[i]) != seq || hero_sig_holds(lo, hi, here)) return;
     int state = atomic_load_explicit(&hero_sig_stack_state[i], memory_order_relaxed);
-    if ((state & HERO_SIG_RANGE_LEFT) == 0) {
-        atomic_fetch_or_explicit(&hero_sig_stack_state[i], HERO_SIG_RANGE_ENDED, memory_order_relaxed);
+    if ((state & HERO_SIG_RANGE_LEFT) != 0) return;
+    atomic_fetch_or_explicit(&hero_sig_stack_state[i], HERO_SIG_RANGE_ENDED, memory_order_relaxed);
+    /* The coroutine ended through its `uc_link`: so did each one down the
+     * chain that no switch left and whose context names what it named when the
+     * swap began, until the first that did not (defect 2850). */
+    int j = i;
+    for (int step = 0; step < HERO_SIG_STACKS; step += 1) {
+        int next = hero_sig_slot_of(atomic_load(&hero_sig_stack_link[j]));
+        if (next < 0 || next == i) return;
+        uintptr_t start = atomic_load(&hero_sig_stack_start[next]), word = 0;
+        int was = atomic_load_explicit(&hero_sig_stack_state[next], memory_order_relaxed);
+        if ((was & HERO_SIG_RANGE_LEFT) != 0 || start == 0) return;
+        if (!hero_jmp_context_word((const void *)atomic_load(&hero_sig_stack_ctx[next]), &word) || word != start) return;
+        atomic_fetch_or_explicit(&hero_sig_stack_state[next], HERO_SIG_RANGE_ENDED, memory_order_relaxed);
+        j = next;
     }
 }
 
@@ -326,6 +427,90 @@ static void hero_sig_drop(HeroSignalStack *own, int i) {
         own->depth -= 1;
         atomic_signal_fence(memory_order_seq_cst);
     }
+}
+
+/* THE FRAMES OF A HANDLER LEFT BY A JUMP (rule 6, defect 2855). A jump that
+ * leaves a handler leaves its frames below its wrapper's frame, down to the
+ * frame making the jump where that lies on the same stack, else to that
+ * stack's bottom; they are kept as a span until the thread is seen running
+ * there again (a save point, a jump, a swap or a handler's own frame inside
+ * it), which overwrites the span from that frame up. A landing inside a span
+ * is that handler re-entered: shape R, a handler left by a jump and jumped
+ * back into, from its own stack or another (panel 255's `rr_2`, a residue
+ * until this defect). Until this defect any landing below the frame making
+ * the jump on that frame's stack was read as one, and a coroutine on a stack
+ * carved from the thread's own, which a switch the runtime never sees had
+ * entered, leaving for good by a `longjmp` to the save point its host made
+ * below it (panel 259's `escape_carved`), was told it had re-entered a
+ * handler the program does not have, and refused. */
+static void hero_sig_left_add(HeroSignalStack *own, uintptr_t lo, uintptr_t hi, uintptr_t slo, uintptr_t shi) {
+    if (hi <= lo) return;
+    for (int k = 0; k < own->left_n; k += 1) {
+        if (own->left_slo[k] == slo && own->left_shi[k] == shi && lo <= own->left_hi[k] && own->left_lo[k] <= hi) {
+            if (lo < own->left_lo[k]) own->left_lo[k] = lo;
+            if (hi > own->left_hi[k]) own->left_hi[k] = hi;
+            return;
+        }
+    }
+    if (own->left_n < HERO_SIG_LEFT) {
+        int k = own->left_n;
+        own->left_lo[k] = lo;
+        own->left_hi[k] = hi;
+        own->left_slo[k] = slo;
+        own->left_shi[k] = shi;
+        atomic_signal_fence(memory_order_seq_cst);
+        own->left_n = k + 1;
+        return;
+    }
+    /* Full: the first span widened to hold this one, which refuses more and
+     * forgets nothing. */
+    if (lo < own->left_lo[0]) own->left_lo[0] = lo;
+    if (hi > own->left_hi[0]) own->left_hi[0] = hi;
+    if (slo < own->left_slo[0]) own->left_slo[0] = slo;
+    if (shi > own->left_shi[0]) own->left_shi[0] = shi;
+}
+
+/* `e`'s frames, left by a jump made below `here` (its frame lies on the
+ * entry's stack where the jump is made there). A re-entry's own entry holds
+ * the landing itself, so its span reaches one byte above it. */
+static void hero_sig_left_by_jump(HeroSignalStack *own, const HeroSigEntry *e, uintptr_t here) {
+    uintptr_t slo = 0, shi = 0;
+    if (e->alt_hi > e->alt_lo) {
+        slo = e->alt_lo;
+        shi = e->alt_hi;
+    } else if (!hero_sig_target_range(own, e->at, &slo, &shi)) {
+        return;
+    }
+    uintptr_t lo = hero_sig_holds(slo, shi, here) && here < e->at ? here : slo;
+    hero_sig_left_add(own, lo, e->unsure == 2 ? e->at + 1 : e->at, slo, shi);
+}
+
+/* The thread seen running at `frame`: every span its stack holds above the
+ * frame runs again, from the frame up. */
+static void hero_sig_relived(HeroSignalStack *own, uintptr_t frame) {
+    if (own == NULL) return;
+    for (int k = own->left_n - 1; k >= 0; k -= 1) {
+        if (!(frame >= own->left_slo[k] && frame < own->left_shi[k]) || frame >= own->left_hi[k]) continue;
+        if (frame > own->left_lo[k]) {
+            own->left_hi[k] = frame;
+            continue;
+        }
+        int last = own->left_n - 1;
+        own->left_lo[k] = own->left_lo[last];
+        own->left_hi[k] = own->left_hi[last];
+        own->left_slo[k] = own->left_slo[last];
+        own->left_shi[k] = own->left_shi[last];
+        atomic_signal_fence(memory_order_seq_cst);
+        own->left_n = last;
+    }
+}
+
+/* Whether `t` lies inside the frames of a handler left by a jump. */
+static bool hero_sig_left_holds(const HeroSignalStack *own, uintptr_t t) {
+    for (int k = 0; k < own->left_n; k += 1) {
+        if (t >= own->left_lo[k] && t < own->left_hi[k]) return true;
+    }
+    return false;
 }
 
 /* A new entry at `at`, `alt_lo..alt_hi` the alternate stack it lies on;
@@ -383,6 +568,7 @@ static bool hero_sig_standing(const HeroSignalStack *own) { return own->depth > 
  * nothing pins is left where the target lies on the entry's range above it,
  * or where the jump leaves the alternate stack the entry was pushed on. */
 static void hero_sig_prune_to(HeroSignalStack *own, uintptr_t t, bool by_jump) {
+    uintptr_t here = (uintptr_t)__builtin_frame_address(0);
     uintptr_t lo = 0, hi = 0;
     bool ranged = hero_sig_target_range(own, t, &lo, &hi);
     /* A jump onto a coroutine's stack that an entry survives is told as such
@@ -397,6 +583,7 @@ static void hero_sig_prune_to(HeroSignalStack *own, uintptr_t t, bool by_jump) {
         bool above = ranged && e->at >= lo && e->at < hi && e->at <= t;
         bool left_alt = by_jump && e->alt_hi > e->alt_lo && !hero_sig_holds(e->alt_lo, e->alt_hi, t);
         if (above || left_alt) {
+            hero_sig_left_by_jump(own, e, here);
             hero_sig_drop(own, i);
         } else if (oncoroutine && e->unsure == 0) {
             e->unsure = life == HERO_SIG_RANGE_ENTERED ? 3 : 4;
@@ -404,23 +591,21 @@ static void hero_sig_prune_to(HeroSignalStack *own, uintptr_t t, bool by_jump) {
     }
 }
 
-/* Rule 6's last sentence, and its twin on one range: a jump that lands BELOW
- * the jumping frame on the range that frame stands on lands in frames this
- * thread already unwound past, and one that lands on the alternate stack from
- * outside it lands in frames only a signal's delivery puts there. Either is a
- * handler left earlier and resumed now (shape R: a handler left by a jump out
- * and jumped back into), or frames that are gone: it stands as an entry of its
- * own, unsure, until a jump above it, the end of a handler pushed before it,
- * or a jump leaving the alternate stack it lies on, proves it left. Every
- * correct jump lands above the frame that makes it, on its own range or on
- * another. */
+/* Rule 6's last sentence: a jump that lands inside the frames of a handler a
+ * jump left, where the thread has not run since (`hero_sig_left_holds`), lands
+ * in that handler's frames (shape R: a handler left by a jump out and jumped
+ * back into, from its own stack or another), and one that lands on the
+ * alternate stack from outside it lands in frames only a signal's delivery
+ * puts there. Either stands as an entry of its own, unsure, until a jump above
+ * it, the end of a handler pushed before it, or a jump leaving the alternate
+ * stack it lies on, proves it left. A landing below the frame making the jump
+ * elsewhere is no handler's (defect 2855): a coroutine on a stack carved from
+ * the thread's own, entered by a switch the runtime never sees, lands below
+ * itself when it leaves for good to its host's save point. */
 static void hero_sig_reentered(HeroSignalStack *own, uintptr_t t, bool below, uintptr_t here);
 
 static void hero_sig_reenter(HeroSignalStack *own, uintptr_t t) {
-    uintptr_t here = (uintptr_t)__builtin_frame_address(0);
-    uintptr_t lo = 0, hi = 0;
-    bool below = hero_sig_target_range(own, here, &lo, &hi) && hero_sig_holds(lo, hi, t) && t < here;
-    hero_sig_reentered(own, t, below, here);
+    hero_sig_reentered(own, t, hero_sig_left_holds(own, t), (uintptr_t)__builtin_frame_address(0));
 }
 
 /* The landing at `t` judged once it is known whether it lies below the frame

@@ -1,0 +1,15 @@
+# Fixed 2026-11-26, defect 2856 (d-p260-mixedown), lane room-mixedown: a
+# header of the program's own declaring a function of the layer's otherwise
+# than the layer does, and binding nothing that reaches it, in a program that
+# links the layer: one function declared with two types in one program, which
+# C leaves undefined, called or not (C11 6.2.7). Told at the group, both
+# declarations named with their types.
+extern "hero_time.h" layer
+    function hero_time_wall_ns() -> i64
+
+extern "fixedbugs-2856-a-layer-function-a-header-declares-otherwise-and-nothing-binds-is-told-at-the-group.h"  #~ ffi_layer_redeclared
+    function answer() -> i64
+
+function main()
+    print(hero_time_wall_ns() > 0)
+    print(answer())

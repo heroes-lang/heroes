@@ -3562,9 +3562,9 @@ test "wait: a time below zero is invalid, and a headless app with nothing to giv
 
 test "timer: two timers fire in order of their times on the headless clock, a destroyed one never again"
     app @= open(.headless).must()
-    fast = timer(@app, every: time.milliseconds(300).must()).must()
-    slow = timer(@app, every: time.milliseconds(500).must()).must()
-    second = time.seconds(1).must()
+    fast = timer(@app, every: time.milliseconds(300)).must()
+    slow = timer(@app, every: time.milliseconds(500)).must()
+    second = time.seconds(1)
     fired: [Widget] @= []
 
     for _ in range(from: 0, to: 4)
@@ -3583,10 +3583,10 @@ test "timer: two timers fire in order of their times on the headless clock, a de
 
 test "wait: a timer due after the time given is a timeout, and fires on a later wait"
     app @= open(.headless).must()
-    t = timer(@app, every: time.seconds(5).must()).must()
-    assert fixture.code_of(wait(@app, within: time.seconds(2).must())) == TIMEOUT
-    assert fixture.code_of(wait(@app, within: time.seconds(2).must())) == TIMEOUT
-    assert wait(@app, within: time.seconds(2).must()).must() == .timer_fired(timer: t)
+    t = timer(@app, every: time.seconds(5)).must()
+    assert fixture.code_of(wait(@app, within: time.seconds(2))) == TIMEOUT
+    assert fixture.code_of(wait(@app, within: time.seconds(2))) == TIMEOUT
+    assert wait(@app, within: time.seconds(2)).must() == .timer_fired(timer: t)
     close(@app).must()
 
 test "resize: a window asked smaller than its content needs keeps its need, and its widgets are laid out again"
@@ -4131,8 +4131,8 @@ test "set_moving: a copy of unknown length"
 # A timer firing on a headless app's clock.
 test "timer: every second"
     app @= open(.headless).must()
-    t = timer(@app, every: time.seconds(1).must()).must()
-    assert wait(@app, within: time.seconds(2).must()).must() == .timer_fired(timer: t)
+    t = timer(@app, every: time.seconds(1)).must()
+    assert wait(@app, within: time.seconds(2)).must() == .timer_fired(timer: t)
     close(@app).must()
 
 # The loop of a program: wait, then match what the person did.
@@ -4144,7 +4144,7 @@ test "wait: one click, then the inputs are spent"
     clicks @= 0
 
     while true
-        match wait(@app, within: time.milliseconds(100).must())
+        match wait(@app, within: time.milliseconds(100))
             .ok event =>
                 if event == .clicked(widget: b)
                     clicks @ clicks + 1

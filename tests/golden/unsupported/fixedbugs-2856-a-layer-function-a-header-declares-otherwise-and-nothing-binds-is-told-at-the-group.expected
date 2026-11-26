@@ -1,0 +1,6 @@
+error[ffi_layer_redeclared]: `hero_net_ask_stop` is the platform layer's function, declared `void (void)` by its `hero_net.h`, and `fixedbugs-2856-a-layer-function-a-header-declares-otherwise-and-nothing-binds-is-told-at-the-group.h` declares it `int (void)` at line 4, including none of the layer's headers: declare it as `hero_net.h` does, or include `hero_net.h` in `fixedbugs-2856-a-layer-function-a-header-declares-otherwise-and-nothing-binds-is-told-at-the-group.h` in place of the declaration
+  at tests/golden/unsupported/fixedbugs-2856-a-layer-function-a-header-declares-otherwise-and-nothing-binds-is-told-at-the-group.hero:10:8
+     |
+  10 | extern "fixedbugs-2856-a-layer-function-a-header-declares-otherwise-and-nothing-binds-is-told-at-the-group.h"  #~ ffi_…
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program links the layer, so its own object and the layer's function are one program, and C takes one function declared with two types as undefined, called or not (C11 6.2.7): a body a header defines outside `static`, or a pointer to the function it keeps, calls the layer's function through the program's type

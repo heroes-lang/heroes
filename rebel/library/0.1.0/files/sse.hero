@@ -118,8 +118,8 @@ constant UNLIMITED: i64
 # status waited out.
 function default_reading() -> Reading
     return Reading(
-        retry: time.seconds(3).must(),
-        longest: time.seconds(60).must(),
+        retry: time.seconds(3),
+        longest: time.seconds(60),
         most_failures: 10,
         idle: time.max_duration(),
         statuses: []
@@ -227,7 +227,7 @@ function next(@s: Source) -> http.Event?
             if events.last_id != ""
                 s.last_id @ events.last_id
 
-            if events.retry != time.seconds(3).must()
+            if events.retry != time.seconds(3)
                 s.retry @ events.retry
 
             match got
@@ -330,8 +330,8 @@ record Hub
 function default_hub() -> Hub
     return Hub(
         history: 100,
-        heartbeat: time.seconds(15).must(),
-        write_wait: time.seconds(10).must(),
+        heartbeat: time.seconds(15),
+        write_wait: time.seconds(10),
         retry: time.Duration(nanoseconds: 0),
         events: [],
         number: 1,
@@ -557,7 +557,7 @@ test "source: a target that is no URL, no http, no host, or a reading below zero
     few.most_failures @ -1
     assert source("http://example.test/feed", client: c, reading: few).is_err()
     s = source("https://example.test/feed", client: c, reading: default_reading()).must()
-    assert last_id_of(s) == "" && retry_of(s) == time.seconds(3).must() && !s.finished
+    assert last_id_of(s) == "" && retry_of(s) == time.seconds(3) && !s.finished
 
 test "next: events across a stream that ends, the last id sent again, the stream's retry kept, and a source closed"
     t @= fixture.start(
@@ -566,7 +566,7 @@ test "next: events across a stream that ends, the last id sent again, the stream
     s @= source(f"http://127.0.0.1:{t.port}/feed", client: http.default_client(), reading: fixture.quick()).must()
     assert next(@s).must() == http.Event(name: "message", data: "a", id: "1")
     assert next(@s).must() == http.Event(name: "tick", data: "b", id: "2")
-    assert last_id_of(s) == "2" && retry_of(s) == time.milliseconds(10).must()
+    assert last_id_of(s) == "2" && retry_of(s) == time.milliseconds(10)
     close(@s)
     assert next(@s).is_err()
     seen = fixture.seen_by(@t)
@@ -634,7 +634,7 @@ test "next: a connection silent of events for `idle` is given up and made again 
         ["hold:" + fixture.stream_head() + "id: 1\ndata: a\n\n", fixture.stream_head() + "id: 2\ndata: b\n\n"]
     )
     r @= fixture.quick()
-    r.idle @ time.milliseconds(100).must()
+    r.idle @ time.milliseconds(100)
     s @= source(f"http://127.0.0.1:{t.port}/feed", client: http.default_client(), reading: r).must()
     assert next(@s).must().data == "a"
     assert next(@s).must().data == "b"
@@ -691,7 +691,7 @@ test "subscribe: a client that connects again is told what it missed, all of it 
 test "subscribe: the history holds the most it was told to, and the `retry` a hub tells is read by the client"
     hub @= default_hub()
     hub.history @ 2
-    hub.retry @ time.seconds(7).must()
+    hub.retry @ time.seconds(7)
 
     for n in range(from: 1, to: 5)
         _ = publish(@hub, event: http.Event(name: "", data: f"e{n}", id: "")).must()
@@ -706,7 +706,7 @@ test "subscribe: the history holds the most it was told to, and the `retry` a hu
     ).must()
     events @= fixture.watched(@p)
     assert http.read_event(@p.client, @events).must().data == "e3"
-    assert events.retry == time.seconds(7).must()
+    assert events.retry == time.seconds(7)
     close_all(@hub)
     io.close(@p.client.stream).must()
 
@@ -726,9 +726,9 @@ test "heartbeat: a comment is written to a client quiet for the interval, and to
     _ = fixture.watched(@p)
     assert heartbeat(@hub).must() == 0
     assert io.read_n(@p.client, n: 2).must() == [58, 10]
-    hub.heartbeat @ time.seconds(3_600).must()
+    hub.heartbeat @ time.seconds(3_600)
     assert heartbeat(@hub).must() == 0
-    assert due(hub).nanoseconds <= time.seconds(3_600).must().nanoseconds && due(hub).nanoseconds > 0
+    assert due(hub).nanoseconds <= time.seconds(3_600).nanoseconds && due(hub).nanoseconds > 0
     close_all(@hub)
     assert due(hub) == time.max_duration()
     io.close(@p.client.stream).must()
@@ -790,7 +790,7 @@ test "stream_of and drop: a number no client has is not found"
 test "default_reading: a reading that waits out a restarting server"
     r @= default_reading()
     r.statuses @ [503]
-    assert r.retry == time.seconds(3).must() && r.most_failures == 10
+    assert r.retry == time.seconds(3) && r.most_failures == 10
 
 # A source of a feed, which connects at its first `next` and not before.
 test "source: a source of a news feed"
@@ -837,9 +837,9 @@ test "last_id_of: the id a stream gave"
 test "retry_of: the wait a stream asks for"
     t @= fixture.start([fixture.stream_head() + "retry: 250\ndata: a\n\n"])
     s @= source(f"http://127.0.0.1:{t.port}/feed", client: http.default_client(), reading: default_reading()).must()
-    assert retry_of(s) == time.seconds(3).must()
+    assert retry_of(s) == time.seconds(3)
     _ = next(@s).must()
-    assert retry_of(s) == time.milliseconds(250).must()
+    assert retry_of(s) == time.milliseconds(250)
     close(@s)
     _ = fixture.seen_by(@t)
 
@@ -847,7 +847,7 @@ test "retry_of: the wait a stream asks for"
 test "default_hub: a hub with a shorter history and heartbeat"
     hub @= default_hub()
     hub.history @ 10
-    hub.heartbeat @ time.seconds(5).must()
+    hub.heartbeat @ time.seconds(5)
     assert count(hub) == 0 && hub.events == []
 
 # The id a browser that connects again sends, read from its request.

@@ -7,6 +7,7 @@
 # dies before it tells cannot hang it.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/net
 use <rebel>/numbers
 use <rebel>/poll
@@ -68,9 +69,9 @@ function failed(port: i64, why: str) -> ()?
 function give_up(@set: poll.Set, @l: net.Listener, port: i64, why: str) -> str?
     # The failure told is `why`; a close or a datagram that fails after it
     # adds nothing the starter could act on.
-    _ = poll.close(@set).is_err()
-    _ = net.close_listener(@l).is_err()
-    _ = failed(port: port, why: why).is_err()
+    errors.ignore(poll.close(@set))
+    errors.ignore(net.close_listener(@l))
+    errors.ignore(failed(port: port, why: why))
     return fail(code: FAILED, msg: why)
 
 # The port a server told `ear`, waiting at most `WAIT_MS`.

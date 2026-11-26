@@ -259,7 +259,7 @@ function excerpt(raw: [u8]) -> str
 
 test "next_line: lines with CRLF, a long line read across the reader's buffer, a bare line feed, the end inside a line"
     two = net.pair(deadline_ms: 5000).must()
-    s @= over(two.first.stream, link: .plain, deadline: time.seconds(5).must(), max_bytes: 1_000_000)
+    s @= over(two.first.stream, link: .plain, deadline: time.seconds(5), max_bytes: 1_000_000)
     server @= two.second.stream
     io.write_text(server, text: "* OK ready\r\n\r\n" + repeat("x", 70000) + "\r\nbad\n").must()
     next_line(@s).must()
@@ -284,7 +284,7 @@ test "next_line: lines with CRLF, a long line read across the reader's buffer, a
 
 test "literal: its bytes and the line after, a length past the budget refused before a byte is read"
     two = net.pair(deadline_ms: 5000).must()
-    s @= over(two.first.stream, link: .plain, deadline: time.seconds(5).must(), max_bytes: 40)
+    s @= over(two.first.stream, link: .plain, deadline: time.seconds(5), max_bytes: 40)
     server @= two.second.stream
     io.write_text(server, text: "a{5}\r\nhe\r\no)\r\n").must()
     begin(@s).must()
@@ -301,7 +301,7 @@ test "literal: its bytes and the line after, a length past the budget refused be
 
 test "next_tag: four digits, then more"
     two = net.pair(deadline_ms: 5000).must()
-    s @= over(two.first.stream, link: .plain, deadline: time.seconds(5).must(), max_bytes: 100)
+    s @= over(two.first.stream, link: .plain, deadline: time.seconds(5), max_bytes: 100)
     assert next_tag(@s) == "A0001" && next_tag(@s) == "A0002"
     s.tag @ 9999
     assert next_tag(@s) == "A10000"
@@ -311,7 +311,7 @@ test "next_tag: four digits, then more"
 
 test "set_deadline: an answer that never comes ends by its deadline, then a closed session refuses"
     two = net.pair(deadline_ms: net.FOREVER).must()
-    s @= over(two.first.stream, link: .plain, deadline: time.milliseconds(200).must(), max_bytes: 100)
+    s @= over(two.first.stream, link: .plain, deadline: time.milliseconds(200), max_bytes: 100)
     server @= two.second.stream
     begin(@s).must()
 
@@ -320,18 +320,18 @@ test "set_deadline: an answer that never comes ends by its deadline, then a clos
         .err e => assert e.code == "timeout"
 
     close(@s).must()
-    assert set_deadline(s, deadline: time.milliseconds(10).must()).is_err() && write(s, data: [65]).is_err() && next_line(@s).is_err()
+    assert set_deadline(s, deadline: time.milliseconds(10)).is_err() && write(s, data: [65]).is_err() && next_line(@s).is_err()
     io.close(@server).must()
 
 test "begin: what the server sent and its end held by the session before a write, none of it counted"
     two = net.pair(deadline_ms: 5000).must()
-    s @= over(two.first.stream, link: .plain, deadline: time.seconds(5).must(), max_bytes: 100)
+    s @= over(two.first.stream, link: .plain, deadline: time.seconds(5), max_bytes: 100)
     server @= two.second.stream
     begin(@s).must()
     assert unread(s) == 0
     io.write_text(server, text: "* BYE going\r\n").must()
     io.close(@server).must()
-    time.sleep(time.milliseconds(50).must())
+    time.sleep(time.milliseconds(50))
     begin(@s).must()
     assert unread(s) == 13 && s.left == 100
     write(s, data: bytes.from_text("A0001 NOOP\r\n")).must()

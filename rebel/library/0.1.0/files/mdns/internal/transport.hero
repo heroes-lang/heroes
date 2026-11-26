@@ -368,7 +368,7 @@ function receive(t: Transport, wait_ms: i64) -> Packet?
 
     if waited < 0
         waited @ 0
-    limit = time.milliseconds(waited)?
+    limit = time.milliseconds_checked(waited)?
     events = poll.wait(t.set, limit: limit)?
 
     for e in events

@@ -1,0 +1,173 @@
+# The directives that place bytes, as GNU as reads them: `.word`, `.half`
+# and `.byte` of values, `.ascii` of strings and `.asciz` (or `.string`) of
+# strings each ended by a zero, `.space` (or `.zero`) of zeros, and `.align`
+# (or `.p2align`) and `.balign`, which pad to a boundary, with `nop`s in the
+# code and zeros in the data. The first pass asks a directive's size, the
+# second its bytes; both read the same statement at the same offset, so the
+# two agree.
+
+use <rebel>/bytes
+use <rebel>/errors
+
+use asm/lexer
+use asm/operands as o
+use asm/resolve
+use asm/syntax
+
+## Sizes
+
+# Whether `name` is a directive this module places bytes for.
+#
+# - `name`: the directive, with its dot.
+function is_data(name: str) -> bool
+    return match name
+        ".word" | ".4byte" | ".half" | ".2byte" | ".byte" | ".ascii" | ".asciz" | ".string" | ".space" | ".zero" | ".align" | ".p2align" | ".balign" => true
+        _ => false
+
+# How many bytes `s` places at `offset`.
+#
+# - `s`: the directive.
+# - `offset`: where it stands in its section.
+# - `known`: the `.equ` values defined before it, which a size may name.
+#
+# Fails `invalid` where an operand is of the wrong kind, a size or an
+# alignment is out of range or names what is not yet known.
+function size_of(s: syntax.Statement, offset: i64, known: {str: i64}) -> i64?
+    width = width_of(s.name)
+
+    if width > 0
+        return ok(width * s.operands.len())
+
+    if s.name == ".ascii" || s.name == ".asciz" || s.name == ".string"
+        total: i64 @= 0
+
+        for at in range(from: 0, to: s.operands.len())
+            total @ total + o.text(s, at: at)?.len()
+
+            if s.name != ".ascii"
+                total @ total + 1
+
+        return ok(total)
+
+    if s.name == ".space" || s.name == ".zero"
+        if s.operands.len() < 1 || s.operands.len() > 2
+            return fail(code: "invalid", msg: f"line {s.line}: {s.name} takes a size, and a fill byte")
+        n = number(s: s, at: 0, known: known)?
+
+        if n < 0 || n > 0x10_0000
+            return fail(code: "invalid", msg: f"line {s.line}: {s.name} of {n} bytes is outside 0 to 1 MiB")
+        return ok(n)
+    o.count(s, n: 1)?
+    boundary = boundary_of(s: s, known: known)?
+    return ok((boundary - offset % boundary) % boundary)
+
+# The bytes of each value of `.word`, `.half` and `.byte`; 0 for the others.
+function width_of(name: str) -> i64
+    return match name
+        ".word" | ".4byte" => 4
+        ".half" | ".2byte" => 2
+        ".byte"            => 1
+        _                  => 0
+
+# The boundary `.align n`, `.p2align n` or `.balign n` pads to.
+function boundary_of(s: syntax.Statement, known: {str: i64}) -> i64?
+    n = number(s: s, at: 0, known: known)?
+
+    if s.name == ".balign"
+        if n < 1 || n > 4096 || n & n - 1 != 0
+            return fail(code: "invalid", msg: f"line {s.line}: .balign {n} is no power of two from 1 to 4096")
+        return ok(n)
+
+    if n < 0 || n > 12
+        return fail(code: "invalid", msg: f"line {s.line}: {s.name} {n} is outside 0 to 12")
+    return ok(1 << n)
+
+# The number the operand at `at` is, a plain one or an `.equ` known so far.
+function number(s: syntax.Statement, at: i64, known: {str: i64}) -> i64?
+    e = o.value(s, at: at)?
+
+    if e.symbol == ""
+        return ok(e.addend)
+    v = errors.context(known[e.symbol], what: f"line {s.line}: {s.name} names {e.symbol}, which is not defined by .equ before it")?
+    return ok(v + e.addend)
+
+## Bytes
+
+# The bytes `s` places at `offset`.
+#
+# - `s`: the directive.
+# - `offset`: where it stands in its section.
+# - `in_code`: whether its section is the code, which pads with `nop`s.
+# - `symbols`: every symbol's value, after the first pass.
+#
+# Fails `invalid` where a value does not fit its width or names no symbol,
+# and as `size_of` does.
+function bytes_of(s: syntax.Statement, offset: i64, in_code: bool, symbols: {str: i64}) -> [u8]?
+    out: [u8] @= []
+    width = width_of(s.name)
+
+    if width > 0
+        for at in range(from: 0, to: s.operands.len())
+            v = resolve.value(e: o.value(s, at: at)?, pc: 0, symbols: symbols, line: s.line)?
+            low = -(1 << 8 * width - 1)
+            high = (1 << 8 * width) - 1
+
+            if v < low || v > high
+                return fail(code: "invalid", msg: f"line {s.line}: {v} does not fit in {s.name}'s {width} bytes")
+
+            for k in range(from: 0, to: width)
+                out @ out.push(to_u8(v >> 8 * k & 0xff).must())
+
+        return ok(out)
+
+    if s.name == ".ascii" || s.name == ".asciz" || s.name == ".string"
+        for at in range(from: 0, to: s.operands.len())
+            bytes.push_text(to: @out, s: o.text(s, at: at)?)
+
+            if s.name != ".ascii"
+                out @ out.push(0)
+
+        return ok(out)
+    size = size_of(s: s, offset: offset, known: symbols)?
+    fill: i64 @= 0
+
+    if (s.name == ".space" || s.name == ".zero") && s.operands.len() == 2
+        fill @ resolve.value(e: o.value(s, at: 1)?, pc: 0, symbols: symbols, line: s.line)? & 0xff
+    nops = in_code && s.name != ".space" && s.name != ".zero" && size % 4 == 0 && offset % 4 == 0
+
+    for k in range(from: 0, to: size)
+        if nops
+            out @ out.push(to_u8(0x13 >> 8 * (k % 4) & 0xff).must())
+        else
+            out @ out.push(to_u8(fill).must())
+
+    return ok(out)
+
+## Tests
+
+function placed(source: str, offset: i64) -> [u8]
+    s = syntax.statement(lexer.lines(source)[0]).must()
+    out = bytes_of(s: s, offset: offset, in_code: false, symbols: {"here": 0x8000_0010}).must()
+    assert out.len() == size_of(s: s, offset: offset, known: {}).must()
+    return out
+
+test "bytes_of: words, halves and bytes little-endian, a symbol's value"
+    assert placed(".word 1, -1", offset: 0) == [1, 0, 0, 0, 0xff, 0xff, 0xff, 0xff]
+    assert placed(".half 0x1234", offset: 0) == [0x34, 0x12]
+    assert placed(".byte 255, -128, 'A'", offset: 0) == [0xff, 0x80, 0x41]
+    assert placed(".word here", offset: 0) == [0x10, 0, 0, 0x80]
+
+test "bytes_of: strings, a space with its fill, and the alignments"
+    assert placed(".ascii \"ab\"", offset: 0) == [0x61, 0x62]
+    assert placed(".asciz \"ab\", \"\"", offset: 0) == [0x61, 0x62, 0, 0]
+    assert placed(".space 3, 7", offset: 0) == [7, 7, 7]
+    assert placed(".align 2", offset: 5).len() == 3
+    assert placed(".align 2", offset: 8).len() == 0
+    assert placed(".balign 16", offset: 17).len() == 15
+
+test "bytes_of and size_of: what does not fit, and what is not known"
+    for source in [".byte 256", ".half -32769", ".word nowhere", ".ascii 5", ".balign 3", ".align 13", ".space -1", ".space later"]
+        s = syntax.statement(lexer.lines(source)[0]).must()
+        sized = size_of(s: s, offset: 0, known: {})
+        made = bytes_of(s: s, offset: 0, in_code: false, symbols: {})
+        assert sized.is_err() || made.is_err()

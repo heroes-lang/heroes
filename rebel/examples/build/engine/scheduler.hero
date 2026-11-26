@@ -25,6 +25,7 @@
 # failure, or killed, keeps every step it applied; a failed step's record
 # is forgotten, so its target runs again however its output was left.
 
+use <rebel>/errors
 use <rebel>/graphs
 use <rebel>/os
 use <rebel>/threads
@@ -280,7 +281,7 @@ function run(f: buildfile.BuildFile lent, p: plan.Plan lent, steps: {str: prepar
             # that made this step stale still differ from it, and an output
             # the failed step rewrote differs from its digest, so the next
             # build runs the step again either way.
-            _ = log.append(root: s.root, line: log.forget_line(name)).is_err()
+            errors.ignore(log.append(root: s.root, line: log.forget_line(name)))
 
     if !stopped && graphs.is_active(sorter)
         # Every node the sorter holds is handed out once what it needs is

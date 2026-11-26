@@ -83,8 +83,12 @@ static _Thread_local bool hero_thread_is_home = false;
  * Heroes code runs on the thread and, on a worker, while its signals are still
  * held off (`parts/spawn.c`, defect 2496), so the reading is never made inside
  * a signal, where glibc's `pthread_getattr_np` would allocate. */
-static void hero_thread_claim(void) {
+static void hero_thread_claim(size_t count_at) {
     hero_thread_is_home = true;
+    /* And the thread's count of callbacks C called and that have not
+     * returned, `count_at` in `parts/callback.c`'s table, which every thread
+     * reads (defect 2854). */
+    hero_callback_claim(count_at);
     hero_signal_measure();
 }
 

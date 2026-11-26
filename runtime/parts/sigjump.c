@@ -72,9 +72,9 @@
  * a handler left by a switch or a jump this file never sees (an inline
  * `__builtin_longjmp`, hand-written assembly, a C++ exception or
  * `_Unwind_*`), which keeps its entry and is told in words that name it; a
- * coroutine left by such a switch, where the context it was switched to does
- * not provably live (a heap block, a mapping), which is judged ended
- * (`sigentries.c`, the life of a range; defect d-lane-d2745-1); and
+ * coroutine left by such a switch that saves into another context than the
+ * one it was switched to, leaving that one as it was, which is judged ended
+ * (`sigentries.c`, the life of a range; defects d-lane-d2745-1 and 2851); and
  * the one residue panel 255's R3 leaves by design, `rr_2`, a handler left by a
  * jump and landed in again from a coroutine on another range (no range's
  * bottom is recorded where the thread leaves it). A program library defining

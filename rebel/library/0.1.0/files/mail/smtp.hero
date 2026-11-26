@@ -187,7 +187,7 @@ function options(host: str, security: Security) -> Options
         security: security,
         roots: "",
         local_name: "localhost",
-        deadline: time.minutes(1).must()
+        deadline: time.minutes(1)
     )
 
 # An SMTP session with a server, made by `connect`. It holds a connection:
@@ -817,7 +817,7 @@ test "connect: a greeting of 554 refused, its reply in the message"
     port = started.port
     server @= started.thread
 
-    match connect(Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must()))
+    match connect(Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10)))
         .ok _  => assert false
         .err e => assert e.code == FAILED && e.msg == "554 5.7.1 go away: the server refused this client: its greeting"
 
@@ -828,7 +828,7 @@ test "connect: EHLO refused on a plain connection, then HELO, and no extension"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     assert extensions_of(c).len() == 0 && !c.is_tls
     quit(@c).must()
@@ -839,7 +839,7 @@ test "connect: a server that never answers EHLO ends by the deadline"
     port = started.port
     server @= started.thread
 
-    match connect(Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.milliseconds(300).must()))
+    match connect(Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.milliseconds(300)))
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT || e.code == CLOSED
 
@@ -850,7 +850,7 @@ test "connect: TLS refused where the server's certificate is no authority's the 
     port = started.port
     server @= started.thread
 
-    match connect(Options(host: "localhost", port: port, security: .implicit, roots: "", local_name: "client.test", deadline: time.seconds(10).must()))
+    match connect(Options(host: "localhost", port: port, security: .implicit, roots: "", local_name: "client.test", deadline: time.seconds(10)))
         .ok _  => assert false
         .err e => assert e.code == INVALID || e.code == FAILED || e.code == CLOSED
 
@@ -861,7 +861,7 @@ test "send: every recipient refused, the transaction reset, the reply kept as th
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
 
     match send(@c, from: "ana@example.org", to: ["x@example.org", "y@example.org"], message: bytes.from_text("Subject: x\r\n\r\nx"))
@@ -877,7 +877,7 @@ test "send: larger than SIZE refused before a byte, 8-bit and UTF-8 asked of the
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
 
     match send(@c, from: "ana@example.org", to: ["bob@example.org"], message: bytes.from_text(repeat("x", 1001)))
@@ -904,7 +904,7 @@ test "mail_from: a server closing with 421, told closed"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
 
     match mail_from(@c, from: "ana@example.org", params: [])
@@ -919,7 +919,7 @@ test "login: credentials refused, told permission"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
 
     match login(@c, user: "ana", password: "wrong")
@@ -934,7 +934,7 @@ test "auth_xoauth2: a token refused, the server's explanation in the message"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "localhost", port: port, security: .starttls, roots: tls.TEST_ROOT, local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "localhost", port: port, security: .starttls, roots: tls.TEST_ROOT, local_name: "client.test", deadline: time.seconds(10))
     ).must()
     assert c.is_tls
 
@@ -950,7 +950,7 @@ test "connect: a plain session with the responder, every extension read"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     assert keys(extensions_of(c)) == ["SIZE", "8BITMIME", "SMTPUTF8", "PIPELINING", "AUTH", "HELP"]
     assert extension_of(c, keyword: "nope").is_err() && !has_extension(c, keyword: "STARTTLS")
@@ -979,7 +979,7 @@ test "format_reply: an enhanced code and two lines"
 # The options of a submission server with STARTTLS.
 test "options: port 587 for STARTTLS"
     o = options(host: "smtp.example.org", security: .starttls)
-    assert o.port == PORT_SUBMISSION && o.roots == "" && o.local_name == "localhost" && o.deadline == time.minutes(1).must()
+    assert o.port == PORT_SUBMISSION && o.roots == "" && o.local_name == "localhost" && o.deadline == time.minutes(1)
     assert options(host: "smtp.example.org", security: .implicit).port == 465 && options(host: "x", security: .plain).port == 25
 
 # A session with a server on this machine, its greeting read and EHLO said.
@@ -988,7 +988,7 @@ test "connect: a plain server on the loopback address"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     assert has_extension(c, keyword: "pipelining")
     quit(@c).must()
@@ -1000,7 +1000,7 @@ test "greeting_of: 220"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     assert greeting_of(c) == Reply(code: 220, enhanced: "", lines: ["mx.test ESMTP ready"])
     quit(@c).must()
@@ -1012,7 +1012,7 @@ test "last_reply_of: a command refused"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     _ = command(@c, line: "XYZZY").must()
     assert last_reply_of(c) == Reply(code: 500, enhanced: "5.5.2", lines: ["what?"])
@@ -1025,7 +1025,7 @@ test "extensions_of: SIZE and its limit"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     assert extensions_of(c)["SIZE"].must() == "1000"
     quit(@c).must()
@@ -1037,7 +1037,7 @@ test "hello: the extensions read anew"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     hello(@c).must()
     quit(@c).must()
@@ -1049,7 +1049,7 @@ test "quit: QUIT, then closed"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     quit(@c).must()
     assert noop(@c).is_err()
@@ -1061,7 +1061,7 @@ test "close: the server sees the connection end"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     close(@c).must()
     assert close(@c).is_err()
@@ -1073,7 +1073,7 @@ test "has_extension: PIPELINING, in any case"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     assert has_extension(c, keyword: "Pipelining") && !has_extension(c, keyword: "CHUNKING")
     quit(@c).must()
@@ -1085,7 +1085,7 @@ test "extension_of: AUTH's mechanisms"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     assert extension_of(c, keyword: "auth").must() == "PLAIN LOGIN"
     quit(@c).must()
@@ -1097,7 +1097,7 @@ test "max_size_of: 1000 bytes"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     assert max_size_of(c).must() == 1000
     quit(@c).must()
@@ -1109,7 +1109,7 @@ test "auth_mechanisms_of: PLAIN and LOGIN"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     assert auth_mechanisms_of(c) == ["PLAIN", "LOGIN"]
     quit(@c).must()
@@ -1121,7 +1121,7 @@ test "login: PLAIN on the loopback host"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     login(@c, user: "ana", password: "secret").must()
     quit(@c).must()
@@ -1133,7 +1133,7 @@ test "auth_plain: an identity apart from the user"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     auth_plain(@c, identity: "admin", user: "ana", password: "secret").must()
     quit(@c).must()
@@ -1145,7 +1145,7 @@ test "auth_login: over implicit TLS"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "localhost", port: port, security: .implicit, roots: tls.TEST_ROOT, local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "localhost", port: port, security: .implicit, roots: tls.TEST_ROOT, local_name: "client.test", deadline: time.seconds(10))
     ).must()
     auth_login(@c, user: "ana", password: "secret").must()
     quit(@c).must()
@@ -1157,7 +1157,7 @@ test "auth_cram_md5: a challenge answered"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     auth_cram_md5(@c, user: "tim", secret: "tanstaaftanstaaf").must()
     quit(@c).must()
@@ -1169,7 +1169,7 @@ test "auth_xoauth2: after STARTTLS, then a message"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "localhost", port: port, security: .starttls, roots: tls.TEST_ROOT, local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "localhost", port: port, security: .starttls, roots: tls.TEST_ROOT, local_name: "client.test", deadline: time.seconds(10))
     ).must()
     assert c.is_tls && !has_extension(c, keyword: "PIPELINING")
     auth_xoauth2(@c, user: "ana@example.org", token: "ya29.token").must()
@@ -1189,7 +1189,7 @@ test "mail_from: with a parameter"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     mail_from(@c, from: "ana@example.org", params: ["BODY=8BITMIME"]).must()
     assert mail_from(@c, from: "a@x>\r\nRCPT TO:<b@y", params: []).is_err()
@@ -1202,7 +1202,7 @@ test "rcpt_to: one taken, one refused"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     mail_from(@c, from: "ana@example.org", params: []).must()
     rcpt_to(@c, to: "bob@example.org", params: []).must()
@@ -1220,7 +1220,7 @@ test "data: a line beginning with a dot"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     mail_from(@c, from: "ana@example.org", params: []).must()
     rcpt_to(@c, to: "bob@example.org", params: []).must()
@@ -1234,7 +1234,7 @@ test "reset: RSET"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     reset(@c).must()
     quit(@c).must()
@@ -1246,7 +1246,7 @@ test "noop: NOOP"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     noop(@c).must()
     quit(@c).must()
@@ -1258,7 +1258,7 @@ test "verify: 252"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     assert verify(@c, address: "ana").must().code == REPLY_CANNOT_VERIFY
     quit(@c).must()
@@ -1270,7 +1270,7 @@ test "expand: two members"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     assert expand(@c, list: "staff").must().lines == ["ana@example.org", "bob@example.org"]
     quit(@c).must()
@@ -1282,7 +1282,7 @@ test "help: 214"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     assert help(@c, topic: "").must().code == REPLY_HELP_MESSAGE
     quit(@c).must()
@@ -1294,7 +1294,7 @@ test "command: a command the server does not know"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     assert command(@c, line: "XYZZY").must().code == REPLY_SYNTAX_ERROR && command(@c, line: "NOOP\r\nQUIT").is_err()
     quit(@c).must()
@@ -1306,7 +1306,7 @@ test "send: one recipient refused, one taken"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     login(@c, user: "ana", password: "secret").must()
     message = bytes.from_text("Subject: hi\r\n\r\n.dot line\r\nbye\r\n")
@@ -1322,7 +1322,7 @@ test "send_message: To, Cc and Bcc"
     port = started.port
     server @= started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10).must())
+        Options(host: "127.0.0.1", port: port, security: .plain, roots: "", local_name: "client.test", deadline: time.seconds(10))
     ).must()
     body = mail.text_part(text: "Hello", subtype: "plain").must()
     m = mail.with_field(
@@ -1351,7 +1351,7 @@ test "send_mail: connect, log in, send, quit"
         security: .plain,
         roots: "",
         local_name: "client.test",
-        deadline: time.seconds(10).must()
+        deadline: time.seconds(10)
     )
     sent = send_mail(
         o,

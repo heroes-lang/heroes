@@ -216,7 +216,7 @@ test "font_button: a font as one text, set and read as a font, refused for a siz
     assert fixture.code_of(ui.set_text(@app, widget: button, text: "12|b|")) == ui.INVALID
     assert ui.text_of(app, widget: button).must() == "1024|bi|Zapfino"
     ui.inject(@app, input: .type_text(widget: button, text: "14|-|Menlo")).must()
-    assert ui.wait(@app, within: time.seconds(1).must()).must() == .text_changed(widget: button, text: "14|-|Menlo")
+    assert ui.wait(@app, within: time.seconds(1)).must() == .text_changed(widget: button, text: "14|-|Menlo")
     assert ui.picked_font(app, widget: button).must() == ui.Font(family: "Menlo", size: 14, bold: false, italic: false)
     assert fixture.code_of(ui.inject(@app, input: .type_text(widget: button, text: "junk"))) == ui.INVALID
     ui.close(@app).must()
@@ -265,7 +265,7 @@ test "font_button: on the native side the system's font button, its font read ba
     assert fixture.code_of(ui.set_picked_font(@app, widget: button, font: ui.Font(family: "NoSuchFamilyHeroes", size: 12, bold: false, italic: false))) == ui.INVALID
     assert ui.text_of(app, widget: button).must() == f"20|bi|{family}"
     ui.inject(@app, input: .type_text(widget: button, text: f"11|-|{family}")).must()
-    assert ui.wait(@app, within: time.seconds(2).must()).must() == .text_changed(widget: button, text: f"11|-|{family}")
+    assert ui.wait(@app, within: time.seconds(2)).must() == .text_changed(widget: button, text: f"11|-|{family}")
     assert ui.rect_of(@app, widget: button).must().width > 0
     ui.destroy(@app, widget: button).must()
     ui.close(@app).must()
@@ -286,7 +286,7 @@ test "color_well: a colour as four bytes, set and read as a colour and as a numb
     b = ui.button(@app, into: w, text: "B").must()
     assert fixture.code_of(ui.picked_color(app, widget: b)) == ui.INVALID
     ui.inject(@app, input: .slide(widget: well, value: 4278190335)).must()
-    assert ui.wait(@app, within: time.seconds(1).must()).must() == .value_changed(widget: well, value: 4278190335)
+    assert ui.wait(@app, within: time.seconds(1)).must() == .value_changed(widget: well, value: 4278190335)
     assert ui.picked_color(app, widget: well).must() == image.Color(r: 255, g: 0, b: 0, a: 255)
     assert fixture.code_of(ui.inject(@app, input: .slide(widget: well, value: 4294967296))) == ui.INVALID
     ui.close(@app).must()
@@ -313,7 +313,7 @@ test "color_well: on the native side the system's colour well, its colour read b
     assert fixture.code_of(ui.set_value(@app, widget: well, value: 4294967296)) == ui.INVALID
     assert fixture.code_of(ui.set_range(@app, widget: well, least: 0, most: 10)) == ui.INVALID
     ui.inject(@app, input: .slide(widget: well, value: 16711935)).must()
-    assert ui.wait(@app, within: time.seconds(2).must()).must() == .value_changed(widget: well, value: 16711935)
+    assert ui.wait(@app, within: time.seconds(2)).must() == .value_changed(widget: well, value: 16711935)
     assert ui.picked_color(app, widget: well).must() == image.Color(r: 0, g: 255, b: 0, a: 255)
     assert ui.rect_of(@app, widget: well).must().width > 0
     ui.destroy(@app, widget: well).must()
@@ -360,7 +360,7 @@ test "date_picker, time_picker, date_time_picker: a value of the fields read as 
 
     # The person's pick is told once.
     ui.inject(@app, input: .slide(widget: clock, value: 3600)).must()
-    assert ui.wait(@app, within: time.seconds(1).must()).must() == .value_changed(widget: clock, value: 3600)
+    assert ui.wait(@app, within: time.seconds(1)).must() == .value_changed(widget: clock, value: 3600)
     assert ui.value_of(app, widget: clock).must() == 3600
     assert fixture.code_of(ui.inject(@app, input: .slide(widget: clock, value: 90000))) == ui.INVALID
     ui.close(@app).must()
@@ -400,10 +400,10 @@ test "date_picker, time_picker, date_time_picker: on the native side the system'
 
     # A pick is told once with the fields' seconds, a program's set tells none.
     ui.inject(@app, input: .slide(widget: clock, value: 5400)).must()
-    assert ui.wait(@app, within: time.seconds(2).must()).must() == .value_changed(widget: clock, value: 5400)
+    assert ui.wait(@app, within: time.seconds(2)).must() == .value_changed(widget: clock, value: 5400)
     ui.set_value(@app, widget: day, value: 86400 * 365).must()
     ui.inject(@app, input: .slide(widget: day, value: 86400 * 366)).must()
-    assert ui.wait(@app, within: time.seconds(2).must()).must() == .value_changed(widget: day, value: 86400 * 366)
+    assert ui.wait(@app, within: time.seconds(2)).must() == .value_changed(widget: day, value: 86400 * 366)
     assert ui.value_of(app, widget: day).must() == 86400 * 366
     ui.destroy(@app, widget: day).must()
     ui.close(@app).must()
@@ -436,7 +436,7 @@ test "calendar: a month shown whole, its value the picked day's midnight read as
 
     # The person's pick is told once.
     ui.inject(@app, input: .slide(widget: month, value: 86400 * 3)).must()
-    assert ui.wait(@app, within: time.seconds(1).must()).must() == .value_changed(widget: month, value: 86400 * 3)
+    assert ui.wait(@app, within: time.seconds(1)).must() == .value_changed(widget: month, value: 86400 * 3)
     assert ui.picked(app, widget: month).must() == time.DateTime(year: 1970, month: 1, day: 4, hour: 0, minute: 0, second: 0, nanosecond: 0)
     ui.close(@app).must()
 
@@ -476,7 +476,7 @@ test "calendar: on the native side the system's own month shown whole, the day r
     # A pick is told once with the day's seconds, a program's set tells none.
     ui.set_value(@app, widget: month, value: 86400 * 2).must()
     ui.inject(@app, input: .slide(widget: month, value: 86400 * 9)).must()
-    assert ui.wait(@app, within: time.seconds(2).must()).must() == .value_changed(widget: month, value: 86400 * 9)
+    assert ui.wait(@app, within: time.seconds(2)).must() == .value_changed(widget: month, value: 86400 * 9)
     assert ui.value_of(app, widget: month).must() == 86400 * 9
     ui.destroy(@app, widget: month).must()
     ui.close(@app).must()

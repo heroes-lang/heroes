@@ -1,0 +1,105 @@
+# The serial port, a 16550 UART in miniature at the address QEMU's `virt`
+# machine gives one: a byte written to its transmit register is sent, a byte
+# read from its receive register is the next one received, and its line
+# status register says whether one is waiting. The bytes sent are kept for
+# the runner to write out; the bytes received are the ones the runner was
+# given, so a program's input never depends on a clock.
+
+## The device
+
+# The UART's registers' first address.
+constant BASE: i64
+    0x1000_0000
+
+# How many bytes of addresses it answers.
+constant SIZE: i64
+    8
+
+# The receive buffer (read) and transmit holding register (write), offset 0.
+constant DATA: i64
+    0
+
+# The line status register, offset 5.
+constant LINE_STATUS: i64
+    5
+
+# The line status bit that says a received byte is waiting.
+constant DATA_READY: i64
+    0x01
+
+# The line status bits that say the transmitter takes a byte now: the
+# holding register and the shift register both empty, which they always are.
+constant TRANSMIT_EMPTY: i64
+    0x60
+
+# A UART's state: what it sent and what it has still to give.
+record Uart
+    # The bytes the program sent, not yet written out by the runner.
+    sent: [u8]
+    # The bytes the program will receive, in order.
+    input: [u8]
+    # How many of `input` it has received.
+    taken: i64
+
+# A UART with nothing sent, which will receive `input`.
+#
+# - `input`: the bytes it receives, in order; empty for none.
+function new_uart(input: [u8]) -> Uart
+    return Uart(sent: [], input: input, taken: 0)
+
+# What a read of the register at `offset` answers, and the UART after it:
+# reading the data register takes the byte waiting, 0 where none is.
+#
+# - `uart`: the device, which moves past a byte read.
+# - `offset`: the register, 0 to 7.
+function read_register(@uart: Uart, offset: i64) -> i64
+    if offset == DATA
+        if uart.taken >= uart.input.len()
+            return 0
+        b = uart.input[uart.taken]
+        uart.taken @ uart.taken + 1
+        return to_i64(b).must()
+
+    if offset == LINE_STATUS
+        if uart.taken < uart.input.len()
+            return TRANSMIT_EMPTY | DATA_READY
+        return TRANSMIT_EMPTY
+    return 0
+
+# Writes `value`'s low byte to the register at `offset`: the data register
+# sends it; the others, which configure a real line's speed and framing,
+# keep nothing here.
+#
+# - `uart`: the device.
+# - `offset`: the register, 0 to 7.
+# - `value`: the word written; only its low byte is read.
+function write_register(@uart: Uart, offset: i64, value: i64)
+    if offset == DATA
+        uart.sent @ uart.sent.push(to_u8(value & 0xff).must())
+
+# The bytes sent since the last drain, and the UART holding none.
+#
+# - `uart`: the device.
+function drain(@uart: Uart) -> [u8]
+    out = uart.sent
+    uart.sent @ []
+    return out
+
+## Tests
+
+test "read_register: bytes in order, then 0, the status following"
+    u @= new_uart([0x68, 0x69])
+    assert read_register(@u, offset: LINE_STATUS) == 0x61
+    assert read_register(@u, offset: DATA) == 0x68
+    assert read_register(@u, offset: DATA) == 0x69
+    assert read_register(@u, offset: LINE_STATUS) == 0x60
+    assert read_register(@u, offset: DATA) == 0
+    assert read_register(@u, offset: 3) == 0
+
+test "write_register and drain: the low byte sent, other registers ignored"
+    u @= new_uart([])
+    write_register(@u, offset: DATA, value: 0x141)
+    write_register(@u, offset: 3, value: 0x03)
+    write_register(@u, offset: DATA, value: 0x0a)
+    assert drain(@u) == [0x41, 0x0a]
+    assert drain(@u).len() == 0

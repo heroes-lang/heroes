@@ -10,6 +10,7 @@
 # the program is asked to stop (`os.ask_stop`), which ends the wait for
 # the next connection. The thread then answers its account.
 
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/io
 use <rebel>/net
@@ -66,7 +67,7 @@ function served(start: Start) -> s3_bucket.Bucket?
 
     match ready.tell(start.ready, service: "s3", port: listener.address.port)
         .err e =>
-            _ = net.close_listener(@listener).is_err()
+            errors.ignore(net.close_listener(@listener))
             return fail(code: e.code, msg: e.msg)
         .ok _ => _ = 0
 
@@ -78,9 +79,9 @@ function served(start: Start) -> s3_bucket.Bucket?
             .ok made =>
                 conn @= made
                 conversation(@b, conn: conn)
-                _ = io.close(@conn.stream).is_err()
+                errors.ignore(io.close(@conn.stream))
 
-    _ = net.close_listener(@listener).is_err()
+    errors.ignore(net.close_listener(@listener))
     return ok(b)
 
 # The requests of one connection answered until the client closes it.

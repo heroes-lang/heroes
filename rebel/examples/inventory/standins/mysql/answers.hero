@@ -9,6 +9,7 @@
 # `CLIENT_DEPRECATE_EOF`, its end an OK packet opening `0xFE` then.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/maps
 use <rebel>/sql/sqlite
@@ -122,7 +123,7 @@ function text_answered(@db: sqlite.Db, sess: Session, stream: io.Stream, text: s
 
     if word == "START TRANSACTION" || word == "BEGIN"
         if sqlite.in_transaction(db)
-            _ = sqlite.commit(@db).is_err()
+            errors.ignore(sqlite.commit(@db))
         return transaction_answered(stream, done: sqlite.begin(@db), status: status_of(db))
 
     if word == "COMMIT"
@@ -231,7 +232,7 @@ function execute_answered(@db: sqlite.Db, @sess: Session, stream: io.Stream, bod
         )
         .ok p =>
             statement @= p
-            _ = packets.take(@c, n: 5).is_err()
+            errors.ignore(errors.discard_value(packets.take(@c, n: 5)))
 
             match rows.read_params(@c, count: statement.params, @statement.types)
                 .err e => return packets.write_packet(

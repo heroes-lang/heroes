@@ -219,7 +219,7 @@ function scheme_of(client: End) -> str
 # TLS stream. A stream that cannot take it is found at its next read.
 function within(e: End, ms: i64)
     if e.secure
-        _ = tls.set_deadline(e.stream, deadline: time.milliseconds(ms).default(time.max_duration())).is_err()
+        _ = tls.set_deadline(e.stream, deadline: time.milliseconds_checked(ms).default(time.max_duration())).is_err()
     else
         _ = net.set_deadline(e.stream, deadline_ms: ms).is_err()
 
@@ -536,7 +536,7 @@ function shut(@conn: net.Conn)
 # `plan.connect_ms`. Fails as `net.connect` and `tls.connect` fail.
 function connect(up: Upstream, plan: Plan) -> net.Conn?
     if up.secure
-        span = time.milliseconds(plan.connect_ms).default(time.max_duration())
+        span = time.milliseconds_checked(plan.connect_ms).default(time.max_duration())
         return tls.connect(
             host: up.base.host,
             port: up.port,
@@ -806,7 +806,7 @@ function turns(plan: Plan, set: poll.Set, client: End, upstream: End)
         plan.read_ms
 
     while true
-        events = match poll.wait(set, limit: time.milliseconds(limit).default(time.max_duration()))
+        events = match poll.wait(set, limit: time.milliseconds_checked(limit).default(time.max_duration()))
             .ok got => got
             .err _  => return
 

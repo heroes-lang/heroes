@@ -11,6 +11,7 @@
 # without pseudo-terminals), the values are handed in by `hand`, and every
 # other part of the monitor sees them as it sees a port's.
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/numbers
 use <rebel>/serial
@@ -139,7 +140,7 @@ function open_port(@s: Sensor) -> ()?
     match serial.set_timeouts(port, timeouts: serial.Timeouts(read_ms: read_wait, write_ms: wait, gap_ms: 0))
         .ok _ => s.ports[s.spec.port] @ port
         .err e =>
-            _ = io.close(@port).is_err()
+            errors.ignore(io.close(@port))
             return fail(code: e.code, msg: e.msg)
 
     return ok()
@@ -150,7 +151,7 @@ function open_port(@s: Sensor) -> ()?
 function close(@s: Sensor)
     for name in keys(s.ports)
         port @= s.ports[name].must()
-        _ = io.close(@port).is_err()
+        errors.ignore(io.close(@port))
 
     s.ports @ {}
 
@@ -180,7 +181,7 @@ function read_once(@s: Sensor) -> Reading
 # - `s`: the sensor, its port open.
 function ask(@s: Sensor) -> ()?
     port = s.ports[s.spec.port].must()
-    _ = serial.discard_input(port).is_err()
+    errors.ignore(serial.discard_input(port))
 
     match io.write_text(port, text: s.spec.query + "\n")
         .ok _ => return ok()
@@ -351,7 +352,7 @@ test "ask and read_answer: a device on a pseudo-terminal answers, then stops ans
     spec.name @ "t"
     spec.port @ pair.path
     spec.query @ "T?"
-    spec.timeout @ time.milliseconds(200).must()
+    spec.timeout @ time.milliseconds(200)
     s @= new_sensor(spec, handed: false)
     open_port(@s).must()
     ask(@s).must()
@@ -370,14 +371,14 @@ test "read_once: a device that sends by itself, its last whole line taken"
     spec @= settings.no_sensor()
     spec.name @ "t"
     spec.port @ pair.path
-    spec.timeout @ time.milliseconds(200).must()
+    spec.timeout @ time.milliseconds(200)
     s @= new_sensor(spec, handed: false)
     open_port(@s).must()
     io.write_text(pair.controller, text: "20.0\n21.0\n22").must()
-    time.sleep(time.milliseconds(50).must())
+    time.sleep(time.milliseconds(50))
     assert read_once(@s).value == 21.0
     io.write_text(pair.controller, text: ".5\n").must()
-    time.sleep(time.milliseconds(50).must())
+    time.sleep(time.milliseconds(50))
     assert read_once(@s).value == 22.5
     assert read_once(@s).status == .silent
     close(@s)

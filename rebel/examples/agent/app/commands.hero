@@ -196,7 +196,7 @@ function toolbox_at(dir: str, allowed: {str: str}, model: str) -> toolbox.Toolbo
         .remote(client: secrets.openai_client("")?, model: m.embedding_model, dimensions: m.dimensions)
 
     return ok(
-        toolbox.Toolbox(root: m.root, store: loaded, embedder: made_by, allowed: allowed, model: model, command_limit: time.seconds(COMMAND_SECONDS).must())
+        toolbox.Toolbox(root: m.root, store: loaded, embedder: made_by, allowed: allowed, model: model, command_limit: time.seconds(COMMAND_SECONDS))
     )
 
 # The providers `--provider` and `--fallback` name, in that order, `--model`

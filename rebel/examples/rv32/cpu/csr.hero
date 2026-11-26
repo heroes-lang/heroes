@@ -1,0 +1,248 @@
+# The control and status registers this machine keeps (the privileged
+# specification, version 20211203, chapters 2 and 3): the counters a program
+# reads with `rdcycle`, `rdtime` and `rdinstret`, each as two halves, and the
+# machine-mode registers a trap handler needs, `mstatus`, `mie`, `mip`,
+# `mtvec`, `mscratch`, `mepc`, `mcause` and `mtval`, with the read-only
+# identity registers `misa` and `mhartid`. A number outside that list, or a
+# write to a read-only one, fails `illegal`: the hart answers it with the
+# illegal instruction trap.
+
+use isa/word
+
+## The numbers
+
+# `mstatus`.
+constant MSTATUS: i64
+    0x300
+
+# `misa`, read-only here.
+constant MISA: i64
+    0x301
+
+# `mie`, the interrupts enabled.
+constant MIE: i64
+    0x304
+
+# `mtvec`, the trap handler's address.
+constant MTVEC: i64
+    0x305
+
+# `mscratch`, a word for the handler.
+constant MSCRATCH: i64
+    0x340
+
+# `mepc`, the pc a trap interrupted.
+constant MEPC: i64
+    0x341
+
+# `mcause`, why the last trap was taken.
+constant MCAUSE: i64
+    0x342
+
+# `mtval`, the address or word the last trap was about.
+constant MTVAL: i64
+    0x343
+
+# `mip`, the interrupts pending.
+constant MIP: i64
+    0x344
+
+# `mhartid`, this hart's number, 0.
+constant MHARTID: i64
+    0xf14
+
+# `mstatus.MIE`: interrupts are taken.
+constant STATUS_MIE: i64
+    0x8
+
+# `mstatus.MPIE`: what `MIE` was before the last trap.
+constant STATUS_MPIE: i64
+    0x80
+
+# `mstatus.MPP`: the privilege before the last trap, always machine here.
+constant STATUS_MPP: i64
+    0x1800
+
+# The machine timer interrupt's bit, in `mie` and `mip`.
+constant TIMER_BIT: i64
+    0x80
+
+# `misa`'s value: 32 bits wide, with the I and M extensions.
+constant ISA: i64
+    0x4000_1100
+
+# The code a CSR access fails with where the CSR is unknown or read-only.
+constant ILLEGAL: str
+    "illegal"
+
+## The registers
+
+# The CSRs a program writes; the counters are the hart's own.
+record Csrs
+    # `mstatus`: `MIE`, `MPIE` and `MPP`, every other bit zero.
+    status: i64
+    # `mie`: only the timer's bit is kept.
+    enabled: i64
+    # `mtvec`, in direct mode: its two low bits read as zero.
+    vector: i64
+    # `mscratch`.
+    scratch: i64
+    # `mepc`: its low two bits read as zero.
+    epc: i64
+    # `mcause`.
+    cause: i64
+    # `mtval`.
+    value: i64
+
+# The CSRs at reset: interrupts off, no handler, `MPP` machine.
+function reset() -> Csrs
+    return Csrs(status: STATUS_MPP, enabled: 0, vector: 0, scratch: 0, epc: 0, cause: 0, value: 0)
+
+# The counters a program reads, the hart's own.
+record Counters
+    # Cycles since reset; one per instruction here, and the timer's `mtime`.
+    cycles: i64
+    # Instructions retired since reset.
+    retired: i64
+
+# What the CSR `number` holds.
+#
+# - `csrs`: the writable registers.
+# - `counters`: the hart's counters.
+# - `timer_pending`: whether the timer's interrupt is pending, `mip.MTIP`.
+# - `number`: the CSR's number, 0 to 0xfff.
+#
+# Fails `illegal` where the machine keeps no CSR of that number.
+function read(csrs: Csrs, counters: Counters, timer_pending: bool, number: i64) -> i64?
+    if number == 0xc00 || number == 0xb00 || number == 0xc01
+        return ok(counters.cycles & word.MASK)
+
+    if number == 0xc80 || number == 0xb80 || number == 0xc81
+        return ok(counters.cycles >> 32)
+
+    if number == 0xc02 || number == 0xb02
+        return ok(counters.retired & word.MASK)
+
+    if number == 0xc82 || number == 0xb82
+        return ok(counters.retired >> 32)
+
+    if number == MIP
+        if timer_pending
+            return ok(TIMER_BIT)
+        return ok(0)
+
+    return match number
+        0x300                         => ok(csrs.status)
+        0x301                         => ok(ISA)
+        0x304                         => ok(csrs.enabled)
+        0x305                         => ok(csrs.vector)
+        0x340                         => ok(csrs.scratch)
+        0x341                         => ok(csrs.epc)
+        0x342                         => ok(csrs.cause)
+        0x343                         => ok(csrs.value)
+        0xf11 | 0xf12 | 0xf13 | 0xf14 => ok(0)
+        _                             => fail(code: ILLEGAL, msg: f"no CSR {word.hex_literal(number)} on this machine")
+
+# Writes `value` to the CSR `number`, keeping only the bits the machine
+# keeps there.
+#
+# - `csrs`: the writable registers.
+# - `number`: the CSR's number.
+# - `value`: the word written.
+#
+# Fails `illegal` where the CSR is unknown or read-only: the user counters,
+# whose number's top two bits say so (0xc00 and above), `misa`, `mip`, the
+# identity registers, and `mcycle` and `minstret`, which the specification
+# lets a program write and this machine keeps read-only, so that a run's
+# counts are the cycles it ran.
+function write(@csrs: Csrs, number: i64, value: i64) -> ()?
+    if number == MSTATUS
+        csrs.status @ value & (STATUS_MIE | STATUS_MPIE) | STATUS_MPP
+    else if number == MIE
+        csrs.enabled @ value & TIMER_BIT
+    else if number == MTVEC
+        csrs.vector @ value & 0xffff_fffc
+    else if number == MSCRATCH
+        csrs.scratch @ value
+    else if number == MEPC
+        csrs.epc @ value & 0xffff_fffc
+    else if number == MCAUSE
+        csrs.cause @ value
+    else if number == MTVAL
+        csrs.value @ value
+    else
+        return fail(code: ILLEGAL, msg: f"the CSR {word.hex_literal(number)} cannot be written on this machine")
+    return ok()
+
+## Names
+
+# The CSRs an assembler and a debugger name, each with its number, in the
+# order the specification lists them.
+function names() -> {str: i64}
+    return {
+        "cycle": 0xc00
+        "time": 0xc01
+        "instret": 0xc02
+        "cycleh": 0xc80
+        "timeh": 0xc81
+        "instreth": 0xc82
+        "mstatus": MSTATUS
+        "misa": MISA
+        "mie": MIE
+        "mtvec": MTVEC
+        "mscratch": MSCRATCH
+        "mepc": MEPC
+        "mcause": MCAUSE
+        "mtval": MTVAL
+        "mip": MIP
+        "mcycle": 0xb00
+        "minstret": 0xb02
+        "mcycleh": 0xb80
+        "minstreth": 0xb82
+        "mvendorid": 0xf11
+        "marchid": 0xf12
+        "mimpid": 0xf13
+        "mhartid": MHARTID
+    }
+
+# The name of the CSR `number`, or its number in hexadecimal where it has
+# none here.
+#
+# - `number`: the CSR's number, 0 to 0xfff.
+function name_of(number: i64) -> str
+    table = names()
+
+    for name in keys(table)
+        if table[name].must() == number
+            return name
+
+    return word.hex_literal(number)
+
+## Tests
+
+test "read: the counters by halves, the identity, and an unknown number"
+    c = reset()
+    counters = Counters(cycles: 0x1_0000_0002, retired: 7)
+    assert read(c, counters: counters, timer_pending: false, number: 0xc00).must() == 2
+    assert read(c, counters: counters, timer_pending: false, number: 0xc80).must() == 1
+    assert read(c, counters: counters, timer_pending: false, number: 0xc02).must() == 7
+    assert read(c, counters: counters, timer_pending: false, number: MISA).must() == ISA
+    assert read(c, counters: counters, timer_pending: true, number: MIP).must() == TIMER_BIT
+    assert read(c, counters: counters, timer_pending: false, number: 0x7c0).is_err()
+
+test "write: the bits kept, and a read-only CSR refused"
+    c @= reset()
+    write(@c, number: MSTATUS, value: word.MASK).must()
+    assert c.status == STATUS_MIE | STATUS_MPIE | STATUS_MPP
+    write(@c, number: MTVEC, value: 0x8000_0103).must()
+    assert c.vector == 0x8000_0100
+    write(@c, number: MIE, value: word.MASK).must()
+    assert c.enabled == TIMER_BIT
+    assert write(@c, number: 0xc00, value: 0).is_err()
+    assert write(@c, number: MISA, value: 0).is_err()
+    assert write(@c, number: MIP, value: 0).is_err()
+
+test "names and name_of: both ways, and a number with no name"
+    assert names()["mepc"].must() == MEPC
+    assert name_of(0xc00) == "cycle"
+    assert name_of(0x7c0) == "0x000007c0"

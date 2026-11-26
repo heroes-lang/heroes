@@ -13,6 +13,7 @@
 # a 500 for a handler's failure, the request id copied, an entity tag and its
 # 304, the security headers, gzip, the counters and the log line.
 
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/metrics
 use <rebel>/openapi
@@ -117,8 +118,8 @@ function finish(r: http.Request, response: http.Response) -> http.Response
 # - `started`: the wall clock's time when it began, as the log's clock reads.
 function note_done(@app: state.App, r: http.Request, response: http.Response, mark: time.Mark, started: time.Instant)
     elapsed = time.elapsed(mark).default(time.nanoseconds(0))
-    _ = metrics.observe_request(@app.registry, r: r, response: response, elapsed: elapsed).is_err()
-    _ = web.log_request(app.logger, r: r, response: response, started: started).is_err()
+    errors.ignore(metrics.observe_request(@app.registry, r: r, response: response, elapsed: elapsed))
+    errors.ignore(web.log_request(app.logger, r: r, response: response, started: started))
     app.answered @ app.answered + 1
 
 ## Before the handler

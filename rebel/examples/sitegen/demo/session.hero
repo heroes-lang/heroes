@@ -121,7 +121,7 @@ function edited(w: watch.Watch, site: model.Site, state: builder.State, edit: Ed
         put_text(root: site.root, name: edit.name, text: edit.text)?
         print(f"watch: {edit.name} edited")
 
-    seen = watching.until_told(w, root: site.root, output: site.output, expected: edit.name, limit: time.seconds(20).must())?
+    seen = watching.until_told(w, root: site.root, output: site.output, expected: edit.name, limit: time.seconds(20))?
     result = builder.build(site.root, state: state, look: watching.look_of(seen))?
     print("  rebuilt: " + reports.summary(result.report))
 

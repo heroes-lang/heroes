@@ -4,6 +4,7 @@
 # socket it is. The loop runs until a client of the Redis stand-in asks
 # `SHUTDOWN`, which the demo's driver does once it has finished.
 
+use <rebel>/errors
 use <rebel>/poll
 use <rebel>/time
 
@@ -53,7 +54,7 @@ function serve_until_shutdown(@h: Host, most: time.Duration) -> ()?
         if time.is_longer(a: time.elapsed(began)?, b: most)
             return fail(code: "timeout", msg: f"the stand-ins were not shut down within {time.format_duration(most)}")
 
-        for e in poll.wait(h.set, limit: time.seconds(1)?)?
+        for e in poll.wait(h.set, limit: time.seconds(1))?
             if redis_standin.owns(h.redis, key: e.key)
                 redis_standin.serve(@h.redis, set: h.set, key: e.key)?
             else if collector.owns(h.collector, key: e.key)
@@ -80,16 +81,16 @@ function serve_redis_alone(port: i64, password: str) -> ()?
     served: ()? @= ok()
 
     while !alone.stopped && !served.is_err()
-        match poll.wait(s, limit: time.seconds(1)?)
+        match poll.wait(s, limit: time.seconds(1))
             .err e => served @ fail(code: e.code, msg: e.msg)
             .ok found =>
                 for e in found
                     if redis_standin.owns(alone, key: e.key)
-                        _ = redis_standin.serve(@alone, set: s, key: e.key).is_err()
+                        errors.ignore(redis_standin.serve(@alone, set: s, key: e.key))
 
     redis_standin.close(@alone, set: s)
     closing @= s
-    _ = poll.close(@closing).is_err()
+    errors.ignore(poll.close(@closing))
     return served
 
 # Closes every service and the set.
@@ -99,4 +100,4 @@ function close(@h: Host)
     redis_standin.close(@h.redis, set: h.set)
     collector.close(@h.collector, set: h.set)
     receiver.close(@h.hooks, set: h.set)
-    _ = poll.close(@h.set).is_err()
+    errors.ignore(poll.close(@h.set))

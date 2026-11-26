@@ -143,7 +143,7 @@ test "sign: an access token verifies, and an ID token is not taken for one"
         "aud": .text(v: "https://a")
         "sub": .text(v: "u1")
         "iat": jose.numeric_date(now)
-        "exp": jose.numeric_date(time.add(now, time.seconds(60).must()).must())
+        "exp": jose.numeric_date(time.add(now, time.seconds(60)).must())
     }
     access = sign(k, claims: claims, typ: ACCESS_TYPE).must()
     assert jose.claim_text(verify_access(k, token: access, issuer: "https://a", now: now).must(), name: "sub").must() == "u1"

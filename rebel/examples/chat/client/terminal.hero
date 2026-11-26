@@ -7,6 +7,7 @@
 # never waited on longer than that. Times are written in the reader's
 # language on the clocks of the machine's zone.
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/net
 use <rebel>/poll
@@ -58,7 +59,7 @@ function run(asked: Asked) -> ()?
     ended = in_full_screen(@a)
 
     # The session ends whatever the screen answered.
-    _ = session.close(@a.s).is_err()
+    errors.ignore(session.close(@a.s))
     return ended
 
 # Runs the client in full-screen mode, the connection waited on with `poll`,
@@ -72,18 +73,18 @@ function in_full_screen(@a: app.App) -> ()?
     # The client waits on the connection with `poll`, never in a read; a
     # stream that refuses the deadline is closed, which the loop's first read
     # says.
-    _ = net.set_deadline(a.s.socket.stream, deadline_ms: net.FOREVER).is_err()
+    errors.ignore(net.set_deadline(a.s.socket.stream, deadline_ms: net.FOREVER))
     set @= poll.make(4)?
 
     screen_held @= match start_screen(set, stream: a.s.socket.stream)
         .ok held => held
         .err e =>
-            _ = poll.close(@set).is_err()
+            errors.ignore(poll.close(@set))
             return fail(code: e.code, msg: e.msg)
 
     ended = loop(@a, @screen_held, set: set)
     stopped = tui.stop(@screen_held)
-    _ = poll.close(@set).is_err()
+    errors.ignore(poll.close(@set))
     stopped?
     return ended
 
@@ -104,7 +105,7 @@ function start_screen(set: poll.Set, stream: io.Stream) -> tui.Terminal?
 # - `screen_held`: the terminal in full-screen mode.
 # - `set`: the poll set holding the connection's stream.
 function loop(@a: app.App, @screen_held: tui.Terminal, set: poll.Set) -> ()?
-    tick = time.milliseconds(TICK_MS)?
+    tick = time.milliseconds(TICK_MS)
 
     while !a.done
         now = time.now()?
@@ -121,7 +122,7 @@ function loop(@a: app.App, @screen_held: tui.Terminal, set: poll.Set) -> ()?
                 if e.code != tui.TIMEOUT
                     return fail(code: e.code, msg: e.msg)
 
-        if session.held_of(a.s) > 0 || poll.wait(set, limit: time.seconds(0)?)?.len() > 0
+        if session.held_of(a.s) > 0 || poll.wait(set, limit: time.seconds(0))?.len() > 0
             session.receive_ready(@a.s, now: now)?
 
     return ok()

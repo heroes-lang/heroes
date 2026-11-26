@@ -9,6 +9,7 @@
 # a hub that serves in a terminal, as a line of its journal with the wall
 # clock's time.
 
+use <rebel>/errors
 use <rebel>/metrics
 use <rebel>/poll
 use <rebel>/protobuf
@@ -165,7 +166,7 @@ function begin(s: settings.Settings, quiet: bool) -> Hub?
     feed = match server.open_feed(s.listen, set: set)
         .ok f => f
         .err e =>
-            _ = poll.close(@set).is_err()
+            errors.ignore(poll.close(@set))
             return fail(code: e.code, msg: e.msg)
 
     p = recovery.policy(first: s.retry.first, multiplier: s.retry.multiplier, longest: s.retry.longest)?
@@ -204,7 +205,7 @@ function end(@h: Hub) -> str
     for i in range(from: 0, to: h.ports.len())
         gateway.close(@h.ports[i])
 
-    _ = poll.close(@h.set).is_err()
+    errors.ignore(poll.close(@h.set))
     c = h.counts
     return f"the hub: {c.readings} readings, {c.refused} refused, {c.unregistered} unregistered, {c.published} published, {c.held} held; links made again after a loss: {reconnections(h)}; requests served: {h.feed.served}"
 
@@ -215,9 +216,9 @@ test "path_name: a path's last part, by either separator"
 
 test "chance_of: a seed draws the same numbers every time"
     r = settings.RetrySettings(
-        first: time.milliseconds(1).must(),
+        first: time.milliseconds(1),
         multiplier: 2.0,
-        longest: time.seconds(1).must(),
+        longest: time.seconds(1),
         seed: ok(7)
     )
     a @= chance_of(r).must()

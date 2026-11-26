@@ -1,0 +1,20 @@
+error[type_mismatch]: expected `(function(App) -> ())`, found `(function(@App) -> ())`
+  at tests/golden/full/function-type-marks-a-mismatch-names-the-differing-mark.hero:20:36
+     |
+  20 |     plain: (function(App) -> ()) = bump  #~ type_mismatch
+     |                                    ^^^^
+  note: parameter 1 is marked `@` in the value's type and unmarked (a copy) in the type asked: a mark is part of a function type, and only `lent` fits where `@` is asked (spec § 9)
+
+error[type_mismatch]: expected `(function(a type parameter) -> ())`, found `(function(@App) -> ())`
+  at tests/golden/full/function-type-marks-a-mismatch-names-the-differing-mark.hero:21:11
+     |
+  21 |     apply(bump, app)  #~ type_mismatch
+     |           ^^^^
+  note: parameter 1 is marked `@` in the value's type and unmarked (a copy) in the type asked: a mark is part of a function type, and only `lent` fits where `@` is asked (spec § 9)
+
+error[type_mismatch]: expected `(function(App) -> i64)`, found `(function(App lent) -> i64)`
+  at tests/golden/full/function-type-marks-a-mismatch-names-the-differing-mark.hero:22:38
+     |
+  22 |     reader: (function(App) -> i64) = peek  #~ type_mismatch
+     |                                      ^^^^
+  note: parameter 1 is marked `lent` in the value's type and unmarked (a copy) in the type asked: a mark is part of a function type, and only `lent` fits where `@` is asked (spec § 9)

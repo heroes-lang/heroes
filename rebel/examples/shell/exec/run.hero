@@ -9,6 +9,7 @@
 # copy of the shell, so what it changes ends with it; only its status and
 # what it wrote to a capture come back.
 
+use <rebel>/errors
 use <rebel>/os
 use <rebel>/process
 
@@ -369,7 +370,7 @@ function end_subshell(@sh: state.Shell, @sub: state.Shell)
 function release_jobs(@sh: state.Shell)
     for j in range(from: 0, to: sh.jobs.len())
         for k in range(from: 0, to: sh.jobs[j].children.len())
-            _ = process.release(@sh.jobs[j].children[k]).is_err()
+            errors.ignore(process.release(@sh.jobs[j].children[k]))
 
     sh.jobs @ []
 

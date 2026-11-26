@@ -4,6 +4,7 @@ packages = [
     "bytes",
     "containers/disjoint",
     "containers/trie",
+    "errors",
     "flags",
     "fs",
     "graphs",

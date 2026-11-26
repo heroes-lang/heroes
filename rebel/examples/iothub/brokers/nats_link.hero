@@ -6,6 +6,7 @@
 # most one, empty while the server is down, because `nats`'s calls work on
 # its place through `@`.
 
+use <rebel>/errors
 use <rebel>/nats
 use <rebel>/time
 
@@ -42,13 +43,13 @@ function connect(s: settings.NatsSettings, name: str) -> nats.Client?
         match nats.subscribe(@c, subject: subject)
             .ok _ => _ = 0
             .err e =>
-                _ = nats.close(@c).is_err()
+                errors.ignore(nats.close(@c))
                 return fail(code: e.code, msg: e.msg)
 
-    match nats.flush(@c, wait: time.seconds(5)?)
+    match nats.flush(@c, wait: time.seconds(5))
         .ok _ => return ok(c)
         .err e =>
-            _ = nats.close(@c).is_err()
+            errors.ignore(nats.close(@c))
             return fail(code: e.code, msg: e.msg)
 
 # Whether the link is up.
@@ -94,14 +95,14 @@ function flush(@l: Link) -> ()?
         return ok()
 
     l.unflushed @ false
-    return nats.flush(@l.clients[0], wait: time.seconds(5)?)
+    return nats.flush(@l.clients[0], wait: time.seconds(5))
 
 # Ends the client and leaves the link down.
 #
 # - `l`: the link.
 function close(@l: Link)
     if l.clients.len() > 0 && !nats.is_closed(l.clients[0])
-        _ = nats.close(@l.clients[0]).is_err()
+        errors.ignore(nats.close(@l.clients[0]))
 
     l.clients @ []
     l.key @ -1

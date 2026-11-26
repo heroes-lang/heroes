@@ -1,5 +1,5 @@
 # The ASCII classes of a byte and the case of ASCII letters: what `bytes`
-# means by white space, a digit, a letter and its case. A byte above 127 is
+# means by white space, a digit, a hexadecimal digit, a letter and its case. A byte above 127 is
 # none of them and keeps its case, since bytes are read as no encoding.
 
 # Whether `c` is ASCII white space: space, and tab to carriage return, the
@@ -23,6 +23,11 @@ function is_lower(c: u8) -> bool
 # Whether `c` is an ASCII letter.
 function is_letter(c: u8) -> bool
     return is_upper(c) || is_lower(c)
+
+# Whether `c` is an ASCII hexadecimal digit: `0` to `9`, `a` to `f` or `A` to
+# `F`.
+function is_hex_digit(c: u8) -> bool
+    return is_digit(c) || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F'
 
 # `c` in lower case where it is an ASCII upper-case letter, else `c`.
 function lowered(c: u8) -> u8
@@ -84,6 +89,12 @@ test "is_digit, is_letter, is_upper and is_lower at the edges of each range"
     assert is_upper('A') && is_upper('Z') && !is_upper('@') && !is_upper('[')
     assert is_lower('a') && is_lower('z') && !is_lower('`') && !is_lower('{')
     assert is_letter('A') && is_letter('z') && !is_letter('1') && !is_letter(0xc9)
+
+test "is_hex_digit: the edges of its three ranges, their neighbours, and a byte above 127"
+    assert is_hex_digit('0') && is_hex_digit('9') && is_hex_digit('a') && is_hex_digit('f')
+    assert is_hex_digit('A') && is_hex_digit('F')
+    assert !is_hex_digit('/') && !is_hex_digit(':') && !is_hex_digit('`') && !is_hex_digit('g')
+    assert !is_hex_digit('@') && !is_hex_digit('G') && !is_hex_digit(0) && !is_hex_digit(0xe6)
 
 # Python's `bytes.upper` and `bytes.lower` answered these on 2026-11-15: the
 # bytes of `É` and a lone 0xE9 keep their case.

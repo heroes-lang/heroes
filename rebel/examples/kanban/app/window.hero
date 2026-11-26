@@ -5,6 +5,7 @@
 # who reaches for Command-Z finds it, and its choices go through the same
 # handler as the page's calls.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/path
 use <rebel>/time
@@ -40,7 +41,7 @@ function run(command: cli.Command) -> ()?
         .ok opened => opened
         .err e =>
             gone @= app
-            _ = ui.close(@gone).is_err()
+            errors.ignore(ui.close(@gone))
             return fail(code: e.code, msg: e.msg)
 
     d @= opening.made(app, db: db, web: web, dates: clock.system(), names: ids.drawn())?
@@ -63,7 +64,7 @@ function menu_bar(@d: desk.Desk) -> Menus?
 # to close.
 function loop(@d: desk.Desk, menus: Menus) -> ()?
     while true
-        match ui.wait(@d.app, within: time.seconds(1)?)
+        match ui.wait(@d.app, within: time.seconds(1))
             .err e =>
                 if e.code != ui.TIMEOUT
                     return fail(code: e.code, msg: e.msg)

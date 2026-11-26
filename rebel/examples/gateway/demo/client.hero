@@ -11,6 +11,7 @@
 # gateway's and the stand-ins' loops.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/http2
 use <rebel>/io
@@ -105,7 +106,7 @@ function over_h1(@lines: [str], port: i64, roots: str)
             lines @ lines.push(
                 said(method: "GET", host: API_HOST, target: "/nowhere", answer: asked_h1(@reader, method: "GET", host: API_HOST, target: "/nowhere", extra: []), detail: error_of)
             )
-            _ = io.close(@conn.stream).is_err()
+            errors.ignore(io.close(@conn.stream))
 
 # The answer to one request on an HTTP/1.1 connection, sent with the
 # client's key.
@@ -293,4 +294,4 @@ function samples_of(answer: http.Response?) -> [str]
 
 # How long a connection and each exchange may take.
 function seconds() -> time.Duration
-    return time.seconds(CALL_SECONDS).default(time.max_duration())
+    return time.seconds(CALL_SECONDS)

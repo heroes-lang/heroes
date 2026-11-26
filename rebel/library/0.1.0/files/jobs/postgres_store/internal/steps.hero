@@ -100,7 +100,7 @@ function clock(@db: postgres.Db) -> time.Instant?
 
 test "micros: whole microseconds, rounded toward zero either way"
     assert micros(time.Duration(nanoseconds: 1_999)) == 1 && micros(time.Duration(nanoseconds: -1_999)) == -1
-    assert micros(time.seconds(30).must()) == 30_000_000
+    assert micros(time.seconds(30)) == 30_000_000
 
 test "clean: a text kept whole, and a zero byte made U+FFFD"
     assert clean("città") == "città" && clean("") == ""

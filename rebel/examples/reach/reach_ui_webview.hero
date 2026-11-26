@@ -92,7 +92,7 @@ function session(@app: ui.App, native: bool)
     while heard < REQUESTS.len() + 2 && deadline < 100
         deadline @ deadline + 1
 
-        match ui.wait(@app, within: time.milliseconds(100).must())
+        match ui.wait(@app, within: time.milliseconds(100))
             .err e =>
                 if e.code != webview.UNSUPPORTED && e.code != ui.TIMEOUT
                     break

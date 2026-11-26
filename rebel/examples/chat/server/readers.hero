@@ -15,6 +15,7 @@
 # loop a hash is made (`server/hashing`).
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/io
 use <rebel>/net
@@ -63,7 +64,7 @@ function work(w: Start) -> i64
                         .ok to => _ = net.send_to(mouth, data: bytes.from_text("read"), to: to).is_err()
                         .err _ => _ = 0
 
-    _ = net.close_udp(@mouth).is_err()
+    errors.ignore(net.close_udp(@mouth))
     return handed
 
 # Reads the one request of `conn` and hands it over with the connection;
@@ -80,7 +81,7 @@ function read_one(w: Start, conn: net.Conn) -> bool
         .err _ =>
             # `next_request` has answered what a status answers; the
             # connection ends either way.
-            _ = io.close(@reader.stream).is_err()
+            errors.ignore(io.close(@reader.stream))
             return false
 
     read @= Read(reader: reader, r: r)
@@ -90,7 +91,7 @@ function read_one(w: Start, conn: net.Conn) -> bool
         .err _ =>
             # Not sent, the program stopping: the connection is still this
             # worker's.
-            _ = io.close(@read.reader.stream).is_err()
+            errors.ignore(io.close(@read.reader.stream))
             return false
 
 # Accepts the connection `l` holds, its deadline `deadline_ms`, and hands it
@@ -109,7 +110,7 @@ function hand(l: net.Listener lent, conns: (mailbox net.Conn), deadline_ms: i64)
         .ok _ => _ = 0
         .err _ =>
             # Not sent: the connection is still this thread's.
-            _ = io.close(@tcp.stream).is_err()
+            errors.ignore(io.close(@tcp.stream))
 
 # Takes the next connection handed over from `reads` without waiting, for
 # the loop's thread; fails where none is waiting.

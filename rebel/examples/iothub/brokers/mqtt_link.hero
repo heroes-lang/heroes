@@ -9,6 +9,7 @@
 # down: `mqtt`'s calls work on the client's own place through `@`, which a
 # list's element lends and a `T?` field cannot.
 
+use <rebel>/errors
 use <rebel>/mqtt
 use <rebel>/time
 
@@ -35,7 +36,7 @@ function connect(s: settings.MqttSettings) -> mqtt.Client?
     opts @= mqtt.parse_url(s.url)?
     opts.client_id @ s.client_id
     opts.reconnect.attempts @ 0
-    opts.wait @ time.seconds(5)?
+    opts.wait @ time.seconds(5)
     c @= mqtt.connect(opts)?
 
     if s.filters.len() == 0
@@ -49,7 +50,7 @@ function connect(s: settings.MqttSettings) -> mqtt.Client?
     match mqtt.subscribe_many(@c, subscriptions: subscriptions, properties: [])
         .ok _ => return ok(c)
         .err e =>
-            _ = mqtt.drop(@c).is_err()
+            errors.ignore(mqtt.drop(@c))
             return fail(code: e.code, msg: e.msg)
 
 # Whether the link is up.
@@ -90,7 +91,7 @@ function close(@l: Link)
     # A client its broker closed already needs no DISCONNECT; one whose
     # DISCONNECT cannot be written is closed all the same.
     if l.clients.len() > 0 && !mqtt.is_closed(l.clients[0])
-        _ = mqtt.close(@l.clients[0]).is_err()
+        errors.ignore(mqtt.close(@l.clients[0]))
 
     l.clients @ []
     l.key @ -1

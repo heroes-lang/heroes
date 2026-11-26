@@ -277,14 +277,14 @@ function serve(arg: str) -> str
             return said
 
     tell(control: control, text: to_str(l.port))
-    tls.set_accept_deadline(l, deadline: time.seconds(15).must()).must()
+    tls.set_accept_deadline(l, deadline: time.seconds(15)).must()
     heard: str @= "closed: no client finished its handshake"
     tries @= 0
 
     while tries < 5
         tries @ tries + 1
 
-        match tls.accept(l, deadline: time.seconds(10).must())
+        match tls.accept(l, deadline: time.seconds(10))
             .err e =>
                 heard @ e.code + ": " + e.msg
 

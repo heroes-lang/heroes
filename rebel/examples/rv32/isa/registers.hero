@@ -1,0 +1,99 @@
+# The 32 integer registers of RV32I by their two names: `x0` to `x31`, and
+# the names the standard calling convention gives them (the RISC-V ELF psABI,
+# its integer register table), which the assembler reads and the
+# disassembler and the debugger write.
+
+use <rebel>/numbers
+use <rebel>/strings
+
+## Names
+
+# The calling convention's name of each register, by its number: `zero`, the
+# return address `ra`, the stack pointer `sp` and the rest.
+function abi_names() -> [str]
+    return [
+        "zero"
+        "ra"
+        "sp"
+        "gp"
+        "tp"
+        "t0"
+        "t1"
+        "t2"
+        "s0"
+        "s1"
+        "a0"
+        "a1"
+        "a2"
+        "a3"
+        "a4"
+        "a5"
+        "a6"
+        "a7"
+        "s2"
+        "s3"
+        "s4"
+        "s5"
+        "s6"
+        "s7"
+        "s8"
+        "s9"
+        "s10"
+        "s11"
+        "t3"
+        "t4"
+        "t5"
+        "t6"
+    ]
+
+# The calling convention's name of register `n`.
+#
+# - `n`: the register's number, 0 to 31.
+#
+# Aborts where `n` is outside 0 to 31: a number the program decoded from five
+# bits, never one read from outside.
+function abi_name(n: i64) -> str
+    return abi_names()[n]
+
+# The number of the register `name` names: `x0` to `x31`, an ABI name, or
+# `fp`, the frame pointer's other name for `s0`.
+#
+# - `name`: the name as written, in lower case.
+#
+# Fails `not_found` where `name` names no register.
+function number_of(name: str) -> i64?
+    if name == "fp"
+        return ok(8)
+    names = abi_names()
+
+    for at in range(from: 0, to: names.len())
+        if names[at] == name
+            return ok(at)
+
+    if name.len() >= 2 && name.len() <= 3 && name[0] == 'x'
+        digits = strings.trim_prefix(s: name, prefix: "x")
+        n = numbers.parse_int(digits)
+
+        if !n.is_err() && n.must() >= 0 && n.must() <= 31 && numbers.format_int(n: n.must(), base: 10) == digits
+            return ok(n.must())
+    return fail(code: "not_found", msg: f"\"{name}\" names no register")
+
+## Tests
+
+test "abi_name: the ends and the stack pointer"
+    assert abi_name(0) == "zero"
+    assert abi_name(2) == "sp"
+    assert abi_name(31) == "t6"
+
+test "number_of: both names, fp, and what is no register"
+    assert number_of("x0").must() == 0
+    assert number_of("x31").must() == 31
+    assert number_of("a0").must() == 10
+    assert number_of("fp").must() == 8
+    assert number_of("s0").must() == 8
+    assert number_of("x32").is_err()
+    assert number_of("x01").is_err()
+    assert number_of("x").is_err()
+    assert number_of("x-1").is_err()
+    assert number_of("").is_err()
+    assert number_of("ra1").is_err()

@@ -15,6 +15,14 @@
 # C's write meets a sealed page and AddressSanitizer names it. A plain build
 # that comes to see it turns this case red, and its expectation is then
 # written again.
+#
+# Corrected 2026-11-26, lane room-mixedown (defect d-lane-land260-2): *at
+# its depth*, twice above, named the stack of regions panel 259's R1 removed
+# (route E, step 192a, `3f9fe858d`): every lend is a region of its own in
+# the process's records, and a region given back is taken by the next lend
+# it fits, on any thread and at any depth (`runtime/parts/lend_aside.c`).
+# `later`'s lend is still that next lend here, so the shape and its pinned
+# cost stand as written.
 
 extern "fixedbugs-451-keepers.h"
     function cell_keep(@out: i64)

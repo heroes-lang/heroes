@@ -196,6 +196,8 @@ __attribute__((noinline)) static uintptr_t hero_rebind_below(void) {
  * home overwritten. */
 static void hero_rebind_note(const void *buf, uintptr_t frame) {
     if (buf == NULL) return;
+    /* The thread runs at the save (defect 2855, `rebind_entries.c`). */
+    hero_rebind_relived(hero_rebind_own(), frame);
     hero_rebind_settle();
     uint64_t entry = hero_rebind_innermost();
     uintptr_t b = (uintptr_t)buf;

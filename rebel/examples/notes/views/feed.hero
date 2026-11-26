@@ -140,7 +140,7 @@ test "atom_of: an empty feed, its updated the moment given"
 
 test "atom_of: two notes, their addresses absolute, a title's markup escaped, the content carried as text"
     at = time.from_unix(whole_seconds: 1_795_251_600, extra_nanoseconds: 0).must()
-    later = time.add(at, d: time.minutes(5).must()).must()
+    later = time.add(at, d: time.minutes(5)).must()
     first = model.Note(
         id: 1,
         author_id: 1,

@@ -9,6 +9,7 @@
 # mends it. Each job is claimed once a replay: one that failed waits, and
 # the replay ends when no job is ready.
 
+use <rebel>/errors
 use <rebel>/jobs
 use <rebel>/jobs/postgres_store
 use <rebel>/json
@@ -42,7 +43,7 @@ record Replayed
 function worker_of() -> jobs.Worker
     w @= jobs.new_worker([deadletter.QUEUE])
     w.name @ "pipeline-replay"
-    w.lease @ time.minutes(5).default(w.lease)
+    w.lease @ time.minutes(5)
     return w
 
 # Replays every job ready, and answers each one's outcome, in the order
@@ -98,7 +99,7 @@ function replay_one(@p: pipeline.Pipeline, worker: jobs.Worker, claimed: jobs.In
             match finished(@p, key: k.key, claimed: claimed, etag: etag)
                 .ok _ => postgres.commit(@p.db)?
                 .err e =>
-                    _ = postgres.rollback(@p.db).is_err()
+                    errors.ignore(postgres.rollback(@p.db))
                     return fail(code: e.code, msg: e.msg)
 
             telemetry.count(@p.registry, name: telemetry.REPLAYED, labels: [])
@@ -123,4 +124,4 @@ function finished(@p: pipeline.Pipeline, key: str, claimed: jobs.Info, etag: str
 
 test "worker_of: claims from the replay queue under its own name"
     w = worker_of()
-    assert w.queues == [deadletter.QUEUE] && w.name == "pipeline-replay" && w.lease == time.minutes(5).must()
+    assert w.queues == [deadletter.QUEUE] && w.name == "pipeline-replay" && w.lease == time.minutes(5)

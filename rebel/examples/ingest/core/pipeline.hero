@@ -3,6 +3,7 @@
 # its run, which the `run` and `demo` commands report. It is one value on
 # one thread, passed with `@` to each step of the loop.
 
+use <rebel>/errors
 use <rebel>/metrics
 use <rebel>/os
 use <rebel>/sql/postgres
@@ -95,4 +96,4 @@ function open(s: settings.Settings) -> Pipeline?
 #
 # - `p`: the pipeline.
 function close(@p: Pipeline)
-    _ = postgres.close(@p.db).is_err()
+    errors.ignore(postgres.close(@p.db))

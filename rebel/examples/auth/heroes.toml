@@ -6,6 +6,7 @@ packages = [
     "cbor",
     "crypto",
     "crypto/keypairs",
+    "errors",
     "fs",
     "http",
     "io",

@@ -7,6 +7,7 @@
 # `open` makes `VERSION`; a file of a later version is refused, since this
 # program cannot know what its tables mean.
 
+use <rebel>/errors
 use <rebel>/sql
 use <rebel>/sql/sqlite
 use <rebel>/time
@@ -31,7 +32,7 @@ function open(path: str) -> sqlite.Db?
     match ready(@db)
         .ok _ => return ok(db)
         .err e =>
-            _ = sqlite.close(@db).is_err()
+            errors.ignore(sqlite.close(@db))
             return fail(code: e.code, msg: f"the database at {path} could not be readied: {e.msg}")
 
 # The database in memory alone, with its tables: what the tests use.
@@ -45,7 +46,7 @@ function open_memory() -> sqlite.Db?
 #
 # - `db`: the connection.
 function ready(@db: sqlite.Db) -> ()?
-    sqlite.set_busy_timeout(@db, timeout: time.seconds(5)?)?
+    sqlite.set_busy_timeout(@db, timeout: time.seconds(5))?
     _ = sqlite.exec(@db, statement: "PRAGMA foreign_keys = ON", params: [])?
     version = sql.integer_at(sqlite.query_one(@db, statement: "PRAGMA user_version", params: [])?, index: 0)?
 

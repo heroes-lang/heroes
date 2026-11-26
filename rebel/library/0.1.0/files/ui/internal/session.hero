@@ -43,7 +43,7 @@ function quits_of(@app: ui.App) -> [ui.Event]?
     out: [ui.Event] @= []
 
     for _ in range(from: 0, to: 5)
-        match ui.wait(@app, within: time.milliseconds(100).must())
+        match ui.wait(@app, within: time.milliseconds(100))
             .ok event =>
                 match event
                     .quit_asked _ => out @ out.push(event)
@@ -202,7 +202,7 @@ function handed_of_waiting(@app: ui.App) -> [ui.Event]?
     out: [ui.Event] @= []
 
     for _ in range(from: 0, to: 10)
-        match ui.wait(@app, within: time.milliseconds(100).must())
+        match ui.wait(@app, within: time.milliseconds(100))
             .ok event =>
                 match event
                     .handed _ => out @ out.push(event)

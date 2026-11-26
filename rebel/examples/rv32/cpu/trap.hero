@@ -1,0 +1,69 @@
+# The causes of a trap, the numbers `mcause` holds (the privileged
+# specification's table 3.6), and the words this program tells them in.
+# An interrupt's cause has the word's top bit set.
+
+## Causes
+
+# A jump or branch to an address that is not a multiple of 4.
+constant INSTRUCTION_MISALIGNED: i64
+    0
+
+# A fetch from an address no memory answers.
+constant INSTRUCTION_ACCESS: i64
+    1
+
+# A word that encodes no instruction, or a CSR access the machine refuses.
+constant ILLEGAL_INSTRUCTION: i64
+    2
+
+# `ebreak`.
+constant BREAKPOINT: i64
+    3
+
+# A load from an address not a multiple of its width.
+constant LOAD_MISALIGNED: i64
+    4
+
+# A load from an address no memory answers.
+constant LOAD_ACCESS: i64
+    5
+
+# A store to an address not a multiple of its width.
+constant STORE_MISALIGNED: i64
+    6
+
+# A store to an address no memory answers.
+constant STORE_ACCESS: i64
+    7
+
+# `ecall` in machine mode, the only mode here.
+constant ENVIRONMENT_CALL: i64
+    11
+
+# The machine timer interrupt: bit 31 and cause 7.
+constant TIMER_INTERRUPT: i64
+    0x8000_0007
+
+# What `cause` is, in a few words: `illegal instruction`.
+#
+# - `cause`: the number `mcause` holds.
+function cause_name(cause: i64) -> str
+    return match cause
+        0           => "instruction address misaligned"
+        1           => "instruction access fault"
+        2           => "illegal instruction"
+        3           => "breakpoint"
+        4           => "load address misaligned"
+        5           => "load access fault"
+        6           => "store address misaligned"
+        7           => "store access fault"
+        11          => "environment call from machine mode"
+        0x8000_0007 => "machine timer interrupt"
+        _           => f"cause {cause}"
+
+## Tests
+
+test "cause_name: an exception, the interrupt, and a number no cause holds"
+    assert cause_name(ILLEGAL_INSTRUCTION) == "illegal instruction"
+    assert cause_name(TIMER_INTERRUPT) == "machine timer interrupt"
+    assert cause_name(9) == "cause 9"

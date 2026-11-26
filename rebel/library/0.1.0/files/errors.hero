@@ -1,6 +1,7 @@
 # Failures told well: words added to a failure as it travels up, its code
-# kept; several failures joined into one; and a failure told to a person, in
-# one line or as an indented chain. It is what Rust's `anyhow` gives, said over
+# kept; several failures joined into one; a failure told to a person, in one
+# line or as an indented chain; and one dropped on purpose where it cannot
+# matter. It is what Rust's `anyhow` gives, said over
 # the language's own failure, a `T?` holding a code and a message (spec § 6):
 # every function here is generic over any `T?`.
 #
@@ -105,6 +106,27 @@ function collect<T>(results: [T?]) -> [T]?
 # where `r` fails, with its code and its message. See also `combine`.
 function discard_value<T>(r: T?) -> ()?
     return wrap.discard_value(r)
+
+## Dropping a failure
+
+# Nothing: the failure `r` may hold is dropped, for a failure that cannot
+# change what the program does next.
+#
+# - `r`: the result of a call made for its effect alone, such as closing a
+#   stream. It is a `()?`, so no value is dropped with the failure: a call
+#   that answers a value, or a list or a record holding failures of their
+#   own, is read by the program, and where its value truly does not matter
+#   `discard_value` says so first, in words a reader sees.
+#
+# It is for a failure that genuinely cannot matter: a stream closed on the
+# way out of a failure already being answered, a scratch folder removed that
+# may already be gone, a line written to standard error, which has nowhere
+# else to tell its own failure. A failure the program acts on or tells is
+# answered with `?`, `match`, `.default` or `context`, never through this.
+# It decides nothing: where `_ = r.is_err()` asks a question and throws the
+# answer away, its name says the drop is meant. See also `discard_value`.
+function ignore(r: ()?)
+    wrap.ignore(r)
 
 ## Reading a failure
 
@@ -223,6 +245,14 @@ test "discard_value: two results of two types joined"
     name: str? = ok("ada")
     joined = combine([discard_value(count), discard_value(name)])
     assert format_line(joined) == "invalid: not a number"
+
+# A stream's close dropped on the way out of a failure the caller is told:
+# the close cannot change what the caller does, the read's failure can.
+test "ignore: a close's failure dropped, the read's own answered"
+    read: str? = fail(code: "closed", msg: "the peer closed the connection")
+    closing: ()? = fail(code: "closed", msg: "already closed")
+    ignore(closing)
+    assert format_line(context(read, what: "reading the request")) == "closed: reading the request: the peer closed the connection"
 
 # The links of a chain, the outermost first.
 test "chain_of: two contexts over a quoted message"

@@ -7,6 +7,7 @@
 
 use <rebel>/bytes
 use <rebel>/crypto
+use <rebel>/errors
 
 use repo/layout
 use repo/repository
@@ -64,17 +65,17 @@ function init(store: storage.Storage, password: str, setup: Setup) -> repository
 
     match settings.encode(config)
         .err e =>
-            _ = master.close(@key).is_err()
+            errors.ignore(master.close(@key))
             return fail(code: e.code, msg: e.msg)
         .ok text =>
             match master.seal_bytes(key, data: bytes.from_text(text), bound: layout.CONFIG)
                 .err e =>
-                    _ = master.close(@key).is_err()
+                    errors.ignore(master.close(@key))
                     return fail(code: e.code, msg: e.msg)
                 .ok sealed =>
                     match storage.put(@s, key: layout.CONFIG, data: sealed)
                         .err e =>
-                            _ = master.close(@key).is_err()
+                            errors.ignore(master.close(@key))
                             return fail(code: e.code, msg: e.msg)
                         .ok _ => return ok(
                             repository.opened(store: s, key: key, config: config, index_files: [], bloom: summary.sized(0))

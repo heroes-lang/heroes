@@ -150,7 +150,7 @@ function burst(w: watch.Watch, root: str, output: str, limit: time.Duration, qui
 function until_told(w: watch.Watch, root: str, output: str, expected: str, limit: time.Duration) -> Seen?
     start = time.mark()?
     seen @= Seen(paths: [], everything: false)
-    step = time.milliseconds(250).must()
+    step = time.milliseconds(250)
 
     while true
         got = burst(w, root: root, output: output, limit: step, quiet: step)?
@@ -189,7 +189,7 @@ function run(root: str, output: str) -> ()?
     print(f"watching {root} (Ctrl-C stops)")
 
     while true
-        seen = match burst(w, root: root, output: output, limit: time.max_duration(), quiet: time.milliseconds(150).must())
+        seen = match burst(w, root: root, output: output, limit: time.max_duration(), quiet: time.milliseconds(150))
             .ok s => s
             .err e =>
                 if e.code == STOPPED

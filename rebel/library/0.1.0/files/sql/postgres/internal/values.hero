@@ -264,7 +264,7 @@ function instant_of(s: str) -> time.Instant?
     if c.at != s.len()
         return fail(code: INVALID, msg: f"\"{s}\" goes on past its time at byte {c.at}")
     t = time.from_date_time(time.DateTime(year: year, month: month, day: day, hour: hour, minute: minute, second: second, nanosecond: nano))?
-    return time.add(t, time.seconds(-offset)?)
+    return time.add(t, time.seconds_checked(-offset)?)
 
 # A place in a text of digits being read.
 record Digits

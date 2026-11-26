@@ -408,12 +408,12 @@ test "act_on_part: a screen reader's press, focus and steps told as `.part_acted
     for input in pressed_acts
         ui.inject(@app, input: input).must()
 
-    assert ui.wait(@app, within: time.seconds(1).must()).must() == .part_acted(widget: chart, part: 3, act: .press)
-    assert ui.wait(@app, within: time.seconds(1).must()).must() == .part_acted(widget: chart, part: 4, act: .press)
-    assert ui.wait(@app, within: time.seconds(1).must()).must() == .part_acted(widget: chart, part: 5, act: .focus)
-    assert ui.wait(@app, within: time.seconds(1).must()).must() == .part_acted(widget: chart, part: 6, act: .press)
-    assert ui.wait(@app, within: time.seconds(1).must()).must() == .part_acted(widget: chart, part: 8, act: .increase)
-    assert ui.wait(@app, within: time.seconds(1).must()).must() == .part_acted(widget: chart, part: 8, act: .decrease)
+    assert ui.wait(@app, within: time.seconds(1)).must() == .part_acted(widget: chart, part: 3, act: .press)
+    assert ui.wait(@app, within: time.seconds(1)).must() == .part_acted(widget: chart, part: 4, act: .press)
+    assert ui.wait(@app, within: time.seconds(1)).must() == .part_acted(widget: chart, part: 5, act: .focus)
+    assert ui.wait(@app, within: time.seconds(1)).must() == .part_acted(widget: chart, part: 6, act: .press)
+    assert ui.wait(@app, within: time.seconds(1)).must() == .part_acted(widget: chart, part: 8, act: .increase)
+    assert ui.wait(@app, within: time.seconds(1)).must() == .part_acted(widget: chart, part: 8, act: .decrease)
 
     # The parts are the program's: a press changed nothing.
     assert ui.parts_of(@app, widget: chart).must() == every_role()
@@ -479,7 +479,7 @@ test "set_parts: on the native side the parts read back from the system's own ac
 
         if words == ""
             injected.must()
-            answered = ui.wait(@app, within: time.seconds(2).must())
+            answered = ui.wait(@app, within: time.seconds(2))
 
             words @ fixture.unsupported_words(answered)
 

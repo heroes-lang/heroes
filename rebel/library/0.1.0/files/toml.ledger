@@ -182,6 +182,13 @@ capability toml/lookup  a value reached by a path of keys
   python  dict.__getitem__, dict.get
   note    a key absent fails `not_found`, as does an index past an array; at an array a step is an index in decimal from "0", as `value_of` reads a document's path; a step into a value that is neither a table nor an array, or a step at an array that is no index, fails `invalid`
 
+capability toml/typed-member  a member of a table read as a text, an integer, a boolean or an array, its key named where it fails
+  heroes  toml.text_at, toml.int_at, toml.bool_at, toml.items_at
+  go      -
+  rust    -
+  python  -
+  note    the member by its key, `not_found` with the keys the table holds where it is absent, `invalid` with the key and the kind found where it is of another kind, `the member "port": expected an integer, found a float`, as `json.text_at` reads an object's; an integer is never read from a float, nor a float from an integer, TOML keeping the two apart; Python indexes a dict and Go's TOML packages, none of its standard library, fill a struct by reflection
+
 capability toml/write  a tree of values written as TOML text that reads back as the same tree
   heroes  toml.format
   go      -
@@ -239,7 +246,7 @@ capability toml/from-json  a JSON value crossed to a TOML value, a document wher
   note    a whole number from -2^63 to 2^63 - 1 becomes an `integer`, every other number, `-0.0` included, a `float`; a string stays a `text` even where it reads as a date, since JSON names none; JSON's `null` fails `unsupported` with its JSON pointer, TOML having no such value
 
 capability toml/records  a table filled into a record of the program by its field names, and a record written as a table
-  heroes  refused: the language has no reflection; a program reads each value with `value_at` and builds its record by its `Record::field` names (spec § 9), which the compiler checks, as `msgpack`'s and `cbor`'s blocks of the same capability say; settings read in layers with typed getters are `config`'s
+  heroes  refused: the language has no reflection; a program reads each value with `value_at`, or a member by its kind with `text_at`, `int_at`, `bool_at` and `items_at`, and builds its record by its `Record::field` names (spec § 9), which the compiler checks, as `msgpack`'s and `cbor`'s blocks of the same capability say; settings read in layers with typed getters are `config`'s
   go      -
   rust    -
   python  -

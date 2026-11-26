@@ -1,0 +1,64 @@
+# Panel 261's R8 (2026-11-26, ratified): the shapes beside a record holding
+# a handler of itself, each `build` exit 2 at the base: the walk reaching the
+# function type from another record first (`T` before `S`), a variant's case
+# holding one, a handler answering the record as a `T?`, and two records
+# naming each other through their handlers. Prints 8, 7, 1, 3.
+record T
+    h: (function(S) -> i64)
+
+record S
+    n: i64
+    f: (function(S) -> i64)
+
+variant Node
+    leaf
+        v: i64
+    step
+        next: (function(Node) -> i64)
+
+record Q
+    n: i64
+    next: (function(Q) -> Q?)
+
+record A
+    g: (function(B) -> i64)
+    k: i64
+
+record B
+    f: (function(A) -> i64)
+    k: i64
+
+function size(s: S) -> i64
+    return s.n
+
+function value(n: Node) -> i64
+    return match n
+        .leaf l => l.v
+        .step _ => 0
+
+function down(q: Q) -> Q?
+    if q.n == 0
+        return fail(code: "zero", msg: "at the bottom")
+    return ok(Q(n: q.n - 1, next: q.next))
+
+function of_b(b: B) -> i64
+    return b.k
+
+function of_a(a: A) -> i64
+    return a.k
+
+function main()
+    s = S(n: 4, f: size)
+    t = T(h: size)
+    print(t.h(s) + s.f(s))
+    n: Node = .step(next: value)
+
+    match n
+        .step st => print(st.next(.leaf(v: 7)))
+        .leaf _  => print(0)
+
+    q = Q(n: 2, next: down)
+    print(q.next(q).must().n)
+    a = A(g: of_b, k: 1)
+    b = B(f: of_a, k: 2)
+    print(a.g(b) + b.f(a))

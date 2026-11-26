@@ -12,6 +12,7 @@
 # table says where the file broke, rather than nothing being read.
 
 use <rebel>/csv
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/io
 use <rebel>/strings
@@ -96,7 +97,7 @@ function read_csv(path: str) -> Table?
                 else
                     rows @ rows.push(Row(line: csv.line_of(reader), cells: cells))
 
-    _ = io.close(@stream).is_err()
+    errors.ignore(io.close(@stream))
 
     if header.len() == 0
         return fail(code: INVALID, msg: f"{path} holds no header")

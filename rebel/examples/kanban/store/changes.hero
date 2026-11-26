@@ -12,6 +12,7 @@
 #         .err e => return changes.abandon(@s, code: e.code, msg: e.msg)
 #         .ok card => changes.finish(@s, board: id, label: "...", before: before)?
 
+use <rebel>/errors
 use <rebel>/sql/sqlite
 
 use store/boards
@@ -74,5 +75,5 @@ function commit(@s: store.Store) -> ()?
 # - `msg`: what was asked and what was found.
 function abandon<T>(@s: store.Store, code: str, msg: str) -> T?
     if sqlite.in_transaction(s.db)
-        _ = sqlite.rollback(@s.db).is_err()
+        errors.ignore(sqlite.rollback(@s.db))
     return fail(code: code, msg: msg)

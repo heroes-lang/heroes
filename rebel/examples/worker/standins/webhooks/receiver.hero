@@ -13,6 +13,7 @@
 # can tell what every endpoint was sent and answered.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/io
 use <rebel>/json
@@ -94,11 +95,11 @@ function serve(@r: Receiver, set: poll.Set, key: i64) -> ()?
         .ok request =>
             answer @= http.respond_status(answer_status(@r, request: request))
             answer.closing @ true
-            _ = http.write_answer(conn.stream, r: request, response: answer).is_err()
+            errors.ignore(http.write_answer(conn.stream, r: request, response: answer))
         .err _ => _ = 0
 
-    _ = poll.remove(set, key: key).is_err()
-    _ = io.close(@conn.stream).is_err()
+    errors.ignore(poll.remove(set, key: key))
+    errors.ignore(io.close(@conn.stream))
     r.conns @ maps.remove(r.conns, key: key)
     return ok()
 
@@ -165,12 +166,12 @@ function answer_status(@r: Receiver, request: http.Request) -> i64
 function close(@r: Receiver, set: poll.Set)
     for key in keys(r.conns)
         conn @= r.conns[key].must()
-        _ = poll.remove(set, key: key).is_err()
-        _ = io.close(@conn.stream).is_err()
+        errors.ignore(poll.remove(set, key: key))
+        errors.ignore(io.close(@conn.stream))
 
     r.conns @ {}
-    _ = poll.remove(set, key: r.listen_key).is_err()
-    _ = net.close_listener(@r.listener).is_err()
+    errors.ignore(poll.remove(set, key: r.listen_key))
+    errors.ignore(net.close_listener(@r.listener))
 
 # The deliveries told a line for each key, its answers in the order sent,
 # the keys in the order of their endpoints and then of themselves, so the

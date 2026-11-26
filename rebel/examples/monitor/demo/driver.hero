@@ -10,6 +10,7 @@
 # memory growing, a process ending) waits in real time, bounded; the clock
 # the monitor reads moves only by the script.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/http
 use <rebel>/io
@@ -64,8 +65,10 @@ function drive(h: Handed) -> str
         .err e => f"{e.code}: {e.msg}"
 
     client @= http.default_client()
-    client.deadline @ time.seconds(5).default(client.deadline)
-    _ = http.post(client, target: h.otlp + "/standin/stop", content_type: "text/plain", body: []).is_err()
+    client.deadline @ time.seconds(5)
+    errors.ignore(
+        errors.discard_value(http.post(client, target: h.otlp + "/standin/stop", content_type: "text/plain", body: []))
+    )
     return problem
 
 # The moment `seconds` after the start.
@@ -73,7 +76,7 @@ function drive(h: Handed) -> str
 # - `start`: the start.
 # - `seconds`: the seconds.
 function moment(start: time.Instant, seconds: i64) -> time.Instant
-    return time.add(start, d: time.seconds(seconds).default(time.nanoseconds(0))).default(start)
+    return time.add(start, d: time.seconds_checked(seconds).default(time.nanoseconds(0))).default(start)
 
 # Prints `line` with the time of day of `at` before it.
 #
@@ -234,7 +237,7 @@ function settle(@m: monitor.Monitor, relative: str, at: time.Instant)
             changes = files.take_settled(
                 @m.files,
                 i: i,
-                within: time.seconds(WAIT_SECONDS).default(time.nanoseconds(0))
+                within: time.seconds(WAIT_SECONDS)
             )
 
             if changes.len() == 0
@@ -257,7 +260,7 @@ function memory_passed(m: monitor.Monitor lent, name: str) -> bool
                     return true
             .err _ => _ = 0
 
-        time.sleep(time.milliseconds(20).default(time.nanoseconds(0)))
+        time.sleep(time.milliseconds(20))
 
     return false
 
@@ -271,7 +274,7 @@ function ended(@m: monitor.Monitor, name: str) -> bool
     while time.elapsed(began).default(time.nanoseconds(0)).nanoseconds < WAIT_SECONDS * 1_000_000_000
         if supervisor.has_ended(@m.sup, name: name)
             return true
-        time.sleep(time.milliseconds(10).default(time.nanoseconds(0)))
+        time.sleep(time.milliseconds(10))
 
     return false
 
@@ -294,7 +297,7 @@ function run_tool(@m: monitor.Monitor, exe: str, words: [str], shown: str, at: t
         .ok started =>
             child @= started
 
-            if serves && commands.serve(@m, within: time.seconds(WAIT_SECONDS).default(time.nanoseconds(0)), most: 1, at: at) == 0
+            if serves && commands.serve(@m, within: time.seconds(WAIT_SECONDS), most: 1, at: at) == 0
                 say(at, line: "!! no request came on the control socket")
             said = io.read_all_text(child.output).default("")
 

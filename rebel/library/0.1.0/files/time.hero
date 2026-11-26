@@ -8,8 +8,11 @@
 # An `Instant` and a `Duration` are counts of nanoseconds in an `i64`, so an
 # instant stands between 1677-09-21T00:12:43.145224192Z and
 # 2262-04-11T23:47:16.854775807Z, and a duration within about 292 years either
-# way. Arithmetic that would leave that range fails `does_not_fit`; nothing
-# here wraps and nothing aborts on a value it computes.
+# way. A duration made from a count the program writes, `seconds(30)`,
+# aborts past that range, as the language's own arithmetic does, and its
+# twin `seconds_checked` fails `does_not_fit` for a count read from outside;
+# arithmetic on durations and instants fails `does_not_fit`; nothing here
+# wraps, and nothing aborts on a value it computes or reads.
 #
 # Two clocks, never mixed. The wall clock says what time it is, and the
 # machine's owner or the network may set it back or forward between two
@@ -436,58 +439,156 @@ function nanoseconds(n: i64) -> Duration
 
 # `n` microseconds, as a duration.
 #
+# - `n`: the count, a negative one running backwards; one the program writes
+#   or computes, since a count read from outside goes through
+#   `microseconds_checked`.
+#
+# Aborts where that is outside a `Duration`, about 292 years either way, as
+# the language's own arithmetic aborts on an overflow (README § B2). See also
+# `microseconds_checked`.
+function microseconds(n: i64) -> Duration
+    return Duration(nanoseconds: n * 1_000)
+
+# `n` microseconds as a duration, where that fits one: the twin of
+# `microseconds` for a count read from outside the program.
+#
 # - `n`: the count, a negative one running backwards.
 #
-# Fails `does_not_fit` where that is outside a `Duration`.
-function microseconds(n: i64) -> Duration?
+# Fails `does_not_fit` where that is outside a `Duration`, about 292 years
+# either way. See also `microseconds`.
+function microseconds_checked(n: i64) -> Duration?
     return scale(d: duration_of(.microsecond), by: n)
 
 # `n` milliseconds, as a duration.
 #
+# - `n`: the count, a negative one running backwards; one the program writes
+#   or computes, since a count read from outside goes through
+#   `milliseconds_checked`.
+#
+# Aborts where that is outside a `Duration`, about 292 years either way, as
+# the language's own arithmetic aborts on an overflow (README § B2). See also
+# `milliseconds_checked`.
+function milliseconds(n: i64) -> Duration
+    return Duration(nanoseconds: n * 1_000_000)
+
+# `n` milliseconds as a duration, where that fits one: the twin of
+# `milliseconds` for a count read from outside the program.
+#
 # - `n`: the count, a negative one running backwards.
 #
-# Fails `does_not_fit` where that is outside a `Duration`.
-function milliseconds(n: i64) -> Duration?
+# Fails `does_not_fit` where that is outside a `Duration`, about 292 years
+# either way. See also `milliseconds`.
+function milliseconds_checked(n: i64) -> Duration?
     return scale(d: duration_of(.millisecond), by: n)
 
 # `n` seconds, as a duration.
 #
+# - `n`: the count, a negative one running backwards; one the program writes
+#   or computes, since a count read from outside goes through
+#   `seconds_checked`.
+#
+# Aborts where that is outside a `Duration`, about 292 years either way, as
+# the language's own arithmetic aborts on an overflow (README § B2). See also
+# `seconds_checked`.
+function seconds(n: i64) -> Duration
+    return Duration(nanoseconds: n * 1_000_000_000)
+
+# `n` seconds as a duration, where that fits one: the twin of `seconds` for a
+# count read from outside the program.
+#
 # - `n`: the count, a negative one running backwards.
 #
-# Fails `does_not_fit` where that is outside a `Duration`.
-function seconds(n: i64) -> Duration?
+# Fails `does_not_fit` where that is outside a `Duration`, about 292 years
+# either way. See also `seconds`.
+function seconds_checked(n: i64) -> Duration?
     return scale(d: duration_of(.second), by: n)
 
 # `n` minutes, as a duration.
 #
+# - `n`: the count, a negative one running backwards; one the program writes
+#   or computes, since a count read from outside goes through
+#   `minutes_checked`.
+#
+# Aborts where that is outside a `Duration`, about 292 years either way, as
+# the language's own arithmetic aborts on an overflow (README § B2). See also
+# `minutes_checked`.
+function minutes(n: i64) -> Duration
+    return Duration(nanoseconds: n * 60_000_000_000)
+
+# `n` minutes as a duration, where that fits one: the twin of `minutes` for a
+# count read from outside the program.
+#
 # - `n`: the count, a negative one running backwards.
 #
-# Fails `does_not_fit` where that is outside a `Duration`.
-function minutes(n: i64) -> Duration?
+# Fails `does_not_fit` where that is outside a `Duration`, about 292 years
+# either way. See also `minutes`.
+function minutes_checked(n: i64) -> Duration?
     return scale(d: duration_of(.minute), by: n)
 
 # `n` hours, as a duration.
 #
+# - `n`: the count, a negative one running backwards; one the program writes
+#   or computes, since a count read from outside goes through
+#   `hours_checked`.
+#
+# Aborts where that is outside a `Duration`, about 292 years either way, as
+# the language's own arithmetic aborts on an overflow (README § B2). See also
+# `hours_checked`.
+function hours(n: i64) -> Duration
+    return Duration(nanoseconds: n * 3_600_000_000_000)
+
+# `n` hours as a duration, where that fits one: the twin of `hours` for a
+# count read from outside the program.
+#
 # - `n`: the count, a negative one running backwards.
 #
-# Fails `does_not_fit` where that is outside a `Duration`.
-function hours(n: i64) -> Duration?
+# Fails `does_not_fit` where that is outside a `Duration`, about 292 years
+# either way. See also `hours`.
+function hours_checked(n: i64) -> Duration?
     return scale(d: duration_of(.hour), by: n)
 
 # `n` days of 24 hours, as a duration.
 #
+# - `n`: the count, a negative one running backwards; one the program writes
+#   or computes, since a count read from outside goes through
+#   `days_checked`.
+#
+# Aborts where that is outside a `Duration`, about 292 years either way, as
+# the language's own arithmetic aborts on an overflow (README § B2). See also
+# `days_checked`.
+function days(n: i64) -> Duration
+    return Duration(nanoseconds: n * 86_400_000_000_000)
+
+# `n` days of 24 hours as a duration, where that fits one: the twin of `days`
+# for a count read from outside the program.
+#
 # - `n`: the count, a negative one running backwards.
 #
-# Fails `does_not_fit` where that is outside a `Duration`.
-function days(n: i64) -> Duration?
+# Fails `does_not_fit` where that is outside a `Duration`, about 292 years
+# either way. See also `days`.
+function days_checked(n: i64) -> Duration?
     return scale(d: duration_of(.day), by: n)
 
 # `n` weeks of 7 days, as a duration.
 #
+# - `n`: the count, a negative one running backwards; one the program writes
+#   or computes, since a count read from outside goes through
+#   `weeks_checked`.
+#
+# Aborts where that is outside a `Duration`, about 292 years either way, as
+# the language's own arithmetic aborts on an overflow (README § B2). See also
+# `weeks_checked`.
+function weeks(n: i64) -> Duration
+    return Duration(nanoseconds: n * 604_800_000_000_000)
+
+# `n` weeks of 7 days as a duration, where that fits one: the twin of `weeks`
+# for a count read from outside the program.
+#
 # - `n`: the count, a negative one running backwards.
 #
-# Fails `does_not_fit` where that is outside a `Duration`.
-function weeks(n: i64) -> Duration?
+# Fails `does_not_fit` where that is outside a `Duration`, about 292 years
+# either way. See also `weeks`.
+function weeks_checked(n: i64) -> Duration?
     return scale(d: duration_of(.week), by: n)
 
 # The duration nearest to `x` seconds.
@@ -1290,7 +1391,7 @@ test "now, since and until: the wall clock stands after 2026 and before 2100, an
 
 test "mark, elapsed, between_marks and sleep: ten milliseconds slept are ten by the monotonic clock"
     start = mark().must()
-    sleep(milliseconds(10).must())
+    sleep(milliseconds(10))
     assert elapsed(start).must().nanoseconds >= 10_000_000
     later = mark().must()
     assert between_marks(from: start, to: later).must().nanoseconds >= 10_000_000
@@ -1358,18 +1459,41 @@ test "truncate and round: half a second, before 1970, a unit of zero, and past e
 
 test "duration_of and the constructors: every unit, a negative count, and one past what fits"
     assert duration_of(.nanosecond) == nanoseconds(1)
-    assert duration_of(.week) == days(7).must()
-    assert microseconds(3).must() == nanoseconds(3_000)
-    assert milliseconds(-3).must() == nanoseconds(-3_000_000)
-    assert seconds(1).must() == duration_of(.second)
-    assert minutes(90).must() == hours(1).must().sum(b: minutes(30).must()).must()
-    assert hours(2_562_047).must() == nanoseconds(9_223_369_200_000_000_000)
-    assert hours(2_562_048).is_err()
-    assert seconds(-9_223_372_036).must() == nanoseconds(-9_223_372_036_000_000_000)
-    assert seconds(9_223_372_037).is_err()
-    assert weeks(15_250).must() == nanoseconds(9_223_200_000_000_000_000)
-    assert weeks(15_251).is_err()
-    assert minutes(-153_722_868).is_err()
+    assert duration_of(.week) == days(7)
+    assert microseconds(3) == nanoseconds(3_000)
+    assert milliseconds(-3) == nanoseconds(-3_000_000)
+    assert seconds(1) == duration_of(.second)
+    assert minutes(90) == hours(1).sum(b: minutes(30)).must()
+    assert hours(2_562_047) == nanoseconds(9_223_369_200_000_000_000)
+    assert hours_checked(2_562_048).is_err()
+    assert seconds(-9_223_372_036) == nanoseconds(-9_223_372_036_000_000_000)
+    assert seconds_checked(9_223_372_037).is_err()
+    assert weeks(15_250) == nanoseconds(9_223_200_000_000_000_000)
+    assert weeks_checked(15_251).is_err()
+    assert minutes_checked(-153_722_868).is_err()
+
+test "the checked constructors: each agrees with its plain one at the largest count that fits, both ways, and fails one past it"
+    assert microseconds_checked(9_223_372_036_854_775).must() == microseconds(9_223_372_036_854_775)
+    assert microseconds_checked(-9_223_372_036_854_775).must() == microseconds(-9_223_372_036_854_775)
+    assert microseconds_checked(9_223_372_036_854_776).is_err()
+    assert microseconds_checked(-9_223_372_036_854_776).is_err()
+    assert milliseconds_checked(9_223_372_036_854).must() == milliseconds(9_223_372_036_854)
+    assert milliseconds_checked(9_223_372_036_855).is_err()
+    assert seconds_checked(-9_223_372_036).must() == seconds(-9_223_372_036)
+    assert seconds_checked(-9_223_372_037).is_err()
+    assert minutes_checked(153_722_867).must() == minutes(153_722_867)
+    assert minutes_checked(153_722_868).is_err()
+    assert hours_checked(-2_562_047).must() == hours(-2_562_047)
+    assert hours_checked(-2_562_048).is_err()
+    assert days_checked(106_751).must() == days(106_751)
+    assert days_checked(106_752).is_err()
+    assert weeks_checked(-15_250).must() == weeks(-15_250)
+    assert weeks_checked(-15_251).is_err()
+    assert seconds_checked(0).must() == nanoseconds(0)
+
+    match days_checked(106_752)
+        .ok _  => assert false
+        .err e => assert e.code == "does_not_fit"
 
 # Expected values observed with Rust's `Duration::try_from_secs_f64`,
 # 2026-11-15.
@@ -1402,32 +1526,32 @@ test "sum, difference, negate, abs, scale and divide: at either end of a duratio
     assert scale(d: shortest, by: 1).must() == shortest
     assert scale(d: shortest, by: -1).is_err()
     assert scale(d: longest, by: 0).must() == nanoseconds(0)
-    assert divide(d: seconds(7).must(), by: -2).must() == nanoseconds(-3_500_000_000)
+    assert divide(d: seconds(7), by: -2).must() == nanoseconds(-3_500_000_000)
     assert divide(d: nanoseconds(-7), by: 2).must() == nanoseconds(-3)
     assert divide(d: shortest, by: -1).is_err()
 
-    match divide(d: seconds(1).must(), by: 0)
+    match divide(d: seconds(1), by: 0)
         .ok _  => assert false
         .err e => assert e.code == "invalid" && e.msg == "1s cannot be cut into 0 parts"
 
 # Expected values observed with Go's `Duration.Hours`, `Minutes`, `Seconds`,
 # `Milliseconds`, `Truncate` and `Round`, 2026-11-15.
 test "to_units, remainder, to_float, truncate_duration and round_duration: 90 minutes, -1.9 seconds, and a tie"
-    ninety = minutes(90).must()
+    ninety = minutes(90)
     assert to_float(d: ninety, unit: .hour) == 1.5
     assert to_float(d: ninety, unit: .minute) == 90.0
     assert to_float(d: ninety, unit: .second) == 5400.0
     assert to_units(d: ninety, unit: .millisecond) == 5_400_000
-    back = milliseconds(-1_900).must()
+    back = milliseconds(-1_900)
     assert to_float(d: back, unit: .second) == -1.9
     assert to_units(d: back, unit: .second) == -1
-    assert remainder(d: back, unit: .second) == milliseconds(-900).must()
+    assert remainder(d: back, unit: .second) == milliseconds(-900)
     assert to_units(d: back, unit: .millisecond) == -1_900
     assert to_units(d: min_duration(), unit: .nanosecond) == -9_223_372_036_854_775_807 - 1
-    assert truncate_duration(d: back, unit: duration_of(.second)).must() == seconds(-1).must()
-    assert round_duration(d: back, unit: duration_of(.second)).must() == seconds(-2).must()
-    assert round_duration(d: milliseconds(1_500).must(), unit: duration_of(.second)).must() == seconds(2).must()
-    assert round_duration(d: milliseconds(-1_500).must(), unit: duration_of(.second)).must() == seconds(-2).must()
+    assert truncate_duration(d: back, unit: duration_of(.second)).must() == seconds(-1)
+    assert round_duration(d: back, unit: duration_of(.second)).must() == seconds(-2)
+    assert round_duration(d: milliseconds(1_500), unit: duration_of(.second)).must() == seconds(2)
+    assert round_duration(d: milliseconds(-1_500), unit: duration_of(.second)).must() == seconds(-2)
     assert round_duration(d: max_duration(), unit: duration_of(.second)).is_err()
     assert truncate_duration(d: back, unit: nanoseconds(0)).is_err()
     assert is_shorter(a: min_duration(), b: nanoseconds(0))
@@ -1558,10 +1682,10 @@ test "format and parse: every layout at one moment, and an offset moved to UTC"
 test "format_duration and parse_duration: zero, a microsecond's sign, hours, and both ends"
     assert format_duration(nanoseconds(0)) == "0s"
     assert format_duration(nanoseconds(1_500)) == "1.5µs"
-    assert format_duration(minutes(90).must()) == "1h30m0s"
+    assert format_duration(minutes(90)) == "1h30m0s"
     assert format_duration(min_duration()) == "-2562047h47m16.854775808s"
-    assert parse_duration("1h30m").must() == minutes(90).must()
-    assert parse_duration("250ms").must() == milliseconds(250).must()
+    assert parse_duration("1h30m").must() == minutes(90)
+    assert parse_duration("250ms").must() == milliseconds(250)
     assert parse_duration("-2562047h47m16.854775808s").must() == min_duration()
     assert parse_duration("2562047h47m16.854775808s").is_err()
     assert parse_duration("").is_err()
@@ -1574,28 +1698,28 @@ test "format_duration and parse_duration: zero, a microsecond's sign, hours, and
 # hour in July); Apia's lost day.
 test "decode_tzif, offset_at and the carried data: changes of 2026, before 1900, the rule's years, a half hour, a negative daylight time, and a day skipped"
     rome = decode_tzif(name: "Europe/Rome", data: zone_files.carried("Europe/Rome").must()).must()
-    assert offset_at(rome, Instant(unix_nanoseconds: 1_774_745_999_000_000_000)) == ZoneOffset(from_utc: hours(1).must(), abbreviation: "CET", is_daylight: false)
-    assert offset_at(rome, Instant(unix_nanoseconds: 1_774_746_000_000_000_000)) == ZoneOffset(from_utc: hours(2).must(), abbreviation: "CEST", is_daylight: true)
+    assert offset_at(rome, Instant(unix_nanoseconds: 1_774_745_999_000_000_000)) == ZoneOffset(from_utc: hours(1), abbreviation: "CET", is_daylight: false)
+    assert offset_at(rome, Instant(unix_nanoseconds: 1_774_746_000_000_000_000)) == ZoneOffset(from_utc: hours(2), abbreviation: "CEST", is_daylight: true)
     assert offset_at(rome, Instant(unix_nanoseconds: 1_792_889_999_000_000_000)).abbreviation == "CEST"
     assert offset_at(rome, Instant(unix_nanoseconds: 1_792_890_000_000_000_000)).abbreviation == "CET"
-    assert offset_at(rome, date(year: 1850, month: 1, day: 1).must()) == ZoneOffset(from_utc: seconds(2_996).must(), abbreviation: "LMT", is_daylight: false)
+    assert offset_at(rome, date(year: 1850, month: 1, day: 1).must()) == ZoneOffset(from_utc: seconds(2_996), abbreviation: "LMT", is_daylight: false)
     assert offset_at(rome, date(year: 2200, month: 7, day: 1).must()).abbreviation == "CEST"
     assert offset_at(rome, date(year: 2262, month: 4, day: 11).must()).abbreviation == "CEST"
     assert offset_at(rome, max_instant()).abbreviation == "CEST"
     assert offset_at(rome, min_instant()).abbreviation == "LMT"
     york = decode_tzif(name: "America/New_York", data: zone_files.carried("America/New_York").must()).must()
-    assert offset_at(york, Instant(unix_nanoseconds: 1_772_953_199_000_000_000)).from_utc == hours(-5).must()
+    assert offset_at(york, Instant(unix_nanoseconds: 1_772_953_199_000_000_000)).from_utc == hours(-5)
     assert offset_at(york, Instant(unix_nanoseconds: 1_772_953_200_000_000_000)).abbreviation == "EDT"
-    assert offset_at(york, date(year: 1850, month: 1, day: 1).must()).from_utc == seconds(-17_762).must()
+    assert offset_at(york, date(year: 1850, month: 1, day: 1).must()).from_utc == seconds(-17_762)
     howe = decode_tzif(name: "Australia/Lord_Howe", data: zone_files.carried("Australia/Lord_Howe").must()).must()
-    assert offset_at(howe, date(year: 2026, month: 1, day: 1).must()).from_utc == seconds(39_600).must()
-    assert offset_at(howe, date(year: 2026, month: 7, day: 1).must()) == ZoneOffset(from_utc: seconds(37_800).must(), abbreviation: "+1030", is_daylight: false)
+    assert offset_at(howe, date(year: 2026, month: 1, day: 1).must()).from_utc == seconds(39_600)
+    assert offset_at(howe, date(year: 2026, month: 7, day: 1).must()) == ZoneOffset(from_utc: seconds(37_800), abbreviation: "+1030", is_daylight: false)
     dublin = decode_tzif(name: "Europe/Dublin", data: zone_files.carried("Europe/Dublin").must()).must()
-    assert offset_at(dublin, date(year: 2026, month: 1, day: 1).must()) == ZoneOffset(from_utc: seconds(0).must(), abbreviation: "GMT", is_daylight: false)
-    assert offset_at(dublin, date(year: 2026, month: 7, day: 1).must()) == ZoneOffset(from_utc: hours(1).must(), abbreviation: "IST", is_daylight: true)
+    assert offset_at(dublin, date(year: 2026, month: 1, day: 1).must()) == ZoneOffset(from_utc: seconds(0), abbreviation: "GMT", is_daylight: false)
+    assert offset_at(dublin, date(year: 2026, month: 7, day: 1).must()) == ZoneOffset(from_utc: hours(1), abbreviation: "IST", is_daylight: true)
     apia = decode_tzif(name: "Pacific/Apia", data: zone_files.carried("Pacific/Apia").must()).must()
-    assert offset_at(apia, Instant(unix_nanoseconds: 1_325_160_000_000_000_000)).from_utc == hours(-10).must()
-    assert offset_at(apia, Instant(unix_nanoseconds: 1_325_246_400_000_000_000)).from_utc == hours(14).must()
+    assert offset_at(apia, Instant(unix_nanoseconds: 1_325_160_000_000_000_000)).from_utc == hours(-10)
+    assert offset_at(apia, Instant(unix_nanoseconds: 1_325_246_400_000_000_000)).from_utc == hours(14)
 
 test "decode_tzif fails: no bytes, and the bytes of a text"
     nothing: [u8] = []
@@ -1631,13 +1755,13 @@ test "local_zone: the machine's zone, or the code that says why there is none"
 test "utc_zone and fixed_zone: no change, a negative offset, an offset of seconds, and the refusals"
     utc = utc_zone()
     assert utc.changes.len() == 0 && offset_at(utc, max_instant()).abbreviation == "UTC"
-    west = fixed_zone(name: "EST", offset: hours(-5).must()).must()
-    assert offset_at(west, epoch()) == ZoneOffset(from_utc: hours(-5).must(), abbreviation: "EST", is_daylight: false)
-    assert !fixed_zone(name: "", offset: seconds(86_399).must()).is_err()
-    assert fixed_zone(name: "x", offset: hours(24).must()).is_err()
-    assert fixed_zone(name: "x", offset: hours(-24).must()).is_err()
+    west = fixed_zone(name: "EST", offset: hours(-5)).must()
+    assert offset_at(west, epoch()) == ZoneOffset(from_utc: hours(-5), abbreviation: "EST", is_daylight: false)
+    assert !fixed_zone(name: "", offset: seconds(86_399)).is_err()
+    assert fixed_zone(name: "x", offset: hours(24)).is_err()
+    assert fixed_zone(name: "x", offset: hours(-24)).is_err()
 
-    match fixed_zone(name: "x", offset: milliseconds(1_500).must())
+    match fixed_zone(name: "x", offset: milliseconds(1_500))
         .ok _  => assert false
         .err e => assert e.code == INVALID && e.msg == "the offset 1.5s of the zone \"x\" is not whole seconds"
 
@@ -1736,10 +1860,10 @@ test "next_runs and next_run: none for 0 and less, a fixed zone, @every, and a s
     start = date(year: 2026, month: 1, day: 1).must()
     assert next_runs(nine, after: start, zone: utc_zone(), count: 0).len() == 0
     assert next_runs(nine, after: start, zone: utc_zone(), count: -3).len() == 0
-    eastern = fixed_zone(name: "EST", offset: hours(-5).must()).must()
+    eastern = fixed_zone(name: "EST", offset: hours(-5)).must()
     assert format(next_run(nine, after: start, zone: eastern).must(), layout: .rfc3339) == "2026-01-01T14:00:00Z"
     every = parse_cron("@every 90s").must()
-    assert next_run(every, after: add(t: start, d: milliseconds(500).must()).must(), zone: eastern).must() == add(t: start, d: seconds(90).must()).must()
+    assert next_run(every, after: add(t: start, d: milliseconds(500)).must(), zone: eastern).must() == add(t: start, d: seconds(90)).must()
 
     match next_run(parse_cron("0 0 30 2 *").must(), after: start, zone: load_zone("Europe/Rome").must())
         .ok _  => assert false
@@ -1758,7 +1882,7 @@ test "now: the wall clock reads a moment after 2026 began"
 # How long ago a moment was.
 test "since: 2020 began more than six years ago"
     ago = since(date(year: 2020, month: 1, day: 1).must()).must()
-    assert is_longer(a: ago, b: days(6 * 365).must())
+    assert is_longer(a: ago, b: days(6 * 365))
 
 # How long is left before a moment.
 test "until: 2100 is still ahead"
@@ -1772,8 +1896,8 @@ test "mark: a reading taken before some work"
 # How long some work took.
 test "elapsed: the time a sleep of five milliseconds took"
     start = mark().must()
-    sleep(milliseconds(5).must())
-    assert !is_shorter(a: elapsed(start).must(), b: milliseconds(5).must())
+    sleep(milliseconds(5))
+    assert !is_shorter(a: elapsed(start).must(), b: milliseconds(5))
 
 # The span between two readings a program kept.
 test "between_marks: two readings in order"
@@ -1784,8 +1908,8 @@ test "between_marks: two readings in order"
 # A pause of a few milliseconds.
 test "sleep: a pause of two milliseconds"
     start = mark().must()
-    sleep(milliseconds(2).must())
-    assert !is_shorter(a: elapsed(start).must(), b: milliseconds(2).must())
+    sleep(milliseconds(2))
+    assert !is_shorter(a: elapsed(start).must(), b: milliseconds(2))
 
 # The instant the Unix clock counts from.
 test "epoch: 1970 began at midnight UTC"
@@ -1826,14 +1950,14 @@ test "unix_microseconds: one and a half seconds after the epoch"
 
 # A moment a day and a half later.
 test "add: 36 hours after midnight"
-    later = add(t: date(year: 2026, month: 1, day: 1).must(), d: hours(36).must()).must()
+    later = add(t: date(year: 2026, month: 1, day: 1).must(), d: hours(36)).must()
     assert format(later, layout: .rfc3339) == "2026-01-02T12:00:00Z"
 
 # The span from one moment to another.
 test "between: a week from one Thursday to the next"
     from = date(year: 2026, month: 1, day: 1).must()
     to = date(year: 2026, month: 1, day: 8).must()
-    assert between(from: from, to: to).must() == days(7).must()
+    assert between(from: from, to: to).must() == days(7)
 
 # Which of two moments comes first.
 test "is_before: New Year's Day before the day after"
@@ -1846,16 +1970,16 @@ test "is_after: the day after New Year's Day"
 # A moment cut to the start of its hour.
 test "truncate: 12:34:56 to the hour"
     t = parse("2026-03-05T12:34:56Z", layout: .rfc3339).must()
-    assert format(truncate(t, unit: hours(1).must()).must(), layout: .rfc3339) == "2026-03-05T12:00:00Z"
+    assert format(truncate(t, unit: hours(1)).must(), layout: .rfc3339) == "2026-03-05T12:00:00Z"
 
 # A moment rounded to the nearest minute.
 test "round: 12:34:56 to the minute"
     t = parse("2026-03-05T12:34:56Z", layout: .rfc3339).must()
-    assert format(round(t, unit: minutes(1).must()).must(), layout: .rfc3339) == "2026-03-05T12:35:00Z"
+    assert format(round(t, unit: minutes(1)).must(), layout: .rfc3339) == "2026-03-05T12:35:00Z"
 
 # One unit as a duration, for a function that takes a `Duration`.
 test "duration_of: a minute is sixty seconds"
-    assert duration_of(.minute) == seconds(60).must()
+    assert duration_of(.minute) == seconds(60)
 
 # A duration counted in nanoseconds.
 test "nanoseconds: 1,500 of them"
@@ -1863,31 +1987,66 @@ test "nanoseconds: 1,500 of them"
 
 # A duration counted in microseconds.
 test "microseconds: three of them"
-    assert microseconds(3).must() == nanoseconds(3_000)
+    assert microseconds(3) == nanoseconds(3_000)
 
 # A duration counted in milliseconds.
 test "milliseconds: a quarter of a second"
-    assert milliseconds(250).must() == nanoseconds(250_000_000)
+    assert milliseconds(250) == nanoseconds(250_000_000)
 
 # A duration counted in seconds.
 test "seconds: a minute and a half"
-    assert format_duration(seconds(90).must()) == "1m30s"
+    assert format_duration(seconds(90)) == "1m30s"
 
 # A duration counted in minutes.
 test "minutes: an hour and a half"
-    assert format_duration(minutes(90).must()) == "1h30m0s"
+    assert format_duration(minutes(90)) == "1h30m0s"
 
 # A duration counted in hours.
 test "hours: two of them"
-    assert hours(2).must() == minutes(120).must()
+    assert hours(2) == minutes(120)
 
 # A duration counted in days of 24 hours.
 test "days: one day is 24 hours"
-    assert days(1).must() == hours(24).must()
+    assert days(1) == hours(24)
 
 # A duration counted in weeks.
 test "weeks: one week is seven days"
-    assert weeks(1).must() == days(7).must()
+    assert weeks(1) == days(7)
+
+# A count of microseconds a file gives, read where it fits, and one past what a duration holds refused.
+test "microseconds_checked: a count of microseconds a file gives, read where it fits"
+    assert microseconds_checked(1_500).must() == microseconds(1_500)
+    assert microseconds_checked(9_223_372_036_854_775_807).is_err()
+
+# A timeout in milliseconds a setting gives, read where it fits, and one past what a duration holds refused.
+test "milliseconds_checked: a timeout in milliseconds a setting gives, read where it fits"
+    assert milliseconds_checked(250).must() == milliseconds(250)
+    assert milliseconds_checked(9_223_372_036_854_775_807).is_err()
+
+# A lifetime in seconds a server sends, read where it fits, and one past what a duration holds refused.
+test "seconds_checked: a lifetime in seconds a server sends, read where it fits"
+    assert seconds_checked(90).must() == seconds(90)
+    assert seconds_checked(9_223_372_036_854_775_807).is_err()
+
+# An offset in minutes a date gives, read where it fits, and one past what a duration holds refused.
+test "minutes_checked: an offset in minutes a date gives, read where it fits"
+    assert minutes_checked(-420).must() == minutes(-420)
+    assert minutes_checked(9_223_372_036_854_775_807).is_err()
+
+# A retention in hours a flag gives, read where it fits, and one past what a duration holds refused.
+test "hours_checked: a retention in hours a flag gives, read where it fits"
+    assert hours_checked(36).must() == hours(36)
+    assert hours_checked(9_223_372_036_854_775_807).is_err()
+
+# A validity in days a request asks, read where it fits, and one past what a duration holds refused.
+test "days_checked: a validity in days a request asks, read where it fits"
+    assert days_checked(30).must() == days(30)
+    assert days_checked(9_223_372_036_854_775_807).is_err()
+
+# A period in weeks a configuration gives, read where it fits, and one past what a duration holds refused.
+test "weeks_checked: a period in weeks a configuration gives, read where it fits"
+    assert weeks_checked(2).must() == weeks(2)
+    assert weeks_checked(9_223_372_036_854_775_807).is_err()
 
 # The longest duration, about 292 years.
 test "max_duration: the longest span written out"
@@ -1899,55 +2058,55 @@ test "min_duration: the shortest span written out"
 
 # Two spans added.
 test "sum: a second and half a second"
-    assert sum(a: seconds(1).must(), b: milliseconds(500).must()).must() == milliseconds(1_500).must()
+    assert sum(a: seconds(1), b: milliseconds(500)).must() == milliseconds(1_500)
 
 # One span taken from another.
 test "difference: a second less a quarter of one"
-    assert difference(a: seconds(1).must(), b: milliseconds(250).must()).must() == milliseconds(750).must()
+    assert difference(a: seconds(1), b: milliseconds(250)).must() == milliseconds(750)
 
 # A span turned the other way.
 test "negate: five seconds back"
-    assert negate(seconds(5).must()).must() == seconds(-5).must()
+    assert negate(seconds(5)).must() == seconds(-5)
 
 # A span without its sign.
 test "abs: five seconds back is five seconds long"
-    assert abs(seconds(-5).must()).must() == seconds(5).must()
+    assert abs(seconds(-5)).must() == seconds(5)
 
 # A span taken several times.
 test "scale: three waits of 100 milliseconds"
-    assert scale(milliseconds(100).must(), by: 3).must() == milliseconds(300).must()
+    assert scale(milliseconds(100), by: 3).must() == milliseconds(300)
 
 # A span cut into equal parts.
 test "divide: a second in four"
-    assert divide(seconds(1).must(), by: 4).must() == milliseconds(250).must()
+    assert divide(seconds(1), by: 4).must() == milliseconds(250)
 
 # How many whole units a span holds.
 test "to_units: 90 minutes hold one whole hour"
-    assert to_units(minutes(90).must(), unit: .hour) == 1
+    assert to_units(minutes(90), unit: .hour) == 1
 
 # What is left over once the whole units are out.
 test "remainder: 90 minutes less the whole hour"
-    assert remainder(minutes(90).must(), unit: .hour) == minutes(30).must()
+    assert remainder(minutes(90), unit: .hour) == minutes(30)
 
 # A span as a fraction of a unit, for a rate or a chart.
 test "to_float: 90 minutes are an hour and a half"
-    assert to_float(minutes(90).must(), unit: .hour) == 1.5
+    assert to_float(minutes(90), unit: .hour) == 1.5
 
 # Which of two spans is shorter.
 test "is_shorter: a second is shorter than a minute"
-    assert is_shorter(a: seconds(1).must(), b: minutes(1).must())
+    assert is_shorter(a: seconds(1), b: minutes(1))
 
 # Which of two spans is longer.
 test "is_longer: a minute is longer than a second"
-    assert is_longer(a: minutes(1).must(), b: seconds(1).must())
+    assert is_longer(a: minutes(1), b: seconds(1))
 
 # A span cut to whole hours.
 test "truncate_duration: 1h40m to the hour"
-    assert truncate_duration(d: minutes(100).must(), unit: hours(1).must()).must() == hours(1).must()
+    assert truncate_duration(d: minutes(100), unit: hours(1)).must() == hours(1)
 
 # A span rounded to the nearest hour.
 test "round_duration: 1h40m to the nearest hour"
-    assert round_duration(d: minutes(100).must(), unit: hours(1).must()).must() == hours(2).must()
+    assert round_duration(d: minutes(100), unit: hours(1)).must() == hours(2)
 
 # The calendar's parts of a moment, in UTC.
 test "to_date_time: half past nine on a summer day"
@@ -2032,11 +2191,11 @@ test "parse: half past three in a zone an hour east"
 
 # A span written for a person or a log.
 test "format_duration: an hour and a half"
-    assert format_duration(minutes(90).must()) == "1h30m0s"
+    assert format_duration(minutes(90)) == "1h30m0s"
 
 # A span read from a setting's text.
 test "parse_duration: 1h30m"
-    assert parse_duration("1h30m").must() == minutes(90).must()
+    assert parse_duration("1h30m").must() == minutes(90)
 
 # A zone read by its name, and the offset it keeps at an instant.
 test "load_zone: Rome's offset on a summer day"
@@ -2052,11 +2211,11 @@ test "local_zone: the zone the machine's clocks keep"
 # UTC as a zone, for a function that takes one.
 test "utc_zone: noon UTC is noon"
     noon = date(year: 2026, month: 1, day: 1).must()
-    assert to_date_time_in(add(t: noon, d: hours(12).must()).must(), zone: utc_zone()).hour == 12
+    assert to_date_time_in(add(t: noon, d: hours(12)).must(), zone: utc_zone()).hour == 12
 
 # A zone five hours behind UTC all year.
 test "fixed_zone: five hours west of Greenwich"
-    zone = fixed_zone(name: "EST", offset: hours(-5).must()).must()
+    zone = fixed_zone(name: "EST", offset: hours(-5)).must()
     assert to_date_time_in(date(year: 2026, month: 1, day: 1).must(), zone: zone).hour == 19
 
 # A zone read from the bytes of a TZif file a program already holds.
@@ -2077,7 +2236,7 @@ test "zone_names: Rome is among them"
 # New York's offset in winter.
 test "offset_at: New York in January"
     york = load_zone("America/New_York").must()
-    assert offset_at(york, date(year: 2026, month: 1, day: 15).must()).from_utc == hours(-5).must()
+    assert offset_at(york, date(year: 2026, month: 1, day: 15).must()).from_utc == hours(-5)
 
 # When the summer time in force began.
 test "previous_change: the start of Rome's summer time of 2026"
@@ -2094,7 +2253,7 @@ test "next_change: the end of Rome's summer time of 2026"
 # Noon UTC on Rome's clocks in summer.
 test "to_date_time_in: noon UTC is two in the afternoon in Rome"
     rome = load_zone("Europe/Rome").must()
-    local = to_date_time_in(add(t: date(year: 2026, month: 7, day: 1).must(), d: hours(12).must()).must(), zone: rome)
+    local = to_date_time_in(add(t: date(year: 2026, month: 7, day: 1).must(), d: hours(12)).must(), zone: rome)
     assert local.hour == 14
 
 # A meeting at nine in Rome, as an instant.

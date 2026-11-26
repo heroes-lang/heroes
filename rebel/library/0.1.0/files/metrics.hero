@@ -1818,7 +1818,7 @@ test "observe and observe_duration: NaN refused, the infinities counted, a bound
     observe(@r, name: "h", labels: [], value: 1.0).must()
     observe(@r, name: "h", labels: [], value: 1.0 / 0.0).must()
     observe(@r, name: "h", labels: [], value: -1.0 / 0.0).must()
-    observe_duration(@r, name: "h", labels: [], d: time.milliseconds(1_500).must()).must()
+    observe_duration(@r, name: "h", labels: [], d: time.milliseconds(1_500)).must()
     families = gather(r)
     assert sample_value(families, name: "h_bucket", labels: [Label(name: "le", value: "1")]).must() == 2.0
     assert sample_value(families, name: "h_bucket", labels: [Label(name: "le", value: "2")]).must() == 3.0
@@ -1971,20 +1971,20 @@ test "register_http and observe_request: one request counted and timed, its meth
         @r,
         r: http.request(method: "GET", target: "/").must(),
         response: http.respond_status(200),
-        elapsed: time.milliseconds(30).must()
+        elapsed: time.milliseconds(30)
     ).is_err()
     register_http(@r).must()
     observe_request(
         @r,
         r: http.request(method: "GET", target: "/").must(),
         response: http.respond_status(200),
-        elapsed: time.milliseconds(30).must()
+        elapsed: time.milliseconds(30)
     ).must()
     observe_request(
         @r,
         r: http.request(method: "BREW", target: "/").must(),
         response: http.respond_status(418),
-        elapsed: time.milliseconds(2).must()
+        elapsed: time.milliseconds(2)
     ).must()
     assert value_of(r, name: HTTP_REQUESTS, labels: ["200", "get"]).must() == 1.0
     assert value_of(r, name: HTTP_REQUESTS, labels: ["418", "unknown"]).must() == 1.0
@@ -2235,7 +2235,7 @@ test "observe: a response's size"
 test "observe_duration: a query's time"
     r @= new_registry()
     register(@r, d: histogram(name: "query_seconds", help: "", labels: [], buckets: DEFAULT_BUCKETS)).must()
-    observe_duration(@r, name: "query_seconds", labels: [], d: time.milliseconds(250).must()).must()
+    observe_duration(@r, name: "query_seconds", labels: [], d: time.milliseconds(250)).must()
     assert sum_of(r, name: "query_seconds", labels: []).must() == 0.25
 
 # A job made busy.
@@ -2368,26 +2368,26 @@ test "observe_request: a GET answered 200"
         @r,
         r: http.request(method: "GET", target: "/").must(),
         response: http.respond_status(200),
-        elapsed: time.milliseconds(12).must()
+        elapsed: time.milliseconds(12)
     ).must()
     assert value_of(r, name: HTTP_REQUESTS, labels: ["200", "get"]).must() == 1.0
 
 # A push to a Pushgateway that is not running here fails, telling why.
 test "push_to_gateway: no Pushgateway here"
     c @= http.default_client()
-    c.deadline @ time.seconds(2).must()
+    c.deadline @ time.seconds(2)
     assert push_to_gateway(c, gateway: "http://127.0.0.1:9", job: "batch", grouping: [], families: []).is_err()
 
 # The same with `POST`.
 test "push_add_to_gateway: no Pushgateway here"
     c @= http.default_client()
-    c.deadline @ time.seconds(2).must()
+    c.deadline @ time.seconds(2)
     assert push_add_to_gateway(c, gateway: "http://127.0.0.1:9", job: "batch", grouping: [], families: []).is_err()
 
 # The same with `DELETE`.
 test "delete_from_gateway: no Pushgateway here"
     c @= http.default_client()
-    c.deadline @ time.seconds(2).must()
+    c.deadline @ time.seconds(2)
     assert delete_from_gateway(c, gateway: "http://127.0.0.1:9", job: "batch", grouping: []).is_err()
 
 # Where a group lives.
@@ -2439,7 +2439,7 @@ test "send_timing: a query of 12 milliseconds"
     server @= net.open_udp("127.0.0.1", port: 0).must()
     net.set_udp_deadline(server, deadline_ms: 2_000).must()
     client @= open_statsd("127.0.0.1", port: server.address.port).must()
-    send_timing(@client, name: "db.query", d: time.milliseconds(12).must(), rate: 1.0, tags: []).must()
+    send_timing(@client, name: "db.query", d: time.milliseconds(12), rate: 1.0, tags: []).must()
     assert bytes.to_text(net.receive(server).must().data).must() == "db.query:12.000000|ms\n"
     close_statsd(@client).must()
     net.close_udp(@server).must()

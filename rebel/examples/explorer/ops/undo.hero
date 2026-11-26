@@ -11,6 +11,7 @@
 # refused) answers the failure and is dropped from both stacks, since the
 # disk no longer matches either way; what was done stays done.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/time
 
@@ -315,7 +316,7 @@ test "undo and redo: an empty history answers not_found"
 
 test "undo and redo: a rename on the disk taken back and done again, and refused where the old name was taken meanwhile"
     base = "build/explorer-tests/undo"
-    _ = fs.remove_all(base).is_err()
+    errors.ignore(fs.remove_all(base))
     fs.make_dir_all(base).must()
     write_file(path: base + "/new.txt", text: "x").must()
     u @= new_undo()

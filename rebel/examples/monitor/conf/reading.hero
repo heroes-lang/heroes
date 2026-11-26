@@ -467,11 +467,11 @@ function sample_text() -> str
 
 test "parse: the services, their settings and defaults, and a rule"
     c = parse(sample_text()).must()
-    assert c.name == "edge" && c.interval == time.seconds(30).must()
+    assert c.name == "edge" && c.interval == time.seconds(30)
     assert c.services.len() == 2 && c.services[0].memory_limit == 100663296
     assert c.services[1].restart == .always && c.services[1].depends_on == ["db"]
     assert c.services[0].restart == .on_failure && c.services[0].input == .none
-    assert c.rules[0].hold == time.seconds(30).must()
+    assert c.rules[0].hold == time.seconds(30)
     assert c.control == "monitor-edge.sock" && !settings.has_sensor(c)
     assert c.exact_figures && !parse("name = \"a\"\nexact_figures = false\n").must().exact_figures
 

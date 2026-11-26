@@ -160,7 +160,7 @@ function options(host: str, security: Security) -> Options
         port: port,
         security: security,
         roots: "",
-        deadline: time.minutes(1).must(),
+        deadline: time.minutes(1),
         max_bytes: 67_108_864
     )
 
@@ -1428,9 +1428,9 @@ test "idle: the server's `+`, news while idling, none within the wait, DONE and 
     c @= Client(conn: p.conn)
     server @= p.server
     idle(@c).must()
-    news = idle_wait(@c, within: time.seconds(2).must()).must()
+    news = idle_wait(@c, within: time.seconds(2)).must()
     assert news.len() == 2 && news[0] == .exists(count: 4)
-    assert idle_wait(@c, within: time.milliseconds(100).must()).must().len() == 0
+    assert idle_wait(@c, within: time.milliseconds(100)).must().len() == 0
     assert noop(@c).is_err()
     io.write_text(server, text: "* 5 EXISTS\r\nA0001 OK IDLE terminated\r\n").must()
     assert idle_done(@c).must() == [.exists(count: 5)]
@@ -1481,7 +1481,7 @@ test "fetch: the subjects of the unseen messages"
 # byte, on port 993.
 test "options: TLS from the first byte on port 993"
     o = options(host: "imap.example.org", security: .implicit)
-    assert o.port == PORT_IMAPS && o.roots == "" && o.deadline == time.minutes(1).must()
+    assert o.port == PORT_IMAPS && o.roots == "" && o.deadline == time.minutes(1)
     assert options(host: "imap.example.org", security: .starttls).port == PORT_IMAP
 
 # A session with a server on this machine, in plain text: its greeting read
@@ -1490,7 +1490,7 @@ test "connect: a plain server on the loopback address"
     started = fake.start("* OK [CAPABILITY IMAP4rev1 IDLE] ready\r\n* BYE logging out\r\nA0001 OK LOGOUT completed\r\n")
     server = started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: started.port, security: .plain, roots: "", deadline: time.seconds(10).must(), max_bytes: 1_000_000)
+        Options(host: "127.0.0.1", port: started.port, security: .plain, roots: "", deadline: time.seconds(10), max_bytes: 1_000_000)
     ).must()
     assert has_capability(c, name: "IDLE")
     logout(@c).must()
@@ -1502,7 +1502,7 @@ test "logout: LOGOUT, then closed"
     started = fake.start("* OK [CAPABILITY IMAP4rev1] ready\r\n* BYE logging out\r\nA0001 OK LOGOUT completed\r\n")
     server = started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: started.port, security: .plain, roots: "", deadline: time.seconds(10).must(), max_bytes: 1_000_000)
+        Options(host: "127.0.0.1", port: started.port, security: .plain, roots: "", deadline: time.seconds(10), max_bytes: 1_000_000)
     ).must()
     logout(@c).must()
     assert server.wait() == "A0001 LOGOUT\r\n"
@@ -1512,7 +1512,7 @@ test "close: the connection closed without LOGOUT"
     started = fake.start("* OK [CAPABILITY IMAP4rev1] ready\r\n")
     server = started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: started.port, security: .plain, roots: "", deadline: time.seconds(10).must(), max_bytes: 1_000_000)
+        Options(host: "127.0.0.1", port: started.port, security: .plain, roots: "", deadline: time.seconds(10), max_bytes: 1_000_000)
     ).must()
     close(@c).must()
     assert server.wait() == ""
@@ -1539,7 +1539,7 @@ test "greeting_of: OK and the server's words"
     started = fake.start("* OK [CAPABILITY IMAP4rev1] Dovecot ready.\r\n")
     server = started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: started.port, security: .plain, roots: "", deadline: time.seconds(10).must(), max_bytes: 1_000_000)
+        Options(host: "127.0.0.1", port: started.port, security: .plain, roots: "", deadline: time.seconds(10), max_bytes: 1_000_000)
     ).must()
     g = greeting_of(c)
     assert g.condition == "OK" && g.text == "Dovecot ready."
@@ -1608,7 +1608,7 @@ test "is_tls: not over a plain connection"
     started = fake.start("* OK [CAPABILITY IMAP4rev1] ready\r\n")
     server = started.thread
     c @= connect(
-        Options(host: "127.0.0.1", port: started.port, security: .plain, roots: "", deadline: time.seconds(10).must(), max_bytes: 1_000_000)
+        Options(host: "127.0.0.1", port: started.port, security: .plain, roots: "", deadline: time.seconds(10), max_bytes: 1_000_000)
     ).must()
     assert !is_tls(c)
     close(@c).must()
@@ -1970,7 +1970,7 @@ test "idle: a message arrives while idling"
     c @= Client(conn: p.conn)
     server @= p.server
     idle(@c).must()
-    assert idle_wait(@c, within: time.seconds(2).must()).must() == [.exists(count: 4)]
+    assert idle_wait(@c, within: time.seconds(2)).must() == [.exists(count: 4)]
     io.write_text(server, text: "A0001 OK IDLE terminated\r\n").must()
     assert idle_done(@c).must().len() == 0
     assert fake.heard(@c.conn, @server) == "A0001 IDLE\r\nDONE\r\n"
@@ -1985,7 +1985,7 @@ test "idle_wait: a flag changed"
     c @= Client(conn: p.conn)
     server @= p.server
     idle(@c).must()
-    news = idle_wait(@c, within: time.seconds(2).must()).must()
+    news = idle_wait(@c, within: time.seconds(2)).must()
     assert news.len() == 1
     io.write_text(server, text: "A0001 OK IDLE terminated\r\n").must()
     _ = idle_done(@c).must()

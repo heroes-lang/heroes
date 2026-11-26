@@ -5,6 +5,7 @@
 # file, its `.proto` texts and its GraphQL schema, and prints the route
 # table without listening.
 
+use <rebel>/errors
 use <rebel>/os
 use <rebel>/time
 use <rebel>/tls
@@ -53,7 +54,7 @@ function started(path: str) -> i64?
         f"gateway: {s.routes.len()} routes, presenting {subject}, listening on {accept.address_of(host: s.listener.host, listener: listener)} until Ctrl-C"
     )
     served = accept.serve(s, ticks: .wall, spread: .drawn, listener: listener)
-    _ = tls.close_listener(@listener).is_err()
+    errors.ignore(tls.close_listener(@listener))
     done = served?
     print(
         f"gateway: stopped after {done.connections} connections and {done.requests} requests, {done.failed} handshakes failed"

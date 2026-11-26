@@ -1346,11 +1346,11 @@ test "decode_frames: one message whole and the start of the next"
 
 # A deadline as `grpc-timeout` carries it.
 test "format_timeout: a second and a half"
-    assert format_timeout(time.milliseconds(1500).must()) == "1500000u"
+    assert format_timeout(time.milliseconds(1500)) == "1500000u"
 
 # A deadline read back.
 test "parse_timeout: 250 milliseconds"
-    assert parse_timeout("250m").must() == time.milliseconds(250).must()
+    assert parse_timeout("250m").must() == time.milliseconds(250)
     assert parse_timeout("1d").is_err()
 
 # The usual options.
@@ -1368,7 +1368,7 @@ test "connect: a unary call over TLS"
     ch @= connect(
         host: "localhost",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         roots: tls.TEST_ROOT,
         options: default_options()
     ).must()
@@ -1377,7 +1377,7 @@ test "connect: a unary call over TLS"
         path: "/test.Echo/Echo",
         request: bytes.from_text("hi"),
         metadata: [],
-        timeout: time.seconds(5).must()
+        timeout: time.seconds(5)
     ).must()
     assert r.status.code == STATUS_OK && r.messages == [bytes.from_text("hi")]
     close(@ch).must()
@@ -1391,7 +1391,7 @@ test "connect_plain: a unary call over h2c"
     ch @= connect_plain(
         host: "127.0.0.1",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         options: default_options()
     ).must()
     r = call(
@@ -1429,7 +1429,7 @@ test "close: a second close refused"
     ch @= connect_plain(
         host: "127.0.0.1",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         options: default_options()
     ).must()
     _ = call(@ch, path: "/test.Echo/Echo", request: [], metadata: [], timeout: time.max_duration()).must()
@@ -1446,7 +1446,7 @@ test "call: echoed, NOT_FOUND with its details, three messages streamed"
     ch @= connect_plain(
         host: "127.0.0.1",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         options: default_options()
     ).must()
     assert call(@ch, path: "/test.Echo/Echo", request: [9], metadata: [], timeout: time.max_duration()).must().messages == [[9]]
@@ -1465,7 +1465,7 @@ test "call_many: three requests echoed"
     ch @= connect_plain(
         host: "127.0.0.1",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         options: default_options()
     ).must()
     r = call_many(
@@ -1487,7 +1487,7 @@ test "start_call: a call driven message by message"
     ch @= connect_plain(
         host: "127.0.0.1",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         options: default_options()
     ).must()
     c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout: time.max_duration()).must()
@@ -1506,7 +1506,7 @@ test "send: a message past the bound refused"
     serving @= started.thread
     o @= default_options()
     o.max_message_bytes @ 4
-    ch @= connect_plain(host: "127.0.0.1", port: port, deadline: time.seconds(10).must(), options: o).must()
+    ch @= connect_plain(host: "127.0.0.1", port: port, deadline: time.seconds(10), options: o).must()
     c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout: time.max_duration()).must()
 
     match send(@ch, @c, message: [1, 2, 3, 4, 5])
@@ -1527,7 +1527,7 @@ test "close_send: the server answers after the client's last message"
     ch @= connect_plain(
         host: "127.0.0.1",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         options: default_options()
     ).must()
     c @= start_call(@ch, path: "/test.Echo/Many", metadata: [], timeout: time.max_duration()).must()
@@ -1544,7 +1544,7 @@ test "receive: the end with its status, and DEADLINE_EXCEEDED"
     ch @= connect_plain(
         host: "127.0.0.1",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         options: default_options()
     ).must()
     c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout: time.max_duration()).must()
@@ -1559,7 +1559,7 @@ test "receive: the end with its status, and DEADLINE_EXCEEDED"
         path: "/test.Echo/Silent",
         request: [],
         metadata: [],
-        timeout: time.milliseconds(300).must()
+        timeout: time.milliseconds(300)
     ).must()
     assert slow.status.code == STATUS_DEADLINE_EXCEEDED
     close(@ch).must()
@@ -1573,7 +1573,7 @@ test "cancel: the call ends CANCELLED"
     ch @= connect_plain(
         host: "127.0.0.1",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         options: default_options()
     ).must()
     c @= start_call(@ch, path: "/test.Echo/Echo", metadata: [], timeout: time.max_duration()).must()
@@ -1618,7 +1618,7 @@ test "call_proto: a Note echoed and decoded"
     ch @= connect_plain(
         host: "127.0.0.1",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         options: default_options()
     ).must()
     r = call_proto(

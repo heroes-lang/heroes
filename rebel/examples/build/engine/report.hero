@@ -135,7 +135,7 @@ test "finished_line: nothing to do, steps run, and a time shown"
     none: time.Duration? = fail(code: "not_found", msg: "not shown")
     assert finished_line(ran: 0, up_to_date: 4, took: none) == "build: nothing to do, 4 targets up to date"
     assert finished_line(ran: 1, up_to_date: 1, took: none) == "build: 1 step run, 1 target up to date"
-    assert finished_line(ran: 2, up_to_date: 0, took: ok(time.microseconds(1_500_400).must())) == "build: 2 steps run, 0 targets up to date in 1.5s"
+    assert finished_line(ran: 2, up_to_date: 0, took: ok(time.microseconds(1_500_400))) == "build: 2 steps run, 0 targets up to date in 1.5s"
 
 test "stopped_line: one step failed, and two"
     assert stopped_line("out/x", ran: 3, failed: 1) == "build: stopped, the step of out/x failed; 3 steps ran"

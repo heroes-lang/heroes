@@ -6,6 +6,7 @@
 # once under a name its content decides, so whole-or-absent is all the
 # repository needs to stay readable.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/path
 use <rebel>/strings
@@ -111,7 +112,7 @@ test "file_of: a key climbing out of the folder is refused"
 
 test "put: an object written, read, listed under its folder and removed"
     root = "build/backup-tests/folder-put"
-    _ = fs.remove_all(root).is_err()
+    errors.ignore(fs.remove_all(root))
     put(root: root, key: "data/ab/one", data: [1, 2, 3]).must()
     put(root: root, key: "data/cd/two", data: [4]).must()
     put(root: root, key: "config", data: []).must()

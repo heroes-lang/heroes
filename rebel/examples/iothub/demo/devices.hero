@@ -12,6 +12,7 @@
 
 use <rebel>/amqp
 use <rebel>/cbor
+use <rebel>/errors
 use <rebel>/mqtt
 use <rebel>/msgpack
 use <rebel>/nats
@@ -179,7 +180,7 @@ function press_says(@f: Fleet, payload: [u8]) -> ()?
     m.delivery_mode @ amqp.PERSISTENT
     channel = amqp.Channel(id: 1)
     _ = amqp.publish(@f.press[0], channel: channel, exchange_name: "plant", routing_key: "line1.press-2.vibration", m: m, mandatory: false)?
-    return amqp.wait_confirms(@f.press[0], channel: channel, wait: time.seconds(WAIT_SECONDS)?)
+    return amqp.wait_confirms(@f.press[0], channel: channel, wait: time.seconds(WAIT_SECONDS))
 
 # The tracker publishes `payload` on its subject, flushed.
 #
@@ -187,7 +188,7 @@ function press_says(@f: Fleet, payload: [u8]) -> ()?
 # - `payload`: the bytes.
 function tracker_says(@f: Fleet, payload: [u8]) -> ()?
     nats.publish(@f.tracker[0], subject: "fleet.tracker-3.position", data: payload)?
-    return nats.flush(@f.tracker[0], wait: time.seconds(WAIT_SECONDS)?)
+    return nats.flush(@f.tracker[0], wait: time.seconds(WAIT_SECONDS))
 
 # The press connects again, as every client of a restarted broker must:
 # its old connection, closed by the broker, let go.
@@ -198,7 +199,7 @@ function tracker_says(@f: Fleet, payload: [u8]) -> ()?
 # Fails as `press_connection` fails.
 function reconnect_press(@f: Fleet, port: i64) -> ()?
     # The broker closed the old one; its own close answers that.
-    _ = amqp.close(@f.press[0]).is_err()
+    errors.ignore(amqp.close(@f.press[0]))
     f.press @ [press_connection(port)?]
     return ok()
 
@@ -207,16 +208,16 @@ function reconnect_press(@f: Fleet, port: i64) -> ()?
 # - `f`: the fleet.
 function close_fleet(@f: Fleet)
     for i in range(from: 0, to: f.fridge.len())
-        _ = mqtt.close(@f.fridge[i]).is_err()
+        errors.ignore(mqtt.close(@f.fridge[i]))
 
     for i in range(from: 0, to: f.stranger.len())
-        _ = mqtt.close(@f.stranger[i]).is_err()
+        errors.ignore(mqtt.close(@f.stranger[i]))
 
     for i in range(from: 0, to: f.press.len())
-        _ = amqp.close(@f.press[i]).is_err()
+        errors.ignore(amqp.close(@f.press[i]))
 
     for i in range(from: 0, to: f.tracker.len())
-        _ = nats.close(@f.tracker[i]).is_err()
+        errors.ignore(nats.close(@f.tracker[i]))
 
     f.fridge @ []
     f.stranger @ []

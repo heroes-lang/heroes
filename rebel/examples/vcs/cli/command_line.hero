@@ -7,6 +7,7 @@
 # with 2. Paths given to `add` and `rm` are read from the working folder,
 # as git reads them, wherever in the work tree that folder is.
 
+use <rebel>/errors
 use <rebel>/flags
 use <rebel>/io
 use <rebel>/os
@@ -143,7 +144,7 @@ function run(arguments: [str]) -> i64
     found = match flags.parse(command(), arguments: arguments)
         .ok f => f
         .err e =>
-            _ = io.write_line(io.stderr(), line: e.msg).is_err()
+            errors.ignore(io.write_line(io.stderr(), line: e.msg))
             return EXIT_USAGE
 
     if flags.is_help(found)
@@ -166,7 +167,7 @@ function run(arguments: [str]) -> i64
                 print(text)
             return EXIT_OK
         .err e =>
-            _ = io.write_line(io.stderr(), line: f"vcs {flags.name_of(chosen)}: {e.code}: {e.msg}").is_err()
+            errors.ignore(io.write_line(io.stderr(), line: f"vcs {flags.name_of(chosen)}: {e.code}: {e.msg}"))
             return EXIT_FAILED
 
 # The repository that holds the working folder.

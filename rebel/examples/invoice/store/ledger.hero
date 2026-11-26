@@ -11,6 +11,7 @@
 # is the first thing an auditor asks about.
 
 use <rebel>/big
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/sql
 use <rebel>/sql/sqlite
@@ -50,7 +51,7 @@ function issue(@db: sqlite.Db, doc: documents.Document) -> documents.Document?
             database.settle(@db, outcome: ok())?
             return ok(written)
         .err e =>
-            _ = database.settle(@db, outcome: fail(code: e.code, msg: e.msg)).is_err()
+            errors.ignore(database.settle(@db, outcome: fail(code: e.code, msg: e.msg)))
             return fail(code: e.code, msg: e.msg)
 
 # `doc` numbered and written, inside the caller's transaction.

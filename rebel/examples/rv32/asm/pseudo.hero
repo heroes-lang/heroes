@@ -1,0 +1,225 @@
+# The pseudo-instructions of the RISC-V assembly programmer's manual, each
+# expanded into the base instructions it stands for: `li` into `addi`, or
+# `lui` and `addi`; `la` and `call` into `auipc` and a partner; `ret`,
+# `mv`, `beqz` and the rest into one. Both passes expand a statement the
+# same way, so the first pass's sizes are the second's: `li` of a plain
+# number takes the fewest instructions that number needs, `li` of a symbol
+# always two, its value being known only after the first pass.
+
+use asm/lexer
+use asm/operands as o
+use asm/syntax
+use isa/word
+
+## Expanding
+
+# The base instructions `s` stands for: itself where it names no
+# pseudo-instruction.
+#
+# - `s`: the statement, an instruction.
+# - `known`: the `.equ` values defined before it, which `li` takes as the
+#   numbers they are, as GNU as and LLVM do.
+#
+# Fails `invalid` where a pseudo-instruction's operands are not the ones it
+# takes, or `li`'s number does not fit in 32 bits.
+function expand(s: syntax.Statement, known: {str: i64}) -> [syntax.Statement]?
+    zero = o.r(0)
+    ra = o.r(1)
+
+    return match s.name
+        "nop" =>
+            o.count(s, n: 0)?
+            ok([o.made(s: s, name: "addi", operands: [zero, zero, o.num(0)])])
+        "li"         => load_immediate(s: s, known: known)
+        "la" | "lla" => address(s)
+        "mv"         => two(s: s, name: "addi", first: 0, second: 1, last: o.num(0))
+        "not"        => two(s: s, name: "xori", first: 0, second: 1, last: o.num(-1))
+        "neg"        => three(s: s, name: "sub", order: [0, -1, 1])
+        "seqz"       => two(s: s, name: "sltiu", first: 0, second: 1, last: o.num(1))
+        "snez"       => three(s: s, name: "sltu", order: [0, -1, 1])
+        "sltz"       => three(s: s, name: "slt", order: [0, 1, -1])
+        "sgtz"       => three(s: s, name: "slt", order: [0, -1, 1])
+        "beqz"       => branch_zero(s: s, name: "beq", zero_first: false)
+        "bnez"       => branch_zero(s: s, name: "bne", zero_first: false)
+        "blez"       => branch_zero(s: s, name: "bge", zero_first: true)
+        "bgez"       => branch_zero(s: s, name: "bge", zero_first: false)
+        "bltz"       => branch_zero(s: s, name: "blt", zero_first: false)
+        "bgtz"       => branch_zero(s: s, name: "blt", zero_first: true)
+        "bgt"        => swapped(s: s, name: "blt")
+        "ble"        => swapped(s: s, name: "bge")
+        "bgtu"       => swapped(s: s, name: "bltu")
+        "bleu"       => swapped(s: s, name: "bgeu")
+        "j"          => jump(s: s, link: zero)
+        "jr"         => jump_register(s: s, link: zero)
+        "ret" =>
+            o.count(s, n: 0)?
+            ok([o.made(s: s, name: "jalr", operands: [zero, .memory(offset: syntax.number(0), base: 1)])])
+        "call"                                                 => far(s: s, link: 1, through: 1)
+        "tail"                                                 => far(s: s, link: 0, through: 6)
+        "csrr"                                                 => csr_read(s)
+        "csrw" | "csrs" | "csrc" | "csrwi" | "csrsi" | "csrci" => csr_write(s)
+        "rdcycle"                                              => counter(s: s, csr: "cycle")
+        "rdcycleh"                                             => counter(s: s, csr: "cycleh")
+        "rdtime"                                               => counter(s: s, csr: "time")
+        "rdtimeh"                                              => counter(s: s, csr: "timeh")
+        "rdinstret"                                            => counter(s: s, csr: "instret")
+        "rdinstreth"                                           => counter(s: s, csr: "instreth")
+        "jal"                                                  => if s.operands.len() == 1
+            jump(s: s, link: ra)
+        else
+            ok([s])
+        "jalr"                                                 => if s.operands.len() == 1
+            jump_register(s: s, link: ra)
+        else
+            ok([s])
+        _                                                      => ok([s])
+
+# `li rd, v`: one `addi` where `v` fits in 12 signed bits, one `lui` where
+# its low 12 bits are zero, else `lui` then `addi`; a label, two always,
+# its value being known only after the first pass.
+function load_immediate(s: syntax.Statement, known: {str: i64}) -> [syntax.Statement]?
+    o.count(s, n: 2)?
+    rd = o.reg(s, at: 0)?
+    written = o.value(s, at: 1)?
+    e @= written
+    equated = known[written.symbol]
+
+    if written.symbol != "" && !equated.is_err()
+        e @ syntax.number(equated.must() + written.addend)
+
+    if e.symbol != "" || e.part != .whole
+        return ok(
+            [o.made(s: s, name: "lui", operands: [o.r(rd), o.v(e: e, part: .high)]), o.made(s: s, name: "addi", operands: [o.r(rd), o.r(rd), o.v(e: e, part: .low)])]
+        )
+
+    if e.addend < -0x8000_0000 || e.addend > word.MASK
+        return fail(code: "invalid", msg: f"line {s.line}: li's value {e.addend} does not fit in 32 bits")
+    w = word.wrap(e.addend)
+    low = word.signed(word.sign_extend(x: w, bits: 12))
+
+    if word.fits_signed(x: word.signed(w), bits: 12)
+        return ok([o.made(s: s, name: "addi", operands: [o.r(rd), o.r(0), o.num(low)])])
+    high = w + 0x800 >> 12 & 0xfffff
+    upper = o.made(s: s, name: "lui", operands: [o.r(rd), o.num(high)])
+
+    if low == 0
+        return ok([upper])
+    return ok([upper, o.made(s: s, name: "addi", operands: [o.r(rd), o.r(rd), o.num(low)])])
+
+# `la rd, symbol`: `auipc` then `addi`, the distance from the `auipc`.
+function address(s: syntax.Statement) -> [syntax.Statement]?
+    o.count(s, n: 2)?
+    rd = o.reg(s, at: 0)?
+    e = o.value(s, at: 1)?
+    return ok(
+        [o.made(s: s, name: "auipc", operands: [o.r(rd), o.v(e: e, part: .pc_high)]), o.made(s: s, name: "addi", operands: [o.r(rd), o.r(rd), o.v(e: e, part: .pc_low)])]
+    )
+
+# `call` and `tail`: `auipc` into `through`, then `jalr` linking `link`.
+function far(s: syntax.Statement, link: i64, through: i64) -> [syntax.Statement]?
+    o.count(s, n: 1)?
+    e = o.value(s, at: 0)?
+    target = syntax.Expr(symbol: e.symbol, addend: e.addend, part: .pc_low)
+    return ok(
+        [o.made(s: s, name: "auipc", operands: [o.r(through), o.v(e: e, part: .pc_high)]), o.made(s: s, name: "jalr", operands: [o.r(link), .memory(offset: target, base: through)])]
+    )
+
+# `name rd, rs, last`, the two registers written as operands `first` and
+# `second`.
+function two(s: syntax.Statement, name: str, first: i64, second: i64, last: syntax.Operand) -> [syntax.Statement]?
+    o.count(s, n: 2)?
+    a = o.reg(s, at: first)?
+    b = o.reg(s, at: second)?
+    return ok([o.made(s: s, name: name, operands: [o.r(a), o.r(b), last])])
+
+# `name` with three registers: each of `order` an operand's index, -1 for
+# `zero`.
+function three(s: syntax.Statement, name: str, order: [i64]) -> [syntax.Statement]?
+    o.count(s, n: 2)?
+    regs: [syntax.Operand] @= []
+
+    for at in order
+        if at < 0
+            regs @ regs.push(o.r(0))
+        else
+            regs @ regs.push(o.r(o.reg(s, at: at)?))
+
+    return ok([o.made(s: s, name: name, operands: regs)])
+
+function branch_zero(s: syntax.Statement, name: str, zero_first: bool) -> [syntax.Statement]?
+    o.count(s, n: 2)?
+    rs = o.r(o.reg(s, at: 0)?)
+    target = s.operands[1]
+
+    if zero_first
+        return ok([o.made(s: s, name: name, operands: [o.r(0), rs, target])])
+    return ok([o.made(s: s, name: name, operands: [rs, o.r(0), target])])
+
+function swapped(s: syntax.Statement, name: str) -> [syntax.Statement]?
+    o.count(s, n: 3)?
+    return ok([o.made(s: s, name: name, operands: [s.operands[1], s.operands[0], s.operands[2]])])
+
+function jump(s: syntax.Statement, link: syntax.Operand) -> [syntax.Statement]?
+    o.count(s, n: 1)?
+    return ok([o.made(s: s, name: "jal", operands: [link, s.operands[0]])])
+
+function jump_register(s: syntax.Statement, link: syntax.Operand) -> [syntax.Statement]?
+    o.count(s, n: 1)?
+    rs = o.reg(s, at: 0)?
+    return ok([o.made(s: s, name: "jalr", operands: [link, .memory(offset: syntax.number(0), base: rs)])])
+
+# `csrw csr, rs` and its kin: the `csrr*` instruction with `zero` as `rd`.
+function csr_write(s: syntax.Statement) -> [syntax.Statement]?
+    o.count(s, n: 2)?
+    name = "csrr" + s.name.slice(from: 3, to: s.name.len())
+    return ok([o.made(s: s, name: name, operands: [o.r(0), s.operands[0], s.operands[1]])])
+
+# `csrr rd, csr`: `csrrs rd, csr, zero`, which reads and writes nothing.
+function csr_read(s: syntax.Statement) -> [syntax.Statement]?
+    o.count(s, n: 2)?
+    rd = o.reg(s, at: 0)?
+    return ok([o.made(s: s, name: "csrrs", operands: [o.r(rd), s.operands[1], o.r(0)])])
+
+function counter(s: syntax.Statement, csr: str) -> [syntax.Statement]?
+    o.count(s, n: 1)?
+    rd = o.reg(s, at: 0)?
+    named: syntax.Operand = .value(e: syntax.Expr(symbol: csr, addend: 0, part: .whole))
+    return ok([o.made(s: s, name: "csrrs", operands: [o.r(rd), named, o.r(0)])])
+
+## Tests
+
+function expanded(source: str) -> [syntax.Statement]
+    return expand(syntax.statement(lexer.lines(source)[0]).must(), known: {"SIZE": 0x1000}).must()
+
+test "expand: li takes one, one or two instructions by its value"
+    assert expanded("li a0, 5").len() == 1
+    assert expanded("li a0, -2048")[0].name == "addi"
+    assert expanded("li a0, 0x12345000").len() == 1
+    pair = expanded("li a0, 0x12345678")
+    assert pair.len() == 2
+    assert pair[0].operands[1] == o.num(0x12345)
+    assert pair[1].operands[2] == o.num(0x678)
+    round = expanded("li a0, 0xfff")
+    assert round[0].operands[1] == o.num(1)
+    assert round[1].operands[2] == o.num(-1)
+    assert expanded("li a0, 0xffffffff")[0].operands[2] == o.num(-1)
+    assert expanded("li a0, label").len() == 2
+    assert expanded("li a0, SIZE").len() == 1
+    assert expanded("li a0, SIZE+1").len() == 2
+
+test "expand: the one-instruction forms"
+    assert expanded("ret")[0].operands == [o.r(0), .memory(offset: syntax.number(0), base: 1)]
+    assert expanded("mv a0, a1")[0].operands == [o.r(10), o.r(11), o.num(0)]
+    assert expanded("neg a0, a1")[0].operands == [o.r(10), o.r(0), o.r(11)]
+    assert expanded("bgt a0, a1, done")[0].operands[0] == o.r(11)
+    assert expanded("blez a0, done")[0].operands[1] == o.r(10)
+    assert expanded("csrw mtvec, t0")[0].name == "csrrw"
+    assert expanded("csrr t0, mcause")[0].operands[2] == o.r(0)
+    assert expanded("jal helper")[0].operands[0] == o.r(1)
+    assert expanded("jal ra, helper")[0].operands.len() == 2
+    assert expanded("call helper").len() == 2
+    assert expanded("addi a0, a0, 1")[0].name == "addi"
+
+test "expand: wrong operands, each refused"
+    for source in ["li a0", "li 5, a0", "neg a0, 5", "mv a0", "ret a0", "call a0, b", "csrw mtvec", "j"]
+        assert expand(syntax.statement(lexer.lines(source)[0]).must(), known: {}).is_err()

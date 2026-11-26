@@ -23,25 +23,35 @@ static uintptr_t hero_rebind_ctx_sp(const void *uc) {
     return hero_rebind_strip_d(hero_rebind_word((const unsigned char *)uc, HERO_REBIND_CTX_SP));
 }
 
-/* Whether the context a swap switched to names, once the switch has
- * returned, another stack pointer than `entered`: one witness of its
- * coroutine's life beside the switches made from its range (a yield through a
- * switch this route never sees still moves it), read only where the context
- * provably lives and by the kernel, so a page made unreadable since is an
- * answer and never a fault; elsewhere nothing is read and the answer is false
- * (defect d-lane-d2745-1: the word was read wherever the context lay, and a
- * coroutine that gave it back crashed the program inside the runtime). */
-static bool hero_rebind_ctx_moved(const void *uc, uintptr_t entered) {
+/* The stack-pointer word of the context at `uc`, copied by the kernel wherever
+ * it is mapped, so a context given back since is an answer and never a fault
+ * (defect 2850); false where the kernel refuses the copy. */
+static bool hero_rebind_ctx_word(const void *uc, uintptr_t *word) {
     const unsigned char *at = (const unsigned char *)uc + HERO_REBIND_CTX_SP;
-    uintptr_t word = 0;
+    uintptr_t got_word = 0;
     mach_vm_size_t got = 0;
-    if (!hero_rebind_lives(at, sizeof word)) return false;
-    if (mach_vm_read_overwrite(mach_task_self(), (mach_vm_address_t)(uintptr_t)at, sizeof word,
-                               (mach_vm_address_t)(uintptr_t)&word, &got) != KERN_SUCCESS ||
-        got != sizeof word) {
+    if (uc == NULL || mach_vm_read_overwrite(mach_task_self(), (mach_vm_address_t)(uintptr_t)at, sizeof got_word,
+                                             (mach_vm_address_t)(uintptr_t)&got_word, &got) != KERN_SUCCESS ||
+        got != sizeof got_word) {
         return false;
     }
-    return hero_rebind_strip_d(word) != entered;
+    *word = hero_rebind_strip_d(got_word);
+    return true;
+}
+
+/* Whether the coroutine a swap switched to may still be alive once the switch
+ * has returned: its context naming another stack pointer than `entered`, one
+ * witness of its life beside the switches made from its range (a yield
+ * through a switch this route never sees still moves it), copied by the
+ * kernel wherever the context is mapped, never loaded (defect d-lane-d2745-1:
+ * the word was loaded wherever the context lay, and a coroutine that gave it
+ * back crashed the program inside the runtime); a context that cannot be read
+ * proves no end (defect 2851: until then one that did not provably live was
+ * not read, and its coroutine was judged ended). */
+static bool hero_rebind_ctx_moved(const void *uc, uintptr_t entered) {
+    uintptr_t word = 0;
+    if (!hero_rebind_ctx_word(uc, &word)) return true;
+    return word != entered;
 }
 
 /* Whether `setcontext` would jump to `uc`: it refuses a context whose size
@@ -97,6 +107,7 @@ static bool hero_rebind_switch_target(HeroSignalStack *own, const void *uc, int 
 static void hero_rebind_jump(const void *env) {
     HeroSignalStack *own = hero_rebind_own();
     if (own == NULL || env == NULL) return;
+    hero_rebind_relived(own, (uintptr_t)__builtin_frame_address(0));
     bool standing = hero_rebind_standing(own);
     if (hero_rebind_decoding(HERO_REBIND_JMP)) {
         uintptr_t t = hero_rebind_jmp_sp(env);
@@ -123,6 +134,7 @@ static void hero_rebind_jump(const void *env) {
 static void hero_rebind_set(const void *uc) {
     HeroSignalStack *own = hero_rebind_own();
     if (own == NULL || !hero_rebind_ctx_valid(uc)) return;
+    hero_rebind_relived(own, (uintptr_t)__builtin_frame_address(0));
     bool standing = hero_rebind_standing(own);
     uintptr_t t = 0;
     bool back = false;
@@ -163,8 +175,8 @@ static void hero_rebind_set(const void *uc) {
  * in its own frame, and only the entries it marked are released, by serial,
  * when the swap returns here (or fails). The target is judged only for a
  * landing in frames already left (rule 6). Once the switch has returned the
- * context switched to is read only where it provably lives, and by the kernel
- * (defect d-lane-d2745-1): the end of a range's coroutine is what the switches
+ * context switched to is copied by the kernel wherever it is mapped, never
+ * loaded (defects d-lane-d2745-1 and 2851): the end of a range's coroutine is what the switches
  * made from it while this one waited say, with that word
  * (`hero_rebind_range_returned`). */
 __attribute__((noinline)) static int hero_rebind_swapcontext(void *from, const void *to) {
@@ -176,6 +188,7 @@ __attribute__((noinline)) static int hero_rebind_swapcontext(void *from, const v
     int watched = -1;
     unsigned seq = 0;
     hero_rebind_range_left((uintptr_t)__builtin_frame_address(0));
+    hero_rebind_relived(own, (uintptr_t)__builtin_frame_address(0));
     if (own != NULL && from != NULL && hero_rebind_ctx_valid(to)) {
         bool field = hero_rebind_decoding(HERO_REBIND_CTX);
         uintptr_t t = 0;
@@ -265,27 +278,37 @@ static int hero_rebind_setcontext(const void *context) {
     return atomic_load_explicit(&hero_rebind_real_setcontext, memory_order_relaxed)(context);
 }
 
-/* Route A's save points, rewritten only for a family whose decode did not
- * verify: each records, with a frame below its caller's stack pointer
- * (`hero_rebind_below`, called here), then reaches the C library's own by a
- * tail call, so it saves this function's caller and returns twice into it. */
+/* The save points: on route A each records, with a frame below its caller's
+ * stack pointer (`hero_rebind_below`, called here); on route C each only tells
+ * where the thread runs (defect 2855, `hero_rebind_saving`); then it reaches
+ * the C library's own by a tail call, so it saves this function's caller and
+ * returns twice into it. */
+static void hero_rebind_saving(const void *buf, int family) {
+    if (!hero_rebind_decoding(family)) {
+        hero_rebind_note(buf, hero_rebind_below());
+        return;
+    }
+    HeroSignalStack *own = hero_rebind_own();
+    if (own != NULL && own->left_n > 0) hero_rebind_relived(own, hero_rebind_below());
+}
+
 static int hero_rebind_setjmp(int *env) {
-    hero_rebind_note(env, hero_rebind_below());
+    hero_rebind_saving(env, HERO_REBIND_JMP);
     __attribute__((musttail)) return atomic_load_explicit(&hero_rebind_real_setjmp, memory_order_relaxed)(env);
 }
 
 static int hero_rebind__setjmp(int *env) {
-    hero_rebind_note(env, hero_rebind_below());
+    hero_rebind_saving(env, HERO_REBIND_JMP);
     __attribute__((musttail)) return atomic_load_explicit(&hero_rebind_real__setjmp, memory_order_relaxed)(env);
 }
 
 static int hero_rebind_sigsetjmp(int *env, int save) {
-    hero_rebind_note(env, hero_rebind_below());
+    hero_rebind_saving(env, HERO_REBIND_JMP);
     __attribute__((musttail)) return atomic_load_explicit(&hero_rebind_real_sigsetjmp, memory_order_relaxed)(env, save);
 }
 
 static int hero_rebind_getcontext(void *context) {
-    hero_rebind_note(context, hero_rebind_below());
+    hero_rebind_saving(context, HERO_REBIND_CTX);
     __attribute__((musttail)) return atomic_load_explicit(&hero_rebind_real_getcontext, memory_order_relaxed)(context);
 }
 

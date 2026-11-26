@@ -1,0 +1,299 @@
+# The 32-bit word of RV32IM and its arithmetic, as the RISC-V unprivileged
+# specification (version 20191213, chapters 2 and 7) defines it: every value
+# a register, a memory word or an immediate holds is kept here as an `i64`
+# between 0 and 2^32 - 1, its 32 bits read as an unsigned number, and every
+# operation answers such a value again, wrapping where the machine wraps.
+#
+# Heroes aborts on overflow at every width and its bitwise operators take
+# `i64` alone (spec § 7), so the machine's wrap-around is written here, once:
+# a sum is taken in 64 bits and cut to 32, a product of two words is taken
+# by `math.multiply_wrapping`, which wraps at 64. Rebel offers wrapping at 64
+# bits only (`math.add_wrapping`, `subtract_wrapping`, `multiply_wrapping`):
+# no wrapping, sign extension or unsigned comparison at 32 bits, which Rust's
+# `u32::wrapping_add`, `i32::wrapping_mul` and `as i32` give, so this module
+# is the smallest honest local one.
+
+use <rebel>/math
+use <rebel>/numbers
+use <rebel>/strings
+
+## The word
+
+# The 32 bits of a word set: the largest unsigned value, -1 signed.
+constant MASK: i64
+    0xffff_ffff
+
+# 2^31: the sign bit of a word, the smallest signed value read unsigned.
+constant SIGN: i64
+    0x8000_0000
+
+# 2^32: one past the largest word.
+constant SPAN: i64
+    0x1_0000_0000
+
+# `x` cut to its lowest 32 bits, as the machine keeps a result: any `i64`,
+# negative ones read by their two's complement bits.
+#
+# - `x`: any value.
+function wrap(x: i64) -> i64
+    return x & MASK
+
+# The signed value a word's 32 bits spell: from -2^31 to 2^31 - 1.
+#
+# - `w`: a word, 0 to 2^32 - 1.
+function signed(w: i64) -> i64
+    if w >= SIGN
+        return w - SPAN
+    return w
+
+# The word whose lowest `bits` bits are those of `x` and whose higher bits
+# copy bit `bits - 1`: an immediate of that many bits sign-extended to 32.
+#
+# - `x`: the field, any value; only its lowest `bits` bits are read.
+# - `bits`: the field's width, 1 to 32.
+function sign_extend(x: i64, bits: i64) -> i64
+    field = x & (1 << bits) - 1
+    top = 1 << bits - 1
+
+    if field & top != 0
+        return wrap(field - (1 << bits))
+    return field
+
+# Whether `x`, a signed number, fits in `bits` bits of two's complement.
+#
+# - `x`: the number.
+# - `bits`: the width, 1 to 63.
+function fits_signed(x: i64, bits: i64) -> bool
+    half = 1 << bits - 1
+    return x >= -half && x < half
+
+## Arithmetic, as RV32I computes it
+
+# `a + b` modulo 2^32: `add`, `addi`.
+#
+# - `a`: a word.
+# - `b`: a word.
+function add(a: i64, b: i64) -> i64
+    return wrap(a + b)
+
+# `a - b` modulo 2^32: `sub`.
+#
+# - `a`: a word.
+# - `b`: a word.
+function subtract(a: i64, b: i64) -> i64
+    return wrap(a - b)
+
+# `a` shifted left by the lowest five bits of `by`: `sll`, `slli`. A count
+# past 31 is read modulo 32, as the machine reads it, never refused.
+#
+# - `a`: a word.
+# - `by`: the count, a word.
+function shift_left(a: i64, by: i64) -> i64
+    return wrap(a << (by & 31))
+
+# `a` shifted right by the lowest five bits of `by`, zeros coming in: `srl`.
+#
+# - `a`: a word.
+# - `by`: the count, a word.
+function shift_right(a: i64, by: i64) -> i64
+    return a >> (by & 31)
+
+# `a` shifted right by the lowest five bits of `by`, its sign bit copied in:
+# `sra`.
+#
+# - `a`: a word.
+# - `by`: the count, a word.
+function shift_right_arith(a: i64, by: i64) -> i64
+    return wrap(signed(a) >> (by & 31))
+
+# Whether `a < b` read as signed numbers: `slt`, `blt`.
+#
+# - `a`: a word.
+# - `b`: a word.
+function less_signed(a: i64, b: i64) -> bool
+    return signed(a) < signed(b)
+
+# Whether `a < b` read as unsigned numbers: `sltu`, `bltu`.
+#
+# - `a`: a word.
+# - `b`: a word.
+function less_unsigned(a: i64, b: i64) -> bool
+    return a < b
+
+## Multiplication and division, as the M extension computes them
+
+# The lowest 32 bits of `a * b`, the same read signed or unsigned: `mul`.
+#
+# - `a`: a word.
+# - `b`: a word.
+#
+# Two words can make a product of 64 bits, past `i64`, so it is taken modulo
+# 2^64 by `math.multiply_wrapping` and cut.
+function multiply(a: i64, b: i64) -> i64
+    return wrap(math.multiply_wrapping(a: a, b: b))
+
+# The highest 32 bits of the 64-bit product of `a` and `b` read signed:
+# `mulh`. Two signed words multiply within 2^62, so `i64` holds it.
+#
+# - `a`: a word.
+# - `b`: a word.
+function multiply_high(a: i64, b: i64) -> i64
+    return wrap(signed(a) * signed(b) >> 32)
+
+# The highest 32 bits of the product of `a` read signed and `b` read
+# unsigned: `mulhsu`. Its size stays below 2^63, so `i64` holds it.
+#
+# - `a`: a word, read signed.
+# - `b`: a word, read unsigned.
+function multiply_high_signed_unsigned(a: i64, b: i64) -> i64
+    return wrap(signed(a) * b >> 32)
+
+# The highest 32 bits of the product of `a` and `b` read unsigned: `mulhu`.
+# The product may reach 2^64 - 2^33 + 1, past `i64`, so it is taken modulo
+# 2^64 and its high half read from those bits.
+#
+# - `a`: a word.
+# - `b`: a word.
+function multiply_high_unsigned(a: i64, b: i64) -> i64
+    return wrap(math.multiply_wrapping(a: a, b: b) >> 32)
+
+# `a / b` read signed, rounded toward zero: `div`. Division by zero answers
+# -1, every bit set, and the one overflow, -2^31 / -1, answers -2^31: the
+# specification's table 7.1, where Heroes would abort on both.
+#
+# - `a`: the dividend, a word.
+# - `b`: the divisor, a word.
+function divide(a: i64, b: i64) -> i64
+    if b == 0
+        return MASK
+
+    if a == SIGN && b == MASK
+        return SIGN
+    return wrap(signed(a) / signed(b))
+
+# `a / b` read unsigned: `divu`. Division by zero answers 2^32 - 1.
+#
+# - `a`: the dividend, a word.
+# - `b`: the divisor, a word.
+function divide_unsigned(a: i64, b: i64) -> i64
+    if b == 0
+        return MASK
+    return a / b
+
+# The remainder of `a / b` read signed, with the dividend's sign: `rem`.
+# Division by zero answers `a`, and the overflow -2^31 % -1 answers 0.
+#
+# - `a`: the dividend, a word.
+# - `b`: the divisor, a word.
+function remainder(a: i64, b: i64) -> i64
+    if b == 0
+        return a
+
+    if a == SIGN && b == MASK
+        return 0
+    return wrap(signed(a) % signed(b))
+
+# The remainder of `a / b` read unsigned: `remu`. Division by zero answers
+# `a`.
+#
+# - `a`: the dividend, a word.
+# - `b`: the divisor, a word.
+function remainder_unsigned(a: i64, b: i64) -> i64
+    if b == 0
+        return a
+    return a % b
+
+## Text
+
+# `w` as eight hexadecimal digits in lower case, `0000002a`.
+#
+# - `w`: a word.
+function hex(w: i64) -> str
+    return strings.pad_zeros(numbers.format_int(n: wrap(w), base: 16), width: 8)
+
+# `w` as `0x` and eight hexadecimal digits, `0x8000002a`.
+#
+# - `w`: a word.
+function hex_literal(w: i64) -> str
+    return "0x" + hex(w)
+
+## Tests
+
+test "wrap and signed: both ends of the word, and -1"
+    assert wrap(-1) == MASK
+    assert wrap(SPAN) == 0
+    assert wrap(SPAN + 5) == 5
+    assert signed(MASK) == -1
+    assert signed(SIGN) == -2147483648
+    assert signed(0x7fff_ffff) == 2147483647
+    assert signed(0) == 0
+
+test "sign_extend: a 12-bit immediate, positive and negative, and 32 bits whole"
+    assert sign_extend(x: 0x7ff, bits: 12) == 0x7ff
+    assert sign_extend(x: 0x800, bits: 12) == 0xffff_f800
+    assert sign_extend(x: 0xfff, bits: 12) == MASK
+    assert sign_extend(x: 0x1_2345_6fff, bits: 12) == MASK
+    assert sign_extend(x: SIGN, bits: 32) == SIGN
+    assert sign_extend(x: 1, bits: 1) == MASK
+
+test "fits_signed: the edges of 12 and 13 bits"
+    assert fits_signed(x: 2047, bits: 12)
+    assert fits_signed(x: -2048, bits: 12)
+    assert !fits_signed(x: 2048, bits: 12)
+    assert !fits_signed(x: -2049, bits: 12)
+    assert fits_signed(x: 4094, bits: 13)
+
+test "add and subtract: wrap-around at both ends"
+    assert add(a: MASK, b: 1) == 0
+    assert add(a: 0x7fff_ffff, b: 1) == SIGN
+    assert subtract(a: 0, b: 1) == MASK
+    assert subtract(a: SIGN, b: 1) == 0x7fff_ffff
+
+test "shifts: counts past 31 read modulo 32, and the sign copied by sra"
+    assert shift_left(a: 1, by: 31) == SIGN
+    assert shift_left(a: 1, by: 32) == 1
+    assert shift_left(a: 3, by: 33) == 6
+    assert shift_left(a: MASK, by: 4) == 0xffff_fff0
+    assert shift_right(a: SIGN, by: 31) == 1
+    assert shift_right(a: SIGN, by: 63) == 1
+    assert shift_right_arith(a: SIGN, by: 31) == MASK
+    assert shift_right_arith(a: 0x4000_0000, by: 30) == 1
+    assert shift_right_arith(a: 0xffff_fff0, by: 2) == 0xffff_fffc
+
+test "less: signed and unsigned disagree on the sign bit"
+    assert less_signed(a: MASK, b: 0)
+    assert !less_unsigned(a: MASK, b: 0)
+    assert less_unsigned(a: 0, b: MASK)
+    assert !less_signed(a: 5, b: 5)
+
+# Expected values observed with Python 3.15, `(a * b) & 0xffffffff` and
+# `(a * b) >> 32 & 0xffffffff` over its unbounded integers, run 2026-11-26.
+test "multiply: low and high halves, signed, mixed and unsigned"
+    assert multiply(a: MASK, b: MASK) == 1
+    assert multiply(a: 0x1234_5678, b: 0x9abc_def0) == 0x242d_2080
+    assert multiply_high(a: MASK, b: MASK) == 0
+    assert multiply_high(a: SIGN, b: SIGN) == 0x4000_0000
+    assert multiply_high(a: SIGN, b: 0x7fff_ffff) == 0xc000_0000
+    assert multiply_high_unsigned(a: MASK, b: MASK) == 0xffff_fffe
+    assert multiply_high_unsigned(a: 0x1234_5678, b: 0x9abc_def0) == 0x0b00_ea4e
+    assert multiply_high_signed_unsigned(a: MASK, b: MASK) == MASK
+    assert multiply_high_signed_unsigned(a: SIGN, b: MASK) == 0x8000_0000
+    assert multiply_high_signed_unsigned(a: 2, b: MASK) == 1
+
+test "divide and remainder: by zero, the overflow, and rounding toward zero"
+    assert divide(a: 7, b: 0) == MASK
+    assert divide_unsigned(a: 7, b: 0) == MASK
+    assert remainder(a: 7, b: 0) == 7
+    assert remainder_unsigned(a: 7, b: 0) == 7
+    assert divide(a: SIGN, b: MASK) == SIGN
+    assert remainder(a: SIGN, b: MASK) == 0
+    assert divide(a: wrap(-7), b: 2) == wrap(-3)
+    assert remainder(a: wrap(-7), b: 2) == wrap(-1)
+    assert divide_unsigned(a: wrap(-7), b: 2) == 0x7fff_fffc
+    assert remainder_unsigned(a: wrap(-7), b: 2) == 1
+
+test "hex: eight digits, the wrap applied"
+    assert hex(0) == "00000000"
+    assert hex(0x2a) == "0000002a"
+    assert hex(-1) == "ffffffff"
+    assert hex_literal(SIGN) == "0x80000000"

@@ -160,10 +160,10 @@ function notice_of(name: str, value: str) -> [service.Notice]?
         return fail(code: failure.INVALID, msg: f"WATCHDOG is \"{value}\": it is 1 or trigger")
 
     if name == "WATCHDOG_USEC"
-        return ok([.watchdog_timeout(span: time.microseconds(number_of(text: value, name: name)?)?)])
+        return ok([.watchdog_timeout(span: time.microseconds_checked(number_of(text: value, name: name)?)?)])
 
     if name == "EXTEND_TIMEOUT_USEC"
-        return ok([.extend_timeout(span: time.microseconds(number_of(text: value, name: name)?)?)])
+        return ok([.extend_timeout(span: time.microseconds_checked(number_of(text: value, name: name)?)?)])
 
     if name == "BUSERROR"
         return ok([.bus_error(name: names.bus_error(value)?)])
@@ -220,7 +220,7 @@ function reading_code<T>(r: T?) -> str
 
 # One duration of the tests: `ms` milliseconds.
 function span(ms: i64) -> time.Duration
-    return time.milliseconds(ms).must()
+    return time.milliseconds(ms)
 
 test "format: every case is the assignment sd_notify(3) names, in the order given and one to a line"
     every: [service.Notice] = [
