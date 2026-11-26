@@ -283,7 +283,7 @@ function serve(config: state.Config) -> i64
             _ = net.close_listener(@listener).is_err()
             return refused(config, lines: [f"cannot make the poll set: {e.msg}"])
 
-    period = time.milliseconds(1000 / config.hz).must()
+    period = time.milliseconds(1000 / config.hz)
     listener_key = poll.add_listener(set, l: listener).default(-1)
     timer_key = poll.add_timer(set, first: period, every: period).default(-1)
     saved: (mailbox state.Saved) = mailbox()

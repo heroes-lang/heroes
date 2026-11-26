@@ -290,7 +290,7 @@ function vocabulary(guide: str) -> {str: bool}?
 function answers(compiler: str, version: str, faces: [str]) -> [Answer]?
     fs.make_dir_all(SCRATCH)?
     write_file(path: SCRATCH + "/heroes.toml", text: f"[dependencies.rebel]\npath = \"../../{tablekit.LIBRARY}/{version}/files\"\n")?
-    limit = time.seconds(DOC_SECONDS)?
+    limit = time.seconds(DOC_SECONDS)
     out: [Answer] @= []
 
     for face in faces
