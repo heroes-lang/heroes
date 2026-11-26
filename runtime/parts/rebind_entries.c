@@ -61,7 +61,14 @@ static _Atomic int hero_rebind_stack_any = 0;
  * the thread's own, where a target above a handler leaves it. A switch into
  * the range clears its end again. A coroutine left by a switch this file
  * never sees, where the context it was switched to does not provably live, is
- * judged ended: said in `rebind.c`'s module doc. */
+ * judged ended: said in `rebind.c`'s module doc.
+ *
+ * A COROUTINE THE C LIBRARY STARTS THROUGH ANOTHER'S `uc_link` (defect 2850)
+ * is entered by no switch this file sees (Darwin's `_ctx_done` switches to it):
+ * the link is learned where `makecontext` reads it, a range whose coroutine
+ * is entered holds every range down its chain of links entered with it, a
+ * range made after the context naming it as well, and their end is seen where
+ * the swap into the first returns, as `parts/sigentries.c` says. */
 #define HERO_REBIND_RANGE_ENTERED 1
 #define HERO_REBIND_RANGE_ENDED 2
 /* WHERE CONTEXTS FALL TO ROUTE A (defect 2745) no switch's target is read and
@@ -78,6 +85,16 @@ static _Atomic int hero_rebind_stack_state[HERO_REBIND_STACKS];
  * switch asked which range it is made from. */
 static _Atomic int hero_rebind_watching = 0;
 static _Atomic uintptr_t hero_rebind_stack_ctx[HERO_REBIND_STACKS];
+/* The context each range's `uc_link` named when `makecontext` was handed it
+ * (0 for none), and the stack pointer each context down a watched chain named
+ * when the swap began (0 where it could not be read). */
+static _Atomic uintptr_t hero_rebind_stack_link[HERO_REBIND_STACKS];
+static _Atomic uintptr_t hero_rebind_stack_start[HERO_REBIND_STACKS];
+
+/* `rebind_jump.c`: the stack-pointer word of the context at `uc`, read by the
+ * kernel wherever it is mapped; false where it cannot be read. */
+static bool hero_rebind_ctx_word(const void *uc, uintptr_t *word);
+static void hero_rebind_range_links(int i);
 
 static void hero_rebind_stack_put(int i, uintptr_t lo, uintptr_t hi) {
     atomic_fetch_add(&hero_rebind_stack_seq[i], 1);
@@ -101,11 +118,53 @@ void hero_rebind_known_stack(const void *context, bool held) {
         if (atomic_load(&hero_rebind_stack_ctx[i]) == (uintptr_t)context) atomic_store(&hero_rebind_stack_ctx[i], 0);
     }
     unsigned at = atomic_fetch_add(&hero_rebind_stack_next, 1) % HERO_REBIND_STACKS;
-    atomic_store_explicit(&hero_rebind_stack_state[at], held ? HERO_REBIND_RANGE_HELD : 0, memory_order_relaxed);
+    int state = held ? HERO_REBIND_RANGE_HELD : 0;
+    /* A context another range's `uc_link` names, that range entered: the C
+     * library may start this one whenever that coroutine ends. */
+    for (int i = 0; i < HERO_REBIND_STACKS; i += 1) {
+        if ((unsigned)i == at || atomic_load(&hero_rebind_stack_link[i]) != (uintptr_t)context) continue;
+        int other = atomic_load_explicit(&hero_rebind_stack_state[i], memory_order_relaxed);
+        if ((other & HERO_REBIND_RANGE_ENTERED) != 0 && (other & HERO_REBIND_RANGE_ENDED) == 0) {
+            state |= HERO_REBIND_RANGE_ENTERED;
+        }
+    }
+    atomic_store_explicit(&hero_rebind_stack_state[at], state, memory_order_relaxed);
     atomic_store(&hero_rebind_stack_ctx[at], (uintptr_t)context);
+    atomic_store(&hero_rebind_stack_link[at], (uintptr_t)uc->uc_link);
+    atomic_store(&hero_rebind_stack_start[at], 0);
     hero_rebind_stack_put((int)at, lo, hi);
     atomic_store_explicit(&hero_rebind_stack_any, 1, memory_order_release);
     atomic_store(&hero_rebind_stack_writing, 0);
+    if ((state & HERO_REBIND_RANGE_ENTERED) != 0) hero_rebind_range_links((int)at);
+}
+
+/* The slot of the range `makecontext` was handed `context` for, -1 where none
+ * stands. */
+static int hero_rebind_slot_of(uintptr_t context) {
+    if (context == 0) return -1;
+    for (int i = 0; i < HERO_REBIND_STACKS; i += 1) {
+        if (atomic_load(&hero_rebind_stack_ctx[i]) != context) continue;
+        if (atomic_load(&hero_rebind_stack_hi[i]) > atomic_load(&hero_rebind_stack_lo[i])) return i;
+    }
+    return -1;
+}
+
+/* The ranges down the chain of links from slot `i`, entered with it: the C
+ * library starts each when the one before ends. A link already entered and not
+ * ended, its own chain was entered when it was. */
+static void hero_rebind_range_links(int i) {
+    for (int step = 0; step < HERO_REBIND_STACKS; step += 1) {
+        int next = hero_rebind_slot_of(atomic_load(&hero_rebind_stack_link[i]));
+        if (next < 0 || next == i) return;
+        int was = atomic_fetch_or_explicit(&hero_rebind_stack_state[next], HERO_REBIND_RANGE_ENTERED,
+                                           memory_order_relaxed);
+        if ((was & HERO_REBIND_RANGE_ENDED) != 0) {
+            atomic_fetch_and_explicit(&hero_rebind_stack_state[next], ~HERO_REBIND_RANGE_ENDED, memory_order_relaxed);
+        } else if ((was & HERO_REBIND_RANGE_ENTERED) != 0) {
+            return;
+        }
+        i = next;
+    }
 }
 
 /* The slot of the known range holding `at`, -1 where none does. */
@@ -158,6 +217,7 @@ static int hero_rebind_range_switched(const void *context) {
             made = i;
         }
     }
+    if (made >= 0) hero_rebind_range_links(made);
     return made;
 }
 
@@ -178,7 +238,9 @@ static bool hero_rebind_range_top(int i, uintptr_t *t) {
 static void hero_rebind_range_entered(uintptr_t at) {
     uintptr_t lo = 0, hi = 0;
     int i = hero_rebind_range_slot(at, &lo, &hi);
-    if (i >= 0) atomic_store_explicit(&hero_rebind_stack_state[i], HERO_REBIND_RANGE_ENTERED, memory_order_relaxed);
+    if (i < 0) return;
+    atomic_store_explicit(&hero_rebind_stack_state[i], HERO_REBIND_RANGE_ENTERED, memory_order_relaxed);
+    hero_rebind_range_links(i);
 }
 
 /* A `swapcontext` or `setcontext` made from a frame at `frame`: while a swap
@@ -200,6 +262,17 @@ static int hero_rebind_range_watch(uintptr_t at, unsigned *seq) {
     if (i < 0) return -1;
     *seq = atomic_load(&hero_rebind_stack_seq[i]);
     atomic_fetch_and_explicit(&hero_rebind_stack_state[i], ~HERO_REBIND_RANGE_LEFT, memory_order_relaxed);
+    /* Down its chain of links, what each context names now (defect 2850). */
+    int j = i;
+    for (int step = 0; step < HERO_REBIND_STACKS; step += 1) {
+        int next = hero_rebind_slot_of(atomic_load(&hero_rebind_stack_link[j]));
+        if (next < 0 || next == i) break;
+        uintptr_t word = 0;
+        atomic_fetch_and_explicit(&hero_rebind_stack_state[next], ~HERO_REBIND_RANGE_LEFT, memory_order_relaxed);
+        atomic_store(&hero_rebind_stack_start[next],
+                     hero_rebind_ctx_word((const void *)atomic_load(&hero_rebind_stack_ctx[next]), &word) ? word : 0);
+        j = next;
+    }
     atomic_fetch_add_explicit(&hero_rebind_watching, 1, memory_order_release);
     return i;
 }
@@ -216,8 +289,23 @@ static void hero_rebind_range_returned(int i, unsigned seq, uintptr_t here, bool
     uintptr_t lo = atomic_load(&hero_rebind_stack_lo[i]), hi = atomic_load(&hero_rebind_stack_hi[i]);
     if (atomic_load(&hero_rebind_stack_seq[i]) != seq || (here >= lo && here < hi)) return;
     int state = atomic_load_explicit(&hero_rebind_stack_state[i], memory_order_relaxed);
-    if ((state & HERO_REBIND_RANGE_LEFT) == 0) {
-        atomic_fetch_or_explicit(&hero_rebind_stack_state[i], HERO_REBIND_RANGE_ENDED, memory_order_relaxed);
+    if ((state & HERO_REBIND_RANGE_LEFT) != 0) return;
+    atomic_fetch_or_explicit(&hero_rebind_stack_state[i], HERO_REBIND_RANGE_ENDED, memory_order_relaxed);
+    /* The coroutine ended through its `uc_link`: so did each one down the
+     * chain that no switch left and whose context names what it named when the
+     * swap began, until the first that did not (defect 2850). */
+    int j = i;
+    for (int step = 0; step < HERO_REBIND_STACKS; step += 1) {
+        int next = hero_rebind_slot_of(atomic_load(&hero_rebind_stack_link[j]));
+        if (next < 0 || next == i) return;
+        uintptr_t start = atomic_load(&hero_rebind_stack_start[next]), word = 0;
+        int was = atomic_load_explicit(&hero_rebind_stack_state[next], memory_order_relaxed);
+        if ((was & HERO_REBIND_RANGE_LEFT) != 0 || start == 0) return;
+        if (!hero_rebind_ctx_word((const void *)atomic_load(&hero_rebind_stack_ctx[next]), &word) || word != start) {
+            return;
+        }
+        atomic_fetch_or_explicit(&hero_rebind_stack_state[next], HERO_REBIND_RANGE_ENDED, memory_order_relaxed);
+        j = next;
     }
 }
 

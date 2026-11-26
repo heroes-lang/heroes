@@ -124,6 +124,23 @@ static _Atomic int hero_sig_stack_any = 0;
  * this file never sees, where the context it was switched to does not
  * provably live, is judged ended: said in `sigjump.c`'s module doc.
  *
+ * A COROUTINE THE C LIBRARY STARTS THROUGH ANOTHER'S `uc_link` (defect 2850)
+ * is entered by no switch this file sees: when the coroutine of a range ends,
+ * the C library itself switches to the context its `uc_link` named, which may
+ * be one `makecontext` was handed for another range. So the link is learned
+ * where `makecontext` reads it (`hero_sig_stack_link`), and a range whose
+ * coroutine is entered holds every range down its chain of links entered with
+ * it, a range made after the context naming it as well: a coroutine started
+ * that way may hold frames from the moment its linker may end. Its end is seen
+ * where the swap into the first range of the chain returns: every range down
+ * the chain from which no switch was made while the swap waited, and whose
+ * context still names the stack pointer it named when the swap began (read
+ * by the kernel, `hero_jmp_context_word`), ended, until the first that did
+ * not; one whose context cannot be read stays entered. Until this defect such
+ * a range was never entered, so a handler's jump into its coroutine, on a
+ * stack carved from the thread's own, ran the program's function inside the
+ * signal.
+ *
  * WHERE CONTEXTS FALL TO ROUTE A (defect 2745) no switch's target is read and
  * no coroutine's end is seen, so a range is HELD from its `makecontext` on:
  * it may hold a coroutine's frames for as long as it stands, and a target in
@@ -141,6 +158,15 @@ static _Atomic int hero_sig_stack_state[HERO_SIG_STACKS];
  * switch asked which range it is made from. */
 static _Atomic int hero_sig_watching = 0;
 static _Atomic uintptr_t hero_sig_stack_ctx[HERO_SIG_STACKS];
+/* The context each range's `uc_link` named when `makecontext` was handed it
+ * (0 for none), and the stack pointer each context down a watched chain named
+ * when the swap began (0 where it could not be read). */
+static _Atomic uintptr_t hero_sig_stack_link[HERO_SIG_STACKS];
+static _Atomic uintptr_t hero_sig_stack_start[HERO_SIG_STACKS];
+
+/* `sigjump_record.c`: the stack-pointer word of the context at `context`,
+ * read by the kernel wherever it is mapped; false where it cannot be read. */
+static bool hero_jmp_context_word(const void *context, uintptr_t *word);
 
 static void hero_sig_stack_put(int i, uintptr_t lo, uintptr_t hi) {
     atomic_fetch_add(&hero_sig_stack_seq[i], 1);
@@ -148,6 +174,8 @@ static void hero_sig_stack_put(int i, uintptr_t lo, uintptr_t hi) {
     atomic_store(&hero_sig_stack_hi[i], hi);
     atomic_fetch_add(&hero_sig_stack_seq[i], 1);
 }
+
+static void hero_sig_range_links(int i);
 
 void hero_sig_known_stack(const void *context, bool held);
 void hero_sig_known_stack(const void *context, bool held) {
@@ -164,11 +192,52 @@ void hero_sig_known_stack(const void *context, bool held) {
         if (atomic_load(&hero_sig_stack_ctx[i]) == (uintptr_t)context) atomic_store(&hero_sig_stack_ctx[i], 0);
     }
     unsigned at = atomic_fetch_add(&hero_sig_stack_next, 1) % HERO_SIG_STACKS;
-    atomic_store_explicit(&hero_sig_stack_state[at], held ? HERO_SIG_RANGE_HELD : 0, memory_order_relaxed);
+    int state = held ? HERO_SIG_RANGE_HELD : 0;
+    /* A context another range's `uc_link` names, that range entered: the C
+     * library may start this one whenever that coroutine ends. */
+    for (int i = 0; i < HERO_SIG_STACKS; i += 1) {
+        if ((unsigned)i == at || atomic_load(&hero_sig_stack_link[i]) != (uintptr_t)context) continue;
+        int other = atomic_load_explicit(&hero_sig_stack_state[i], memory_order_relaxed);
+        if ((other & HERO_SIG_RANGE_ENTERED) != 0 && (other & HERO_SIG_RANGE_ENDED) == 0) {
+            state |= HERO_SIG_RANGE_ENTERED;
+        }
+    }
+    atomic_store_explicit(&hero_sig_stack_state[at], state, memory_order_relaxed);
     atomic_store(&hero_sig_stack_ctx[at], (uintptr_t)context);
+    atomic_store(&hero_sig_stack_link[at], (uintptr_t)uc->uc_link);
+    atomic_store(&hero_sig_stack_start[at], 0);
     hero_sig_stack_put((int)at, lo, hi);
     atomic_store_explicit(&hero_sig_stack_any, 1, memory_order_release);
     atomic_store(&hero_sig_stack_writing, 0);
+    if ((state & HERO_SIG_RANGE_ENTERED) != 0) hero_sig_range_links((int)at);
+}
+
+/* The slot of the range `makecontext` was handed `context` for, -1 where none
+ * stands. */
+static int hero_sig_slot_of(uintptr_t context) {
+    if (context == 0) return -1;
+    for (int i = 0; i < HERO_SIG_STACKS; i += 1) {
+        if (atomic_load(&hero_sig_stack_ctx[i]) != context) continue;
+        if (atomic_load(&hero_sig_stack_hi[i]) > atomic_load(&hero_sig_stack_lo[i])) return i;
+    }
+    return -1;
+}
+
+/* The ranges down the chain of links from slot `i`, entered with it: the C
+ * library starts each when the one before ends. A link already entered and not
+ * ended, its own chain was entered when it was. */
+static void hero_sig_range_links(int i) {
+    for (int step = 0; step < HERO_SIG_STACKS; step += 1) {
+        int next = hero_sig_slot_of(atomic_load(&hero_sig_stack_link[i]));
+        if (next < 0 || next == i) return;
+        int was = atomic_fetch_or_explicit(&hero_sig_stack_state[next], HERO_SIG_RANGE_ENTERED, memory_order_relaxed);
+        if ((was & HERO_SIG_RANGE_ENDED) != 0) {
+            atomic_fetch_and_explicit(&hero_sig_stack_state[next], ~HERO_SIG_RANGE_ENDED, memory_order_relaxed);
+        } else if ((was & HERO_SIG_RANGE_ENTERED) != 0) {
+            return;
+        }
+        i = next;
+    }
 }
 
 /* Route A's switch to `context`: the range `makecontext` was handed it for,
@@ -183,6 +252,7 @@ static int hero_sig_range_switched(const void *context) {
             made = i;
         }
     }
+    if (made >= 0) hero_sig_range_links(made);
     return made;
 }
 
@@ -236,7 +306,9 @@ static bool hero_sig_live_range(uintptr_t at, uintptr_t *lo, uintptr_t *hi) { re
 static void hero_sig_range_entered(uintptr_t at) {
     uintptr_t lo = 0, hi = 0;
     int i = hero_sig_range_slot(at, &lo, &hi);
-    if (i >= 0) atomic_store_explicit(&hero_sig_stack_state[i], HERO_SIG_RANGE_ENTERED, memory_order_relaxed);
+    if (i < 0) return;
+    atomic_store_explicit(&hero_sig_stack_state[i], HERO_SIG_RANGE_ENTERED, memory_order_relaxed);
+    hero_sig_range_links(i);
 }
 
 /* A `swapcontext` or `setcontext` made from a frame at `frame`: while a swap
@@ -258,6 +330,17 @@ static int hero_sig_range_watch(uintptr_t at, unsigned *seq) {
     if (i < 0) return -1;
     *seq = atomic_load(&hero_sig_stack_seq[i]);
     atomic_fetch_and_explicit(&hero_sig_stack_state[i], ~HERO_SIG_RANGE_LEFT, memory_order_relaxed);
+    /* Down its chain of links, what each context names now (defect 2850). */
+    int j = i;
+    for (int step = 0; step < HERO_SIG_STACKS; step += 1) {
+        int next = hero_sig_slot_of(atomic_load(&hero_sig_stack_link[j]));
+        if (next < 0 || next == i) break;
+        uintptr_t word = 0;
+        atomic_fetch_and_explicit(&hero_sig_stack_state[next], ~HERO_SIG_RANGE_LEFT, memory_order_relaxed);
+        atomic_store(&hero_sig_stack_start[next],
+                     hero_jmp_context_word((const void *)atomic_load(&hero_sig_stack_ctx[next]), &word) ? word : 0);
+        j = next;
+    }
     atomic_fetch_add_explicit(&hero_sig_watching, 1, memory_order_release);
     return i;
 }
@@ -274,8 +357,21 @@ static void hero_sig_range_returned(int i, unsigned seq, uintptr_t here, bool ok
     uintptr_t lo = atomic_load(&hero_sig_stack_lo[i]), hi = atomic_load(&hero_sig_stack_hi[i]);
     if (atomic_load(&hero_sig_stack_seq[i]) != seq || hero_sig_holds(lo, hi, here)) return;
     int state = atomic_load_explicit(&hero_sig_stack_state[i], memory_order_relaxed);
-    if ((state & HERO_SIG_RANGE_LEFT) == 0) {
-        atomic_fetch_or_explicit(&hero_sig_stack_state[i], HERO_SIG_RANGE_ENDED, memory_order_relaxed);
+    if ((state & HERO_SIG_RANGE_LEFT) != 0) return;
+    atomic_fetch_or_explicit(&hero_sig_stack_state[i], HERO_SIG_RANGE_ENDED, memory_order_relaxed);
+    /* The coroutine ended through its `uc_link`: so did each one down the
+     * chain that no switch left and whose context names what it named when the
+     * swap began, until the first that did not (defect 2850). */
+    int j = i;
+    for (int step = 0; step < HERO_SIG_STACKS; step += 1) {
+        int next = hero_sig_slot_of(atomic_load(&hero_sig_stack_link[j]));
+        if (next < 0 || next == i) return;
+        uintptr_t start = atomic_load(&hero_sig_stack_start[next]), word = 0;
+        int was = atomic_load_explicit(&hero_sig_stack_state[next], memory_order_relaxed);
+        if ((was & HERO_SIG_RANGE_LEFT) != 0 || start == 0) return;
+        if (!hero_jmp_context_word((const void *)atomic_load(&hero_sig_stack_ctx[next]), &word) || word != start) return;
+        atomic_fetch_or_explicit(&hero_sig_stack_state[next], HERO_SIG_RANGE_ENDED, memory_order_relaxed);
+        j = next;
     }
 }
 
