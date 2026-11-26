@@ -1,0 +1,213 @@
+# kvd: a small key-value server in Redis's manner, and its client. It
+# speaks RESP2 over TCP, so `redis-cli` and every Redis client library talk
+# to it, and it serves strings, lists, hashes, sets and sorted sets, keys
+# that expire, transactions with `WATCH`, publish and subscribe, `SCAN`,
+# `INFO`, and keeps its data in a snapshot and an append-only file.
+#
+# Run for real:
+#
+#     kvd serve --port 6379 --dir ./data --appendfsync everysec \
+#         --requirepass s3cret
+#     kvd cli --port 6379 --password s3cret SET greeting hello
+#     kvd cli --port 6379 --script commands.txt
+#     kvd cli --port 6379 --pipeline < commands.txt
+#     kvd cli --port 6379
+#
+# `kvd serve` listens on 127.0.0.1 unless `--bind` says otherwise, writes
+# every change to its log unless `--no-appendonly`, and stops at
+# `SHUTDOWN` or Ctrl-C. `kvd cli` with words runs them as one command, with
+# `--script` runs a file of command lines, with `--pipeline` sends the
+# standard input's lines in one write, and with neither reads commands from
+# the standard input, a prompt shown where it is a terminal. `kvd demo`
+# plays the session on its standard input against a server on a thread of
+# its own, on the loopback, its clock manual, and prints the transcript.
+#
+# The Rebel packages it uses, and for what:
+# - `net` and `poll`: the listener and one loop serving every connection;
+#   `redis`: the client, the demo's clients, and the RESP reader the server
+#   cuts requests with; `io`: the connections' bytes and the prompt.
+# - `containers/indexed`: the keyspace, hashes, sets and every map that
+#   loses keys; `containers/deque`: lists, and the skip list's free nodes;
+#   `sets`: `SINTER`, `SUNION`, `SDIFF`; `random`: the active sweep's draws
+#   and the skip list's heights, seeded.
+# - `fs` and `path`: the snapshot written in one step and the log's parts;
+#   `hash`: the snapshot's CRC-32; `math`: a score's 64 bits; `bytes`: the
+#   snapshot's numbers and every key; `numbers`: numbers read and written.
+# - `time`: the system's clock and the poll set's timer; `crypto`: the
+#   password compared in constant time; `os`: Ctrl-C; `flags`: this command
+#   line; `strings`: the script's lines.
+
+use <rebel>/flags
+use <rebel>/os
+
+use cli/session
+use demo/script
+use server/loop
+use server/state
+
+# An option whose value is an integer from `lowest` to `highest`, `given`
+# where it is not given.
+#
+# - `a`: the option.
+# - `given`: its value where it is not given, as text.
+# - `lowest`: the least value.
+# - `highest`: the greatest value.
+function number(a: flags.Argument, given: str, lowest: i64, highest: i64) -> flags.Argument
+    return flags.with_range(
+        flags.with_default(flags.with_kind(a, kind: .integer), value: given),
+        lowest: lowest,
+        highest: highest
+    )
+
+# The declaration of the command line.
+function declaration() -> flags.Command
+    root @= flags.command(name: "kvd", about: "A key-value server in Redis's manner, and its client.")
+
+    serving @= flags.command(name: "serve", about: "Serve RESP2 over TCP until SHUTDOWN or Ctrl-C.")
+    flags.add(
+        @serving,
+        flags.with_default(flags.option(long: "bind", short: "b", value_name: "HOST", help: "the address to listen on"), value: "127.0.0.1")
+    )
+    flags.add(
+        @serving,
+        number(flags.option(long: "port", short: "p", value_name: "PORT", help: "the port, 0 for one the system chooses"), given: "6379", lowest: 0, highest: 65535)
+    )
+    flags.add(
+        @serving,
+        flags.with_default(flags.option(long: "dir", short: "d", value_name: "FOLDER", help: "the data folder"), value: ".")
+    )
+    flags.add(
+        @serving,
+        flags.flag(long: "no-appendonly", short: "", help: "keep no append-only file; save only by SAVE, BGSAVE and SHUTDOWN")
+    )
+    flags.add(
+        @serving,
+        flags.with_default(flags.with_kind(flags.option(long: "appendfsync", short: "", value_name: "WHEN", help: "when the log is put on the storage"), kind: .choice(among: ["always", "everysec", "no"])), value: "everysec")
+    )
+    flags.add(
+        @serving,
+        flags.with_default(flags.option(long: "requirepass", short: "", value_name: "PASSWORD", help: "the password clients give with AUTH"), value: "")
+    )
+    flags.add(
+        @serving,
+        number(flags.option(long: "hz", short: "", value_name: "N", help: "active sweeps a second"), given: "10", lowest: 1, highest: 500)
+    )
+    flags.add(
+        @serving,
+        number(flags.option(long: "maxclients", short: "", value_name: "N", help: "the most clients at once"), given: "1000", lowest: 1, highest: 60000)
+    )
+    flags.add_command(c: @root, sub: serving)
+
+    talking @= flags.command(name: "cli", about: "Run commands against a kvd or Redis server.")
+    flags.add(
+        @talking,
+        flags.with_default(flags.option(long: "host", short: "", value_name: "HOST", help: "the server's host"), value: "127.0.0.1")
+    )
+    flags.add(
+        @talking,
+        number(flags.option(long: "port", short: "p", value_name: "PORT", help: "the server's port"), given: "6379", lowest: 1, highest: 65535)
+    )
+    flags.add(
+        @talking,
+        flags.with_default(flags.option(long: "password", short: "a", value_name: "PASSWORD", help: "the password"), value: "")
+    )
+    flags.add(
+        @talking,
+        flags.with_default(flags.option(long: "script", short: "s", value_name: "FILE", help: "a file of command lines"), value: "")
+    )
+    flags.add(@talking, flags.flag(long: "pipeline", short: "", help: "send the standard input's lines in one write"))
+    flags.add(
+        @talking,
+        flags.with_arity(flags.positional(name: "command", help: "one command and its arguments"), arity: .many)
+    )
+    flags.add_command(c: @root, sub: talking)
+
+    flags.add_command(
+        c: @root,
+        sub: flags.command(name: "demo", about: "Play the scripted session on the standard input.")
+    )
+    return root
+
+# Serves until the server stops, and answers the exit code.
+#
+# - `found`: the `serve` subcommand's arguments.
+function serve(found: flags.Found) -> i64
+    fsync = flags.value_of(found, name: "appendfsync").default("everysec")
+
+    match os.catch_stop()
+        .ok _  => _ = 0
+        .err e => print(f"kvd: Ctrl-C will not be caught: {e.msg}")
+
+    ready: (mailbox state.Ready) = mailbox()
+    config = state.Config(
+        host: flags.value_of(found, name: "bind").default("127.0.0.1"),
+        port: flags.int_of(found, name: "port").default(6379),
+        dir: flags.value_of(found, name: "dir").default("."),
+        appendonly: !flags.is_on(found, name: "no-appendonly"),
+        fsync: fsync,
+        password: flags.value_of(found, name: "requirepass").default(""),
+        hz: flags.int_of(found, name: "hz").default(10),
+        manual_clock: false,
+        start_ms: 0,
+        most_clients: flags.int_of(found, name: "maxclients").default(1000),
+        quiet: false,
+        ready: ready
+    )
+    return loop.serve(config)
+
+# Runs the client, and answers the exit code.
+#
+# - `found`: the `cli` subcommand's arguments.
+function client(found: flags.Found) -> i64
+    target = session.Target(
+        host: flags.value_of(found, name: "host").default("127.0.0.1"),
+        port: flags.int_of(found, name: "port").default(6379),
+        password: flags.value_of(found, name: "password").default("")
+    )
+
+    match session.run(target, command: flags.values_of(found, name: "command"), script: flags.value_of(found, name: "script").default(""), piped: flags.is_on(found, name: "pipeline"))
+        .ok _ => return 0
+        .err e =>
+            print(f"kvd cli: {e.msg}")
+            return 1
+
+# Reads the command line and runs what it names.
+function main()
+    found = match flags.parse_args(declaration())
+        .ok f => f
+        .err e =>
+            print(e.msg)
+            exit(code: 2)
+
+    if flags.is_help(found)
+        print(flags.help_text(found))
+        return
+
+    sub = match flags.subcommand(found)
+        .ok s => s
+        .err _ =>
+            print(flags.help_text(found))
+            exit(code: 2)
+
+    if flags.is_help(sub)
+        print(flags.help_text(sub))
+        return
+
+    code = match flags.name_of(sub)
+        "serve" => serve(sub)
+        "cli"   => client(sub)
+        _       => script.run()
+
+    if code != 0
+        exit(code: code)
+
+test "declaration: each subcommand reads its options, a port outside its range refused"
+    serving = flags.subcommand(
+        flags.parse(declaration(), arguments: ["serve", "--port", "7000", "--appendfsync", "always"]).must()
+    ).must()
+    assert flags.int_of(serving, name: "port").must() == 7000
+    assert flags.value_of(serving, name: "appendfsync").must() == "always"
+    assert flags.parse(declaration(), arguments: ["serve", "--port", "70000"]).is_err()
+    assert flags.parse(declaration(), arguments: ["serve", "--appendfsync", "sometimes"]).is_err()
+    talking = flags.subcommand(flags.parse(declaration(), arguments: ["cli", "SET", "k", "a b"]).must()).must()
+    assert flags.values_of(talking, name: "command") == ["SET", "k", "a b"]

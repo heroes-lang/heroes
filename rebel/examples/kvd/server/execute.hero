@@ -1,0 +1,147 @@
+# One command of one client, run as Redis runs it: looked up in the
+# table, held to its arity, to the password, to what a subscribed
+# connection may run, queued inside a transaction; then run, by the
+# keyspace's dispatcher or by the server's own commands, and what it changed
+# logged and shown to the clients that watch it. A command answers several
+# replies where Redis writes several (`SUBSCRIBE a b`).
+
+use <rebel>/bytes
+use <rebel>/redis
+
+use commands/table
+use protocol/reply
+use protocol/words
+use server/admin
+use server/clock
+use server/multi
+use server/pubsub
+use server/state
+use store/keyspace
+
+# The error an unknown command answers, as Redis words it.
+#
+# - `argv`: the command's words.
+function unknown(argv: [[u8]]) -> redis.Reply
+    shown: [str] @= []
+
+    for a in argv.slice(from: 1, to: argv.len())
+        if shown.len() < 8
+            shown @ shown.push(f"'{reply.one_line(bytes.to_text_lossy(a))}' ")
+
+    name = reply.one_line(bytes.to_text_lossy(argv[0]))
+    return reply.error(code: "ERR", message: f"unknown command '{name}', with args beginning with: {shown.join("")}")
+
+# Logs what the last command changed, counts it, and marks dirty the
+# clients watching a key it touched.
+#
+# - `s`: the server.
+# - `transaction`: whether the changes ran as one transaction.
+function after_change(@s: state.State, transaction: bool)
+    state.logged(@s, effects: keyspace.drain_effects(@s.db), transaction: transaction)
+    multi.touched(@s, keys_changed: keyspace.drain_touched(@s.db))
+
+# Runs `argv` for the client at `at`, the checks passed.
+#
+# - `s`: the server.
+# - `at`: the client's position.
+# - `argv`: the command's words.
+# - `spec`: its table entry.
+function run_checked(@s: state.State, at: i64, argv: [[u8]], spec: table.Spec) -> [redis.Reply]
+    s.stats.commands @ s.stats.commands + 1
+    name = spec.name
+
+    if spec.scope == .data
+        r = table.run(@s.db, argv: argv, name: name, now: clock.now(@s.clock))
+        after_change(@s, transaction: false)
+        return [r]
+
+    return match name
+        "SUBSCRIBE"    => pubsub.subscribe(@s, at: at, argv: argv, patterns: false)
+        "PSUBSCRIBE"   => pubsub.subscribe(@s, at: at, argv: argv, patterns: true)
+        "UNSUBSCRIBE"  => pubsub.unsubscribe(@s, at: at, argv: argv, patterns: false)
+        "PUNSUBSCRIBE" => pubsub.unsubscribe(@s, at: at, argv: argv, patterns: true)
+        "PUBLISH"      => [pubsub.publish(@s, argv: argv)]
+        "PUBSUB"       => [pubsub.introspect(s, argv: argv)]
+        "MULTI"        => [multi.multi(@s, at: at)]
+        "DISCARD"      => [multi.discard(@s, at: at)]
+        "WATCH"        => [multi.watch(@s, at: at, argv: argv)]
+        "UNWATCH" =>
+            multi.unwatch_all(@s, at: at)
+            [reply.okay()]
+        "EXEC" => [exec(@s, at: at)]
+        "SHUTDOWN" =>
+            said = admin.shutdown(@s, argv: argv)
+
+            if s.stopping
+                []
+            else
+                [said]
+        _ => [admin.run(@s, at: at, argv: argv, name: name)]
+
+# `EXEC`: the queued commands run one after another, their replies in an
+# array; a null where a watched key changed; `EXECABORT` where one was
+# refused while queueing.
+#
+# - `s`: the server.
+# - `at`: the client's position.
+function exec(@s: state.State, at: i64) -> redis.Reply
+    if !s.clients[at].in_multi
+        return reply.error(code: "ERR", message: "EXEC without MULTI")
+
+    if s.clients[at].queue_broken
+        multi.close_transaction(@s, at: at)
+        return reply.error(code: "EXECABORT", message: "Transaction discarded because of previous errors.")
+
+    if s.clients[at].dirty
+        multi.close_transaction(@s, at: at)
+        return reply.nothing()
+    queued = s.clients[at].queued
+    multi.close_transaction(@s, at: at)
+    replies: [redis.Reply] @= []
+    now = clock.now(@s.clock)
+
+    for argv in queued
+        name = words.upper(argv[0])
+        spec = s.specs[name].must()
+
+        if spec.scope == .data
+            replies @ replies.push(table.run(@s.db, argv: argv, name: name, now: now))
+            s.stats.commands @ s.stats.commands + 1
+        else
+            for r in run_checked(@s, at: at, argv: argv, spec: spec)
+                replies @ replies.push(r)
+
+    after_change(@s, transaction: true)
+    return .array(items: replies)
+
+# Runs the command `argv` sent by the client at `at`, and answers its
+# replies.
+#
+# - `s`: the server.
+# - `at`: the client's position.
+# - `argv`: the command's words, at least one.
+function execute(@s: state.State, at: i64, argv: [[u8]]) -> [redis.Reply]
+    name = words.upper(argv[0])
+
+    spec = match s.specs[name]
+        .ok found => found
+        .err _ =>
+            multi.refused(@s, at: at)
+            return [unknown(argv)]
+
+    if !table.fits(spec, count: argv.len())
+        multi.refused(@s, at: at)
+        lower = bytes.to_text_lossy(argv[0])
+        return [reply.error(code: "ERR", message: f"wrong number of arguments for '{reply.one_line(lower)}' command")]
+
+    if s.config.password != "" && !s.clients[at].authed && name != "AUTH" && name != "HELLO" && name != "QUIT"
+        return [reply.error(code: "NOAUTH", message: "Authentication required.")]
+
+    if pubsub.is_subscribed(s, at: at) && !spec.subscribed
+        return [
+            reply.error(code: "ERR", message: f"Can't execute '{reply.one_line(bytes.to_text_lossy(argv[0]))}': only (P|S)SUBSCRIBE / (P|S)UNSUBSCRIBE / PING / QUIT / RESET are allowed in this context")
+        ]
+
+    if s.clients[at].in_multi && name != "EXEC" && name != "DISCARD" && name != "MULTI" && name != "WATCH" && name != "QUIT" && name != "RESET"
+        return [multi.queue(@s, at: at, argv: argv)]
+    return run_checked(@s, at: at, argv: argv, spec: spec)

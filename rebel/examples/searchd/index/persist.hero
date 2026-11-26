@@ -68,7 +68,7 @@ function write(data: str, e: engine.Engine lent) -> ()?
 function read(data: str) -> engine.Engine?
     folder = folder_of(data)
     v = json.parse(read_file(folder + "/pages.json")?)?
-    version = store.int_at(v, key: "version")?
+    version = json.int_at(v, key: "version")?
 
     if version != VERSION
         return fail(code: "invalid", msg: f"pages.json is of version {version}, and this searchd reads {VERSION}")
@@ -88,11 +88,11 @@ function read(data: str) -> engine.Engine?
     semantic = vectors.from_bytes(fs.read_bytes(folder + "/vectors.idx")?)?
     meta = engine.Meta(
         fold_marks: json.bool_of(json.member(v, key: "fold_marks")?)?,
-        language: store.text_at(v, key: "language")?,
-        start: store.int_at(v, key: "start")?,
-        rounds: store.int_at(v, key: "rounds")?,
+        language: json.text_at(v, key: "language")?,
+        start: json.int_at(v, key: "start")?,
+        rounds: json.int_at(v, key: "rounds")?,
         holding: features_of(json.member(v, key: "features")?)?,
-        counted: store.int_at(v, key: "counted")?
+        counted: json.int_at(v, key: "counted")?
     )
     return ok(engine.assemble(docs, full: full, titles: titles, semantic: semantic, meta: meta))
 
@@ -159,21 +159,21 @@ function doc_of(v: json.Value) -> engine.Doc?
         out @ out.push(json.int_of(item)?)
 
     made = engine.Doc(
-        id: store.int_at(v, key: "id")?,
-        url: store.text_at(v, key: "url")?,
-        path: store.text_at(v, key: "path")?,
-        title: store.text_at(v, key: "title")?,
-        description: store.text_at(v, key: "description")?,
-        language: store.text_at(v, key: "language")?,
-        canonical: store.text_at(v, key: "canonical")?,
+        id: json.int_at(v, key: "id")?,
+        url: json.text_at(v, key: "url")?,
+        path: json.text_at(v, key: "path")?,
+        title: json.text_at(v, key: "title")?,
+        description: json.text_at(v, key: "description")?,
+        language: json.text_at(v, key: "language")?,
+        canonical: json.text_at(v, key: "canonical")?,
         headings: store.texts_at(v, key: "headings")?,
-        text: store.text_at(v, key: "text")?,
+        text: json.text_at(v, key: "text")?,
         indexed: json.bool_of(json.member(v, key: "indexed")?)?,
         links: out,
-        inbound: store.int_at(v, key: "inbound")?,
+        inbound: json.int_at(v, key: "inbound")?,
         rank: json.number_of(json.member(v, key: "rank")?)?,
-        depth: store.int_at(v, key: "depth")?,
-        group: store.int_at(v, key: "group")?
+        depth: json.int_at(v, key: "depth")?,
+        group: json.int_at(v, key: "group")?
     )
     return ok(made)
 

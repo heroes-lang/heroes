@@ -1,0 +1,216 @@
+# The commands of hashes: `HSET`, `HGET`, `HMGET`, `HDEL`, `HGETALL`,
+# `HLEN`, `HEXISTS`, `HKEYS`, `HVALS`, `HINCRBY`, as Redis answers each. A
+# hash is `containers/indexed`'s map, so a field is put, found and taken out
+# at a constant cost, and answered in the order the fields were first put.
+
+use <rebel>/containers/indexed
+use <rebel>/redis
+
+use commands/common
+use protocol/reply
+use protocol/words
+use store/keyspace
+
+# Puts `v` under `field` of the hash at `at`, and answers whether the
+# field is new.
+#
+# - `db`: the keyspace.
+# - `at`: the key's position.
+# - `field`: the field.
+# - `v`: its value.
+function put_field(@db: keyspace.Db, at: i64, field: [u8], v: [u8]) -> bool
+    fresh = !indexed.contains(db.values[at].hash_shape, lookup: db.values[at].hash_lookup, key: field)
+    _ = indexed.put(
+        @db.values[at].hash_shape,
+        @db.values[at].hash_fields,
+        @db.values[at].hash_values,
+        @db.values[at].hash_lookup,
+        key: field,
+        value: v
+    )
+    return fresh
+
+# `HSET key field value [field value ...]`: how many fields are new.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function hset(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    if argv.len() % 2 != 0
+        return reply.error(code: "ERR", message: "wrong number of arguments for 'hset' command")
+
+    at = match common.made(@db, key: argv[1], kind: .hash, now: now)
+        .ok p  => p
+        .err _ => return reply.wrong_type()
+
+    added @= 0
+    i @= 2
+
+    while i < argv.len()
+        if put_field(@db, at: at, field: argv[i], v: argv[i + 1])
+            added @ added + 1
+        i @ i + 2
+
+    common.changed(@db, key: argv[1], logged: argv)
+    return reply.integer(added)
+
+# The value of `field` in the hash at `at`, or a null.
+#
+# - `db`: the keyspace.
+# - `at`: the key's position.
+# - `field`: the field.
+function field_reply(db: keyspace.Db lent, at: i64, field: [u8]) -> redis.Reply
+    return match indexed.get(db.values[at].hash_shape, value_list: db.values[at].hash_values, lookup: db.values[at].hash_lookup, key: field)
+        .ok v  => reply.bulk(v)
+        .err _ => reply.nothing()
+
+# `HGET key field`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function hget(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    return match common.of_kind(@db, key: argv[1], kind: .hash, now: now)
+        .at a   => field_reply(db, at: a.p, field: argv[2])
+        .absent => reply.nothing()
+        .wrong  => reply.wrong_type()
+
+# `HMGET key field [field ...]`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function hmget(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    found = common.of_kind(@db, key: argv[1], kind: .hash, now: now)
+    out: [redis.Reply] @= []
+
+    for field in argv.slice(from: 2, to: argv.len())
+        match found
+            .at a   => out @ out.push(field_reply(db, at: a.p, field: field))
+            .absent => out @ out.push(reply.nothing())
+            .wrong  => return reply.wrong_type()
+
+    return .array(items: out)
+
+# `HDEL key field [field ...]`: how many fields went.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function hdel(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    at = match common.of_kind(@db, key: argv[1], kind: .hash, now: now)
+        .at a   => a.p
+        .absent => return reply.integer(0)
+        .wrong  => return reply.wrong_type()
+
+    gone @= 0
+
+    for field in argv.slice(from: 2, to: argv.len())
+        match indexed.swap_remove(@db.values[at].hash_shape, @db.values[at].hash_fields, @db.values[at].hash_values, @db.values[at].hash_lookup, key: field)
+            .ok _  => gone @ gone + 1
+            .err _ => _ = 0
+
+    if gone > 0
+        _ = keyspace.drop_if_empty(@db, at: at)
+        common.changed(@db, key: argv[1], logged: argv)
+    return reply.integer(gone)
+
+# `HGETALL`, `HKEYS` and `HVALS`, by `name`: fields and values in the order
+# the fields were first put.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `name`: the command's name in capitals.
+# - `now`: the time.
+function listing(@db: keyspace.Db, argv: [[u8]], name: str, now: i64) -> redis.Reply
+    at = match common.of_kind(@db, key: argv[1], kind: .hash, now: now)
+        .at a   => a.p
+        .absent => return .array(items: [])
+        .wrong  => return reply.wrong_type()
+
+    out: [[u8]] @= []
+    n = indexed.size(db.values[at].hash_shape)
+
+    for i in range(from: 0, to: n)
+        if name != "HVALS"
+            out @ out.push(indexed.key_at(db.values[at].hash_shape, key_list: db.values[at].hash_fields, at: i))
+
+        if name != "HKEYS"
+            out @ out.push(indexed.value_at(db.values[at].hash_shape, value_list: db.values[at].hash_values, at: i))
+
+    return reply.bulks(out)
+
+# `HLEN key` and `HEXISTS key field`, by `name`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `name`: the command's name in capitals.
+# - `now`: the time.
+function count(@db: keyspace.Db, argv: [[u8]], name: str, now: i64) -> redis.Reply
+    return match common.of_kind(@db, key: argv[1], kind: .hash, now: now)
+        .at a =>
+            if name == "HLEN"
+                reply.integer(indexed.size(db.values[a.p].hash_shape))
+            else if indexed.contains(db.values[a.p].hash_shape, lookup: db.values[a.p].hash_lookup, key: argv[2])
+                reply.integer(1)
+            else
+                reply.integer(0)
+        .absent => reply.integer(0)
+        .wrong  => reply.wrong_type()
+
+# `HINCRBY key field n`: the field's number moved by `n`, made 0 first.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function hincrby(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    by = match words.integer(argv[3])
+        .ok n  => n
+        .err _ => return reply.not_integer()
+
+    current @= 0
+
+    match common.of_kind(@db, key: argv[1], kind: .hash, now: now)
+        .at a =>
+            match indexed.get(db.values[a.p].hash_shape, value_list: db.values[a.p].hash_values, lookup: db.values[a.p].hash_lookup, key: argv[2])
+                .ok v =>
+                    match words.integer(v)
+                        .ok n  => current @ n
+                        .err _ => return reply.error(code: "ERR", message: "hash value is not an integer")
+                .err _ => _ = 0
+        .absent => _ = 0
+        .wrong  => return reply.wrong_type()
+
+    if by > 0 && current > 9223372036854775807 - by || by < 0 && current < -9223372036854775807 - 1 - by
+        return reply.error(code: "ERR", message: "increment or decrement would overflow")
+    next = current + by
+
+    at = match common.made(@db, key: argv[1], kind: .hash, now: now)
+        .ok p  => p
+        .err _ => return reply.wrong_type()
+
+    _ = put_field(@db, at: at, field: argv[2], v: common.decimal(next))
+    common.changed(@db, key: argv[1], logged: argv)
+    return reply.integer(next)
+
+test "hset, hget, hmget and hdel: new fields counted, the key gone with its last field"
+    db @= keyspace.new()
+    assert hset(@db, argv: common.argv_of("HSET h a 1 b 2"), now: 0) == reply.integer(2)
+    assert hset(@db, argv: common.argv_of("HSET h a 9 c 3"), now: 0) == reply.integer(1)
+    assert hset(@db, argv: common.argv_of("HSET h a"), now: 0) == reply.error(code: "ERR", message: "wrong number of arguments for 'hset' command")
+    assert hget(@db, argv: common.argv_of("HGET h a"), now: 0) == reply.bulk([57])
+    assert hmget(@db, argv: common.argv_of("HMGET h c none"), now: 0) == .array(items: [reply.bulk([51]), reply.nothing()])
+    assert hdel(@db, argv: common.argv_of("HDEL h a b none"), now: 0) == reply.integer(2)
+    assert listing(@db, argv: common.argv_of("HGETALL h"), name: "HGETALL", now: 0) == reply.bulks([[99], [51]])
+    assert hdel(@db, argv: common.argv_of("HDEL h c"), now: 0) == reply.integer(1)
+    assert keyspace.size(db) == 0
+    assert count(@db, argv: common.argv_of("HLEN h"), name: "HLEN", now: 0) == reply.integer(0)
+
+test "hincrby: a field made, moved, past the largest, and one that is no integer"
+    db @= keyspace.new()
+    assert hincrby(@db, argv: common.argv_of("HINCRBY h n 5"), now: 0) == reply.integer(5)
+    assert hincrby(@db, argv: common.argv_of("HINCRBY h n 9223372036854775807"), now: 0) == reply.error(code: "ERR", message: "increment or decrement would overflow")
+    _ = hset(@db, argv: common.argv_of("HSET h w abc"), now: 0)
+    assert hincrby(@db, argv: common.argv_of("HINCRBY h w 1"), now: 0) == reply.error(code: "ERR", message: "hash value is not an integer")
+    assert hincrby(@db, argv: common.argv_of("HINCRBY other n x"), now: 0) == reply.not_integer()
+    assert keyspace.size(db) == 1

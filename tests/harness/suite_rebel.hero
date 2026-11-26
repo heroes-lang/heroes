@@ -29,6 +29,9 @@
 #              README § A7's rules (`rebel_docs.hero`, the review's D11)
 #   headings   a code outside `## Codes`, and a module comment that does not
 #              say what its ledger leaves pending (`rebel_headings.hero`, D10)
+#   pending    a program's comment that cites a capability as `pending` whose
+#              ledger's block no longer says so (`rebel_pending.hero`, the
+#              examples review's row 1, 2026-11-26)
 #
 # **A finding is repaired or kept, never ignored.** The review that built these
 # repaired what was local and sure, and kept the rest in `rebel_kept.hero`, each
@@ -53,6 +56,7 @@ use rebel_kept
 use rebel_layers
 use rebel_ledgers
 use rebel_names
+use rebel_pending
 use rebel_tree
 use report
 
@@ -100,6 +104,7 @@ record Read
     rows: [rebel_tree.Row]
     named: {str: [str]}
     references: [rebel_docs.Printed]
+    programs: [rebel_tree.Module]
 
 function read_tree(scratch: str, compiler: str) -> Read?
     root = rebel_tree.source_root(scratch)?
@@ -113,8 +118,9 @@ function read_tree(scratch: str, compiler: str) -> Read?
             msg: "cannot read " + rebel_tree.RULES + ", whose README § A1 is the table of packages"
         )
     references = rebel_docs.printed(scratch: scratch, compiler: compiler, root: root, modules: modules)?
+    programs = rebel_pending.programs(scratch)?
     return ok(
-        Read(root: root, modules: modules, ledgers: ledgers, rows: rebel_tree.rows_of(rules.must()), named: rebel_tree.named_uses(rules.must()), references: references)
+        Read(root: root, modules: modules, ledgers: ledgers, rows: rebel_tree.rows_of(rules.must()), named: rebel_tree.named_uses(rules.must()), references: references, programs: programs)
     )
 
 # Every finding of every instrument over the tree read, in the order of the
@@ -204,6 +210,9 @@ function findings(tree: Read) -> [Finding]
     for one in headed(tree)
         out @ out.push(Finding(check: "headings", key: rebel_headings.key(one), said: rebel_headings.told(one)))
 
+    for one in rebel_pending.stale(read: tree.programs, blocks: blocks)
+        out @ out.push(Finding(check: "pending", key: rebel_pending.key(one), said: rebel_pending.told(one)))
+
     return out
 
 # The `headings` check's findings: every face's codes, and its comment against
@@ -262,6 +271,7 @@ constant CHECKS: [str]
         "uses"
         "docs"
         "headings"
+        "pending"
     ]
 
 function run_all(scratch: str, compiler: str) -> report.Report?

@@ -27,7 +27,7 @@ function mode_after(@c: cursor.Cursor, text: str, marked: bool) -> str
             span: word
         )
         return "@"
-    return "lent"
+    return keywords.WORD_LENT
 
 # The name in `(function(x: i64) -> i64)`, which `parse/type.hero`'s `function_params` read as a type
 # because a bare name is one. Anything else there is not a name at all, and the

@@ -1,0 +1,159 @@
+# A line of words cut as Redis cuts one: the words of an inline command a
+# client types into a raw connection (`SET k "a b"`), and of a line of
+# `kvd cli`'s script or prompt. Redis's own rules (its `sdssplitargs`): words
+# stand apart by white space; a word in double quotes takes `\n`, `\r`, `\t`,
+# `\b`, `\a`, `\\`, `\"` and `\xHH` for any byte; a word in single quotes
+# takes `\'` alone; a closing quote must be followed by white space or the
+# end of the line.
+#
+# Fails `invalid` where a quote is left open or a closing quote is followed
+# by more of the word, as Redis answers "unbalanced quotes".
+
+use <rebel>/bytes
+
+# The code of a line whose quotes do not close.
+constant INVALID: str
+    "invalid"
+
+# Whether `c` is white space as C's `isspace` reads it in the C locale.
+#
+# - `c`: the byte.
+function is_space(c: u8) -> bool
+    return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == 11 || c == 12
+
+# The value of a hexadecimal digit, or -1 where `c` is none.
+#
+# - `c`: the byte.
+function hex_value(c: u8) -> i64
+    if c >= '0' && c <= '9'
+        return to_i64(c - '0').must()
+
+    if c >= 'a' && c <= 'f'
+        return to_i64(c - 'a').must() + 10
+
+    if c >= 'A' && c <= 'F'
+        return to_i64(c - 'A').must() + 10
+    return -1
+
+# The byte a backslash and `c` stand for inside double quotes.
+#
+# - `c`: the byte after the backslash.
+function escaped(c: u8) -> u8
+    return match c
+        'n' => '\n'
+        'r' => '\r'
+        't' => '\t'
+        'b' => 8
+        'a' => 7
+        _   => c
+
+# The words of `line`, cut by Redis's rules: none for a line of white space.
+#
+# - `line`: the bytes of one line, its end included or not.
+#
+# Fails `invalid` where a quote is left open, or a closing quote is followed
+# by a byte that is not white space.
+function words_of(line: [u8]) -> [[u8]]?
+    words: [[u8]] @= []
+    at @= 0
+
+    while true
+        while at < line.len() && is_space(line[at])
+            at @ at + 1
+
+        if at >= line.len()
+            return ok(words)
+        word: [u8] @= []
+        quote: u8 @= 0
+        ended @= false
+
+        while !ended
+            if at >= line.len()
+                if quote != 0
+                    return fail(code: INVALID, msg: "unbalanced quotes in the line")
+                ended @ true
+            else
+                c = line[at]
+
+                if quote == '"'
+                    if c == '\\' && at + 3 < line.len() && line[at + 1] == 'x' && hex_value(line[at + 2]) >= 0 && hex_value(line[at + 3]) >= 0
+                        word @ word.push(to_u8(hex_value(line[at + 2]) * 16 + hex_value(line[at + 3])).must())
+                        at @ at + 4
+                    else if c == '\\' && at + 1 < line.len()
+                        word @ word.push(escaped(line[at + 1]))
+                        at @ at + 2
+                    else if c == '"'
+                        if at + 1 < line.len() && !is_space(line[at + 1])
+                            return fail(
+                                code: INVALID,
+                                msg: "unbalanced quotes in the line: a closing quote is followed by more"
+                            )
+                        at @ at + 1
+                        ended @ true
+                    else
+                        word @ word.push(c)
+                        at @ at + 1
+                else if quote == '\''
+                    if c == '\\' && at + 1 < line.len() && line[at + 1] == '\''
+                        word @ word.push('\'')
+                        at @ at + 2
+                    else if c == '\''
+                        if at + 1 < line.len() && !is_space(line[at + 1])
+                            return fail(
+                                code: INVALID,
+                                msg: "unbalanced quotes in the line: a closing quote is followed by more"
+                            )
+                        at @ at + 1
+                        ended @ true
+                    else
+                        word @ word.push(c)
+                        at @ at + 1
+                else if is_space(c)
+                    ended @ true
+                else if c == '"' || c == '\''
+                    quote @ c
+                    at @ at + 1
+                else
+                    word @ word.push(c)
+                    at @ at + 1
+
+        words @ words.push(word)
+
+    return ok(words)
+
+# The words of the text `line`, as `words_of` cuts its bytes.
+#
+# - `line`: one line of text.
+#
+# Fails as `words_of` does.
+function words_of_text(line: str) -> [[u8]]?
+    return words_of(bytes.from_text(line))
+
+test "words_of: empty, spaces alone, plain words and runs of white space"
+    assert words_of([]).must().len() == 0
+    assert words_of(bytes.from_text("  \t ")).must().len() == 0
+    got = words_of_text("SET  key\tvalue").must()
+    assert got == [bytes.from_text("SET"), bytes.from_text("key"), bytes.from_text("value")]
+
+test "words_of: double quotes keep spaces, take escapes and hexadecimal bytes"
+    got = words_of_text("SET k \"a b\\n\\x41\\xff\"").must()
+    assert got[2] == [97, 32, 98, 10, 65, 255]
+
+test "words_of: single quotes keep backslashes but the quote's own"
+    got = words_of_text("ECHO 'it\\'s \\n'").must()
+    assert got[1] == bytes.from_text("it's \\n")
+
+test "words_of: an empty quoted word is a word"
+    got = words_of_text("SET k \"\"").must()
+    assert got.len() == 3
+    assert got[2].len() == 0
+
+test "words_of: a quote left open, and one closed against more, are refused"
+    assert words_of_text("SET k \"abc").is_err()
+    assert words_of_text("SET k 'abc").is_err()
+    assert words_of_text("SET k \"a\"b").is_err()
+
+test "words_of: a word of several-byte characters is kept whole"
+    got = words_of_text("SET città \"naïve é\"").must()
+    assert got[1] == bytes.from_text("città")
+    assert got[2] == bytes.from_text("naïve é")

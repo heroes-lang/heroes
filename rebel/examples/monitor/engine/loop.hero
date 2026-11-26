@@ -3,9 +3,10 @@
 # of the same configuration is refused before it starts a service; then one
 # loop on one thread, waiting on one `poll` set for whatever comes first:
 # the collection's timer, a service's output, a watched path's event, a key
-# at the dashboard; the control socket asked at each turn, since `poll`
-# waits on no channel of `ipc` (`ipc.ledger`'s pending readiness), so a
-# request waits at most one turn, `TURN_MS`.
+# at the dashboard; the control socket asked at each turn, as this loop was
+# written before `poll` waited on a channel of `ipc`, so a request waits at
+# most one turn, `TURN_MS`. `poll.add_stream` waits on one since
+# (`ipc.ledger`'s `ipc/readiness`); moving the socket into the set is owed.
 #
 # Without the dashboard, every event the monitor tells is printed on the
 # standard output with its time, as a daemon's log; the journal's file

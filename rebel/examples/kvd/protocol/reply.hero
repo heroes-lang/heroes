@@ -1,0 +1,222 @@
+# The server's half of writing RESP: a reply, a `redis.Reply` as Rebel's
+# client reads one, written as RESP2 writes it, and the makers of the replies
+# every command answers.
+#
+# Rebel's `redis` reads replies (`redis.decode`, `redis.decode_next`) and
+# writes commands (`redis.encode_command`), the client's two halves; it
+# writes no reply, the server's half, so this module writes the smallest one
+# the protocol's page describes (a missing face: `redis.encode(r: Reply,
+# protocol: i64) -> [u8]`). RESP2 has no map, set, double or boolean: a map
+# is written as an array of its keys and values, a set as an array, a double
+# as the bulk string of its shortest digits and a boolean as 1 or 0.
+
+use <rebel>/bytes
+use <rebel>/numbers
+use <rebel>/redis
+
+# `OK`, the simple string most writes answer.
+function okay() -> redis.Reply
+    return .simple(v: "OK")
+
+# An error reply opening with `code`, a word in capitals.
+#
+# - `code`: `ERR`, `WRONGTYPE`, `EXECABORT`, ...
+# - `message`: the words after it.
+function error(code: str, message: str) -> redis.Reply
+    return .error(code: code, message: message)
+
+# The integer reply `n`.
+#
+# - `n`: the number.
+function integer(n: i64) -> redis.Reply
+    return .integer(v: n)
+
+# The bulk string reply holding `v`.
+#
+# - `v`: the bytes.
+function bulk(v: [u8]) -> redis.Reply
+    return .bulk(v: v)
+
+# The bulk string reply holding the UTF-8 of `text`.
+#
+# - `s`: the text.
+function bulk_text(s: str) -> redis.Reply
+    return .bulk(v: bytes.from_text(s))
+
+# The null reply, `$-1`.
+function nothing() -> redis.Reply
+    return .null_value
+
+# The array reply of the bulk strings `items`.
+#
+# - `items`: each element's bytes.
+function bulks(items: [[u8]]) -> redis.Reply
+    out: [redis.Reply] @= []
+
+    for v in items
+        out @ out.push(.bulk(v: v))
+
+    return .array(items: out)
+
+# The `WRONGTYPE` error a command answers on a key holding another type.
+function wrong_type() -> redis.Reply
+    return .error(code: "WRONGTYPE", message: "Operation against a key holding the wrong kind of value")
+
+# The error a command answers for an argument that is no integer.
+function not_integer() -> redis.Reply
+    return .error(code: "ERR", message: "value is not an integer or out of range")
+
+# The error a command answers for an argument that is no float.
+function not_float() -> redis.Reply
+    return .error(code: "ERR", message: "value is not a valid float")
+
+# The error a command answers for options it cannot read.
+function syntax() -> redis.Reply
+    return .error(code: "ERR", message: "syntax error")
+
+# `text` with every carriage return and line feed made a space, since a
+# simple string or an error is one line of RESP.
+#
+# - `text`: the text a line would hold.
+function one_line(text: str) -> str
+    out: [u8] @= []
+
+    for c in bytes.from_text(text)
+        if c == '\r' || c == '\n'
+            out @ out.push(' ')
+        else
+            out @ out.push(c)
+
+    return bytes.to_text_lossy(out)
+
+# `x` in the fewest digits that read back as it, `1.5`, `3`, `inf`, as
+# Redis writes a score: Rebel's shortest form ends a whole number in `.0`,
+# which Redis leaves out.
+#
+# - `x`: the number.
+function format_double(x: f64) -> str
+    shortest = numbers.format_float_shortest(x)
+
+    if shortest.len() > 2 && shortest.slice(from: shortest.len() - 2, to: shortest.len()) == ".0"
+        return shortest.slice(from: 0, to: shortest.len() - 2)
+    return shortest
+
+# Appends to `out` the header line `kind`, `n` and its end.
+#
+# - `out`: the bytes written so far, the caller's own.
+# - `kind`: the type's byte, `*`, `$`, `:`.
+# - `n`: the number the line holds.
+function header(@out: [u8], kind: u8, n: i64)
+    out @ out.push(kind)
+    bytes.push_text(@out, to_str(n))
+    out @ out.push('\r')
+    out @ out.push('\n')
+
+# Appends to `out` the bulk string `v`.
+#
+# - `out`: the bytes written so far, the caller's own.
+# - `v`: the bytes of the string.
+function put_bulk(@out: [u8], v: [u8])
+    header(@out, kind: '$', n: v.len())
+
+    for c in v
+        out @ out.push(c)
+
+    out @ out.push('\r')
+    out @ out.push('\n')
+
+# Appends to `out` the line `kind` then `text`, as a simple string or an
+# error writes one.
+#
+# - `out`: the bytes written so far, the caller's own.
+# - `kind`: `+` or `-`.
+# - `text`: the line's text; a line's end inside it becomes a space.
+function put_line(@out: [u8], kind: u8, text: str)
+    out @ out.push(kind)
+    bytes.push_text(@out, one_line(text))
+    out @ out.push('\r')
+    out @ out.push('\n')
+
+# Appends to `out` the reply `r` as RESP2 writes it. An aggregate calls
+# this function for each element: the replies are the server's own, nested
+# three deep at most (an `EXEC` of a `SCAN`), never a client's.
+#
+# - `out`: the bytes written so far, the caller's own.
+# - `r`: the reply.
+function put(@out: [u8], r: redis.Reply)
+    match r
+        .simple s => put_line(@out, kind: '+', text: s.v)
+        .error e =>
+            if e.code == ""
+                put_line(@out, kind: '-', text: e.message)
+            else
+                put_line(@out, kind: '-', text: f"{e.code} {e.message}")
+        .integer i  => header(@out, kind: ':', n: i.v)
+        .bulk b     => put_bulk(out: @out, v: b.v)
+        .null_value => bytes.push_text(@out, "$-1\r\n")
+        .array a    => put_all(@out, items: a.items)
+        .set s      => put_all(@out, items: s.items)
+        .pushed p   => put_all(@out, items: p.items)
+        .mapping m =>
+            header(@out, kind: '*', n: m.entries.len() * 2)
+
+            for e in m.entries
+                put(@out, r: e.key)
+                put(@out, r: e.value)
+        .double d => put_bulk(out: @out, v: bytes.from_text(format_double(d.v)))
+        .boolean b =>
+            if b.v
+                bytes.push_text(@out, ":1\r\n")
+            else
+                bytes.push_text(@out, ":0\r\n")
+        .big_number n => put_bulk(out: @out, v: bytes.from_text(n.v))
+        .verbatim v   => put_bulk(out: @out, v: bytes.from_text(v.v))
+
+# Appends to `out` the array of `items`.
+#
+# - `out`: the bytes written so far, the caller's own.
+# - `items`: the elements, in order.
+function put_all(@out: [u8], items: [redis.Reply])
+    header(@out, kind: '*', n: items.len())
+
+    for item in items
+        put(@out, r: item)
+
+# The bytes of `r` as RESP2 writes it.
+#
+# - `r`: the reply.
+function encode(r: redis.Reply) -> [u8]
+    out: [u8] @= []
+    put(@out, r: r)
+    return out
+
+test "encode: each RESP2 type, as the protocol's page writes it"
+    assert encode(okay()) == bytes.from_text("+OK\r\n")
+    assert encode(error(code: "ERR", message: "bad")) == bytes.from_text("-ERR bad\r\n")
+    assert encode(integer(-42)) == bytes.from_text(":-42\r\n")
+    assert encode(bulk(bytes.from_text("hi"))) == bytes.from_text("$2\r\nhi\r\n")
+    assert encode(bulk([])) == bytes.from_text("$0\r\n\r\n")
+    assert encode(nothing()) == bytes.from_text("$-1\r\n")
+
+test "encode: arrays nest in order, the empty array included"
+    got = encode(.array(items: [integer(1), .array(items: [bulk_text("a"), nothing()]), .array(items: [])]))
+    assert got == bytes.from_text("*3\r\n:1\r\n*2\r\n$1\r\na\r\n$-1\r\n*0\r\n")
+
+test "encode: a line's end inside an error is written as a space"
+    assert encode(error(code: "ERR", message: "a\r\nb")) == bytes.from_text("-ERR a  b\r\n")
+
+test "encode: RESP2's forms of a double, a boolean and a map"
+    assert encode(.double(v: 2.5)) == bytes.from_text("$3\r\n2.5\r\n")
+    assert encode(.boolean(v: true)) == bytes.from_text(":1\r\n")
+    m: redis.Reply = .mapping(entries: [redis.Entry(key: bulk_text("k"), value: integer(7))])
+    assert encode(m) == bytes.from_text("*2\r\n$1\r\nk\r\n:7\r\n")
+
+test "encode: what Rebel's client decodes back is the reply written"
+    r: redis.Reply = .array(items: [bulk_text("x"), integer(3), nothing()])
+    assert redis.decode(encode(r)).must() == r
+
+test "format_double: whole numbers lose their point, others keep the fewest digits"
+    assert format_double(3.0) == "3"
+    assert format_double(-0.5) == "-0.5"
+    assert format_double(0.1) == "0.1"
+    assert format_double(1.0 / 0.0) == "inf"

@@ -4,6 +4,7 @@ packages = [
     "bytes",
     "compress/brotli",
     "crypto",
+    "errors",
     "flags",
     "fs",
     "fs/watch",

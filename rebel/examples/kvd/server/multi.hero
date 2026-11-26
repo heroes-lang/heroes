@@ -1,0 +1,108 @@
+# Transactions as Redis runs them: `MULTI` opens one, the commands after
+# it are queued, not run; `EXEC` runs them all at once, no other client's
+# command between them, or none where a key `WATCH` named changed since it
+# was watched; `DISCARD` drops the queue. A key changes for `WATCH` when a
+# command writes it, `DEL` and `FLUSHDB` included, or when it expires and
+# is taken out. This module holds the queue and the watches; `EXEC` itself
+# runs in `server/execute`, which runs every command.
+
+use <rebel>/redis
+
+use protocol/reply
+use server/registry
+use server/state
+
+# `MULTI`.
+#
+# - `s`: the server.
+# - `at`: the client's position.
+function multi(@s: state.State, at: i64) -> redis.Reply
+    if s.clients[at].in_multi
+        return reply.error(code: "ERR", message: "MULTI calls can not be nested")
+    s.clients[at].in_multi @ true
+    s.clients[at].queued @ []
+    s.clients[at].queue_broken @ false
+    return reply.okay()
+
+# Ends the client's transaction and its watches, as `EXEC` and `DISCARD`
+# leave it.
+#
+# - `s`: the server.
+# - `at`: the client's position.
+function close_transaction(@s: state.State, at: i64)
+    s.clients[at].in_multi @ false
+    s.clients[at].queued @ []
+    s.clients[at].queue_broken @ false
+    unwatch_all(@s, at: at)
+
+# `DISCARD`.
+#
+# - `s`: the server.
+# - `at`: the client's position.
+function discard(@s: state.State, at: i64) -> redis.Reply
+    if !s.clients[at].in_multi
+        return reply.error(code: "ERR", message: "DISCARD without MULTI")
+    close_transaction(@s, at: at)
+    return reply.okay()
+
+# `WATCH key [key ...]`.
+#
+# - `s`: the server.
+# - `at`: the client's position.
+# - `argv`: the command's words, its name first.
+function watch(@s: state.State, at: i64, argv: [[u8]]) -> redis.Reply
+    if s.clients[at].in_multi
+        return reply.error(code: "ERR", message: "WATCH inside MULTI is not allowed")
+    key = s.clients[at].key
+
+    for name in argv.slice(from: 1, to: argv.len())
+        if registry.add(@s.watched, name: name, id: key)
+            s.clients[at].watching @ s.clients[at].watching.push(name)
+
+    return reply.okay()
+
+# Forgets every key the client watches; `UNWATCH`.
+#
+# - `s`: the server.
+# - `at`: the client's position.
+function unwatch_all(@s: state.State, at: i64)
+    key = s.clients[at].key
+
+    for name in s.clients[at].watching
+        _ = registry.remove(@s.watched, name: name, id: key)
+
+    s.clients[at].watching @ []
+    s.clients[at].dirty @ false
+
+# Marks dirty every client watching one of `keys`.
+#
+# - `s`: the server.
+# - `keys_changed`: the keys a command changed.
+function touched(@s: state.State, keys_changed: [[u8]])
+    if registry.size(s.watched) == 0
+        return
+
+    for name in keys_changed
+        for holder in registry.holders_of(s.watched, name: name)
+            at = state.client_at(s, key: holder)
+
+            if at != -1
+                s.clients[at].dirty @ true
+
+# Queues `argv` in the client's transaction.
+#
+# - `s`: the server.
+# - `at`: the client's position.
+# - `argv`: the command's words.
+function queue(@s: state.State, at: i64, argv: [[u8]]) -> redis.Reply
+    s.clients[at].queued @ s.clients[at].queued.push(argv)
+    return .simple(v: "QUEUED")
+
+# Marks the client's transaction to abort, a command having been refused
+# while it queued.
+#
+# - `s`: the server.
+# - `at`: the client's position.
+function refused(@s: state.State, at: i64)
+    if s.clients[at].in_multi
+        s.clients[at].queue_broken @ true

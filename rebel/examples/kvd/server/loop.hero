@@ -1,0 +1,347 @@
+# The server's loop, Redis's in miniature: one thread waits on a `poll`
+# set holding the listener, every connection, a timer and the background
+# save's mailbox; accepts a connection when the listener is ready; reads
+# what a client sent, runs every whole command in it in order and writes
+# their replies in one write; runs the active sweep and puts the log on the
+# storage at the timer; and ends at `SHUTDOWN`, at a stop asked by Ctrl-C,
+# or at `DEBUG CRASH`, closing every connection, the listener, the set and
+# the log, and waiting for a background save.
+#
+# What a client sends is held to bounds before the server keeps it: 64 KiB
+# read at a time, 64 MiB waiting to be run, past which the client is told
+# and let go; a write to a client that reads nothing waits 5 seconds at
+# most (`pubsub.WRITE_MS`).
+
+use <rebel>/containers/indexed
+use <rebel>/io
+use <rebel>/net
+use <rebel>/poll
+use <rebel>/time
+
+use commands/table
+use persist/aof
+use protocol/reply
+use protocol/request
+use server/clock
+use server/execute
+use server/multi
+use server/pubsub
+use server/registry
+use server/saving
+use server/state
+use store/keyspace
+
+# The most bytes read from a client at once.
+constant READ_MOST: i64
+    65_536
+
+# The most bytes a client may send ahead of the server, as Redis's
+# `client-query-buffer-limit` bounds them.
+constant MOST_PENDING: i64
+    67_108_864
+
+# A client for the connection `conn`, at `key` in the poll set.
+#
+# - `s`: the server.
+# - `conn`: the connection.
+# - `key`: its key in the poll set.
+function client_of(s: state.State lent, conn: net.Conn, key: i64) -> state.Client
+    return state.Client(
+        id: s.next_id,
+        conn: conn,
+        key: key,
+        pending: [],
+        name: "",
+        authed: s.config.password == "",
+        in_multi: false,
+        queued: [],
+        queue_broken: false,
+        watching: [],
+        dirty: false,
+        channels: [],
+        patterns: [],
+        closing: false
+    )
+
+# Accepts the connection the listener holds.
+#
+# - `s`: the server.
+function accept_one(@s: state.State)
+    conn @= match net.accept(s.listener, deadline_ms: net.FOREVER)
+        .ok c => c
+        .err e =>
+            state.say(@s, line: f"accepting a connection failed: {e.msg}")
+            return
+
+    if indexed.size(s.clients_shape) >= s.config.most_clients
+        s.stats.rejected @ s.stats.rejected + 1
+        _ = io.write(
+            conn.stream,
+            data: reply.encode(reply.error(code: "ERR", message: "max number of clients reached"))
+        ).is_err()
+        _ = io.close(@conn.stream).is_err()
+        return
+
+    key = match poll.add_conn(s.set, c: conn, interest: .read)
+        .ok k => k
+        .err _ =>
+            _ = io.close(@conn.stream).is_err()
+            return
+
+    fresh = client_of(s, conn: conn, key: key)
+    _ = indexed.put(@s.clients_shape, @s.client_keys, @s.clients, @s.client_lookup, key: key, value: fresh)
+    s.next_id @ s.next_id + 1
+    s.stats.connections @ s.stats.connections + 1
+
+# Closes the client whose key is `key`: its subscriptions and watches
+# forgotten, its connection out of the set and closed.
+#
+# - `s`: the server.
+# - `key`: its key in the poll set.
+function close_client(@s: state.State, key: i64)
+    at = state.client_at(s, key: key)
+
+    if at == -1
+        return
+    _ = pubsub.unsubscribe(@s, at: at, argv: [[]], patterns: false)
+    _ = pubsub.unsubscribe(@s, at: at, argv: [[]], patterns: true)
+    multi.unwatch_all(@s, at: at)
+    _ = poll.remove(s.set, key: key).is_err()
+    stream @= s.clients[at].conn.stream
+    _ = io.close(@stream).is_err()
+    _ = indexed.swap_remove(@s.clients_shape, @s.client_keys, @s.clients, @s.client_lookup, key: key).is_err()
+
+# Closes every client that asked to be closed or whose write failed.
+#
+# - `s`: the server.
+function close_marked(@s: state.State)
+    marked: [i64] @= []
+
+    for at in range(from: 0, to: indexed.size(s.clients_shape))
+        if s.clients[at].closing
+            marked @ marked.push(s.clients[at].key)
+
+    for key in marked
+        close_client(@s, key: key)
+
+# Adds `data` to the client's bytes waiting to be run.
+#
+# - `pending`: those bytes, the client's own.
+# - `data`: the bytes read.
+function keep(@pending: [u8], data: [u8])
+    for c in data
+        pending @ pending.push(c)
+
+# Reads what the client at `key` sent and runs every whole command in it.
+#
+# - `s`: the server.
+# - `key`: its key in the poll set.
+function serve_client(@s: state.State, key: i64)
+    at = state.client_at(s, key: key)
+
+    if at == -1
+        return
+
+    data = match io.read(s.clients[at].conn.stream, n: READ_MOST)
+        .ok d => d
+        .err _ =>
+            s.clients[at].closing @ true
+            return
+
+    if data.len() == 0
+        s.clients[at].closing @ true
+        return
+    keep(pending: @s.clients[at].pending, data: data)
+    out: [u8] @= []
+
+    if s.clients[at].pending.len() > MOST_PENDING
+        reply.put(
+            out: @out,
+            r: reply.error(code: "ERR", message: "Protocol error: the client sent more than 64 MiB not yet run")
+        )
+        pubsub.deliver(@s, key: key, data: out)
+        s.clients[at].closing @ true
+        return
+    from @= 0
+    reading @= true
+
+    while reading && !s.clients[at].closing && !s.stopping
+        match request.next_request(s.clients[at].pending, from: from)
+            .whole w =>
+                from @ w.next
+
+                if w.words.len() > 0
+                    for r in execute.execute(@s, at: at, argv: w.words)
+                        reply.put(out: @out, r: r)
+            .partial => reading @ false
+            .broken b =>
+                reply.put(out: @out, r: reply.error(code: "ERR", message: b.reason))
+                s.clients[at].closing @ true
+
+    if from > 0
+        rest = s.clients[at].pending.slice(from: from, to: s.clients[at].pending.len())
+        s.clients[at].pending @ rest
+
+    if out.len() > 0
+        closing = s.clients[at].closing
+        s.clients[at].closing @ false
+        pubsub.deliver(@s, key: key, data: out)
+
+        if closing
+            s.clients[at].closing @ true
+
+# What the timer does: the active sweep where the clock is the system's,
+# and the log put on the storage once a second where it is `everysec`.
+#
+# - `s`: the server.
+function tick(@s: state.State)
+    now = clock.now(@s.clock)
+
+    if !s.clock.manual
+        _ = keyspace.sweep(@s.db, now: now, rounds: 1)
+        multi.touched(@s, keys_changed: keyspace.drain_touched(@s.db))
+        state.logged(@s, effects: keyspace.drain_effects(@s.db), transaction: false)
+
+    if s.log.fsync == "everysec"
+        aof.sync(@s.log)
+
+# Runs the loop until the server stops.
+#
+# - `s`: the server.
+function run_loop(@s: state.State)
+    while !s.stopping
+        events = match poll.wait(s.set, limit: time.max_duration())
+            .ok found => found
+            .err e =>
+                if e.code == poll.STOPPED
+                    state.say(@s, line: "a stop was asked; shutting down")
+                    saving.finish_saving(@s)
+                else
+                    state.say(@s, line: f"waiting failed: {e.msg}")
+                s.stopping @ true
+                return
+
+        for ev in events
+            if !s.stopping
+                if ev.key == s.listener_key
+                    accept_one(@s)
+                else if ev.key == s.timer_key
+                    tick(@s)
+                else if ev.key == s.saved_key
+                    saving.save_finished(@s)
+                else
+                    serve_client(@s, key: ev.key)
+
+        close_marked(@s)
+
+# Closes everything the server holds.
+#
+# - `s`: the server.
+function close_all(@s: state.State)
+    saving.finish_saving(@s)
+    keys_held: [i64] @= []
+
+    for at in range(from: 0, to: indexed.size(s.clients_shape))
+        keys_held @ keys_held.push(s.clients[at].key)
+
+    for key in keys_held
+        close_client(@s, key: key)
+
+    _ = poll.remove(s.set, key: s.listener_key).is_err()
+    _ = poll.remove(s.set, key: s.timer_key).is_err()
+    _ = poll.remove(s.set, key: s.saved_key).is_err()
+    _ = net.close_listener(@s.listener).is_err()
+    _ = poll.close(@s.set).is_err()
+    aof.close(@s.log)
+
+# Tells whoever started the server that it could not start, and why.
+#
+# - `config`: the settings, holding where to tell.
+# - `lines`: what it did, the reason last.
+function refused(config: state.Config, lines: [str]) -> i64
+    if !config.quiet
+        for line in lines
+            _ = io.write_line(io.stdout(), line: f"kvd: {line}").is_err()
+
+    match config.ready.send(state.Ready(started: false, port: 0, lines: lines))
+        .ok _  => return 1
+        .err _ => return 1
+
+# Runs a server with `config` until it stops: what a thread of the demo
+# runs, and `kvd serve` on the program's own thread. It tells
+# `config.ready` once it listens, or why it could not.
+#
+# - `config`: the settings.
+function serve(config: state.Config) -> i64
+    listener @= match net.listen(config.host, port: config.port)
+        .ok l  => l
+        .err e => return refused(config, lines: [f"cannot listen on {config.host}:{config.port}: {e.msg}"])
+
+    set = match poll.make(most: config.most_clients + 8)
+        .ok made => made
+        .err e =>
+            _ = net.close_listener(@listener).is_err()
+            return refused(config, lines: [f"cannot make the poll set: {e.msg}"])
+
+    period = time.milliseconds(1000 / config.hz)
+    listener_key = poll.add_listener(set, l: listener).default(-1)
+    timer_key = poll.add_timer(set, first: period, every: period).default(-1)
+    saved: (mailbox state.Saved) = mailbox()
+    saved_key = poll.add_mailbox(set, m: saved).default(-1)
+
+    start_clock = if config.manual_clock
+        clock.manual(config.start_ms)
+    else
+        clock.system()
+    s @= state.State(
+        config: config,
+        clock: start_clock,
+        db: keyspace.new(),
+        specs: table.by_name(),
+        set: set,
+        listener: listener,
+        listener_key: listener_key,
+        timer_key: timer_key,
+        clients_shape: indexed.new(),
+        client_keys: [],
+        clients: [],
+        client_lookup: {},
+        next_id: 1,
+        channels: registry.new(),
+        patterns: registry.new(),
+        watched: registry.new(),
+        log: aof.off(config.dir, generation: 0),
+        saving: state.Saving(running: false, generation: 0, changes: 0),
+        saved: saved,
+        saved_key: saved_key,
+        savers: [],
+        stats: state.Stats(connections: 0, rejected: 0, commands: 0, messages: 0),
+        last_save_ms: 0,
+        last_save_ok: true,
+        changes: 0,
+        started_ms: 0,
+        stopping: false,
+        lines: []
+    )
+    s.started_ms @ clock.now(@s.clock)
+
+    if listener_key == -1 || timer_key == -1 || saved_key == -1
+        close_all(@s)
+        return refused(config, lines: ["cannot add the listener, the timer or the mailbox to the poll set"])
+
+    match saving.load(@s)
+        .ok _ => _ = 0
+        .err e =>
+            lines @= s.lines
+            lines @ lines.push(f"cannot load the data folder: {e.msg}")
+            close_all(@s)
+            return refused(config, lines: lines)
+
+    if !config.quiet
+        state.say(@s, line: f"ready to accept connections on port {s.listener.address.port}")
+    told = state.Ready(started: true, port: s.listener.address.port, lines: s.lines)
+    s.lines @ []
+    _ = config.ready.send(told).is_err()
+    run_loop(@s)
+    close_all(@s)
+    return 0

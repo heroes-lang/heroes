@@ -211,7 +211,7 @@ function encode(v: model.Value, format: formats.Format, name: str) -> [u8]?
         .yaml                        => ok(bytes.from_text(json_file.write_yaml(v)?))
         .toml                        => ok(bytes.from_text(toml_file.write(v, name: name)?))
         .ini                         => ok(bytes.from_text(ini_file.write(v, name: name)?))
-        .properties                  => ok(bytes.from_text(properties_file.write(v, name: name)))
+        .properties                  => ok(bytes.from_text(properties_file.write(v, name: name)?))
         .xml                         => ok(bytes.from_text(xml_file.write(v, name: name)?))
         .msgpack                     => msgpack_file.write(v)
         .cbor                        => cbor_file.write(v)

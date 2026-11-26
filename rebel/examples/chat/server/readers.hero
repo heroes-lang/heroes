@@ -8,13 +8,10 @@
 # that connects and says nothing, or sends its request slowly, holds its
 # worker alone, never the loop.
 #
-# A `poll` set waits on sockets and a mailbox waits alone, and nothing joins
-# the two (`poll.ledger`'s `poll/wake` is pending), so a worker, after each
-# hand-over, sends one datagram from a UDP socket of its own to the loop's
-# doorbell, a UDP socket in the loop's set, as the hashing threads tell the
-# loop a hash is made (`server/hashing`).
+# The mailbox of requests read stands in the loop's `poll` set
+# (`poll.add_mailbox`), so a hand-over wakes the loop by itself and a worker
+# rings nothing.
 
-use <rebel>/bytes
 use <rebel>/errors
 use <rebel>/http
 use <rebel>/io
@@ -33,25 +30,18 @@ record Read
 record Start
     # The connections the loop accepted, each taken by one worker.
     conns: (mailbox net.Conn)
-    # Where the requests read go, each with its connection.
+    # Where the requests read go, each with its connection; the loop's set
+    # waits on it.
     reads: (mailbox Read)
-    # The port of the loop's doorbell on 127.0.0.1.
-    doorbell: i64
 
 # A worker's thread: connections taken and their requests read until the
 # mailbox is closed and empty, or the program's stop finds it empty; a
 # connection still queued then is read first, its read answering the stop
 # at once. Answers how many requests it handed over.
 #
-# - `w`: the mailboxes and the doorbell's port.
+# - `w`: the mailboxes.
 function work(w: Start) -> i64
     handed @= 0
-
-    mouth @= match net.open_udp(host: "127.0.0.1", port: 0)
-        .ok u  => u
-        .err _ => return 0
-
-    bell = net.with_port(net.loopback_v4(), port: w.doorbell)
 
     while true
         match w.conns.receive(within_ms: -1)
@@ -60,11 +50,6 @@ function work(w: Start) -> i64
                 if read_one(w, conn: conn)
                     handed @ handed + 1
 
-                    match bell
-                        .ok to => _ = net.send_to(mouth, data: bytes.from_text("read"), to: to).is_err()
-                        .err _ => _ = 0
-
-    errors.ignore(net.close_udp(@mouth))
     return handed
 
 # Reads the one request of `conn` and hands it over with the connection;

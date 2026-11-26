@@ -15,6 +15,7 @@
 # where its coding is lossless, the one `image/webp` reads: a lossy WebP
 # fails `unsupported`, as the decoder does.
 
+use <rebel>/errors
 use <rebel>/image
 use <rebel>/image/bmp
 use <rebel>/image/gif
@@ -143,9 +144,7 @@ function build(source: str, data: [u8], settings: model.ImageSettings, base_path
     target = written_kind(read, settings)
     places = places_of(source: source, kind: target, converted: target != read)
 
-    built = match made(data, kind: kind, target: target, settings: settings)
-        .ok b  => b
-        .err e => return fail(code: e.code, msg: f"{source}: {e.msg}")
+    built = errors.context(made(data, kind: kind, target: target, settings: settings), what: f"{source}")?
 
     full = if target == read
         data

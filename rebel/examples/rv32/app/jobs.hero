@@ -117,7 +117,7 @@ function run(p: format.Program, input: str, limit: i64, memory: i64) -> i64
         return 1
     m @= loaded.must()
     stop = runner.run(@m, budget: limit)
-    _ = io.write(io.stdout(), runner.console(@m)).is_err()
+    errors.ignore(io.write(io.stdout(), runner.console(@m)))
 
     return match stop
         .exited e => e.code
@@ -176,7 +176,7 @@ function listing(p: format.Program) -> [str]?
 #
 # - `message`: the line.
 function complain(message: str)
-    _ = io.write_line(io.stderr(), line: message).is_err()
+    errors.ignore(io.write_line(io.stderr(), line: message))
 
 ## Tests
 
