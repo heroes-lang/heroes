@@ -8,6 +8,7 @@
 
 use <rebel>/bytes
 use <rebel>/crypto
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/path
 use <rebel>/strings
@@ -150,9 +151,7 @@ function discover(site: model.Site) -> Found?
 # The files under the folder `folder` of `root`, each as its slash-separated
 # path under `root`, sorted, the ignored ones left out.
 function walked(root: str, folder: str) -> [str]?
-    entries = match fs.walk(on_disk(root: root, name: folder))
-        .ok es => es
-        .err e => return fail(code: e.code, msg: f"{folder}: {e.msg}")
+    entries = errors.context(fs.walk(on_disk(root: root, name: folder)), what: f"{folder}")?
 
     out: [str] @= []
 
@@ -182,9 +181,7 @@ function on_disk(root: str, name: str) -> str
 # - `root`: the site's folder.
 # - `name`: the source's slash-separated path under it.
 function read(root: str, name: str) -> [u8]?
-    return match fs.read_bytes(on_disk(root: root, name: name))
-        .ok data => ok(data)
-        .err e   => fail(code: e.code, msg: f"{name}: {e.msg}")
+    return errors.context(fs.read_bytes(on_disk(root: root, name: name)), what: f"{name}")
 
 # The text of the source `name`. Fails as `read` does, and `not_text` where
 # it is not UTF-8.
@@ -194,9 +191,7 @@ function read(root: str, name: str) -> [u8]?
 function read_text(root: str, name: str) -> str?
     data = read(root: root, name: name)?
 
-    return match bytes.to_text(data)
-        .ok text => ok(text)
-        .err e   => fail(code: e.code, msg: f"{name} is not UTF-8 text: {e.msg}")
+    return errors.context(bytes.to_text(data), what: f"{name} is not UTF-8 text")
 
 # The SHA-256 of `data` in hexadecimal: what a build remembers of a source
 # or an output to tell later whether it changed.

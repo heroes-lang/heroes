@@ -143,7 +143,7 @@ function fetch_json(c: Client, target: str) -> json.Value?
         return http.json_of(response)
 
     message = match http.json_of(response)
-        .ok v  => store.text_at(v, key: "message").default(f"status {response.status}")
+        .ok v  => json.text_at(v, key: "message").default(f"status {response.status}")
         .err _ => f"status {response.status}"
 
     code = if response.status == 400
@@ -170,26 +170,26 @@ function search(c: Client, query: str, mode: str, limit: i64) -> Results?
     corrected: [Change] @= []
 
     for item in json.items_of(json.member(v, key: "corrected")?)?
-        corrected @ corrected.push(Change(from: store.text_at(item, key: "from")?, to: store.text_at(item, key: "to")?))
+        corrected @ corrected.push(Change(from: json.text_at(item, key: "from")?, to: json.text_at(item, key: "to")?))
 
     hits: [Result] @= []
 
     for item in json.items_of(json.member(v, key: "hits")?)?
         entry = Result(
-            id: store.int_at(item, key: "id")?,
-            path: store.text_at(item, key: "path")?,
-            title: store.text_at(item, key: "title")?,
-            snippet: store.text_at(item, key: "snippet")?,
+            id: json.int_at(item, key: "id")?,
+            path: json.text_at(item, key: "path")?,
+            title: json.text_at(item, key: "title")?,
+            snippet: json.text_at(item, key: "snippet")?,
             score: json.number_of(json.member(item, key: "score")?)?,
             folded: store.texts_at(item, key: "folded")?
         )
         hits @ hits.push(entry)
 
     made = Results(
-        query: store.text_at(v, key: "query")?,
-        mode: store.text_at(v, key: "mode")?,
+        query: json.text_at(v, key: "query")?,
+        mode: json.text_at(v, key: "mode")?,
         corrected: corrected,
-        matched: store.int_at(v, key: "matched")?,
+        matched: json.int_at(v, key: "matched")?,
         hits: hits
     )
     return ok(made)
@@ -206,8 +206,8 @@ function suggest(c: Client, typed: str, limit: i64) -> [Suggestion]?
 
     for item in json.items_of(json.member(v, key: "suggestions")?)?
         entry = Suggestion(
-            text: store.text_at(item, key: "text")?,
-            pages: store.int_at(item, key: "pages")?
+            text: json.text_at(item, key: "text")?,
+            pages: json.int_at(item, key: "pages")?
         )
         found @ found.push(entry)
 
@@ -222,9 +222,9 @@ function pages(c: Client) -> [Listed]?
 
     for item in json.items_of(json.member(v, key: "pages")?)?
         entry = Listed(
-            id: store.int_at(item, key: "id")?,
-            path: store.text_at(item, key: "path")?,
-            title: store.text_at(item, key: "title")?
+            id: json.int_at(item, key: "id")?,
+            path: json.text_at(item, key: "path")?,
+            title: json.text_at(item, key: "title")?
         )
         found @ found.push(entry)
 
@@ -237,13 +237,13 @@ function pages(c: Client) -> [Listed]?
 function page(c: Client, id: i64) -> PageInfo?
     v = fetch_json(c, target: f"/api/pages/{id}")?
     made = PageInfo(
-        id: store.int_at(v, key: "id")?,
-        path: store.text_at(v, key: "path")?,
-        title: store.text_at(v, key: "title")?,
+        id: json.int_at(v, key: "id")?,
+        path: json.text_at(v, key: "path")?,
+        title: json.text_at(v, key: "title")?,
         indexed: json.bool_of(json.member(v, key: "indexed")?)?,
         rank: json.number_of(json.member(v, key: "rank")?)?,
-        depth: store.int_at(v, key: "depth")?,
-        inbound: store.int_at(v, key: "inbound")?,
+        depth: json.int_at(v, key: "depth")?,
+        inbound: json.int_at(v, key: "inbound")?,
         links: store.texts_at(v, key: "links")?,
         path_from_start: store.texts_at(v, key: "path_from_start")?,
         duplicates: store.texts_at(v, key: "duplicates")?
@@ -276,18 +276,18 @@ function stats(c: Client) -> Stats?
 
     for item in json.items_of(json.member(v, key: "top")?)?
         entry = Ranked(
-            path: store.text_at(item, key: "path")?,
+            path: json.text_at(item, key: "path")?,
             rank: json.number_of(json.member(item, key: "rank")?)?
         )
         top @ top.push(entry)
 
     made = Stats(
-        pages: store.int_at(v, key: "pages")?,
-        indexed: store.int_at(v, key: "indexed")?,
-        terms: store.int_at(v, key: "terms")?,
-        vectors: store.int_at(v, key: "vectors")?,
-        duplicate_groups: store.int_at(v, key: "duplicate_groups")?,
-        rank_rounds: store.int_at(v, key: "rank_rounds")?,
+        pages: json.int_at(v, key: "pages")?,
+        indexed: json.int_at(v, key: "indexed")?,
+        terms: json.int_at(v, key: "terms")?,
+        vectors: json.int_at(v, key: "vectors")?,
+        duplicate_groups: json.int_at(v, key: "duplicate_groups")?,
+        rank_rounds: json.int_at(v, key: "rank_rounds")?,
         top: top
     )
     return ok(made)

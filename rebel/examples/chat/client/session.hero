@@ -146,9 +146,7 @@ function open(socket_url: str, token: str, now: time.Instant) -> Session?
     c @= websocket.default_client()
     c.headers @ [http.Header(name: "Authorization", value: "Bearer " + token)]
 
-    socket = match websocket.connect(target: socket_url, client: c)
-        .ok got => got
-        .err e  => return fail(code: e.code, msg: f"the server refused the connection: {e.msg}")
+    socket = errors.context(websocket.connect(target: socket_url, client: c), what: "the server refused the connection")?
 
     s @= Session(socket: socket, view: views.new_view(), next_ref: 1)
 

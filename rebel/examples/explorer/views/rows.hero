@@ -1,6 +1,8 @@
-# The text of each row the window's lists show. `ui` has no table of
-# columns yet (its ledger's `ui/table`, pending), so an entry's row is one
-# line of padded columns: its name, a folder's ending in `/` and a link's in
+# The text of each row the window's lists show. The window was written
+# before `ui` had a table of columns; `ui.table` holds one now (its ledger's
+# `ui/table`), and moving onto it changes what the demo prints, so it waits
+# for a transcript of its own. Until then an entry's row is one line of
+# padded columns: its name, a folder's ending in `/` and a link's in
 # `@` as `ls -F` marks them, its size, its type and when it was last
 # written, the numbers and dates in the person's locale. The header above
 # the list names the columns the same way and marks the one the entries are

@@ -89,18 +89,6 @@ constant SYMBOLS: [str]
 function is_name_start(c: u8) -> bool
     return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c == '_'
 
-# Whether `c` is a decimal digit.
-#
-# - `c`: one byte of the script.
-function is_digit(c: u8) -> bool
-    return c >= '0' && c <= '9'
-
-# Whether `c` is a hexadecimal digit of either case.
-#
-# - `c`: one byte of the script.
-function is_hex_digit(c: u8) -> bool
-    return is_digit(c) || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F'
-
 # A failure of the script's text at `line`, worded as Redis words a script's
 # compile error.
 #
@@ -210,11 +198,11 @@ function quoted(s: str, at: i64, line: i64) -> Quoted?
         e = s[i + 1]
         i @ i + 2
 
-        if is_digit(e)
+        if bytes.is_digit_ascii(e)
             value: i64 @= to_i64(e - '0').must()
             digits: i64 @= 1
 
-            while digits < 3 && i < s.len() && is_digit(s[i])
+            while digits < 3 && i < s.len() && bytes.is_digit_ascii(s[i])
                 value @ value * 10 + to_i64(s[i] - '0').must()
                 digits @ digits + 1
                 i @ i + 1
@@ -252,7 +240,7 @@ function number_at(s: str, at: i64, line: i64) -> Token?
     if s[at] == '0' && at + 1 < s.len() && (s[at + 1] == 'x' || s[at + 1] == 'X')
         i @ at + 2
 
-        while i < s.len() && is_hex_digit(s[i])
+        while i < s.len() && bytes.is_hex_digit_ascii(s[i])
             i @ i + 1
 
         digits = s.slice(from: at + 2, to: i)
@@ -261,7 +249,7 @@ function number_at(s: str, at: i64, line: i64) -> Token?
             .ok v  => return ok(Token(kind: "number", text: s.slice(from: at, to: i), number: to_f64(v), line: line))
             .err _ => return refused(line, what: f"malformed number near '{s.slice(from: at, to: i)}'")
 
-    while i < s.len() && (is_digit(s[i]) || s[i] == '.')
+    while i < s.len() && (bytes.is_digit_ascii(s[i]) || s[i] == '.')
         i @ i + 1
 
     if i < s.len() && (s[i] == 'e' || s[i] == 'E')
@@ -270,7 +258,7 @@ function number_at(s: str, at: i64, line: i64) -> Token?
         if i < s.len() && (s[i] == '+' || s[i] == '-')
             i @ i + 1
 
-        while i < s.len() && is_digit(s[i])
+        while i < s.len() && bytes.is_digit_ascii(s[i])
             i @ i + 1
 
     text = s.slice(from: at, to: i)
@@ -358,7 +346,7 @@ function tokens(source: str) -> [Token]?
         else if is_name_start(c)
             start = at
 
-            while at < n && (is_name_start(source[at]) || is_digit(source[at]))
+            while at < n && (is_name_start(source[at]) || bytes.is_digit_ascii(source[at]))
                 at @ at + 1
 
             word = source.slice(from: start, to: at)
@@ -368,7 +356,7 @@ function tokens(source: str) -> [Token]?
             else
                 "name"
             out @ out.push(Token(kind: kind, text: word, number: 0.0, line: line))
-        else if is_digit(c) || c == '.' && at + 1 < n && is_digit(source[at + 1])
+        else if bytes.is_digit_ascii(c) || c == '.' && at + 1 < n && bytes.is_digit_ascii(source[at + 1])
             t = number_at(source, at: at, line: line)?
             out @ out.push(t)
             at @ at + t.text.len()
