@@ -425,6 +425,31 @@ the adopted text reads **13,311 to 13,322** real on `measure --refresh` (the bas
 refused by the landed build on this Mac or in Linux arm64, or by one undeclared program whose binary holds a
 `_hero_<member>_` symbol** (`nm`).
 
+## The blind reading, run 2026-11-26
+
+Added the same afternoon, after this sitting's ratification (`f0b59c152`): the registered reading ran on the
+author's authorisation of 2026-11-25 (*ok a*, ceiling 20.00 USD), its report `260-reports/llm-ergonomist-blind.md`,
+the sessions' answers `260-reports/llm-ergonomist-blind-answers.tar.xz`, t2's task, the runner as it ran and the
+registration's appended section (*Written 2026-11-26, after the landing*, 91 lines, none of the registered ones
+changed) in `260-briefs/blind/`, and t2's six programs in `260-reports/evidence-blind.tar.xz` (paths kept). **31
+sessions counted, 7.108556 USD of the 20.00** (the 31 cost 7.018539, one attempt a network outage cut and the runner
+ran again 0.090017); none voided. **D1 holds** (W1 and W3 right for 5 of 5 `adopted` readers) and **D1c** (W4, 5 of 5);
+**D2 fails**: 5 of 5 `adopted` readers write `extern "hero_os.h" layer` in W2, where at most 1 may; **D3 fails on one
+program of six**, t2's (4), 0 of 5 right, for the same cause. `rival` reads exactly as `adopted` on every grade, so
+nothing moves the resolution to `rival`. **By the registration's own rules the resolution stays on `adopted` and its
+text owes a narrowing**: the sentence naming *"processes and files from the language's `hero_os.h`, and sockets,
+clocks and the rest from its platform layer: ... every other `hero_` header it provides but the compiler's
+`hero_compiler.h`"* is read by every reader as putting `hero_os.h` among the layer's headers, the one exception it
+names being `hero_compiler.h`. **And the landed build does not tell them**: `extern "hero_os.h" layer` builds and runs
+at exit 0 and `heroes check` passes it, on this Mac and in Linux arm64, while the text says *"no other group may"*: a
+plausible mistake the build accepts, a defect found beside (class blocking). The warden's predictions hold but D2
+(predicted 0 [0-1], measured 5 under both arms); the spend prediction (6.8 [4.5-10.0]) held. **What is owed, and is
+this sitting's amendment, provisional, the author's reading pending**: a narrowed sentence, and the build's refusal of
+a `layer` on a header that is not the layer's; neither is written yet. **The run's own limits, in its report**: t2's
+task, programs and key did not exist before the run and were written first, under the registration's append-only rule;
+no session could write `report.md`, each answer is the brief's fallback; the verdict session approved on a premise
+the landed build disproves (that the `hero_os.h` doubt can only lead to a refused build).
+
 ## Author's verdict
 
 **Pending.** The decision's draft is `docs/panel/260-reports/decision-draft.md`, filed with this sitting as `panel 260`.
