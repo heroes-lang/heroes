@@ -57,7 +57,7 @@ function cause_name(cause: i64) -> str
         5           => "load access fault"
         6           => "store address misaligned"
         7           => "store access fault"
-        11          => "environment call from M-mode"
+        11          => "environment call from machine mode"
         0x8000_0007 => "machine timer interrupt"
         _           => f"cause {cause}"
 
