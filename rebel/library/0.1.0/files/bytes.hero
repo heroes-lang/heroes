@@ -717,6 +717,15 @@ function is_digit_ascii(c: u8) -> bool
 function is_letter_ascii(c: u8) -> bool
     return ascii.is_letter(c)
 
+# Whether the byte `c` is an ASCII hexadecimal digit, `0` to `9`, `a` to `f`
+# or `A` to `F`.
+#
+# - `c`: the byte asked about; any.
+#
+# See also `parse_hex`.
+function is_hex_digit_ascii(c: u8) -> bool
+    return ascii.is_hex_digit(c)
+
 # Whether the byte `c` is an ASCII upper-case letter, `A` to `Z`.
 #
 # - `c`: the byte asked about; any.
@@ -2194,6 +2203,10 @@ test "is_digit_ascii: a digit and a letter"
 # A byte asked whether it is a letter.
 test "is_letter_ascii: a letter and a digit"
     assert is_letter_ascii(0x5a) && !is_letter_ascii(0x37)
+
+# A byte asked whether it is a digit of hexadecimal.
+test "is_hex_digit_ascii: a digit of hexadecimal and a letter past f"
+    assert is_hex_digit_ascii(0x62) && !is_hex_digit_ascii(0x67)
 
 # A byte asked whether it is a capital.
 test "is_upper_ascii: a capital and a small letter"
