@@ -123,7 +123,7 @@ function start(dir: str) -> Started?
 # Fails as `session.connect` fails.
 function client_at(port: i64) -> redis.Client?
     c = session.connect(session.Target(host: "127.0.0.1", port: port, password: ""))?
-    redis.set_deadline(c, deadline: time.seconds(WAIT_SECONDS).must())?
+    redis.set_deadline(c, deadline: time.seconds(WAIT_SECONDS))?
     return ok(c)
 
 # The text of a message, as `redis-cli` writes one.
