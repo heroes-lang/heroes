@@ -35,7 +35,7 @@
 # `vectors` holds them in an HNSW index and fingerprints near-duplicates;
 # `containers/trie` holds the terms for suggestions and spelling;
 # `containers/disjoint` gathers near-duplicates; `graphs` gives click depths
-# and paths; `math/linear` multiplies PageRank's link matrix in blocks;
+# and paths; `math/sparse` ranks the pages by PageRank;
 # `i18n` and `i18n/collate` order titles as the site's language orders
 # them; `hash` hashes the fingerprints' word runs; `toml` reads the
 # settings; `flags` reads the command line; `json` is the crawl store, the
