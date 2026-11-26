@@ -1358,7 +1358,10 @@ test "the tables are what this module is, so they are counted"
     # 218 -> 219 on 2026-11-22, feature 2647 (lane lane-mailbox): a thread's
     # and a mailbox's types and operations printed back by `fmt`,
     # `thread2647/`.
-    assert verb_probes().len() == 219
+    # 219 -> 220 on 2026-11-26, panel 260's R7 (lane land260): a group head's
+    # `layer` printed back by `fmt` alone, before `link`, before `pkgconfig`
+    # and before a comment, `layer260/`.
+    assert verb_probes().len() == 220
 
     # 117 on 2026-09-27, panel 180 R5: the compiler-engineer's break map, one
     # row per shape, its exit the adopted sentence's; a shape added to the map
