@@ -63,7 +63,7 @@ function shape(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, id: i64) -> 
             if !written.is_err()
                 names @ written.must()
 
-            table.intern_function(@c.out.types, lowered, names, result: result)
+            table.intern_function(@c.out.types, lowered, labels: names, modes: f.modes, result: result)
 
 function named(@c: state.Checker, r: resolved.Resolved, id: i64) -> i64
     return match r.type_uses[id]

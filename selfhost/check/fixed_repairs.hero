@@ -58,7 +58,13 @@ function growable_twin(@c: state.Checker, ty: i64) -> i64
 
             result = growable_twin(@c, f.result)
             labels = table.labels_of(c.out.types, f.labels)
-            return table.intern_function(@c.out.types, params: params, labels: labels, result: result)
+            return table.intern_function(
+                @c.out.types,
+                params: params,
+                labels: labels,
+                modes: table.modes_of(c.out.types, f.modes, count: params.len()),
+                result: result
+            )
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .named => return ty
         .thread_ty | .mailbox_ty                                           => return ty
         .case_ty | .failure | .generic | .error                            => return ty

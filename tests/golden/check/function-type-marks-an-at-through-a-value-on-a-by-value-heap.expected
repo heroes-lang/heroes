@@ -1,0 +1,1 @@
+tests/golden/check/function-type-marks-an-at-through-a-value-on-a-by-value-heap.hero:15:8: error[not_mutable]: `p` is a parameter without `@`, so `@p` would be refused: mark it `@p` in the signature too, and at every call

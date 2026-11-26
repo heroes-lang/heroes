@@ -70,6 +70,7 @@ use check/operands
 use check/ops
 use check/path_end
 use check/reach
+use check/read_lends
 use check/render
 use check/settling
 use check/state
@@ -1318,9 +1319,14 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
             index: i64 @= 0
             before = c.out.diagnostics.len()
 
+            modes = table.modes_of(c.out.types, f.modes, count: params.len())
+
             for arg in given
                 position = index + offset
-                markers.through_a_value(@c, a, arg)
+                markers.through_a_value(@c, a, r, s, arg, mode: modes[position], callee: callee_text.written(s, callee))
+
+                if arg.mutable && modes[position] == "@"
+                    access.refuse_str_element(@c, a, place: arg.value)
 
                 # §4.9 through a VALUE (defect 026), and it is §4.9's rule
                 # rather than a second one. A position the type NAMED is a
@@ -1383,6 +1389,8 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
                         labels.misnamed(c, a, s, decls, asked: asked, holder: callee_text.written(s, callee), label: arg.name.must(), types: params, at: position, from: offset, value: arg.value)
                     )
                 index @ index + 1
+
+            read_lends.aliased_through_a_value(@c, a, r, s, given, modes: modes, from: offset)
 
             if !labels_in_place.none_written(given) && labels_in_place.any_elsewhere(s.text, given: given, names: names, from: offset)
                 label_order.told_value(@c, a, s, decls, callee, names, params, given, from: offset, said: before)

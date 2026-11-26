@@ -102,6 +102,7 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s:
                         names,
                         name: names.funcs[ty].must(),
                         params: fn_ty.params,
+                        modes: fn_ty.modes,
                         result: fn_ty.result
                     )
                     owed_blank @ true

@@ -1,0 +1,3 @@
+tests/golden/check/function-type-marks-an-at-through-a-value-on-a-binding.hero:17:8: error[not_mutable]: `p` is a parameter without `@`, so `@p` would be refused: mark it `@p` in the signature too, and at every call
+tests/golden/check/function-type-marks-an-at-through-a-value-on-a-binding.hero:23:8: error[not_mutable]: `k` was bound with `=`, which binds once, so `@k` would be refused: declare it a cell, `k @= <value>`, and pass `@k`
+tests/golden/check/function-type-marks-an-at-through-a-value-on-a-binding.hero:28:12: error[not_mutable]: `x` is the loop variable, bound afresh for each element, so `@x` would be refused: pass a cell declared outside the loop

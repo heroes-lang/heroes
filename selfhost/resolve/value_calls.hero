@@ -1,0 +1,63 @@
+# A cell handed bare to a call through a function VALUE (panel 261; spec § 5,
+# panel 209's R1b; design.md §4.17 one mistake, one message).
+#
+# A value's type may take that position `@`, which only the checker reads, so
+# a cell nothing re-binds but that bare argument may be the one the call was
+# meant to write: `h(app)` where `h` takes `@App`. Told here, its certain `=`
+# would take away the `@=` the checker's certain `@` needs, and the two fixes
+# applied together write a program that does not check. So the verdict is
+# left to the checker (`Local.deferred`, `check/kept_cells.hero`), as a
+# dropped value's cell is (defect 630): `check/markers.through_a_value` keeps
+# the cell where the type asks the `@`, and every cell left is told after the
+# walk as here.
+
+use ast
+use resolve/state
+use resolve/unused_sweep
+use resolve/value_lines
+use source
+
+function leave_to_the_checker(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast.Decl])
+    at: i64 @= 0
+
+    while at < a.exprs.len()
+        match a.exprs[at].kind
+            .call c =>
+                if through_a_value(r, a, decls, callee: c.callee)
+                    defer_bare(@r, a, s, given: c.args)
+            .method m =>
+                match r.out.uses[at]
+                    .unresolved                        => defer_bare(@r, a, s, given: m.args)
+                    .local | .top | .builtin | .module => at @ at
+            .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit  => at @ at
+            .field_name | .null_ptr | .hole | .unary | .binary | .field | .index        => at @ at
+            .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => at @ at
+
+        at @ at + 1
+
+# Whether the callee is a value: a local, or an expression that names no
+# declaration and is no name (an element, a field, a call's answer).
+function through_a_value(r: state.Resolver, a: ast.Ast, decls: [ast.Decl], callee: i64) -> bool
+    match r.out.uses[callee]
+        .local      => return true
+        .unresolved => return a.exprs[callee].kind != .name
+        .top t =>
+            match decls[t.at].kind
+                .constant_decl                                             => return true
+                .function_decl | .record_decl | .variant_decl | .test_decl => return false
+        .builtin | .module => return false
+
+    return false
+
+function defer_bare(@r: state.Resolver, a: ast.Ast, s: source.Source, given: [ast.Arg])
+    for arg in given
+        if arg.mutable
+            continue
+        cell = value_lines.cell_at(r, a, arg.value)
+
+        if cell.is_err()
+            continue
+        one = r.out.locals[cell.must()]
+
+        if unused_sweep.rebound_nowhere(r, s, one) || unused_sweep.written_nowhere(r, s, one)
+            r.out.locals[cell.must()].deferred @ true

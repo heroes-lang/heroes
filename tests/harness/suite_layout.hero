@@ -542,17 +542,38 @@ constant CEILING: i64
 # and a close ended lives at compile time; since panel 254 only a wait does
 # (its S3 and S6), and the walk is back under the ceiling at 295, so the row
 # is gone.
+# **Five rows raised 2026-11-26, for panel 261's R1 and R2 at M-rebel-library
+# step 203a** (lane land261; provisional, author ratification pending), each
+# measured by this suite's counter on the sitting's built route: a function
+# type carries its parameters' marks, a run on the existing case, and every
+# pass from the parser to the emitter learns it (the compiler-engineer's
+# report, § 4). `selfhost/check/table.hero` 368 -> **414**: the run's arena
+# beside the names' (`Types.modes`, `mode_runs`), its key, `modes_of` and
+# `lends_through_a_type`, and the four unit tests' calls, which the language's
+# own named-argument rule makes name both runs; the table owns the arenas, so
+# the run lives where the names' does. `selfhost/ir/flatten.hero` 1250 ->
+# **1297**: a call through a value lowers each argument by its position's
+# mark, the caller's place for `@`, in place for `lent`, else the value, the
+# knot's own lowering of an argument (`inout.argument`, `lent_argument`).
+# `selfhost/check/walk.hero` 1877 -> **1882**: the call through a value hands
+# each argument and its mark to `check/markers.hero` and `check/read_lends.hero`,
+# which hold the rules. `selfhost/ir/mono.hero` 384 -> **390**: an instance's
+# function type rebuilt with its marks. `selfhost/ast.hero` 550 -> **553**: the
+# written type's `modes`. Two modules the route took past §11's 300 were cut
+# instead: `check/generics.hero` (311) gave a function type's run comparisons
+# to `check/generic_runs.hero`, the names' and the marks', and `parse/type.hero`
+# (326) the words around one position to `parse/type_arg.hero`.
 constant DECIDED: [str]
     [
-        "selfhost/check/walk.hero 1877"
+        "selfhost/check/walk.hero 1882"
         "selfhost/print/fmt.hero 1175"
-        "selfhost/ir/flatten.hero 1250"
+        "selfhost/ir/flatten.hero 1297"
         "selfhost/grammar_expr.hero 1085"
         "selfhost/ir/print.hero 470"
-        "selfhost/ast.hero 550"
-        "selfhost/check/table.hero 368"
+        "selfhost/ast.hero 553"
+        "selfhost/check/table.hero 414"
         "selfhost/check/builtins.hero 378"
-        "selfhost/ir/mono.hero 384"
+        "selfhost/ir/mono.hero 390"
         "selfhost/emit/ctype.hero 404"
         "selfhost/emit/structural.hero 335"
         "selfhost/emit/gate.hero 365"
@@ -651,9 +672,19 @@ constant DECIDED: [str]
 # file), carried by the head's linkage to every member (`parse/tails.hero`,
 # its field and `linkage_layer`, +8 with the members' arguments) and read by
 # `parse/group.hero`'s head (+1). What judges it is outside this directory.
+# **Raised 2026-11-26, 8809 -> 8845, for panel 261's R1 at M-rebel-library
+# step 203a** (lane land261; provisional, author ratification pending): a
+# function type's position carries its mark, `@` before it and `lent` after
+# its type, read where its name is (spec § 3's `TypeArg`). `parse/type.hero`'s
+# `function_params` reads the `@` and keeps one mark per position, and the
+# words around one position, the mark after its type and the name the loop
+# took for a type, stand in `parse/type_arg.hero` (38 with its doc), the
+# name's reader moved there with the new one, so `parse/type.hero` reads 298
+# against its 300 before: 36 in this row's unit, measured by this suite's
+# counter. A surface form the panel adopted is read beside its neighbours.
 constant BUDGETS: [str]
     [
-        "selfhost/parse/ 8809"
+        "selfhost/parse/ 8845"
     ]
 
 # The floor is the Rust's own idea —

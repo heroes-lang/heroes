@@ -20,10 +20,12 @@
 # (int64_t *)` as `void (*)(int64_t)`, an internal error at exit 2.
 
 use ast
+use check/kept_cells
 use check/leasing
 use check/state
 use check/table
 use data_errors
+use diag
 use resolved
 use source
 use token
@@ -64,6 +66,13 @@ function blocked(a: ast.Ast, r: resolved.Resolved, s: source.Source, value: i64)
 function refused_as_value(@c: state.Checker, s: source.Source, decls: [ast.Decl], decl: i64, span: token.Span) -> bool
     match decls[decl].kind
         .function_decl fd =>
+            # A function of the program is a value of the type its signature
+            # writes, each mode with it (panel 261); an `extern`'s `@` is a
+            # cell C writes and its `lent` panel 171's, which no Heroes value
+            # carries across.
+            if !fd.value.is_extern
+                return false
+
             for p in fd.value.params
                 if p.mutable
                     state.push_diagnostic(
@@ -103,7 +112,34 @@ function ufcs_hides_the_marker(decls: [ast.Decl], decl: i64) -> bool
         .function_decl fd => fd.value.params.len() > 0 && fd.value.params[0].mutable
         .constant_decl | .record_decl | .variant_decl | .test_decl => false
 
-# An `@` before an argument of a call through a function value.
-function through_a_value(@c: state.Checker, a: ast.Ast, arg: ast.Arg)
-    if arg.mutable
-        state.push_diagnostic(@c, data_errors.marker_through_a_value(a.exprs[arg.value].span))
+# An argument of a call through a function value against its position's
+# mode (panel 261): the TYPE decides as a declaration does by name, so an `@`
+# is owed exactly where the type carries one, and refused elsewhere.
+function through_a_value(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, arg: ast.Arg, mode: str, callee: str)
+    wants = mode == "@"
+
+    # A cell handed bare where the type asks `@` is one the certain `@`
+    # re-binds, so its never-re-bound verdict, left here by the resolver
+    # (`resolve/value_calls.hero`), is not told.
+    if wants && !arg.mutable
+        kept_cells.keep_root(@c, a, r, value: arg.value)
+
+    # The rule of the left of `@`, which the resolver asks of a call by name
+    # (`resolve/writes.inout_root`) and sets aside for a value, whose type it
+    # cannot read: an `@` the type takes stands only before a cell or an `@`
+    # parameter, or the callee would write a binding, a loop variable or a
+    # by-value parameter in place (measured: a heap abort, exit 134).
+    if arg.mutable && wants
+        why = blocked(a, r, s, arg.value)
+
+        if why.len() > 0
+            state.push_diagnostic(
+                @c,
+                diag.new_diagnostic(code: "not_mutable", message: why, span: a.exprs[arg.value].span)
+            )
+
+    if arg.mutable != wants
+        state.push_diagnostic(
+            @c,
+            data_errors.marker_mismatch(name: callee, wants: wants, blocked: blocked(a, r, s, arg.value), span: a.exprs[arg.value].span)
+        )

@@ -46,6 +46,7 @@ use check/state
 use check/table
 use check/type_fit
 use diag
+use read_lend
 use resolved
 use source
 use token
@@ -78,12 +79,30 @@ function signature_of(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: so
             return table.intern_function(
                 @c.out.types,
                 lowered,
-                labels.declared_labels(s, fd.value.params, lowered),
+                labels: labels.declared_labels(s, fd.value.params, lowered),
+                modes: declared_modes(a, s, fd.value),
                 result: result
             )
         .constant_decl | .record_decl | .variant_decl | .test_decl => return state.error_ty_of(c)
 
     return state.error_ty_of(c)
+
+# Each parameter's mode as its function type carries it (panel 261): `@`
+# where the signature marks it, `lent` where it is lent read-only
+# (`read_lend.read_only`, which leaves panel 171's `lent` on a C pointer by
+# value), else by value.
+function declared_modes(a: ast.Ast, s: source.Source, f: ast.FunctionDecl) -> [str]
+    out: [str] @= []
+
+    for p in f.params
+        if p.mutable
+            out @ out.push("@")
+        else if read_lend.read_only(f, p, a, s)
+            out @ out.push("lent")
+        else
+            out @ out.push("")
+
+    return out
 
 # Whether this expression names a GENERIC top-level function: a bare name, or
 # one a module qualifies (`helper.ident`), which the resolver answers alike.
@@ -240,7 +259,8 @@ function instance_type(@c: state.Checker, s: source.Source, decls: [ast.Decl], d
                 .function_decl fd => return table.intern_function(
                     @c.out.types,
                     params,
-                    labels.declared_labels(s, fd.value.params, params),
+                    labels: labels.declared_labels(s, fd.value.params, params),
+                    modes: table.modes_of(c.out.types, f.modes, count: params.len()),
                     result: result
                 )
                 .constant_decl | .record_decl | .variant_decl | .test_decl => return state.error_ty_of(c)

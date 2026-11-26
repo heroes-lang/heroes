@@ -1,0 +1,27 @@
+# Panel 261's R3 (2026-11-26, provisional, author ratification pending):
+# `lent` fits where a type asks `@`, read as the `@`, so one table of `@`
+# handlers holds a writer, a reader declared `lent` and a handler with no
+# state, `_: App lent`, each signature saying what its function does; the
+# call writes `@` and is judged by `@`'s exclusivity. Prints 2, 3, 1, then 2:
+# only `count` wrote.
+record App
+    n: i64
+
+function count(@app: App, k: i64) -> i64
+    app.n @ app.n + k
+    return app.n
+
+function health(app: App lent, k: i64) -> i64
+    return app.n + k
+
+function logout(_: App lent, k: i64) -> i64
+    return k
+
+function main()
+    app @= App(n: 1)
+    table: [(function(@App, i64) -> i64)] = [count, health, logout]
+
+    for h in table
+        print(h(@app, 1))
+
+    print(app.n)

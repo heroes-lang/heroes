@@ -1,0 +1,21 @@
+# Panel 261's R2 (2026-11-26, provisional, author ratification pending): the
+# class M-robustness-guards step 1 closed for a call by name, an `@` on a
+# by-value place whose record holds an array, asked through a value. Built
+# without the checker's rule of the left of `@`, the panel's route checked
+# and built this program and its binary aborted, exit 134, *an array
+# released after its last reference*; it is `not_mutable` at `@p`, as by
+# name, under `build --permissive` too.
+record Bag
+    items: [str]
+
+function add(@b: Bag, x: str)
+    b.items @ b.items.push(x)
+
+function through(h: (function(@Bag, str) -> ()), p: Bag) -> i64
+    h(@p, "x")  #~ not_mutable
+    return p.items.len()
+
+function main()
+    bag = Bag(items: ["a"])
+    print(through(add, bag))
+    print(bag.items.len())

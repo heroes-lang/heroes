@@ -46,6 +46,20 @@ function claim(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 c.kept[l.at] @ true
         .top | .module | .builtin | .unresolved => return
 
+# A cell at the root of `value`, left to the checker, kept: an argument a
+# certain `@` will mark (panel 261).
+function keep_root(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, value: i64)
+    root = leasing.place_root(a, at: value)
+
+    if root.is_err()
+        return
+
+    match r.uses[root.must()]
+        .local l =>
+            if r.locals[l.at].deferred
+                c.kept[l.at] @ true
+        .top | .module | .builtin | .unresolved => return
+
 # After the walk: every cell left to the checker that no dropped value's
 # repair writes back, told never re-bound.
 function told(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])

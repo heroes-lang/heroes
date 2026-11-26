@@ -33,6 +33,7 @@ use resolve/rest_zero
 use resolve/state
 use resolve/top
 use resolve/unused_sweep
+use resolve/value_calls
 use resolve/value_lines
 use resolve/written_nowhere
 use resolved
@@ -95,6 +96,7 @@ function resolve_within(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [
     # Before the sweep, which leaves the cells marked here to the checker
     # (defect 630).
     value_lines.leave_to_the_checker(@r, a, s, decls)
+    value_calls.leave_to_the_checker(@r, a, s, decls)
     unused_sweep.report(@r, s)
     written_nowhere.report(@r, a, s, decls)
 

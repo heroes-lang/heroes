@@ -27,6 +27,7 @@ use parse/fixed_length
 use parse/handle_type
 use parse/line_end
 use parse/swap_reading
+use parse/type_arg
 use parse/unclosed
 use token
 
@@ -213,7 +214,7 @@ function unit_or_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
     close = unclosed.type_closer(@c, text: text, open: at)
     return ast.push_type(
         @a.types,
-        ast.TypeNode(kind: .function_type(params: parts.params, labels: parts.labels, result: parts.result), span: token.Span(start: open.start, end: close.end))
+        ast.TypeNode(kind: .function_type(params: parts.params, labels: parts.labels, modes: parts.modes, result: parts.result), span: token.Span(start: open.start, end: close.end))
     )
 
 # What follows a function type's `function`: its parameters, `->` and its
@@ -221,12 +222,14 @@ function unit_or_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 record FunctionParts
     params: [i64]
     labels: [token.Span]
+    modes: [str]
     result: i64
 
 function function_parts(@c: cursor.Cursor, @a: ast.Ast, text: str) -> FunctionParts
     labels: [token.Span] @= []
+    modes: [str] @= []
     open = c.pos
-    params = function_params(@c, @a, text, @labels)
+    params = function_params(@c, @a, text, @labels, @modes)
     _ = line_end.expect_after(
         @c,
         text: text,
@@ -240,7 +243,7 @@ function function_parts(@c: cursor.Cursor, @a: ast.Ast, text: str) -> FunctionPa
     # there, up to the `)` the lexer pairs with the `(` (defect 197).
     if c.tokens[open].kind == .lparen
         unclosed.recover_past_pair(@c, text, open: open)
-    return FunctionParts(params: params, labels: labels, result: result)
+    return FunctionParts(params: params, labels: labels, modes: modes, result: result)
 
 # `function(i64) -> i64` where a type goes, its parentheses left out: read
 # as the type it means, so the signature goes on to its body (defect 133's
@@ -268,7 +271,7 @@ function bare_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         cursor.say(@c, d)
     return ast.push_type(
         @a.types,
-        ast.TypeNode(kind: .function_type(params: parts.params, labels: parts.labels, result: parts.result), span: span)
+        ast.TypeNode(kind: .function_type(params: parts.params, labels: parts.labels, modes: parts.modes, result: parts.result), span: span)
     )
 
 # The parameter types of a function type, and since defect 026 their NAMES:
@@ -283,7 +286,7 @@ function bare_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
 # `x: i64` arrives as a TYPE followed by a colon, since a bare name is a legal
 # type — so the name is recognised by what follows it rather than by a
 # lookahead, and a name that is not a plain name is refused where it stands.
-function function_params(@c: cursor.Cursor, @a: ast.Ast, text: str, @labels: [token.Span]) -> [i64]
+function function_params(@c: cursor.Cursor, @a: ast.Ast, text: str, @labels: [token.Span], @modes: [str]) -> [i64]
     params: [i64] @= []
     at = c.pos
 
@@ -295,11 +298,17 @@ function function_params(@c: cursor.Cursor, @a: ast.Ast, text: str, @labels: [to
     reading: bool @= !cursor.at(c, .arrow)
 
     while reading
+        # A position's mode as a signature writes it (panel 261): `@` before
+        # it, name included, `lent` after its type, never both (spec § 4).
+        marked = cursor.at(c, .at)
+
+        if marked
+            _ = cursor.bump(@c)
         ty = parse_type(@c, @a, text)
 
         if cursor.at(c, .colon)
             _ = cursor.bump(@c)
-            labels @ labels.push(named_parameter(@c, a, ty))
+            labels @ labels.push(type_arg.named_parameter(@c, a, ty))
             params @ params.push(parse_type(@c, @a, text))
         else
 
@@ -307,6 +316,7 @@ function function_params(@c: cursor.Cursor, @a: ast.Ast, text: str, @labels: [to
             # has to ask which name belongs to which parameter.
             labels @ labels.push(token.Span(start: 0, end: 0))
             params @ params.push(ty)
+        modes @ modes.push(type_arg.mode_after(@c, text, marked: marked))
         cursor.skip_terminators(@c)
 
         if !cursor.eat(@c, .comma)
@@ -328,20 +338,6 @@ function function_params(@c: cursor.Cursor, @a: ast.Ast, text: str, @labels: [to
 
 constant BARE_ARROW: str
     "expected a parameter type or `)`, found `->` — a function type closes its parameters before its `->`, `function() -> i64`: the `)` written past the result goes there"
-
-# The name in `(function(x: i64) -> i64)`, which the loop above read as a type
-# because a bare name is one. Anything else there is not a name at all, and the
-# span is returned either way so the run keeps its positions.
-function named_parameter(@c: cursor.Cursor, a: ast.Ast, name: i64) -> token.Span
-    span = a.types[name].span
-
-    match a.types[name].kind
-        .named => return span
-        .unit | .array_of | .fixed | .map_of | .fallible | .function_type | .error | .thread_of | .mailbox_of =>
-            cursor.say(@c, data_errors.parameter_name_not_a_name(span))
-            return span
-
-    return span
 
 ## Tests — the parser reading real token streams
 

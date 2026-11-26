@@ -5,6 +5,11 @@
 # `lent` parameter takes, since nothing changes, `marker_mismatch`; and `@`
 # beside `lent` on a function of the program hands the place two ways, to
 # change it and to read it, so it is `lent_shape`: write one.
+#
+# Corrected 2026-11-26, panel 261's R1 (provisional, author ratification
+# pending): a function type now carries `lent`, so `doubled` IS a value, of
+# `(function(Pt lent) -> i64)`; handed where `(function(Pt) -> i64)` is asked
+# it is `type_mismatch`, the two types differing in the mark alone.
 
 record Pt
     x: i64
@@ -19,7 +24,7 @@ function apply(f: (function(Pt) -> i64), p: Pt) -> i64
     return f(p)
 
 function main()
-    print(apply(doubled, p: Pt(x: 2)))  #~ lent_parameter_as_value
+    print(apply(doubled, p: Pt(x: 2)))  #~ type_mismatch
     q @= Pt(x: 2)
     q.x @ 3
     print(doubled(@q))  #~ marker_mismatch

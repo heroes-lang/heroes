@@ -73,6 +73,10 @@ variant Ty
         # The parameter names, empty where the type needs none. In the key
         # below, so two orders of one name set are two types.
         labels: Params
+        # Each parameter's mode, `@` or `lent` or `""` by value, and EMPTY where
+        # every position is by value (panel 261), so a type with no mode keeps
+        # its key, its id and its C typedef's name.
+        modes: Params
         result: i64
     # A `record` or `variant`: index into the declarations. Two records
     # with identical fields are DIFFERENT types — Heroes is nominal here,
@@ -135,6 +139,9 @@ record Types
     # and `(i64, str)` are unchanged and their ids do not move.
     labels: [str]
     label_runs: {str: i64}
+    # The modes' runs, the names' shape (panel 261).
+    modes: [str]
+    mode_runs: {str: i64}
 
 # The canonical spelling of a structure — the map key Rust gets from
 # `Ord` on the enum. Injective by construction: every case has its own
@@ -154,7 +161,7 @@ function ty_key(t: Ty) -> str
         .fixed x       => "x:" + x.element.to_str() + ":" + x.length.to_str()
         .map m         => "m:" + m.key.to_str() + ":" + m.value.to_str()
         .fallible o    => "?:" + o.payload.to_str()
-        .function_ty f => "fn:" + f.params.start.to_str() + ":" + f.params.len.to_str() + label_key(f.labels) + ":" + f.result.to_str()
+        .function_ty f => "fn:" + f.params.start.to_str() + ":" + f.params.len.to_str() + label_key(f.labels) + mode_key(f.modes) + ":" + f.result.to_str()
         .named n    => "n:" + n.decl.to_str()
         .case_ty vc => "vc:" + vc.decl.to_str() + ":" + vc.at.to_str()
         .failure    => "fail"
@@ -173,6 +180,14 @@ function label_key(labels: Params) -> str
 
     return ":l" + labels.start.to_str() + ":" + labels.len.to_str()
 
+# The modes' share, empty where every position is by value, `label_key`'s
+# promise; `d` opens it, so it never spells a run of names.
+function mode_key(modes: Params) -> str
+    if modes.len == 0
+        return ""
+
+    return ":d" + modes.start.to_str() + ":" + modes.len.to_str()
+
 # The scalars are interned first, in a fixed order, so their ids are
 # constants the whole pass can name without a lookup — and `error` is
 # **id 0**, which is what lets the expression-type array be dense with a
@@ -185,6 +200,8 @@ function new_types() -> Types
     runs: {str: i64} = {}
     labels: [str] = []
     label_runs: {str: i64} = {}
+    modes: [str] = []
+    mode_runs: {str: i64} = {}
     t: Types @= Types(
         nodes: nodes,
         poison: poison,
@@ -192,7 +209,9 @@ function new_types() -> Types
         index: index,
         runs: runs,
         labels: labels,
-        label_runs: label_runs
+        label_runs: label_runs,
+        modes: modes,
+        mode_runs: mode_runs
     )
     prelude: [Ty] = [.error, .unit, .int_ty(kind: .i64), .float_ty(kind: .f64), .bool, .str, .ptr, .cstr, .failure]
 
@@ -265,15 +284,52 @@ function append_node(@nodes: [Ty], @poison: [bool], ty: Ty, bad: bool)
     nodes @ nodes.push(ty)
     poison @ poison.push(bad)
 
-# Interns a function type, canonicalising its parameter run and its NAME
-# run first (`check/type_runs.hero`, which writes each once and keys it).
-function intern_function(@t: Types, params: [i64], labels: [str], result: i64) -> i64
+# Interns a function type, canonicalising its parameter run, its NAME run
+# and its MODE run first (`check/type_runs.hero`, which writes each once and
+# keys it). A mode run of by-value positions alone is stored empty, so the
+# caller that copies a type's modes and the one that writes none agree.
+function intern_function(@t: Types, params: [i64], labels: [str], modes: [str], result: i64) -> i64
     start = type_runs.id_run(ids: @t.params, @t.runs, run: params)
     label_start = type_runs.name_run(names: @t.labels, @t.label_runs, run: labels)
+    kept: [str] @= []
+
+    if any_mode(modes)
+        kept @ modes
+    mode_start = type_runs.name_run(names: @t.modes, @t.mode_runs, run: kept)
     return intern(
         @t,
-        .function_ty(params: Params(start: start, len: params.len()), labels: Params(start: label_start, len: labels.len()), result: result)
+        .function_ty(params: Params(start: start, len: params.len()), labels: Params(start: label_start, len: labels.len()), modes: Params(start: mode_start, len: kept.len()), result: result)
     )
+
+function any_mode(modes: [str]) -> bool
+    for m in modes
+        if m.len() > 0
+            return true
+
+    return false
+
+# Whether some function type of the program carries `lent` (panel 261).
+function lends_through_a_type(t: Types) -> bool
+    for m in t.modes
+        if m == "lent"
+            return true
+
+    return false
+
+# Each position's mode, `""` for every one where the run is empty; `count`
+# is the type's parameter count.
+function modes_of(t: Types, modes: Params, count: i64) -> [str]
+    out: [str] @= []
+    i: i64 @= 0
+
+    while i < count
+        if i < modes.len
+            out @ out.push(t.modes[modes.start + i])
+        else
+            out @ out.push("")
+        i @ i + 1
+
+    return out
 
 # Whether a structure is already interned, WITHOUT interning it. One
 # caller class: a rule that needs to compare against `[str]` and must not
@@ -428,12 +484,12 @@ test "a function type canonicalises its parameter run"
     one: [i64] = [int_ty_id(t), str_ty(t)]
     two: [i64] = [int_ty_id(t), str_ty(t)]
     none: [str] = []
-    f1 = intern_function(@t, one, none, result: bool_ty(t))
-    f2 = intern_function(@t, two, none, result: bool_ty(t))
+    f1 = intern_function(@t, one, labels: none, modes: [], result: bool_ty(t))
+    f2 = intern_function(@t, two, labels: none, modes: [], result: bool_ty(t))
     assert f1 == f2
 
     # Same parameters, different result: a different type, sharing the run.
-    f3 = intern_function(@t, one, none, result: unit_ty(t))
+    f3 = intern_function(@t, one, labels: none, modes: [], result: unit_ty(t))
     assert f1 != f3
 
     match get(t, f1)
@@ -454,12 +510,12 @@ test "the parameter names are part of a function type's identity"
     forward: [str] = ["from", "to"]
     backward: [str] = ["to", "from"]
     none: [str] = []
-    a = intern_function(@t, both, forward, result: unit_ty(t))
-    b = intern_function(@t, both, backward, result: unit_ty(t))
-    bare = intern_function(@t, both, none, result: unit_ty(t))
+    a = intern_function(@t, both, labels: forward, modes: [], result: unit_ty(t))
+    b = intern_function(@t, both, labels: backward, modes: [], result: unit_ty(t))
+    bare = intern_function(@t, both, labels: none, modes: [], result: unit_ty(t))
     assert a != b
     assert a != bare
-    assert a == intern_function(@t, both, forward, result: unit_ty(t))
+    assert a == intern_function(@t, both, labels: forward, modes: [], result: unit_ty(t))
 
     match get(t, a)
         .function_ty f =>
@@ -467,6 +523,28 @@ test "the parameter names are part of a function type's identity"
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => assert false
         .array | .fixed | .map | .fallible | .named | .case_ty    => assert false
         .failure | .generic | .error | .thread_ty | .mailbox_ty   => assert false
+
+test "a mode is part of a function type's identity, and a type with none keeps its key"
+    # Panel 112's R6, owed where the mode lands (panel 261): two types that
+    # differ in a mode alone intern to two ids, so `content_key`, which hashes
+    # their renderings, names two typedefs; a run of by-value positions is
+    # stored empty, so the key of a type nobody marked is the one it had.
+    t: Types @= new_types()
+    one: [i64] = [int_ty_id(t)]
+    none: [str] = []
+    plain = intern_function(@t, one, labels: none, modes: [], result: unit_ty(t))
+    by_value = intern_function(@t, one, labels: none, modes: [""], result: unit_ty(t))
+    marked = intern_function(@t, one, labels: none, modes: ["@"], result: unit_ty(t))
+    lent = intern_function(@t, one, labels: none, modes: ["lent"], result: unit_ty(t))
+    assert plain == by_value
+    assert marked != plain && lent != plain && marked != lent
+
+    # The marked type's key is the plain one's with the mode run's share,
+    # and the plain one's has none.
+    plain_key = ty_key(get(t, plain))
+    marked_key = ty_key(get(t, marked))
+    assert marked_key.len() > plain_key.len()
+    assert marked_key.slice(from: 0, to: plain_key.len() - 2) == plain_key.slice(from: 0, to: plain_key.len() - 2)
 
 test "contained walks one level down, and poison climbs back up"
     t: Types @= new_types()
@@ -540,9 +618,9 @@ test "each node's poison is written once, beside it, and agrees with the walk"
     none: [str] = []
     by_param: [i64] = [clean, bad]
     by_result: [i64] = [clean]
-    takes = intern_function(@t, by_param, none, result: unit_ty(t))
-    gives = intern_function(@t, by_result, none, result: bad)
-    neither = intern_function(@t, by_result, none, result: clean)
+    takes = intern_function(@t, by_param, labels: none, modes: [], result: unit_ty(t))
+    gives = intern_function(@t, by_result, labels: none, modes: [], result: bad)
+    neither = intern_function(@t, by_result, labels: none, modes: [], result: clean)
     assert poisoned(t, takes) && poisoned(t, gives)
     assert !poisoned(t, neither)
 

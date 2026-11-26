@@ -92,15 +92,16 @@ function render_read(t: table.Types, s: source.Source, decls: [ast.Decl], id: i6
         .function_ty f =>
             rendered: [str] @= []
             names = table.labels_of(t, f.labels)
+            held = table.params_of(t, f.params)
+            modes = table.modes_of(t, f.modes, count: held.len())
             at: i64 @= 0
 
-            for p in table.params_of(t, f.params)
-                one = render_read(t, s, decls, p, generics, reader: reader)
+            for p in held
+                one: str @= render_read(t, s, decls, p, generics, reader: reader)
 
                 if at < names.len() && names[at].len() > 0
-                    rendered @ rendered.push(names[at] + ": " + one)
-                else
-                    rendered @ rendered.push(one)
+                    one @ names[at] + ": " + one
+                rendered @ rendered.push(moded(mode: modes[at], written: one))
                 at @ at + 1
 
             "(function(" + rendered.join(", ") + ") -> " + render_read(t, s, decls, f.result, generics, reader: reader) + ")"
@@ -165,6 +166,16 @@ function module_last_part(path: str) -> str
 function fixture(text: str) -> parse.ParseOutput
     return parse.parse(text)
 
+# A position as a signature writes its mode (panel 261): `@` before it, `lent`
+# after it, nothing by value.
+function moded(mode: str, written: str) -> str
+    if mode == "@"
+        return "@" + written
+
+    if mode == "lent"
+        return written + " lent"
+    return written
+
 test "fixedbugs: a type of another module is written as the reader's file writes it (defect 2205)"
     text = "record Box\n    width: i64\n"
     p = fixture(text)
@@ -199,13 +210,13 @@ test "a function type keeps its mandatory parentheses"
     t: table.Types @= table.new_types()
     ps: [i64] = [table.int_ty_id(t), table.str_ty(t)]
     none: [str] = []
-    f = table.intern_function(@t, ps, none, result: table.bool_ty(t))
+    f = table.intern_function(@t, ps, labels: none, modes: [], result: table.bool_ty(t))
     assert render_ty(t, s, p.decls, f, none) == "(function(i64, str) -> bool)"
 
     # The names are part of the type, so they are part of its one spelling.
     pair: [i64] = [table.str_ty(t), table.str_ty(t)]
     written: [str] = ["code", "msg"]
-    named = table.intern_function(@t, pair, written, result: table.str_ty(t))
+    named = table.intern_function(@t, pair, labels: written, modes: [], result: table.str_ty(t))
     assert render_ty(t, s, p.decls, named, none) == "(function(code: str, msg: str) -> str)"
 
 test "a case prints its variant's dot spelling, a generic its own name"
