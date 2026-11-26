@@ -268,6 +268,15 @@ test "the dump prints a thread's and a mailbox's types and their dotted operatio
     got = dump_ast(parsed.tree, s, parsed.uses, parsed.decls)
     assert got == "file t.hero\n  function f(m: (mailbox str)) -> (thread i64)\n    expr m.send(\"a\").must()\n    return spawn(g, 1).must()\n  function g(n: i64) -> i64\n    return n\n"
 
+test "the dump prints a function type's marks"
+    # Panel 261's form: an `@` before a position and a `lent` after one, which
+    # the formatter's self-check sees only where this printer prints them.
+    text = "function f(h: (function(@i64) -> ()), g: (function(i64 lent) -> ()))\n    _ = h\n    _ = g\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    got = dump_ast(parsed.tree, s, parsed.uses, parsed.decls)
+    assert got == "file t.hero\n  function f(h: (function(@i64) -> ()), g: (function(i64 lent) -> ())) -> ()\n    bind _ = h\n    bind _ = g\n"
+
 # Defect 290: an ESC in each place the dump prints the file's own text, a doc
 # comment, a string literal and a test's title, reaches the terminal by its
 # code, and the guard's dump keeps the byte.

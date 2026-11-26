@@ -1,0 +1,20 @@
+# Part 11's control arm (panel 226's R1) through a function value (panel
+# 261's R7, 2026-11-26): a call that leaves out the `@` its value's type
+# takes. The type decides, as the declaration does by name
+# (`marker_mismatch-missing-at`): the caller's place all the same, and a value
+# that is no place goes through a slot nobody reads. The witness is the
+# sitting compiler-engineer's `c1_control_missing`. Prints 1, then 2.
+record App
+    n: i64
+
+function bump(@a: App)
+    a.n @ a.n + 1
+
+function main()
+    app @= App(n: 0)
+    h: (function(@App) -> ()) = bump
+    h(app)  #~ marker_mismatch
+    print(app.n)
+    h(App(n: 7))  #~ marker_mismatch
+    h(@app)
+    print(app.n)
