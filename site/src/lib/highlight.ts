@@ -506,6 +506,11 @@ export function tokenize(source: string): Token[] {
     // before its `,` or `)`, on the line `function` opens; a parameter named
     // `lent` is followed by `:` and stays a name.
     if (word === 'lent' && lineHead === 'function') return /^ *[,)]/.test(restOfLine(end));
+    // A function type's position lent read-only, `(function(App lent) -> i64)`
+    // (panel 261's `TypeArg`), wherever a type stands: after a type's last
+    // character and one space, before the position's `,` or `)`. Two words
+    // side by side are no expression, so a name `lent` in one stays a name.
+    if (word === 'lent' && /^ *[,)]/.test(restOfLine(end)) && /[A-Za-z0-9_\])?] $/.test(source.slice(Math.max(0, start - 2), start))) return true;
     return inExtern && lineHead === null && !/^ *:/.test(source.slice(end, end + 64));
   };
 

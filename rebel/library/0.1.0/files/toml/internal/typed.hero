@@ -1,7 +1,7 @@
 # A member of a table read by its kind, the readers `toml.text_at`,
-# `int_at`, `bool_at` and `items_at` stand on: the member a key names, the
-# kind a value is named by in a message, and each reader failing with the key
-# and the kind it found.
+# `int_at`, `bool_at` and `items_at` stand on: the member a key names, absent
+# told as `value_at` tells it, the kind a value is named by in a message, and
+# each reader failing with the key and the kind it found.
 
 use toml
 
@@ -13,7 +13,7 @@ function member_of(v: toml.Value, key: str) -> toml.Value?
                 .ok found => return ok(found)
                 .err _ => return fail(
                     code: toml.NOT_FOUND,
-                    msg: f"no key \"{key}\" in a table holding {keys_named(keys(t.members))}"
+                    msg: f"no key \"{key}\""
                 )
         .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ =>
             return fail(code: toml.INVALID, msg: f"expected a table, found {kind_named(v)}")
@@ -31,21 +31,6 @@ function kind_named(v: toml.Value) -> str
         .local_time _      => "a local time"
         .array _           => "an array"
         .table _           => "a table"
-
-# The keys `names` for a message: `no keys`, or up to eight of them quoted and
-# how many more there are.
-function keys_named(names: [str]) -> str
-    if names.len() == 0
-        return "no keys"
-    shown: [str] @= []
-
-    for name in names
-        if shown.len() < 8
-            shown @ shown.push(f"\"{name}\"")
-
-    if names.len() > 8
-        return f"the keys {shown.join(", ")} and {names.len() - 8} more"
-    return f"the keys {shown.join(", ")}"
 
 # The failure of a member `key` that is `found` where `expected` was asked.
 function wrong_kind<T>(key: str, expected: str, found: toml.Value) -> T?
@@ -87,23 +72,19 @@ function items_at(v: toml.Value, key: str) -> [toml.Value]?
         .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .table _ =>
             return wrong_kind(key: key, expected: "an array", found: found)
 
-test "member_of: a key held, one absent with the keys named, more than eight keys, and not a table"
+test "member_of: a key held, one absent named as `value_at` names it, an empty table, and not a table"
     doc = toml.parse("a = 1\nb = \"x\"").must()
     assert member_of(doc, key: "a").must() == .integer(v: 1)
 
     match member_of(doc, key: "c")
         .ok _  => assert false
-        .err e => assert e.code == "not_found" && e.msg == "no key \"c\" in a table holding the keys \"a\", \"b\""
+        .err e => assert e.code == "not_found" && e.msg == "no key \"c\""
 
-    match member_of(toml.parse("").must(), key: "c")
+    match toml.value_at(doc, path: ["c"])
         .ok _  => assert false
-        .err e => assert e.msg == "no key \"c\" in a table holding no keys"
+        .err e => assert e.msg == "no key \"c\""
 
-    many = toml.parse("a=1\nb=1\nc=1\nd=1\ne=1\nf=1\ng=1\nh=1\ni=1\nj=1").must()
-
-    match member_of(many, key: "z")
-        .ok _  => assert false
-        .err e => assert e.msg == "no key \"z\" in a table holding the keys \"a\", \"b\", \"c\", \"d\", \"e\", \"f\", \"g\", \"h\" and 2 more"
+    assert member_of(toml.parse("").must(), key: "c").is_err()
 
     match member_of(.array(items: []), key: "a")
         .ok _  => assert false

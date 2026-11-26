@@ -187,7 +187,7 @@ capability toml/typed-member  a member of a table read as a text, an integer, a 
   go      -
   rust    -
   python  -
-  note    the member by its key, `not_found` with the keys the table holds where it is absent, `invalid` with the key and the kind found where it is of another kind, `the member "port": expected an integer, found a float`, as `json.text_at` reads an object's; an integer is never read from a float, nor a float from an integer, TOML keeping the two apart; Python indexes a dict and Go's TOML packages, none of its standard library, fill a struct by reflection
+  note    the member by its key, `not_found` naming the key where it is absent, as `value_at` names it, `invalid` with the key and the kind found where it is of another kind, `the member "port": expected an integer, found a float`, as `json.text_at` reads an object's; an integer is never read from a float, nor a float from an integer, TOML keeping the two apart; Python indexes a dict and Go's TOML packages, none of its standard library, fill a struct by reflection
 
 capability toml/write  a tree of values written as TOML text that reads back as the same tree
   heroes  toml.format
