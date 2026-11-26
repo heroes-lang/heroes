@@ -66,14 +66,11 @@ function judge_name(@c: cursor.Cursor, text: str, span: token.Span, what: str)
     if !said.is_err()
         cursor.say(@c, said.must())
 
-# `layer` right after the header (panel 260): the group says its header is,
-# or reaches, the platform layer's, so the program's link carries the layer
-# (`cli/layer_reach.hero`). One word with no string, matched by text as
-# `link` is, so a program may still name anything `layer`; it stands before
-# `link` or `pkgconfig`, which a group whose own header reaches the layer
-# beside a library of its own still writes. Where it is not the next word
-# nothing is taken, and `check/layer_header.hero` and the build's walk
-# (`cli/layer_bound.hero`) say where it was owed.
+# `layer` right after the header and before `link` or `pkgconfig` (panel
+# 260): the group binds the platform layer, so the program's link carries it.
+# Matched by text as `link` is, so a program may still name anything `layer`;
+# where it is owed and absent, `cli/layer_said.hero` and
+# `cli/layer_bound.hero` say so.
 function layer_word(@c: cursor.Cursor, text: str) -> token.Span?
     if !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != keywords.WORD_LAYER
         return fail(code: "absent", msg: "no layer word")

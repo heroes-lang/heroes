@@ -38,6 +38,7 @@ use diag
 use emit/c_words
 use emit/externs as emit_externs
 use module/reading
+use parse
 use source
 use token
 
@@ -52,6 +53,10 @@ record Reach
 
 # Each group of `decls` whose header is one of `headers`, its reach read from
 # the walk's `edges` and `roots` into `reaches`, by its string's first byte.
+# A header the walk found as no file is judged by nothing here: what it
+# binds is unread, and the build tells the header missing (`Hero_Time.h` on
+# a file system that keeps case, where it was told a binding through a file
+# that is not there, lane land260's Linux arm64 run).
 function reach_each(s: source.Source, decls: [ast.Decl], headers: [str], edges: {str: [str]}, roots: {i64: str}, runtime: str, files: [str], @reaches: {i64: Reach})
     for decl in decls
         head = layer_header.head_of(decl)
@@ -60,7 +65,7 @@ function reach_each(s: source.Source, decls: [ast.Decl], headers: [str], edges: 
             continue
         at = index_of(headers, name: emit_externs.unquoted(s, span: head.header.must()))
 
-        if at >= 0
+        if at >= 0 && roots[at].default("").len() > 0
             reaches[head.header.must().start] @ reach_of(
                 edges: edges,
                 root: roots[at].default(""),
@@ -353,6 +358,40 @@ test "a reach is the first layer file met, the header itself or one it includes 
     assert reach_of(edges: edges, root: "vend.h", runtime: "rt", files: files).file == ""
     assert reach_of(edges: edges, root: "rt/HERO_TIME.h", runtime: "rt", files: files).folded
     assert reach_of(edges: edges, root: "", runtime: "rt", files: files).file == ""
+
+# A header the walk found as no file leaves its group unjudged, so the build
+# tells it missing rather than a binding through it (lane land260).
+test "a group whose header the walk found nowhere has no reach to be judged by (panel 260)"
+    text = "extern \"Hero_Time.h\" layer\n    function hero_time_monotonic_ns() -> i64\n"
+    s = source.new_source(name: "main.hero", text: text)
+    decls = parse.parse(text).decls
+    reaches: {i64: Reach} @= {}
+    edges: {str: [str]} = {}
+    unfound: {i64: str} = {}
+    reach_each(
+        s,
+        decls,
+        headers: ["Hero_Time.h"],
+        edges: edges,
+        roots: unfound,
+        runtime: "rt",
+        files: ["hero_time.h"],
+        reaches: @reaches
+    )
+    assert keys(reaches).len() == 0
+    found: {i64: str} @= {}
+    found[0] @ "rt/hero_time.h"
+    reach_each(
+        s,
+        decls,
+        headers: ["Hero_Time.h"],
+        edges: edges,
+        roots: found,
+        runtime: "rt",
+        files: ["hero_time.h"],
+        reaches: @reaches
+    )
+    assert keys(reaches).len() == 1
 
 test "a name the layer's headers declare is found with its header, and one of the runtime's own is not (panel 260)"
     t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
