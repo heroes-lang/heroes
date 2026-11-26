@@ -1,0 +1,96 @@
+# Names and the clients that hold each: the channels and the patterns
+# clients subscribe to, and the keys they `WATCH`. A name with no client
+# left is taken out, so `PUBSUB CHANNELS` names only live channels and the
+# registry never outgrows what is in use; it stands in
+# `containers/indexed`'s map, since the language's own map takes nothing out
+# in place.
+
+use <rebel>/containers/indexed
+
+# A registry. Made by `new`.
+record Registry
+    # The map's shape.
+    shape: indexed.Indexed
+    # The names.
+    names: [[u8]]
+    # The ids of the clients holding each name, at its position.
+    holders: [[i64]]
+    # The map's lookup of positions.
+    lookup: {[u8]: i64}
+
+# An empty registry.
+function new() -> Registry
+    return Registry(shape: indexed.new(), names: [], holders: [], lookup: {})
+
+# How many names have a holder.
+#
+# - `r`: the registry.
+function size(r: Registry lent) -> i64
+    return indexed.size(r.shape)
+
+# The ids of the clients holding `name`, none where nobody does.
+#
+# - `r`: the registry.
+# - `name`: the name.
+function holders_of(r: Registry lent, name: [u8]) -> [i64]
+    return indexed.get(r.shape, value_list: r.holders, lookup: r.lookup, key: name).default([])
+
+# Adds the client `id` to `name`'s holders; answers whether it was not
+# among them.
+#
+# - `r`: the registry.
+# - `name`: the name.
+# - `id`: the client.
+function add(@r: Registry, name: [u8], id: i64) -> bool
+    held @= holders_of(r, name: name)
+
+    for h in held
+        if h == id
+            return false
+
+    held @ held.push(id)
+    _ = indexed.put(@r.shape, @r.names, @r.holders, @r.lookup, key: name, value: held)
+    return true
+
+# Takes the client `id` from `name`'s holders, and the name out where none
+# is left; answers whether it was among them.
+#
+# - `r`: the registry.
+# - `name`: the name.
+# - `id`: the client.
+function remove(@r: Registry, name: [u8], id: i64) -> bool
+    held = holders_of(r, name: name)
+    kept: [i64] @= []
+
+    for h in held
+        if h != id
+            kept @ kept.push(h)
+
+    if kept.len() == held.len()
+        return false
+
+    if kept.len() == 0
+        _ = indexed.swap_remove(@r.shape, @r.names, @r.holders, @r.lookup, key: name).is_err()
+    else
+        _ = indexed.put(@r.shape, @r.names, @r.holders, @r.lookup, key: name, value: kept)
+    return true
+
+# Every name with a holder, in the order they were first added.
+#
+# - `r`: the registry.
+function names_of(r: Registry lent) -> [[u8]]
+    return indexed.keys_in_order(r.shape, key_list: r.names)
+
+test "add and remove: holders added once, a name gone with its last holder"
+    r @= new()
+    assert add(@r, name: [97], id: 1)
+    assert !add(@r, name: [97], id: 1)
+    assert add(@r, name: [97], id: 2)
+    assert holders_of(r, name: [97]) == [1, 2]
+    assert remove(@r, name: [97], id: 1)
+    assert !remove(@r, name: [97], id: 1)
+    assert size(r) == 1
+    assert remove(@r, name: [97], id: 2)
+    assert size(r) == 0
+    assert holders_of(r, name: [97]).len() == 0
+    assert !remove(@r, name: [98], id: 1)

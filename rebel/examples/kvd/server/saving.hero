@@ -1,0 +1,187 @@
+# Persistence as the server runs it: the keyspace loaded at start from the
+# snapshot and the log's parts after it; `SAVE`, a snapshot written while
+# every client waits; `BGSAVE` and `BGREWRITEAOF`, the same written on a
+# thread of its own while the server goes on; `LASTSAVE`.
+#
+# A background save is handed a copy of the keyspace, as every value
+# crosses to a thread (spec § 11), which is what Redis's `fork` gives its
+# child: the keyspace as it stood, while the server goes on changing its
+# own. The thread answers on a mailbox the poll set waits on beside the
+# connections, so the server learns it is done without waiting for it.
+#
+# Every save first begins the log's next part, then writes the snapshot
+# that names it, then removes the parts before it: a crash between any two
+# of the three still loads every change exactly once (`persist/aof`).
+
+use <rebel>/fs
+
+use persist/aof
+use persist/snapshot
+use server/clock
+use server/state
+use store/keyspace
+
+# A background save's work: a copy of the keyspace, and where it goes.
+record Job
+    # The keyspace as it stood when the save began.
+    db: keyspace.Db
+    # The log's generation that follows the snapshot.
+    generation: i64
+    # The snapshot's path.
+    target: str
+    # The time the save began; keys expired at it are left out.
+    now: i64
+    # Where the thread answers.
+    done: (mailbox state.Saved)
+
+# The thread of a background save: writes the snapshot and answers.
+#
+# - `job`: the work.
+function save_in_background(job: Job) -> i64
+    data = snapshot.encode(job.db, generation: job.generation, now: job.now)
+
+    outcome = match fs.write_atomic_bytes(job.target, data: data)
+        .ok _  => state.Saved(written: true, why: "", size: data.len())
+        .err e => state.Saved(written: false, why: e.msg, size: 0)
+
+    match job.done.send(outcome)
+        .ok _  => return 0
+        .err _ => return 1
+
+# `SAVE`: the snapshot written now.
+#
+# - `s`: the server.
+#
+# Fails `exists` where a background save runs, and as `aof.next_part` and
+# `fs.write_atomic_bytes` fail.
+function save_now(@s: state.State) -> ()?
+    if s.saving.running
+        return fail(code: "exists", msg: "Background save already in progress")
+    aof.next_part(@s.log)?
+    now = clock.now(@s.clock)
+    data = snapshot.encode(s.db, generation: s.log.generation, now: now)
+    fs.write_atomic_bytes(aof.snapshot_path(s.config.dir), data: data)?
+    aof.remove_before(s.config.dir, generation: s.log.generation)
+    s.last_save_ms @ now
+    s.last_save_ok @ true
+    s.changes @ 0
+    return ok()
+
+# `BGSAVE` and `BGREWRITEAOF`: a snapshot begun on a thread of its own.
+#
+# - `s`: the server.
+#
+# Fails `exists` where one runs already, `limit` where no thread can be
+# had, and as `aof.next_part` fails.
+function save_later(@s: state.State) -> ()?
+    if s.saving.running
+        return fail(code: "exists", msg: "Background save already in progress")
+    aof.next_part(@s.log)?
+    job = Job(
+        db: s.db,
+        generation: s.log.generation,
+        target: aof.snapshot_path(s.config.dir),
+        now: clock.now(@s.clock),
+        done: s.saved
+    )
+    saver = spawn(save_in_background, job)?
+    s.savers @ s.savers.push(saver)
+    s.saving @ state.Saving(running: true, generation: s.log.generation, changes: s.changes)
+    return ok()
+
+# What the background save answered, taken from its mailbox where it is
+# there: the thread waited for, the parts before its snapshot removed
+# where it was written.
+#
+# - `s`: the server.
+function save_finished(@s: state.State)
+    match s.saved.receive(within_ms: 0)
+        .ok outcome => take_outcome(@s, outcome: outcome)
+        .err _      => _ = 0
+
+# Ends the background save that answered `outcome`.
+#
+# - `s`: the server.
+# - `outcome`: what it answered.
+function take_outcome(@s: state.State, outcome: state.Saved)
+    wait_savers(@s)
+    s.saving.running @ false
+
+    if outcome.written
+        aof.remove_before(s.config.dir, generation: s.saving.generation)
+        s.last_save_ms @ clock.now(@s.clock)
+        s.last_save_ok @ true
+        s.changes @ s.changes - s.saving.changes
+        state.say(@s, line: f"background saving terminated with success, {outcome.size} bytes")
+    else
+        s.last_save_ok @ false
+        state.say(@s, line: f"background saving failed: {outcome.why}")
+
+# Waits for every background save's thread.
+#
+# - `s`: the server.
+function wait_savers(@s: state.State)
+    for t in s.savers
+        _ = t.wait()
+
+    s.savers @ []
+
+# Waits for a background save that runs, and takes its answer.
+#
+# - `s`: the server.
+function finish_saving(@s: state.State)
+    while s.saving.running
+        match s.saved.receive(within_ms: 1000)
+            .ok outcome => take_outcome(@s, outcome: outcome)
+            .err e =>
+                if e.code != "timeout"
+                    wait_savers(@s)
+                    s.saving.running @ false
+
+# `n` and `what`, with an `s` where `n` is not 1.
+#
+# - `n`: the count.
+# - `what`: the noun.
+function counted(n: i64, what: str) -> str
+    if n == 1
+        return f"1 {what}"
+    return f"{n} {what}s"
+
+# Loads the keyspace from the data folder: the snapshot, then the log's
+# parts after it, the bytes of a last part cut by a crash cut off the file
+# too; then opens the log to go on writing where it ends.
+#
+# - `s`: the server.
+#
+# Fails `invalid` where the snapshot or the log is damaged, as
+# `snapshot.decode` and `aof.replay` say, and as `fs` fails.
+function load(@s: state.State) -> ()?
+    dir = s.config.dir
+    generation @= 0
+    s.last_save_ms @ clock.now(@s.clock)
+
+    if fs.exists(aof.snapshot_path(dir)).default(false)
+        loaded = snapshot.decode(fs.read_bytes(aof.snapshot_path(dir))?)?
+        s.db @ loaded.db
+        generation @ loaded.generation
+        state.say(@s, line: f"loaded {loaded.count} keys from the snapshot")
+
+    if !s.config.appendonly
+        s.log @ aof.off(dir, generation: generation)
+        return ok()
+    found = aof.replay(@s.db, dir: dir, generation: generation)?
+
+    if found.parts > 0
+        state.say(
+            @s,
+            line: f"replayed {counted(found.commands, what: "command")} from {counted(found.parts, what: "part")} of the append-only file"
+        )
+
+    if found.refused > 0
+        state.say(@s, line: f"{counted(found.refused, what: "command")} of the log answered an error as it ran")
+
+    if found.dropped > 0
+        fs.truncate(aof.path_of(dir, generation: found.generation), length: found.kept)?
+        state.say(@s, line: f"the log's last part ended inside a command: {found.dropped} bytes cut off")
+    s.log @ aof.begin(dir: dir, generation: found.generation, fsync: s.config.fsync)?
+    return ok()

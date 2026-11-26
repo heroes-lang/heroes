@@ -1,0 +1,215 @@
+# `kvd cli`, a client in `redis-cli`'s shape, over Rebel's Redis client:
+# one command given as the program's arguments; a script, a file of command
+# lines run one after another; a pipeline, the lines of the standard input
+# sent in one write and their replies read after (`redis.pipeline`); and,
+# where the standard input is a terminal, a prompt read line by line. A
+# line is cut into words by Redis's own rules (`protocol/split`), so quotes
+# and `\x` escapes work as in `redis-cli`. `SUBSCRIBE` and `PSUBSCRIBE`
+# wait for messages and write each until the connection ends.
+
+use <rebel>/bytes
+use <rebel>/io
+use <rebel>/redis
+use <rebel>/strings
+
+use cli/render
+use protocol/split
+use protocol/words
+
+# Where the client connects and how.
+record Target
+    # The server's host.
+    host: str
+    # Its port.
+    port: i64
+    # The password, "" for none.
+    password: str
+
+# A connection to `target`, plain and in RESP2, as kvd speaks.
+#
+# - `target`: where.
+#
+# Fails as `redis.connect` fails.
+function connect(target: Target) -> redis.Client?
+    opts @= redis.options(target.host)
+    opts.port @ target.port
+    opts.password @ target.password
+    opts.protocol @ 2
+    opts.security @ .plain
+    return redis.connect(opts)
+
+# The text written for the reply to `argv`: `INFO`'s raw, every other
+# reply as `redis-cli` writes it.
+#
+# - `argv`: the command sent.
+# - `r`: its reply.
+function shown(argv: [[u8]], r: redis.Reply) -> str
+    if words.upper(argv[0]) == "INFO"
+        return render.render_raw(r)
+    return render.render(r)
+
+# Runs `argv` over `c` and answers what to write: the reply, or the
+# messages of a subscription once confirmed, as `redis-cli` writes them.
+#
+# - `c`: the connection.
+# - `argv`: the command's words.
+#
+# Fails as `redis.send` and `redis.read_reply` fail, the connection lost.
+function run_one(@c: redis.Client, argv: [[u8]]) -> str?
+    name = words.upper(argv[0])
+
+    if name == "SUBSCRIBE" || name == "PSUBSCRIBE"
+        targets: [str] @= []
+
+        for a in argv.slice(from: 1, to: argv.len())
+            targets @ targets.push(bytes.to_text_lossy(a))
+
+        if name == "SUBSCRIBE"
+            redis.subscribe(@c, channels: targets)?
+        else
+            redis.psubscribe(@c, patterns: targets)?
+        print("Reading messages... (press Ctrl-C to quit)")
+
+        while true
+            m = redis.receive(@c)?
+
+            if m.kind == "pmessage"
+                print(
+                    render.render(.array(items: [.bulk(v: bytes.from_text(m.kind)), .bulk(v: bytes.from_text(m.pattern)), .bulk(v: bytes.from_text(m.channel)), .bulk(v: m.payload)]))
+                )
+            else
+                print(
+                    render.render(.array(items: [.bulk(v: bytes.from_text(m.kind)), .bulk(v: bytes.from_text(m.channel)), .bulk(v: m.payload)]))
+                )
+    redis.send(@c, words: argv)?
+    return ok(shown(argv, r: redis.read_reply(@c)?))
+
+# Runs the one command `command`, the program's own arguments, and writes
+# its reply.
+#
+# - `c`: the connection.
+# - `command`: the words, each sent as it is.
+#
+# Fails as `run_one` fails.
+function run_words(@c: redis.Client, command: [str]) -> ()?
+    argv: [[u8]] @= []
+
+    for word in command
+        argv @ argv.push(bytes.from_text(word))
+
+    print(run_one(@c, argv: argv)?)
+    return ok()
+
+# Runs every line of `lines` in order, writing each reply; a line that is
+# empty or opens with `#` is passed over, one whose quotes do not close is
+# told and passed over.
+#
+# - `c`: the connection.
+# - `lines`: the command lines.
+#
+# Fails as `run_one` fails.
+function run_lines(@c: redis.Client, lines: [str]) -> ()?
+    for line in lines
+        match split.words_of_text(line)
+            .ok argv =>
+                if argv.len() > 0 && argv[0][0] != '#'
+                    print(run_one(@c, argv: argv)?)
+            .err e => print(f"(error) {e.msg}")
+
+    return ok()
+
+# The lines of the standard input, to its end.
+#
+# Fails `not_text` where a line is not UTF-8.
+function stdin_lines() -> [str]?
+    r @= io.reader(io.stdin())
+    return io.read_lines(@r)
+
+# Sends every line of the standard input in one write and writes the
+# replies in order: `redis-cli --pipe`'s purpose, its replies shown.
+#
+# - `c`: the connection.
+#
+# Fails as `redis.pipeline` fails.
+function pipeline(@c: redis.Client) -> ()?
+    commands: [[str]] @= []
+    sent: [[[u8]]] @= []
+
+    for line in stdin_lines()?
+        match split.words_of_text(line)
+            .ok argv =>
+                if argv.len() > 0
+                    texts: [str] @= []
+
+                    for a in argv
+                        texts @ texts.push(bytes.to_text_lossy(a))
+
+                    commands @ commands.push(texts)
+                    sent @ sent.push(argv)
+            .err e => print(f"(error) {e.msg}")
+
+    replies = redis.pipeline(@c, commands: commands)?
+
+    for i in range(from: 0, to: replies.len())
+        print(shown(sent[i], r: replies[i]))
+
+    print(f"All data transferred. Replies received: {replies.len()}.")
+    return ok()
+
+# Reads a line at a time from the standard input and runs it, with a
+# prompt where the input is a terminal, until the input ends or `quit`.
+#
+# - `c`: the connection.
+# - `target`: where it is connected, for the prompt.
+#
+# Fails as `run_one` fails.
+function prompt(@c: redis.Client, target: Target) -> ()?
+    terminal = io.is_terminal(io.stdin()).default(false)
+    r @= io.reader(io.stdin())
+
+    while true
+        if terminal
+            _ = io.write_text(io.stdout(), text: f"{target.host}:{target.port}> ").is_err()
+        line = io.read_line_with_end(@r)?
+
+        if line == ""
+            return ok()
+
+        match split.words_of_text(line)
+            .ok argv =>
+                if argv.len() > 0
+                    if words.upper(argv[0]) == "QUIT" || words.upper(argv[0]) == "EXIT"
+                        return ok()
+                    print(run_one(@c, argv: argv)?)
+            .err e => print(f"(error) {e.msg}")
+
+# Runs the client: one command where `command` holds one, else the script
+# at `script` where it is not "", else a pipeline where `piped`, else the
+# prompt.
+#
+# - `target`: where to connect.
+# - `command`: the words of one command, or none.
+# - `script`: a file of command lines, or "".
+# - `piped`: whether the standard input is sent as one pipeline.
+#
+# Fails as `connect`, `fs.read_file` and the modes fail.
+function run(target: Target, command: [str], script: str, piped: bool) -> ()?
+    c @= connect(target)?
+
+    outcome: ()? = if command.len() > 0
+        run_words(@c, command: command)
+    else if script != ""
+        match read_file(script)
+            .ok text => run_lines(@c, lines: strings.split(s: text, sep: "\n"))
+            .err e   => fail(code: e.code, msg: e.msg)
+    else if piped
+        pipeline(@c)
+    else
+        prompt(@c, target: target)
+    _ = redis.close(@c).is_err()
+    return outcome
+
+test "shown: INFO's text raw, every other reply as redis-cli writes it"
+    info: redis.Reply = .bulk(v: bytes.from_text("# Stats\r\na:1\r\n"))
+    assert shown([bytes.from_text("info")], r: info) == "# Stats\na:1"
+    assert shown([bytes.from_text("GET")], r: info) == "\"# Stats\\r\\na:1\\r\\n\""

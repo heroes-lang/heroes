@@ -1,0 +1,137 @@
+# `INFO [section ...]`: what the server reports of itself, in Redis's
+# form, a `# Section` line then `field:value` lines, each ended by a
+# carriage return and a line feed. The sections are `server`, `clients`,
+# `persistence`, `stats` and `keyspace`, named in any case; `INFO` alone,
+# `all`, `default` and `everything` name every one, and an unknown name is
+# passed over, as Redis passes it.
+
+use <rebel>/containers/indexed
+
+use protocol/words
+use server/clock
+use server/registry
+use server/state
+use store/keyspace
+
+# The sections in the order they are written, in capitals.
+function sections() -> [str]
+    return ["SERVER", "CLIENTS", "PERSISTENCE", "STATS", "KEYSPACE"]
+
+# `1` or `0` for `b`.
+#
+# - `b`: the truth.
+function flag(b: bool) -> str
+    if b
+        return "1"
+    return "0"
+
+# `ok` or `err` for `b`.
+#
+# - `b`: whether the last attempt succeeded.
+function status(b: bool) -> str
+    if b
+        return "ok"
+    return "err"
+
+# The lines of `section`, its title first.
+#
+# - `s`: the server.
+# - `section`: its name in capitals.
+# - `now`: the time.
+function lines_of(s: state.State lent, section: str, now: i64) -> [str]
+    clock_kind = if s.clock.manual
+        "manual"
+    else
+        "system"
+
+    return match section
+        "SERVER" =>
+            [
+                "# Server"
+                "kvd_version:0.1.0"
+                "redis_mode:standalone"
+                "multiplexing_api:poll"
+                f"tcp_port:{s.listener.address.port}"
+                f"uptime_in_seconds:{(now - s.started_ms) / 1000}"
+                f"hz:{s.config.hz}"
+                f"clock:{clock_kind}"
+            ]
+        "CLIENTS" => [
+            "# Clients"
+            f"connected_clients:{indexed.size(s.clients_shape)}"
+            f"maxclients:{s.config.most_clients}"
+        ]
+        "PERSISTENCE" =>
+            [
+                "# Persistence"
+                "loading:0"
+                f"rdb_changes_since_last_save:{s.changes}"
+                f"rdb_bgsave_in_progress:{flag(s.saving.running)}"
+                f"rdb_last_save_time:{s.last_save_ms / 1000}"
+                f"rdb_last_bgsave_status:{status(s.last_save_ok)}"
+                f"aof_enabled:{flag(s.config.appendonly)}"
+                f"aof_current_generation:{s.log.generation}"
+                f"aof_current_size:{s.log.size}"
+                f"aof_last_write_status:{status(s.log.last_error == "")}"
+            ]
+        "STATS" =>
+            [
+                "# Stats"
+                f"total_connections_received:{s.stats.connections}"
+                f"total_commands_processed:{s.stats.commands}"
+                f"rejected_connections:{s.stats.rejected}"
+                f"expired_keys:{s.db.expired}"
+                f"keyspace_hits:{s.db.hits}"
+                f"keyspace_misses:{s.db.misses}"
+                f"pubsub_channels:{registry.size(s.channels)}"
+                f"pubsub_patterns:{registry.size(s.patterns)}"
+                f"pubsub_messages_delivered:{s.stats.messages}"
+            ]
+        _ =>
+            if keyspace.size(s.db) == 0
+                ["# Keyspace"]
+            else
+                ["# Keyspace", f"db0:keys={keyspace.size(s.db)},expires={keyspace.volatile_count(s.db)},avg_ttl=0"]
+
+# Whether `argv` names `section`, or every section.
+#
+# - `argv`: the command's words, its name first.
+# - `section`: a section's name in capitals.
+function is_asked(argv: [[u8]], section: str) -> bool
+    if argv.len() == 1
+        return true
+
+    for word in argv.slice(from: 1, to: argv.len())
+        name = words.upper(word)
+
+        if name == section || name == "ALL" || name == "DEFAULT" || name == "EVERYTHING"
+            return true
+
+    return false
+
+# The text `INFO` answers for `argv`'s sections.
+#
+# - `s`: the server.
+# - `argv`: the command's words, its name first.
+function text(@s: state.State, argv: [[u8]]) -> str
+    now = clock.now(@s.clock)
+    out: [str] @= []
+
+    for section in sections()
+        if is_asked(argv, section: section)
+            if out.len() > 0
+                out @ out.push("")
+
+            for line in lines_of(s, section: section, now: now)
+                out @ out.push(line)
+
+    if out.len() == 0
+        return ""
+    return out.join("\r\n") + "\r\n"
+
+test "is_asked: none named, one named in any case, all, and an unknown name"
+    assert is_asked([[73]], section: "STATS")
+    assert is_asked([[73], [115, 116, 97, 116, 115]], section: "STATS")
+    assert !is_asked([[73], [115, 116, 97, 116, 115]], section: "SERVER")
+    assert is_asked([[73], [97, 108, 108]], section: "KEYSPACE")
+    assert !is_asked([[73], [120]], section: "KEYSPACE")
