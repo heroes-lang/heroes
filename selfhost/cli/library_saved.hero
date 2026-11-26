@@ -164,6 +164,8 @@ function read_words(said: str) -> {str: bool}
         else if line == MARK
             past @ true
 
+    # ORDER: none — each word sets one key to true, which every order leaves
+    # the same.
     for word in keys(c_words.code_words(after.join("\n"), reserved: false))
         out[word] @ true
 
