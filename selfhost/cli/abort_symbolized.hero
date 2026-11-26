@@ -23,16 +23,41 @@
 #   whose PDB is the one it names;
 # - `llvm-symbolizer --inlines --relativenames`, the file as the `#line`
 #   named it, relative to the compile's folder; per address a function line
-#   and a `<file>:<line>:<column>` line per level, and a blank line;
-# - `addr2line -f -i -a`, binutils', where no LLVM tool is: per address its
-#   `0x...` line, then a function line and a `<file>:<line>` line per level,
-#   the compile's folder before the file.
+#   and a `<file>:<line>:<column>` line per level, and a blank line. **The one
+#   beside the clang that compiled the binary first**, by the path clang
+#   answers (`clang_asked.tool_beside`), so the line tables are read by the
+#   toolchain that wrote them, then the one `PATH` names: in the Linux arm64
+#   image clang answers `/usr/lib/llvm-22/bin/llvm-symbolizer`, a file of
+#   Debian's package `llvm-22`, which `clang-22` recommends and does not
+#   depend on, and no package there holds a bare `llvm-symbolizer` on `PATH`
+#   (`dpkg -S`, `dpkg -s`, 2026-11-25); the CI's Linux legs install `clang
+#   lldb ...` (`.github/workflows/ci.yml`), and what stands on their `PATH`
+#   is unread.
+#
+# **Never binutils' `addr2line`**, which this file asked last until
+# 2026-11-25 (defect d-abort-trace-1). Measured in the Linux arm64 image (GNU
+# addr2line 2.44, clang 22.1.8): asked eight addresses inside inlined calls
+# whose code a DWARF 5 range list holds, it read the inlined levels of one
+# and none of the other seven (every one read by `llvm-symbolizer`), and it
+# answers such an address's innermost line under the frame's own function, a
+# line that function does not hold. At `-O2`, `pick` and `middle` inlined into `outer` were `outer`
+# at `pick`'s line 11, and `middle` inlined into `main` was `main` at
+# `middle`'s line 17, where `llvm-symbolizer` read three levels and two from
+# the same binaries; the unit compiled again with `-gdwarf-4`, addr2line read
+# all three. Its answer has a place at every level, so nothing here could tell
+# it from a true one, and it was told: with `llvm-symbolizer` taken off
+# `PATH`, `run/abort-calls-three-deep` and `-while-another-thread-holds-the-
+# loader` at `-O2` and `-through-a-callback-from-c` under `--sanitize` said
+# what the CI's Linux legs said of them on 2026-11-25 (run 45654270318).
 #
 # A level a symbolizer cannot place, `??`, a line 0, or atos's `+ <offset>`,
 # has no place, and an answer holding one is not read: the runtime's own
-# lines are told instead, so a line is never a guess.
+# lines are told instead, so a line is never a guess; and so are they where
+# no symbolizer above answers, each call by the file's address and the name
+# the runtime read, which says every frame the walk saw and no inlined call.
 
 use bytes
+use cli/clang_asked
 use cli/process
 use cli/strings
 use module/listing
@@ -72,27 +97,30 @@ function resolved(binary: str, addresses: [str], scratch: str) -> [[Level]]?
 
         if complete(read, count: addresses.len())
             return ok(read)
-    llvm = asked(
-        words: strings.with_all(list: ["llvm-symbolizer", "--inlines", "--relativenames", "--functions=linkage", "--obj=" + binary], more: addresses),
-        scratch: scratch
-    )
 
-    if !llvm.is_err()
-        read = llvm_levels(llvm.must())
+    for program in llvm_symbolizers(clang_asked.tool_beside(name: LLVM_SYMBOLIZER, err_path: scratch + ".clang"))
+        llvm = asked(
+            words: strings.with_all(list: [program, "--inlines", "--relativenames", "--functions=linkage", "--obj=" + binary], more: addresses),
+            scratch: scratch
+        )
 
-        if complete(read, count: addresses.len())
-            return ok(read)
-    gnu = asked(
-        words: strings.with_all(list: ["addr2line", "-f", "-i", "-a", "-e", binary], more: addresses),
-        scratch: scratch
-    )
+        if !llvm.is_err()
+            read = llvm_levels(llvm.must())
 
-    if !gnu.is_err()
-        read = addr2line_levels(gnu.must())
+            if complete(read, count: addresses.len())
+                return ok(read)
 
-        if complete(read, count: addresses.len())
-            return ok(read)
     return fail(code: "unresolved", msg: "no symbolizer answered every address")
+
+constant LLVM_SYMBOLIZER: str
+    "llvm-symbolizer"
+
+# The LLVM symbolizers asked, in order: the one clang named beside itself,
+# where it named one, then the bare name, which `PATH` may answer.
+function llvm_symbolizers(beside: str) -> [str]
+    if beside.len() == 0 || beside == LLVM_SYMBOLIZER
+        return [LLVM_SYMBOLIZER]
+    return [beside, LLVM_SYMBOLIZER]
 
 # A symbolizer's stdout, where it started and ended at 0; its stderr thrown
 # away, since what it says there is not the program's.
@@ -173,31 +201,6 @@ function llvm_levels(text: str) -> [[Level]]
         out @ out.push(block)
     return out
 
-function addr2line_levels(text: str) -> [[Level]]
-    out: [[Level]] @= []
-    block: [Level] @= []
-    started: bool @= false
-    callee: str @= ""
-    named: bool @= false
-
-    for line in listing.lines_of(text)
-        if strings.starts_with(text: line, prefix: "0x")
-            if started
-                out @ out.push(block)
-            block @ []
-            started @ true
-            named @ false
-        else if !named
-            callee @ line
-            named @ true
-        else
-            block @ block.push(Level(callee: callee, place: line_place(without_discriminator(line))))
-            named @ false
-
-    if started
-        out @ out.push(block)
-    return out
-
 # `<file>:<line>:<column>` less its column; a text with one colon as it is.
 function without_column(line: str) -> str
     last = last_byte(text: line, byte: ':')
@@ -205,14 +208,6 @@ function without_column(line: str) -> str
     if last <= 0 || last_byte(text: line.slice(from: 0, to: last), byte: ':') < 0
         return line
     return line.slice(from: 0, to: last)
-
-# `<file>:<line> (discriminator <n>)` less its discriminator.
-function without_discriminator(line: str) -> str
-    paren = located(text: line, needle: " (discriminator ")
-
-    if paren < 0
-        return line
-    return line.slice(from: 0, to: paren)
 
 # A place a symbolizer gave, `<file>:<line>`, or "" where it gave none: `??`,
 # no line, or line 0.
@@ -305,14 +300,10 @@ test "llvm-symbolizer's levels are read, a column left out and `??` read as no p
     assert !complete(llvm_levels("??\n??:0:0\n\n"), count: 1)
     assert !complete(llvm_levels("h_deep_main\ndeep.hero:0:0\n\n"), count: 1)
 
-test "addr2line's levels are read per address, a discriminator left out"
-    read = addr2line_levels(
-        "0x0000000000001234\nh_deep_pick\n/w/deep.hero:3\nh_deep_outer\n/w/deep.hero:10 (discriminator 2)\n0x0000000000001240\nh_deep_main\n/w/deep.hero:14\n"
-    )
-    assert read.len() == 2
-    assert read[0][1].place == "/w/deep.hero:10"
-    assert read[1][0].place == "/w/deep.hero:14"
-    assert !complete(addr2line_levels("0x0000000000001234\n??\n??:0\n"), count: 1)
+test "the LLVM symbolizer clang names beside itself is asked before the one PATH names, and never twice"
+    assert llvm_symbolizers("/usr/lib/llvm-22/bin/llvm-symbolizer") == ["/usr/lib/llvm-22/bin/llvm-symbolizer", "llvm-symbolizer"]
+    assert llvm_symbolizers("") == ["llvm-symbolizer"]
+    assert llvm_symbolizers("llvm-symbolizer") == ["llvm-symbolizer"]
 
 test "the PDB's reader answers for no binary but a PE one with its PDB, and asks nothing of this one's"
     status: i64 @= 0
