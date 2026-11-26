@@ -131,13 +131,17 @@ void __asan_init(void);
 #define HERO_JMP_DECODES 1
 #endif
 
-/* Whether `makecontext` is wrapped, so the stacks it hands out are known
- * (rule 7, `sigjump_make.c`): its wrapper is assembly, written for those two
- * architectures alone, and `HERO_JMP_NO_MAKE` compiles it out, as glibc's
- * other architectures build (the simulation of defect d-lane-d2745-2, with
- * `HERO_JMP_NO_DECODE`). Where it is not, see `sigjump_save.c`'s placement. */
-#if !defined(HERO_JMP_NO_MAKE) && (defined(__aarch64__) || defined(__x86_64__))
-#define HERO_JMP_MAKES 1
+/* How `makecontext` is wrapped, so the stacks it hands out are known on every
+ * architecture (rule 7, `sigjump_make.c`): in assembly on those two, which
+ * keeps every argument whatever their count, and in C on glibc's others,
+ * which passes on a bounded count (defect d-lane-ctx-after-1: until then those
+ * had no wrapper and no stack `makecontext` handed out was known, so a
+ * coroutine started by `setcontext` ran the program's function inside a
+ * signal). `HERO_JMP_MAKE_IN_C` builds the C wrapper on those two as well, as
+ * glibc's other architectures build: the simulation, with `HERO_JMP_NO_DECODE`
+ * (contexts and jumps on route A, as there), run on Linux arm64. */
+#if !defined(HERO_JMP_MAKE_IN_C) && (defined(__aarch64__) || defined(__x86_64__))
+#define HERO_JMP_MAKE_ASM 1
 #endif
 
 /* How many bytes of a context the fingerprint reads (route A): its saved

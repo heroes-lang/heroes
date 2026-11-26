@@ -1,0 +1,28 @@
+# Fixed 2026-11-26, defect 2848, lane sig-family (step 199a).
+# A coroutine on the heap, started by `setcontext`, saves a buffer and comes
+# back; a handler jumps into it, and it calls the function: refused.
+# Symptom: before, on glibc's architectures other than aarch64 and x86-64
+# (simulated on Linux arm64 by a build with no `makecontext` wrapper and no
+# decode), a handler's `setcontext` into a context `makecontext` made, and a
+# coroutine `setcontext` started that a handler then jumped into, ran the
+# Heroes function inside the signal, exit 0, plain and under `--sanitize`.
+# Cause: no wrapper stood on `makecontext` there, so no stack it hands out was
+# known and a coroutine carved from the thread's own stack was judged that
+# stack; a save made inside a `swapcontext` stood in for the range, which no
+# `setcontext` reached.
+# Fix: a wrapper in C stands on `makecontext` on those architectures, passing
+# up to 64 arguments on, so they take the path aarch64 takes forced onto
+# route A; and route A's switch to the very context `makecontext` was handed
+# lands at its range's top, told in the switch's words, not a lost record's.
+# The simulated build is run apart (a golden carries no define); this case
+# holds what every route must say.
+extern "fixedbugs-2848-setcontext-into-contexts-makecontext-made.h"
+    function sm_run(shape: i32, stack: i32, cb: (function(i64) -> i64)) -> i64
+    function mk_run(cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("sm_1_1: ", sm_run(shape: 1, stack: 1, cb: answer))

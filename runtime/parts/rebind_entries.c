@@ -147,14 +147,30 @@ static bool hero_rebind_live_range(uintptr_t at, uintptr_t *lo, uintptr_t *hi) {
 }
 
 /* Route A's switch to `context`: the range `makecontext` was handed it for,
- * where one was, entered (a pointer compared, nothing of the context read). */
-static void hero_rebind_range_switched(const void *context) {
-    if (context == NULL || !atomic_load_explicit(&hero_rebind_stack_any, memory_order_acquire)) return;
+ * where one was, entered (a pointer compared, nothing of the context read);
+ * that range's slot, -1 where none was. */
+static int hero_rebind_range_switched(const void *context) {
+    if (context == NULL || !atomic_load_explicit(&hero_rebind_stack_any, memory_order_acquire)) return -1;
+    int made = -1;
     for (int i = 0; i < HERO_REBIND_STACKS; i += 1) {
         if (atomic_load(&hero_rebind_stack_ctx[i]) == (uintptr_t)context) {
             atomic_fetch_or_explicit(&hero_rebind_stack_state[i], HERO_REBIND_RANGE_ENTERED, memory_order_relaxed);
+            made = i;
         }
     }
+    return made;
+}
+
+/* The top of the range in slot `i`, where a context `makecontext` made for it
+ * starts; false where the slot is being written or names no range now. The
+ * top itself is judged the range's by rule 4 only through the frame below it,
+ * so the target given is the last word inside it. */
+static bool hero_rebind_range_top(int i, uintptr_t *t) {
+    unsigned before = atomic_load(&hero_rebind_stack_seq[i]);
+    uintptr_t l = atomic_load(&hero_rebind_stack_lo[i]), h = atomic_load(&hero_rebind_stack_hi[i]);
+    if ((before & 1) != 0 || atomic_load(&hero_rebind_stack_seq[i]) != before || h <= l) return false;
+    *t = h - sizeof(uintptr_t);
+    return true;
 }
 
 /* A switch whose target's stack pointer is `at` enters the range holding it
