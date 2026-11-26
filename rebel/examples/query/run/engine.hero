@@ -8,9 +8,10 @@
 #
 # THE SORT IS `lists.sort_by`, STABLE, ONE ORDER PER FUNCTION. The built-in
 # `sort` orders numbers, texts and booleans and cannot be told which field of
-# a record to look at, and the language has no closures, so an order cannot
-# carry the `plan.Order` it was asked for into the function `sort_by` calls:
-# each order is a function of its own, and `ordered` picks one.
+# a record to look at. `lists.sort_by_with` could hand each comparison the
+# `plan.Order` it was asked for, but every one of the n log n comparisons
+# would then ask the order which field it reads: each order is a function of
+# its own, and `ordered` picks one, once.
 
 use <rebel>/lists
 use <rebel>/strings
