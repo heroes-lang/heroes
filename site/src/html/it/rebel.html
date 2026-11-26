@@ -23,15 +23,16 @@
   <p>
     Un programma nomina ogni pacchetto di Rebel che usa con il nome della voce tra parentesi angolari, come si nomina qualsiasi pacchetto. Queste sono le prime righe di un piccolo jq, uno strumento che filtra il JSON, scritto con Rebel:
   </p>
-  <figure class="example" data-src="rebel/examples/jq/main.hero" data-lines="17-23">
-<pre><code>use &lt;rebel&gt;/io
+  <figure class="example" data-src="rebel/examples/jq/main.hero" data-lines="17-24">
+<pre><code>use &lt;rebel&gt;/errors
+use &lt;rebel&gt;/io
 use &lt;rebel&gt;/json
 use &lt;rebel&gt;/json/jq
 use &lt;rebel&gt;/os
 use &lt;rebel&gt;/time
 use &lt;rebel&gt;/toml
 use &lt;rebel&gt;/yaml</code></pre>
-    <figcaption>rebel/examples/jq/main.hero, righe 17&ndash;23</figcaption>
+    <figcaption>rebel/examples/jq/main.hero, righe 17&ndash;24</figcaption>
   </figure>
   <p>
     Il suo catalogo, il file <code>heroes.toml</code> accanto al programma, contiene una voce per Rebel e una riga che elenca i pacchetti che il programma usa. <code>heroes add</code> scrive la voce e <code>heroes add rebel/csv</code> aggiunge un pacchetto alla riga. Da lì il programma si porta dietro i pacchetti che elenca e i moduli che quelli usano, e nient&rsquo;altro di Rebel: un programma che legge il CSV in questo modo se ne porta dietro qualche decina di file e meno di un megabyte, dove Rebel intero è più di milleseicento file e più di trenta megabyte. Un <code>use</code> di un pacchetto che la riga lascia fuori viene rifiutato, con il comando che lo aggiunge.
