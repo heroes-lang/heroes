@@ -1,0 +1,96 @@
+# The assembler's tokens: a source read by Rebel's `scanner` with the rules
+# of GNU as for RISC-V, then cut into lines, since a statement ends where
+# its line does. Names may hold `.`, `_` and `$` (a directive is a name
+# beginning with `.`); integers are written as Go's scanner reads them,
+# decimal, `0x`, `0o`, `0b` or a leading `0` for octal, which GNU as reads
+# alike; strings and characters take C's escapes; `#` and `//` begin a
+# comment to the end of the line, `/*` one to `*/`. A line may end in "\n"
+# or "\r\n", so a source checked out on Windows reads the same.
+
+use <rebel>/scanner
+
+## Lines
+
+# One line of a source that holds something.
+record SourceLine
+    # Its number, from 1.
+    number: i64
+    # Its tokens, in order; neither a line end nor the end is among them.
+    tokens: [scanner.Token]
+
+# The rules the assembler reads a source by.
+function rules() -> scanner.Rules
+    r @= scanner.go_rules()
+    r.identifier_char @ is_name_char
+    r.raw_quotes @ ""
+    r.floats @ false
+    r.line_comments @ ["#", "//"]
+    r.keep_newlines @ true
+    r.operators @ [",", "(", ")", ":", "+", "-", "%"]
+    return r
+
+# Whether `c` may stand at `at` in a name: a letter, `_`, `.` or `$`
+# anywhere, a digit anywhere but first.
+#
+# - `c`: one character.
+# - `at`: its index in the name, from 0.
+function is_name_char(c: str, at: i64) -> bool
+    if c.len() != 1
+        return false
+    b = c[0]
+
+    if b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b == '_' || b == '.' || b == '$'
+        return true
+    return at > 0 && b >= '0' && b <= '9'
+
+# The lines of `source` that hold a token, each with its tokens.
+#
+# - `source`: the assembly text, UTF-8.
+#
+# A malformed token stays among its line's tokens, of the kind `invalid`,
+# for the parser to tell with its line.
+function lines(source: str) -> [SourceLine]
+    found: [SourceLine] @= []
+    current: [scanner.Token] @= []
+    number: i64 @= 1
+
+    for t in scanner.scan(source, rules())
+        if t.kind == .newline || t.kind == .end
+            if current.len() > 0
+                found @ found.push(SourceLine(number: number, tokens: current))
+            current @ []
+            number @ t.end.line
+        else
+            if current.len() == 0
+                number @ t.start.line
+            current @ current.push(t)
+
+    return found
+
+## Tests
+
+test "lines: comments, blank lines and CRLF line ends leave only statements"
+    found = lines(
+        "# a program\r\n\r\nloop:  addi a0, a0, -1   # count down\r\n  bnez a0, loop // again\r\n/* done */\r\n"
+    )
+    assert found.len() == 2
+    assert found[0].number == 3
+    assert found[0].tokens.len() == 9
+    assert found[0].tokens[0].text == "loop"
+    assert found[0].tokens[1].text == ":"
+    assert found[1].number == 4
+    assert found[1].tokens[3].text == "loop"
+
+test "lines: directives, strings with escapes, and a number in each base"
+    found = lines(".asciz \"hi\\n\"\n.word 0x10, 0b11, 017, 'A'")
+    assert found[0].tokens[0].text == ".asciz"
+    assert scanner.text_of(found[0].tokens[1]).must() == "hi\n"
+    assert scanner.int_of(found[1].tokens[1]).must() == 16
+    assert scanner.int_of(found[1].tokens[3]).must() == 3
+    assert scanner.int_of(found[1].tokens[5]).must() == 15
+    assert scanner.text_of(found[1].tokens[7]).must() == "A"
+
+test "lines: an unterminated string is a token of its own, never an abort"
+    found = lines(".ascii \"open\nnop")
+    assert found.len() == 2
+    assert found[0].tokens[1].kind == .invalid(reason: "literal not terminated")

@@ -1,0 +1,12 @@
+# rv32 (being written).
+
+use asm/syntax
+use cpu/execute
+use cpu/machine
+use isa/registers
+
+function main()
+    m @= machine.new_machine(ram_size: 64, input: [])
+    print(registers.abi_name(2))
+    _ = execute.step(@m)
+    print(syntax.number(3).addend)
