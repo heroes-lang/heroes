@@ -37,7 +37,14 @@ only the guard's list was): every bound name is saved around
 `heroes_standard.h` and given back after it, undefined there unless C
 reserves it, which the library reads as clang predefined it
 (`macro_guard.read_after`), and so is every name a bound macro reaches that
-the guard's close leaves (`cli/bound_kept.hero`).
+the guard's close leaves (`cli/bound_kept.hero`). **And a header correct for
+its own users is never refused for a word of the library it defines, the
+program binding it or not** (defect d-lane-macro-members4-1, 2026-11-25;
+until then `#define y1 5` rewrote `<math.h>`'s declaration): every name a
+group's header defines that the library, read as this build's clang reads
+it, writes or reads in a file it enters is saved around it where the unit
+defines it and given back after (`cli/library_saved.hero`), read from the
+library itself and never from a list a new SDK leaves behind.
 
 **What that stamp catches is a header from another compiler, and not a decoy**
 (CL-007). A decoy `runtime/` that copies the number passes; what protects a

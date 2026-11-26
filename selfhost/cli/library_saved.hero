@@ -1,0 +1,307 @@
+# The names a group's header defines that C's library, read after the groups,
+# reads: saved around it in every unit that defines them, and given back
+# after it (design.md §4.19, spec § 13; defect d-lane-macro-members4-1,
+# 2026-11-25, found by lane macro-members4).
+#
+# **A header that is correct C for its own users was refused for a name the
+# program never binds.** A unit reads `<stdint.h>` and `<math.h>` after its
+# groups (`runtime/heroes_standard.h`, so a switch a group defines reaches
+# them; panel 205's R3), and the guard's close gives back only the names its
+# list holds, C11's. So `#define y1 5` in a group's header, the program binding
+# none of it, rewrote `<math.h>`'s declaration of `y1` and the unit was
+# refused `ffi_header_refused`, *where clang refuses `<math.h>`*: on this Mac 28
+# such names (`j0` to `yn`, `scalb`, `signgam`, the members of `struct
+# exception`, the words of the availability attributes, the library's own
+# `_opaque_pthread_*` tags), 41 in glibc, more in mingw-w64 (`x`, `y`, `low`,
+# `high`, `abs`, its parameters' names). A list of them is left behind by the
+# next SDK in silence, so the names are read from the library itself, as this
+# build reads it.
+#
+# **What is asked of clang, and kept** (`saved`): the macros defined after the
+# guard's close otherwise than before the groups, by `-dM` tables of the two
+# places, C's reserved names and the names the unit saves already left out;
+# then the library read as the unit reads it, every one of those undefined
+# first, and every identifier it yields, past a mark, and every identifier of
+# every file it enters, its directives' among them. The names in both are
+# saved: undefined where the library reads, nothing the library sees differs
+# from that reading, so no other name can change it. Kept under everything the
+# question depends on, as `cli/bound_ask.hero` keeps its answers: a warm build
+# asks clang nothing.
+#
+# **Saved only where a unit defines them** (`emit/macro_guard.read_after`):
+# each program module is a unit of its own, and a name one module's header
+# defines, saved in another that defines it not, would be given back
+# undefined over the library's own macro of that name.
+
+use cli/bound_ask
+use cli/bound_said
+use cli/compiling
+use cli/digest
+use cli/io
+use cli/kept
+use cli/libraries
+use cli/process
+use cli/strings
+use cli/toolchain
+use emit/c_text
+use emit/c_words
+use emit/externs as emit_externs
+use emit/macro_guard
+use module/reading
+
+# The line the library's reading is asked after: what clang prints past it
+# is the library's.
+constant MARK: str
+    "\"hero-library-read\";"
+
+# The names `headers`' macros leave defined after the guard's close otherwise
+# than before the groups, that the C library read after the close reads,
+# sorted; `bound` the names the unit saves around the library already. None
+# where clang could not be asked: the unit's own compile then tells the
+# header as before.
+function saved(t: toolchain.Toolchain, probe: compiling.Probe, headers: [str], bound: {str: bool}) -> [str]
+    none: [str] = []
+
+    if headers.len() == 0
+        return none
+    seeds: [str] @= [macro_guard.FIRST_LINE]
+    seeds @ strings.with_all(list: seeds, more: c_text.includes(emit_externs.SEEDS))
+    closed = strings.with_all(list: seeds, more: macro_guard.around(c_text.includes(headers), bound: bound))
+    no_names: {str: bool} = {}
+    standard = macro_guard.read_after(bound: bound, where: no_names)
+    key = digest.digest(
+        t.fingerprint + "|library-read|" + t.compiler_key + "|" + closed.join("\n") + "|" + standard.join("\n") + "|words:" + libraries.key_text(probe.words) + "|reads:" + probe.read.default("") + "|" + t.runtime_key
+    )
+    path = t.build + "/meaning/library-" + key + ".txt"
+    known = kept.read(path)
+
+    if !known.is_err()
+        return names_of(known.must())
+    before = bound_ask.preprocessed(t, probe: probe, text: seeds.join("\n") + "\n", mode: ["-E", "-dM"])
+    after = bound_ask.preprocessed(t, probe: probe, text: closed.join("\n") + "\n", mode: ["-E", "-dM"])
+
+    if before.is_err() || after.is_err()
+        return none
+    changed = defined_otherwise(
+        was: bound_said.defines(before.must()),
+        table: bound_said.defines(after.must()),
+        bound: bound
+    )
+    out: [str] @= []
+
+    if changed.len() > 0
+        read: [str] @= closed
+
+        for name in changed
+            read @ read.push("#undef " + name)
+
+        read @ read.push(MARK)
+        said = bound_ask.preprocessed(
+            t,
+            probe: probe,
+            text: strings.with_all(list: read, more: standard).join("\n") + "\n",
+            mode: ["-E"]
+        )
+
+        if said.is_err()
+            return none
+        words = read_words(said.must())
+
+        for name in changed
+            if !words[name].is_err()
+                out @ out.push(name)
+
+    _ = kept.write(path: path, text: out.join("\n")).is_err()
+    return out
+
+# The names a kept answer holds, one a line.
+function names_of(text: str) -> [str]
+    out: [str] @= []
+
+    for row in bound_said.rows(text)
+        if row != ""
+            out @ out.push(row)
+
+    return out
+
+# ORDER: by name, as `sort` orders a `str`. The names `table` defines that
+# `was` defined otherwise or not at all, neither reserved by C, which the
+# library reads as its switches, nor in `bound`.
+function defined_otherwise(was: {str: bound_said.Define}, table: {str: bound_said.Define}, bound: {str: bool}) -> [str]
+    out: [str] @= []
+
+    for name in sort(keys(table))
+        if !c_words.is_reserved(name) && bound[name].is_err() && table[name].must().line != was[name].default(bound_said.Define(params: {}, body: "", line: "")).line
+            out @ out.push(name)
+
+    return out
+
+# Every identifier C does not reserve that the reading `said` yields past
+# `MARK`, and every one of each file a line marker past it names, but the
+# question's own file, which the first marker names: what the library's text
+# writes, its expansions included, and what its directives read.
+function read_words(said: str) -> {str: bool}
+    out: {str: bool} @= {}
+    lines = bound_said.rows(said)
+    own: str @= ""
+    past: bool @= false
+    after: [str] @= []
+    files: {str: bool} @= {}
+
+    for line in lines
+        if bound_said.marker(line)
+            file = bound_said.marker_file(line)
+
+            if own == ""
+                own @ file
+            else if past && file != own && !strings.starts_with(text: file, prefix: "<")
+                files[file] @ true
+
+            continue
+
+        if past
+            after @ after.push(line)
+        else if line == MARK
+            past @ true
+
+    for word in keys(c_words.code_words(after.join("\n"), reserved: false))
+        out[word] @ true
+
+    # ORDER: none — each file's words set keys to true, which every order
+    # leaves the same.
+    for file in keys(files)
+        text = reading.text_of(file)
+
+        if !text.is_err()
+            for word in keys(c_words.code_words(text.must(), reserved: false))
+                out[word] @ true
+
+    return out
+
+## Tests
+
+# The names defined otherwise: a new one and a changed one, never one the
+# same as before, one C reserves, or one the unit saves already.
+test "the names the groups define otherwise than before them, but reserved and saved ones"
+    before = bound_said.defines("#define KEEP 1\n#define MOVED 1\n#define __x 1\n")
+    after = bound_said.defines(
+        "#define KEEP 1\n#define MOVED 2\n#define __x 2\n#define y1 5\n#define LIMIT 7\n#define _Bad 3\n"
+    )
+    bound: {str: bool} @= {}
+    bound["LIMIT"] @ true
+    assert defined_otherwise(was: before, table: after, bound: bound) == ["MOVED", "y1"]
+
+# The words past the mark and in each file it enters, never the question's own
+# file nor a word before the mark.
+test "the library's words are read past the mark and from each file it enters, never the question's own"
+    dir = "build/selftest-library-saved"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    entered = dir + "/lib.h"
+    assert !write_file(path: entered, text: "#if defined(switched) /* comment */\nextern double y1(double param);\n#endif\n").is_err()
+    said = "# 1 \"" + dir + "/q.c\"\nbefore_mark;\n" + MARK + "\n# 1 \"" + entered + "\" 1 3\nextern double y1(double param);\n# 3 \"" + dir + "/q.c\" 2\n# 1 \"<built-in>\" 1\n__reserved word_after;\n"
+    words = read_words(said)
+    assert !words["y1"].is_err()
+    assert !words["param"].is_err()
+    assert !words["switched"].is_err()
+    assert !words["word_after"].is_err()
+    assert words["before_mark"].is_err()
+    assert words["__reserved"].is_err()
+    assert words["comment"].is_err()
+    assert !process.remove_tree(dir).is_err()
+
+# DEFECT d-lane-macro-members4-1, asked of clang on the machine that runs it,
+# so each leg holds its own library: a group's header defines every identifier
+# C does not reserve that the library read after the groups yields here, or
+# reads in a file it enters, each as `5`, the program binding none of them.
+# With the names `saved` finds saved where the unit defines them, the unit's
+# opening and the library compile under `-Werror`; with none saved the same
+# unit is refused, so the test is not blind.
+test "a header defining every word of this machine's C library, the program binding none, leaves the unit compiling (defect d-lane-macro-members4-1)"
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    dir = "build/selftest-library-words"
+    t.build @ dir
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    words = strings.with_all(list: compiling.probe_flags(), more: ["-I", t.runtime, "-I", dir])
+    no_digests: {str: str} = {}
+    probe = compiling.Probe(words: words, headers: [], read: ok(""), digests: no_digests)
+    no_names: {str: bool} = {}
+    seeds: [str] @= [macro_guard.FIRST_LINE]
+    seeds @ strings.with_all(list: seeds, more: c_text.includes(emit_externs.SEEDS))
+    alone = strings.with_all(list: seeds.push(MARK), more: macro_guard.read_after(bound: no_names, where: no_names))
+    library = read_words(bound_ask.preprocessed(t, probe: probe, text: alone.join("\n") + "\n", mode: ["-E"]).must())
+    planted: [str] @= []
+
+    for word in sort(keys(library))
+        planted @ planted.push("#define " + word + " 5")
+
+    assert planted.len() > 100
+    assert !write_file(path: dir + "/planted.h", text: planted.join("\n") + "\n").is_err()
+    where: {str: bool} @= {}
+
+    for name in saved(t, probe: probe, headers: ["planted.h"], bound: no_names)
+        where[name] @ true
+
+    assert where.len() > 0
+    opened = strings.with_all(list: seeds, more: macro_guard.around(c_text.includes(["planted.h"]), bound: no_names))
+    body = "int hero_library_probe(void) { return 0; }\n"
+    units = [
+        [strings.with_all(list: opened, more: macro_guard.read_after(bound: no_names, where: where)).join("\n"), "true"]
+        [strings.with_all(list: opened, more: macro_guard.read_after(bound: no_names, where: no_names)).join("\n"), "false"]
+    ]
+    at: i64 @= 0
+
+    for pair in units
+        unit = dir + "/unit-" + at.to_str() + ".c"
+        at @ at + 1
+        assert !write_file(path: unit, text: pair[0] + "\n" + body).is_err()
+        line = strings.with_all(list: ["clang", "-Werror", "-fsyntax-only"], more: words).push(unit)
+        said = process.run(program: "clang", words: line, out: process.discard(), err: dir + "/unit.err.txt")
+        assert said.started
+
+        if said.code == 0 != (pair[1] == "true")
+            io.eprint(text: unit + ": " + read_file(dir + "/unit.err.txt").default("no answer"))
+        assert said.code == 0 == (pair[1] == "true")
+
+    assert !process.remove_tree(dir).is_err()
+
+# A name saved where the unit defines it is left alone where the unit does
+# not, asked of clang: `INT64_MAX`, a macro `<stdint.h>` defines, means the
+# library's after it in a unit whose groups never define it, where saved as a
+# bound name is saved it is given back undefined and the unit is refused, so
+# the test is not blind; and in a unit whose group defines it, it means the
+# group's.
+test "a name saved where the unit defines it keeps the library's macro in a unit that does not (defect d-lane-macro-members4-1)"
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    dir = "build/selftest-library-where"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/planted.h", text: "#define INT64_MAX 5\n").is_err()
+    no_names: {str: bool} = {}
+    named: {str: bool} @= {}
+    named["INT64_MAX"] @ true
+    seeds: [str] @= [macro_guard.FIRST_LINE]
+    seeds @ strings.with_all(list: seeds, more: c_text.includes(emit_externs.SEEDS))
+    planted = strings.with_all(list: seeds, more: macro_guard.around(c_text.includes(["planted.h"]), bound: no_names))
+    library = "_Static_assert(INT64_MAX == 9223372036854775807, \"the library's\");\n"
+    header = "_Static_assert(INT64_MAX == 5, \"the header's\");\n"
+    units = [
+        [strings.with_all(list: seeds, more: macro_guard.read_after(bound: no_names, where: named)).join("\n") + "\n" + library, "true"]
+        [strings.with_all(list: seeds, more: macro_guard.read_after(bound: named, where: no_names)).join("\n") + "\n" + library, "false"]
+        [strings.with_all(list: planted, more: macro_guard.read_after(bound: no_names, where: named)).join("\n") + "\n" + header, "true"]
+    ]
+    at: i64 @= 0
+
+    for pair in units
+        unit = dir + "/unit-" + at.to_str() + ".c"
+        at @ at + 1
+        assert !write_file(path: unit, text: pair[0]).is_err()
+        line = strings.with_all(list: ["clang", "-Werror", "-fsyntax-only"], more: compiling.probe_flags()).push("-I").push(t.runtime).push("-I").push(dir).push(
+            unit
+        )
+        said = process.run(program: "clang", words: line, out: process.discard(), err: process.discard())
+        assert said.started
+        assert said.code == 0 == (pair[1] == "true")
+
+    assert !process.remove_tree(dir).is_err()

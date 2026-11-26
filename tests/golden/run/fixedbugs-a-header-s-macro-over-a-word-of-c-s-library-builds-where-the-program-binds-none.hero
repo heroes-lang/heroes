@@ -1,0 +1,22 @@
+# Fixed 2026-11-25, lane macro-members5 (found by lane macro-members4 beside
+# its repair of a bound name's value after C's library).
+# Symptom: a group's header defining `#define y1 5`, `#define j0 5` or
+# `#define exception 5`, the program binding none of them, was refused
+# `ffi_header_refused` at exit 1, *where clang refuses `<math.h>`*: 28 such
+# names on this Mac, 41 in glibc, more in mingw-w64.
+# Cause: a unit reads `<stdint.h>` and `<math.h>` after its groups, and the
+# guard's close gives back only the names its list holds, C11's, so a
+# header's macro over another word the library reads rewrote the library.
+# Repair: the names a group's header defines that the library reads, as this
+# build's clang reads it, are saved around the library where the unit defines
+# them and given back after it (`cli/library_saved.hero`). The header below
+# defines the words of Darwin's, glibc's and mingw-w64's libraries the lane
+# measured; `REACHES` reaches `y1` and means the header's `7`.
+
+extern "fixedbugs-a-header-s-macro-over-a-word-of-c-s-library-builds-where-the-program-binds-none.h"
+    constant LIMIT: i64
+    constant REACHES: i64
+
+function main()
+    print(LIMIT)
+    print(REACHES)

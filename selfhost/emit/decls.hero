@@ -108,10 +108,20 @@ function prelude(@w: writer.Writer, p: containers.Program, target: BuildTarget, 
     if groups.len() > 0
         bound: {str: bool} @= macro_guard.bound_names(s, decls)
 
+        # A name kept `true` is saved in every unit, one a bound macro reaches
+        # (`cli/bound_kept.hero`); one kept `false` only where the unit
+        # defines it, a group header's macro the library read after the
+        # groups reads (`cli/library_saved.hero`, defect
+        # d-lane-macro-members4-1).
+        where: {str: bool} @= {}
+
         # ORDER: none — each name sets one key to true, which every order
         # leaves the same; `around` and `read_after` order what they write.
         for name in keys(kept)
-            bound[name] @ true
+            if kept[name].must()
+                bound[name] @ true
+            else
+                where[name] @ true
 
         for line in macro_guard.around(c_text.includes(groups), bound: bound)
             writer.line(@w, text: line)
@@ -121,7 +131,7 @@ function prelude(@w: writer.Writer, p: containers.Program, target: BuildTarget, 
         for line in bound_type.aliases(s, decls, headers: groups)
             writer.line(@w, text: line)
 
-        standard @ macro_guard.read_after(bound)
+        standard @ macro_guard.read_after(bound: bound, where: where)
 
     for line in standard
         writer.line(@w, text: line)

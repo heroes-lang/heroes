@@ -52,7 +52,8 @@ function closed_opening(lines: [str], bound: {str: bool}, end: [str]) -> str
     out: [str] @= [macro_guard.FIRST_LINE]
     out @ strings.with_all(list: out, more: c_text.includes(emit_externs.SEEDS))
     out @ strings.with_all(list: out, more: macro_guard.around(lines, bound: bound))
-    out @ strings.with_all(list: out, more: macro_guard.read_after(bound))
+    no_names: {str: bool} = {}
+    out @ strings.with_all(list: out, more: macro_guard.read_after(bound: bound, where: no_names))
     out @ strings.with_all(list: out, more: end)
     return out.join("\n") + "\n"
 

@@ -41,6 +41,7 @@ use cli/bound_names
 use cli/bound_said
 use cli/bound_told
 use cli/compiling
+use cli/library_saved
 use cli/order_trial
 use cli/probing
 use cli/strings
@@ -53,36 +54,60 @@ use source
 
 # The refusals of every list's names, each name told once, and the names
 # the guard keeps for the units where a bound macro expands to them (defect
-# 2059, `cli/bound_kept.hero`).
+# 2059, `cli/bound_kept.hero`), each kept `true`; and the names a group's
+# header defines that the C library read after the groups reads, the program
+# binding them or not, kept `false`, saved only where a unit defines them
+# (`cli/library_saved.hero`, defect d-lane-macro-members4-1).
 function told(t: toolchain.Toolchain, probings: [probing.Probing], s: source.Source, decls: [ast.Decl]) -> bound_kept.Told
     out: [diag.Diagnostic] @= []
     seen: {str: bool} @= {}
     kept: {str: bool} @= {}
+    library: {str: bool} @= {}
+    pushed = macro_guard.bound_names(s, decls)
 
     for one in probings
         headers = bound_names.groups_of(one.headers)
-        bound = bound_names.bound_of(s, decls, headers: headers)
 
-        if bound.len() == 0
+        if headers.len() == 0
             continue
+        bound = bound_names.bound_of(s, decls, headers: headers)
         probe = probe_of(t, one: one)
 
         if probe.read.is_err()
             continue
 
-        answered = judged(t, probe: probe, s, decls, headers: headers, bound: bound)
+        if bound.len() > 0
+            answered = judged(t, probe: probe, s, decls, headers: headers, bound: bound)
+
+            # ORDER: none — each name sets one key to true, which every order
+            # leaves the same.
+            for name in keys(answered.kept)
+                kept[name] @ true
+
+            for d in answered.diagnostics
+                name = source.span_text(s, d.span)
+
+                if seen[name].is_err()
+                    seen[name] @ true
+                    out @ out.push(d)
+
+        # Saved around the library as the unit saves them: the names bound
+        # and those a bound macro reaches.
+        saving: {str: bool} @= pushed
 
         # ORDER: none — each name sets one key to true, which every order
         # leaves the same.
-        for name in keys(answered.kept)
-            kept[name] @ true
+        for name in keys(kept)
+            saving[name] @ true
 
-        for d in answered.diagnostics
-            name = source.span_text(s, d.span)
+        for name in library_saved.saved(t, probe: probe, headers: headers, bound: saving)
+            library[name] @ true
 
-            if seen[name].is_err()
-                seen[name] @ true
-                out @ out.push(d)
+    # ORDER: none — each name sets one key, which every order leaves the
+    # same: a name kept for every unit is never also kept where defined.
+    for name in keys(library)
+        if kept[name].is_err()
+            kept[name] @ false
 
     return bound_kept.Told(diagnostics: out, kept: kept)
 
