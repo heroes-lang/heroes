@@ -1,0 +1,158 @@
+# The command line, declared with Rebel's `flags`: `run` a scenario,
+# `fuzz` the cluster from seeds, `inspect` a node's folder, and the `demo`.
+# What the person typed is read into a `Job`, so the rest of the program
+# never sees a word of it again.
+
+use <rebel>/flags
+use <rebel>/time
+
+## The declaration
+
+# The program's command line.
+function declaration() -> flags.Command
+    root @= flags.command(name: "raftkv", about: "Raft and a replicated key-value store, under a simulated network.")
+    run @= flags.command(name: "run", about: "Runs a scenario and prints its transcript.")
+    flags.add(@run, flags.positional(name: "SCENARIO", help: "the scenario, a .toml file"))
+    flags.add(@run, flags.option(long: "seed", short: "s", value_name: "N", help: "the seed, in place of the file's"))
+    flags.add(@run, work_option("build/raftkv-run"))
+    flags.add_command(c: @root, sub: run)
+    fuzz @= flags.command(name: "fuzz", about: "Runs the cluster under faults drawn from seeds, and checks it.")
+    flags.add(
+        @fuzz,
+        flags.with_default(flags.option(long: "runs", short: "n", value_name: "N", help: "how many runs"), "20")
+    )
+    flags.add(
+        @fuzz,
+        flags.with_default(flags.option(long: "seed", short: "s", value_name: "N", help: "the first run's seed"), "1")
+    )
+    flags.add(
+        @fuzz,
+        flags.with_default(flags.option(long: "nodes", short: "", value_name: "N", help: "the nodes, 3 to 9"), "5")
+    )
+    flags.add(
+        @fuzz,
+        flags.with_default(flags.option(long: "span", short: "", value_name: "DURATION", help: "how long faults are drawn"), "10s")
+    )
+    flags.add(@fuzz, work_option("build/raftkv-fuzz"))
+    flags.add_command(c: @root, sub: fuzz)
+    inspect @= flags.command(name: "inspect", about: "Reads a node's folder and writes out what it holds.")
+    flags.add(@inspect, flags.positional(name: "FOLDER", help: "a node's folder"))
+    flags.add(
+        @inspect,
+        flags.with_default(flags.option(long: "last", short: "", value_name: "N", help: "how many entries"), "20")
+    )
+    flags.add_command(c: @root, sub: inspect)
+    demo @= flags.command(
+        name: "demo",
+        about: "Runs the scenarios of a folder, inspects a disk and fuzzes, as the check of Rebel's programs runs it."
+    )
+    flags.add(@demo, flags.positional(name: "SCENARIOS", help: "the folder of the scenarios"))
+    flags.add(@demo, work_option("build/raftkv-demo"))
+    flags.add_command(c: @root, sub: demo)
+    return root
+
+function work_option(default_folder: str) -> flags.Argument
+    return flags.with_default(
+        flags.option(long: "work", short: "", value_name: "DIR", help: "the folder the nodes' folders are written in"),
+        default_folder
+    )
+
+## The request
+
+# What the command line asks.
+variant Job
+    # Run one scenario.
+    run
+        # The scenario's path.
+        scenario: str
+        # The seed in place of the file's; fails where none was given.
+        seed: i64?
+        # The work folder.
+        work: str
+    # Fuzz.
+    fuzz
+        # How many runs.
+        runs: i64
+        # The first seed.
+        seed: i64
+        # How many nodes.
+        nodes: i64
+        # How long faults are drawn, in milliseconds.
+        span: i64
+        # The work folder.
+        work: str
+    # Inspect a node's folder.
+    inspect
+        # The folder.
+        folder: str
+        # How many entries are written out.
+        last: i64
+    # The demo.
+    demo
+        # The scenarios' folder.
+        scenarios: str
+        # The work folder.
+        work: str
+    # Help was asked; `text` is it.
+    help
+        # The help.
+        text: str
+
+# The job `arguments` ask for.
+#
+# - `arguments`: the words after the program's name.
+#
+# Fails `invalid` where they are not a command line of this program, the
+# message saying why.
+function read(arguments: [str]) -> Job?
+    found = flags.parse(declaration(), arguments)?
+
+    if flags.is_help(found)
+        return ok(.help(text: flags.help_text(found)))
+    sub = flags.subcommand(found)?
+    verb = flags.name_of(sub)
+
+    if verb == "run"
+        seed: i64? = if flags.is_given(sub, "seed")
+            ok(flags.int_of(sub, "seed")?)
+        else
+            fail(code: "not_found", msg: "the file's seed")
+        return ok(.run(scenario: flags.value_of(sub, "SCENARIO")?, seed: seed, work: flags.value_of(sub, "work")?))
+
+    if verb == "fuzz"
+        runs = flags.int_of(sub, "runs")?
+        nodes = flags.int_of(sub, "nodes")?
+        span = time.to_units(time.parse_duration(flags.value_of(sub, "span")?)?, unit: .millisecond)
+
+        if runs < 1
+            return fail(code: "invalid", msg: f"--runs {runs} runs nothing; give 1 or more")
+
+        if nodes < 3 || nodes > 9
+            return fail(code: "invalid", msg: f"--nodes {nodes} is outside 3 to 9")
+
+        if span < 1
+            return fail(code: "invalid", msg: "--span must be a span of 1ms or more")
+        return ok(
+            .fuzz(runs: runs, seed: flags.int_of(sub, "seed")?, nodes: nodes, span: span, work: flags.value_of(sub, "work")?)
+        )
+
+    if verb == "inspect"
+        last = flags.int_of(sub, "last")?
+
+        if last < 0
+            return fail(code: "invalid", msg: f"--last {last} is below 0")
+        return ok(.inspect(folder: flags.value_of(sub, "FOLDER")?, last: last))
+    return ok(.demo(scenarios: flags.value_of(sub, "SCENARIOS")?, work: flags.value_of(sub, "work")?))
+
+## Tests
+
+test "read: each subcommand, its defaults and its options"
+    assert read(["run", "s.toml"]).must() == .run(scenario: "s.toml", seed: fail(code: "not_found", msg: "the file's seed"), work: "build/raftkv-run")
+    assert read(["run", "s.toml", "--seed", "9"]).must() == .run(scenario: "s.toml", seed: ok(9), work: "build/raftkv-run")
+    assert read(["fuzz", "--runs", "3", "--span", "2s"]).must() == .fuzz(runs: 3, seed: 1, nodes: 5, span: 2000, work: "build/raftkv-fuzz")
+    assert read(["inspect", "n1"]).must() == .inspect(folder: "n1", last: 20)
+    assert read(["demo", "scenarios"]).must() == .demo(scenarios: "scenarios", work: "build/raftkv-demo")
+
+test "read: what is no command line of this program"
+    for words in [[], ["fly"], ["run"], ["fuzz", "--runs", "0"], ["fuzz", "--nodes", "2"], ["fuzz", "--span", "soon"], ["inspect", "n", "--last", "-1"]]
+        assert read(words).is_err()
