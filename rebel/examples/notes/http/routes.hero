@@ -191,7 +191,7 @@ test "router_of: the pages, the groups and the API found by their names"
     r = router_of(doc, site: openapi.new_site(doc, title: "API").must()).must()
     get = http.request(method: "GET", target: "/notes/hello").must()
     found = web.route(r, r: get).must()
-    assert found.name == NOTE && web.param_of(found, name: "slug").must() == "hello"
+    assert found.name == NOTE && web.param_of(found, name: "slug") == "hello"
     assert web.route(r, r: http.request(method: "POST", target: "/admin/users/bob/role").must()).must().groups == [ADMIN_GROUP]
     api = web.route(r, r: http.request(method: "GET", target: "/api/notes/hello").must()).must()
     assert api.name == api_doc.READ_NOTE && api.groups == [API_GROUP] && is_api_route(api)

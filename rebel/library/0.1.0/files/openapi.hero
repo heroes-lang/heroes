@@ -3990,7 +3990,7 @@ test "pattern_of and add_routes: the routes a router takes, under the first serv
     add_routes(@router, doc: doc).must()
     found = web.route(router, r: fixture.request(method: "GET", target: "/v1/pets/7")).must()
     assert found.name == "showPetById"
-    assert web.param_of(found, name: "petId").must() == "7"
+    assert web.param_of(found, name: "petId") == "7"
     assert web.route(router, r: fixture.request(method: "GET", target: "/v1/pets/mine")).must().name == "myPets"
     assert pattern_of("/files/{name}.json").is_err()
 
@@ -4015,7 +4015,7 @@ test "add_routes: a group under the server's path, the paths alone under a group
     web.mount(router: @root, group: api).must()
     found = web.route(root, r: fixture.request(method: "DELETE", target: "/api/notes/a")).must()
     assert found.name == "deleteNote" && found.pattern == "/api/notes/:slug" && web.is_in_group(found, name: "api")
-    assert web.param_of(found, name: "slug").must() == "a"
+    assert web.param_of(found, name: "slug") == "a"
     assert web.route(root, r: fixture.request(method: "GET", target: "/api/api/notes")).is_err()
 
     bare @= new_document(title: "Notes", version: "1.0.0")

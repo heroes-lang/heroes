@@ -388,19 +388,27 @@ function not_routed(router: Router, r: http.Request) -> http.Response
         out.headers @ http.with_header(out.headers, name: "Allow", value: m.allow.join(", "))
     return out
 
-# The value of the parameter `name` of `found`.
+# The value of the parameter `name` of `found`, which its route's pattern
+# declares: a value every request the route takes holds, so it is read with
+# no failure to answer.
 #
 # - `found`: the route found.
-# - `name`: the parameter's name, as the pattern writes it.
+# - `name`: the parameter's name, as the pattern writes it, `slug` for
+#   `:slug` or `*slug`.
 #
-# Fails `not_found` where the route has no such parameter. A number or an
-# identifier is read from the text by `numbers.parse_int` or `uuid.parse`.
-function param_of(found: Found, name: str) -> str?
+# Aborts where the route declares no parameter `name`: a route's pattern is
+# the program's own, so asking a route for a name it does not write is a
+# mistake in the program, as an index past a list's end is, never something a
+# request can cause (README § A4); a program whose routes come from outside
+# asks `found.params` first. A number or an identifier is read from the text
+# by `numbers.parse_int` or `uuid.parse`.
+function param_of(found: Found, name: str) -> str
     for p in found.params
         if p.name == name
-            return ok(p.value)
+            return p.value
 
-    return fail(code: NOT_FOUND, msg: f"the route \"{found.name}\" has no parameter \"{name}\"")
+    missing: str? = fail(code: NOT_FOUND, msg: f"the route \"{found.name}\" declares no parameter \"{name}\"")
+    return missing.must()
 
 # Whether `found` was added in the group `name`, or in a group inside it.
 #
@@ -2321,9 +2329,9 @@ test "route: a fixed segment before a parameter before a wildcard, parameters un
     assert route(rt, fixture.request_of(method: "GET", target: "/users/new", headers: [])).must().name == "new_user"
     one = route(rt, fixture.request_of(method: "GET", target: "/users/a%2Fb", headers: [])).must()
     assert one.name == "user" && one.params == [Param(name: "id", value: "a/b")]
-    assert param_of(route(rt, fixture.request_of(method: "GET", target: "/files/a/b%20c", headers: [])).must(), name: "path").must() == "a/b c"
-    assert param_of(route(rt, fixture.request_of(method: "GET", target: "/files/", headers: [])).must(), name: "path").must() == ""
-    assert param_of(route(rt, fixture.request_of(method: "GET", target: "/files", headers: [])).must(), name: "path").must() == ""
+    assert param_of(route(rt, fixture.request_of(method: "GET", target: "/files/a/b%20c", headers: [])).must(), name: "path") == "a/b c"
+    assert param_of(route(rt, fixture.request_of(method: "GET", target: "/files/", headers: [])).must(), name: "path") == ""
+    assert param_of(route(rt, fixture.request_of(method: "GET", target: "/files", headers: [])).must(), name: "path") == ""
     assert route(rt, fixture.request_of(method: "GET", target: "/users/", headers: [])).is_err()
 
 test "route: HEAD taken by GET, every method last, a dirty path and a bad escape refused"
@@ -3478,7 +3486,7 @@ test "route: a user's route and its id"
     rt @= new_router()
     add(@rt, method: http.METHOD_GET, pattern: "/users/:id", name: "user").must()
     found = route(rt, fixture.request_of(method: "GET", target: "/users/42", headers: [])).must()
-    assert found.name == "user" && param_of(found, name: "id").must() == "42"
+    assert found.name == "user" && param_of(found, name: "id") == "42"
 
 # The methods a path allows.
 test "allowed_of: GET and the two this package adds"
@@ -3496,7 +3504,7 @@ test "not_routed: 405 for a method no route of the path takes"
 # A parameter's value by its name.
 test "param_of: the id of a found route"
     found = Found(name: "user", pattern: "/users/:id", groups: [], params: [Param(name: "id", value: "7")])
-    assert param_of(found, name: "id").must() == "7"
+    assert param_of(found, name: "id") == "7"
 
 # Whether a route stands in a group, for a step the group asks.
 test "is_in_group: a route of the admin group"
@@ -3840,7 +3848,7 @@ test "route: a program's own loop, its state passed with @"
             .err _  => break
 
         response = match route(rt, r)
-            .ok found => fixture.visit(@hits, name: found.name, id: param_of(found, name: "id").default(""))
+            .ok found => fixture.visit(@hits, name: found.name, id: param_of(found, name: "id"))
             .err _    => not_routed(rt, r)
 
         http.write_answer(reader.stream, r: r, response: response).must()
