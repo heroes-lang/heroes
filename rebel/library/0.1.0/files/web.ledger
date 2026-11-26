@@ -351,7 +351,7 @@ capability middleware/chain  steps run before and after a handler, in the progra
   go      echo.Echo.Use, echo.Echo.Pre, echo.MiddlewareFunc, echo.HandlerFunc, gin.Engine.Use, gin.HandlersChain, gin.Context.Next, Abort, IsAborted, chi.Router.Use, chi.Chain, chi.Middlewares
   rust    -
   python  flask.Flask.before_request, flask.Flask.after_request, flask.Flask.teardown_request, flask.Blueprint.before_request, after_request
-  note    a step before is a function from a request to the request or an answer, a step after one from a request and a response to a response; `before_with` and `after_with` hand each step the program's own value first, as `http.serve_with` hands a handler one, since the language has no closure for a step to carry the server's keys, settings or store in; the value is read and never changed, so a step that changes state (`limit_rate`'s limiter) is called by the program with its `@` state
+  note    a step before is a function from a request to the request or an answer, a step after one from a request and a response to a response; `before_with` and `after_with` hand each step the program's own value first, as `http.serve_with` hands a handler one, since the language has no closure for a step to carry the server's keys, settings or store in; the value is read and never changed, so a step that changes state (`limit_rate`'s limiter) is called by the program with its `@` state; the steps a router keeps by name, every route's, a group's and a route's own, run around the answer with the program's state lent to each by `@`, are `web/chain`'s, and Echo's usual ones ready to bind `web/steps`'
 
 capability middleware/log  one line a request
   heroes  web.log_request

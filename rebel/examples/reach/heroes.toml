@@ -208,6 +208,7 @@ packages = [
     "web",
     "web/chain",
     "web/proxy",
+    "web/steps",
     "webauthn",
     "websocket",
     "x509",
