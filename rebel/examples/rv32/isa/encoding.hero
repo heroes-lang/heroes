@@ -1,0 +1,271 @@
+# The fields of a 32-bit instruction word, read and written: the register
+# numbers, `funct3`, and the five immediate layouts of RV32I (the
+# unprivileged specification's figure 2.4), whose bits are scattered so that
+# the sign always stands in bit 31. Reading answers words (`isa/word.hero`);
+# writing checks that a value fits its field and fails `invalid` where it
+# does not, which is how the assembler tells a program its immediate is too
+# large.
+
+use isa/ops
+use isa/word
+
+## Reading the fields
+
+# The seven bits of the opcode.
+#
+# - `w`: the instruction word.
+function opcode_of(w: i64) -> i64
+    return w & 0x7f
+
+# The destination register, bits 7 to 11.
+#
+# - `w`: the instruction word.
+function rd_of(w: i64) -> i64
+    return w >> 7 & 31
+
+# The three bits of `funct3`, bits 12 to 14.
+#
+# - `w`: the instruction word.
+function funct3_of(w: i64) -> i64
+    return w >> 12 & 7
+
+# The first source register, bits 15 to 19.
+#
+# - `w`: the instruction word.
+function rs1_of(w: i64) -> i64
+    return w >> 15 & 31
+
+# The second source register, bits 20 to 24.
+#
+# - `w`: the instruction word.
+function rs2_of(w: i64) -> i64
+    return w >> 20 & 31
+
+# The seven bits of `funct7`, bits 25 to 31.
+#
+# - `w`: the instruction word.
+function funct7_of(w: i64) -> i64
+    return w >> 25 & 0x7f
+
+# The I-type immediate, bits 20 to 31, sign-extended.
+#
+# - `w`: the instruction word.
+function imm_i(w: i64) -> i64
+    return word.sign_extend(x: w >> 20, bits: 12)
+
+# The twelve bits above `rs1`, unsigned: a CSR's number, or `system`'s code.
+#
+# - `w`: the instruction word.
+function imm_12(w: i64) -> i64
+    return w >> 20 & 0xfff
+
+# The S-type immediate: bits 25 to 31 then 7 to 11, sign-extended.
+#
+# - `w`: the instruction word.
+function imm_s(w: i64) -> i64
+    return word.sign_extend(x: w >> 25 << 5 | rd_of(w), bits: 12)
+
+# The B-type offset: bit 31 is bit 12, bit 7 is bit 11, bits 25 to 30 are
+# bits 5 to 10 and bits 8 to 11 bits 1 to 4; bit 0 is always zero.
+#
+# - `w`: the instruction word.
+function imm_b(w: i64) -> i64
+    b12 = w >> 31 & 1
+    b11 = w >> 7 & 1
+    b10_5 = w >> 25 & 0x3f
+    b4_1 = w >> 8 & 0xf
+    return word.sign_extend(x: b12 << 12 | b11 << 11 | b10_5 << 5 | b4_1 << 1, bits: 13)
+
+# The U-type immediate: bits 12 to 31 in place, the low twelve zero.
+#
+# - `w`: the instruction word.
+function imm_u(w: i64) -> i64
+    return w & 0xffff_f000
+
+# The J-type offset: bit 31 is bit 20, bits 21 to 30 are bits 1 to 10, bit 20
+# is bit 11 and bits 12 to 19 stay in place; bit 0 is always zero.
+#
+# - `w`: the instruction word.
+function imm_j(w: i64) -> i64
+    b20 = w >> 31 & 1
+    b10_1 = w >> 21 & 0x3ff
+    b11 = w >> 20 & 1
+    b19_12 = w >> 12 & 0xff
+    return word.sign_extend(x: b20 << 20 | b19_12 << 12 | b11 << 11 | b10_1 << 1, bits: 21)
+
+## Writing the fields
+
+# The word of an R-type instruction.
+#
+# - `spec`: the instruction's row.
+# - `rd`: the destination register, 0 to 31.
+# - `rs1`: the first source, 0 to 31.
+# - `rs2`: the second source, 0 to 31.
+function encode_r(spec: ops.Spec, rd: i64, rs1: i64, rs2: i64) -> i64
+    return spec.funct7 << 25 | rs2 << 20 | rs1 << 15 | spec.funct3 << 12 | rd << 7 | spec.opcode
+
+# The word of an I-type instruction, a load and `jalr` among them.
+#
+# - `spec`: the instruction's row.
+# - `rd`: the destination register.
+# - `rs1`: the source register.
+# - `imm`: the immediate, a signed number.
+#
+# Fails `invalid` where `imm` is outside -2048 to 2047.
+function encode_i(spec: ops.Spec, rd: i64, rs1: i64, imm: i64) -> i64?
+    if !word.fits_signed(x: imm, bits: 12)
+        return fail(code: "invalid", msg: f"the immediate {imm} does not fit in 12 signed bits (-2048 to 2047)")
+    return ok((imm & 0xfff) << 20 | rs1 << 15 | spec.funct3 << 12 | rd << 7 | spec.opcode)
+
+# The word of a shift by an immediate.
+#
+# - `spec`: the instruction's row.
+# - `rd`: the destination register.
+# - `rs1`: the source register.
+# - `shamt`: the count.
+#
+# Fails `invalid` where `shamt` is outside 0 to 31, which RV32I reserves.
+function encode_shift(spec: ops.Spec, rd: i64, rs1: i64, shamt: i64) -> i64?
+    if shamt < 0 || shamt > 31
+        return fail(code: "invalid", msg: f"the shift count {shamt} is outside 0 to 31")
+    return ok(spec.funct7 << 25 | shamt << 20 | rs1 << 15 | spec.funct3 << 12 | rd << 7 | spec.opcode)
+
+# The word of a store.
+#
+# - `spec`: the instruction's row.
+# - `rs1`: the base register.
+# - `rs2`: the register stored.
+# - `imm`: the offset, a signed number.
+#
+# Fails `invalid` where `imm` is outside -2048 to 2047.
+function encode_s(spec: ops.Spec, rs1: i64, rs2: i64, imm: i64) -> i64?
+    if !word.fits_signed(x: imm, bits: 12)
+        return fail(code: "invalid", msg: f"the offset {imm} does not fit in 12 signed bits (-2048 to 2047)")
+    high = imm >> 5 & 0x7f
+    low = imm & 31
+    return ok(high << 25 | rs2 << 20 | rs1 << 15 | spec.funct3 << 12 | low << 7 | spec.opcode)
+
+# The word of a branch.
+#
+# - `spec`: the instruction's row.
+# - `rs1`: the first register compared.
+# - `rs2`: the second register compared.
+# - `offset`: from the branch to its target, in bytes.
+#
+# Fails `invalid` where `offset` is odd or outside -4096 to 4094.
+function encode_b(spec: ops.Spec, rs1: i64, rs2: i64, offset: i64) -> i64?
+    if offset & 1 != 0
+        return fail(code: "invalid", msg: f"the branch offset {offset} is odd")
+
+    if !word.fits_signed(x: offset, bits: 13)
+        return fail(code: "invalid", msg: f"the branch target is {offset} bytes away, past the 4 KiB a branch reaches")
+    b12 = offset >> 12 & 1
+    b11 = offset >> 11 & 1
+    b10_5 = offset >> 5 & 0x3f
+    b4_1 = offset >> 1 & 0xf
+    return ok(b12 << 31 | b10_5 << 25 | rs2 << 20 | rs1 << 15 | spec.funct3 << 12 | b4_1 << 8 | b11 << 7 | spec.opcode)
+
+# The word of `lui` or `auipc`.
+#
+# - `spec`: the instruction's row.
+# - `rd`: the destination register.
+# - `imm20`: the upper immediate, the value of bits 12 to 31.
+#
+# Fails `invalid` where `imm20` is outside 0 to 0xfffff.
+function encode_u(spec: ops.Spec, rd: i64, imm20: i64) -> i64?
+    if imm20 < 0 || imm20 > 0xfffff
+        return fail(code: "invalid", msg: f"the upper immediate {imm20} is outside 0 to 0xfffff")
+    return ok(imm20 << 12 | rd << 7 | spec.opcode)
+
+# The word of `jal`.
+#
+# - `spec`: the instruction's row.
+# - `rd`: the link register.
+# - `offset`: from the jump to its target, in bytes.
+#
+# Fails `invalid` where `offset` is odd or outside -1 MiB to 1 MiB - 2.
+function encode_j(spec: ops.Spec, rd: i64, offset: i64) -> i64?
+    if offset & 1 != 0
+        return fail(code: "invalid", msg: f"the jump offset {offset} is odd")
+
+    if !word.fits_signed(x: offset, bits: 21)
+        return fail(code: "invalid", msg: f"the jump target is {offset} bytes away, past the 1 MiB a jal reaches")
+    b20 = offset >> 20 & 1
+    b10_1 = offset >> 1 & 0x3ff
+    b11 = offset >> 11 & 1
+    b19_12 = offset >> 12 & 0xff
+    return ok(b20 << 31 | b10_1 << 21 | b11 << 20 | b19_12 << 12 | rd << 7 | spec.opcode)
+
+# The word of an instruction with no operand: `ecall`, `ebreak`, `mret`,
+# `wfi`; and of `fence`, whose fields are left as every ordering.
+#
+# - `spec`: the instruction's row.
+function encode_fixed(spec: ops.Spec) -> i64
+    if spec.format == .fence
+        return 0xff << 20 | spec.opcode
+    return spec.funct7 << 20 | spec.opcode
+
+# The word of a CSR instruction, `source` being `rs1` or the five-bit
+# immediate that stands in its field.
+#
+# - `spec`: the instruction's row.
+# - `rd`: the destination register.
+# - `csr`: the CSR's number.
+# - `source`: the register, or the immediate.
+#
+# Fails `invalid` where `csr` is outside 0 to 0xfff or `source` outside 0 to
+# 31.
+function encode_csr(spec: ops.Spec, rd: i64, csr: i64, source: i64) -> i64?
+    if csr < 0 || csr > 0xfff
+        return fail(code: "invalid", msg: f"the CSR number {csr} is outside 0 to 0xfff")
+
+    if source < 0 || source > 31
+        return fail(code: "invalid", msg: f"the CSR immediate {source} is outside 0 to 31")
+    return ok(csr << 20 | source << 15 | spec.funct3 << 12 | rd << 7 | spec.opcode)
+
+## Tests
+
+# Words observed from LLVM's assembler, `clang --target=riscv32
+# -march=rv32im_zicsr` 22.1.8 in the Linux arm64 image, and `llvm-objdump
+# -d`, run on 2026-11-26: `addi sp, sp, -16` is `ff010113`.
+test "encode_i and imm_i: a negative immediate both ways"
+    w = encode_i(spec: ops.spec_named("addi").must(), rd: 2, rs1: 2, imm: -16).must()
+    assert w == 0xff01_0113
+    assert imm_i(w) == word.wrap(-16)
+    assert rd_of(w) == 2
+    assert rs1_of(w) == 2
+    assert encode_i(spec: ops.spec_named("addi").must(), rd: 2, rs1: 2, imm: 2048).is_err()
+    assert encode_i(spec: ops.spec_named("addi").must(), rd: 2, rs1: 2, imm: -2048).must() == 0x8001_0113
+
+test "encode_s and imm_s: the offset split around rd's field"
+    w = encode_s(spec: ops.spec_named("sw").must(), rs1: 2, rs2: 1, imm: 12).must()
+    assert w == 0x0011_2623
+    assert imm_s(w) == 12
+    v = encode_s(spec: ops.spec_named("sw").must(), rs1: 2, rs2: 1, imm: -4).must()
+    assert imm_s(v) == word.wrap(-4)
+
+test "encode_b and imm_b: both directions and the ends of the range"
+    for offset in [-4096, -2, 2, 8, 2048, 4094]
+        w = encode_b(spec: ops.spec_named("bne").must(), rs1: 5, rs2: 6, offset: offset).must()
+        assert imm_b(w) == word.wrap(offset)
+
+    assert encode_b(spec: ops.spec_named("beq").must(), rs1: 0, rs2: 0, offset: 4096).is_err()
+    assert encode_b(spec: ops.spec_named("beq").must(), rs1: 0, rs2: 0, offset: 3).is_err()
+
+test "encode_j and imm_j: both directions and the ends of the range"
+    for offset in [-1048576, -4, 4, 2048, 1048574]
+        w = encode_j(spec: ops.spec_named("jal").must(), rd: 1, offset: offset).must()
+        assert imm_j(w) == word.wrap(offset)
+
+    assert encode_j(spec: ops.spec_named("jal").must(), rd: 1, offset: 1048576).is_err()
+
+test "encode_u, encode_shift, encode_csr and encode_fixed: the words LLVM's assembler writes"
+    assert encode_u(spec: ops.spec_named("lui").must(), rd: 10, imm20: 0x12345).must() == 0x1234_5537
+    assert imm_u(0x1234_5537) == 0x1234_5000
+    assert encode_u(spec: ops.spec_named("lui").must(), rd: 10, imm20: 0x100000).is_err()
+    assert encode_shift(spec: ops.spec_named("srai").must(), rd: 5, rs1: 5, shamt: 3).must() == 0x4032_d293
+    assert encode_shift(spec: ops.spec_named("slli").must(), rd: 5, rs1: 5, shamt: 32).is_err()
+    assert encode_csr(spec: ops.spec_named("csrrs").must(), rd: 10, csr: 0xc00, source: 0).must() == 0xc000_2573
+    assert encode_fixed(ops.spec_named("ecall").must()) == 0x0000_0073
+    assert encode_fixed(ops.spec_named("ebreak").must()) == 0x0010_0073
+    assert encode_fixed(ops.spec_named("mret").must()) == 0x3020_0073

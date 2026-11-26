@@ -1,0 +1,17 @@
+[dependencies.rebel]
+path = "../../library/0.1.0/files"
+packages = [
+    "bytes",
+    "containers/deque",
+    "containers/ordered",
+    "errors",
+    "flags",
+    "fs",
+    "hash",
+    "io",
+    "math",
+    "numbers",
+    "path",
+    "scanner",
+    "strings",
+]

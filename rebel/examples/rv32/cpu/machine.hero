@@ -1,0 +1,141 @@
+# The machine: one hart's registers, pc, CSRs and counters, and the bus it
+# reaches its memory and devices through. Everything here is state and the
+# few rules that keep it right: `x0` always reads 0, every register holds a
+# word, and a trap is entered and left as the privileged specification's
+# machine mode does (its section 3.1.6.1 and `mret`).
+
+use cpu/bus
+use cpu/clint
+use cpu/csr
+use isa/word
+
+## The machine
+
+# A RISC-V hart and its bus.
+record Machine
+    # The 32 integer registers as words; `x0` is never written.
+    regs: [i64]
+    # The address of the next instruction.
+    pc: i64
+    # The writable CSRs.
+    csrs: csr.Csrs
+    # The cycle and instruction counters.
+    counters: csr.Counters
+    # The RAM and the devices.
+    bus: bus.Bus
+
+# A machine at reset: every register 0, the pc at the RAM's start.
+#
+# - `ram_size`: the RAM's bytes, a multiple of 4.
+# - `input`: the bytes its UART will receive.
+function new_machine(ram_size: i64, input: [u8]) -> Machine
+    regs: [i64] @= []
+
+    for _ in range(from: 0, to: 32)
+        regs @ regs.push(0)
+
+    return Machine(
+        regs: regs,
+        pc: bus.RAM_BASE,
+        csrs: csr.reset(),
+        counters: csr.Counters(cycles: 0, retired: 0),
+        bus: bus.new_bus(size: ram_size, input: input)
+    )
+
+# The word register `n` holds.
+#
+# - `m`: the machine.
+# - `n`: the register, 0 to 31.
+function reg(m: Machine lent, n: i64) -> i64
+    return m.regs[n]
+
+# Writes `value` to register `n`, cut to a word; a write to `x0` is dropped.
+#
+# - `m`: the machine.
+# - `n`: the register, 0 to 31.
+# - `value`: the value, any `i64`.
+function set_reg(@m: Machine, n: i64, value: i64)
+    if n != 0
+        m.regs[n] @ word.wrap(value)
+
+# The address one past the RAM's last byte, where a stack begins.
+#
+# - `m`: the machine.
+function ram_end(m: Machine lent) -> i64
+    return bus.RAM_BASE + m.bus.ram.len()
+
+## Traps
+
+# Whether the timer's interrupt is pending: `mtime` has reached `mtimecmp`.
+#
+# - `m`: the machine.
+function timer_pending(m: Machine lent) -> bool
+    return clint.is_due(m.bus.clint, now: m.counters.cycles)
+
+# Whether the timer's interrupt is taken before the next instruction: pending,
+# enabled in `mie`, and `mstatus.MIE` set.
+#
+# - `m`: the machine.
+function interrupt_ready(m: Machine lent) -> bool
+    return m.csrs.status & csr.STATUS_MIE != 0 && m.csrs.enabled & csr.TIMER_BIT != 0 && timer_pending(m)
+
+# Whether a handler is installed: `mtvec` is not 0. Without one, this machine
+# answers `ecall` itself and stops at every other trap, as a simulator's
+# environment does for a program that runs on no kernel.
+#
+# - `m`: the machine.
+function has_handler(m: Machine lent) -> bool
+    return m.csrs.vector != 0
+
+# Enters the trap handler: `mepc` is the pc of the instruction trapped, or of
+# the one an interrupt came before; `mcause` and `mtval` say why; `MPIE`
+# keeps `MIE`, which is cleared; and the pc moves to `mtvec`.
+#
+# - `m`: the machine.
+# - `cause`: the trap's cause.
+# - `value`: what `mtval` holds: the address or the word at fault, else 0.
+function enter_trap(@m: Machine, cause: i64, value: i64)
+    m.csrs.epc @ m.pc
+    m.csrs.cause @ cause
+    m.csrs.value @ value
+    previous: i64 @= 0
+
+    if m.csrs.status & csr.STATUS_MIE != 0
+        previous @ csr.STATUS_MPIE
+    m.csrs.status @ previous | csr.STATUS_MPP
+    m.pc @ m.csrs.vector
+
+# Leaves the handler, `mret`: the pc returns to `mepc`, `MIE` takes `MPIE`
+# back, and `MPIE` is set.
+#
+# - `m`: the machine.
+function leave_trap(@m: Machine)
+    enabled: i64 @= 0
+
+    if m.csrs.status & csr.STATUS_MPIE != 0
+        enabled @ csr.STATUS_MIE
+    m.csrs.status @ enabled | csr.STATUS_MPIE | csr.STATUS_MPP
+    m.pc @ m.csrs.epc
+
+## Tests
+
+test "set_reg: x0 stays 0, a value is cut to a word"
+    m @= new_machine(ram_size: 16, input: [])
+    set_reg(@m, n: 0, value: 5)
+    set_reg(@m, n: 1, value: -1)
+    assert reg(m, n: 0) == 0
+    assert reg(m, n: 1) == word.MASK
+    assert ram_end(m) == bus.RAM_BASE + 16
+
+test "enter_trap and leave_trap: MIE kept in MPIE and given back"
+    m @= new_machine(ram_size: 16, input: [])
+    m.csrs.vector @ bus.RAM_BASE + 8
+    m.csrs.status @ csr.STATUS_MIE | csr.STATUS_MPP
+    m.pc @ bus.RAM_BASE + 4
+    enter_trap(@m, cause: 2, value: 0x1234)
+    assert m.pc == bus.RAM_BASE + 8
+    assert m.csrs.epc == bus.RAM_BASE + 4
+    assert m.csrs.status == csr.STATUS_MPIE | csr.STATUS_MPP
+    leave_trap(@m)
+    assert m.pc == bus.RAM_BASE + 4
+    assert m.csrs.status == csr.STATUS_MIE | csr.STATUS_MPIE | csr.STATUS_MPP

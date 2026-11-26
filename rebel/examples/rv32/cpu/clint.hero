@@ -1,0 +1,115 @@
+# The timer, the core-local interruptor (CLINT) of SiFive's layout that QEMU's
+# `virt` machine also uses: `mtime`, a 64-bit count of ticks, and
+# `mtimecmp`, the count at which the hart's timer interrupt becomes pending.
+# Here one tick is one cycle of the hart, so a program's timer is the same on
+# every machine and every run. Both registers are 64 bits read and written
+# as two words, low then high.
+
+use isa/word
+
+## The device
+
+# The CLINT's first address.
+constant BASE: i64
+    0x0200_0000
+
+# How many bytes of addresses it answers.
+constant SIZE: i64
+    0x1_0000
+
+# `mtimecmp`'s low word, as an offset from `BASE`; its high word follows.
+constant COMPARE: i64
+    0x4000
+
+# `mtime`'s low word, as an offset from `BASE`; its high word follows.
+constant TIME: i64
+    0xbff8
+
+# The timer's state: `mtimecmp` as two words, since its 64 bits unsigned
+# pass `i64` once the high word's top bit is set.
+record Clint
+    # The low word of `mtimecmp`.
+    compare_low: i64
+    # The high word of `mtimecmp`.
+    compare_high: i64
+
+# A timer whose interrupt never comes: `mtimecmp` holds every bit set, as a
+# hart's reset leaves software to write it.
+function new_clint() -> Clint
+    return Clint(compare_low: word.MASK, compare_high: word.MASK)
+
+# Whether the count `now` has reached `mtimecmp`, so the timer interrupt is
+# pending: the two 64-bit numbers compared unsigned, high words first.
+#
+# - `clint`: the timer.
+# - `now`: `mtime`, the hart's cycles, from 0 below 2^63.
+function is_due(clint: Clint, now: i64) -> bool
+    high = now >> 32
+
+    if high != clint.compare_high
+        return high > clint.compare_high
+    return now & word.MASK >= clint.compare_low
+
+# The cycle at which the interrupt comes, or -1 where `mtimecmp` is past any
+# count an `i64` holds.
+#
+# - `clint`: the timer.
+function due_at(clint: Clint) -> i64
+    if clint.compare_high >= 0x8000_0000
+        return -1
+    return clint.compare_high << 32 | clint.compare_low
+
+# What a word read at `offset` answers; an offset holding no register reads
+# as zero.
+#
+# - `clint`: the timer.
+# - `offset`: from `BASE`, a multiple of 4.
+# - `now`: `mtime`.
+function read_register(clint: Clint, offset: i64, now: i64) -> i64
+    if offset == COMPARE
+        return clint.compare_low
+
+    if offset == COMPARE + 4
+        return clint.compare_high
+
+    if offset == TIME
+        return now & word.MASK
+
+    if offset == TIME + 4
+        return now >> 32
+    return 0
+
+# Writes the word `value` at `offset`: `mtimecmp`'s halves are kept, and
+# `mtime`, which counts the hart's cycles here, is read-only.
+#
+# - `clint`: the timer.
+# - `offset`: from `BASE`, a multiple of 4.
+# - `value`: the word written.
+function write_register(@clint: Clint, offset: i64, value: i64)
+    if offset == COMPARE
+        clint.compare_low @ value
+
+    if offset == COMPARE + 4
+        clint.compare_high @ value
+
+## Tests
+
+test "is_due: never at reset, then at and past the compare value"
+    c @= new_clint()
+    assert !is_due(c, now: 0)
+    assert due_at(c) == -1
+    write_register(@c, offset: COMPARE + 4, value: 0)
+    write_register(@c, offset: COMPARE, value: 100)
+    assert !is_due(c, now: 99)
+    assert is_due(c, now: 100)
+    assert is_due(c, now: 0x1_0000_0000)
+    assert due_at(c) == 100
+
+test "read_register: both halves of both registers, and a hole"
+    c @= new_clint()
+    write_register(@c, offset: COMPARE, value: 7)
+    assert read_register(c, offset: COMPARE, now: 0) == 7
+    assert read_register(c, offset: COMPARE + 4, now: 0) == word.MASK
+    assert read_register(c, offset: TIME, now: 0x1_0000_0005) == 5
+    assert read_register(c, offset: TIME + 4, now: 0x1_0000_0005) == 1
+    assert read_register(c, offset: 0x10, now: 9) == 0
