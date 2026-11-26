@@ -15,6 +15,17 @@
 # `cell_keep`'s parameter is not declared `lent`, so C may keep the address
 # while `lend` runs; `lend` returns, C writes, and `lend_again` is the next
 # lend at the same depth.
+#
+# Corrected 2026-11-26, lane room-mixedown (defect d-lane-land260-2): since
+# panel 259's R1 (route E, step 192a, `3f9fe858d`, 2026-11-25) no lend
+# region is kept by its frame's depth: every lend is a region of its own in
+# the process's records, and a region given back is taken by the next lend
+# it fits, on any thread and at any depth (`runtime/parts/lend_aside.c`).
+# `lend_again`'s is still that next lend, so the write is still found there,
+# and the runtime says *found when the next lend took its memory*; *at its
+# depth*, which this case pinned and the paragraphs above say, named a
+# stack of regions that no longer exists, and the `.expected` was changed by
+# hand that day to the runtime's words.
 
 extern "fixedbugs-451-keepers.h"
     function cell_keep(@out: i64)
