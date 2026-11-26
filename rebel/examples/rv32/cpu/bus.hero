@@ -102,9 +102,12 @@ function store(@bus: Bus, at: i64, width: i64, value: i64) -> ()?
 
     if in_ram(bus, at: at, width: width)
         base = at - RAM_BASE
+        k: i64 @= 0
 
-        for k in range(from: 0, to: width)
+        # A `while`: `range` would make a list on every store (spec § 11).
+        while k < width
             bus.ram[base + k] @ to_u8(value >> 8 * k & 0xff).must()
+            k @ k + 1
 
         return ok()
 
@@ -171,9 +174,12 @@ function aligned(at: i64, width: i64) -> ()?
 # The word `width` bytes of `ram` spell from `from`, the first the lowest.
 function ram_word(ram: [u8] lent, from: i64, width: i64) -> i64
     value @= 0
+    k: i64 @= 0
 
-    for k in range(from: 0, to: width)
+    # A `while`, as in `store`: this runs for every fetch and load.
+    while k < width
         value @ value | to_i64(ram[from + k]).must() << 8 * k
+        k @ k + 1
 
     return value
 

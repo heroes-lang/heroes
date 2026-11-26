@@ -1,0 +1,178 @@
+== assembling
+primes.s: 224 bytes at 0x80000000, 11 symbols, entry 0x80000000 <_start>
+sort.s: 436 bytes at 0x80000000, 17 symbols, entry 0x80000000 <_start>
+fib.s: 236 bytes at 0x80000000, 8 symbols, entry 0x80000000 <_start>
+strings.s: 749 bytes at 0x80000000, 31 symbols, entry 0x80000000 <_start>
+muldiv.s: 1023 bytes at 0x80000000, 26 symbols, entry 0x80000000 <_start>
+ticks.s: 643 bytes at 0x80000000, 21 symbols, entry 0x80000000 <_start>
+crash.s: 82 bytes at 0x80000000, 2 symbols, entry 0x80000000 <_start>
+
+== a source with mistakes
+bad.s:6: no instruction or pseudo-instruction is named "addd"
+bad.s:7: li takes 2 operands, not 1
+bad.s:8: "q9" names no register
+bad.s:9: "_start" is defined twice
+bad.s:10: no directive is named .quad
+bad.s:11: mv takes 2 operands, not 3
+bad.s:12: 0x1_0000_0000 does not fit in 32 bits
+
+== a damaged image
+invalid: not an rv32 image: the payload's CRC-32 is not the header's: the file is damaged
+
+== run primes
+| 2 3 5 7 11 13 17 19 23 29 31 37 41 43 47 53 59 61 67 71 73 79 83 89 97
+exited with status 0 after 3255 instructions
+
+== run sort
+| 42 -7 1000 0 3 -2147483648 2147483647 17 -1 256 3 99
+| -2147483648 -7 -1 0 3 3 17 42 99 256 1000 2147483647
+exited with status 0 after 1705 instructions
+
+== run fib
+| 0 1 1 2 3 5 8 13 21 34 55 89 144 233 377 610
+exited with status 0 after 59636 instructions
+
+== run strings
+| length: 20
+| reversed: !dlrow V-CSIR ,olleH
+| upper: HELLO, RISC-V WORLD!
+| vowels: 4
+exited with status 0 after 1801 instructions
+
+== run muldiv
+| mul    -1 * -1           0x00000001
+| mulh   -1 * -1           0x00000000
+| mulhu  ffffffff^2        0xfffffffe
+| mulhsu -1 * ffffffff     0xffffffff
+| mulh   80000000^2        0x40000000
+| div    7 / 0             0xffffffff
+| divu   7 / 0             0xffffffff
+| rem    7 % 0             0x00000007
+| div    80000000 / -1     0x80000000
+| rem    80000000 % -1     0x00000000
+| div    -7 / 2            0xfffffffd
+| rem    -7 % 2            0xffffffff
+| add    7fffffff + 1      0x80000000
+| sll    1 << 33           0x00000002
+| sra    80000000 >> 31    0xffffffff
+| srl    80000000 >> 31    0x00000001
+| slt    -1 < 0            0x00000001
+| sltu   ffffffff < 0      0x00000000
+exited with status 0 after 3596 instructions
+
+== run ticks
+| tick 1 at cycle 1257
+| tick 2 at cycle 2257
+| tick 3 at cycle 3257
+| tick 4 at cycle 4257
+| tick 5 at cycle 5257
+| trap: mcause 2, stepped over
+| trap: mcause 3, stepped over
+exited with status 0 after 2683 instructions
+
+== run crash
+| storing past the top of the stack
+stopped by a trap at 0x80000018: store access fault (0x80010000) after 6 instructions
+
+== listing of fib, its first instructions
+80000000 <_start>:
+80000000:  00000413  li      s0, 0
+80000004 <loop>:
+80000004:  00040513  mv      a0, s0
+80000008:  00000097  auipc   ra, 0x0
+8000000c:  038080e7  jalr    ra, 56(ra)
+80000010:  02000593  li      a1, 32
+80000014:  00f00293  li      t0, 15
+80000018:  00541463  bne     s0, t0, 0x80000020 <separated>
+8000001c:  00a00593  li      a1, 10
+80000020 <separated>:
+80000020:  00000097  auipc   ra, 0x0
+80000024:  070080e7  jalr    ra, 112(ra)
+80000028:  00140413  addi    s0, s0, 1
+8000002c:  01000293  li      t0, 16
+80000030:  fc544ae3  blt     s0, t0, 0x80000004 <loop>
+80000034:  00000513  li      a0, 0
+80000038:  05d00893  li      a7, 93
+8000003c:  00000073  ecall
+80000040 <fib>:
+80000040:  00200293  li      t0, 2
+80000044:  04554463  blt     a0, t0, 0x8000008c <fib_done>
+80000048:  ff010113  addi    sp, sp, -16
+8000004c:  00112623  sw      ra, 12(sp)
+
+== debugging fib
+rv32 debugger: 236 bytes at 0x80000000, 8 symbols, entry 0x80000000 <_start>
+(rv32) help
+break LOC       stop before the instruction at LOC: a label, a register, either plus N, or an address
+delete LOC      remove the breakpoint at LOC
+breaks          list the breakpoints
+step [N]        run N instructions, 1 by default, each shown with what it wrote
+continue        run to a breakpoint or the program's end
+regs            the pc and the registers
+csrs            the machine's CSRs and counters
+x LOC [N]       N bytes of memory from LOC, 64 by default
+list [LOC] [N]  N instructions from LOC, the pc and 8 by default
+trace           the last instructions run
+quit            end the session
+(rv32) list fib 8
+80000040 <fib>:
+80000040:  00200293  li      t0, 2
+80000044:  04554463  blt     a0, t0, 0x8000008c <fib_done>
+80000048:  ff010113  addi    sp, sp, -16
+8000004c:  00112623  sw      ra, 12(sp)
+80000050:  00812423  sw      s0, 8(sp)
+80000054:  00912223  sw      s1, 4(sp)
+80000058:  00050413  mv      s0, a0
+8000005c:  fff50513  addi    a0, a0, -1
+(rv32) break fib_done
+breakpoint at 8000008c <fib_done>
+(rv32) continue
+breakpoint at 8000008c <fib_done>
+8000008c:  00008067  ret
+(rv32) regs
+pc=8000008c
+zero=00000000    ra=80000010    sp=80010000    gp=00000000
+  tp=00000000    t0=00000002    t1=00000000    t2=00000000
+  s0=00000000    s1=00000000    a0=00000000    a1=00000000
+  a2=00000000    a3=00000000    a4=00000000    a5=00000000
+  a6=00000000    a7=00000000    s2=00000000    s3=00000000
+  s4=00000000    s5=00000000    s6=00000000    s7=00000000
+  s8=00000000    s9=00000000   s10=00000000   s11=00000000
+  t3=00000000    t4=00000000    t5=00000000    t6=00000000
+(rv32) trace
+80000000:  00000413  li      s0, 0                      s0=00000000
+80000004:  00040513  mv      a0, s0                     a0=00000000
+80000008:  00000097  auipc   ra, 0x0                    ra=80000008
+8000000c:  038080e7  jalr    ra, 56(ra)                 ra=80000010
+80000040:  00200293  li      t0, 2                      t0=00000002
+80000044:  04554463  blt     a0, t0, 0x8000008c <fib_done>
+(rv32) delete fib_done
+deleted the breakpoint at 8000008c <fib_done>
+(rv32) break fib+0x38
+breakpoint at 80000078 <fib+0x38>
+(rv32) continue
+| 0 1 
+breakpoint at 80000078 <fib+0x38>
+80000078:  00950533  add     a0, a0, s1
+(rv32) x sp 16
+8000fff0  00 00 00 00 00 00 00 00  02 00 00 00 10 00 00 80  |................|
+(rv32) step 5
+80000078:  00950533  add     a0, a0, s1                 a0=00000001
+8000007c:  00412483  lw      s1, 4(sp)                  s1=00000000
+80000080:  00812403  lw      s0, 8(sp)                  s0=00000002
+80000084:  00c12083  lw      ra, 12(sp)                 ra=80000010
+80000088:  01010113  addi    sp, sp, 16                 sp=80010000
+(rv32) csrs
+mstatus=00001800  mie=00000000  mtvec=00000000  mscratch=00000000
+mepc=00000000  mcause=00000000  mtval=00000000
+cycle=93  instret=93
+(rv32) breaks
+80000078 <fib+0x38>
+(rv32) delete fib+0x38
+deleted the breakpoint at 80000078 <fib+0x38>
+(rv32) continue
+| 1 2 3 5 8 13 21 34 55 89 144 233 377 610
+the program has ended: exited with status 0 after 59636 instructions
+(rv32) step
+the program has ended: exited with status 0 after 59636 instructions
+(rv32) quit

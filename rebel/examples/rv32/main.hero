@@ -1,12 +1,109 @@
-# rv32 (being written).
+# rv32: a RISC-V RV32IM emulator, with the two-pass assembler that makes
+# its programs, a disassembler and a debugger. The machine is one hart in
+# machine mode: the base integer instructions and the M extension, with
+# their exact 32-bit wrap-around, shifts read modulo 32 and division by zero
+# as the specification defines it; the CSRs of the counters and of trap
+# handling, traps for `ecall`, `ebreak`, illegal instructions and faulting
+# accesses, and `mret`; a bus that checks every address, with RAM at
+# 0x8000_0000, a 16550 UART at 0x1000_0000 and a CLINT timer at
+# 0x0200_0000, as QEMU's `virt` machine places them. The assembler reads GNU
+# as's syntax for RISC-V, its labels, directives and pseudo-instructions,
+# and writes a flat binary image with a small header, a checksum and the
+# symbols; a raw flat binary loads too. A program with no trap handler calls
+# `exit`, `read` and `write` by `ecall` with Linux's numbers.
+#
+# Run for real, on the samples of `samples/` beside this file or a program
+# of one's own:
+#
+#     rv32 asm primes.s                  # writes primes.img beside it
+#     rv32 run primes.img                # runs it; a .s is assembled first
+#     rv32 run strings.s --input 'hi\n'  # what its UART receives
+#     rv32 run fib.s --limit 1000        # at most 1000 instructions
+#     rv32 debug fib.img                 # the debugger, commands on stdin
+#     rv32 disasm fib.img                # the image as assembly
+#
+# `rv32 demo <folder>` assembles the samples of the folder (primes, a sort,
+# a recursive Fibonacci on the stack, a string routine, the M extension's
+# edge cases, a timer interrupt, a crash), writes their images under
+# `build/rv32-demo/`, shows a source with mistakes and a damaged image
+# refused, reads every image back and runs it, lists one, and debugs one
+# under the commands of the standard input.
+#
+# The packages of Rebel it uses, and what for:
+#
+# - `scanner`: the assembler's tokens;
+# - `flags`: the command line;
+# - `math`: the 64-bit wrapping product `mulhu` needs;
+# - `numbers`, `strings`: numbers read and written in any base, text cut
+#   and padded;
+# - `bytes`, `hash`: the image's little-endian fields and its CRC-32, a
+#   memory dump;
+# - `containers/ordered`: the symbols by address and the breakpoints;
+# - `containers/deque`: the debugger's trail of the last instructions;
+# - `lists`: the symbols sorted, the debugger's lines joined;
+# - `fs`, `path`, `io`: images written and read, the standard streams;
+# - `errors`: failures told with their file and line.
 
-use asm/syntax
-use cpu/execute
-use cpu/machine
-use isa/registers
+use <rebel>/io
+
+use app/jobs
+use cli/command_line
+use demo/demo
+
+# The exit status of a command line the program does not read.
+constant USAGE: i64
+    2
 
 function main()
-    m @= machine.new_machine(ram_size: 64, input: [])
-    print(registers.abi_name(2))
-    _ = execute.step(@m)
-    print(syntax.number(3).addend)
+    request = command_line.read(args())
+
+    if request.is_err()
+        jobs.complain(errors_line(request))
+        exit(code: USAGE)
+    exit(code: perform(request.must()))
+
+# Does what `job` asks; answers the exit status.
+function perform(job: command_line.Job) -> i64
+    return match job
+        .help h =>
+            print(h.text)
+            0
+        .assemble a => status(jobs.assemble(source: a.source, output: a.output, base: a.base, raw: a.raw))
+        .demo d     => status(demo.run(folder: d.samples, work: d.work, commands: io.stdin()))
+        .machine m  => machine(verb: m.verb, file: m.program, input: m.input, limit: m.limit, memory: m.memory)
+
+function machine(verb: str, file: str, input: str, limit: i64, memory: i64) -> i64
+    found = jobs.program_at(file)
+
+    if found.is_err()
+        jobs.complain(errors_line(found))
+        return 1
+    p = found.must()
+
+    if verb == "run"
+        return jobs.run(p, input: input, limit: limit, memory: memory)
+
+    if verb == "debug"
+        return status(jobs.debug(p, input: input, memory: memory, commands: io.stdin()))
+
+    match jobs.listing(p)
+        .ok lines =>
+            for line in lines
+                print(line)
+
+            return 0
+        .err e =>
+            jobs.complain(e.msg)
+            return 1
+
+function status(r: ()?) -> i64
+    if r.is_err()
+        jobs.complain(errors_line(r))
+        return 1
+    return 0
+
+# A failure's message with "rv32: " before it.
+function errors_line<T>(r: T?) -> str
+    return match r
+        .ok _  => ""
+        .err e => "rv32: " + e.msg

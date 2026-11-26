@@ -1,0 +1,195 @@
+# The four jobs the command line names, each reading its files through Rebel's
+# `fs` and `path` and writing to the standard streams through `io`:
+# assembling a source into an image, running a program, debugging one under
+# commands read from the standard input, and writing one as assembly. A
+# program is an image file, or an assembly source (`.s`) assembled on the
+# way, so `rv32 run hello.s` needs no step before it.
+
+use <rebel>/bytes
+use <rebel>/errors
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/path
+use <rebel>/strings
+
+use asm/assembler
+use cpu/bus
+use debug/debugger
+use debug/views
+use disasm/disasm
+use image/format
+use isa/word
+use run/runner
+
+## Programs
+
+# The program at `file`: assembled where its extension is `.s` or `.S`, else
+# read as an image.
+#
+# - `file`: the path.
+#
+# Fails where the file cannot be read (`fs.read_bytes`' codes), and
+# `invalid` where its source does not assemble or its image is damaged, the
+# message opening with the file's name.
+function program_at(file: str) -> format.Program?
+    name = path.name(file).default(file)
+    extension = path.ext(file).default("")
+
+    if extension == ".s" || extension == ".S"
+        source = errors.context(read_file(file), what: name)?
+        return assembled(source: source, name: name, base: bus.RAM_BASE)
+    data = errors.context(fs.read_bytes(file), what: name)?
+    return errors.context(format.decode(data, raw_base: bus.RAM_BASE), what: name)
+
+# `source` assembled at `base`, every error's line naming `name`.
+#
+# - `source`: the assembly text.
+# - `name`: the file's name, for the messages.
+# - `base`: the load address.
+#
+# Fails `invalid` with one line per error, `name:line: what`.
+function assembled(source: str, name: str, base: i64) -> format.Program?
+    return match assembler.assemble(source, base: base)
+        .ok p  => ok(p)
+        .err e => fail(code: e.code, msg: located(text: e.msg, name: name))
+
+# `text`'s lines, each `line N: ...` written `name:N: ...`, as a compiler
+# names a place.
+function located(text: str, name: str) -> str
+    out: [str] @= []
+
+    for line in strings.lines(text)
+        out @ out.push(name + ":" + strings.trim_prefix(s: line, prefix: "line "))
+
+    return out.join("\n")
+
+## The jobs
+
+# `rv32 asm`: writes `source`'s image, and says what it holds.
+#
+# - `source`: the source's path.
+# - `output`: the image's path, "" for `source` with `.img`.
+# - `base`: the load address.
+# - `raw`: whether to write a raw flat binary.
+#
+# Fails as `program_at` does, and where the image cannot be written.
+function assemble(source: str, output: str, base: i64, raw: bool) -> ()?
+    text = errors.context(read_file(source), what: path.name(source).default(source))?
+    p = assembled(source: text, name: path.name(source).default(source), base: base)?
+    target: str @= output
+
+    if target == ""
+        target @ path.with_ext(path: source, to: ".img")?
+    data: [u8] @= format.encode(p)
+
+    if raw
+        data @ p.image
+    fs.write_bytes(target, data: data)?
+    print(summary(p))
+    return ok()
+
+# A program in one line: its size, its symbols and its entry.
+#
+# - `p`: the program.
+function summary(p: format.Program) -> str
+    names = disasm.names_of(p)
+    counted: str @= f"{p.symbols.len()} symbols"
+
+    if p.symbols.len() == 1
+        counted @ "1 symbol"
+    return f"{p.image.len()} bytes at {word.hex_literal(p.base)}, {counted}, entry {word.hex_literal(p.entry)} {disasm.describe(names, address: p.entry)}"
+
+# `rv32 run`: runs `p` and writes its console as it ends; answers the
+# process's exit status.
+#
+# - `p`: the program.
+# - `input`: what its UART receives.
+# - `limit`: the most instructions.
+# - `memory`: the RAM's bytes.
+#
+# The status is the program's own where it exits, and 1 where it stops
+# otherwise, the reason written to the standard error.
+function run(p: format.Program, input: str, limit: i64, memory: i64) -> i64
+    loaded = runner.load(p, ram_size: memory, input: bytes.from_text(input))
+
+    if loaded.is_err()
+        complain(errors.format_line(loaded))
+        return 1
+    m @= loaded.must()
+    stop = runner.run(@m, budget: limit)
+    _ = io.write(io.stdout(), runner.console(@m)).is_err()
+
+    return match stop
+        .exited e => e.code
+        .breakpoint | .trapped _ | .stalled | .limit =>
+            complain("rv32: " + runner.told(stop, m))
+            1
+
+# `rv32 debug`: reads commands from `commands` until it ends or `quit`,
+# writing each answer; echoes each command after its prompt where the input
+# is no terminal, so a scripted session reads as a typed one.
+#
+# - `p`: the program.
+# - `input`: what its UART receives.
+# - `memory`: the RAM's bytes.
+# - `commands`: the stream the commands are read from.
+#
+# Fails as `runner.load` does, and where `commands` cannot be read.
+function debug(p: format.Program, input: str, memory: i64, commands: io.Stream) -> ()?
+    m = runner.load(p, ram_size: memory, input: bytes.from_text(input))?
+    d @= debugger.new_debugger(m: m, p: p)
+    echo = !io.is_terminal(commands).default(false)
+    reader @= io.reader(commands)
+    print(f"rv32 debugger: {summary(p)}")
+
+    while true
+        line = io.read_line(@reader)?
+
+        if echo
+            print("(rv32) " + line)
+
+        if line == "" && io.at_end(@reader)?
+            return ok()
+        reply = debugger.command(@d, line: line)
+
+        for shown in reply.lines
+            print(shown)
+
+        if reply.quit
+            return ok()
+
+# `rv32 disasm`: the whole image as a listing.
+#
+# - `p`: the program.
+#
+# Fails `access_fault` where the image does not fit the RAM it would load
+# in.
+function listing(p: format.Program) -> [str]?
+    m = runner.load(p, ram_size: (p.image.len() + 4) / 4 * 4 + 4, input: [])?
+    names = disasm.names_of(p)
+    return views.listing_of(m, at: p.base, count: (p.image.len() + 3) / 4, names: names)
+
+## Helpers
+
+# Writes `message` to the standard error; a line that cannot be written is
+# dropped, there being nowhere else to say it.
+#
+# - `message`: the line.
+function complain(message: str)
+    _ = io.write_line(io.stderr(), line: message).is_err()
+
+## Tests
+
+test "assembled: every error named by the file and its line"
+    match assembled(source: "nop\naddd a0\nli a0\n", name: "x.s", base: bus.RAM_BASE)
+        .ok _  => assert false
+        .err e => assert e.msg == "x.s:2: no instruction or pseudo-instruction is named \"addd\"\nx.s:3: li takes 2 operands, not 1"
+
+test "summary: the size, the symbols and the entry by its name"
+    p = assembled(source: "_start: nop\n", name: "x.s", base: bus.RAM_BASE).must()
+    assert summary(p) == "4 bytes at 0x80000000, 1 symbol, entry 0x80000000 <_start>"
+
+test "program_at: a file that is not there fails, naming it"
+    match program_at("build/rv32-no-such-folder/missing.img")
+        .ok _  => assert false
+        .err e => assert strings.has_prefix(s: e.msg, prefix: "missing.img: ")
