@@ -1,0 +1,242 @@
+# The lexer of minidb's SQL: the text of one or more statements cut into
+# tokens by Rebel's `scanner`, given SQL's own rules: words of letters,
+# digits and `_`; integers and decimals; strings between single quotes, a
+# doubled quote standing for one; names between double quotes, the same;
+# parameters `?` and `?N`; comments after `--` and between `/*` and `*/`;
+# SQL's operators. A word is compared without case by the parser, so the
+# scanner is given no keyword.
+
+use <rebel>/regex
+use <rebel>/scanner
+use <rebel>/strings
+
+## Tokens
+
+# What a token is, as the parser reads it.
+variant Kind
+    # A keyword or a name: the parser decides which, without case.
+    word
+    # A name between double quotes, which keeps its case and may be a
+    # keyword's.
+    quoted
+    # A whole number's digits.
+    integer
+    # A number with a point or an exponent.
+    decimal
+    # A string's characters, its quotes and doubled quotes taken off.
+    text
+    # A parameter: `?` alone, or `?` and its number.
+    parameter
+    # An operator or a punctuation mark.
+    symbol
+    # After the last token.
+    end
+
+# One token of a statement and where it stands.
+record Token
+    # What it is.
+    kind: Kind
+    # Its text: a word as written, a string's characters, a parameter's
+    # number ("" for `?` alone), an operator's characters.
+    text: str
+    # Its line, from 1.
+    line: i64
+    # Its column, from 1, in bytes.
+    column: i64
+    # The byte offset of its first byte in the source.
+    offset: i64
+    # The byte offset after its last byte.
+    stop: i64
+
+## Reading
+
+# The tokens of `source`, the `end` token last.
+#
+# - `source`: SQL text, one statement or several.
+#
+# Fails `invalid` at a string or a quoted name with no closing quote and at
+# a character no token begins with, the message giving the line and column.
+function tokens(source: str) -> [Token]?
+    found: [Token] @= []
+
+    for t in scanner.scan(source, rules: sql_rules())
+        found @ found.push(token_of(t)?)
+
+    return ok(found)
+
+# Where a token stands, as an error message opens: "line 3, column 14".
+#
+# - `t`: the token.
+function place_of(t: Token) -> str
+    return f"line {t.line}, column {t.column}"
+
+# Whether `t` is the word `word`, compared without case: `select` is the
+# word "SELECT". A quoted name is never a word.
+#
+# - `t`: the token.
+# - `word`: the word in upper case.
+function is_word(t: Token, word: str) -> bool
+    return t.kind == .word && strings.to_upper_ascii(t.text) == word
+
+# Whether `t` is the operator or punctuation mark `symbol`.
+#
+# - `t`: the token.
+# - `symbol`: its characters.
+function is_symbol(t: Token, symbol: str) -> bool
+    return t.kind == .symbol && t.text == symbol
+
+## SQL's rules for the scanner
+
+# Classes of tokens tried before the scanner's own, by their place in the
+# list: a string, a quoted name, a numbered parameter.
+constant STRING_CLASS: i64
+    0
+
+constant QUOTED_CLASS: i64
+    1
+
+constant PARAMETER_CLASS: i64
+    2
+
+function sql_rules() -> scanner.Rules
+    rules @= scanner.go_rules()
+    rules.string_quotes @ ""
+    rules.raw_quotes @ ""
+    rules.char_quotes @ ""
+    rules.line_comments @ ["--"]
+    rules.operators @ [
+        "<="
+        ">="
+        "<>"
+        "!="
+        "=="
+        "||"
+        "="
+        "<"
+        ">"
+        "+"
+        "-"
+        "*"
+        "/"
+        "%"
+        "("
+        ")"
+        ","
+        ";"
+        "."
+        "?"
+    ]
+
+    # The patterns are the program's own and known good: a failure here is a
+    # defect of this file, which the module's tests would show first.
+    rules.classes @ [
+        regex.compile("'(?:[^']|'')*'").must()
+        regex.compile("\"(?:[^\"]|\"\")*\"").must()
+        regex.compile("\\?[0-9]+").must()
+    ]
+    return rules
+
+function token_of(t: scanner.Token) -> Token?
+    line = t.start.line
+    column = t.start.column
+
+    kind: Kind = match t.kind
+        .identifier => .word
+        .integer    => .integer
+        .float      => .decimal
+        .operator   => symbol_kind(t.text)
+        .end        => .end
+        .custom c   => custom_kind(c.index)
+        .keyword | .string | .raw_string | .character | .comment | .whitespace | .newline | .other | .invalid _ =>
+            return fail(code: "invalid", msg: f"line {line}, column {column}: {refused(t.text)}")
+
+    return ok(
+        Token(kind: kind, text: text_of(t.text, kind: kind), line: line, column: column, offset: t.start.offset, stop: t.end.offset)
+    )
+
+# `?` alone is a parameter numbered by its place; every other operator is a
+# symbol.
+function symbol_kind(text: str) -> Kind
+    if text == "?"
+        return .parameter
+    return .symbol
+
+function custom_kind(which: i64) -> Kind
+    if which == STRING_CLASS
+        return .text
+
+    if which == QUOTED_CLASS
+        return .quoted
+    return .parameter
+
+# A token's text as the parser reads it: a string or quoted name without its
+# quotes, each doubled quote one; a parameter without its `?`.
+function text_of(raw: str, kind: Kind) -> str
+    return match kind
+        .text                                        => undoubled(raw: raw, quote: "'")
+        .quoted                                      => undoubled(raw: raw, quote: "\"")
+        .parameter                                   => raw.slice(from: 1, to: raw.len())
+        .word | .integer | .decimal | .symbol | .end => raw
+
+function undoubled(raw: str, quote: str) -> str
+    inner = raw.slice(from: 1, to: raw.len() - 1)
+    return strings.replace_all(s: inner, old: quote + quote, new: quote)
+
+# What the lexer says of a character no token begins with.
+function refused(text: str) -> str
+    if text == "'"
+        return "a string with no closing quote"
+
+    if text == "\""
+        return "a quoted name with no closing quote"
+    return f"no token begins with \"{text}\""
+
+## Tests
+
+test "tokens: a statement's words, numbers, strings and symbols"
+    found = tokens("SELECT name, 2.5 FROM t WHERE id >= 10;").must()
+    kinds = found.map(kind_of)
+    assert kinds == [.word, .word, .symbol, .decimal, .word, .word, .word, .word, .symbol, .integer, .symbol, .end]
+    assert found[9].text == "10"
+    assert found[8].text == ">="
+
+test "tokens: a doubled quote inside a string and a quoted name, an empty string"
+    found = tokens("'it''s' \"say \"\"hi\"\"\" ''").must()
+    assert found[0].kind == .text
+    assert found[0].text == "it's"
+    assert found[1].kind == .quoted
+    assert found[1].text == "say \"hi\""
+    assert found[2].text == ""
+
+test "tokens: comments are skipped, parameters keep their number, `?` alone none"
+    found = tokens("-- a comment\nSELECT ?2, ? /* and\nanother */ + 1").must()
+    assert found[0].line == 2
+    assert found[1].kind == .parameter
+    assert found[1].text == "2"
+    assert found[3].kind == .parameter
+    assert found[3].text == ""
+    assert found[4].text == "+"
+
+test "tokens: an unclosed string, an unclosed name and a stray character are refused with their place"
+    assert tokens("SELECT 'abc").is_err()
+
+    match tokens("SELECT\n  \"abc")
+        .ok _  => assert false
+        .err e => assert e.msg == "line 2, column 3: a quoted name with no closing quote"
+
+    match tokens("SELECT #")
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1, column 8: no token begins with \"#\""
+
+test "tokens: text of more than one byte in a string and a quoted name"
+    found = tokens("'caffè' \"naïve\"").must()
+    assert found[0].text == "caffè"
+    assert found[1].text == "naïve"
+
+test "is_word: without case, never a quoted name"
+    found = tokens("select \"SELECT\"").must()
+    assert is_word(found[0], word: "SELECT")
+    assert !is_word(found[1], word: "SELECT")
+
+function kind_of(t: Token) -> Kind
+    return t.kind

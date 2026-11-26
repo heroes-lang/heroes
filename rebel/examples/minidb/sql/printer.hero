@@ -1,0 +1,111 @@
+# An expression written back as SQL text: the name a result column takes
+# where no `AS` gives one, as SQLite names it from its text. Brackets are
+# written around every operation inside another, so the text reads as the
+# tree does, whatever the precedence.
+
+use sql/ast
+use values/value
+
+## Printing
+
+# `e` as SQL text.
+#
+# - `e`: the expression.
+function text_of(e: ast.Expr) -> str
+    return written(e, inner: false)
+
+function written(e: ast.Expr, inner: bool) -> str
+    return match e
+        .literal l   => value.literal(l.value)
+        .column c    => qualified(table: c.table, name: c.name)
+        .parameter p => f"?{p.number}"
+        .negate n    => "-" + written(n.args[0], inner: true)
+        .negation n  => wrapped("NOT " + written(n.args[0], inner: true), inner: inner)
+        .binary b => wrapped(
+            written(b.args[0], inner: true) + " " + operator_of(b.op) + " " + written(b.args[1], inner: true),
+            inner: inner
+        )
+        .is_null n => wrapped(
+            written(n.args[0], inner: true) + negated_word(n.negated, word: " IS NOT NULL", otherwise: " IS NULL"),
+            inner: inner
+        )
+        .in_list l => wrapped(
+            written(l.args[0], inner: true) + negated_word(l.negated, word: " NOT IN (", otherwise: " IN (") + listed(l.args.slice(from: 1, to: l.args.len())) + ")",
+            inner: inner
+        )
+        .between b => wrapped(
+            written(b.args[0], inner: true) + negated_word(b.negated, word: " NOT BETWEEN ", otherwise: " BETWEEN ") + written(b.args[1], inner: true) + " AND " + written(b.args[2], inner: true),
+            inner: inner
+        )
+        .like l => wrapped(
+            written(l.args[0], inner: true) + negated_word(l.negated, word: " NOT LIKE ", otherwise: " LIKE ") + written(l.args[1], inner: true),
+            inner: inner
+        )
+        .choice c => choice_text(c.args)
+        .call c   => call_text(c.name, star: c.star, distinct: c.distinct, operands: c.args)
+
+function qualified(table: str, name: str) -> str
+    if table == ""
+        return name
+    return table + "." + name
+
+function wrapped(text: str, inner: bool) -> str
+    if inner
+        return "(" + text + ")"
+    return text
+
+function negated_word(negated: bool, word: str, otherwise: str) -> str
+    if negated
+        return word
+    return otherwise
+
+function listed(operands: [ast.Expr]) -> str
+    parts: [str] @= []
+
+    for a in operands
+        parts @ parts.push(written(a, inner: false))
+
+    return parts.join(", ")
+
+function call_text(name: str, star: bool, distinct: bool, operands: [ast.Expr]) -> str
+    if star
+        return name + "(*)"
+
+    if distinct
+        return name + "(DISTINCT " + listed(operands) + ")"
+    return name + "(" + listed(operands) + ")"
+
+function choice_text(operands: [ast.Expr]) -> str
+    parts @= ["CASE"]
+    last = operands.len() - 1
+    k @= 0
+
+    while k < last
+        parts @ parts.push(
+            "WHEN " + written(operands[k], inner: false) + " THEN " + written(operands[k + 1], inner: false)
+        )
+        k @ k + 2
+
+    parts @ parts.push("ELSE " + written(operands[last], inner: false))
+    parts @ parts.push("END")
+    return parts.join(" ")
+
+# The text of an operator.
+#
+# - `op`: the operator.
+function operator_of(op: ast.Binary) -> str
+    return match op
+        .add           => "+"
+        .subtract      => "-"
+        .multiply      => "*"
+        .divide        => "/"
+        .remainder     => "%"
+        .concat        => "||"
+        .equal         => "="
+        .not_equal     => "<>"
+        .less          => "<"
+        .less_equal    => "<="
+        .greater       => ">"
+        .greater_equal => ">="
+        .both          => "AND"
+        .either        => "OR"
