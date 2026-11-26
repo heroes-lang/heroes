@@ -212,6 +212,12 @@ int(setcontext)(const ucontext_t *ucp) {
     hero_jmp_find();
     hero_sig_range_left(hero_jmp_below());
     hero_jmp_set(ucp);
+#if defined(HERO_JMP_ASAN)
+    /* As a jump does (`hero_jmp_go`): `setcontext` does not return, and the
+     * redzones of this frame and the ones it called would stay in the shadow
+     * of the stack it leaves (defect 2853, measured on Darwin's twin). */
+    __asan_handle_no_return();
+#endif
     return atomic_load_explicit(&hero_ctx_real_set, memory_order_relaxed)(ucp);
 }
 
