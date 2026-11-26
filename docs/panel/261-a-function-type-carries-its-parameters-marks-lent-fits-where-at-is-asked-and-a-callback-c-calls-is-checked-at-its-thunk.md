@@ -621,3 +621,13 @@ of the three legs (`--sanitize` where it reads memory).
 ## Author's verdict
 
 **Pending.** The decision's draft is `docs/panel/261-reports/decision-draft.md`, filed with this sitting as `panel 261`.
+
+**Ratified by the author's reading, 2026-11-26, at about 14:06**, in conversation (the answer *1a* to the
+coordinator's recommendation, meant as: *ratify R1 to R12 as adopted, the fit included*; decision issue 2827).
+Recorded with it, so the reading is of what was adopted: R3's fit, a `lent` function where `@` is asked, which Swift,
+Rust and Nim refuse on the author's Mac and the historian found only in C# 12, with a warning; the alternative the
+author may still turn is the conservative resolution above, identity with no fit. A mark in an `extern` callback's
+type stays refused by the checker until the thunk carries the ffi-pragmatist's five duties (R4). The sitting's blind
+reading, authorised up to 20.00 USD, runs on the landed route and is scored beneath with its date. The landing is
+lane land261, then the router and the middleware chain (R11, R12) and the rewrite of the examples; the author asked
+for web middleware before the milestone's tag, which is where R11 and R12 stand.

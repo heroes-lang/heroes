@@ -428,3 +428,12 @@ refused by the landed build on this Mac or in Linux arm64, or by one undeclared 
 ## Author's verdict
 
 **Pending.** The decision's draft is `docs/panel/260-reports/decision-draft.md`, filed with this sitting as `panel 260`.
+
+**Ratified by the author's reading, 2026-11-26, at about 14:06**, in conversation (the answer *2a* to the
+coordinator's recommendation, meant as: *ratify*). Landed in steps 197a to 197h (`1c90675b9` to `e322918ed`), on
+`main` and pushed at `a60dfb77f`: 96 group heads in 77 files declare `layer`, and the critic's shapes `ownnamed`,
+`vendorinc`, door 3, `linkmixed`, `swiftentry` and `casefold` read as the sitting adopted them; `mixedown` is not
+closed by the sitting's reading and is defect 2856, open. **What the landing measured, with the machine loaded and so
+a count and not a duration** (CL-025): a warm `print(1)` build 0.36 s before Rebel (`17c50eba6`) and 0.60 s now, cold
+0.81 s and 1.24 s; the latency instrument's `compare` on a still machine is owed. The blind reading, authorised up to
+20.00 USD, runs on the landed build and is scored beneath with its date.
