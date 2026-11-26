@@ -498,7 +498,7 @@ test "what the form has no line for is refused by name, and so is what cannot be
 # of constants are read, each with the doc above it inside the group, and its
 # functions, which no program can call across the module, are not.
 test "a floor's group is read: its header, its records, its runs of constants, and no function of C"
-    text = "# Floor.\n\nextern \"hero_net.h\"\n    # A socket. More.\n    record Socket tag hero_net_socket\n    # The kinds.\n    constant A: i64\n    constant B: i64\n    # Narrow.\n    constant C: i32\n    function hero_net_f(s: Socket) -> i64\n    # Two numbers.\n    record Pair tag pair\n        # a comment inside\n        x: i64\n        y: i64\n    constant D: i64\n\n# Reads.\nfunction f(s: Socket) -> i64\n    return hero_net_f(s)\n"
+    text = "# Floor.\n\nextern \"hero_net.h\" layer\n    # A socket. More.\n    record Socket tag hero_net_socket\n    # The kinds.\n    constant A: i64\n    constant B: i64\n    # Narrow.\n    constant C: i32\n    function hero_net_f(s: Socket) -> i64\n    # Two numbers.\n    record Pair tag pair\n        # a comment inside\n        x: i64\n        y: i64\n    constant D: i64\n\n# Reads.\nfunction f(s: Socket) -> i64\n    return hero_net_f(s)\n"
     face = face_of(path: "net/hero_net", text: text)
     assert face.header == "hero_net.h"
     assert face.callables.len() == 1 && face.callables[0].name == "f"

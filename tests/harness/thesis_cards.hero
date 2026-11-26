@@ -266,7 +266,7 @@ function written_cards(dir: str) -> ()?
     folder = dir + "/" + thesis_packages.PLACED + "/rebel@0.5.0-f58b55a0517ed0eb"
     thesis_packages.written_tree(dir: dir, index: "file://../../packages", key: "f58b55a0517ed0eb", body: "function f() -> i64\n    return 1\n")?
     shell.mkdir_all(folder + "/net")?
-    write_file(path: folder + "/net/hero_net.hero", text: "extern \"hero_net.h\"\n    constant HERO_NET_OK: i64\n")?
+    write_file(path: folder + "/net/hero_net.hero", text: "extern \"hero_net.h\" layer\n    constant HERO_NET_OK: i64\n")?
     return write_file(path: folder + "/net/hero_net.md", text: "# hero_net: `use <rebel>/net/hero_net`\n")
 
 test "a context is the specification, the heading, the lead and the faces' cards, and its first line names the tree and the specification"

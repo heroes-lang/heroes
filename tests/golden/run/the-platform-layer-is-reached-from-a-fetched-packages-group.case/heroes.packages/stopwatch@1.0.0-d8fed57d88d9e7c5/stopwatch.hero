@@ -1,7 +1,7 @@
 # The package `stopwatch` of the case two folders up (feature 2295,
-# 2026-11-12): its group names the platform layer's header and nothing else,
-# no `link` and no flag, as every package reaches the layer.
-extern "hero_time.h"
+# 2026-11-12): its group names the platform layer's header and says `layer`,
+# no `link` and no flag, as every package binding the layer does (panel 260).
+extern "hero_time.h" layer
     function hero_time_monotonic_ns() -> i64
 
 # Whether two readings in a row go forward or stand still.

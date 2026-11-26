@@ -1,0 +1,1 @@
+tests/golden/check/layer-written-after-the-library-is-told-where-it-goes.hero:5:30: error[expected_end_of_line]: expected the end of the line after `extern "libnow.h" link "now"`, found a name (`layer`) — `layer` stands right after the header's string and before the library, as `extern "libnow.h" layer link "now"`; its signatures go on the lines below it, one level deeper

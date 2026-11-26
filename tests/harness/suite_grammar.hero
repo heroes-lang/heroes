@@ -537,7 +537,7 @@ constant MARK_SOURCE: str
     "selfhost/parse/group_head.hero"
 
 constant LEAST_MARKS: i64
-    2
+    3
 
 function extern_marks(@r: report.Report, out: str)
     reserved = quoted_before_arrow(path: KEYWORD_SOURCE, marker: "=> ok(.kw_")

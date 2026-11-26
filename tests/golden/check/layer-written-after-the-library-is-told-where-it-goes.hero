@@ -1,0 +1,9 @@
+# Panel 260 (provisional, author ratification pending): `layer` stands right
+# after the header's string and before the library, where the parser reads
+# it. Written after the library's name it is the head line's junk, told where
+# the word goes rather than as a word the line cannot hold.
+extern "libnow.h" link "now" layer  #~ expected_end_of_line
+    function lib_now() -> i64
+
+function main()
+    print(lib_now())

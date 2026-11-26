@@ -2775,8 +2775,8 @@ test "a library defining a name a platform layer member the program takes calls 
     dir = scratch + "/layer2489"
     assert !shell.mkdir_all(dir).is_err()
     assert !c_library(scratch: scratch, dir: dir, library: "fake", sources: [Written(name: "fake.c", text: "int socket(int domain, int type, int protocol) { (void)domain; (void)type; (void)protocol; return -1; }\nlong fake_answer(void) { return 7; }\n")], shared: false).is_err()
-    net = "extern \"hero_net.h\"\n    record Socket tag hero_net_socket\n    function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close\n    function hero_net_close(s: Socket consumes) -> i64\n\nfunction main()\n    print(fake_lib.answer())\n    s = hero_net_listen(address: \"127.0.0.1\".cstr(), port: 0)\n\n    if s != nullptr\n        _ = hero_net_close(s)\n"
-    clock = "extern \"hero_time.h\"\n    function hero_time_monotonic_ns() -> i64\n\nfunction main()\n    print(fake_lib.answer())\n    print(hero_time_monotonic_ns() > 0)\n"
+    net = "extern \"hero_net.h\" layer\n    record Socket tag hero_net_socket\n    function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close\n    function hero_net_close(s: Socket consumes) -> i64\n\nfunction main()\n    print(fake_lib.answer())\n    s = hero_net_listen(address: \"127.0.0.1\".cstr(), port: 0)\n\n    if s != nullptr\n        _ = hero_net_close(s)\n"
+    clock = "extern \"hero_time.h\" layer\n    function hero_time_monotonic_ns() -> i64\n\nfunction main()\n    print(fake_lib.answer())\n    print(hero_time_monotonic_ns() > 0)\n"
     assert !wrote(dir: dir, files: [Written(name: "fake.h", text: "long fake_answer(void);\n"), Written(name: "fake_lib.hero", text: "extern \"fake.h\" link \"fake\"\n    function fake_answer() -> i64\n\nfunction answer() -> i64\n    return fake_answer()\n"), Written(name: "net.hero", text: "use fake_lib\n\n" + net), Written(name: "clock.hero", text: "use fake_lib\n\n" + clock)]).is_err()
     told = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "net")
     assert refused_at(

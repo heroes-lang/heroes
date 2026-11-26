@@ -1885,8 +1885,12 @@ test "a comment in a chain 81 long is worked out once a part, never the chain's 
 # it, `pkgconfig`, and the word beside it, `link`, as itself, each the head's
 # one line; the old word `package` is the parser's refusal and never reaches a
 # printer (`pkgconfig_head.retired`), so `fmt` refuses it and never respells it.
+#
+# And panel 260's `layer`, right after the header's string and before either
+# mark: a head that dropped it would be a program whose link no longer
+# carries the platform layer.
 test "fmt prints both marks of a group head as written, and the old word stays the parser's"
-    for head in ["extern \"raylib.h\" pkgconfig \"raylib\"", "extern \"m.h\" link \"m\""]
+    for head in ["extern \"raylib.h\" pkgconfig \"raylib\"", "extern \"m.h\" link \"m\"", "extern \"hero_time.h\" layer", "extern \"libnow.h\" layer link \"now\"", "extern \"own.h\" layer pkgconfig \"own\""]
         text = head + "\n    function f() -> i32\n\nfunction main()\n    print(f())\n"
         parsed = parse.parse(text)
         assert parsed.diagnostics.len() == 0

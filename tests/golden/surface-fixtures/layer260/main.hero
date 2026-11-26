@@ -1,0 +1,17 @@
+# Panel 260's `layer` on every shape a group's head takes: alone, before a
+# `link` and before a `pkgconfig`, a comment after it. The probe's variants
+# put a comment and a broken bracket at every place on these lines, and `fmt`
+# prints the file back byte for byte.
+extern "hero_time.h" layer
+    function hero_time_monotonic_ns() -> i64
+
+extern "libnow.h" layer link "now"
+    function lib_now() -> i64
+
+extern "own.h" layer pkgconfig "own"  # the package's own header
+    constant OWN_ANSWER: i64
+
+function main()
+    print(hero_time_monotonic_ns() > 0)
+    print(lib_now() > 0)
+    print(OWN_ANSWER)

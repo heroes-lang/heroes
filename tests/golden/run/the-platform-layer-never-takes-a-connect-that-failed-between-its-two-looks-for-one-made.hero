@@ -14,7 +14,7 @@
 # where every step held, else the step that did not (the header says which).
 # Built and not run on Windows, whose connect waits in slices and joins no
 # waiter list (`tests/harness/platform_skips.hero`).
-extern "the-platform-layer-connect-order.h"
+extern "the-platform-layer-connect-order.h" layer
     function connect_failed_while_it_waits() -> i64
     function connect_failed_between_two_looks_after_a_wake_for_nothing() -> i64
 
