@@ -1,0 +1,29 @@
+# Panel 261's R1 and R8 (2026-11-26, ratified): a state record holding its
+# own handler, which takes the record by `@`, the router's natural shape. The
+# callee is the copy read out of the place before the call lends it, so a
+# handler that rewrites the very field it was read from changes the next
+# call's callee, never its own: `first` adds 1 and makes `second` current,
+# `second` adds 10 and makes `first` current. Prints 1, 11, then 12 through a
+# copy of the field bound to `h`, and 12 for `app.n`. Before R8's forward
+# struct this built nowhere, exit 2.
+record App
+    n: i64
+    handler: (function(@App, i64) -> i64)
+
+function first(@app: App, k: i64) -> i64
+    app.n @ app.n + k
+    app.handler @ second
+    return app.n
+
+function second(@app: App, k: i64) -> i64
+    app.n @ app.n + 10 * k
+    app.handler @ first
+    return app.n
+
+function main()
+    app @= App(n: 0, handler: first)
+    print(app.handler(@app, 1))
+    print(app.handler(@app, 1))
+    h = app.handler
+    print(h(@app, 1))
+    print(app.n)
