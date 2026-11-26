@@ -24,7 +24,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and eighty-five packages, in layers. **A package may use any package of a layer below
+A hundred and eighty-six packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -216,6 +216,7 @@ package moves its row in the same change. There is no cycle.
 | 8 | `mcp` | the Model Context Protocol, server and client, over standard streams and HTTP | `bytes`, `containers/deque`, `http`, `io`, `json`, `json/schema`, `jsonrpc`, `net`, `numbers`, `oauth2`, `strings`, `threads`, `time`, `url`, `web` |  |
 | 8 | `openapi` | an OpenAPI 3.1 document built as data, written, served, and requests validated against it | `bytes`, `http`, `json`, `json/schema`, `numbers`, `strings`, `url`, `web`, `yaml` |  |
 | 8 | `web/proxy` | a reverse proxy in the manner of nginx's `proxy_pass` and Go's `httputil.ReverseProxy`: requests passed to balanced upstreams (weighted round-robin, fewest in flight) and the answers passed back, bodies streamed both ways and never held whole, failing upstreams kept out and the next tried, the hop-by-hop fields removed and the client told, a WebSocket relayed; apart from `web`, so only the programs that proxy carry it | `bytes`, `http`, `io`, `net`, `os`, `poll`, `strings`, `time`, `tls`, `url`, `web` |  |
+| 8 | `web/chain` | the steps a request runs around a `web` route's answer, in the manner of Echo's middleware: every route's, a group's and one route's own, in their order, each answering before the handler or wrapping it; the `next` passed as data, the program's steps and answers bound by name in its own tables and its state lent to each by `@`; apart from `web`, so only the programs that chain carry it | `bytes`, `http`, `web` |  |
 
 **The types other packages name** are each owned by one package and named
 qualified everywhere else, never redefined; among them:

@@ -1,0 +1,53 @@
+# Whether a name may be bound to a function in a program's table of steps:
+# what `web/chain.add_step` and `add_route_step` ask before they change
+# anything, so a failure leaves the router and the table as they were.
+
+use http
+use web/chain
+
+# Whether `name` may be bound to `step` in `table`: an empty name fails
+# `invalid`, a name bound to another function `exists`; one bound to the same
+# function may be bound again.
+#
+# - `table`: the program's table, read.
+# - `name`: the name.
+# - `step`: the function it would be bound to.
+function check<S>(table: {str: (function(@S, chain.Next, http.Request) -> http.Response?)} lent, name: str, step: (function(@S, chain.Next, http.Request) -> http.Response?)) -> ()?
+    if name == ""
+        return fail(code: chain.INVALID, msg: "a step's name is empty")
+
+    match table[name]
+        .ok bound =>
+            if bound != step
+                return fail(code: chain.EXISTS, msg: f"the step \"{name}\" is bound to another function already")
+        .err _ => _ = 0
+
+    return ok()
+
+# A step that goes on, for the test.
+#
+# - `n`: where the request stands.
+# - `r`: the request.
+function passes(_: i64 lent, n: chain.Next, r: http.Request) -> http.Response?
+    _ = n
+    _ = r
+    return ok(http.respond_status(http.STATUS_OK))
+
+# Another step, for the test.
+#
+# - `n`: where the request stands.
+# - `r`: the request.
+function refuses(_: i64 lent, n: chain.Next, r: http.Request) -> http.Response?
+    _ = n
+    _ = r
+    return ok(http.respond_status(http.STATUS_FORBIDDEN))
+
+test "check: an empty name, a new one, the same function again, another function"
+    table: {str: (function(@i64, chain.Next, http.Request) -> http.Response?)} = {"log": passes}
+    assert check(table, name: "", step: passes).is_err()
+    assert !check(table, name: "auth", step: refuses).is_err()
+    assert !check(table, name: "log", step: passes).is_err()
+
+    match check(table, name: "log", step: refuses)
+        .ok _  => assert false
+        .err e => assert e.code == chain.EXISTS
