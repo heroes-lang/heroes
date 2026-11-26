@@ -164,9 +164,24 @@ function around(lines: [str], bound: {str: bool}) -> [str]
 # `__LINE__` clang's *undefining builtin macro*. Saved, a reserved name a
 # group's header defines is read by the library as C reads it after that
 # header, and keeps the header's meaning after.
-function read_after(bound: {str: bool}) -> [str]
+#
+# **And each name of `where` that `bound` does not hold, where the unit
+# defines it** (defect d-lane-macro-members4-1, 2026-11-25): a name a group's
+# header defines that the library reads, the program binding it or not
+# (`cli/library_saved.hero`), saved and undefined only where it is defined, a
+# flag of the runtime's own name standing for the save, so a unit whose groups
+# never define it reads the library's own macro of that name after it. Until
+# then `#define y1 5` in a header, the program binding none of it, was refused,
+# `<math.h>`'s declaration of `y1` rewritten.
+function read_after(bound: {str: bool}, where: {str: bool}) -> [str]
     # ORDER: by bytes, as `sort` orders a `str`, so the unit is one text.
     names = sort(keys(bound))
+    only: [str] @= []
+
+    for name in sort(keys(where))
+        if bound[name].is_err()
+            only @ only.push(name)
+
     out: [str] @= []
 
     for name in names
@@ -175,12 +190,30 @@ function read_after(bound: {str: bool}) -> [str]
         if !c_words.is_reserved(name)
             out @ out.push("#undef " + name)
 
+    for name in only
+        out @ out.push("#ifdef " + name)
+        out @ out.push("#pragma push_macro(\"" + name + "\")")
+        out @ out.push("#undef " + name)
+        out @ out.push("#define " + SAVED + name)
+        out @ out.push("#endif")
+
     out @ out.push(STANDARD_LINE)
 
     for name in names
         out @ out.push("#pragma pop_macro(\"" + name + "\")")
 
+    for name in only
+        out @ out.push("#ifdef " + SAVED + name)
+        out @ out.push("#undef " + SAVED + name)
+        out @ out.push("#pragma pop_macro(\"" + name + "\")")
+        out @ out.push("#endif")
+
     return out
+
+# The prefix of the flag that says a name was saved around the library where
+# the unit defined it: a name of the runtime's, which no group defines.
+constant SAVED: str
+    "HERO_SAVED_"
 
 # Every C name the program's groups take from a header between the guards:
 # a function's or constant's own name, a record's, its C tag and its fields,
@@ -522,10 +555,18 @@ test "every bound name is saved around the library's headers, undefined unless C
     bound["sqrt"] @ true
     bound["__STDC__"] @ true
     bound["INT64_MAX"] @ true
-    got = read_after(bound)
-    assert got == ["#pragma push_macro(\"INT64_MAX\")", "#undef INT64_MAX", "#pragma push_macro(\"__STDC__\")", "#pragma push_macro(\"sqrt\")", "#undef sqrt", STANDARD_LINE, "#pragma pop_macro(\"INT64_MAX\")", "#pragma pop_macro(\"__STDC__\")", "#pragma pop_macro(\"sqrt\")"]
     none: {str: bool} = {}
-    assert read_after(none) == [STANDARD_LINE]
+    got = read_after(bound: bound, where: none)
+    assert got == ["#pragma push_macro(\"INT64_MAX\")", "#undef INT64_MAX", "#pragma push_macro(\"__STDC__\")", "#pragma push_macro(\"sqrt\")", "#undef sqrt", STANDARD_LINE, "#pragma pop_macro(\"INT64_MAX\")", "#pragma pop_macro(\"__STDC__\")", "#pragma pop_macro(\"sqrt\")"]
+    assert read_after(bound: none, where: none) == [STANDARD_LINE]
+
+    # A name saved where the unit defines it, never again where it is bound.
+    where: {str: bool} @= {}
+    where["y1"] @ true
+    where["sqrt"] @ true
+    one: {str: bool} @= {}
+    one["sqrt"] @ true
+    assert read_after(bound: one, where: where) == ["#pragma push_macro(\"sqrt\")", "#undef sqrt", "#ifdef y1", "#pragma push_macro(\"y1\")", "#undef y1", "#define HERO_SAVED_y1", "#endif", STANDARD_LINE, "#pragma pop_macro(\"sqrt\")", "#ifdef HERO_SAVED_y1", "#undef HERO_SAVED_y1", "#pragma pop_macro(\"y1\")", "#endif"]
 
 # DEFECT d-lane-macro-members3-1, asked of clang: a group's header defines
 # `INT64_MAX`, a macro of `<stdint.h>` the list leaves to the library, and
@@ -551,7 +592,9 @@ test "a bound name keeps its header's meaning whatever the library read after th
     # The same lines with `__STDC__` undefined after it is saved.
     stdc: [str] @= []
 
-    for line in read_after(bound)
+    no_names: {str: bool} = {}
+
+    for line in read_after(bound: bound, where: no_names)
         stdc @ stdc.push(line)
 
         if line == "#pragma push_macro(\"__STDC__\")"
@@ -559,7 +602,7 @@ test "a bound name keeps its header's meaning whatever the library read after th
 
     opened = strings.with_all(list: [FIRST_LINE], more: around(["#include <planted.h>"], bound: bound))
     units = [
-        [strings.with_all(list: opened, more: read_after(bound)).join("\n"), "true"]
+        [strings.with_all(list: opened, more: read_after(bound: bound, where: no_names)).join("\n"), "true"]
         [strings.with_all(list: opened, more: [STANDARD_LINE]).join("\n"), "false"]
         [strings.with_all(list: opened, more: stdc).join("\n"), "false"]
     ]
