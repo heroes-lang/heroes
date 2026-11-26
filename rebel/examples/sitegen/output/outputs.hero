@@ -6,6 +6,7 @@
 # file with its size and the start of its SHA-256, for a person comparing
 # two builds.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/path
 use <rebel>/strings
@@ -60,13 +61,9 @@ function write_all(site: model.Site, outputs: [model.Output], known: {str: str})
         if before == digest
             unchanged @ unchanged.push(o.path)
         else
-            match fs.make_dir_all(path.parent(target))
-                .ok _  => _ = 0
-                .err e => return fail(code: e.code, msg: f"{site.output}/{o.path}: {e.msg}")
+            errors.context(fs.make_dir_all(path.parent(target)), what: f"{site.output}/{o.path}")?
 
-            match fs.write_atomic_bytes(target, o.data)
-                .ok _  => _ = 0
-                .err e => return fail(code: e.code, msg: f"{site.output}/{o.path}: {e.msg}")
+            errors.context(fs.write_atomic_bytes(target, o.data), what: f"{site.output}/{o.path}")?
 
             written @ written.push(o.path)
         now[o.path] @ digest
@@ -109,9 +106,7 @@ function remove_all(site: model.Site, names: [str]) -> ()?
         target = on_disk(site, name: name)
 
         if fs.exists(target).default(false)
-            match fs.remove(target)
-                .ok _  => _ = 0
-                .err e => return fail(code: e.code, msg: f"{site.output}/{name}: {e.msg}")
+            errors.context(fs.remove(target), what: f"{site.output}/{name}")?
 
         folder @= path.parent_by(name, .posix)
 

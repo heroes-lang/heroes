@@ -12,6 +12,7 @@
 # say: `visiting.push(name)` hands the callee a **copy**, so there is nothing
 # to pop on the way back and no way to forget to.
 
+use <rebel>/bytes
 use <rebel>/numbers
 
 use sheet
@@ -205,10 +206,10 @@ function factor(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
         advance(@p)
         return ok(-factor(@p, s, visiting)?)
 
-    if sheet.is_digit(c)
+    if bytes.is_digit_ascii(c)
         return number(@p)
 
-    if sheet.is_letter(c)
+    if bytes.is_upper_ascii(c)
         return named(@p, s, visiting)
     return fail(code: ERR_UNEXPECTED_CHARACTER, msg: "no value starts at " + p.pos.to_str())
 
@@ -225,13 +226,13 @@ function factor(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
 function number(@p: Parse) -> f64?
     start = p.pos
 
-    while !at_end(p) && sheet.is_digit(here(p))
+    while !at_end(p) && bytes.is_digit_ascii(here(p))
         advance(@p)
 
     if !at_end(p) && here(p) == '.'
         advance(@p)
 
-        while !at_end(p) && sheet.is_digit(here(p))
+        while !at_end(p) && bytes.is_digit_ascii(here(p))
             advance(@p)
 
     literal = p.text.slice(from: start, to: p.pos)
@@ -269,7 +270,7 @@ function named(@p: Parse, s: sheet.Sheet, visiting: [str]) -> f64?
 function word_at(@p: Parse) -> str
     start = p.pos
 
-    while !at_end(p) && (sheet.is_letter(here(p)) || sheet.is_digit(here(p)))
+    while !at_end(p) && (bytes.is_upper_ascii(here(p)) || bytes.is_digit_ascii(here(p)))
         advance(@p)
 
     return p.text.slice(from: start, to: p.pos)
