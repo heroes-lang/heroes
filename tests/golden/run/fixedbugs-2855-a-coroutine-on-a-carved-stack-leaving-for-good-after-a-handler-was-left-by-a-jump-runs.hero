@@ -1,0 +1,41 @@
+# Fixed 2026-11-26, defect 2855, lane sig-family (step 199d).
+# The same after a handler was left by a jump at the depth where the escape's
+# host later runs: the next callback runs.
+# Symptom: before, the next callback after the escape, on this Mac and on
+# Linux arm64, plain and under `--sanitize`, ended the program at exit 134 with
+# `panic: ... was called after C jumped into stack frames the thread had
+# already left (a handler left by a jump and jumped back into, ...)`: the
+# program has no handler there, so the words were false and a correct program
+# was refused.
+# Cause: a jump landing below the frame making it, on that frame's stack, was
+# read as a re-entry into a handler's frames; a switch the runtime never sees
+# had put the coroutine's frames above its host's on the thread's one range.
+# Fix: a landing re-enters a handler only inside the frames of a handler a
+# jump left, where the thread has not been seen running since.
+extern "fixedbugs-2855-a-coroutine-leaving-for-good-by-a-longjmp-to-its-host.h"
+    function ow_start(k: i64, f: (function(i64) -> i64))
+    function ow_yield()
+    function ow_host(body: (function(i64) -> i64), n: i64) -> i64
+    function es_resume(k: i64) -> i64
+    function es_escape()
+    function es_call(f: (function(i64) -> i64), n: i64) -> i64
+    function eo_prime() -> i64
+
+function run(k: i64) -> i64
+    ow_yield()
+    es_escape()
+    return k
+
+function twice(n: i64) -> i64
+    return n * 2
+
+function body(n: i64) -> i64
+    ow_start(k: 0, f: run)
+    a = es_resume(k: 0)
+    b = es_call(f: twice, n: n)
+    print("escaped: ", a, " then ", b)
+    return b
+
+function main()
+    print("primed: ", eo_prime())
+    print("carved: ", ow_host(body: body, n: 21))

@@ -362,6 +362,90 @@ static void hero_rebind_drop(HeroSignalStack *own, int i) {
     }
 }
 
+/* THE FRAMES OF A HANDLER LEFT BY A JUMP (rule 6, defect 2855). A jump that
+ * leaves a handler leaves its frames below its trampoline's frame, down to the
+ * frame making the jump where that lies on the same stack, else to that
+ * stack's bottom; they are kept as a span until the thread is seen running
+ * there again (a save point, a jump, a swap or a handler's own frame inside
+ * it), which overwrites the span from that frame up. A landing inside a span
+ * is that handler re-entered: shape R, a handler left by a jump and jumped
+ * back into, from its own stack or another (panel 255's `rr_2`, a residue
+ * until this defect). Until this defect any landing below the frame making
+ * the jump on that frame's stack was read as one, and a coroutine on a stack
+ * carved from the thread's own, which a switch the runtime never sees had
+ * entered, leaving for good by a `longjmp` to the save point its host made
+ * below it (panel 259's `escape_carved`), was told it had re-entered a
+ * handler the program does not have, and refused. */
+static void hero_rebind_left_add(HeroSignalStack *own, uintptr_t lo, uintptr_t hi, uintptr_t slo, uintptr_t shi) {
+    if (hi <= lo) return;
+    for (int k = 0; k < own->left_n; k += 1) {
+        if (own->left_slo[k] == slo && own->left_shi[k] == shi && lo <= own->left_hi[k] && own->left_lo[k] <= hi) {
+            if (lo < own->left_lo[k]) own->left_lo[k] = lo;
+            if (hi > own->left_hi[k]) own->left_hi[k] = hi;
+            return;
+        }
+    }
+    if (own->left_n < HERO_SIG_LEFT) {
+        int k = own->left_n;
+        own->left_lo[k] = lo;
+        own->left_hi[k] = hi;
+        own->left_slo[k] = slo;
+        own->left_shi[k] = shi;
+        atomic_signal_fence(memory_order_seq_cst);
+        own->left_n = k + 1;
+        return;
+    }
+    /* Full: the first span widened to hold this one, which refuses more and
+     * forgets nothing. */
+    if (lo < own->left_lo[0]) own->left_lo[0] = lo;
+    if (hi > own->left_hi[0]) own->left_hi[0] = hi;
+    if (slo < own->left_slo[0]) own->left_slo[0] = slo;
+    if (shi > own->left_shi[0]) own->left_shi[0] = shi;
+}
+
+/* `e`'s frames, left by a jump made below `here` (its frame lies on the
+ * entry's stack where the jump is made there). A re-entry's own entry holds
+ * the landing itself, so its span reaches one byte above it. */
+static void hero_rebind_left_by_jump(HeroSignalStack *own, const HeroRebindEntry *e, uintptr_t here) {
+    uintptr_t slo = 0, shi = 0;
+    if (e->alt_hi > e->alt_lo) {
+        slo = e->alt_lo;
+        shi = e->alt_hi;
+    } else if (!hero_rebind_target_range(own, e->at, &slo, &shi)) {
+        return;
+    }
+    uintptr_t lo = (here >= slo && here < shi) && here < e->at ? here : slo;
+    hero_rebind_left_add(own, lo, e->unsure == 2 ? e->at + 1 : e->at, slo, shi);
+}
+
+/* The thread seen running at `frame`: every span its stack holds above the
+ * frame runs again, from the frame up. */
+static void hero_rebind_relived(HeroSignalStack *own, uintptr_t frame) {
+    if (own == NULL) return;
+    for (int k = own->left_n - 1; k >= 0; k -= 1) {
+        if (!(frame >= own->left_slo[k] && frame < own->left_shi[k]) || frame >= own->left_hi[k]) continue;
+        if (frame > own->left_lo[k]) {
+            own->left_hi[k] = frame;
+            continue;
+        }
+        int last = own->left_n - 1;
+        own->left_lo[k] = own->left_lo[last];
+        own->left_hi[k] = own->left_hi[last];
+        own->left_slo[k] = own->left_slo[last];
+        own->left_shi[k] = own->left_shi[last];
+        atomic_signal_fence(memory_order_seq_cst);
+        own->left_n = last;
+    }
+}
+
+/* Whether `t` lies inside the frames of a handler left by a jump. */
+static bool hero_rebind_left_holds(const HeroSignalStack *own, uintptr_t t) {
+    for (int k = 0; k < own->left_n; k += 1) {
+        if (t >= own->left_lo[k] && t < own->left_hi[k]) return true;
+    }
+    return false;
+}
+
 /* A new entry at `at`, `alt_lo..alt_hi` the alternate stack it lies on;
  * false where the record is full. */
 static bool hero_rebind_push(HeroSignalStack *own, uintptr_t at, uintptr_t alt_lo, uintptr_t alt_hi, int unsure,
@@ -417,6 +501,7 @@ static bool hero_rebind_standing(const HeroSignalStack *own) { return own->depth
  * nothing pins is left where the target lies on the entry's range above it,
  * or where the jump leaves the alternate stack the entry was pushed on. */
 static void hero_rebind_prune_to(HeroSignalStack *own, uintptr_t t, bool by_jump) {
+    uintptr_t here = (uintptr_t)__builtin_frame_address(0);
     uintptr_t lo = 0, hi = 0;
     bool ranged = hero_rebind_target_range(own, t, &lo, &hi);
     /* A jump onto a coroutine's stack that an entry survives is told as such
@@ -430,6 +515,7 @@ static void hero_rebind_prune_to(HeroSignalStack *own, uintptr_t t, bool by_jump
         bool above = ranged && e->at >= lo && e->at < hi && e->at <= t;
         bool left_alt = by_jump && e->alt_hi > e->alt_lo && !(t >= e->alt_lo && t < e->alt_hi);
         if (above || left_alt) {
+            hero_rebind_left_by_jump(own, e, here);
             hero_rebind_drop(own, i);
         } else if (oncoroutine && e->unsure == 0) {
             e->unsure = life == HERO_REBIND_RANGE_ENTERED ? 3 : 4;
@@ -437,23 +523,21 @@ static void hero_rebind_prune_to(HeroSignalStack *own, uintptr_t t, bool by_jump
     }
 }
 
-/* Rule 6's last sentence, and its twin on one range: a jump that lands BELOW
- * the jumping frame on the range that frame stands on lands in frames this
- * thread already unwound past, and one that lands on the alternate stack from
- * outside it lands in frames only a signal's delivery puts there. Either is a
- * handler left earlier and resumed now (shape R: a handler left by a jump out
- * and jumped back into), or frames that are gone: it stands as an entry of its
- * own, unsure, until a jump above it, the end of a handler pushed before it,
- * or a jump leaving the alternate stack it lies on, proves it left. Every
- * correct jump lands above the frame that makes it, on its own range or on
- * another. */
+/* Rule 6's last sentence: a jump that lands inside the frames of a handler a
+ * jump left, where the thread has not run since (`hero_rebind_left_holds`), lands
+ * in that handler's frames (shape R: a handler left by a jump out and jumped
+ * back into, from its own stack or another), and one that lands on the
+ * alternate stack from outside it lands in frames only a signal's delivery
+ * puts there. Either stands as an entry of its own, unsure, until a jump above
+ * it, the end of a handler pushed before it, or a jump leaving the alternate
+ * stack it lies on, proves it left. A landing below the frame making the jump
+ * elsewhere is no handler's (defect 2855): a coroutine on a stack carved from
+ * the thread's own, entered by a switch the runtime never sees, lands below
+ * itself when it leaves for good to its host's save point. */
 static void hero_rebind_reentered(HeroSignalStack *own, uintptr_t t, bool below, uintptr_t here);
 
 static void hero_rebind_reenter(HeroSignalStack *own, uintptr_t t) {
-    uintptr_t here = (uintptr_t)__builtin_frame_address(0);
-    uintptr_t lo = 0, hi = 0;
-    bool below = hero_rebind_target_range(own, here, &lo, &hi) && t >= lo && t < hi && t < here;
-    hero_rebind_reentered(own, t, below, here);
+    hero_rebind_reentered(own, t, hero_rebind_left_holds(own, t), (uintptr_t)__builtin_frame_address(0));
 }
 
 /* The landing at `t` judged once it is known whether it lies below the frame
@@ -515,6 +599,7 @@ __attribute__((no_sanitize("function", "address"))) static void hero_rebind_tram
     bool lost = false;
     if (own != NULL) {
         uintptr_t me = (uintptr_t)__builtin_frame_address(0);
+        hero_rebind_relived(own, me);
         uintptr_t al = 0, ah = 0;
         if (!hero_rebind_alt_now(&al, &ah) || me < al || me >= ah) al = ah = 0;
         if (!hero_rebind_push(own, me, al, ah, 0, &mine)) {

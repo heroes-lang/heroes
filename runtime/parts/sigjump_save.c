@@ -63,6 +63,7 @@ static _Noreturn void hero_jmp_go(hero_jmp_jump_fn real, struct __jmp_buf_tag *e
 static void hero_jmp_jump(const void *env) {
     HeroSignalStack *own = hero_sig_own();
     if (own == NULL || env == NULL) return;
+    hero_sig_relived(own, (uintptr_t)__builtin_frame_address(0));
     bool standing = hero_sig_standing(own);
     if (!hero_jmp_recording()) {
         uintptr_t t = hero_jmp_sp_of((const struct __jmp_buf_tag *)env);
@@ -92,6 +93,7 @@ static void hero_jmp_jump(const void *env) {
 static void hero_jmp_set(const ucontext_t *ucp) {
     HeroSignalStack *own = hero_sig_own();
     if (own == NULL || ucp == NULL) return;
+    hero_sig_relived(own, (uintptr_t)__builtin_frame_address(0));
     bool standing = hero_sig_standing(own);
     uintptr_t t = 0;
     bool back = false;
@@ -127,6 +129,14 @@ static void hero_jmp_set(const ucontext_t *ucp) {
     if (standing && !hero_sig_standing(own)) hero_signal_jump_checked();
 }
 
+/* A save point's frame: the thread runs there (defect 2855), which
+ * overwrites any span of a handler's frames left by a jump from that frame
+ * up. One read of the thread's slot where no span stands. */
+static void hero_jmp_saving(void) {
+    HeroSignalStack *own = hero_sig_own();
+    if (own != NULL && own->left_n > 0) hero_sig_relived(own, hero_jmp_below());
+}
+
 /* THE SAVE POINTS: under A the buffer noted with a frame below this one's
  * caller (`hero_jmp_below`, called here, so its frame lies under the stack
  * pointer the C library saves, the caller's), then the C library's own reached
@@ -134,6 +144,7 @@ static void hero_jmp_set(const ucontext_t *ucp) {
  * glibc's macros of them stay out. */
 int(setjmp)(struct __jmp_buf_tag env[1]) {
     hero_jmp_find();
+    hero_jmp_saving();
     if (hero_jmp_recording()) {
         hero_jmp_note(env, (uint32_t)sizeof(struct __jmp_buf_tag), hero_jmp_below());
     }
@@ -143,6 +154,7 @@ int(setjmp)(struct __jmp_buf_tag env[1]) {
 
 int(_setjmp)(struct __jmp_buf_tag env[1]) {
     hero_jmp_find();
+    hero_jmp_saving();
     if (hero_jmp_recording()) {
         hero_jmp_note(env, (uint32_t)sizeof(struct __jmp_buf_tag), hero_jmp_below());
     }
@@ -152,6 +164,7 @@ int(_setjmp)(struct __jmp_buf_tag env[1]) {
 
 int(__sigsetjmp)(struct __jmp_buf_tag env[1], int savemask) {
     hero_jmp_find();
+    hero_jmp_saving();
     if (hero_jmp_recording()) {
         hero_jmp_note(env, (uint32_t)sizeof(struct __jmp_buf_tag), hero_jmp_below());
     }
@@ -161,6 +174,7 @@ int(__sigsetjmp)(struct __jmp_buf_tag env[1], int savemask) {
 
 int(getcontext)(ucontext_t *ucp) {
     hero_jmp_find();
+    hero_jmp_saving();
     if (hero_ctx_recording()) hero_jmp_note(ucp, HERO_JMP_CONTEXT_BYTES, hero_jmp_below());
     hero_ctx_get_fn real = atomic_load_explicit(&hero_ctx_real_get, memory_order_relaxed);
     __attribute__((musttail)) return real(ucp);
@@ -225,6 +239,7 @@ int(swapcontext)(ucontext_t *restrict oucp, const ucontext_t *restrict ucp) {
     unsigned seq = 0;
     uintptr_t entered = 0;
     hero_sig_range_left((uintptr_t)__builtin_frame_address(0));
+    hero_sig_relived(own, (uintptr_t)__builtin_frame_address(0));
     if (own != NULL && oucp != NULL && ucp != NULL) {
         bool field = !hero_ctx_recording();
         uintptr_t t = field ? hero_jmp_context_sp(ucp) : 0;
