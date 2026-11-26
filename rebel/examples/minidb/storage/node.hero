@@ -1,0 +1,263 @@
+# A page of a B-tree, decoded: a leaf holds keys in order, each with its
+# value (a table's row; nothing for an index, whose key is the whole entry);
+# an interior page holds keys and one child more than keys, child `k`
+# holding the keys below key `k` and at or above key `k - 1`. The kinds take
+# SQLite's numbers: 13 a table's leaf, 5 a table's interior page, 10 an
+# index's leaf, 2 an index's interior page; 0 is a free page.
+#
+# A page is written whole: its kind, its count, then each cell as lengths
+# and bytes, in zig-zag varints. SQLite keeps an array of cell offsets so a
+# cell is changed in place; minidb decodes the page, changes the list and
+# writes it again, which costs a page's bytes per change and keeps the
+# format to one loop each way. A cell larger than a quarter of a page is
+# refused rather than spilled to overflow pages, which minidb does not have.
+
+use <rebel>/bytes
+use <rebel>/sql
+
+## Kinds
+
+constant FREE: u8
+    0
+
+constant INDEX_INTERIOR: u8
+    2
+
+constant TABLE_INTERIOR: u8
+    5
+
+constant INDEX_LEAF: u8
+    10
+
+constant TABLE_LEAF: u8
+    13
+
+## Nodes
+
+# A page of a B-tree, decoded.
+record Node
+    # Its kind: one of the constants above.
+    kind: u8
+    # Its keys, in increasing order of their bytes.
+    keys: [[u8]]
+    # A leaf's values, one per key; empty for an interior page.
+    values: [[u8]]
+    # An interior page's children, one more than its keys; empty for a leaf.
+    children: [i64]
+
+# An empty leaf of a table, or of an index.
+#
+# - `table`: true for a table's, false for an index's.
+function empty_leaf(table: bool) -> Node
+    if table
+        return Node(kind: TABLE_LEAF, keys: [], values: [], children: [])
+    return Node(kind: INDEX_LEAF, keys: [], values: [], children: [])
+
+# Whether `n` is a leaf.
+#
+# - `n`: the node.
+function is_leaf(n: Node) -> bool
+    return n.kind == TABLE_LEAF || n.kind == INDEX_LEAF
+
+# Whether `n` belongs to a table's tree rather than an index's.
+#
+# - `n`: the node.
+function is_table(n: Node) -> bool
+    return n.kind == TABLE_LEAF || n.kind == TABLE_INTERIOR
+
+# The interior kind of the tree a node of kind `kind` belongs to.
+#
+# - `kind`: a node's kind.
+function interior_of(kind: u8) -> u8
+    if kind == TABLE_LEAF || kind == TABLE_INTERIOR
+        return TABLE_INTERIOR
+    return INDEX_INTERIOR
+
+# The bytes `n` takes on a page.
+#
+# - `n`: the node.
+function size_of(n: Node) -> i64
+    return encode(n).len()
+
+# The largest cell a page of `page_size` bytes takes: a quarter of it, so a
+# page that splits leaves each half able to take one more.
+#
+# - `page_size`: the bytes of a page.
+function max_cell(page_size: i64) -> i64
+    return page_size / 4 - 16
+
+# The bytes of `n`, without the zeros that fill its page.
+#
+# - `n`: the node.
+function encode(n: Node) -> [u8]
+    out @= [n.kind]
+    bytes.push_all(to: @out, from: bytes.encode_varint(n.keys.len()))
+
+    for k in range(from: 0, to: n.keys.len())
+        key = n.keys[k]
+        bytes.push_all(to: @out, from: bytes.encode_varint(key.len()))
+        bytes.push_all(to: @out, from: key)
+
+        if is_leaf(n)
+            value = n.values[k]
+            bytes.push_all(to: @out, from: bytes.encode_varint(value.len()))
+            bytes.push_all(to: @out, from: value)
+
+    for child in n.children
+        bytes.push_all(to: @out, from: bytes.encode_varint(child))
+
+    return out
+
+# `n` as a whole page of `page_size` bytes.
+#
+# - `n`: the node.
+# - `page_size`: the bytes of a page.
+#
+# Fails `limit` where `n` does not fit, which the B-tree's splits prevent.
+function to_page(n: Node, page_size: i64) -> [u8]?
+    out @= encode(n)
+
+    if out.len() > page_size
+        return fail(code: sql.LIMIT, msg: f"a node of {out.len()} bytes does not fit a page of {page_size}")
+
+    while out.len() < page_size
+        out @ out.push(0)
+
+    return ok(out)
+
+# The node a page holds.
+#
+# - `page`: the page's bytes.
+# - `page_count`: the database's pages, which a child may not pass.
+#
+# Fails `invalid` where the page is free or damaged: an unknown kind, a
+# count or a length past its bytes, keys out of order, or a child that names
+# no page.
+function decode(page: [u8], page_count: i64) -> Node?
+    if page.len() == 0
+        return damaged("an empty page")
+    kind = page[0]
+
+    if kind != TABLE_LEAF && kind != TABLE_INTERIOR && kind != INDEX_LEAF && kind != INDEX_INTERIOR
+        return damaged(f"a page of kind {kind}, no B-tree's")
+    leaf = kind == TABLE_LEAF || kind == INDEX_LEAF
+    head = bytes.decode_varint(page, at: 1)?
+    count = head.value
+    at @= 1 + head.width
+
+    if count < 0 || count > page.len()
+        return damaged("a count past the page")
+    found_keys: [[u8]] @= []
+    found_values: [[u8]] @= []
+
+    while found_keys.len() < count
+        key = slice_at(page, at: at)?
+        at @ key.next
+
+        if found_keys.len() > 0 && bytes.compare(a: found_keys[found_keys.len() - 1], b: key.data) >= 0
+            return damaged("found_keys out of order")
+        found_keys @ found_keys.push(key.data)
+
+        if leaf
+            value = slice_at(page, at: at)?
+            at @ value.next
+            found_values @ found_values.push(value.data)
+
+    children: [i64] @= []
+
+    if !leaf
+        while children.len() < count + 1
+            child = bytes.decode_varint(page, at: at)?
+            at @ at + child.width
+
+            if child.value < 2 || child.value > page_count
+                return damaged(f"a child that names page {child.value}")
+            children @ children.push(child.value)
+
+    return ok(Node(kind: kind, keys: found_keys, values: found_values, children: children))
+
+# Bytes read at a place of a page, and where the next field begins.
+record Slice
+    data: [u8]
+    next: i64
+
+function slice_at(page: [u8], at: i64) -> Slice?
+    size = bytes.decode_varint(page, at: at)?
+    start = at + size.width
+
+    if size.value < 0 || size.value > page.len() - start
+        return damaged("a length past the page")
+    return ok(Slice(data: page.slice(from: start, to: start + size.value), next: start + size.value))
+
+function damaged<T>(what: str) -> T?
+    return fail(code: sql.INVALID, msg: f"a damaged page: {what}")
+
+## Free pages
+
+# A free page of `page_size` bytes naming the free page after it.
+#
+# - `next`: the next free page, 0 for none.
+# - `page_size`: the bytes of a page.
+function free_page(next: i64, page_size: i64) -> [u8]
+    out @= [FREE]
+    bytes.push_all(to: @out, from: bytes.encode_i64_be(next))
+
+    while out.len() < page_size
+        out @ out.push(0)
+
+    return out
+
+# The free page a free page names.
+#
+# - `page`: a free page's bytes.
+# - `page_count`: the database's pages.
+#
+# Fails `invalid` where the page is no free page or names none.
+function next_free(page: [u8], page_count: i64) -> i64?
+    if page.len() < 9 || page[0] != FREE
+        return damaged("a page on the free list that is in use")
+    next = bytes.decode_i64_be(page, at: 1)?
+
+    if next < 0 || next > page_count || next == 1
+        return damaged(f"a free page that names page {next}")
+    return ok(next)
+
+## Tests
+
+function sample_leaf() -> Node
+    return Node(kind: TABLE_LEAF, keys: [[1, 2], [1, 3], [7]], values: [[9, 9, 9], [], [0]], children: [])
+
+test "encode and decode: a leaf and an interior page round-trip"
+    leaf = sample_leaf()
+    assert decode(to_page(leaf, page_size: 512).must(), page_count: 10).must() == leaf
+    interior = Node(kind: INDEX_INTERIOR, keys: [[5], [8]], values: [], children: [2, 3, 4])
+    assert decode(to_page(interior, page_size: 512).must(), page_count: 10).must() == interior
+
+test "decode: every cut of a page refused, keys out of order, a child past the count, a free page"
+    data = encode(sample_leaf())
+
+    for n in range(from: 0, to: data.len())
+        assert decode(data.slice(from: 0, to: n), page_count: 10).is_err()
+
+    assert decode(
+        encode(Node(kind: TABLE_LEAF, keys: [[2], [1]], values: [[], []], children: [])),
+        page_count: 10
+    ).is_err()
+    assert decode(
+        encode(Node(kind: TABLE_INTERIOR, keys: [[2]], values: [], children: [2, 11])),
+        page_count: 10
+    ).is_err()
+    assert decode(free_page(next: 0, page_size: 512), page_count: 10).is_err()
+
+test "to_page: a node too large for its page refused"
+    big = Node(kind: TABLE_LEAF, keys: [[1]], values: [range(from: 0, to: 600).map(low_byte)], children: [])
+    assert to_page(big, page_size: 512).is_err()
+
+test "next_free: a free page's link read back, a page in use and a link out of range refused"
+    assert next_free(free_page(next: 7, page_size: 512), page_count: 9).must() == 7
+    assert next_free(to_page(sample_leaf(), page_size: 512).must(), page_count: 9).is_err()
+    assert next_free(free_page(next: 12, page_size: 512), page_count: 9).is_err()
+    assert next_free(free_page(next: 1, page_size: 512), page_count: 9).is_err()
+
+function low_byte(n: i64) -> u8
+    return to_u8(n % 256).must()
