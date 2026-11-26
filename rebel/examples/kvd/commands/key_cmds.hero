@@ -1,0 +1,290 @@
+# The commands of keys whatever they hold: `DEL`, `EXISTS`, `TYPE`, the
+# four of a time to live (`EXPIRE`, `PEXPIRE`, `EXPIREAT`, `PEXPIREAT`),
+# `TTL`, `PTTL`, `PERSIST`, `KEYS`, `SCAN`, `RENAME`, `DBSIZE` and
+# `FLUSHDB`, as Redis answers each.
+
+use <rebel>/bytes
+use <rebel>/redis
+
+use commands/common
+use protocol/reply
+use protocol/words
+use store/keyspace
+
+# The most keys a `SCAN` looks at for one page, so a client asking a page
+# of a billion keys still lets the others be served.
+constant MOST_SCAN: i64
+    100_000
+
+# `DEL key [key ...]`: how many went.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function del(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    gone @= 0
+
+    for key in argv.slice(from: 1, to: argv.len())
+        if keyspace.locate(@db, key: key, now: now) != -1 && keyspace.remove(@db, key: key)
+            gone @ gone + 1
+            common.changed(@db, key: key, logged: common.command("DEL", rest: [key]))
+
+    return reply.integer(gone)
+
+# `EXISTS key [key ...]`: how many are there, a key named twice counted
+# twice.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function exists(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    found @= 0
+
+    for key in argv.slice(from: 1, to: argv.len())
+        if keyspace.read(@db, key: key, now: now) != -1
+            found @ found + 1
+
+    return reply.integer(found)
+
+# `TYPE key`: `string`, `list`, `hash`, `set`, `zset`, or `none`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function kind(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    at = keyspace.locate(@db, key: argv[1], now: now)
+
+    if at == -1
+        return .simple(v: "none")
+    return .simple(v: keyspace.kind_name(db.values[at].kind))
+
+# `EXPIRE`, `PEXPIRE`, `EXPIREAT` and `PEXPIREAT`, by `name`: 1 where the
+# key's time was set, 0 where the key is not there. A moment already past
+# takes the key out at once, as Redis does.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `name`: the command's name in capitals.
+# - `now`: the time.
+function expire(@db: keyspace.Db, argv: [[u8]], name: str, now: i64) -> redis.Reply
+    n = match words.integer(argv[2])
+        .ok v  => v
+        .err _ => return reply.not_integer()
+
+    most = 9223372036854775807
+
+    when = match name
+        "EXPIRE" =>
+            if n > (most - now) / 1000 || n < -(most / 1000)
+                return reply.error(code: "ERR", message: "invalid expire time in 'expire' command")
+            now + n * 1000
+        "PEXPIRE" =>
+            if n > most - now || n < -most + now
+                return reply.error(code: "ERR", message: "invalid expire time in 'pexpire' command")
+            now + n
+        "EXPIREAT" =>
+            if n > most / 1000 || n < -(most / 1000)
+                return reply.error(code: "ERR", message: "invalid expire time in 'expireat' command")
+            n * 1000
+        _ => n
+
+    at = keyspace.locate(@db, key: argv[1], now: now)
+
+    if at == -1
+        return reply.integer(0)
+
+    if when <= now
+        _ = keyspace.remove(@db, key: argv[1])
+        common.changed(@db, key: argv[1], logged: common.command("DEL", rest: [argv[1]]))
+        return reply.integer(1)
+    keyspace.set_expiry(@db, at: at, when: when)
+    common.changed(@db, key: argv[1], logged: common.command("PEXPIREAT", rest: [argv[1], common.decimal(when)]))
+    return reply.integer(1)
+
+# `TTL` and `PTTL`, by `name`: the time left in seconds or milliseconds,
+# -1 for a key that does not expire, -2 for one that is not there.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `name`: the command's name in capitals.
+# - `now`: the time.
+function ttl(@db: keyspace.Db, argv: [[u8]], name: str, now: i64) -> redis.Reply
+    at = keyspace.read(@db, key: argv[1], now: now)
+
+    if at == -1
+        return reply.integer(-2)
+    when = db.values[at].expire_at
+
+    if when == 0
+        return reply.integer(-1)
+    left = when - now
+
+    if name == "PTTL"
+        return reply.integer(left)
+    return reply.integer((left + 500) / 1000)
+
+# `PERSIST key`: 1 where a time to live was taken away.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function persist(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    at = keyspace.locate(@db, key: argv[1], now: now)
+
+    if at == -1 || db.values[at].expire_at == 0
+        return reply.integer(0)
+    keyspace.set_expiry(@db, at: at, when: 0)
+    common.changed(@db, key: argv[1], logged: argv)
+    return reply.integer(1)
+
+# `KEYS pattern`: every key matching it.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function keys_matching(db: keyspace.Db lent, argv: [[u8]], now: i64) -> redis.Reply
+    page = keyspace.scan(db, cursor: 0, count: keyspace.size(db) + 1, pattern: argv[1], kind_filter: "", now: now)
+    return reply.bulks(page.found)
+
+# `SCAN cursor [MATCH pattern] [COUNT count] [TYPE type]`: the next cursor
+# and a page of keys.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function scan(db: keyspace.Db lent, argv: [[u8]], now: i64) -> redis.Reply
+    cursor = match words.integer(argv[1])
+        .ok n =>
+            if n < 0
+                return reply.error(code: "ERR", message: "invalid cursor")
+            n
+        .err _ => return reply.error(code: "ERR", message: "invalid cursor")
+
+    pattern @= bytes.from_text("*")
+    count @= 10
+    kind_filter @= ""
+    i @= 2
+
+    while i < argv.len()
+        option = words.upper(argv[i])
+
+        if i + 1 >= argv.len()
+            return reply.syntax()
+
+        if option == "MATCH"
+            pattern @ argv[i + 1]
+        else if option == "COUNT"
+            match words.integer(argv[i + 1])
+                .ok n =>
+                    if n < 1
+                        return reply.syntax()
+                    count @ n
+                .err _ => return reply.not_integer()
+        else if option == "TYPE"
+            kind_filter @ bytes.to_text_lossy(argv[i + 1])
+        else
+            return reply.syntax()
+        i @ i + 2
+
+    if count > MOST_SCAN
+        count @ MOST_SCAN
+    page = keyspace.scan(db, cursor: cursor, count: count, pattern: pattern, kind_filter: kind_filter, now: now)
+    return .array(items: [reply.bulk(common.decimal(page.cursor)), reply.bulks(page.found)])
+
+# `RENAME key newkey`: the value and its time to live moved, whatever the
+# new name held taken out.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function rename(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    at = keyspace.locate(@db, key: argv[1], now: now)
+
+    if at == -1
+        return reply.error(code: "ERR", message: "no such key")
+
+    if argv[1] == argv[2]
+        return reply.okay()
+    v = db.values[at]
+    _ = keyspace.remove(@db, key: argv[1])
+    _ = keyspace.locate(@db, key: argv[2], now: now)
+    _ = keyspace.remove(@db, key: argv[2])
+    _ = keyspace.create(@db, key: argv[2], value: v)
+    keyspace.touch(@db, key: argv[1])
+    common.changed(@db, key: argv[2], logged: argv)
+    return reply.okay()
+
+# `DBSIZE`.
+#
+# - `db`: the keyspace.
+function dbsize(db: keyspace.Db lent) -> redis.Reply
+    return reply.integer(keyspace.size(db))
+
+# `FLUSHDB` and `FLUSHALL`: every key taken out, each touched for `WATCH`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+function flush(@db: keyspace.Db, argv: [[u8]]) -> redis.Reply
+    for key in db.names.slice(from: 0, to: keyspace.size(db))
+        keyspace.touch(@db, key: key)
+
+    keyspace.flush(@db)
+    keyspace.log(@db, words: [argv[0]])
+    return reply.okay()
+
+test "del and exists: counted keys, a key named twice, an expired key not there"
+    db @= keyspace.new()
+    _ = text_for_test(@db, key: "a", expire_at: 0)
+    _ = text_for_test(@db, key: "b", expire_at: 5)
+    assert exists(@db, argv: common.argv_of("EXISTS a a b"), now: 1) == reply.integer(3)
+    assert exists(@db, argv: common.argv_of("EXISTS b"), now: 5) == reply.integer(0)
+    assert del(@db, argv: common.argv_of("DEL a b none"), now: 5) == reply.integer(1)
+    assert keyspace.size(db) == 0
+
+test "expire, ttl and persist: a time set, read back in both units, a past time deleting, taken away"
+    db @= keyspace.new()
+    _ = text_for_test(@db, key: "k", expire_at: 0)
+    assert ttl(@db, argv: common.argv_of("TTL k"), name: "TTL", now: 0) == reply.integer(-1)
+    assert ttl(@db, argv: common.argv_of("TTL none"), name: "TTL", now: 0) == reply.integer(-2)
+    assert expire(@db, argv: common.argv_of("EXPIRE k 10"), name: "EXPIRE", now: 1000) == reply.integer(1)
+    assert ttl(@db, argv: common.argv_of("PTTL k"), name: "PTTL", now: 2000) == reply.integer(9000)
+    assert ttl(@db, argv: common.argv_of("TTL k"), name: "TTL", now: 2400) == reply.integer(9)
+    assert persist(@db, argv: common.argv_of("PERSIST k"), now: 2400) == reply.integer(1)
+    assert persist(@db, argv: common.argv_of("PERSIST k"), now: 2400) == reply.integer(0)
+    assert expire(@db, argv: common.argv_of("PEXPIREAT k 5"), name: "PEXPIREAT", now: 2400) == reply.integer(1)
+    assert keyspace.size(db) == 0
+    assert expire(@db, argv: common.argv_of("EXPIRE none 10"), name: "EXPIRE", now: 0) == reply.integer(0)
+    assert expire(@db, argv: common.argv_of("EXPIRE k 9223372036854775807"), name: "EXPIRE", now: 0) == reply.error(code: "ERR", message: "invalid expire time in 'expire' command")
+
+test "scan: a cursor that is no number, a count of 0, an option without its value, a type"
+    db @= keyspace.new()
+    _ = text_for_test(@db, key: "a", expire_at: 0)
+    assert scan(db, argv: common.argv_of("SCAN x"), now: 0) == reply.error(code: "ERR", message: "invalid cursor")
+    assert scan(db, argv: common.argv_of("SCAN -1"), now: 0) == reply.error(code: "ERR", message: "invalid cursor")
+    assert scan(db, argv: common.argv_of("SCAN 0 COUNT 0"), now: 0) == reply.syntax()
+    assert scan(db, argv: common.argv_of("SCAN 0 MATCH"), now: 0) == reply.syntax()
+    assert scan(db, argv: common.argv_of("SCAN 0 TYPE list"), now: 0) == .array(items: [reply.bulk([48]), .array(items: [])])
+    assert scan(db, argv: common.argv_of("SCAN 0"), now: 0) == .array(items: [reply.bulk([48]), reply.bulks([[97]])])
+
+test "rename and flush: the value and its time moved over another key, every key taken out"
+    db @= keyspace.new()
+    _ = text_for_test(@db, key: "a", expire_at: 900)
+    _ = text_for_test(@db, key: "b", expire_at: 0)
+    assert rename(@db, argv: common.argv_of("RENAME a b"), now: 0) == reply.okay()
+    assert keyspace.size(db) == 1
+    assert db.values[keyspace.locate(@db, key: [98], now: 0)].expire_at == 900
+    assert rename(@db, argv: common.argv_of("RENAME none c"), now: 0) == reply.error(code: "ERR", message: "no such key")
+    assert flush(@db, argv: common.argv_of("FLUSHDB")) == reply.okay()
+    assert dbsize(db) == reply.integer(0)
+
+# Puts the string `key` holding `x`, expiring at `expire_at`, for the
+# tests.
+#
+# - `db`: the keyspace.
+# - `key`: the key.
+# - `expire_at`: when it expires, 0 for never.
+function text_for_test(@db: keyspace.Db, key: str, expire_at: i64) -> i64
+    v @= keyspace.empty(.text)
+    v.text @ [120]
+    v.expire_at @ expire_at
+    return keyspace.create(@db, key: bytes.from_text(key), value: v)

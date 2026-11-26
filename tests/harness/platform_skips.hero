@@ -372,6 +372,9 @@ function unbuildable_on_windows() -> [Skip]
         Skip(name: "tests/golden/run/fixedbugs-2855-a-coroutine-on-a-carved-stack-leaving-for-good-after-a-handler-was-left-by-a-jump-runs.hero", why: SYSV_SWITCH_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2855-a-coroutine-on-a-carved-stack-leaving-for-good-by-a-longjmp-to-its-host-runs.hero", why: SYSV_SWITCH_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2855-a-handler-left-by-a-jump-and-jumped-back-into-from-a-coroutine-on-the-heap-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2853-fibres-carved-from-a-frame-entered-by-setcontext-then-longjmp-run-under-the-sanitizer.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2853-openssl-async-jobs-on-carved-fibres-run-under-the-sanitizer.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2852-fibres-carved-from-a-frame-call-the-function-under-the-sanitizer-and-run.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
     ]
 
 # Why the program at `source` is not built on this machine: one of
@@ -417,7 +420,7 @@ constant TEXT_STUB_IS_APPLES: str
     "the folder `--library` names holds library `z` as a `.tbd`, a text stub Apple's linker reads as a library, so a tree that holds no binary carries a library of its own; GNU ld and lld-link read no `.tbd` and take the platform's `libz` beside it (measured on this Mac, 2026-11-11, at panel 245's landing; the other linkers' reading is their documented file types, unrun), so the shape, a library half a folder the build names holds, is judged on Darwin, and a header half the build names is judged everywhere (defect 2448)"
 
 # The cases whose shape only Apple's clang or the SDK holds, skipped on every
-# other machine by name, and two surface rows.
+# other machine by name, and three surface rows.
 function darwin_alone() -> [Skip]
     return [
         Skip(name: "fixedbugs-2344-an-empty-cpath", why: EMPTY_CPATH_IS_APPLES)
@@ -434,6 +437,7 @@ function darwin_alone() -> [Skip]
         Skip(name: "fixedbugs-2447-a-sibling-named-as-the-search-names-it-the-sdks-socket-header-includes-after", why: SOCKET_READS_TYPES_ON_DARWIN)
         Skip(name: "the platform's header beside a library of a folder --library names is refused as two releases (panel 245's R3, defect 2448)", why: TEXT_STUB_IS_APPLES)
         Skip(name: "a header and a library each of a folder the build names build, both halves named (panel 245's R3)", why: TEXT_STUB_IS_APPLES)
+        Skip(name: "a pasted header and a library each of a folder the build names build, both halves named (panel 245's R3, lane p261-beside)", why: TEXT_STUB_IS_APPLES)
     ]
 
 # **And an emission that names the platform's own C is compared where it was
@@ -581,8 +585,9 @@ test "every name skipped on Windows is a case or a surface row that exists"
         assert folder || strings.contains(s: surface.must(), substr: "row(name: \"" + one.name + "\"")
 
     # Two, defect 2447's ten danger cases, whose words are the SDK's, and
-    # panel 245's two rows of a library a text stub holds.
-    assert darwin_alone().len() == 14
+    # panel 245's two rows of a library a text stub holds; and since lane
+    # p261-beside (2026-11-26) a third such row, its header pasted.
+    assert darwin_alone().len() == 15
 
 # On a machine that is not Windows nothing is skipped by name but the cases
 # whose words are Windows' alone, and on Windows those are judged.
@@ -659,7 +664,14 @@ test "every program Windows cannot build is a file that exists, skipped there al
     # (`SYSV_SWITCH_ON_WINDOWS`, compiled alone by `zig cc` 0.15.2 for both
     # Windows targets on 2026-11-26), and one binds defect 2702's context
     # header, refused at `ucontext.h` (`POSIX_CONTEXT_SHAPES_ON_WINDOWS`).
-    assert unbuildable_on_windows().len() == 183
+    # Then the 2 of defect 2853 (lane sig-family): one header refused at
+    # `ucontext.h` not found, the other, OpenSSL's ASYNC, stopping itself with
+    # `#error` (Windows' fibres are the system's own), each compiled alone by
+    # `zig cc` 0.15.2 for both Windows targets on 2026-11-26
+    # (`POSIX_CONTEXT_SHAPES_ON_WINDOWS`).
+    # Then the 1 of defect 2852 (lane sig-family), its header refused at
+    # `ucontext.h` not found by `zig cc` 0.15.2 for Windows x86-64 on 2026-11-26.
+    assert unbuildable_on_windows().len() == 186
 
     for one in unbuildable_on_windows()
         assert strings.has_prefix(s: one.name, prefix: "tests/golden/run/")

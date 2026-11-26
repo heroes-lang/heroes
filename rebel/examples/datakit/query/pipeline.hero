@@ -9,6 +9,7 @@
 # a sort never fails on a column a file filled carelessly.
 
 use <rebel>/big
+use <rebel>/errors
 use <rebel>/lists
 use <rebel>/strings
 
@@ -70,9 +71,7 @@ function run(t: model.Table, steps: Steps) -> model.Table?
 # - `flag`: the flag, `--where`.
 # - `answer`: the step's answer.
 function with_flag<T>(flag: str, answer: T?) -> T?
-    return match answer
-        .ok v  => ok(v)
-        .err e => fail(code: e.code, msg: f"{flag}: {e.msg}")
+    return errors.context(answer, what: f"{flag}")
 
 # The rows of `t` for which `where` holds.
 #

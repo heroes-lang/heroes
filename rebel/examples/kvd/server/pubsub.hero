@@ -1,0 +1,213 @@
+# Publish and subscribe as Redis runs them: a client subscribes to
+# channels by name and by glob pattern, and from then on runs only the
+# subscription commands, `PING`, `QUIT` and `RESET`; `PUBLISH` hands a
+# message to every client subscribed to its channel, by name and by each
+# pattern that matches, and answers how many it reached. A message is
+# written to its subscriber's connection at once, before the publisher's
+# own reply, so what one client publishes another has received by the
+# time the publisher hears back.
+
+use <rebel>/bytes
+use <rebel>/io
+use <rebel>/net
+use <rebel>/redis
+
+use protocol/reply
+use protocol/words
+use server/registry
+use server/state
+use store/glob
+
+# How long a write to a subscriber may wait, in milliseconds: a client that
+# reads nothing is let go rather than let it stop the server.
+constant WRITE_MS: i64
+    5_000
+
+# Whether the client at `at` is subscribed to a channel or a pattern.
+#
+# - `s`: the server.
+# - `at`: the client's position.
+function is_subscribed(s: state.State lent, at: i64) -> bool
+    return s.clients[at].channels.len() + s.clients[at].patterns.len() > 0
+
+# The confirmation `kind` of `name`, with the client's count of
+# subscriptions after it.
+#
+# - `kind`: `subscribe`, `unsubscribe`, `psubscribe` or `punsubscribe`.
+# - `name`: the channel or the pattern; a null where none is left.
+# - `count`: the client's subscriptions after it.
+function confirmation(kind: str, name: redis.Reply, count: i64) -> redis.Reply
+    return .array(items: [reply.bulk_text(kind), name, reply.integer(count)])
+
+# Whether `list` holds `name`.
+#
+# - `list`: the names.
+# - `name`: the name.
+function holds(list: [[u8]], name: [u8]) -> bool
+    for n in list
+        if n == name
+            return true
+
+    return false
+
+# `SUBSCRIBE` and `PSUBSCRIBE`, by `patterns`: one confirmation each.
+#
+# - `s`: the server.
+# - `at`: the client's position.
+# - `argv`: the command's words, its name first.
+# - `patterns`: whether the names are patterns.
+function subscribe(@s: state.State, at: i64, argv: [[u8]], patterns: bool) -> [redis.Reply]
+    out: [redis.Reply] @= []
+    key = s.clients[at].key
+
+    for name in argv.slice(from: 1, to: argv.len())
+        if patterns
+            if !holds(s.clients[at].patterns, name: name)
+                s.clients[at].patterns @ s.clients[at].patterns.push(name)
+                _ = registry.add(@s.patterns, name: name, id: key)
+            out @ out.push(confirmation("psubscribe", name: reply.bulk(name), count: count_of(s, at: at)))
+        else
+            if !holds(s.clients[at].channels, name: name)
+                s.clients[at].channels @ s.clients[at].channels.push(name)
+                _ = registry.add(@s.channels, name: name, id: key)
+            out @ out.push(confirmation("subscribe", name: reply.bulk(name), count: count_of(s, at: at)))
+
+    return out
+
+# How many channels and patterns the client is subscribed to.
+#
+# - `s`: the server.
+# - `at`: the client's position.
+function count_of(s: state.State lent, at: i64) -> i64
+    return s.clients[at].channels.len() + s.clients[at].patterns.len()
+
+# `UNSUBSCRIBE` and `PUNSUBSCRIBE`, by `patterns`: the names given, or all
+# where none is; one confirmation each, or one with a null where the client
+# held none.
+#
+# - `s`: the server.
+# - `at`: the client's position.
+# - `argv`: the command's words, its name first.
+# - `patterns`: whether the names are patterns.
+function unsubscribe(@s: state.State, at: i64, argv: [[u8]], patterns: bool) -> [redis.Reply]
+    held = if patterns
+        s.clients[at].patterns
+    else
+        s.clients[at].channels
+
+    named = if argv.len() > 1
+        argv.slice(from: 1, to: argv.len())
+    else
+        held
+
+    kind = if patterns
+        "punsubscribe"
+    else
+        "unsubscribe"
+    key = s.clients[at].key
+    out: [redis.Reply] @= []
+
+    for name in named
+        kept: [[u8]] @= []
+
+        for n in s.clients[at].channels
+            if patterns || n != name
+                kept @ kept.push(n)
+
+        kept_patterns: [[u8]] @= []
+
+        for n in s.clients[at].patterns
+            if !patterns || n != name
+                kept_patterns @ kept_patterns.push(n)
+
+        s.clients[at].channels @ kept
+        s.clients[at].patterns @ kept_patterns
+
+        if patterns
+            _ = registry.remove(@s.patterns, name: name, id: key)
+        else
+            _ = registry.remove(@s.channels, name: name, id: key)
+        out @ out.push(confirmation(kind, name: reply.bulk(name), count: count_of(s, at: at)))
+
+    if out.len() == 0
+        out @ out.push(confirmation(kind, name: reply.nothing(), count: count_of(s, at: at)))
+    return out
+
+# Writes `data` to the client whose key is `key`, and lets it go where the
+# write fails or waits past `WRITE_MS`.
+#
+# - `s`: the server.
+# - `key`: the client's key in the poll set.
+# - `data`: the bytes.
+function deliver(@s: state.State, key: i64, data: [u8])
+    at = state.client_at(s, key: key)
+
+    if at == -1 || s.clients[at].closing
+        return
+    stream = s.clients[at].conn.stream
+    _ = net.set_deadline(stream, deadline_ms: WRITE_MS).is_err()
+
+    match io.write(stream, data: data)
+        .ok _  => _ = net.set_deadline(stream, deadline_ms: net.FOREVER).is_err()
+        .err _ => s.clients[at].closing @ true
+
+# `PUBLISH channel message`: how many clients received it.
+#
+# - `s`: the server.
+# - `argv`: the command's words, its name first.
+function publish(@s: state.State, argv: [[u8]]) -> redis.Reply
+    channel = argv[1]
+    message = argv[2]
+    reached @= 0
+    direct = reply.encode(.array(items: [reply.bulk_text("message"), reply.bulk(channel), reply.bulk(message)]))
+
+    for key in registry.holders_of(s.channels, name: channel)
+        deliver(@s, key: key, data: direct)
+        reached @ reached + 1
+
+    for pattern in registry.names_of(s.patterns)
+        if glob.matches(s: channel, pattern: pattern)
+            by_pattern = reply.encode(
+                .array(items: [reply.bulk_text("pmessage"), reply.bulk(pattern), reply.bulk(channel), reply.bulk(message)])
+            )
+
+            for key in registry.holders_of(s.patterns, name: pattern)
+                deliver(@s, key: key, data: by_pattern)
+                reached @ reached + 1
+
+    s.stats.messages @ s.stats.messages + reached
+    return reply.integer(reached)
+
+# `PUBSUB CHANNELS [pattern]`, `PUBSUB NUMSUB [channel ...]` and
+# `PUBSUB NUMPAT`.
+#
+# - `s`: the server.
+# - `argv`: the command's words, its name first.
+function introspect(s: state.State lent, argv: [[u8]]) -> redis.Reply
+    what = words.upper(argv[1])
+
+    if what == "CHANNELS"
+        pattern = if argv.len() > 2
+            argv[2]
+        else
+            bytes.from_text("*")
+        found: [[u8]] @= []
+
+        for name in registry.names_of(s.channels)
+            if glob.matches(s: name, pattern: pattern)
+                found @ found.push(name)
+
+        return reply.bulks(found)
+
+    if what == "NUMSUB"
+        out: [redis.Reply] @= []
+
+        for name in argv.slice(from: 2, to: argv.len())
+            out @ out.push(reply.bulk(name))
+            out @ out.push(reply.integer(registry.holders_of(s.channels, name: name).len()))
+
+        return .array(items: out)
+
+    if what == "NUMPAT"
+        return reply.integer(registry.size(s.patterns))
+    return reply.error(code: "ERR", message: f"unknown subcommand '{what}'. Try PUBSUB HELP.")

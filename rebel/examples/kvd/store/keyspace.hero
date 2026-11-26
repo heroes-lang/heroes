@@ -1,0 +1,528 @@
+# The keyspace: every key, its value of one of five kinds, and when it
+# expires; the keys with a time to live, from which the active sweep draws;
+# and what the commands since the server last asked changed, the keys a
+# `WATCH` looks at and the commands the append-only file must hold.
+#
+# The keys stand in `containers/indexed`'s map, since the language's own map
+# takes no key out but by copying every other (`maps.remove`), and `DEL`
+# must cost a constant. A value is a record holding the storage of all five
+# kinds, the four its kind does not use left empty: a variant's payload is
+# no place a command can change (a `match` binds a copy), so a list held in
+# a case would be copied whole by every `LPUSH`.
+#
+# A time is a number of milliseconds since the Unix epoch, which the caller
+# hands every function that may find a key expired: the clock is the
+# server's parameter, never read here.
+
+use <rebel>/bytes
+use <rebel>/containers/deque
+use <rebel>/containers/indexed
+use <rebel>/random
+
+use store/glob
+use store/zset
+
+# The kinds of value a key holds.
+variant Kind
+    # A string of bytes.
+    text
+    # A list of strings, both ends open.
+    list
+    # A map of fields to strings.
+    hash
+    # A set of strings.
+    set
+    # A sorted set: strings by score.
+    zset
+
+# One key's value. Made by `empty`; the fields of the kinds it is not stay
+# empty.
+record Value
+    # Which kind it is.
+    kind: Kind
+    # A string's bytes.
+    text: [u8]
+    # A list's shape, over `list`.
+    list_shape: deque.Deque
+    # A list's items, the deque's storage.
+    list: [[u8]]
+    # A hash's shape.
+    hash_shape: indexed.Indexed
+    # A hash's fields.
+    hash_fields: [[u8]]
+    # A hash's values, at their fields' positions.
+    hash_values: [[u8]]
+    # A hash's lookup of positions.
+    hash_lookup: {[u8]: i64}
+    # A set's shape.
+    set_shape: indexed.Indexed
+    # A set's members.
+    set_members: [[u8]]
+    # A mark beside each member, always true: the map's values.
+    set_marks: [bool]
+    # A set's lookup of positions.
+    set_lookup: {[u8]: i64}
+    # A sorted set.
+    zset: zset.ZSet
+    # When the key expires, in milliseconds since the Unix epoch; 0 for
+    # never.
+    expire_at: i64
+
+# The keyspace. Made by `new`.
+record Db
+    # The shape of the map of keys.
+    shape: indexed.Indexed
+    # The keys.
+    names: [[u8]]
+    # Their values, at their keys' positions.
+    values: [Value]
+    # The map's lookup of positions.
+    lookup: {[u8]: i64}
+    # The shape of the map of keys that expire.
+    volatile_shape: indexed.Indexed
+    # The keys that expire.
+    volatile_names: [[u8]]
+    # When each expires, as `Value.expire_at`.
+    volatile_at: [i64]
+    # That map's lookup.
+    volatile_lookup: {[u8]: i64}
+    # The keys changed since `drain_touched` was last asked, for `WATCH`.
+    touched: [[u8]]
+    # The commands that changed the keyspace since `drain_effects` was last
+    # asked, each as words the append-only file replays.
+    effects: [[[u8]]]
+    # Reads that found their key, for `INFO`.
+    hits: i64
+    # Reads that found none.
+    misses: i64
+    # Keys taken out because they expired.
+    expired: i64
+    # The generator the active sweep draws keys from.
+    sampler: random.Generator
+
+# A page of `SCAN`: the cursor to ask next, 0 at the end, and the keys.
+record Page
+    # The cursor the next call takes; 0 once every key was offered.
+    cursor: i64
+    # The keys of this page.
+    found: [[u8]]
+
+# An empty keyspace.
+function new() -> Db
+    return Db(
+        shape: indexed.new(),
+        names: [],
+        values: [],
+        lookup: {},
+        volatile_shape: indexed.new(),
+        volatile_names: [],
+        volatile_at: [],
+        volatile_lookup: {},
+        touched: [],
+        effects: [],
+        hits: 0,
+        misses: 0,
+        expired: 0,
+        sampler: random.Generator(high: 7, low: 11)
+    )
+
+# An empty value of `kind`, which never expires.
+#
+# - `kind`: its kind.
+function empty(kind: Kind) -> Value
+    return Value(
+        kind: kind,
+        text: [],
+        list_shape: deque.new(),
+        list: [],
+        hash_shape: indexed.new(),
+        hash_fields: [],
+        hash_values: [],
+        hash_lookup: {},
+        set_shape: indexed.new(),
+        set_members: [],
+        set_marks: [],
+        set_lookup: {},
+        zset: zset.new(),
+        expire_at: 0
+    )
+
+# The name `TYPE` answers for `kind`.
+#
+# - `kind`: the kind.
+function kind_name(kind: Kind) -> str
+    return match kind
+        .text => "string"
+        .list => "list"
+        .hash => "hash"
+        .set  => "set"
+        .zset => "zset"
+
+# How many keys `db` holds, the expired ones not yet found included.
+#
+# - `db`: the keyspace.
+function size(db: Db lent) -> i64
+    return indexed.size(db.shape)
+
+# How many keys have a time to live.
+#
+# - `db`: the keyspace.
+function volatile_count(db: Db lent) -> i64
+    return indexed.size(db.volatile_shape)
+
+# How many members a value holds: a string's bytes, a list's items, a
+# hash's fields, a set's or a sorted set's members.
+#
+# - `v`: the value.
+function length_of(v: Value lent) -> i64
+    return match v.kind
+        .text => v.text.len()
+        .list => deque.size(v.list_shape)
+        .hash => indexed.size(v.hash_shape)
+        .set  => indexed.size(v.set_shape)
+        .zset => zset.size(v.zset)
+
+# Records that `key` changed, for `WATCH`.
+#
+# - `db`: the keyspace.
+# - `key`: the key.
+function touch(@db: Db, key: [u8])
+    add_key(list: @db.touched, key: key)
+
+# Adds `key` at the end of `list`, the caller's own, in place: a list
+# reached through a field would be copied whole by a `push` written there
+# (spec § 10), which a replay of a long log would pay once per command.
+#
+# - `list`: the keys.
+# - `key`: the key added.
+function add_key(@list: [[u8]], key: [u8])
+    list @ list.push(key)
+
+# Adds `words` at the end of `list`, the caller's own, in place, as
+# `add_key` does.
+#
+# - `list`: the commands.
+# - `words`: the command added.
+function add_command(@list: [[[u8]]], words: [[u8]])
+    list @ list.push(words)
+
+# Records the command `words` as one the append-only file must hold.
+#
+# - `db`: the keyspace.
+# - `words`: the command, as the file replays it.
+function log(@db: Db, words: [[u8]])
+    add_command(list: @db.effects, words: words)
+
+# The keys changed since the last call, emptied.
+#
+# - `db`: the keyspace.
+function drain_touched(@db: Db) -> [[u8]]
+    out = db.touched
+    db.touched @ []
+    return out
+
+# The commands recorded since the last call, emptied.
+#
+# - `db`: the keyspace.
+function drain_effects(@db: Db) -> [[[u8]]]
+    out = db.effects
+    db.effects @ []
+    return out
+
+# Takes `key` out, whatever it holds, and answers whether it was there.
+# Neither touched nor logged: the caller says why it went.
+#
+# - `db`: the keyspace.
+# - `key`: the key.
+function remove(@db: Db, key: [u8]) -> bool
+    match indexed.swap_remove(@db.shape, @db.names, @db.values, @db.lookup, key: key)
+        .ok _ =>
+            _ = indexed.swap_remove(
+                @db.volatile_shape,
+                @db.volatile_names,
+                @db.volatile_at,
+                @db.volatile_lookup,
+                key: key
+            ).is_err()
+            return true
+        .err _ => return false
+
+# Whether the key at position `at` has expired at `now`.
+#
+# - `db`: the keyspace.
+# - `at`: a key's position.
+# - `now`: the time.
+function is_expired(db: Db lent, at: i64, now: i64) -> bool
+    when = db.values[at].expire_at
+    return when != 0 && when <= now
+
+# Takes the expired key `key` out, counting it, touching it and logging a
+# `DEL`, as Redis does so a replica and the file agree.
+#
+# - `db`: the keyspace.
+# - `key`: the key.
+function expire_now(@db: Db, key: [u8])
+    if remove(@db, key: key)
+        db.expired @ db.expired + 1
+        touch(@db, key: key)
+        log(@db, words: [bytes.from_text("DEL"), key])
+
+# The position of `key`, or -1 where it is not there; a key found expired
+# at `now` is taken out first, so no command sees it.
+#
+# - `db`: the keyspace.
+# - `key`: the key.
+# - `now`: the time.
+function locate(@db: Db, key: [u8], now: i64) -> i64
+    at = match indexed.position_of(db.shape, lookup: db.lookup, key: key)
+        .ok p  => p
+        .err _ => return -1
+
+    if is_expired(db, at: at, now: now)
+        expire_now(@db, key: key)
+        return -1
+    return at
+
+# The position of `key` for a read, counted as a hit or a miss for `INFO`.
+#
+# - `db`: the keyspace.
+# - `key`: the key.
+# - `now`: the time.
+function read(@db: Db, key: [u8], now: i64) -> i64
+    at = locate(@db, key: key, now: now)
+
+    if at == -1
+        db.misses @ db.misses + 1
+    else
+        db.hits @ db.hits + 1
+    return at
+
+# Puts `value` under `key`, which must not be there, and answers its
+# position.
+#
+# - `db`: the keyspace.
+# - `key`: the key.
+# - `value`: the value; its time to live is kept.
+function create(@db: Db, key: [u8], value: Value) -> i64
+    at = indexed.put(@db.shape, @db.names, @db.values, @db.lookup, key: key, value: value)
+
+    if value.expire_at != 0
+        _ = indexed.put(
+            @db.volatile_shape,
+            @db.volatile_names,
+            @db.volatile_at,
+            @db.volatile_lookup,
+            key: key,
+            value: value.expire_at
+        )
+    return at
+
+# Sets when the key at `at` expires, 0 for never.
+#
+# - `db`: the keyspace.
+# - `at`: the key's position.
+# - `when`: milliseconds since the Unix epoch, or 0.
+function set_expiry(@db: Db, at: i64, when: i64)
+    key = db.names[at]
+    db.values[at].expire_at @ when
+
+    if when == 0
+        _ = indexed.swap_remove(
+            @db.volatile_shape,
+            @db.volatile_names,
+            @db.volatile_at,
+            @db.volatile_lookup,
+            key: key
+        ).is_err()
+    else
+        _ = indexed.put(
+            @db.volatile_shape,
+            @db.volatile_names,
+            @db.volatile_at,
+            @db.volatile_lookup,
+            key: key,
+            value: when
+        )
+
+# Takes out every key that the collection the key at `at` held has emptied:
+# Redis removes a list, a hash, a set or a sorted set when its last member
+# goes. Answers whether it went.
+#
+# - `db`: the keyspace.
+# - `at`: the key's position.
+function drop_if_empty(@db: Db, at: i64) -> bool
+    if db.values[at].kind != .text && length_of(db.values[at]) == 0
+        return remove(@db, key: db.names[at])
+    return false
+
+# Takes out every key; the counters stay.
+#
+# - `db`: the keyspace.
+function flush(@db: Db)
+    db.shape @ indexed.new()
+    db.names @ []
+    db.values @ []
+    db.lookup @ {}
+    db.volatile_shape @ indexed.new()
+    db.volatile_names @ []
+    db.volatile_at @ []
+    db.volatile_lookup @ {}
+
+# One round of the active sweep, as Redis's `activeExpireCycle` does it:
+# up to 20 keys with a time to live drawn at random, the expired ones taken
+# out, again while more than a quarter of those drawn had expired, at most
+# `rounds` times. Answers how many went.
+#
+# - `db`: the keyspace; its generator advances.
+# - `now`: the time.
+# - `rounds`: the most draws of 20, 1 or more.
+function sweep(@db: Db, now: i64, rounds: i64) -> i64
+    gone @= 0
+    round @= 0
+
+    while round < rounds && volatile_count(db) > 0
+        drawn @= 0
+        found @= 0
+
+        while drawn < 20 && volatile_count(db) > 0
+            pick = random.int_in(@db.sampler, from: 0, to: volatile_count(db))
+
+            if db.volatile_at[pick] <= now
+                expire_now(@db, key: db.volatile_names[pick])
+                found @ found + 1
+            drawn @ drawn + 1
+
+        gone @ gone + found
+        round @ round + 1
+
+        if found * 4 <= drawn
+            return gone
+
+    return gone
+
+# A page of `SCAN` from `cursor`: keys whose bytes match `pattern` (every
+# key for `*`) and whose kind is `kind_filter`'s ("" for any), at most
+# `count` positions looked at.
+#
+# Positions are walked from the last down: a key taken out moves the last
+# key into its place (`indexed.swap_remove`), always downward, so a key
+# present from the first call to the last is offered at least once, as
+# Redis promises, whatever is taken out between. The cursor is the
+# position below which the walk goes on; 0 starts and 0 ends.
+#
+# - `db`: the keyspace.
+# - `cursor`: 0 to start, else what the last page answered.
+# - `count`: how many positions to look at, 1 or more.
+# - `pattern`: the glob the keys must match.
+# - `kind_filter`: a kind's name as `TYPE` writes it, or "".
+# - `now`: the time; expired keys are not offered.
+function scan(db: Db lent, cursor: i64, count: i64, pattern: [u8], kind_filter: str, now: i64) -> Page
+    top @= size(db)
+
+    if cursor > 0 && cursor < top
+        top @ cursor
+    found: [[u8]] @= []
+    looked @= 0
+
+    while top > 0 && looked < count
+        top @ top - 1
+        looked @ looked + 1
+        key = db.names[top]
+
+        if !is_expired(db, at: top, now: now) && glob.matches(s: key, pattern: pattern)
+            if kind_filter == "" || kind_filter == kind_name(db.values[top].kind)
+                found @ found.push(key)
+
+    return Page(cursor: top, found: found)
+
+test "create, find and remove: a key put, read, expired lazily and taken out"
+    db @= new()
+    v @= empty(.text)
+    v.text @ [104, 105]
+    v.expire_at @ 1000
+    at = create(@db, key: [107], value: v)
+    assert locate(@db, key: [107], now: 999) == at
+    assert size(db) == 1
+    assert volatile_count(db) == 1
+    assert locate(@db, key: [107], now: 1000) == -1
+    assert size(db) == 0
+    assert volatile_count(db) == 0
+    assert db.expired == 1
+    assert drain_effects(@db) == [[bytes.from_text("DEL"), [107]]]
+    assert drain_touched(@db) == [[107]]
+    assert drain_effects(@db).len() == 0
+    assert !remove(@db, key: [107])
+
+test "set_expiry: a time set, moved and taken away"
+    db @= new()
+    at = create(@db, key: [97], value: empty(.text))
+    set_expiry(@db, at: at, when: 50)
+    assert volatile_count(db) == 1
+    set_expiry(@db, at: at, when: 80)
+    assert volatile_count(db) == 1
+    assert db.volatile_at[0] == 80
+    set_expiry(@db, at: at, when: 0)
+    assert volatile_count(db) == 0
+
+test "sweep: expired keys go without being read, a round stopping once few of those drawn had expired, and the others stay"
+    db @= new()
+
+    for i in range(from: 0, to: 100)
+        v @= empty(.text)
+
+        if i % 2 == 0
+            v.expire_at @ 10
+        else
+            v.expire_at @ 1000
+        _ = create(@db, key: [to_u8(i).must()], value: v)
+
+    gone = sweep(@db, now: 500, rounds: 1000)
+    assert gone > 0
+    assert gone < 50 || size(db) == 50
+    calls @= 0
+
+    while size(db) > 50 && calls < 1000
+        _ = sweep(@db, now: 500, rounds: 1)
+        calls @ calls + 1
+
+    assert size(db) == 50
+    assert db.expired == 50
+    assert sweep(@db, now: 500, rounds: 1000) == 0
+    empty_db @= new()
+    assert sweep(@empty_db, now: 0, rounds: 5) == 0
+
+test "scan: every key present throughout is offered, however many are taken out between pages"
+    db @= new()
+
+    for i in range(from: 0, to: 40)
+        _ = create(@db, key: [to_u8(i).must()], value: empty(.text))
+
+    seen: {[u8]: bool} @= {}
+    cursor @= 0
+    first @= true
+
+    while first || cursor != 0
+        first @ false
+        page = scan(db, cursor: cursor, count: 7, pattern: [42], kind_filter: "", now: 0)
+
+        for k in page.found
+            seen[k] @ true
+
+        cursor @ page.cursor
+        _ = remove(@db, key: [to_u8(page.cursor % 40).must()])
+        _ = remove(@db, key: [39])
+
+    for i in range(from: 0, to: 39)
+        key = [to_u8(i).must()]
+
+        if locate(@db, key: key, now: 0) != -1
+            assert seen[key].default(false)
+
+test "scan: a pattern and a kind filter"
+    db @= new()
+    _ = create(@db, key: [97, 49], value: empty(.text))
+    _ = create(@db, key: [97, 50], value: empty(.list))
+    _ = create(@db, key: [98, 49], value: empty(.text))
+    page = scan(db, cursor: 0, count: 10, pattern: [97, 42], kind_filter: "string", now: 0)
+    assert page.found == [[97, 49]]
+    assert page.cursor == 0

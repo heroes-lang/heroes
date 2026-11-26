@@ -1,0 +1,205 @@
+# What the server holds: its settings, its clock, the keyspace, the
+# connections and what each is doing, the subscriptions and the watched
+# keys, the log, the background save and the counters `INFO` reports. One
+# thread owns all of it and runs every command in turn, as Redis's main
+# thread does, so no command ever sees another half done.
+
+use <rebel>/containers/indexed
+use <rebel>/io
+use <rebel>/net
+use <rebel>/poll
+
+use commands/table
+use persist/aof
+use server/clock
+use server/registry
+use store/keyspace
+
+# What the server tells whoever started it once it listens, or why it
+# could not.
+record Ready
+    # Whether it listens.
+    started: bool
+    # The port it listens on, the system's choice where 0 was asked.
+    port: i64
+    # What it did to start: what it loaded, or why it stopped.
+    lines: [str]
+
+# How the server runs, from the command line.
+record Config
+    # The address it listens on: `127.0.0.1`, `::1`, or "" for every one.
+    host: str
+    # The port, 0 for one the system chooses.
+    port: i64
+    # The data folder, holding the snapshot and the log.
+    dir: str
+    # Whether every change is logged to the append-only file.
+    appendonly: bool
+    # When the log is put on the storage: `always`, `everysec` or `no`.
+    fsync: str
+    # The password a client gives with `AUTH`, "" for none.
+    password: str
+    # How many times a second the timer runs the active sweep, 1 to 500.
+    hz: i64
+    # Whether the clock is manual, moved by `DEBUG ADVANCE` alone.
+    manual_clock: bool
+    # Where a manual clock starts, in milliseconds since the Unix epoch.
+    start_ms: i64
+    # The most clients connected at once.
+    most_clients: i64
+    # Whether the server keeps its log lines for `Ready` and prints none.
+    quiet: bool
+    # Where the server says it listens.
+    ready: (mailbox Ready)
+
+# One connection.
+record Client
+    # Its number, as `CLIENT ID` answers it, never reused.
+    id: i64
+    # The connection.
+    conn: net.Conn
+    # Its key in the poll set, which the registries name it by.
+    key: i64
+    # Bytes read and not yet run.
+    pending: [u8]
+    # Its name, as `CLIENT SETNAME` set it.
+    name: str
+    # Whether it gave the password, or none is asked.
+    authed: bool
+    # Whether `MULTI` opened a transaction.
+    in_multi: bool
+    # The commands queued since `MULTI`.
+    queued: [[[u8]]]
+    # Whether a command was refused while queueing, so `EXEC` aborts.
+    queue_broken: bool
+    # The keys `WATCH` named.
+    watching: [[u8]]
+    # Whether one of them changed since.
+    dirty: bool
+    # The channels it is subscribed to.
+    channels: [[u8]]
+    # The patterns it is subscribed to.
+    patterns: [[u8]]
+    # Whether it asked to be closed once its replies are written.
+    closing: bool
+
+# The counters `INFO stats` reports.
+record Stats
+    # Connections accepted.
+    connections: i64
+    # Connections refused, the server holding its most clients.
+    rejected: i64
+    # Commands run.
+    commands: i64
+    # Messages delivered to subscribers.
+    messages: i64
+
+# The background save, while one runs.
+record Saving
+    # Whether one runs.
+    running: bool
+    # The log's generation its snapshot is written for.
+    generation: i64
+    # The changes counted when it began, which its snapshot holds.
+    changes: i64
+
+# What a background save answers when its file is written, or why not.
+record Saved
+    # Whether the snapshot was written.
+    written: bool
+    # Why not.
+    why: str
+    # The bytes written.
+    size: i64
+
+# The whole server.
+record State
+    # Its settings.
+    config: Config
+    # Its clock.
+    clock: clock.Clock
+    # The keyspace.
+    db: keyspace.Db
+    # The command table by name.
+    specs: {str: table.Spec}
+    # The poll set every connection, the listener, the timer and the
+    # background save's mailbox stand in.
+    set: poll.Set
+    # The listener.
+    listener: net.Listener
+    # The listener's key in the set.
+    listener_key: i64
+    # The timer's key.
+    timer_key: i64
+    # The clients' map, by their keys in the set: shape.
+    clients_shape: indexed.Indexed
+    # The clients' keys.
+    client_keys: [i64]
+    # The clients, at their keys' positions.
+    clients: [Client]
+    # The map's lookup.
+    client_lookup: {i64: i64}
+    # The next client's number.
+    next_id: i64
+    # Who is subscribed to each channel.
+    channels: registry.Registry
+    # Who is subscribed to each pattern.
+    patterns: registry.Registry
+    # Who watches each key.
+    watched: registry.Registry
+    # The append-only file.
+    log: aof.Writer
+    # The background save.
+    saving: Saving
+    # Where a background save answers.
+    saved: (mailbox Saved)
+    # That mailbox's key in the poll set.
+    saved_key: i64
+    # The background save's thread, while one runs.
+    savers: [(thread i64)]
+    # The counters.
+    stats: Stats
+    # When the last snapshot was written, in milliseconds since the Unix
+    # epoch; 0 for never.
+    last_save_ms: i64
+    # Whether the last background save succeeded.
+    last_save_ok: bool
+    # The changes since the last snapshot.
+    changes: i64
+    # When the server started.
+    started_ms: i64
+    # Whether `SHUTDOWN` or a stop ended the loop.
+    stopping: bool
+    # The log lines kept for `Ready` where the server is quiet.
+    lines: [str]
+
+# Says `line` in the server's log: written to the standard output at once,
+# or kept where it is quiet. It is written by `io`, never by `print`, whose
+# bytes reach a pipe only when its buffer fills or the program ends, so a
+# log read through a pipe would hold nothing until `SHUTDOWN`.
+#
+# - `s`: the server.
+# - `line`: what happened.
+function say(@s: State, line: str)
+    if s.config.quiet
+        s.lines @ s.lines.push(line)
+    else
+        _ = io.write_line(io.stdout(), line: f"kvd: {line}").is_err()
+
+# The position of the client whose key is `key`, or -1.
+#
+# - `s`: the server.
+# - `key`: the client's key in the poll set.
+function client_at(s: State lent, key: i64) -> i64
+    return indexed.position_of(s.clients_shape, lookup: s.client_lookup, key: key).default(-1)
+
+# Logs `effects`, the commands one client command or the active sweep made,
+# and counts them as changes since the last snapshot.
+#
+# - `s`: the server.
+# - `effects`: the commands, each its words.
+# - `transaction`: whether they ran as one transaction.
+function logged(@s: State, effects: [[[u8]]], transaction: bool)
+    if effects.len() > 0
+        aof.append(@s.log, batch: effects, transaction: transaction)
+        s.changes @ s.changes + effects.len()

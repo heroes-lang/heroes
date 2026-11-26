@@ -225,10 +225,10 @@ test "admit, tell and going_away: a welcome, a comment pushed, and 1001 at the s
     client @= websocket.conn_of(@two.first.stream, role: .client, settings: websocket.default_settings())
     hub @= new_hub()
     admit(@hub, key: 1, conn: server_end, user_id: 7, user: "alice").must()
-    assert jsonv.text_at(websocket.read_json(@client).must(), key: "user").must() == "alice"
+    assert json.text_at(websocket.read_json(@client).must(), key: "user").must() == "alice"
     assert tell(@hub, user_id: 7, message: comment_message(slug: "a", title: "A", by: "bob", uid: "u")).len() == 0
     assert tell(@hub, user_id: 8, message: comment_message(slug: "a", title: "A", by: "bob", uid: "u")).len() == 0
-    assert jsonv.text_at(websocket.read_json(@client).must(), key: "by").must() == "bob" && hub.pushed == 1
+    assert json.text_at(websocket.read_json(@client).must(), key: "by").must() == "bob" && hub.pushed == 1
     assert going_away(@hub) == 1 && count(hub) == 0
     assert websocket.read_message(@client).is_err()
     assert websocket.closing_of(client).must().code == websocket.CLOSE_GOING_AWAY

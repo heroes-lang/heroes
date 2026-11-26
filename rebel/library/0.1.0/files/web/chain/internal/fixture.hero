@@ -1,0 +1,160 @@
+# What the tests and examples of `web/chain` share and cannot declare in a
+# test: a program's state with its two tables, three steps (one every route
+# runs, which wraps the rest; a group's, which answers 401 before the
+# handler; a route's own) and three answers (a reader, a writer, one with no
+# state), as a program binds them.
+
+use bytes
+use http
+use web
+use web/chain
+
+# A program's state: its router, its tables, its notes and what its steps
+# saw.
+record App
+    # Every route.
+    router: web.Router
+    # The program's steps, by their names.
+    steps: {str: (function(@App, chain.Next, http.Request) -> http.Response?)}
+    # The program's answers, by their routes' names.
+    answers: {str: (function(@App, web.Found, http.Request) -> http.Response?)}
+    # The notes, by their names.
+    notes: {str: str}
+    # The steps and answers in the order they ran, `>` going in, `<` coming out.
+    trace: [str]
+    # A line for each request the logger saw: its path and its status.
+    log: [str]
+    # The requests `auth` refused.
+    refused: i64
+
+# An empty program: no route, no step, no note.
+function new_app() -> App
+    return App(router: web.new_router(), steps: {}, answers: {}, notes: {}, trace: [], log: [], refused: 0)
+
+# The program's one line that goes on: its tables read, its state lent on.
+#
+# - `app`: the state.
+# - `n`: where the request stands.
+# - `r`: the request.
+function go_on(@app: App, n: chain.Next, r: http.Request) -> http.Response?
+    return chain.proceed(@app, steps: app.steps, answers: app.answers, n: n, r: r)
+
+# Every route's: wraps the rest, writing the path and the status it answered.
+#
+# - `app`: the state, whose trace and log grow.
+# - `n`: where the request stands.
+# - `r`: the request.
+function logger(@app: App, n: chain.Next, r: http.Request) -> http.Response?
+    app.trace @ app.trace.push("log>")
+    got = go_on(@app, n, r)?
+    app.trace @ app.trace.push("<log")
+    app.log @ app.log.push(r.url.path + " " + to_str(got.status))
+    return ok(got)
+
+# A group's: 401 before the handler unless the request carries
+# `Authorization: Bearer letmein`.
+#
+# - `app`: the state, whose trace grows and which counts a refusal.
+# - `n`: where the request stands.
+# - `r`: the request.
+function auth(@app: App, n: chain.Next, r: http.Request) -> http.Response?
+    app.trace @ app.trace.push("auth>")
+
+    if http.value_of(r.headers, name: "Authorization").default("") != "Bearer letmein"
+        app.refused @ app.refused + 1
+        app.trace @ app.trace.push("<auth")
+        return ok(http.respond_status(http.STATUS_UNAUTHORIZED))
+    got = go_on(@app, n, r)?
+    app.trace @ app.trace.push("<auth")
+    return ok(got)
+
+# A route's own: marks its place around the answer.
+#
+# - `app`: the state, whose trace grows.
+# - `n`: where the request stands.
+# - `r`: the request.
+function count(@app: App, n: chain.Next, r: http.Request) -> http.Response?
+    app.trace @ app.trace.push("count>")
+    got = go_on(@app, n, r)?
+    app.trace @ app.trace.push("<count")
+    return ok(got)
+
+# A reader: how many notes there are.
+#
+# - `app`: the state, read.
+# - `found`: the route.
+# - `r`: the request.
+function home(app: App lent, found: web.Found, r: http.Request) -> http.Response?
+    _ = found
+    _ = r
+    return ok(http.respond_text(http.STATUS_OK, text: "notes " + to_str(app.notes.len())))
+
+# A writer: the note of the route's `slug`, its body the request's.
+#
+# - `app`: the state, whose notes gain one.
+# - `found`: the route, its parameter `slug`.
+# - `r`: the request, its body the note.
+function save(@app: App, found: web.Found, r: http.Request) -> http.Response?
+    slug = web.param_of(found, name: "slug")
+    app.trace @ app.trace.push("save")
+    app.notes[slug] @ bytes.to_text_lossy(r.body)
+    return ok(http.respond_text(http.STATUS_CREATED, text: "stored " + slug))
+
+# One with no state: answers 200 `ok`.
+#
+# - `found`: the route.
+# - `r`: the request.
+function health(_: App lent, found: web.Found, r: http.Request) -> http.Response?
+    _ = found
+    _ = r
+    return ok(http.respond_text(http.STATUS_OK, text: "ok"))
+
+# One that fails, for a failure handed on.
+#
+# - `found`: the route.
+# - `r`: the request.
+function broken(_: App lent, found: web.Found, r: http.Request) -> http.Response?
+    _ = found
+    _ = r
+    return fail(code: "failed", msg: "the store is down")
+
+# The program of the tests: `logger` every route's, `/` read, `/notes/:slug`
+# written with `count` its own, `/healthz` with no state, `/broken` failing,
+# and the group `admin` at `/admin`, guarded by `auth`, its `/stats` read.
+function routed() -> App
+    app @= new_app()
+    router @= app.router
+    chain.add_step(@router, @app.steps, name: "log", step: logger).must()
+    chain.on(@router, @app.answers, method: http.METHOD_GET, pattern: "/", name: "home", answer: home).must()
+    chain.on(
+        @router,
+        @app.answers,
+        method: http.METHOD_POST,
+        pattern: "/notes/:slug",
+        name: "save",
+        answer: save
+    ).must()
+    chain.add_route_step(@router, @app.steps, route: "save", name: "count", step: count).must()
+    chain.on(@router, @app.answers, method: http.METHOD_GET, pattern: "/healthz", name: "health", answer: health).must()
+    chain.on(@router, @app.answers, method: http.METHOD_GET, pattern: "/broken", name: "broken", answer: broken).must()
+    admin @= web.new_group(router, name: "admin", prefix: "/admin").must()
+    chain.add_step(@admin, @app.steps, name: "auth", step: auth).must()
+    chain.on(@admin, @app.answers, method: http.METHOD_GET, pattern: "/stats", name: "stats", answer: home).must()
+    web.mount(router: @router, group: admin).must()
+    app.router @ router
+    return app
+
+# A request of `method` for `target` carrying `body`, with the bearer token
+# `auth` takes where `authorised`.
+#
+# - `method`: the method.
+# - `target`: the target.
+# - `body`: the body, as text.
+# - `authorised`: whether it carries the token.
+function asked(method: str, target: str, body: str, authorised: bool) -> http.Request
+    made @= http.request(method: method, target: target).must()
+    made.body @ bytes.from_text(body)
+
+    if authorised
+        made.headers @ http.with_header(made.headers, name: "Authorization", value: "Bearer letmein")
+    return made

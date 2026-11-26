@@ -1,0 +1,173 @@
+# The `pending` instrument of the `rebel` suite: a program of Rebel's whose
+# comment cites a capability of a ledger as `pending` (README § A8) is held
+# to that ledger, so a workaround a program wrote for a gap is told the day
+# its block leaves `pending` (the examples review of 2026-11-26, row 1: seven
+# comments of four programs said something false about Rebel, `ui/tree` and
+# `poll/wake` among them, and nothing told them).
+#
+# **What a citation is**: a capability's id in backticks, `` `poll/wake` ``,
+# on a comment line of a program under `rebel/examples`, the drivers of
+# `reach/` and every `build/` left out, where the word `pending` stands on
+# that line or on the comment line just before or after it, since a sentence
+# of a comment wraps. A citation whose id no ledger holds, or whose block
+# still says `pending`, is no finding: the instrument reads what a comment
+# names by its id, and a gap named in other words (`ipc.ledger`'s pending
+# readiness) is not seen.
+
+use rebel_ledgers
+use rebel_tree
+use shell
+use strings
+
+# The programs' folder, walked whole but for `SKIPPED`.
+constant PROGRAMS: str
+    "rebel/examples"
+
+# The folders a walk of the programs passes by: the drivers, which are no
+# program (README § A10), and what a build leaves.
+constant SKIPPED: [str]
+    ["reach", "build"]
+
+# A citation the ledger no longer bears out: where it stands, the capability
+# it names, and what the ledger's block says the capability is now.
+record Stale
+    # The program's file, from the repository's root.
+    path: str
+    # The comment's line, from 1.
+    line: i64
+    # The capability's id.
+    id: str
+    # The ledger the block stands in.
+    ledger: str
+    # The block's `heroes` line.
+    heroes: str
+
+# Every `.hero` file of the programs, read, in the order of their paths.
+function programs(scratch: str) -> [rebel_tree.Module]?
+    out: [rebel_tree.Module] @= []
+
+    for file in shell.list_tree(scratch: scratch, dir: PROGRAMS, skip: SKIPPED)?
+        if strings.has_suffix(s: file, suffix: ".hero")
+            text = read_file(file)
+
+            if text.is_err()
+                return fail(
+                    code: "unreadable",
+                    msg: "cannot read " + file + " as text, and every program of Rebel is read"
+                )
+            out @ out.push(rebel_tree.Module(path: file, text: text.must()))
+
+    return ok(out)
+
+# Whether `line` is a comment line.
+function is_comment(line: str) -> bool
+    return strings.has_prefix(s: strings.trimmed(line), prefix: "#")
+
+# Whether the comment line at `at` of `lines`, or a comment line beside it,
+# holds the word `pending`.
+function near_pending(lines: [str], at: i64) -> bool
+    for i in [at - 1, at, at + 1]
+        if i >= 0 && i < lines.len() && is_comment(lines[i]) && strings.contains(s: lines[i], substr: "pending")
+            return true
+
+    return false
+
+# The ids of capabilities `line` writes in backticks: a text of letters,
+# digits, `_`, `-` and `.` holding one `/` or more, between two backticks.
+function cited(line: str) -> [str]
+    out: [str] @= []
+    opened: i64 @= -1
+
+    for at in range(from: 0, to: line.len())
+        if line[at] == '`'
+            if opened < 0
+                opened @ at
+            else
+                word = line.slice(from: opened + 1, to: at)
+
+                if is_id(word)
+                    out @ out.push(word)
+                opened @ -1
+
+    return out
+
+# Whether `word` reads as a capability's id: its first part a word, then a
+# `/` and more, with no character outside letters, digits, `_`, `-`, `.`
+# and `/`.
+function is_id(word: str) -> bool
+    slash = strings.index_of(text: word, needle: "/")
+
+    if slash.is_err() || slash.must() == 0 || slash.must() == word.len() - 1
+        return false
+
+    for at in range(from: 0, to: word.len())
+        c = word[at]
+        letter = c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9'
+
+        if !letter && c != '_' && c != '-' && c != '.' && c != '/'
+            return false
+
+    return true
+
+# Every citation of the programs `read` that `blocks` no longer bear out.
+function stale(read: [rebel_tree.Module], blocks: [rebel_ledgers.Block]) -> [Stale]
+    done: {str: rebel_ledgers.Block} @= {}
+
+    for b in blocks
+        if b.heroes != "pending" && b.heroes != ""
+            done[b.id] @ b
+
+    out: [Stale] @= []
+
+    for m in read
+        lines = strings.lines(m.text)
+
+        for at in range(from: 0, to: lines.len())
+            if !is_comment(lines[at]) || !near_pending(lines, at: at)
+                continue
+
+            for id in cited(lines[at])
+                match done[id]
+                    .ok b  => out @ out.push(
+                        Stale(path: m.path, line: at + 1, id: id, ledger: b.ledger, heroes: b.heroes)
+                    )
+                    .err _ => _ = 0
+
+    return out
+
+# The key a finding is kept under: the file and the id, so a comment moved
+# down a line stays the one kept.
+function key(s: Stale) -> str
+    return s.path + ": " + s.id
+
+# The finding as the suite says it.
+function told(s: Stale) -> str
+    return f"{s.path}:{s.line}: a comment cites `{s.id}` as pending, and {s.ledger}.ledger answers it with `{s.heroes}`: write the program on it, or say why not"
+
+test "cited: an id, two on a line, a path with no slash, a ledger's file, and an unclosed backtick"
+    assert cited("# nothing joins the two (`poll.ledger`'s `poll/wake` is pending)") == ["poll/wake"]
+    assert cited("# `ui/tree` and `ui/table`, pending") == ["ui/tree", "ui/table"]
+    assert cited("# `server/hashing` tells it") == ["server/hashing"]
+    assert cited("# `io` alone") == []
+    assert cited("# an `ui/tree") == []
+
+test "is_id: a slash at either end, a space, and a dot inside"
+    assert is_id("md/heading-ids") && is_id("text/find-first") && is_id("a.b/c")
+    assert !is_id("/tree") && !is_id("ui/") && !is_id("ui tree") && !is_id("tree")
+
+test "near_pending: on the line, on a comment line beside it, and past code"
+    lines = ["# ui has no tree", "# widget, `ui/tree`,", "# still pending", "x = 1", "# pending"]
+    assert near_pending(lines, at: 1)
+    assert !near_pending(lines, at: 0)
+    assert !near_pending(["# `ui/tree`", "x = 1", "# pending"], at: 0)
+
+test "stale: a block done, one still pending, an id no ledger holds, and a citation far from the word"
+    blocks = [
+        rebel_ledgers.Block(ledger: "poll", line: 3, id: "poll/wake", what: "", heroes: "poll.add_mailbox")
+        rebel_ledgers.Block(ledger: "markdown", line: 9, id: "md/heading-ids", what: "", heroes: "pending")
+    ]
+    text = "# A\n# nothing joins them (`poll/wake` is pending)\nx = 1\n# `md/heading-ids` is pending\n# `poll/none` is pending\n\n# `poll/wake` is done\n"
+    found = stale(read: [rebel_tree.Module(path: "rebel/examples/chat/x.hero", text: text)], blocks: blocks)
+    assert found.len() == 1
+    assert found[0].line == 2 && found[0].id == "poll/wake" && found[0].heroes == "poll.add_mailbox"
+    assert key(found[0]) == "rebel/examples/chat/x.hero: poll/wake"

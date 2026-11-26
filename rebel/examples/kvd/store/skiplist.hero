@@ -1,0 +1,419 @@
+# The ordered half of a sorted set: a skip list of members by score, then
+# by their bytes, as Redis keeps one (its `zskiplist`), each link carrying
+# its span, the number of members it steps over, so a member's rank and the
+# member at a rank are found in logarithmic time too.
+#
+# A record takes no type parameter and a list's element is no place a link
+# can point at, so the nodes stand in one list, the head at index 0, and a
+# link is an index into it, -1 for none; a node taken out is kept for the
+# next one put in. A node's height is drawn from `random`'s seeded
+# generator, each level a quarter as likely as the one below, so the same
+# commands build the same list on every machine.
+
+use <rebel>/bytes
+use <rebel>/containers/deque
+use <rebel>/random
+
+# The most levels a node may have, as Redis bounds them.
+constant MOST_LEVELS: i64
+    32
+
+# A member and its score, as a range answers them.
+record Pair
+    # The member's bytes.
+    member: [u8]
+    # Its score.
+    score: f64
+
+# One end of a range of scores.
+record Bound
+    # The score.
+    value: f64
+    # Whether the score itself is left out, as `(1.5` writes it.
+    exclusive: bool
+
+# A node: a member, its score, and its links.
+record Node
+    # The member's bytes; empty for the head and a node taken out.
+    member: [u8]
+    # The member's score.
+    score: f64
+    # The next node at each of its levels, -1 where none follows.
+    next: [i64]
+    # How many members each link steps over.
+    span: [i64]
+    # The node before it at the lowest level, -1 for the first.
+    back: i64
+
+# A skip list. Made by `new`, changed by `insert` and `delete`.
+record SkipList
+    # The nodes, the head at 0.
+    nodes: [Node]
+    # The indices of nodes taken out, reused first: a stack kept by
+    # `containers/deque`, since a list gives up its last element only by a
+    # copy of the rest.
+    free: [i64]
+    # The shape of that stack.
+    free_shape: deque.Deque
+    # The levels in use, 1 or more.
+    level: i64
+    # How many members it holds.
+    length: i64
+    # The last node, -1 where it is empty.
+    tail: i64
+    # The generator the heights are drawn from.
+    heights: random.Generator
+
+# An empty skip list.
+function new() -> SkipList
+    head = Node(member: [], score: 0.0, next: lists_of(-1), span: lists_of(0), back: -1)
+    return SkipList(
+        nodes: [head],
+        free: [],
+        free_shape: deque.new(),
+        level: 1,
+        length: 0,
+        tail: -1,
+        heights: random.Generator(high: 1, low: 2)
+    )
+
+# A list of `MOST_LEVELS` copies of `v`.
+#
+# - `v`: the value.
+function lists_of(v: i64) -> [i64]
+    out: [i64] @= []
+
+    for _ in range(from: 0, to: MOST_LEVELS)
+        out @ out.push(v)
+
+    return out
+
+# Whether the member `a` at score `x` comes before `b` at score `y`.
+#
+# - `x`: the first score.
+# - `a`: the first member.
+# - `y`: the second score.
+# - `b`: the second member.
+function before(x: f64, a: [u8], y: f64, b: [u8]) -> bool
+    return x < y || x == y && bytes.compare(a: a, b: b) < 0
+
+# The height of a new node: 1, then one more with a chance of a quarter
+# each time, at most `MOST_LEVELS`.
+#
+# - `l`: the list, whose generator advances.
+function draw_level(@l: SkipList) -> i64
+    level @= 1
+
+    while level < MOST_LEVELS && random.below(@l.heights, n: 4) == 0
+        level @ level + 1
+
+    return level
+
+# Adds `node` at the end of `nodes`, the caller's own list, which grows in
+# place.
+#
+# - `nodes`: the list.
+# - `node`: the node added.
+function grow(@nodes: [Node], node: Node)
+    nodes @ nodes.push(node)
+
+# Puts `member` at `score` into `l`, which holds no such member.
+#
+# - `l`: the list.
+# - `score`: the score.
+# - `member`: the member's bytes.
+function insert(@l: SkipList, score: f64, member: [u8])
+    update @= lists_of(0)
+    rank @= lists_of(0)
+    x @= 0
+    i @= l.level - 1
+
+    while i >= 0
+        if i < l.level - 1
+            rank[i] @ rank[i + 1]
+        n @= l.nodes[x].next[i]
+
+        while n != -1 && before(x: l.nodes[n].score, a: l.nodes[n].member, y: score, b: member)
+            rank[i] @ rank[i] + l.nodes[x].span[i]
+            x @ n
+            n @ l.nodes[x].next[i]
+
+        update[i] @ x
+        i @ i - 1
+
+    level = draw_level(@l)
+
+    if level > l.level
+        for j in range(from: l.level, to: level)
+            rank[j] @ 0
+            update[j] @ 0
+            l.nodes[0].span[j] @ l.length
+
+        l.level @ level
+    node = Node(member: member, score: score, next: lists_of(-1), span: lists_of(0), back: -1)
+    at @= l.nodes.len()
+
+    match deque.pop_back(@l.free_shape, @l.free)
+        .ok reused =>
+            at @ reused
+            l.nodes[at] @ node
+        .err _ => grow(@l.nodes, node: node)
+
+    for j in range(from: 0, to: level)
+        u = update[j]
+        l.nodes[at].next[j] @ l.nodes[u].next[j]
+        l.nodes[u].next[j] @ at
+        l.nodes[at].span[j] @ l.nodes[u].span[j] - (rank[0] - rank[j])
+        l.nodes[u].span[j] @ rank[0] - rank[j] + 1
+
+    for j in range(from: level, to: l.level)
+        l.nodes[update[j]].span[j] @ l.nodes[update[j]].span[j] + 1
+
+    l.nodes[at].back @ if update[0] == 0
+        -1
+    else
+        update[0]
+    following = l.nodes[at].next[0]
+
+    if following != -1
+        l.nodes[following].back @ at
+    else
+        l.tail @ at
+    l.length @ l.length + 1
+
+# Takes `member` at `score` out of `l`, and answers whether it was there.
+#
+# - `l`: the list.
+# - `score`: the member's score in the list.
+# - `member`: the member's bytes.
+function delete(@l: SkipList, score: f64, member: [u8]) -> bool
+    update @= lists_of(0)
+    x @= 0
+    i @= l.level - 1
+
+    while i >= 0
+        n @= l.nodes[x].next[i]
+
+        while n != -1 && before(x: l.nodes[n].score, a: l.nodes[n].member, y: score, b: member)
+            x @ n
+            n @ l.nodes[x].next[i]
+
+        update[i] @ x
+        i @ i - 1
+
+    found = l.nodes[x].next[0]
+
+    if found == -1 || l.nodes[found].score != score || l.nodes[found].member != member
+        return false
+
+    for j in range(from: 0, to: l.level)
+        u = update[j]
+
+        if l.nodes[u].next[j] == found
+            l.nodes[u].span[j] @ l.nodes[u].span[j] + l.nodes[found].span[j] - 1
+            l.nodes[u].next[j] @ l.nodes[found].next[j]
+        else
+            l.nodes[u].span[j] @ l.nodes[u].span[j] - 1
+
+    following = l.nodes[found].next[0]
+
+    if following != -1
+        l.nodes[following].back @ l.nodes[found].back
+    else
+        l.tail @ l.nodes[found].back
+
+    while l.level > 1 && l.nodes[0].next[l.level - 1] == -1
+        l.level @ l.level - 1
+
+    l.length @ l.length - 1
+    l.nodes[found] @ Node(member: [], score: 0.0, next: [], span: [], back: -1)
+    deque.push_back(@l.free_shape, @l.free, value: found)
+    return true
+
+# The rank of `member` at `score`, from 0 for the first, or -1 where it is
+# not there.
+#
+# - `l`: the list.
+# - `score`: the member's score.
+# - `member`: the member's bytes.
+function rank_of(l: SkipList lent, score: f64, member: [u8]) -> i64
+    traversed @= 0
+    x @= 0
+    i @= l.level - 1
+
+    while i >= 0
+        n @= l.nodes[x].next[i]
+
+        while n != -1 && (before(x: l.nodes[n].score, a: l.nodes[n].member, y: score, b: member) || l.nodes[n].score == score && l.nodes[n].member == member)
+            traversed @ traversed + l.nodes[x].span[i]
+            x @ n
+            n @ l.nodes[x].next[i]
+
+        if x != 0 && l.nodes[x].member == member
+            return traversed - 1
+        i @ i - 1
+
+    return -1
+
+# The node at `rank`, from 0, or -1 where the list is shorter.
+#
+# - `l`: the list.
+# - `rank`: the rank.
+function at_rank(l: SkipList lent, rank: i64) -> i64
+    if rank < 0 || rank >= l.length
+        return -1
+    traversed @= 0
+    x @= 0
+    i @= l.level - 1
+
+    while i >= 0
+        n @= l.nodes[x].next[i]
+
+        while n != -1 && traversed + l.nodes[x].span[i] <= rank + 1
+            traversed @ traversed + l.nodes[x].span[i]
+            x @ n
+            n @ l.nodes[x].next[i]
+
+        if traversed == rank + 1
+            return x
+        i @ i - 1
+
+    return -1
+
+# Whether `score` lies at or above `min`, as `min` reads.
+#
+# - `score`: the score.
+# - `min`: the lower bound.
+function above(score: f64, min: Bound) -> bool
+    if min.exclusive
+        return score > min.value
+    return score >= min.value
+
+# Whether `score` lies at or below `max`, as `max` reads.
+#
+# - `score`: the score.
+# - `max`: the upper bound.
+function below(score: f64, max: Bound) -> bool
+    if max.exclusive
+        return score < max.value
+    return score <= max.value
+
+# The first node whose score lies between `min` and `max`, or -1.
+#
+# - `l`: the list.
+# - `min`: the lower bound.
+# - `max`: the upper bound.
+function first_in(l: SkipList lent, min: Bound, max: Bound) -> i64
+    x @= 0
+    i @= l.level - 1
+
+    while i >= 0
+        n @= l.nodes[x].next[i]
+
+        while n != -1 && !above(score: l.nodes[n].score, min: min)
+            x @ n
+            n @ l.nodes[x].next[i]
+
+        i @ i - 1
+
+    found = l.nodes[x].next[0]
+
+    if found == -1 || !below(score: l.nodes[found].score, max: max)
+        return -1
+    return found
+
+# The last node whose score lies between `min` and `max`, or -1.
+#
+# - `l`: the list.
+# - `min`: the lower bound.
+# - `max`: the upper bound.
+function last_in(l: SkipList lent, min: Bound, max: Bound) -> i64
+    x @= 0
+    i @= l.level - 1
+
+    while i >= 0
+        n @= l.nodes[x].next[i]
+
+        while n != -1 && below(score: l.nodes[n].score, max: max)
+            x @ n
+            n @ l.nodes[x].next[i]
+
+        i @ i - 1
+
+    if x == 0 || !above(score: l.nodes[x].score, min: min)
+        return -1
+    return x
+
+# The member and score of the node at `at`.
+#
+# - `l`: the list.
+# - `at`: a node's index, not the head.
+function pair_at(l: SkipList lent, at: i64) -> Pair
+    return Pair(member: l.nodes[at].member, score: l.nodes[at].score)
+
+# The members in order, for the tests.
+#
+# - `l`: the list.
+function members_of(l: SkipList lent) -> [str]
+    out: [str] @= []
+    x @= l.nodes[0].next[0]
+
+    while x != -1
+        out @ out.push(bytes.to_text_lossy(l.nodes[x].member))
+        x @ l.nodes[x].next[0]
+
+    return out
+
+test "insert: members kept by score, then by their bytes; the tail and the backward links follow"
+    l @= new()
+    insert(@l, score: 2.0, member: bytes.from_text("b"))
+    insert(@l, score: 1.0, member: bytes.from_text("z"))
+    insert(@l, score: 2.0, member: bytes.from_text("a"))
+    assert members_of(l) == ["z", "a", "b"]
+    assert l.length == 3
+    assert l.nodes[l.tail].member == bytes.from_text("b")
+    assert l.nodes[l.nodes[l.tail].back].member == bytes.from_text("a")
+
+test "rank_of and at_rank: each the other's inverse over a thousand members"
+    l @= new()
+
+    for i in range(from: 0, to: 1000)
+        insert(@l, score: to_f64(i * 7919 % 1000), member: bytes.from_text(to_str(i)))
+
+    for r in range(from: 0, to: 1000)
+        n = at_rank(l, rank: r)
+        assert n != -1
+        assert rank_of(l, score: l.nodes[n].score, member: l.nodes[n].member) == r
+
+    assert at_rank(l, rank: 1000) == -1
+    assert at_rank(l, rank: -1) == -1
+    assert rank_of(l, score: 5.0, member: bytes.from_text("absent")) == -1
+
+test "delete: a member taken out, absent ones refused, ranks closed up, nodes reused"
+    l @= new()
+
+    for i in range(from: 0, to: 50)
+        insert(@l, score: to_f64(i), member: bytes.from_text(to_str(i)))
+
+    assert delete(@l, score: 10.0, member: bytes.from_text("10"))
+    assert !delete(@l, score: 10.0, member: bytes.from_text("10"))
+    assert !delete(@l, score: 11.0, member: bytes.from_text("12"))
+    assert l.length == 49
+    assert rank_of(l, score: 11.0, member: bytes.from_text("11")) == 10
+    before_count = l.nodes.len()
+    insert(@l, score: 10.5, member: bytes.from_text("x"))
+    assert l.nodes.len() == before_count
+    assert rank_of(l, score: 10.5, member: bytes.from_text("x")) == 10
+
+test "first_in and last_in: inclusive and exclusive bounds, and an empty range"
+    l @= new()
+
+    for i in range(from: 1, to: 6)
+        insert(@l, score: to_f64(i), member: bytes.from_text(to_str(i)))
+
+    assert l.nodes[first_in(l, min: Bound(value: 2.0, exclusive: false), max: Bound(value: 4.0, exclusive: false))].score == 2.0
+    assert l.nodes[first_in(l, min: Bound(value: 2.0, exclusive: true), max: Bound(value: 4.0, exclusive: false))].score == 3.0
+    assert l.nodes[last_in(l, min: Bound(value: 2.0, exclusive: false), max: Bound(value: 4.0, exclusive: true))].score == 3.0
+    assert first_in(l, min: Bound(value: 6.0, exclusive: false), max: Bound(value: 9.0, exclusive: false)) == -1
+    assert last_in(l, min: Bound(value: 0.0, exclusive: false), max: Bound(value: 1.0, exclusive: true)) == -1
+    assert first_in(new(), min: Bound(value: 0.0, exclusive: false), max: Bound(value: 1.0, exclusive: false)) == -1

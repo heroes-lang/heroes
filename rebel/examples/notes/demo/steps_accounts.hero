@@ -4,6 +4,7 @@
 # until the sign-in limit refuses.
 
 use <rebel>/http
+use <rebel>/json
 use <rebel>/strings
 
 use demo/browse
@@ -99,7 +100,7 @@ function token_for(@s: http.Session, name: str, password: str) -> str?
     print(
         f"{name}'s token: {r.status} {browse.shown(v, key: "token_type")}, ends in {browse.shown(v, key: "expires_in")} s"
     )
-    return jsonv.text_at(v, key: "token")
+    return json.text_at(v, key: "token")
 
 # The account a token names.
 #

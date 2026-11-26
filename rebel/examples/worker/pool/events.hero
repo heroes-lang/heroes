@@ -63,20 +63,6 @@ function report_text(r: Report) -> str
     )
     return json.format(value).default("{}")
 
-# The member `name` of `v` as a whole number.
-#
-# - `v`: an object.
-# - `name`: the member.
-function int_member(v: json.Value, name: str) -> i64?
-    return json.int_of(json.member(v, key: name)?)
-
-# The member `name` of `v` as text.
-#
-# - `v`: an object.
-# - `name`: the member.
-function text_member(v: json.Value, name: str) -> str?
-    return json.text_of(json.member(v, key: name)?)
-
 # The report `report_text` wrote. Fails `invalid` where `text` is none.
 #
 # - `text`: the thread's answer.
@@ -86,11 +72,11 @@ function report_of(text: str) -> Report?
 
     for a in json.items_of(json.member(v, key: Report::attempts)?)?
         attempts @ attempts.push(
-            Attempt(job: int_member(a, name: Attempt::job)?, kind: text_member(a, name: Attempt::kind)?, queue: text_member(a, name: Attempt::queue)?, attempt: int_member(a, name: Attempt::attempt)?, outcome: text_member(a, name: Attempt::outcome)?, error: text_member(a, name: Attempt::error)?, began_us: int_member(a, name: Attempt::began_us)?, waited_us: int_member(a, name: Attempt::waited_us)?, ran_us: int_member(a, name: Attempt::ran_us)?, next_us: int_member(a, name: Attempt::next_us)?)
+            Attempt(job: json.int_at(a, key: Attempt::job)?, kind: json.text_at(a, key: Attempt::kind)?, queue: json.text_at(a, key: Attempt::queue)?, attempt: json.int_at(a, key: Attempt::attempt)?, outcome: json.text_at(a, key: Attempt::outcome)?, error: json.text_at(a, key: Attempt::error)?, began_us: json.int_at(a, key: Attempt::began_us)?, waited_us: json.int_at(a, key: Attempt::waited_us)?, ran_us: json.int_at(a, key: Attempt::ran_us)?, next_us: json.int_at(a, key: Attempt::next_us)?)
         )
 
     return ok(
-        Report(worker: text_member(v, name: Report::worker)?, attempts: attempts, problem: text_member(v, name: Report::problem)?)
+        Report(worker: json.text_at(v, key: Report::worker)?, attempts: attempts, problem: json.text_at(v, key: Report::problem)?)
     )
 
 test "report_of: a report reads back as report_text wrote it"

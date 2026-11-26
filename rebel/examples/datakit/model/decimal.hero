@@ -8,6 +8,7 @@
 # deviation) takes the floats `to_float` gives, as `query/aggregate` says.
 
 use <rebel>/big
+use <rebel>/bytes
 use <rebel>/numbers
 
 use model/model
@@ -42,7 +43,7 @@ function is_number_text(s: str) -> bool
 
     if s[at] == '0'
         at @ at + 1
-    else if is_digit(s[at])
+    else if bytes.is_digit_ascii(s[at])
         at @ skip_digits(s, from: at)
     else
         return false
@@ -67,12 +68,6 @@ function is_number_text(s: str) -> bool
 
     return at == s.len()
 
-# Whether the byte `b` is an ASCII digit.
-#
-# - `b`: the byte.
-function is_digit(b: u8) -> bool
-    return b >= '0' && b <= '9'
-
 # The index of the first byte at or after `from` that is not a digit.
 #
 # - `s`: the text.
@@ -80,7 +75,7 @@ function is_digit(b: u8) -> bool
 function skip_digits(s: str, from: i64) -> i64
     at: i64 @= from
 
-    while at < s.len() && is_digit(s[at])
+    while at < s.len() && bytes.is_digit_ascii(s[at])
         at @ at + 1
 
     return at

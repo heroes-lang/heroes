@@ -3,10 +3,11 @@
 # and pattern, `/users/:id` and `/files/*path`, each with a name, and groups
 # under a prefix. `route` answers which route takes a request and what its
 # parameters hold; the program calls its own function for that name, with its
-# own state. Steps before and after a handler are plain functions the program
-# calls in its order, each handed the program's own value where it reads one:
-# a log line, CORS, a failure answered 500, a request id, a body's limit,
-# Basic and Bearer checks, gzip, a rate limit per client.
+# own state. A router also keeps the names of the steps its routes run, every
+# route's, a group's and one route's own, which `web/chain` adds and runs in
+# their order. The pieces a step is made of are here: a log line, CORS, a
+# failure answered 500, a request id, a body's limit, Basic and Bearer
+# checks, gzip, a rate limit per client; `web/steps` makes them steps.
 # Responses of a template, of a file and of a folder's files, served safely,
 # errors as text or JSON, and server-sent events written as they are made.
 # Cookies signed or sealed with their end inside, sessions kept in them, and
@@ -17,19 +18,22 @@
 # at the stop; health and readiness answered from the program's own checks;
 # and webhooks signed and verified as Standard Webhooks signs them.
 #
-# **Why the program dispatches.** The language has no closure, and a function
-# value takes no `@` parameter (spec § 9), so no handler a router held could
-# carry the program's state as Echo's closures carry it. So the router finds
-# and the program calls: it writes `match found.name` and calls its own
-# function, handing it the state it holds by `@`.
+# **Why the router keeps names.** The language has no closure, so no handler
+# a router held could carry the program's state as Echo's closures carry it.
+# A function value takes the program's state by `@` as a call by name does,
+# so the program keeps its own table of its functions, each bound to a
+# route's or a step's name, and `web/chain` calls the one a name was bound to
+# with the state the program lends it by `@`. The router holds a name and
+# never a function, and nothing of the program's is held here.
 #
 # **A program with no state** hands `serve` its router and one top-level
 # function, which routes each request and answers it; `serve` hands the
 # router to it as `http.serve_with` hands a program's value. **A program
 # with state** writes the loop itself: `net.accept` a connection, `io.reader`
-# on its stream, then for each request `http.next_request`, `route`, its own
-# function called with its `@` state (or `not_routed` where no route takes
-# the request), and `http.write_answer`, until the request or the response
+# on its stream, then for each request `http.next_request`,
+# `web/chain.dispatch` with its tables and its `@` state (or `route`, its own
+# function and `not_routed` where no route takes the request), and
+# `http.write_answer`, until the request or the response
 # closes the connection; `route`'s example of a program's own loop is that
 # loop, whole, and `http` answers its 100, 417, 431, 505 and 501 and keeps
 # its connection alive as `http.serve` does.
@@ -132,6 +136,11 @@ record Route
     # The names of the groups it was added in, the outermost first; none for a
     # route added to a router made by `new_router`.
     groups: [str]
+    # The names of the steps it runs after its router's own: its groups'
+    # steps, the outermost group's first, then its own, each list in the
+    # order its steps were added. `add` makes it empty, `mount` puts a
+    # group's steps before its routes' own, and `web/chain` adds a route's.
+    steps: [str]
 
 # How this package writes an error's body.
 variant ErrorForm
@@ -160,19 +169,33 @@ record Router
     errors: ErrorForm
     # What `route` reads: each route's pieces and the tree of their segments.
     index: routing.Index
+    # The names of the steps every route of this router runs before its own,
+    # in the order added: every route's for a router `new_router` made, the
+    # group's for one `new_group` made, which `mount` puts before each of the
+    # group's routes' own. `web/chain` adds them and runs them.
+    steps: [str]
 
-# An empty router: no prefix, no group, errors written as text, no slash
-# redirected.
+# An empty router: no prefix, no group, no step, errors written as text, no
+# slash redirected.
 #
 # See also `new_group`, `add`.
 function new_router() -> Router
-    return Router(prefix: "", groups: [], routes: [], redirect_slash: false, errors: .text, index: routing.empty())
+    return Router(
+        prefix: "",
+        groups: [],
+        routes: [],
+        redirect_slash: false,
+        errors: .text,
+        index: routing.empty(),
+        steps: []
+    )
 
 # An empty router for the group `name`, whose routes take `prefix` after the
 # prefix of `parent`, to be mounted into `parent` once its routes are added.
 #
 # - `parent`: the router the group belongs to; its prefix, its groups, its
-#   `redirect_slash` and its `errors` are copied, and its routes are not.
+#   `redirect_slash` and its `errors` are copied, and its routes and its
+#   steps are not: the group's steps are its own.
 # - `name`: the group's name, which a found route's `groups` holds: letters,
 #   digits and `_`, not empty.
 # - `prefix`: the prefix, beginning with `/` and not ending with one, holding
@@ -197,7 +220,7 @@ function new_group(parent: Router, name: str, prefix: str) -> Router?
     groups @= parent.groups
     groups @ groups.push(name)
     return ok(
-        Router(prefix: whole, groups: groups, routes: [], redirect_slash: parent.redirect_slash, errors: parent.errors, index: routing.empty())
+        Router(prefix: whole, groups: groups, routes: [], redirect_slash: parent.redirect_slash, errors: parent.errors, index: routing.empty(), steps: [])
     )
 
 # Adds to `router` the route `name` for `method` and `pattern`.
@@ -228,7 +251,9 @@ function add(@router: Router, method: str, pattern: str, name: str) -> ()?
         return fail(code: INVALID, msg: f"the pattern \"{pattern}\" does not begin with `/`")
     whole = router.prefix + pattern
     routing.add(@router.index, method: method, whole: whole, name: name)?
-    router.routes @ router.routes.push(Route(method: method, pattern: whole, name: name, groups: router.groups))
+    router.routes @ router.routes.push(
+        Route(method: method, pattern: whole, name: name, groups: router.groups, steps: [])
+    )
     return ok()
 
 # Adds to `router` the route `name` for every method on `pattern`.
@@ -244,13 +269,15 @@ function add_any(@router: Router, pattern: str, name: str) -> ()?
         return fail(code: INVALID, msg: f"the pattern \"{pattern}\" does not begin with `/`")
     whole = router.prefix + pattern
     routing.add(@router.index, method: "", whole: whole, name: name)?
-    router.routes @ router.routes.push(Route(method: "", pattern: whole, name: name, groups: router.groups))
+    router.routes @ router.routes.push(Route(method: "", pattern: whole, name: name, groups: router.groups, steps: []))
     return ok()
 
 # Adds to `router` every route of `group`, which `new_group` made from it.
 #
 # - `router`: the router, which gains the routes.
-# - `group`: the group, its routes' patterns whole already.
+# - `group`: the group, its routes' patterns whole already; its steps go
+#   before each of its routes' own, so they travel with its routes, and a
+#   step or a route the group gains after this call stays the group's.
 #
 # Fails `exists` as `add` does, adding none of them then.
 function mount(@router: Router, group: Router) -> ()?
@@ -258,7 +285,13 @@ function mount(@router: Router, group: Router) -> ()?
     list @= router.routes
 
     for each in group.routes
-        list @ list.push(each)
+        moved @= each
+        moved.steps @ group.steps
+
+        for own in each.steps
+            moved.steps @ moved.steps.push(own)
+
+        list @ list.push(moved)
 
     router.routes @ list
     return ok()
@@ -307,6 +340,10 @@ record Found
     groups: [str]
     # Its parameters, in the order its pattern writes them.
     params: [Param]
+    # The names of the steps it runs before its answer, in the order they
+    # run: its router's own, then its groups', the outermost first, then its
+    # own (`Route.steps`); none where nothing added one.
+    steps: [str]
 
 # The route of `router` that takes `r`, and its parameters.
 #
@@ -336,7 +373,12 @@ function route(router: Router, r: http.Request) -> Found?
         params @ params.push(Param(name: found.names[i], value: found.values[i]))
 
     each = router.routes[at]
-    return ok(Found(name: each.name, pattern: each.pattern, groups: each.groups, params: params))
+    steps @= router.steps
+
+    for name in each.steps
+        steps @ steps.push(name)
+
+    return ok(Found(name: each.name, pattern: each.pattern, groups: each.groups, params: params, steps: steps))
 
 # The methods a route of `router` takes on `r`'s path, sorted by their bytes:
 # what an `Allow` field says.
@@ -589,8 +631,8 @@ variant Step
 #
 # The first `answer`, or `go_on` with what the last step went on with. A step
 # that reads the program's own value is `before_with`'s; one that changes it,
-# as `limit_rate` changes its limiter, is called by the program itself, since
-# a function value takes no `@` parameter (spec § 9).
+# as `limit_rate` changes its limiter, is a step of `web/chain`, which lends
+# each step the program's state by `@`, since the steps here take none.
 function before(r: http.Request, steps: [(function(http.Request) -> Step)]) -> Step
     current @= r
 
@@ -1366,7 +1408,8 @@ function wait_of(limiter: Limiter, key: str, now: time.Instant) -> time.Duration
 # - `form`: how the 429 says it, as text or JSON; its message is Echo's,
 #   "rate limit exceeded", and the wait.
 #
-# A step the program calls in its own loop with its own limiter, since a
+# Called with the program's own limiter, by a step of `web/chain`, which
+# is lent the program's state by `@`, or in the program's own loop, since a
 # step `before` calls takes no `@` value. Aborts where the limiter's fields
 # break what `new_limiter` checks. See also `allow`.
 function limit_rate(@limiter: Limiter, r: http.Request, key: str, now: time.Instant, form: ErrorForm) -> Step
@@ -2419,6 +2462,26 @@ test "mount: a conflict adds none of the group's routes"
     add(@g, method: "GET", pattern: "/b", name: "b2").must()
     assert mount(router: @rt, group: g).is_err() && rt.routes.len() == 1 && route(rt, fixture.request_of(method: "GET", target: "/g/a", headers: [])).is_err()
 
+test "mount, route: the steps of a router, of nested groups and of a route, in order, none, and a step added after"
+    rt @= new_router()
+    add(@rt, method: "GET", pattern: "/", name: "home").must()
+    assert route(rt, fixture.request_of(method: "GET", target: "/", headers: [])).must().steps.len() == 0
+    rt.steps @ ["log"]
+    outer @= new_group(rt, name: "admin", prefix: "/admin").must()
+    assert outer.steps.len() == 0
+    outer.steps @ ["auth"]
+    inner @= new_group(outer, name: "users", prefix: "/users").must()
+    inner.steps @ ["audit", "trace"]
+    add(@inner, method: "POST", pattern: "/:id", name: "save").must()
+    inner.routes[0].steps @ ["count"]
+    mount(router: @outer, group: inner).must()
+    inner.steps @ inner.steps.push("late")
+    mount(router: @rt, group: outer).must()
+    found = route(rt, fixture.request_of(method: "POST", target: "/admin/users/7", headers: [])).must()
+    assert found.steps == ["log", "auth", "audit", "trace", "count"]
+    assert route(rt, fixture.request_of(method: "GET", target: "/", headers: [])).must().steps == ["log"]
+    assert route(inner, fixture.request_of(method: "POST", target: "/admin/users/7", headers: [])).must().steps == ["audit", "trace", "late", "count"]
+
 test "path_for: escaped values, a wildcard, an unknown name, a missing value"
     rt @= new_router()
     add(@rt, method: "GET", pattern: "/users/:id/files/*rest", name: "file").must()
@@ -3459,7 +3522,7 @@ test "new_group: an admin group mounted"
 test "add: a route of GET with a parameter"
     rt @= new_router()
     add(@rt, method: http.METHOD_GET, pattern: "/users/:id", name: "user").must()
-    assert rt.routes == [Route(method: "GET", pattern: "/users/:id", name: "user", groups: [])]
+    assert rt.routes == [Route(method: "GET", pattern: "/users/:id", name: "user", groups: [], steps: [])]
 
 # A route for every method.
 test "add_any: one route, every method"
@@ -3503,12 +3566,12 @@ test "not_routed: 405 for a method no route of the path takes"
 
 # A parameter's value by its name.
 test "param_of: the id of a found route"
-    found = Found(name: "user", pattern: "/users/:id", groups: [], params: [Param(name: "id", value: "7")])
+    found = Found(name: "user", pattern: "/users/:id", groups: [], params: [Param(name: "id", value: "7")], steps: [])
     assert param_of(found, name: "id") == "7"
 
 # Whether a route stands in a group, for a step the group asks.
 test "is_in_group: a route of the admin group"
-    found = Found(name: "users", pattern: "/admin/users", groups: ["admin"], params: [])
+    found = Found(name: "users", pattern: "/admin/users", groups: ["admin"], params: [], steps: [])
     assert is_in_group(found, name: "admin")
 
 # A JSON body read.

@@ -12,6 +12,7 @@
 # `content`, its braces written as character references so that no `{{` of
 # the text is read as an action.
 
+use <rebel>/errors
 use <rebel>/json
 use <rebel>/path
 use <rebel>/strings
@@ -122,13 +123,9 @@ function render(theme: Theme, layout: str, body: str, value: json.Value) -> str?
 
     texts["content"] @ escape_braces(body)
 
-    set = match template.parse_all(texts, template.html_options())
-        .ok t  => t
-        .err e => return fail(code: e.code, msg: f"themes/{theme.name}, layout {layout}: {e.msg}")
+    set = errors.context(template.parse_all(texts, template.html_options()), what: f"themes/{theme.name}, layout {layout}")?
 
-    return match template.render(set, value)
-        .ok page => ok(page)
-        .err e   => fail(code: e.code, msg: f"themes/{theme.name}, layout {layout}: {e.msg}")
+    return errors.context(template.render(set, value), what: f"themes/{theme.name}, layout {layout}")
 
 ## Tests
 

@@ -13,6 +13,7 @@
 use <rebel>/archive
 use <rebel>/bytes
 use <rebel>/crypto
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/strings
 use <rebel>/time
@@ -54,9 +55,7 @@ function archive_of(data_dir: str, year: i64, docs: [documents.Document], csv_te
         for ext in ["pdf", "xlsx"]
             file = files.file_of(data_dir: data_dir, doc: d, ext: ext)
 
-            data = match fs.read_bytes(file)
-                .ok b  => b
-                .err e => return fail(code: e.code, msg: f"{d.number}'s {ext} file: {e.msg}")
+            data = errors.context(fs.read_bytes(file), what: f"{d.number}'s {ext} file")?
 
             name = f"{year}/{d.number}.{ext}"
             members @ members.push(member(name, data: data, day: d.issued))

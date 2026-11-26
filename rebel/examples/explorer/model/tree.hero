@@ -1,8 +1,10 @@
 # The tree of folders beside the listing: the root folder and, under each
 # folder the person unfolded, its folders in the locale's order. It is shown
 # in a list of rows, each indented by its depth and marked unfolded, folded
-# or with nothing to unfold, since `ui` has no tree widget yet (the ledger's
-# `ui/tree`, pending); choosing a row opens its folder and unfolds it.
+# or with nothing to unfold, since the window was written before `ui` had a
+# tree widget; `ui.tree` holds one now (the ledger's `ui/tree`), and moving
+# onto it changes what the demo prints, so it waits for a transcript of its
+# own. Choosing a row opens its folder and unfolds it.
 #
 # The tree holds only which folders are unfolded; the rows are read from the
 # disk each time they are asked for, so a folder made or removed elsewhere

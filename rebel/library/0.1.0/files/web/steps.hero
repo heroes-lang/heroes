@@ -1,0 +1,425 @@
+# The usual steps of a `web/chain` chain, ready for a program to bind, in
+# the manner of Echo's `middleware` package: a log line for each request
+# with its status and the time it took, a request id kept or made, CORS, a
+# Basic check against the program's own accounts, a body's limit, helmet's
+# security headers and gzip. Each is a function generic over the program's
+# state, lent to it by `@` and handed on, so a step reads the state, and
+# changes it where its work does, as the program's own steps do.
+#
+# **How a program binds one.** A step of a chain takes the program's state,
+# the `Next` it stands at and the request; these take besides what Echo's
+# take as their configuration, and the program's function that goes on, its
+# call of `web/chain.proceed` with its own tables. The language has no
+# closure to hold that configuration, so the program binds a step of its own
+# of one line that hands them over, `steps.cors(@app, n: n, r: r, policy:
+# app.cors, go_on: go_on)`, and adds it with `web/chain.add_step`.
+#
+# **What it does not do.** The pieces each step is made of are `web`'s
+# (`web.preflight` and `web.with_cors`, `web.with_request_id`,
+# `web.limit_body`, `web.with_security_headers`, `web.gzip`); the chain and
+# its order are `web/chain`'s; a line of log is `log`'s. No step stops a
+# handler past a time: a handler runs to its end on the thread that serves,
+# and the language has no way to stop a function midway, so `web`'s ledger
+# refuses it and `http.Server.deadline_ms` bounds a connection instead. A
+# rate limit is `web.limit_rate`, called by a step of the program's with
+# the limiter its state holds, since no generic step reaches a field of a
+# state it does not know.
+#
+# Each step fails where the program's function that goes on fails, with its
+# code; `access_log` where the clock it is given fails, and `request_id` as
+# `uuid.new_v4` does.
+
+use bytes
+use http
+use io
+use log
+use net
+use time
+use web
+use web/chain
+use web/steps/internal/fixture
+use web/steps/internal/lines
+
+## Steps
+
+# Writes one line through `logger` for each request: its method, its path,
+# the status answered, the body's bytes, the milliseconds it took by `clock`,
+# its client and its request id; Echo's `Logger`.
+#
+# - `state`: the program's state, lent to `clock` and to `go_on`.
+# - `n`: where the request stands, handed to `go_on`.
+# - `r`: the request, handed to `go_on`.
+# - `logger`: where the line goes and how; the line's time is its clock's.
+# - `clock`: called with the state once before `go_on` and once after; the
+#   time between the two is the line's `milliseconds`, rounded down. A
+#   program reads its own clock there, and a test one it advances.
+# - `go_on`: the program's call of `web/chain.proceed`, called once.
+#
+# The line is `log_request`'s of `web`: level `info` below 500 and `error`
+# from 500, the message `request`. Where `go_on` fails, a line at level
+# `error`, the message `request failed`, names the code and the failure,
+# and the failure is handed on. A line that cannot be written changes no
+# answer. Fails where `clock` fails, and where `go_on` fails, with its code.
+# See also `web.log_request`.
+function access_log<S>(@state: S, n: chain.Next, r: http.Request, logger: log.Logger, clock: (function(@S) -> time.Instant?), go_on: (function(@S, chain.Next, http.Request) -> http.Response?)) -> http.Response?
+    began = clock(@state)?
+    outcome = go_on(@state, n, r)
+    ended = clock(@state)?
+    took = time.between(from: began, to: ended)?
+    fields: [log.Field] @= [
+        log.text(key: "method", value: r.method)
+        log.text(key: "path", value: lines.path_of(r))
+    ]
+
+    match outcome
+        .err e =>
+            fields @ fields.push(log.text(key: "code", value: e.code))
+            fields @ fields.push(log.text(key: "failure", value: e.msg))
+            fields @ fields.push(log.integer(key: "milliseconds", value: took.nanoseconds / 1_000_000))
+            fields @ fields.push(log.text(key: "remote", value: r.remote))
+            _ = log.error(logger, msg: "request failed", fields: lines.with_id(fields, r: r)).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok got =>
+            fields @ fields.push(log.integer(key: "status", value: got.status))
+            fields @ fields.push(log.integer(key: "bytes", value: got.body.len()))
+            fields @ fields.push(log.integer(key: "milliseconds", value: took.nanoseconds / 1_000_000))
+            fields @ fields.push(log.text(key: "remote", value: r.remote))
+
+            if got.status >= 500
+                _ = log.error(logger, msg: "request", fields: lines.with_id(fields, r: r)).is_err()
+            else
+                _ = log.info(logger, msg: "request", fields: lines.with_id(fields, r: r)).is_err()
+            return ok(got)
+
+# Hands on `r` with an `X-Request-Id`, the one the client sent or a new one,
+# and copies it into the response: Echo's `RequestID`.
+#
+# - `state`: the program's state, lent to `go_on`.
+# - `n`: where the request stands, handed to `go_on`.
+# - `r`: the request; an `X-Request-Id` of 1 to 128 visible ASCII characters
+#   is kept, any other replaced by a UUID of version 4.
+# - `go_on`: the program's call of `web/chain.proceed`, called once with the
+#   request carrying the id.
+#
+# Fails as `uuid.new_v4` does, before `go_on` is called, and where `go_on`
+# fails, with its code. See also `web.with_request_id`,
+# `web.copy_request_id`.
+function request_id<S>(@state: S, n: chain.Next, r: http.Request, go_on: (function(@S, chain.Next, http.Request) -> http.Response?)) -> http.Response?
+    request = web.with_request_id(r)?
+    got = go_on(@state, n, request)?
+    return ok(web.copy_request_id(request, response: got))
+
+# Answers a CORS preflight 204 before the handler, and gives every other
+# response the fields that let the page of an allowed origin read it: Echo's
+# `CORSWithConfig`.
+#
+# - `state`: the program's state, lent to `go_on`.
+# - `n`: where the request stands, handed to `go_on`.
+# - `r`: the request; a preflight is an `OPTIONS` with `Origin` and
+#   `Access-Control-Request-Method`.
+# - `policy`: what is allowed, as `web.default_cors` makes it.
+# - `go_on`: the program's call of `web/chain.proceed`, called once for
+#   every request but a preflight.
+#
+# A request with no `Origin` goes on and comes back as it was answered.
+# Fails where `go_on` fails, with its code. See also `web.preflight`,
+# `web.with_cors`.
+function cors<S>(@state: S, n: chain.Next, r: http.Request, policy: web.Cors, go_on: (function(@S, chain.Next, http.Request) -> http.Response?)) -> http.Response?
+    match web.preflight(r, cors: policy)
+        .answer a => return ok(a.response)
+        .go_on g =>
+            got = go_on(@state, n, g.request)?
+            return ok(web.with_cors(g.request, response: got, cors: policy))
+
+# Refuses 401 a request without Basic credentials `accepts` takes, before
+# the handler: Echo's `BasicAuth`.
+#
+# - `state`: the program's state, lent to `accepts` and to `go_on`.
+# - `n`: where the request stands, handed to `go_on`.
+# - `r`: the request.
+# - `realm`: the realm the challenge names, any text; a `"` or a `\` in it is
+#   escaped.
+# - `accepts`: called once with the state and the credentials where `r`
+#   carries them; true lets `r` go on. It may read the program's accounts,
+#   and count a refusal in the state.
+# - `go_on`: the program's call of `web/chain.proceed`, called once where
+#   `accepts` takes the credentials.
+#
+# The challenge is `web.challenge_basic`'s. Fails where `go_on` fails, with
+# its code. See also `http.basic_auth_of`.
+function basic_auth<S>(@state: S, n: chain.Next, r: http.Request, realm: str, accepts: (function(@S, http.Credentials) -> bool), go_on: (function(@S, chain.Next, http.Request) -> http.Response?)) -> http.Response?
+    match http.basic_auth_of(r)
+        .err _ => return ok(web.challenge_basic(realm))
+        .ok given =>
+            if !accepts(@state, given)
+                return ok(web.challenge_basic(realm))
+            return go_on(@state, n, r)
+
+# Refuses 413 a request whose body is longer than `most_bytes`, before the
+# handler: Echo's `BodyLimit`.
+#
+# - `state`: the program's state, lent to `go_on`.
+# - `n`: where the request stands, handed to `go_on`.
+# - `r`: the request.
+# - `most_bytes`: the most bytes of the body, 0 or more; a body of exactly
+#   that many goes on.
+# - `go_on`: the program's call of `web/chain.proceed`, called once where
+#   the body is not too long.
+#
+# A route's own limit; the server's is `http.Server.limits`. Aborts where
+# `most_bytes` is below 0. Fails where `go_on` fails, with its code. See also
+# `web.limit_body`.
+function body_limit<S>(@state: S, n: chain.Next, r: http.Request, most_bytes: i64, go_on: (function(@S, chain.Next, http.Request) -> http.Response?)) -> http.Response?
+    match web.limit_body(r, most_bytes: most_bytes)
+        .answer a => return ok(a.response)
+        .go_on g  => return go_on(@state, n, g.request)
+
+# Gives the response the security headers `headers` writes: Echo's
+# `Secure`, helmet's set.
+#
+# - `state`: the program's state, lent to `go_on`.
+# - `n`: where the request stands, handed to `go_on`.
+# - `r`: the request, handed to `go_on`.
+# - `headers`: the fields and their values, as
+#   `web.default_security_headers` or `web.minimal_security_headers` makes
+#   them.
+# - `go_on`: the program's call of `web/chain.proceed`, called once.
+#
+# Fails where `go_on` fails, with its code. See also
+# `web.with_security_headers`.
+function security_headers<S>(@state: S, n: chain.Next, r: http.Request, headers: web.SecurityHeaders, go_on: (function(@S, chain.Next, http.Request) -> http.Response?)) -> http.Response?
+    got = go_on(@state, n, r)?
+    return ok(web.with_security_headers(got, headers: headers))
+
+# Compresses the response by gzip where the client accepts it and its body
+# holds at least `min_bytes`: Echo's `Gzip`.
+#
+# - `state`: the program's state, lent to `go_on`.
+# - `n`: where the request stands, handed to `go_on`.
+# - `r`: the request; its `Accept-Encoding` is read.
+# - `min_bytes`: the fewest bytes of a body compressed; 0 compresses every
+#   body.
+# - `go_on`: the program's call of `web/chain.proceed`, called once.
+#
+# Answers as `web.gzip` does: a shorter body, a response with a
+# `Content-Encoding`, no body or a status 1xx, 204, 206 or 304 as they are,
+# and `Vary: Accept-Encoding` on every other. Fails where `go_on` fails,
+# with its code. See also `web.gzip`.
+function gzip<S>(@state: S, n: chain.Next, r: http.Request, min_bytes: i64, go_on: (function(@S, chain.Next, http.Request) -> http.Response?)) -> http.Response?
+    got = go_on(@state, n, r)?
+    return ok(web.gzip(r, response: got, min_bytes: min_bytes))
+
+## Tests
+
+test "access_log: a line with the status and the time between two reads of the clock, a 500 at error, an id, a failure handed on"
+    two @= net.pair(deadline_ms: 5_000).must()
+    app @= fixture.program("log", step: fixture.logged, stream: two.first.stream)
+    asked = fixture.asked(
+        method: "GET",
+        target: "/?q=1",
+        headers: [http.Header(name: "X-Request-Id", value: "r")],
+        body: ""
+    )
+    assert fixture.answer(@app, r: asked).must().status == 200
+    assert app.now_ms == 784_111_777_010
+
+    match fixture.answer(@app, r: fixture.asked(method: "GET", target: "/broken", headers: [], body: ""))
+        .ok _  => assert false
+        .err e => assert e.code == "failed"
+
+    assert fixture.answer(@app, r: fixture.asked(method: "GET", target: "/nowhere", headers: [], body: "")).must().status == 404
+    reader @= io.reader(two.second.stream)
+    assert io.read_line(@reader).must() == "1994-11-06T08:49:37.000Z INFO request method=GET path=\"/?q=1\" status=200 bytes=5 milliseconds=5 remote=\"\" id=r"
+    assert io.read_line(@reader).must() == "1994-11-06T08:49:37.000Z ERROR request failed method=GET path=/broken code=failed failure=\"the store is down\" milliseconds=5 remote=\"\""
+    assert io.read_line(@reader).must() == "1994-11-06T08:49:37.000Z INFO request method=GET path=/nowhere status=404 bytes=10 milliseconds=5 remote=\"\""
+    io.close(@two.first.stream).must()
+    io.close(@reader.stream).must()
+
+test "request_id: one kept, one of one character kept, an empty one, one of 129 characters and one not ASCII replaced"
+    two @= net.pair(deadline_ms: 5_000).must()
+    app @= fixture.program("id", step: fixture.identified, stream: two.first.stream)
+    kept = fixture.answer(
+        @app,
+        r: fixture.asked(method: "GET", target: "/", headers: [http.Header(name: "X-Request-Id", value: "abc")], body: "")
+    ).must()
+    assert http.value_of(kept.headers, name: "X-Request-Id").must() == "abc"
+    one = fixture.answer(
+        @app,
+        r: fixture.asked(method: "GET", target: "/", headers: [http.Header(name: "X-Request-Id", value: "x")], body: "")
+    ).must()
+    assert http.value_of(one.headers, name: "X-Request-Id").must() == "x"
+
+    for given in ["", repeat("a", 129), "é"]
+        got = fixture.answer(
+            @app,
+            r: fixture.asked(method: "GET", target: "/", headers: [http.Header(name: "X-Request-Id", value: given)], body: "")
+        ).must()
+        assert http.value_of(got.headers, name: "X-Request-Id").must().len() == 36
+
+    made = fixture.answer(@app, r: fixture.asked(method: "GET", target: "/", headers: [], body: "")).must()
+    assert http.value_of(made.headers, name: "X-Request-Id").must().len() == 36
+    io.close(@two.first.stream).must()
+    io.close(@two.second.stream).must()
+
+test "cors: no origin, an allowed origin, a refused one, a preflight answered before the handler"
+    two @= net.pair(deadline_ms: 5_000).must()
+    app @= fixture.program("cors", step: fixture.crossed, stream: two.first.stream)
+    plain = fixture.answer(@app, r: fixture.asked(method: "GET", target: "/", headers: [], body: "")).must()
+    assert !http.has_header(plain.headers, name: "Access-Control-Allow-Origin")
+    allowed = fixture.answer(
+        @app,
+        r: fixture.asked(method: "GET", target: "/", headers: [http.Header(name: "Origin", value: "https://a.example")], body: "")
+    ).must()
+    assert http.value_of(allowed.headers, name: "Access-Control-Allow-Origin").must() == "https://a.example"
+    refused = fixture.answer(
+        @app,
+        r: fixture.asked(method: "GET", target: "/", headers: [http.Header(name: "Origin", value: "https://b.example")], body: "")
+    ).must()
+    assert refused.status == 200 && !http.has_header(refused.headers, name: "Access-Control-Allow-Origin")
+    preflight = fixture.answer(
+        @app,
+        r: fixture.asked(method: "OPTIONS", target: "/echo", headers: [http.Header(name: "Origin", value: "https://a.example"), http.Header(name: "Access-Control-Request-Method", value: "POST")], body: "")
+    ).must()
+    assert preflight.status == 204 && http.value_of(preflight.headers, name: "Access-Control-Allow-Methods").must() == "GET, HEAD, PUT, PATCH, POST, DELETE"
+    io.close(@two.first.stream).must()
+    io.close(@two.second.stream).must()
+
+test "basic_auth: none, an empty password, a wrong one, the right one, each refusal counted in the state"
+    two @= net.pair(deadline_ms: 5_000).must()
+    app @= fixture.program("auth", step: fixture.guarded, stream: two.first.stream)
+    none = fixture.answer(@app, r: fixture.asked(method: "GET", target: "/", headers: [], body: "")).must()
+    assert none.status == 401 && http.value_of(none.headers, name: "WWW-Authenticate").must() == "Basic realm=\"admin\", charset=\"UTF-8\""
+    assert app.refused == 0
+
+    for given in ["YW5hOg==", "YW5hOng="]
+        refused = fixture.answer(
+            @app,
+            r: fixture.asked(method: "GET", target: "/", headers: [http.Header(name: "Authorization", value: "Basic " + given)], body: "")
+        ).must()
+        assert refused.status == 401
+
+    assert app.refused == 2
+    let_in = fixture.answer(
+        @app,
+        r: fixture.asked(method: "GET", target: "/", headers: [http.Header(name: "Authorization", value: "Basic YW5hOnB3")], body: "")
+    ).must()
+    assert let_in.status == 200 && app.refused == 2
+    io.close(@two.first.stream).must()
+    io.close(@two.second.stream).must()
+
+test "body_limit: an empty body, one of the limit, one past it, at a limit of 4 bytes"
+    two @= net.pair(deadline_ms: 5_000).must()
+    app @= fixture.program("limit", step: fixture.limited, stream: two.first.stream)
+    assert fixture.answer(@app, r: fixture.asked(method: "POST", target: "/echo", headers: [], body: "")).must().status == 201
+    assert bytes.to_text_lossy(fixture.answer(@app, r: fixture.asked(method: "POST", target: "/echo", headers: [], body: "abcd")).must().body) == "abcd"
+    assert fixture.answer(@app, r: fixture.asked(method: "POST", target: "/echo", headers: [], body: "abcde")).must().status == 413
+    assert fixture.answer(@app, r: fixture.asked(method: "POST", target: "/echo", headers: [], body: "éé")).must().status == 201
+    io.close(@two.first.stream).must()
+    io.close(@two.second.stream).must()
+
+test "security_headers: the fields on an answer, on a 404, and a failure handed on"
+    two @= net.pair(deadline_ms: 5_000).must()
+    app @= fixture.program("secure", step: fixture.secured, stream: two.first.stream)
+    got = fixture.answer(@app, r: fixture.asked(method: "GET", target: "/", headers: [], body: "")).must()
+    assert http.value_of(got.headers, name: "X-Content-Type-Options").must() == "nosniff"
+    missed = fixture.answer(@app, r: fixture.asked(method: "GET", target: "/x", headers: [], body: "")).must()
+    assert missed.status == 404 && http.has_header(missed.headers, name: "X-Content-Type-Options")
+    assert fixture.answer(@app, r: fixture.asked(method: "GET", target: "/broken", headers: [], body: "")).is_err()
+    io.close(@two.first.stream).must()
+    io.close(@two.second.stream).must()
+
+test "gzip: a body under the least, one past it, a client that does not accept it, a weight of 0"
+    two @= net.pair(deadline_ms: 5_000).must()
+    app @= fixture.program("gzip", step: fixture.zipped, stream: two.first.stream)
+    small = fixture.answer(
+        @app,
+        r: fixture.asked(method: "GET", target: "/", headers: [http.Header(name: "Accept-Encoding", value: "gzip")], body: "")
+    ).must()
+    assert !http.has_header(small.headers, name: "Content-Encoding")
+    big = fixture.answer(
+        @app,
+        r: fixture.asked(method: "GET", target: "/big", headers: [http.Header(name: "Accept-Encoding", value: "gzip")], body: "")
+    ).must()
+    assert http.value_of(big.headers, name: "Content-Encoding").must() == "gzip" && big.body.len() < 2048
+    plain = fixture.answer(@app, r: fixture.asked(method: "GET", target: "/big", headers: [], body: "")).must()
+    assert !http.has_header(plain.headers, name: "Content-Encoding") && plain.body.len() == 2048
+    zero = fixture.answer(
+        @app,
+        r: fixture.asked(method: "GET", target: "/big", headers: [http.Header(name: "Accept-Encoding", value: "gzip;q=0")], body: "")
+    ).must()
+    assert !http.has_header(zero.headers, name: "Content-Encoding")
+    io.close(@two.first.stream).must()
+    io.close(@two.second.stream).must()
+
+## Examples
+
+# Every request's line, the time read from the program's own clock.
+test "access_log: a request's line"
+    two @= net.pair(deadline_ms: 5_000).must()
+    app @= fixture.program("log", step: fixture.logged, stream: two.first.stream)
+    _ = fixture.answer(@app, r: fixture.asked(method: "GET", target: "/", headers: [], body: "")).must()
+    reader @= io.reader(two.second.stream)
+    assert io.read_line(@reader).must() == "1994-11-06T08:49:37.000Z INFO request method=GET path=/ status=200 bytes=5 milliseconds=5 remote=\"\""
+    io.close(@two.first.stream).must()
+    io.close(@reader.stream).must()
+
+# The client's request id, copied into the answer.
+test "request_id: the client's id kept"
+    two @= net.pair(deadline_ms: 5_000).must()
+    app @= fixture.program("id", step: fixture.identified, stream: two.first.stream)
+    got = fixture.answer(
+        @app,
+        r: fixture.asked(method: "GET", target: "/", headers: [http.Header(name: "X-Request-Id", value: "r-1")], body: "")
+    ).must()
+    assert http.value_of(got.headers, name: "X-Request-Id").must() == "r-1"
+    io.close(@two.first.stream).must()
+    io.close(@two.second.stream).must()
+
+# An allowed origin told it may read the answer.
+test "cors: an allowed origin"
+    two @= net.pair(deadline_ms: 5_000).must()
+    app @= fixture.program("cors", step: fixture.crossed, stream: two.first.stream)
+    got = fixture.answer(
+        @app,
+        r: fixture.asked(method: "GET", target: "/", headers: [http.Header(name: "Origin", value: "https://a.example")], body: "")
+    ).must()
+    assert http.value_of(got.headers, name: "Access-Control-Allow-Origin").must() == "https://a.example"
+    io.close(@two.first.stream).must()
+    io.close(@two.second.stream).must()
+
+# A request without credentials refused before the handler.
+test "basic_auth: no credentials, 401"
+    two @= net.pair(deadline_ms: 5_000).must()
+    app @= fixture.program("auth", step: fixture.guarded, stream: two.first.stream)
+    assert fixture.answer(@app, r: fixture.asked(method: "GET", target: "/", headers: [], body: "")).must().status == 401
+    io.close(@two.first.stream).must()
+    io.close(@two.second.stream).must()
+
+# A body past the limit refused.
+test "body_limit: a body too long, 413"
+    two @= net.pair(deadline_ms: 5_000).must()
+    app @= fixture.program("limit", step: fixture.limited, stream: two.first.stream)
+    assert fixture.answer(@app, r: fixture.asked(method: "POST", target: "/echo", headers: [], body: "too long")).must().status == 413
+    io.close(@two.first.stream).must()
+    io.close(@two.second.stream).must()
+
+# The security headers on every answer.
+test "security_headers: nosniff on an answer"
+    two @= net.pair(deadline_ms: 5_000).must()
+    app @= fixture.program("secure", step: fixture.secured, stream: two.first.stream)
+    got = fixture.answer(@app, r: fixture.asked(method: "GET", target: "/", headers: [], body: "")).must()
+    assert http.value_of(got.headers, name: "X-Content-Type-Options").must() == "nosniff"
+    io.close(@two.first.stream).must()
+    io.close(@two.second.stream).must()
+
+# A large answer compressed for a client that accepts gzip.
+test "gzip: a large body compressed"
+    two @= net.pair(deadline_ms: 5_000).must()
+    app @= fixture.program("gzip", step: fixture.zipped, stream: two.first.stream)
+    got = fixture.answer(
+        @app,
+        r: fixture.asked(method: "GET", target: "/big", headers: [http.Header(name: "Accept-Encoding", value: "gzip")], body: "")
+    ).must()
+    assert http.value_of(got.headers, name: "Content-Encoding").must() == "gzip"
+    io.close(@two.first.stream).must()
+    io.close(@two.second.stream).must()

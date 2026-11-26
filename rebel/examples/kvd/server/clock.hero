@@ -1,0 +1,74 @@
+# The server's clock, a parameter of the server: the system's, read at each
+# command, or a manual one that stands still until `DEBUG ADVANCE` moves
+# it, so a session's expiries and the active sweep happen at the same
+# commands on every run and every machine. Every time is a number of
+# milliseconds since the Unix epoch.
+
+use <rebel>/time
+
+# A clock.
+record Clock
+    # Whether it stands still between `advance` calls.
+    manual: bool
+    # A manual clock's time; the last reading of the system's clock.
+    now_ms: i64
+
+# The system's clock.
+function system() -> Clock
+    return Clock(manual: false, now_ms: 0)
+
+# A manual clock standing at `start_ms`.
+#
+# - `start_ms`: milliseconds since the Unix epoch, 0 or more.
+function manual(start_ms: i64) -> Clock
+    return Clock(manual: true, now_ms: start_ms)
+
+# The time now. A system clock that cannot be read answers its last
+# reading, and a clock never moves back: a step back of the system's
+# clock would bring expired keys back to life.
+#
+# - `c`: the clock, which keeps the reading.
+function now(@c: Clock) -> i64
+    if c.manual
+        return c.now_ms
+
+    match time.now()
+        .ok t =>
+            read = time.unix_milliseconds(t)
+
+            if read > c.now_ms
+                c.now_ms @ read
+        .err _ => _ = 0
+
+    return c.now_ms
+
+# Moves a manual clock forward by `ms`.
+#
+# - `c`: the clock.
+# - `ms`: milliseconds, 0 or more.
+#
+# Fails `invalid` where `c` is the system's, or `ms` is below 0 or would
+# carry the clock past `i64`.
+function advance(@c: Clock, ms: i64) -> ()?
+    if !c.manual
+        return fail(code: "invalid", msg: "the server's clock is the system's; start it with --manual-clock")
+
+    if ms < 0 || ms > 9223372036854775807 - c.now_ms
+        return fail(code: "invalid", msg: f"the clock cannot move by {ms} ms")
+    c.now_ms @ c.now_ms + ms
+    return ok()
+
+test "now and advance: a manual clock stands still and moves when told"
+    c @= manual(1000)
+    assert now(@c) == 1000
+    advance(@c, ms: 500).must()
+    assert now(@c) == 1500
+    assert advance(@c, ms: -1).is_err()
+    assert advance(@c, ms: 9223372036854775807).is_err()
+
+test "now: the system's clock never goes back and refuses to be moved"
+    c @= system()
+    first = now(@c)
+    assert now(@c) >= first
+    assert first > 0
+    assert advance(@c, ms: 1).is_err()

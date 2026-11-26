@@ -1,22 +1,20 @@
 # How much the site's own links vouch for each page: PageRank, as Brin and
-# Page described it (1998), computed by power iteration on the block matrix
-# of `index/blocks`.
+# Page described it (1998), computed by `math/sparse.pagerank`'s power
+# iteration over the site's link matrix.
 #
 # A reader on a page follows one of its links, each as likely, with the
-# probability `damping`, and otherwise jumps to any page of the site; a page
+# probability `DAMPING`, and otherwise jumps to any page of the site; a page
 # with no link to follow sends its reader anywhere. A page's rank is how
 # often such a reader stands on it in the long run, and the ranks of a site
-# sum to one. Each round multiplies the link matrix, whose column `j` holds
-# `1 / links(j)` at every page `j` links to, by the ranks of the round
-# before, then adds what the pages with no link and the jumps spread over
-# every page; the rounds end once the ranks move less than `TOLERANCE` in
-# sum, or after `MOST_ROUNDS`. A link from a page to itself, and a second
-# link from one page to another, count as nothing more.
+# sum to one. Row `j` of the matrix holds a weight of 1 at every page `j`
+# links to, which `math/sparse` divides by the row's sum; the rounds end once
+# the ranks move less than `TOLERANCE` in sum, or after `MOST_ROUNDS`. A link
+# from a page to itself, and a second link from one page to another, count
+# as nothing more, so they are left out here: `math/sparse` would count a
+# page's link to itself as any other, and sum a link given twice.
 
 use <rebel>/math
-use <rebel>/math/linear
-
-use index/blocks
+use <rebel>/math/sparse
 
 # The share of a reader's moves that follow a link: 0.85, the value Brin and
 # Page's paper gives.
@@ -48,51 +46,18 @@ function rank(links: [[i64]]) -> Ranked
 
     if n == 0
         return Ranked(ranks: [], rounds: 0)
-
-    m @= blocks.zeros(n)
-    dangling: [i64] @= []
+    triplets: [sparse.Triplet] @= []
 
     for j in range(from: 0, to: n)
-        targets = targets_of(links[j], from: j, order: n)
+        for i in targets_of(links[j], from: j, order: n)
+            triplets @ triplets.push(sparse.Triplet(row: j, column: i, value: 1.0))
 
-        if targets.len() == 0
-            dangling @ dangling.push(j)
-
-        for i in targets
-            blocks.add(@m, row: i, column: j, value: 1.0 / to_f64(targets.len()))
-
-    share = 1.0 / to_f64(n)
-    mask = blocks.to_slices(filled(n, value: 1.0))
-    r @= blocks.to_slices(filled(n, value: share))
-    rounds @= 0
-
-    while rounds < MOST_ROUNDS
-        rounds @ rounds + 1
-        product = blocks.multiply(m, vs: r)
-        lost @= 0.0
-
-        for j in dangling
-            lost @ lost + blocks.component(r[j / 4], at: j % 4)
-
-        spread = DAMPING * lost * share + (1.0 - DAMPING) * share
-        level = linear.Vec4(x: spread, y: spread, z: spread, w: spread)
-        next: [linear.Vec4] @= []
-        moved @= 0.0
-
-        for k in range(from: 0, to: product.len())
-            part = linear.add_vec4(
-                a: linear.scale_vec4(product[k], by: DAMPING),
-                b: linear.multiply_vec4(a: mask[k], b: level)
-            )
-            moved @ moved + absolute_sum(linear.subtract_vec4(a: part, b: r[k]))
-            next @ next.push(part)
-
-        r @ next
-
-        if moved < TOLERANCE
-            break
-
-    return Ranked(ranks: blocks.from_slices(r, order: n), rounds: rounds)
+    # Every place is inside the `n` by `n` matrix, by `targets_of`, and `n`,
+    # the weights and the settings are in their ranges, so neither call can
+    # fail.
+    m = sparse.from_triplets(rows: n, columns: n, triplets: triplets).must()
+    settled = sparse.pagerank(m, damping: DAMPING, tolerance: TOLERANCE, most_iterations: MOST_ROUNDS).must()
+    return Ranked(ranks: settled.vector, rounds: settled.iterations)
 
 # The pages `out` names, each once, without `from` itself and without a
 # number outside `0` to `order` less one, in the order first named.
@@ -110,24 +75,6 @@ function targets_of(out: [i64], from: i64, order: i64) -> [i64]
             kept @ kept.push(i)
 
     return kept
-
-# `n` copies of `value`.
-#
-# - `n`: how many, 0 or more.
-# - `value`: the value.
-function filled(n: i64, value: f64) -> [f64]
-    out: [f64] @= []
-
-    for _ in range(from: 0, to: n)
-        out @ out.push(value)
-
-    return out
-
-# The sum of the absolute values of `v`'s four components.
-#
-# - `v`: the vector.
-function absolute_sum(v: linear.Vec4) -> f64
-    return math.abs(v.x) + math.abs(v.y) + math.abs(v.z) + math.abs(v.w)
 
 # The sum of `xs`.
 #

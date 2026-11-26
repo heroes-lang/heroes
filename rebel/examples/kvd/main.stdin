@@ -1,0 +1,118 @@
+# kvd's demo: two clients, A and B, of one server on the loopback; the
+# server's clock is manual and moves only at an @clock line.
+== strings
+A> PING
+A> SET greeting "hello, world"
+A> GET greeting
+B> APPEND greeting "!"
+A> GET greeting
+A> SET greeting "bonjour" XX GET
+A> SET greeting "hi" NX
+A> INCR visits
+A> INCRBY visits 41
+A> INCR greeting
+A> MSET colour red size L
+A> MGET colour size nothing
+A> GETRANGE greeting 0 2
+@pipeline B
+SET page:1 "the first page"
+INCR hits
+INCR hits
+GET page:1
+DEL page:1 nothing
+@end
+
+== lists, hashes, sets and sorted sets
+A> RPUSH queue job1 job2 job3
+A> LPUSH queue job0
+A> LPOP queue
+A> LRANGE queue 0 -1
+A> HSET user:1 name Ada born 1815 field "analytical engine"
+A> HGET user:1 name
+A> HINCRBY user:1 born 1
+A> HGETALL user:1
+A> SADD tags redis heroes kv heroes
+A> SADD other kv rust
+A> SINTER tags other
+A> SISMEMBER tags heroes
+A> ZADD board 120 ada 95 bob 133 cyd 120 abe
+A> ZRANGE board 0 -1 WITHSCORES
+A> ZREVRANK board ada
+A> ZINCRBY board 40 bob
+A> ZRANGEBYSCORE board (120 +inf WITHSCORES
+A> ZCOUNT board -inf 120
+A> TYPE board
+A> LPUSH board oops
+
+== keys that expire
+A> SET session abc PX 1500
+A> SET token xyz EX 2
+A> SET flag on EX 1
+A> PTTL session
+A> TTL token
+@clock 1600
+A> GET session
+A> TTL token
+@clock 1000
+A> DBSIZE
+A> INFO keyspace
+
+== publish and subscribe
+A> SUBSCRIBE news
+B> PUBLISH news "kvd 0.1 is out"
+A<
+B> PUBLISH sport "nobody listens"
+A> PSUBSCRIBE n*
+B> PUBLISH news again
+A<
+A<
+A> UNSUBSCRIBE
+A> PUNSUBSCRIBE
+
+== a transaction WATCH aborts, and the same transaction again
+A> SET balance 100
+A> WATCH balance
+A> GET balance
+B> INCRBY balance 50
+A> MULTI
+A> DECRBY balance 30
+A> RPUSH ledger "-30"
+A> EXEC
+A> WATCH balance
+A> GET balance
+A> MULTI
+A> DECRBY balance 30
+A> RPUSH ledger "-30"
+A> EXEC
+A> MULTI
+A> SET x 1
+A> NOSUCHCOMMAND
+A> EXEC
+
+== scanning the keys
+A> SCAN 0 MATCH user:* COUNT 100
+A> SCAN 0 TYPE zset COUNT 100
+A> KEYS b*
+
+== a snapshot, a background one, and a restart that replays the log
+A> SAVE
+A> SET after-save 1
+A> RPUSH queue job4
+@files
+A> BGSAVE
+A> SET after-bgsave 2
+@restart
+A> GET after-save
+A> GET after-bgsave
+A> LRANGE queue 0 -1
+A> ZRANGE board 0 -1 WITHSCORES
+A> GET balance
+A> INFO persistence
+
+== a crash in the middle of a write
+A> SET last-words "written whole"
+@crash
+A> GET last-words
+A> GET lost
+A> DBSIZE
+A> INFO stats

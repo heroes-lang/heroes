@@ -1,0 +1,35 @@
+# What `web/steps`' `access_log` writes beside the status and the time: the
+# request's path with its query, and its request id where it has one.
+
+use http
+use log
+
+# The path of `r` and its query, as a log line writes it: `/a?b=1`, `/`.
+#
+# - `r`: the request.
+function path_of(r: http.Request) -> str
+    if r.url.query == ""
+        return r.url.path
+    return r.url.path + "?" + r.url.query
+
+# `fields` with the field `id` holding `r`'s `X-Request-Id` after them, where
+# it has one.
+#
+# - `fields`: the line's fields.
+# - `r`: the request.
+function with_id(fields: [log.Field], r: http.Request) -> [log.Field]
+    return match http.value_of(r.headers, name: "X-Request-Id")
+        .ok id => fields.push(log.text(key: "id", value: id))
+        .err _ => fields
+
+test "path_of: no query, a query, the root"
+    assert path_of(http.request(method: "GET", target: "/a").must()) == "/a"
+    assert path_of(http.request(method: "GET", target: "/a?b=1&c").must()) == "/a?b=1&c"
+    assert path_of(http.request(method: "GET", target: "/").must()) == "/"
+
+test "with_id: none, one, and one of one character"
+    none = http.request(method: "GET", target: "/").must()
+    assert with_id([], r: none).len() == 0
+    one @= none
+    one.headers @ [http.Header(name: "X-Request-Id", value: "r")]
+    assert with_id([log.text(key: "a", value: "b")], r: one).len() == 2
