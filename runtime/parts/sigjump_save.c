@@ -237,8 +237,11 @@ int(setcontext)(const ucontext_t *ucp) {
  * switch has returned the context switched to is read only where it provably
  * lives, and by the kernel (defect d-lane-d2745-1): the end of a range's
  * coroutine is what the switches made from it while this one waited say,
- * with that word (`hero_sig_range_returned`). */
-__attribute__((noinline, no_sanitize("address"))) int(swapcontext)(ucontext_t *restrict oucp, const ucontext_t *restrict ucp) {
+ * with that word (`hero_sig_range_returned`). It carries what the C
+ * library's declaration writes after its parameters (`HERO_CTX_SWAP_RETURN`,
+ * `sigjump.c`), written before it, where a definition takes attributes. */
+__attribute__((noinline, no_sanitize("address"))) HERO_CTX_SWAP_RETURN
+int(swapcontext)(ucontext_t *restrict oucp, const ucontext_t *restrict ucp) {
     hero_jmp_find();
     HeroSignalStack *own = hero_sig_own();
     uint64_t marks[HERO_SIG_DEPTH];
