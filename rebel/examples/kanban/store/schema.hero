@@ -7,6 +7,7 @@
 # `open` makes `VERSION`; a file of a later version is refused, since this
 # program cannot know what its tables mean.
 
+use <rebel>/errors
 use <rebel>/sql
 use <rebel>/sql/sqlite
 use <rebel>/time
@@ -31,7 +32,7 @@ function open(path: str) -> sqlite.Db?
     match ready(@db)
         .ok _ => return ok(db)
         .err e =>
-            _ = sqlite.close(@db).is_err()
+            errors.ignore(sqlite.close(@db))
             return fail(code: e.code, msg: f"the database at {path} could not be readied: {e.msg}")
 
 # The database in memory alone, with its tables: what the tests use.

@@ -14,6 +14,7 @@
 # `now` the clock. The exit code is jq's: 5 where an error ends a run, 2 where
 # a file or an option is refused, a halt's own code where it halts.
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/json
 use <rebel>/json/jq
@@ -166,7 +167,7 @@ function environment() -> {str: json.Value}
 # Writes `text` to the standard error; a standard error that is closed is
 # told nothing, having nowhere to be told.
 function warn(text: str)
-    _ = io.write_text(io.stderr(), text: text).is_err()
+    errors.ignore(io.write_text(io.stderr(), text: text))
 
 # `v` written as `a` asks.
 function shown(v: json.Value, a: Asked) -> str

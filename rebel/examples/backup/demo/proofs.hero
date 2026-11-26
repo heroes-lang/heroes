@@ -7,6 +7,7 @@
 use <rebel>/archive
 use <rebel>/bytes
 use <rebel>/crypto
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/io
 use <rebel>/path
@@ -106,10 +107,10 @@ function export_to(@r: repository.Repository, id: str, file: str) -> exporter.Ex
 function read_back(file: str, into: str, source: str) -> i64?
     listed @= fs.open(file)?
     entries = archive.list_tar(listed, compression: .none, limit: 100_000_000)
-    _ = io.close(@listed).is_err()
+    errors.ignore(io.close(@listed))
     extracting @= fs.open(file)?
     extracted = archive.extract_tar(extracting, compression: .none, to: into, limit: 100_000_000)
-    _ = io.close(@extracting).is_err()
+    errors.ignore(io.close(@extracting))
     _ = extracted?
     found = compare.differences(expected: source, actual: into, facts: false)?
 

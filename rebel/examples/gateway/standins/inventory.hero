@@ -7,6 +7,7 @@
 # supervisor waits on, and serves one connection after another until the
 # program is asked to stop.
 
+use <rebel>/errors
 use <rebel>/grpc
 use <rebel>/io
 use <rebel>/net
@@ -116,7 +117,7 @@ function served(told: (mailbox notify.Ready)) -> i64?
 
     match notify.ready(told, service: NAME, port: listener.address.port)
         .err e =>
-            _ = net.close_listener(@listener).is_err()
+            errors.ignore(net.close_listener(@listener))
             return fail(code: e.code, msg: e.msg)
         .ok _ => _ = 0
 
@@ -133,9 +134,9 @@ function served(told: (mailbox notify.Ready)) -> i64?
                     .ok s =>
                         server @= s
                         calls @ calls + answered(@server, schema: schema, methods: methods)
-                        _ = grpc.close_server(@server).is_err()
+                        errors.ignore(grpc.close_server(@server))
 
-    _ = net.close_listener(@listener).is_err()
+    errors.ignore(net.close_listener(@listener))
     return ok(calls)
 
 # Every call of one connection answered, until the client closes it.
@@ -152,7 +153,7 @@ function answered(@server: grpc.Server, schema: protobuf.Schema, methods: [grpc.
             .ok c =>
                 call @= c
                 ended = called(@server, @call, schema: schema, streams: methods[call.method].server_streaming)
-                _ = grpc.finish(@server, @call, status: ended, trailers: []).is_err()
+                errors.ignore(grpc.finish(@server, @call, status: ended, trailers: []))
                 count @ count + 1
 
     return count

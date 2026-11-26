@@ -10,6 +10,7 @@ packages = [
     "containers/indexed",
     "crypto",
     "crypto/seal",
+    "errors",
     "flags",
     "fs",
     "hash",

@@ -12,6 +12,7 @@
 # summary was lost, is built again from the index when it is opened.
 
 use <rebel>/bytes
+use <rebel>/errors
 
 use chunking/gear
 use repo/index
@@ -150,12 +151,12 @@ function open(store: storage.Storage, password: str) -> Repository?
 
     match configured(@s, key: key)
         .err e =>
-            _ = master.close(@key).is_err()
+            errors.ignore(master.close(@key))
             return fail(code: e.code, msg: e.msg)
         .ok config =>
             match listed_index(@s)
                 .err e =>
-                    _ = master.close(@key).is_err()
+                    errors.ignore(master.close(@key))
                     return fail(code: e.code, msg: e.msg)
                 .ok names =>
                     r @= opened(store: s, key: key, config: config, index_files: names, bloom: summary.sized(0))
@@ -198,7 +199,7 @@ function opened(store: storage.Storage, key: master.Master, config: settings.Set
 #
 # - `r`: the repository.
 function close(@r: Repository)
-    _ = master.close(@r.key).is_err()
+    errors.ignore(master.close(@r.key))
 
 # The master key a key file of `files` opens with `password`.
 #

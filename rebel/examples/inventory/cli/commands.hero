@@ -19,6 +19,7 @@
 # Every movement is timed by the wall clock and audited under the
 # configuration's `actor`.
 
+use <rebel>/errors
 use <rebel>/os
 use <rebel>/time
 
@@ -81,7 +82,7 @@ function run(words: [str]) -> i64
                                 print("inventory: " + e.msg)
                                 1
 
-                    _ = store.close(@st).is_err()
+                    errors.ignore(store.close(@st))
                     return exit_code
 
 # One command done on an open store; answers the exit code.

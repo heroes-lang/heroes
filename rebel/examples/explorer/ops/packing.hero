@@ -12,6 +12,7 @@
 # failed removes the archive, since half an archive is none.
 
 use <rebel>/archive
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/io
 use <rebel>/path as paths
@@ -200,7 +201,7 @@ function step(@p: Packing) -> i64?
     if piece.len() == 0
         held @= p.reading[0]
         p.reading @ []
-        _ = io.close(@held).is_err()
+        errors.ignore(io.close(@held))
         p.tar @ [w]
         p.at @ p.at + 1
         return ok(0)
@@ -234,8 +235,8 @@ function finish(@p: Packing, stamp: time.Instant) -> ()?
 #
 # - `p`: the packing; its streams are closed.
 function abandon(@p: Packing)
-    _ = close_all(@p).is_err()
-    _ = fs.remove(p.archive).is_err()
+    errors.ignore(close_all(@p))
+    errors.ignore(fs.remove(p.archive))
 
 # Closes the archive's stream and the member's file where they are open.
 #
@@ -245,7 +246,7 @@ function abandon(@p: Packing)
 function close_all(@p: Packing) -> ()?
     if p.reading.len() > 0
         held @= p.reading[0]
-        _ = io.close(@held).is_err()
+        errors.ignore(io.close(@held))
 
     p.reading @ []
 
@@ -262,7 +263,7 @@ test "ext_of: each kind's extension"
 
 test "start, step and finish: a folder packed into a ZIP file and a tar.gz, read back by archive"
     base = "build/explorer-tests/packing"
-    _ = fs.remove_all(base).is_err()
+    errors.ignore(fs.remove_all(base))
     fs.make_dir_all(base + "/docs").must()
     write_file(path: base + "/docs/a.txt", text: "alpha").must()
     stamp = time.from_unix(whole_seconds: 1700000000, extra_nanoseconds: 0).must()

@@ -5,6 +5,7 @@
 # sent) is journaled, so the record says who asked what and when; every
 # request is counted by its command and outcome.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/strings
 use <rebel>/term
@@ -233,7 +234,7 @@ function alert_lines(m: monitor.Monitor lent) -> [str]
 #
 # - `dir`: the test's folder, made fresh.
 function test_monitor(dir: str) -> monitor.Monitor
-    _ = fs.remove_all(dir).is_err()
+    errors.ignore(fs.remove_all(dir))
     fs.make_dir_all(dir + "/spool").must()
     write_file(path: dir + "/spool/a.dat", text: "0123456789").must()
     text = ["name = \"test\"", "control = \"\"", "host = false", f"[logs]\ndir = \"{dir}/logs\"", f"[[watch]]\nname = \"spool\"\npath = \"{dir}/spool\"", "[[rule]]\nname = \"spool-full\"\nwhen = \"watch.spool.bytes > 5\"\nseverity = \"warning\""].join("\n") + "\n"

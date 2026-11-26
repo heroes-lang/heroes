@@ -6,6 +6,7 @@
 # one answer takes. `metrics.respond` writes the text format, or
 # OpenMetrics where the scraper asks for it.
 
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/io
 use <rebel>/metrics
@@ -85,14 +86,14 @@ function answer_conn(@e: Exporter, registry: metrics.Registry lent, conn: net.Co
                 metrics.respond(registry, r: r)
             else
                 http.respond_not_found(r)
-            _ = http.write_answer(conn.stream, r: r, response: response).is_err()
+            errors.ignore(http.write_answer(conn.stream, r: r, response: response))
             e.answered @ e.answered + 1
 
     closing @= conn
-    _ = io.close(@closing.stream).is_err()
+    errors.ignore(io.close(@closing.stream))
 
 # Stops listening.
 #
 # - `e`: the exporter, its listener closed.
 function close(@e: Exporter)
-    _ = net.close_listener(@e.listener).is_err()
+    errors.ignore(net.close_listener(@e.listener))

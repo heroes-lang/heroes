@@ -14,6 +14,7 @@
 # whole when the loop's set tells it readable, bounded by a deadline.
 
 use <rebel>/compress
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/io
 use <rebel>/maps
@@ -89,7 +90,7 @@ function serve(@c: Collector, set: poll.Set, key: i64) -> bool
                     .ok added => c.conns[added] @ conn
                     .err _ =>
                         held @= conn
-                        _ = io.close(@held.stream).is_err()
+                        errors.ignore(io.close(@held.stream))
             .err _ => _ = 0
 
         return true
@@ -104,11 +105,11 @@ function serve(@c: Collector, set: poll.Set, key: i64) -> bool
                 .ok r =>
                     answer @= answer_of(@c, r: r)
                     answer.closing @ true
-                    _ = http.write_answer(conn.stream, r: r, response: answer).is_err()
+                    errors.ignore(http.write_answer(conn.stream, r: r, response: answer))
                 .err _ => count_refused(@c, status: 400)
 
-            _ = poll.remove(set, key: key).is_err()
-            _ = io.close(@conn.stream).is_err()
+            errors.ignore(poll.remove(set, key: key))
+            errors.ignore(io.close(@conn.stream))
             c.conns @ maps.remove(c.conns, key: key)
             return true
 
@@ -201,12 +202,12 @@ function read_request(@c: Collector, path: str, body: [u8]?, json_body: bool) ->
 function close(@c: Collector, set: poll.Set)
     for key in keys(c.conns)
         conn @= c.conns[key].must()
-        _ = poll.remove(set, key: key).is_err()
-        _ = io.close(@conn.stream).is_err()
+        errors.ignore(poll.remove(set, key: key))
+        errors.ignore(io.close(@conn.stream))
 
     c.conns @ {}
-    _ = poll.remove(set, key: c.listen_key).is_err()
-    _ = net.close_listener(@c.listener).is_err()
+    errors.ignore(poll.remove(set, key: c.listen_key))
+    errors.ignore(net.close_listener(@c.listener))
 
 # What the collector received, as the demo prints it: the requests by path,
 # the refusals, the spans by name with how many were children, the metrics

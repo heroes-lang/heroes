@@ -12,6 +12,7 @@
 # service's name and taken out of it as it is waited for, since a copy of a
 # child kept after its wait would name a process given back.
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/log
 use <rebel>/maps
@@ -227,9 +228,9 @@ function start(@sup: Supervisor, i: i64, at: time.Instant) -> Event
                     match output.open(sup.logs, name: spec.name)
                         .ok c => c
                         .err e =>
-                            _ = process.kill(child).is_err()
+                            errors.ignore(process.kill(child))
                             stopped @= child
-                            _ = process.wait(@stopped).is_err()
+                            errors.ignore(errors.discard_value(process.wait(@stopped)))
                             return ended_badly(@sup, i: i, at: at, how: f"could not open its log: {e.code}: {e.msg}")
 
             capture.key @ poll.add_stream(sup.set, s: child.output, interest: .read).default(-1)
@@ -369,7 +370,7 @@ function finish_child(@sup: Supervisor, name: str, at: time.Instant) -> process.
     capture @= sup.captures[name].must()
 
     if capture.key >= 0
-        _ = poll.remove(sup.set, key: capture.key).is_err()
+        errors.ignore(poll.remove(sup.set, key: capture.key))
         capture.key @ -1
 
     while true
@@ -387,8 +388,8 @@ function finish_child(@sup: Supervisor, name: str, at: time.Instant) -> process.
     match process.wait(@child)
         .ok status => return ok(status)
         .err e =>
-            _ = process.kill(child).is_err()
-            _ = process.release(@child).is_err()
+            errors.ignore(process.kill(child))
+            errors.ignore(process.release(@child))
             return fail(code: e.code, msg: e.msg)
 
 # Reads what waits on the pipe whose key in the set is `key`, where it is a
@@ -407,12 +408,12 @@ function read_ready(@sup: Supervisor, key: i64, at: time.Instant) -> bool
             match io.read(child.output, n: READ_MOST)
                 .ok data =>
                     if data.len() == 0
-                        _ = poll.remove(sup.set, key: key).is_err()
+                        errors.ignore(poll.remove(sup.set, key: key))
                         capture.key @ -1
                     else
                         output.take(@capture, data: data, at: at)
                 .err _ =>
-                    _ = poll.remove(sup.set, key: key).is_err()
+                    errors.ignore(poll.remove(sup.set, key: key))
                     capture.key @ -1
 
             sup.captures[name] @ capture
@@ -476,7 +477,7 @@ function lines_written(sup: Supervisor lent) -> {str: i64}
 function close(@sup: Supervisor, at: time.Instant)
     for name in keys(sup.captures)
         capture @= sup.captures[name].must()
-        _ = output.close(@capture, at: at).is_err()
+        errors.ignore(output.close(@capture, at: at))
         sup.captures[name] @ capture
 
 test "wait_after: the backoff doubled for each failure past the first, never past the longest"

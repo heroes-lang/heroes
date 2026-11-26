@@ -9,6 +9,7 @@
 
 use <rebel>/archive
 use <rebel>/compress
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/io
 
@@ -115,7 +116,7 @@ function tar_shown(f: formats.Formats, file: str, compression: archive.Compressi
                 broken @ x.msg
                 break
 
-    _ = io.close(@s).is_err()
+    errors.ignore(io.close(@s))
     facts: [str] @= [
         title
         f"{formats.count_text(f, n: count, one: "member", other: "members")}, {formats.size_text(f, size: total)} unpacked"

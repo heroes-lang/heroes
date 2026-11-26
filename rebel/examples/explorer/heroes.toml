@@ -5,6 +5,7 @@ packages = [
     "bytes",
     "compress",
     "containers/ordered",
+    "errors",
     "flags",
     "fs",
     "fs/watch",

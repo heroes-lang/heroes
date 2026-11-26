@@ -9,6 +9,7 @@ packages = [
     "crypto",
     "crypto/keypairs",
     "diff",
+    "errors",
     "flags",
     "fs",
     "hash",

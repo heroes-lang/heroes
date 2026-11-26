@@ -13,6 +13,7 @@
 # fails or ends is lost, closed, and opened again with the hub's backoff.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/net
 use <rebel>/serial
@@ -74,7 +75,7 @@ function open_stream(spec: settings.PortSettings) -> io.Stream?
     match serial.set_timeouts(port, timeouts: serial.Timeouts(read_ms: 0, write_ms: 1_000, gap_ms: 0))
         .ok _ => return ok(port)
         .err e =>
-            _ = io.close(@port).is_err()
+            errors.ignore(io.close(@port))
             return fail(code: e.code, msg: e.msg)
 
 # Opens `p` where it is closed.
@@ -101,7 +102,7 @@ function is_open(p: Port lent) -> bool
 # - `p`: the port.
 function close(@p: Port)
     if p.streams.len() > 0
-        _ = io.close(@p.streams[0]).is_err()
+        errors.ignore(io.close(@p.streams[0]))
 
     p.streams @ []
     p.partial @ []

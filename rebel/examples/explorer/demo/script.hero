@@ -15,6 +15,7 @@
 # still and moves a minute a scene, and every path is below the working
 # folder, so the transcript is the same on every run.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/strings
 use <rebel>/time
@@ -45,7 +46,7 @@ function run() -> i64
                     return 1
         .err x =>
             print(f"the demo stopped: {x.msg}")
-            _ = demo_tree.remove_all().is_err()
+            errors.ignore(demo_tree.remove_all())
             return 1
 
 # Writes the tree, opens the explorer, plays the scenes, and stops the

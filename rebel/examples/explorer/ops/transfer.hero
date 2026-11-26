@@ -13,6 +13,7 @@
 # cancelled or failed keeps the entries it finished and removes the file it
 # was in the middle of, since half a file is no copy.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/io
 use <rebel>/path as paths
@@ -265,7 +266,7 @@ function finish_folders(plan: Plan) -> ()?
 function close_streams(@t: Transfer) -> ()?
     if t.reading.len() > 0
         held @= t.reading[0]
-        _ = io.close(@held).is_err()
+        errors.ignore(io.close(@held))
 
     t.reading @ []
 
@@ -282,10 +283,10 @@ function close_streams(@t: Transfer) -> ()?
 # - `t`: the transfer; it stays where it stopped.
 function stop_copy(@t: Transfer) -> [undo.Pair]
     open_file = t.reading.len() > 0
-    _ = close_streams(@t).is_err()
+    errors.ignore(close_streams(@t))
 
     if open_file && !is_done(t)
-        _ = fs.remove(t.plan.items[t.at].to).is_err()
+        errors.ignore(fs.remove(t.plan.items[t.at].to))
 
     return whole_tops(t)
 
@@ -351,7 +352,7 @@ test "whole_tops: an entry is whole once no item of it is left"
 
 test "plan_copy and step_copy: a folder copied a budget at a time, its times kept, a second copy beside it named free, and a folder refused inside itself"
     base = "build/explorer-tests/transfer"
-    _ = fs.remove_all(base).is_err()
+    errors.ignore(fs.remove_all(base))
     fs.make_dir_all(base + "/src/inner").must()
     fs.make_dir_all(base + "/dst").must()
     write_file(path: base + "/src/inner/a.txt", text: "0123456789").must()
@@ -374,7 +375,7 @@ test "plan_copy and step_copy: a folder copied a budget at a time, its times kep
 
 test "plan_move and step_move: an entry already in the folder stays, another moves"
     base = "build/explorer-tests/move"
-    _ = fs.remove_all(base).is_err()
+    errors.ignore(fs.remove_all(base))
     fs.make_dir_all(base + "/to").must()
     write_file(path: base + "/a.txt", text: "a").must()
     write_file(path: base + "/to/b.txt", text: "b").must()

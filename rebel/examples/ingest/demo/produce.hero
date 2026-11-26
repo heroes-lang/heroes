@@ -8,6 +8,7 @@
 # reads and goes to the dead-letter topic.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/json
 use <rebel>/kafka
 use <rebel>/msgpack
@@ -130,7 +131,7 @@ function produce(opts: kafka.Options) -> [Written]?
     made = kafka.connect(opts)?
     client @= made
     sent = kafka.send(@client, messages: messages)
-    _ = kafka.close(@client).is_err()
+    errors.ignore(kafka.close(@client))
     _ = sent?
     out: [Written] @= []
 

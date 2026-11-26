@@ -6,6 +6,7 @@
 # and serves one connection after another until the program is asked to
 # stop.
 
+use <rebel>/errors
 use <rebel>/graphql
 use <rebel>/http
 use <rebel>/io
@@ -77,7 +78,7 @@ function served(told: (mailbox notify.Ready)) -> i64?
 
     match notify.ready(told, service: NAME, port: listener.address.port)
         .err e =>
-            _ = net.close_listener(@listener).is_err()
+            errors.ignore(net.close_listener(@listener))
             return fail(code: e.code, msg: e.msg)
         .ok _ => _ = 0
 
@@ -89,9 +90,9 @@ function served(told: (mailbox notify.Ready)) -> i64?
             .ok made =>
                 conn @= made
                 answered @ answered + conversation(schema, conn: conn)
-                _ = io.close(@conn.stream).is_err()
+                errors.ignore(io.close(@conn.stream))
 
-    _ = net.close_listener(@listener).is_err()
+    errors.ignore(net.close_listener(@listener))
     return ok(answered)
 
 # The requests of one connection answered until the client closes it.

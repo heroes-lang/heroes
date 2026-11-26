@@ -3,6 +3,7 @@
 # as one message, reads the answer as one message and closes, the whole
 # bounded by the wait the caller gives.
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/ipc
 use <rebel>/time
@@ -22,7 +23,7 @@ use control/server
 function ask(path: str, request: protocol.Request, within: time.Duration) -> protocol.Answer?
     s @= ipc.connect(path, within: within)?
     sent = exchange(s, request: request, within: within)
-    _ = io.close(@s).is_err()
+    errors.ignore(io.close(@s))
     return sent
 
 # Writes `request` on `s` and reads the answer.

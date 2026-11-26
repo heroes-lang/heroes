@@ -6,6 +6,7 @@
 # where it is, since removing a lock file is a race with the next build
 # that opens it.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/io
 
@@ -30,11 +31,11 @@ function take(root: str) -> Held?
     held = match fs.try_lock(s, exclusive: true)
         .ok answer => answer
         .err e =>
-            _ = io.close(@s).is_err()
+            errors.ignore(io.close(@s))
             return fail(code: e.code, msg: f"{paths.LOCK_NAME}: {e.msg}")
 
     if !held
-        _ = io.close(@s).is_err()
+        errors.ignore(io.close(@s))
         return fail(code: buildfile.FAILED, msg: f"another build of this folder is running: it holds {paths.LOCK_NAME}")
     return ok(Held(stream: s))
 
@@ -45,5 +46,5 @@ function take(root: str) -> Held?
 # Fails where the file cannot be closed, with its code; the system lets the
 # lock go with the process either way.
 function release(@held: Held) -> ()?
-    _ = fs.unlock(held.stream).is_err()
+    errors.ignore(fs.unlock(held.stream))
     return io.close(@held.stream)

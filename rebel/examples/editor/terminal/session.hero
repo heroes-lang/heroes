@@ -9,6 +9,7 @@
 # A command that fails, a save the system refuses, is told on the bottom
 # line and the editor goes on.
 
+use <rebel>/errors
 use <rebel>/time
 use <rebel>/tui
 
@@ -36,7 +37,7 @@ function run(@e: state.Editor) -> ()?
     t @= match started
         .ok held => held
         .err x =>
-            _ = state.stop(@e).is_err()
+            errors.ignore(state.stop(@e))
             return fail(code: x.code, msg: x.msg)
 
     area = tui.area_of(t)

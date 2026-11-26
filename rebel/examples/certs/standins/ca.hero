@@ -15,6 +15,7 @@
 # to stop.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/io
 use <rebel>/json
@@ -127,7 +128,7 @@ function started(@s: objects.State, told: (mailbox ready.Ready)) -> ()?
 
             if !said.is_err()
                 serve(@s, a: a, listener: listener)
-            _ = tls.close_listener(@listener).is_err()
+            errors.ignore(tls.close_listener(@listener))
             authority.close(@a)
             return said
 
@@ -153,7 +154,7 @@ function serve(@s: objects.State, a: authority.Authority, listener: tls.Listener
                     deadline: time.seconds(CONNECTION_SECONDS)
                 ).is_err()
                 serve_stream(@s, a: a, stream: stream)
-                _ = io.close(@stream).is_err()
+                errors.ignore(io.close(@stream))
 
 # The requests of one connection answered until it closes or asks to.
 #

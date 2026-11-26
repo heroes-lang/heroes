@@ -7,6 +7,7 @@
 # environment but `PATH` and `HOME`, the session's folder, and writes its
 # messages to its output, so the transcript holds them where they were said.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/io
 use <rebel>/os
@@ -28,7 +29,7 @@ constant ROOT: str
 # - `exe`: this program's own path, which the links name.
 function play(exe: str) -> i64?
     started_in = os.working_dir()?
-    _ = fs.remove_all(ROOT).is_err()
+    errors.ignore(fs.remove_all(ROOT))
     fs.make_dir_all(ROOT + "/bin")?
     fs.make_dir_all(ROOT + "/work")?
     names @= kit.names()

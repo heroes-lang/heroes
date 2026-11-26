@@ -16,6 +16,7 @@
 # its files hold when read back (`demo/readback`).
 
 use <rebel>/csv
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/os
 use <rebel>/strings
@@ -59,7 +60,7 @@ function run() -> i64
             return 1
         .ok folder =>
             code = in_folder(folder)
-            _ = fs.remove_all(folder).is_err()
+            errors.ignore(fs.remove_all(folder))
             return code
 
 # A new work folder under `build/`.
@@ -133,7 +134,7 @@ function scripted(folder: str, smtp_port: i64) -> i64
                     print("demo: " + e.msg)
                     1
 
-            _ = workspace.close(@ws).is_err()
+            errors.ignore(workspace.close(@ws))
             return code
 
 # Writes the company's files into `folder`.

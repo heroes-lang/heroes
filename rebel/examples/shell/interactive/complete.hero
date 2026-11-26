@@ -5,6 +5,7 @@
 # dot is offered only to a word that begins with one, as the shell's globs
 # do.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/strings
 use <rebel>/term
@@ -102,7 +103,7 @@ test "complete: a command's first word, and one after a pipe"
 
 test "complete: a path in a folder of the build"
     dir = "build/shell-test-complete"
-    _ = fs.remove_all(dir).is_err()
+    errors.ignore(fs.remove_all(dir))
     fs.make_dir_all(dir + "/notes").must()
     write_file(path: dir + "/naming.txt", text: "").must()
     c = complete(Known(commands: []), line: "cat " + dir + "/n", cursor: 4 + dir.len() + 2)

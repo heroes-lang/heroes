@@ -27,6 +27,7 @@
 # past which a publisher is answered 429 with `Retry-After`.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/time
 use <rebel>/web
@@ -89,7 +90,7 @@ function handle(@state: serving.State, r: http.Request) -> http.Response
         .err _    => web.not_routed(state.router, r: r)
 
     state.answered @ state.answered + 1
-    _ = web.log_request(state.logger, r: r, response: response, started: now).is_err()
+    errors.ignore(web.log_request(state.logger, r: r, response: response, started: now))
     return response
 
 # The answer of the handler `found` names.

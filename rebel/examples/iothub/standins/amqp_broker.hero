@@ -20,6 +20,7 @@
 
 use <rebel>/amqp
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/net
 use <rebel>/poll
@@ -377,7 +378,7 @@ function on_readable(@b: amqp_state.Broker, set: poll.Set, i: i64)
         if held.slice(from: 0, to: 8) != amqp_wire.protocol_header()
             # § 4.2.2: a broker that does not speak the version asked writes
             # the header of the one it speaks, and closes.
-            _ = io.write(b.peers[i].stream, data: amqp_wire.protocol_header()).is_err()
+            errors.ignore(io.write(b.peers[i].stream, data: amqp_wire.protocol_header()))
             amqp_state.drop_peer(@b, set: set, i: i)
             return
 
@@ -430,7 +431,7 @@ function accept(@b: amqp_state.Broker, set: poll.Set, l: net.Listener lent)
     key = match poll.add_stream(set, s: conn.stream, interest: .read)
         .ok k => k
         .err _ =>
-            _ = io.close(@conn.stream).is_err()
+            errors.ignore(io.close(@conn.stream))
             return
 
     peers @= b.peers
@@ -458,14 +459,14 @@ function serve_on(to: (mailbox told.Told), fault: amqp_state.Fault) -> str?
     l @= match net.listen(host: "127.0.0.1", port: 0)
         .ok got => got
         .err e =>
-            _ = told.failed(to, why: e.msg).is_err()
+            errors.ignore(told.failed(to, why: e.msg))
             return fail(code: e.code, msg: e.msg)
 
     set @= match poll.make(256)
         .ok got => got
         .err e =>
-            _ = net.close_listener(@l).is_err()
-            _ = told.failed(to, why: e.msg).is_err()
+            errors.ignore(net.close_listener(@l))
+            errors.ignore(told.failed(to, why: e.msg))
             return fail(code: e.code, msg: e.msg)
 
     listening = poll.add_listener(set, l: l)?

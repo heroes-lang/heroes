@@ -20,6 +20,7 @@
 
 use <rebel>/bytes
 use <rebel>/crypto
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/io
 use <rebel>/path
@@ -190,7 +191,7 @@ function file_node(@r: repository.Repository, @m: meter.Meter, @totals: snapshot
     totals.read @ totals.read + 1
     s @= fs.open(path.join_all([root, path.from_slash(f.rel)]))?
     read = read_chunks(@r, @m, @totals, s: s)
-    _ = io.close(@s).is_err()
+    errors.ignore(io.close(@s))
     got = read?
     return ok(
         tree.file_node(name: name, mode: f.mode, modified: f.modified, size: got.size, chunks: got.chunks, digest: got.digest)

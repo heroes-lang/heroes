@@ -17,6 +17,7 @@
 use <rebel>/archive
 use <rebel>/bytes
 use <rebel>/crypto/keypairs
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/semver
 use <rebel>/sql/sqlite
@@ -247,7 +248,7 @@ function write_rows(@db: sqlite.Db, owner: Owner, grant: database.Grant, r: rele
             sqlite.commit(@db)?
             return ok(a)
         .err e =>
-            _ = sqlite.rollback(@db).is_err()
+            errors.ignore(sqlite.rollback(@db))
             return fail(code: e.code, msg: e.msg)
 
 # The rows of a publication, inside the caller's transaction.

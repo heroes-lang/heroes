@@ -4,6 +4,7 @@
 # worker, are told under it. A unique key held by a job not yet finished
 # refuses the second job, which the span records as an error.
 
+use <rebel>/errors
 use <rebel>/jobs
 use <rebel>/jobs/redis_store
 use <rebel>/otlp
@@ -33,10 +34,10 @@ function enqueue(@c: redis.Client, @tr: tracing.Tracer, job: jobs.Job, at: time.
     match redis_store.enqueue(@c, job: traced)
         .ok id =>
             tracing.set_attribute(@span, a: otlp.Attribute(key: "job.id", value: .integer(v: id)))
-            _ = tracing.end(@tr, span: span).is_err()
+            errors.ignore(tracing.end(@tr, span: span))
             return ok(id)
         .err e =>
             tracing.record_error(@span, message: e.msg, at: at)
             tracing.set_status(@span, code: .error, message: e.code)
-            _ = tracing.end(@tr, span: span).is_err()
+            errors.ignore(tracing.end(@tr, span: span))
             return fail(code: e.code, msg: e.msg)

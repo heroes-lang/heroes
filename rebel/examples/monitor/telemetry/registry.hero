@@ -10,6 +10,7 @@
 # `monitor_sensor_value{sensor="temperature"}`. A key no family takes is
 # kept in the store and not exported.
 
+use <rebel>/errors
 use <rebel>/metrics
 use <rebel>/strings
 use <rebel>/time
@@ -155,7 +156,7 @@ function record_samples(@r: metrics.Registry, samples: [store.Sample])
 # - `name`: the counter.
 # - `labels`: its labels' values.
 function count(@r: metrics.Registry, name: str, labels: [str])
-    _ = metrics.inc(@r, name: name, labels: labels).is_err()
+    errors.ignore(metrics.inc(@r, name: name, labels: labels))
 
 # Records how long the collector `collector` took.
 #
@@ -163,7 +164,7 @@ function count(@r: metrics.Registry, name: str, labels: [str])
 # - `collector`: `services`, `sensor`, `files` or `host`.
 # - `took`: how long, in real time.
 function record_duration(@r: metrics.Registry, collector: str, took: time.Duration)
-    _ = metrics.observe_duration(@r, name: COLLECT_SECONDS, labels: [collector], d: took).is_err()
+    errors.ignore(metrics.observe_duration(@r, name: COLLECT_SECONDS, labels: [collector], d: took))
 
 # The registry in Prometheus's text format 0.0.4.
 #

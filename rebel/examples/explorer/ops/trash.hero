@@ -12,6 +12,7 @@
 # called `notes.txt` deleted from two folders are both kept. The time of a
 # deletion is the explorer's clock's, never read here.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/path as paths
 use <rebel>/time
@@ -64,7 +65,7 @@ function put_in(trash: str, item: str, at: time.Instant) -> Trashed?
     match fs.move(from: item, to: stored)
         .ok _ => return ok(Trashed(original: item, stored: stored, deleted: at))
         .err x =>
-            _ = fs.remove(note).is_err()
+            errors.ignore(fs.remove(note))
             return fail(code: x.code, msg: x.msg)
 
 # A name for `wanted` free among the trash's entries and its notes.
@@ -118,7 +119,7 @@ function restore(t: Trashed) -> str?
     to = paths.join_all([folder, names.free_name(folder: folder, wanted: wanted)])
     fs.move(from: t.stored, to: to)?
     stored_name = paths.name(t.stored)?
-    _ = fs.remove(note_path(trash: paths.parent(paths.parent(t.stored)), stored_name: stored_name)).is_err()
+    errors.ignore(fs.remove(note_path(trash: paths.parent(paths.parent(t.stored)), stored_name: stored_name)))
     return ok(to)
 
 # Every entry the trash holds, by its note, in the order of the notes'
@@ -195,7 +196,7 @@ test "note_text: the original path and the time in UTC, read back by read_note's
 
 test "put_in and restore: two entries of one name both kept, each put back where it was, and a taken place answered with a free name"
     base = "build/explorer-tests/trash"
-    _ = fs.remove_all(base).is_err()
+    errors.ignore(fs.remove_all(base))
     fs.make_dir_all(base + "/a").must()
     fs.make_dir_all(base + "/b").must()
     write_file(path: base + "/a/notes.txt", text: "one").must()

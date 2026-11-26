@@ -20,6 +20,7 @@
 # would buy nothing here and cost time on every byte.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/hash
 use <rebel>/io
@@ -70,7 +71,7 @@ function digest_of_file(place: str) -> str?
             .err e =>
                 # The read's failure is the one told; a close that fails
                 # after it has nothing to add.
-                _ = io.close(@s).is_err()
+                errors.ignore(io.close(@s))
                 return fail(code: e.code, msg: f"{place}: {e.msg}")
 
     io.close(@s)?

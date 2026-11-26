@@ -11,6 +11,7 @@
 # a path, a random value or a time of the machine's clock.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/net
 use <rebel>/os
@@ -127,7 +128,7 @@ function run()
         print(threads.wait_text(@w.started[i]))
         i @ i - 1
 
-    _ = net.close_udp(@ear).is_err()
+    errors.ignore(net.close_udp(@ear))
     removed = !fs.remove_all(folder).is_err()
     print(f"the demo's database folder removed: {removed}")
 

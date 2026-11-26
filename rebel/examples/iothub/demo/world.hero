@@ -12,6 +12,7 @@
 # (Windows), it speaks through a raw TCP socket on the loopback, as a serial
 # device server would put it on a network, and the hub reads it as such.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/io
 use <rebel>/json
@@ -134,10 +135,10 @@ function station_says(s: Station lent, line: str) -> ()?
 # - `s`: the station.
 function close_station(@s: Station)
     if s.ends.len() > 0
-        _ = io.close(@s.ends[0]).is_err()
+        errors.ignore(io.close(@s.ends[0]))
 
     if s.listeners.len() > 0
-        _ = net.close_listener(@s.listeners[0]).is_err()
+        errors.ignore(net.close_listener(@s.listeners[0]))
 
     s.ends @ []
     s.listeners @ []

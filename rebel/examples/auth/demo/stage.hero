@@ -16,6 +16,7 @@
 # stage writes, as a served instance reads its own.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/jose
 use <rebel>/net
@@ -153,12 +154,12 @@ function directory_side(arg: str) -> str
         .ok started =>
             rest @= started
             directory_done = ldap.serve(l)
-            _ = net.close_listener(@l).is_err()
+            errors.ignore(net.close_listener(@l))
             said = threads.wait_text(@rest)
             return f"{said}\ndirectory stand-in: {directory_done.binds} binds accepted, {directory_done.refused} refused, {directory_done.searches} searches answered"
         .err e =>
             os.ask_stop()
-            _ = net.close_listener(@l).is_err()
+            errors.ignore(net.close_listener(@l))
             return f"the server's thread did not start: {e.msg}"
 
 # Thread 2: the identity server, its configuration written and read, and the
@@ -190,7 +191,7 @@ function served(arg: str) -> str?
     st @= state.open(s, issuer: issuer, c: fixed, g: ids.seeded_generator("server"), v: secrets)?
     driver @= threads.start_text(script_side, arg: f"{folder}\n{issuer}")?
     looped = serve.serve(@st, l: l, mode: serve.Mode(scheduled: false, logged: false))
-    _ = net.close_listener(@l).is_err()
+    errors.ignore(net.close_listener(@l))
     ran = threads.wait_text(@driver)
     looped?
     kept = storage.load(s.data_file)?

@@ -7,6 +7,7 @@
 # `certs respond` where no web server serves the webroot.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/net
 use <rebel>/os
@@ -34,7 +35,7 @@ function serve(folder: str, host: str, port: i64, told: (mailbox ready.Ready)) -
     match ready.tell(told, said: ready.Ready(service: "responder", port: listener.address.port, https_root: ""))
         .ok _ => _ = 0
         .err e =>
-            _ = net.close_listener(@listener).is_err()
+            errors.ignore(net.close_listener(@listener))
             return fail(code: e.code, msg: "the starter could not be told: " + e.msg)
 
     served = http.serve_until_stopped(
@@ -44,7 +45,7 @@ function serve(folder: str, host: str, port: i64, told: (mailbox ready.Ready)) -
         handler: answer,
         grace: time.seconds(1)
     )
-    _ = net.close_listener(@listener).is_err()
+    errors.ignore(net.close_listener(@listener))
     return served
 
 # What the responder's thread is handed, whole.

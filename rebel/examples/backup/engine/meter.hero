@@ -4,6 +4,7 @@
 # goes to a file or a pipe, as a scheduled backup's does, stays clean; and
 # a command asked to be quiet draws nothing at all.
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/term
 
@@ -44,7 +45,7 @@ function tick(@m: Meter, n: i64)
 # - `m`: the meter.
 function done(@m: Meter)
     if m.live
-        _ = term.finish(@m.bar).is_err()
+        errors.ignore(term.finish(@m.bar))
         m.live @ false
 
 test "meter: a meter not shown counts nothing and draws nothing"

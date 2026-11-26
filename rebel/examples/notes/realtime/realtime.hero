@@ -5,6 +5,7 @@
 # push to the others; and at the stop every socket is told 1001, Going Away
 # (RFC 6455 § 7.4.1), so a client knows to connect again later.
 
+use <rebel>/errors
 use <rebel>/json
 use <rebel>/net
 use <rebel>/websocket
@@ -111,7 +112,7 @@ function on_readable(@hub: Hub, key: i64) -> Read
         .ok closing => closing.code
         .err _      => websocket.CLOSE_ABNORMAL
 
-    _ = websocket.drop(@c).is_err()
+    errors.ignore(websocket.drop(@c))
     hub.sockets @ without(hub.sockets, key: key)
     return .closed(code: code)
 
@@ -150,7 +151,7 @@ function tell(@hub: Hub, user_id: i64, message: json.Value) -> [i64]
                     hub.sockets[key] @ Socket(conn: c, user_id: s.user_id, user: s.user)
                     hub.pushed @ hub.pushed + 1
                 .err _ =>
-                    _ = websocket.drop(@c).is_err()
+                    errors.ignore(websocket.drop(@c))
                     gone @ gone.push(key)
 
     for key in gone
@@ -172,7 +173,7 @@ function ping_all(@hub: Hub) -> [i64]
         match websocket.write_ping(@c, data: [])
             .ok _ => hub.sockets[key] @ Socket(conn: c, user_id: s.user_id, user: s.user)
             .err _ =>
-                _ = websocket.drop(@c).is_err()
+                errors.ignore(websocket.drop(@c))
                 gone @ gone.push(key)
 
     for key in gone
@@ -196,7 +197,7 @@ function going_away(@hub: Hub) -> i64
         else
             told @ told + 1
 
-        _ = websocket.drop(@c).is_err()
+        errors.ignore(websocket.drop(@c))
 
     hub.sockets @ {}
     return told
@@ -231,4 +232,4 @@ test "admit, tell and going_away: a welcome, a comment pushed, and 1001 at the s
     assert going_away(@hub) == 1 && count(hub) == 0
     assert websocket.read_message(@client).is_err()
     assert websocket.closing_of(client).must().code == websocket.CLOSE_GOING_AWAY
-    _ = websocket.drop(@client).is_err()
+    errors.ignore(websocket.drop(@client))

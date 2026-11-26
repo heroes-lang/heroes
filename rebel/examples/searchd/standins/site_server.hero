@@ -11,6 +11,7 @@
 # died never leaves it waiting for ever.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/io
 use <rebel>/net
@@ -68,7 +69,7 @@ function serve(@site: Site, l: net.Listener) -> ()?
             if http.write_answer(reader.stream, r: r, response: response).is_err() || r.closing || response.closing || site.stopping
                 break
 
-        _ = io.close(@reader.stream).is_err()
+        errors.ignore(io.close(@reader.stream))
 
     return ok()
 

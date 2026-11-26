@@ -21,6 +21,7 @@
 use <rebel>/bytes
 use <rebel>/crypto
 use <rebel>/dns
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/io
 use <rebel>/net
@@ -83,7 +84,7 @@ function http01(dns_port: i64, port: i64, kind: str, value: str, token: str, exp
         .ok r  => http.round_trip(@reader, r: r, limits: http.default_limits())
         .err e => fail(code: e.code, msg: e.msg)
 
-    _ = io.close(@conn.stream).is_err()
+    errors.ignore(io.close(@conn.stream))
 
     match answered
         .err e => return fail(code: "connection", msg: f"fetching {where}: {e.msg}")

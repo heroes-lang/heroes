@@ -19,6 +19,7 @@
 # broken is 1062, a table unknown 1146, a column unknown 1054, a statement
 # not read 1064, and every other 1105, each with its SQLSTATE.
 
+use <rebel>/errors
 use <rebel>/sql
 use <rebel>/sql/sqlite
 use <rebel>/strings
@@ -65,7 +66,7 @@ function run(@db: sqlite.Db, text: str, params: [sql.Value]) -> Answer
         .ok first =>
             prepared @= first
             answers_rows = prepared.columns.len() > 0
-            _ = sqlite.close_statement(@db, @prepared).is_err()
+            errors.ignore(sqlite.close_statement(@db, @prepared))
 
             if answers_rows
                 match sqlite.query(@db, text, params)
@@ -117,7 +118,7 @@ function shape_of(@db: sqlite.Db, text: str) -> Shaped
                 columns @ columns.push(declared(c))
 
             count = prepared.parameter_count
-            _ = sqlite.close_statement(@db, @prepared).is_err()
+            errors.ignore(sqlite.close_statement(@db, @prepared))
             return .ready(params: count, columns: columns)
 
 # Checks that `text` means in MySQL what it means in SQLite.

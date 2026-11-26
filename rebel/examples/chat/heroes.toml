@@ -3,6 +3,7 @@ path = "../../library/0.1.0/files"
 packages = [
     "bytes",
     "crypto",
+    "errors",
     "flags",
     "fs",
     "http",

@@ -11,6 +11,7 @@
 
 use <rebel>/bytes
 use <rebel>/crypto
+use <rebel>/errors
 use <rebel>/time
 
 ## Codes
@@ -82,7 +83,9 @@ function derive(password: str, salt: [u8], params: Params) -> [u8]?
 # written into the key file, which is the one place it is read again.
 function calibrated(target: time.Duration) -> Params
     start = time.mark().default(time.Mark(nanoseconds: 0))
-    _ = derive("calibration", salt: bytes.repeated([0], n: 16), params: params_of(PROBE_N)).is_err()
+    errors.ignore(
+        errors.discard_value(derive("calibration", salt: bytes.repeated([0], n: 16), params: params_of(PROBE_N)))
+    )
     took = time.to_units(time.elapsed(start).default(time.nanoseconds(1)), unit: .nanosecond)
     return params_of(scaled_n(probe_nanoseconds: took, target_nanoseconds: time.to_units(target, unit: .nanosecond)))
 

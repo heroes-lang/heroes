@@ -5,6 +5,7 @@
 # however it ends, so a monitor killed leaves no lock behind it, and the
 # next one is told the one before ended holding it.
 
+use <rebel>/errors
 use <rebel>/ipc
 use <rebel>/time
 
@@ -29,7 +30,7 @@ function take(name: str) -> ipc.Lock?
     match ipc.acquire_lock(l, within: time.nanoseconds(0))
         .ok _ => return ok(l)
         .err e =>
-            _ = ipc.close_lock(@l).is_err()
+            errors.ignore(ipc.close_lock(@l))
 
             if e.code == "timeout"
                 return fail(code: "exists", msg: f"another monitor runs the configuration \"{name}\"")
@@ -54,8 +55,8 @@ function is_free(name: str) -> bool?
 #
 # - `l`: the lock, emptied.
 function release(@l: ipc.Lock)
-    _ = ipc.release_lock(l).is_err()
-    _ = ipc.close_lock(@l).is_err()
+    errors.ignore(ipc.release_lock(l))
+    errors.ignore(ipc.close_lock(@l))
 
 test "take: held, released, and free again; a second take by the holding thread refused"
     name = "lock-test"
@@ -65,4 +66,4 @@ test "take: held, released, and free again; a second take by the holding thread 
     assert is_free(name) == ok(true)
     again @= take(name).must()
     release(@again)
-    _ = ipc.remove_lock(lock_name(name)).is_err()
+    errors.ignore(ipc.remove_lock(lock_name(name)))

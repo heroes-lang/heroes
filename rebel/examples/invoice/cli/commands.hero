@@ -21,6 +21,7 @@
 # configuration's environment is the process's own, so
 # `INVOICE_SMTP__PASSWORD` gives the mail server's password.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/io
 use <rebel>/numbers
@@ -292,7 +293,7 @@ function told(done: workspace.Done) -> i64
 #
 # - `message`: why.
 function failed(message: str) -> i64
-    _ = io.write_line(io.stderr(), line: "invoice: " + message).is_err()
+    errors.ignore(io.write_line(io.stderr(), line: "invoice: " + message))
     return FAILED
 
 # Tells the standard error how the program is run, after `message` where
@@ -301,7 +302,7 @@ function failed(message: str) -> i64
 # - `message`: what was wrong.
 function usage(message: str) -> i64
     if message != ""
-        _ = io.write_line(io.stderr(), line: "invoice: " + message).is_err()
+        errors.ignore(io.write_line(io.stderr(), line: "invoice: " + message))
     _ = io.write_line(
         io.stderr(),
         line: "usage: invoice init|import|issue|credit|render|mail|export|report|archive CONFIG ..., or invoice demo"

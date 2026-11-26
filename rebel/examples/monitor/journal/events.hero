@@ -10,6 +10,7 @@
 # that cannot be written is counted and told by `monitor ctl status`, never
 # a reason to stop monitoring.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/io
 use <rebel>/log
@@ -127,7 +128,7 @@ function format_entry(e: Entry) -> str
 
 test "write: lines in the file, the last few kept, every one a record to export"
     dir = "build/monitor-test-journal"
-    _ = fs.remove_all(dir).is_err()
+    errors.ignore(fs.remove_all(dir))
     logs = settings.Logs(dir: dir, max_bytes: 0, keep: 0, daily: false, compress: false)
     j @= open(logs, keep_recent: 2).must()
     t0 = time.from_unix(whole_seconds: 1_764_000_000, extra_nanoseconds: 0).must()

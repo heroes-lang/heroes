@@ -10,6 +10,7 @@
 # memory growing, a process ending) waits in real time, bounded; the clock
 # the monitor reads moves only by the script.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/http
 use <rebel>/io
@@ -65,7 +66,9 @@ function drive(h: Handed) -> str
 
     client @= http.default_client()
     client.deadline @ time.seconds(5)
-    _ = http.post(client, target: h.otlp + "/standin/stop", content_type: "text/plain", body: []).is_err()
+    errors.ignore(
+        errors.discard_value(http.post(client, target: h.otlp + "/standin/stop", content_type: "text/plain", body: []))
+    )
     return problem
 
 # The moment `seconds` after the start.

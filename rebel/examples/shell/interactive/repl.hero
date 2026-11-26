@@ -11,6 +11,7 @@
 # comes: the shell counts it (`os.count_signal`) and the executor asks the
 # count before each command.
 
+use <rebel>/errors
 use <rebel>/os
 use <rebel>/path
 use <rebel>/term
@@ -32,10 +33,10 @@ use syntax/words
 #
 # - `sh`: the shell, its options marked interactive.
 function run(@sh: state.Shell) -> i64
-    _ = os.count_signal(.interrupt).is_err()
+    errors.ignore(os.count_signal(.interrupt))
     editor @= term.line_editor("$ ")
     history_path = history_file(sh)
-    _ = term.read_history(@editor, path: history_path).is_err()
+    errors.ignore(term.read_history(@editor, path: history_path))
     pending @= ""
     place = streams.standard(sh)
 
@@ -78,7 +79,7 @@ function run(@sh: state.Shell) -> i64
             sh.flow @ .normal
             streams.write_err(@sh, place: place, text: "\n")
 
-    _ = term.write_history(editor, path: history_path).is_err()
+    errors.ignore(term.write_history(editor, path: history_path))
     return sh.status
 
 # The file the history is kept in: `HISTFILE`, else `.shell_history` in the

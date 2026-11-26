@@ -7,6 +7,7 @@
 # the router's handlers reach the database (`web`'s opening comment says why
 # the program dispatches).
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/io
 use <rebel>/json/schema
@@ -73,7 +74,7 @@ function open(s: settings.Settings, base_url: str, router: web.Router) -> State?
                 State(settings: s, base_url: base_url, db: db, blobs: blobs.Blobs(root: settings.blobs_of(s)), catalog: p.catalog, manifest_schema: p.manifest_schema, router: router, publish_limiter: p.limiter, logger: p.logged.logger, owns_log: p.logged.owned, answered: 0)
             )
         .err e =>
-            _ = sqlite.close(@db).is_err()
+            errors.ignore(sqlite.close(@db))
             return fail(code: e.code, msg: e.msg)
 
 # What `open` builds over the database, apart, so that a failure closes it.

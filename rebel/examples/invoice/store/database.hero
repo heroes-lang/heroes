@@ -11,6 +11,7 @@
 # are switched on for every connection, so a line cannot outlive its
 # document.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/sql
 use <rebel>/sql/sqlite
@@ -122,7 +123,7 @@ function open_books(file: str) -> sqlite.Db?
     match prepared(@db)
         .ok _ => return ok(db)
         .err e =>
-            _ = sqlite.close(@db).is_err()
+            errors.ignore(sqlite.close(@db))
             return fail(code: e.code, msg: e.msg)
 
 # The connection's foreign keys switched on and its schema made or
@@ -141,7 +142,7 @@ function prepared(@db: sqlite.Db) -> ()?
         match sqlite.exec_script(@db, schema())
             .ok _ => return sqlite.commit(@db)
             .err e =>
-                _ = sqlite.rollback(@db).is_err()
+                errors.ignore(sqlite.rollback(@db))
                 return fail(code: e.code, msg: e.msg)
 
     if version != SCHEMA_VERSION
@@ -163,7 +164,7 @@ function settle(@db: sqlite.Db, outcome: ()?) -> ()?
     match outcome
         .ok _ => return sqlite.commit(@db)
         .err e =>
-            _ = sqlite.rollback(@db).is_err()
+            errors.ignore(sqlite.rollback(@db))
             return fail(code: e.code, msg: e.msg)
 
 test "open_books: a new file made, opened again, and one of another version refused"

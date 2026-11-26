@@ -24,6 +24,7 @@
 
 use <rebel>/bytes
 use <rebel>/crypto
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/os
 use <rebel>/path
@@ -83,10 +84,10 @@ function run() -> i64
         .ok _ => _ = 0
 
     if fs.exists(ROOT).default(false)
-        _ = fs.remove_all(ROOT).is_err()
+        errors.ignore(fs.remove_all(ROOT))
 
     code = steps()
-    _ = fs.remove_all(ROOT).is_err()
+    errors.ignore(fs.remove_all(ROOT))
     return code
 
 # Every step, stopping at the first that fails.

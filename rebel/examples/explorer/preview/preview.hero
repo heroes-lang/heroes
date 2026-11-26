@@ -10,6 +10,7 @@
 # reads gigabytes to fill a small pane.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/image
 use <rebel>/io
@@ -147,7 +148,7 @@ function first_of(at: str) -> [u8]
         .err _     => return []
 
     data = io.read(s, n: DUMP_BYTES).default([])
-    _ = io.close(@s).is_err()
+    errors.ignore(io.close(@s))
     return data
 
 # The first `DUMP_BYTES` of `data` as a hexadecimal dump, its last line

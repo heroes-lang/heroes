@@ -5,6 +5,7 @@
 # restart, the operator's and the monitor's own on its way out, goes through
 # here; the supervisor's step never stops a service.
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/os
 use <rebel>/poll
@@ -50,10 +51,10 @@ function stop(@sup: supervisor.Supervisor, name: str, at: time.Instant) -> [supe
             ask_end(child)
 
         if !ended_within(@child, grace: spec.stop_grace)
-            _ = process.kill(child).is_err()
+            errors.ignore(process.kill(child))
 
     sup.children[name] @ child
-    _ = supervisor.finish_child(@sup, name: name, at: at).is_err()
+    errors.ignore(errors.discard_value(supervisor.finish_child(@sup, name: name, at: at)))
     sup.services[i].state @ .stopped
     sup.services[i].since @ at.unix_nanoseconds
     sup.services[i].pid @ 0

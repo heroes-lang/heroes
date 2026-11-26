@@ -45,6 +45,7 @@
 # - `strings` and `numbers`: text and numbers throughout.
 
 use <rebel>/config
+use <rebel>/errors
 use <rebel>/flags
 use <rebel>/os
 use <rebel>/path
@@ -126,7 +127,7 @@ function edit(found: flags.Found) -> ()?
         match state.open_path(@e, path: path.clean(p), named: encoding)
             .ok _ => _ = 0
             .err x =>
-                _ = state.stop(@e).is_err()
+                errors.ignore(state.stop(@e))
                 return fail(code: x.code, msg: f"{p}: {x.msg}")
 
     e.current @ path.clean(named[0])

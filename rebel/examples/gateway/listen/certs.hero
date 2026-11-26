@@ -9,6 +9,7 @@
 use <rebel>/asn1
 use <rebel>/crypto
 use <rebel>/crypto/keypairs
+use <rebel>/errors
 use <rebel>/net
 use <rebel>/pem
 use <rebel>/time
@@ -93,7 +94,7 @@ record Signed
 function make_identity(server: Subject, host: str, now: time.Instant, days: i64) -> Made?
     ca_key: keypairs.PrivateKey @= keypairs.generate(.p256)?
     made = with_authority_key(ca_key, server: server, host: host, now: now, days: days)
-    _ = keypairs.close_private(@ca_key).is_err()
+    errors.ignore(keypairs.close_private(@ca_key))
     return made
 
 # `make_identity`'s work once the authority's key is made, so its caller
@@ -128,7 +129,7 @@ function with_authority_key(ca_key: keypairs.PrivateKey, server: Subject, host: 
         validity: validity
     )
     key_pem = keypairs.format_private_pem(leaf_key)
-    _ = keypairs.close_private(@leaf_key).is_err()
+    errors.ignore(keypairs.close_private(@leaf_key))
     leaf_der = leaf?
     leaf_pem = pem_of(leaf_der)?
     ca_pem = pem_of(ca.der)?
@@ -208,7 +209,7 @@ function serial_of(spki: [u8]) -> i64
 function public_der(key: keypairs.PrivateKey) -> [u8]?
     public: keypairs.PublicKey @= keypairs.public_of(key)?
     spki = keypairs.encode_public_der(public)
-    _ = keypairs.close_public(@public).is_err()
+    errors.ignore(keypairs.close_public(@public))
     return spki
 
 # The key identifier of RFC 5280 § 4.2.1.2's first method: the SHA-1 of the

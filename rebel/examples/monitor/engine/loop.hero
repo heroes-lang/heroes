@@ -11,6 +11,7 @@
 # standard output with its time, as a daemon's log; the journal's file
 # holds them all the same.
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/os
 use <rebel>/poll
@@ -155,4 +156,4 @@ function show(@m: monitor.Monitor, @screens: {str: screen.Screen}, at: time.Inst
 # - `at`: the moment.
 function print_told(@m: monitor.Monitor, at: time.Instant)
     for line in monitor.take_told(@m)
-        _ = io.write_line(io.stdout(), line: time.format(at, layout: .rfc3339_seconds) + " " + line).is_err()
+        errors.ignore(io.write_line(io.stdout(), line: time.format(at, layout: .rfc3339_seconds) + " " + line))

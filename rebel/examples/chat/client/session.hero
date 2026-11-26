@@ -9,6 +9,7 @@
 # client that syncs after acting has seen everything its action caused.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/json
 use <rebel>/net
@@ -154,7 +155,7 @@ function open(socket_url: str, token: str, now: time.Instant) -> Session?
     match receive(@s, now: now)
         .ok _ => return ok(s)
         .err e =>
-            _ = websocket.drop(@s.socket).is_err()
+            errors.ignore(websocket.drop(@s.socket))
             return fail(code: e.code, msg: e.msg)
 
 # Sends the request `c`.

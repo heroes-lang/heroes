@@ -13,6 +13,7 @@
 # broker is down, because `amqp`'s calls work on its place through `@`.
 
 use <rebel>/amqp
+use <rebel>/errors
 use <rebel>/time
 
 use config/settings
@@ -96,7 +97,7 @@ function connect(s: settings.AmqpSettings, name: str, outputs: [str]) -> amqp.Co
     match outcome
         .ok _ => return ok(c)
         .err e =>
-            _ = amqp.close(@c).is_err()
+            errors.ignore(amqp.close(@c))
             return fail(code: e.code, msg: e.msg)
 
 # Whether the link is up.
@@ -183,7 +184,7 @@ function closing_text(l: Link lent) -> str
 # - `l`: the link.
 function close(@l: Link)
     if l.connections.len() > 0 && !amqp.is_closed(l.connections[0])
-        _ = amqp.close(@l.connections[0]).is_err()
+        errors.ignore(amqp.close(@l.connections[0]))
 
     l.connections @ []
     l.key @ -1

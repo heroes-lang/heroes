@@ -9,6 +9,7 @@
 # A path that is neither a file, a folder nor a link (a pipe, a socket, a
 # device) is counted and left out, as restic leaves sockets out.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/path
 use <rebel>/strings
@@ -106,7 +107,7 @@ function is_name(name: str) -> bool
 
 test "scan: a file is no folder to back up"
     root = "build/backup-tests/scan-file"
-    _ = fs.remove_all(root).is_err()
+    errors.ignore(fs.remove_all(root))
     fs.make_dir_all(root).must()
     write_file(path: root + "/f", text: "x").must()
     assert scan(root + "/f").is_err()
@@ -115,7 +116,7 @@ test "scan: a file is no folder to back up"
 
 test "scan: the root first, then depth first, an ignored folder never entered"
     root = "build/backup-tests/scan-tree"
-    _ = fs.remove_all(root).is_err()
+    errors.ignore(fs.remove_all(root))
     fs.make_dir_all(root + "/b/cache").must()
     write_file(path: root + "/a.txt", text: "a").must()
     write_file(path: root + "/b/c.txt", text: "cc").must()
@@ -133,7 +134,7 @@ test "scan: the root first, then depth first, an ignored folder never entered"
 
 test "scan: a link recorded with `tree.LINK_MODE`, whatever bits the system gave it"
     root = "build/backup-tests/scan-link"
-    _ = fs.remove_all(root).is_err()
+    errors.ignore(fs.remove_all(root))
     fs.make_dir_all(root).must()
     write_file(path: root + "/a.txt", text: "a").must()
     fs.symlink(target: "a.txt", name: root + "/l").must()

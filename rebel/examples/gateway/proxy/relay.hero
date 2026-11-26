@@ -12,6 +12,7 @@
 # a message is never decompressed here.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/grpc
 use <rebel>/http2
 use <rebel>/numbers
@@ -76,7 +77,7 @@ function relay(@gw: state.Gateway, @conn: http2.Conn, r: http2.Request, routed: 
                 .ok opened =>
                     channel @= opened.channel
                     done = streamed(@channel, @conn, r: r, messages: messages, instance: opened.instance)
-                    _ = grpc.close(@channel).is_err()
+                    errors.ignore(grpc.close(@channel))
                     return done
 
 # The messages of `r`, once its method is found in the upstream's `.proto`
@@ -143,7 +144,7 @@ function streamed(@channel: grpc.Channel, @conn: http2.Conn, r: http2.Request, m
                     .ok _  => _ = 0
                     .err e => return refuse(@conn, stream: r.stream, code: grpc.STATUS_UNAVAILABLE, message: e.msg)
 
-            _ = grpc.close_send(@channel, c: call).is_err()
+            errors.ignore(grpc.close_send(@channel, c: call))
             return answered(@channel, @call, @conn, stream: r.stream, instance: instance)
 
 # The answers of `call`, each written to the client as it arrives.
@@ -216,7 +217,7 @@ function ended(@conn: http2.Conn, stream: i64, head_sent: bool, status: grpc.Sta
     if !head_sent
         _ = refuse(@conn, stream: stream, code: status.code, message: status.message)
         return done
-    _ = http2.write_headers(@conn, stream: stream, headers: trailers(status), end_stream: true).is_err()
+    errors.ignore(http2.write_headers(@conn, stream: stream, headers: trailers(status), end_stream: true))
     return done
 
 # A call answered with a status and no message: its head and its trailers
@@ -232,7 +233,7 @@ function refuse(@conn: http2.Conn, stream: i64, code: i64, message: str) -> Rela
     for f in trailers(grpc.Status(code: code, message: message, details: []))
         fields @ fields.push(f)
 
-    _ = http2.write_headers(@conn, stream: stream, headers: fields, end_stream: true).is_err()
+    errors.ignore(http2.write_headers(@conn, stream: stream, headers: fields, end_stream: true))
     return Relayed(code: code, messages: 0, bytes: 0, instance: "")
 
 # The head of a gRPC answer, naming the instance where one answers.

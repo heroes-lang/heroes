@@ -76,7 +76,7 @@ constant USAGE: i64
 #
 # - `message`: the line.
 function complain(message: str)
-    _ = io.write_line(io.stderr(), line: message).is_err()
+    errors.ignore(io.write_line(io.stderr(), line: message))
 
 # The exit code of `done`: 0 where it did what it was asked, else 1, its
 # failure told on the standard error.
