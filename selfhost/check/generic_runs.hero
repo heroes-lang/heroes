@@ -69,3 +69,40 @@ function named(@c: state.Checker, wanted: table.Params, got: table.Params, span:
             return
 
         i @ i + 1
+
+# Where two function types differ in a position's mark, a note naming the
+# first such position and both marks (panel 261's R7): a reader who does not
+# see the `@` reads `type_mismatch` as a mismatch of types. None where the
+# runs agree, or where the value's `lent` stands where `@` is asked, which
+# fits.
+function marks_note(c: state.Checker, expected: i64, got: i64) -> str?
+    wanted = marks_of(c, expected)
+    given = marks_of(c, got)
+
+    if wanted.len() == 0 || wanted.len() != given.len()
+        return fail(code: "none", msg: "no two runs of marks to compare")
+    i: i64 @= 0
+
+    while i < wanted.len()
+        if wanted[i] != given[i] && !(wanted[i] == "@" && given[i] == "lent")
+            return ok(
+                "parameter " + (i + 1).to_str() + " is " + spelled(given[i]) + " in the value's type and " + spelled(wanted[i]) + " in the type asked: a mark is part of a function type, and only `lent` fits where `@` is asked (spec § 9)"
+            )
+        i @ i + 1
+
+    return fail(code: "none", msg: "the marks agree")
+
+function marks_of(c: state.Checker, ty: i64) -> [str]
+    return match table.get(c.out.types, ty)
+        .function_ty f => table.modes_of(c.out.types, f.modes, count: f.params.len)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => []
+        .array | .fixed | .map | .fallible | .named | .case_ty => []
+        .failure | .generic | .error | .thread_ty | .mailbox_ty => []
+
+function spelled(mark: str) -> str
+    if mark == "@"
+        return "marked `@`"
+
+    if mark == "lent"
+        return "marked `lent`"
+    return "unmarked (a copy)"
