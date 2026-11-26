@@ -274,9 +274,12 @@ test "the unit's own C writes no function of <math.h> the guard holds (defect 20
 
     assert written.join(" ") == ""
 
-    # And an `f64` `%` is the builtin, a name C reserves, so `fmod` is in the
-    # list with the rest since defect d-lane-macro-members2-1.
-    assert called_words(read_file("selfhost/emit/operator.hero").must())["__builtin_fmod"].must()
+    # And an `f64` `%` is the runtime's own, a name of the runtime's, so
+    # `fmod` is in the list with the rest since defect d-lane-macro-members2-1,
+    # and the unit calls no maths library since defect d-lane-macro-members4-2.
+    operator = called_words(read_file("selfhost/emit/operator.hero").must())
+    assert operator["hero_f64_rem"].must()
+    assert operator["__builtin_fmod"].is_err()
 
 # DEFECT d-lane-macro-members3-1: a bound macro reaching a name the guard does
 # not hold, or one of the ten `heroes_standard.h` defines again, keeps it for

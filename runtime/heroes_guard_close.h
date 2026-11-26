@@ -341,6 +341,7 @@
 #pragma pop_macro("hero_f32_to_f64")
 #pragma pop_macro("hero_f32_to_str")
 #pragma pop_macro("hero_f64_fits_int")
+#pragma pop_macro("hero_f64_rem")
 #pragma pop_macro("hero_f64_to_f32")
 #pragma pop_macro("hero_f64_to_int")
 #pragma pop_macro("hero_f64_to_str")

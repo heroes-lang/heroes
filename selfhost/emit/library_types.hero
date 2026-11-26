@@ -6,7 +6,8 @@
 # **Why these keep their names.** Every other word of C's library the unit
 # wrote after its groups is spelled in a form C reserves since this defect,
 # `_Bool`, `((void *)0)`, a literal cast to `__INT64_TYPE__`, `(-__INT64_MAX__
-# - 1)`, `__builtin_fmod`, `__builtin_huge_val()` (`emit/literal.hero`), so a
+# - 1)`, `__builtin_fmod` (the runtime's `hero_f64_rem` since defect
+# d-lane-macro-members4-2), `__builtin_huge_val()` (`emit/literal.hero`), so a
 # group's header that defines one and a program that binds it leave the unit
 # building. A type is the one word a debugger shows by the name the
 # declaration spells, `(int64_t) h0_n = 2` in every session of

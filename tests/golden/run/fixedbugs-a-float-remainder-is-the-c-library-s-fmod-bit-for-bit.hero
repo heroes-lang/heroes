@@ -1,0 +1,98 @@
+# Fixed 2026-11-25, lane macro-members5, beside
+# `fixedbugs-a-float-remainder-links-with-no-maths-library-at-every-level`.
+# Symptom: a float's `%` was C's `fmod`, which glibc keeps in libm, so a
+# program taking one did not link on Linux (exit 2).
+# Repair: the runtime computes it, `hero_f64_rem`, and this program holds
+# the operator to C's own `fmod`, which it links libm for: every pair of 32
+# numbers of every kind with both signs (both zeros, the least subnormal and
+# the largest, the least normal, 1 either side, 2^52 either side, the
+# largest finite, the infinities, quiet and signalling NaNs with payloads)
+# and 50,000 pairs of any bits, each answer C's bit for bit, or a NaN where
+# C's is one. A NaN's bits are the runtime's own on every target, the ones
+# arm64's arithmetic and Darwin's libm give: a signalling operand made quiet
+# first, `x` before `y`, and the default NaN where neither is one.
+
+extern "fixedbugs-a-float-remainder-is-the-c-library-s-fmod-bit-for-bit.h" link "m"
+    function rem_case_of_bits(bits: i64) -> f64
+    function rem_case_bits(x: f64) -> i64
+    function rem_case_fmod(x: f64, y: f64) -> f64
+
+function differs(x: f64, y: f64) -> bool
+    ours = x % y
+    theirs = rem_case_fmod(x: x, y: y)
+
+    if ours != ours && theirs != theirs
+        return false
+    return rem_case_bits(ours) != rem_case_bits(theirs)
+
+# The next of a xorshift's states, its right shift made logical.
+function next(state: i64) -> i64
+    a = state ^ state << 13
+    b = a ^ a >> 7 & 0x01ffffffffffffff
+    return b ^ b << 17
+
+function main()
+    edges: [i64] = [
+        0
+        1
+        2
+        3
+        0x000fffffffffffff
+        0x0010000000000000
+        0x0010000000000001
+        0x001fffffffffffff
+        0x3fe0000000000000
+        0x3ff0000000000000
+        0x3ff0000000000001
+        0x3fefffffffffffff
+        0x4000000000000000
+        0x401e000000000000
+        0x4330000000000000
+        0x4340000000000000
+        0x433fffffffffffff
+        0x7fefffffffffffff
+        0x7fe0000000000000
+        0x7ff0000000000000
+        0x7ff8000000000000
+        0x7ff8000000000123
+        0x7ff0000000000789
+        0x7ff4000000000000
+        0x7fffffffffffffff
+        0x3fb999999999999a
+        0x400921fb54442d18
+        0x401921fb54442d18
+        0x3cb0000000000000
+        0x0008000000000000
+        0x0000000080000000
+        0x7fe1ccf385ebc8a0
+    ]
+    sign = 1 << 63
+    pairs: i64 @= 0
+    wrong: i64 @= 0
+
+    for a in edges
+        for b in edges
+            for sa in [0, sign]
+                for sb in [0, sign]
+                    pairs @ pairs + 1
+
+                    if differs(x: rem_case_of_bits(a | sa), y: rem_case_of_bits(b | sb))
+                        wrong @ wrong + 1
+
+    state: i64 @= 0x2545f4914f6cdd1d
+    k: i64 @= 0
+
+    while k < 50000
+        first = next(state)
+        state @ next(first)
+
+        if differs(x: rem_case_of_bits(first), y: rem_case_of_bits(state))
+            wrong @ wrong + 1
+        k @ k + 1
+
+    print(f"{pairs} pairs of edges and 50000 of any bits: {wrong} not C's")
+    print(rem_case_bits(rem_case_of_bits(0x7ff8000000000123) % 2.0))
+    print(rem_case_bits(2.0 % rem_case_of_bits(0x7ff0000000000789)))
+    print(rem_case_bits(rem_case_of_bits(0x7ff8000000000123) % rem_case_of_bits(0x7ff0000000000789)))
+    print(rem_case_bits(rem_case_of_bits(0x7ff0000000000000) % 2.0))
+    print(rem_case_bits(2.0 % 0.0))
