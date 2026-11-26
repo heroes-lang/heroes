@@ -501,9 +501,13 @@ This is not laziness, it is the leverage that makes a one-person language viable
 library is more work than a compiler, so the language is whole without one, and a library is work a
 program may take on or leave. Rebel is written beside the language, not inside it. The compiler takes
 none of it; what Rebel needs of the platform beyond the runtime's own doors is the platform layer, C
-of this project's own archived beside the runtime, whose archive stands on every program's link
-line and whose members the linker takes into a program only where the program calls them
-(`selfhost/cli/layer.hero`).
+of this project's own archived beside the runtime, whose archive stands on the link line of a
+program only where a module it compiles holds a group saying `layer` (spec § 13; panel 260,
+provisional, author ratification pending), and whose members the linker takes into such a program
+only where a module it reaches binds them, measured, never only where the program calls them
+(`selfhost/cli/layer.hero`, `selfhost/cli/layer_reach.hero`). A program none of whose groups says
+it asks the layer nothing and links none of it, and there is no fallback: a group that binds the
+layer without the word is refused, where it is defined.
 
 **Three levels of interoperability exist, and Heroes deliberately targets only the first:**
 
