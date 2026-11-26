@@ -6,10 +6,17 @@
 # along the seam between finding the toolchain and asking it; `toolchain`'s
 # `asked_of_clang`, `asked_through` and `run_clang` are its callers, and
 # `cli/link_warning.hero` asks the link through it with stdout read.
+#
+# **And which tool stands beside the clang that compiles** (`tool_beside`):
+# `-print-prog-name` answers the path of a tool installed with that clang, so
+# a tool that reads what it wrote is that toolchain's own: the archiver
+# (`cli/archiver.hero`, feature 2295) and the symbolizer an abort's calls are
+# read with (`cli/abort_symbolized.hero`).
 
 use cli/clang_died
 use cli/os_reason
 use cli/process
+use cli/publish
 use cli/read_back
 use cli/strings
 
@@ -139,7 +146,58 @@ function refusal(what: str, code: i64, noise: str) -> str
         return what + " failed: clang exited " + code.to_str() + " and said nothing"
     return what + " failed:\n" + noise
 
+# The path clang answers for the tool `name` where a file stands there; "" where
+# it answers the bare name back, which is how it says it found none, or where it
+# did not answer. Moved here from `cli/archiver.hero`, its first caller, when the
+# symbolizer became its second (the archiver's `named_by_clang` until then).
+function tool_beside(name: str, err_path: str) -> str
+    printed: str @= ""
+    out_path = publish.private_name(err_path + ".out")
+    answer = asked_apart(
+        program: "clang",
+        words: ["clang", "-print-prog-name=" + name],
+        what: "asking clang where `" + name + "` stands",
+        err_path: err_path,
+        out_path: out_path,
+        printed: @printed
+    )
+    publish.discard(out_path)
+    publish.discard(err_path)
+    path = strings.trimmed(printed)
+
+    if answer.is_err() || path == name || path.len() == 0
+        return ""
+    return standing(path: path, suffix: process.exe_suffix())
+
+# The file a program clang named stands in: `path` itself, or `path` with
+# `suffix`, the one the platform gives a program, where clang wrote none;
+# "" where neither is a file.
+function standing(path: str, suffix: str) -> str
+    for one in [path, path + suffix]
+        if process.path_exists(one) && !process.is_directory(one)
+            return one
+
+    return ""
+
 ## Tests
+
+# The Windows box's answer of 2026-11-12: clang names `llvm-lib` and `llvm-ar`
+# without the `.exe` their files hold, so a tool is found with the platform's
+# suffix beside the bare path, the bare path first, and a folder is no tool.
+test "a tool clang names without its suffix is found with it, and a folder or nothing is none (feature 2295)"
+    dir = "build/selftest-archiver-standing"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/bin/folder.exe").is_err()
+    assert !write_file(path: dir + "/bin/llvm-lib.exe", text: "a stand-in\n").is_err()
+    assert !write_file(path: dir + "/bin/llvm-ar", text: "a stand-in\n").is_err()
+    assert standing(path: dir + "/bin/llvm-lib", suffix: ".exe") == dir + "/bin/llvm-lib.exe"
+    assert standing(path: dir + "/bin/llvm-ar", suffix: ".exe") == dir + "/bin/llvm-ar"
+    assert standing(path: dir + "/bin/llvm-ar", suffix: "") == dir + "/bin/llvm-ar"
+    assert standing(path: dir + "/bin/llvm-lib", suffix: "") == ""
+    assert standing(path: dir + "/bin/folder", suffix: ".exe") == ""
+    assert standing(path: dir + "/bin/nothing", suffix: ".exe") == ""
+    assert !process.remove_tree(dir).is_err()
+    assert tool_beside(name: "no-such-archiver-2295", err_path: "build/selftest-layer-asked.txt") == ""
 
 # Defect 326's shape at clang: a refusal with no word in it, or only line ends,
 # says so and how clang exited, where `linking failed:` stood over an empty

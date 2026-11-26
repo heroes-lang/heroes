@@ -106,7 +106,7 @@ function archiver_for(target: str, err_path: str) -> Archiver
     wanted = wanted_for(target)
 
     for name in wanted
-        found = named_by_clang(name: name, err_path: err_path)
+        found = clang_asked.tool_beside(name: name, err_path: err_path)
 
         if found.len() > 0
             return archiver_named(name: name, program: found, target: target)
@@ -157,38 +157,6 @@ function archiver_named(name: str, program: str, target: str) -> Archiver
         deterministic: name == "llvm-ar" || !link_flags.apple(target)
     )
 
-# The path clang answers for the tool `name` where a file stands there; "" where
-# it answers the bare name back, which is how it says it found none, or where it
-# did not answer.
-function named_by_clang(name: str, err_path: str) -> str
-    printed: str @= ""
-    out_path = publish.private_name(err_path + ".out")
-    asked = clang_asked.asked_apart(
-        program: "clang",
-        words: ["clang", "-print-prog-name=" + name],
-        what: "asking clang for an archiver",
-        err_path: err_path,
-        out_path: out_path,
-        printed: @printed
-    )
-    publish.discard(out_path)
-    publish.discard(err_path)
-    path = strings.trimmed(printed)
-
-    if asked.is_err() || path == name || path.len() == 0
-        return ""
-    return standing(path: path, suffix: process.exe_suffix())
-
-# The file a program clang named stands in: `path` itself, or `path` with
-# `suffix`, the one the platform gives a program, where clang wrote none;
-# "" where neither is a file.
-function standing(path: str, suffix: str) -> str
-    for one in [path, path + suffix]
-        if process.path_exists(one) && !process.is_directory(one)
-            return one
-
-    return ""
-
 # An archive's suffix: what `link.exe` reads as a library on an MSVC target,
 # which takes a file of another suffix for an object; `.a` elsewhere.
 function suffix_of(target: str) -> str
@@ -213,21 +181,3 @@ test "an archiver is asked of clang in the target's order, and told its own word
     assert archive_line(llvm, staged: "s.a", objects: ["x.o"]) == ["llvm-ar", "rcsD", "s.a", "x.o"]
     lib = archiver_named(name: "llvm-lib", program: "llvm-lib", target: "x86_64-pc-windows-msvc")
     assert archive_line(lib, staged: "s.lib", objects: ["x.o"]) == ["llvm-lib", "/out:s.lib", "x.o"]
-    assert named_by_clang(name: "no-such-archiver-2295", err_path: "build/selftest-layer-asked.txt") == ""
-
-# The Windows box's answer of 2026-11-12: clang names `llvm-lib` and `llvm-ar`
-# without the `.exe` their files hold, so a tool is found with the platform's
-# suffix beside the bare path, the bare path first, and a folder is no tool.
-test "a tool clang names without its suffix is found with it, and a folder or nothing is none (feature 2295)"
-    dir = "build/selftest-archiver-standing"
-    assert !process.remove_tree(dir).is_err()
-    assert !process.mkdir_all(dir + "/bin/folder.exe").is_err()
-    assert !write_file(path: dir + "/bin/llvm-lib.exe", text: "a stand-in\n").is_err()
-    assert !write_file(path: dir + "/bin/llvm-ar", text: "a stand-in\n").is_err()
-    assert standing(path: dir + "/bin/llvm-lib", suffix: ".exe") == dir + "/bin/llvm-lib.exe"
-    assert standing(path: dir + "/bin/llvm-ar", suffix: ".exe") == dir + "/bin/llvm-ar"
-    assert standing(path: dir + "/bin/llvm-ar", suffix: "") == dir + "/bin/llvm-ar"
-    assert standing(path: dir + "/bin/llvm-lib", suffix: "") == ""
-    assert standing(path: dir + "/bin/folder", suffix: ".exe") == ""
-    assert standing(path: dir + "/bin/nothing", suffix: ".exe") == ""
-    assert !process.remove_tree(dir).is_err()
