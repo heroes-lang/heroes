@@ -408,6 +408,33 @@ test "a name that makes no one folder, a package no use names, a -C naming no fo
 
     assert !process.remove_tree(SCRATCH).is_err()
 
+# Defect d-windows-ci-4-1: where `heroes new` would write, a link whose chain
+# ends at nothing, a folder gone or another link to nothing, is *a link to
+# nothing*, and one that loops, to itself or through a second link, is told
+# as a loop; nothing is written either way. Windows told all four as loops.
+# Where this machine makes no link, the rows have nothing to hold.
+test "a link to nothing and a loop where heroes new would write are told as each is, and nothing is written (defect d-windows-ci-4-1)"
+    dir = SCRATCH + "-links"
+    loop = "a link to a chain of links the system cannot follow"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir + "/gone").is_err()
+
+    if !files.symbolic_link(target: "gone", name: dir + "/to-gone").is_err()
+        assert !process.remove_tree(dir + "/gone").is_err()
+        assert !files.symbolic_link(target: "to-gone", name: dir + "/via").is_err()
+        assert !files.symbolic_link(target: "itself", name: dir + "/itself").is_err()
+        assert !files.symbolic_link(target: "pong", name: dir + "/ping").is_err()
+        assert !files.symbolic_link(target: "ping", name: dir + "/pong").is_err()
+        rows = [["to-gone", "a link to nothing"], ["via", "a link to nothing"], ["itself", loop], ["ping", loop]]
+
+        for row in rows
+            assert refusal(["new", row[0], "-C", dir]) == "bad_usage: `" + dir + "/" + row[0] + "` is already there, " + row[1] + ", and `heroes new` writes only into a folder it makes: nothing was written; choose another name"
+
+        assert process.walk(dir).must().files.len() == 5
+        assert !process.path_exists(dir + "/gone")
+
+    assert !process.remove_tree(dir).is_err()
+
 test "a write that fails leaves nothing, staged or made"
     assert !process.remove_tree(SCRATCH).is_err()
     assert !process.mkdir_all(SCRATCH).is_err()

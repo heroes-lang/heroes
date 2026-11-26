@@ -13,18 +13,25 @@
  * Measured 2026-11-25: `#define a1 1` broke mingw-w64's `math.h:164`, where
  * `a1` is a parameter (zig 0.15.2's headers), and the CI's MSVC `<stdint.h>`
  * read after these words left its `#pragma pack` changed (run of fc19cb341).
- * Read here first, each is read once, before any word below. */
+ * Read here first, each is read once, before any word below.
+ *
+ * Its 64-bit integers are `int64_t`, the type a binding's `i64` is on every
+ * platform. They were `long long` until 2026-11-25, which is `int64_t` on
+ * Darwin and Windows and not on LP64 Linux, where `int64_t` is `long`: a
+ * value of either converts, but a callback's type is compared whole, and
+ * the CI's Linux arm64 leg refused the program as `ffi_callback_type`,
+ * `long long (*)(long long)` (run 45654270318, defect d-windows-ci-4-2). */
 #include <stdint.h>
 #include <math.h>
 
-struct macro_pair { long long left; long long right; };
+struct macro_pair { int64_t left; int64_t right; };
 
 #define MACRO_LIMIT 99
 
-static inline long long macro_seven(void) { return 7; }
-static inline long long macro_add(long long x, long long y) { return x + y; }
-static inline long long macro_apply(long long (*callback)(long long), long long x) { return callback(x); }
-static inline long long macro_sum(struct macro_pair pair) { return pair.left + pair.right; }
+static inline int64_t macro_seven(void) { return 7; }
+static inline int64_t macro_add(int64_t x, int64_t y) { return x + y; }
+static inline int64_t macro_apply(int64_t (*callback)(int64_t), int64_t x) { return callback(x); }
+static inline int64_t macro_sum(struct macro_pair pair) { return pair.left + pair.right; }
 static inline void macro_grow(struct macro_pair *pair) { pair->left += 1; }
 
 /* The members of a `T?`, a variant and a thread's box, and a case's member. */
