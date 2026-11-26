@@ -22,12 +22,14 @@
 # clang reads both types: the function itself where its type is the Heroes
 # type's, so a value that built keeps its address and every call through it
 # reaches the function as before, and the adapter where it is not. A function
-# with an `@` parameter has no value (defect 398), so an adapter's
-# parameters are values alone.
+# with an `@` parameter has no value (defect 398; panel 261's R5), so an
+# adapter's parameters are values alone.
 
 use ast
 use check/state
+use check/table
 use checker
+use emit/callback_guard
 use emit/ctype
 use emit/extern_probe
 use emit/externs as emit_externs
@@ -49,8 +51,15 @@ function adapter(name: str, s: source.Source, decls: [ast.Decl]) -> str
     return shadowed.unbound(head: HEAD, name: name, s: s, decls: decls)
 
 # What a body assigns to `target` for the bound function `name`: the function,
-# where its C type is the target's, else its adapter, chosen by clang.
-function chosen(target: str, name: str, s: source.Source, decls: [ast.Decl]) -> str
+# where its C type is the target's, else its adapter, chosen by clang. A
+# function that takes a callback is its adapter always (panel 261's R4 (f)):
+# a call by name hands each function argument through `hero_callback_of`, its
+# thunk, and a call through the value must too, or C calls the program's
+# function with no thunk between (a handle C hands it out again refused as
+# dead, exit 134, measured by the sitting's synthesis).
+function chosen(target: str, name: str, s: source.Source, decls: [ast.Decl], thunked: bool) -> str
+    if thunked
+        return adapter(name, s: s, decls: decls)
     written = shadowed.written(name, s: s, decls: decls)
     return "__builtin_choose_expr(__builtin_types_compatible_p(__typeof__(" + target + "), __typeof__(&" + written + ")), " + written + ", " + adapter(name, s: s, decls: decls) + ")"
 
@@ -83,6 +92,11 @@ function adapters(@w: writer.Writer, p: containers.Program, c: state.Checked, na
         return
     writer.at_generated(@w)
 
+    # The thunks' table is written after these, by `emit/callback_thunk.hero`,
+    # in every unit of a program an `extern` of which takes a callback.
+    if callback_guard.takes_a_callback(p, c, decls)
+        writer.line(@w, text: "static void (*hero_callback_of(void (*hero_f)(void)))(void);")
+
     # ORDER: by name, as `sort` orders a `str`.
     for name in sort(keys(named))
         bound = declared(p, s, decls, name: name)
@@ -100,8 +114,22 @@ function declared(p: containers.Program, s: source.Source, decls: [ast.Decl], na
 
     return fail(code: "none", msg: "no group binds this name as a function")
 
+# Whether the bound function `decl` takes a callback, which its value then
+# reaches through its adapter alone (`chosen`).
+function takes_a_callback(c: state.Checked, decls: [ast.Decl], decl: i64) -> bool
+    match decls[decl].kind
+        .function_decl fd =>
+            for p in fd.value.params
+                written = state.written_type(c, p.ty)
+
+                if !written.is_err() && table.is_function_ty(c.types, written.must())
+                    return true
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return false
+
+    return false
+
 # One adapter, as one line of C: the Heroes type's parameters and result, and
-# the probe's call of the function.
+# the probe's call of the function, a function argument through its thunk.
 function definition(f: containers.Function, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], name: str) -> str
     params: [str] @= []
     index: i64 @= 0
@@ -115,7 +143,20 @@ function definition(f: containers.Function, c: state.Checked, names: ctype.Names
 
     if params.len() > 0
         listed @ params.join(", ")
-    call = "(" + shadowed.written(name, s: s, decls: decls) + ")(" + extern_probe.probe_arguments(f, c, names, callee: name).join(", ") + ")"
+    handed = extern_probe.probe_arguments(f, c, names, callee: name)
+    arguments: [str] @= []
+    at: i64 @= 0
+
+    # A function argument crosses through its thunk, as at a call by name.
+    for slot_id in f.params
+        if table.is_function_ty(c.types, f.slots[slot_id].ty)
+            spelled = ctype.c_type(names, c: c, ty: f.slots[slot_id].ty).default("void *")
+            arguments @ arguments.push("(" + spelled + ")hero_callback_of((void (*)(void))(" + handed[at] + "))")
+        else
+            arguments @ arguments.push(handed[at])
+        at @ at + 1
+
+    call = "(" + shadowed.written(name, s: s, decls: decls) + ")(" + arguments.join(", ") + ")"
     returned = ctype.c_result(names, c: c, ty: f.result)
     body: str @= "return " + call + ";"
 
@@ -147,4 +188,4 @@ test "a bound function taken as a value has an adapter of the program's type, an
     assert extern_probe.find_text(line: got, needle: "static int32_t hero_value_t1(int32_t hero_a0) { return ((*hero_bound_t1()))(hero_a0); }").must() >= 0
 
     # The value: the function where its type is the target's, else the adapter.
-    assert chosen(target: "t4", name: "set_two", s: s, decls: parsed.decls) == "__builtin_choose_expr(__builtin_types_compatible_p(__typeof__(t4), __typeof__(&set_two)), set_two, hero_value_set_two)"
+    assert chosen(target: "t4", name: "set_two", s: s, decls: parsed.decls, thunked: false) == "__builtin_choose_expr(__builtin_types_compatible_p(__typeof__(t4), __typeof__(&set_two)), set_two, hero_value_set_two)"

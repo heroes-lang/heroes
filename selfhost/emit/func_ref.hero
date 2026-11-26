@@ -78,7 +78,8 @@ function emit(@w: writer.Writer, p: instances.Held, f: containers.Function, c: s
                 target: target.must(),
                 name: source.span_text(s, decls[e.decl].name),
                 s: s,
-                decls: decls
+                decls: decls,
+                thunked: bound_value.takes_a_callback(c, decls, decl: e.decl)
             )
             writer.line(@w, text: "    " + target.must() + " = " + chosen + ";")
             return

@@ -1,0 +1,157 @@
+# Which types cross the C boundary, and the message a refused one gets
+# (design.md §4.19; panels 036, 060, 111, 113, 261): moved out of
+# `check/ffi.hero` with panel 261's R4, whose refusal of a mark in a
+# callback's type is one more answer of the same question. `check/ffi.hero`
+# asks it of every type an `extern` declares, and says where each may stand.
+
+use ast
+use check/state
+use check/table
+use diag
+use ffi_errors
+use source
+use token
+
+## The vocabulary — can a C header spell this at all?
+
+# What a C header can spell: the scalars, §4.19's two opaque types, (),
+# a function pointer — since panel 111 R4 — and, since panel 060, a
+# record THE HEADER ITSELF declares. The narrowing asks the
+# declaration, never where the type was mentioned: "this record carries
+# a header" is a fact about the value in hand.
+#
+# A function type answers YES here and is still refused at two of its
+# three positions, which is the whole reason this question and
+# arguments_may_stand's are asked separately. C spells a function
+# pointer everywhere it spells a type, so a vocabulary rule cannot be
+# the one that says where a callback may stand.
+#
+# **AND IT ANSWERS YES ONLY IF WHAT IT CARRIES CAN CROSS — the arm below
+# recurses, and it did not until defect 014** (panel 113 R2, 2026-09-06).
+# `.function_ty => return true` judged the callback and never what the
+# callback takes and returns, so a `[T]` or a `{K: V}` crossed inside a
+# callback signature, in both directions, at **exit 0 with an empty
+# stderr**. The bar was one forward declaration:
+#
+#     struct HeroArrayHeader;
+#     void hold(struct HeroArrayHeader *(*mk)(void),
+#               void (*run)(struct HeroArrayHeader *));
+#
+# `spec § 13 FFI` had already refused it — *"a callback is a parameter, never
+# a result; ITS PARAMETERS FOLLOW THE SAME RULE"* — and the same rule is
+# this function, which refuses `.array` one line down. So this was the
+# compiler disagreeing with the specification (CLAUDE.md §12), not a
+# design question, and it cost no spec token to settle.
+#
+# WHY IT MATTERED MORE THAN IT LOOKS. That was the only route by which a
+# refcounted Heroes value could reach a thread the program did not start.
+# Panel 113 was convened on `cow.c`'s `if (refcount == 1)` and two seats
+# measured, independently and with a live positive control, that the
+# corruption does not arrive through there: a callback parameter comes in
+# BORROWED and the emitted body increfs before it can store, so `unshare`
+# never sees the window. The door was here.
+#
+# The recursion terminates for `poisoned`'s reason at
+# `selfhost/check/table.hero:278-285`, which walks the same interned
+# table the same way: a type id is an index into a table built before
+# this pass runs, so the walk is over a finite acyclic structure and not
+# over the program.
+function crosses_the_boundary(c: state.Checker, decls: [ast.Decl], ty: i64) -> bool
+    match table.get(c.out.types, ty)
+        .named n =>
+            match decls[n.decl].kind
+                .record_decl rec                                             => return !rec.header.is_err()
+                .constant_decl | .function_decl | .variant_decl | .test_decl => return false
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .error => return true
+        .function_ty f =>
+            if f.modes.len > 0
+                return false
+
+            for p in table.params_of(c.out.types, f.params)
+                if !crosses_the_boundary(c, decls, p)
+                    return false
+
+            return crosses_the_boundary(c, decls, f.result)
+        .array | .fixed | .map | .fallible | .thread_ty | .mailbox_ty => return false
+        .case_ty | .failure | .generic                                => return false
+
+    return false
+
+# **A MARK IN A CALLBACK'S TYPE DOES NOT CROSS** (panel 261's R4, ratified
+# 2026-11-26). `(function(@n: i64) -> i64)` is a type of the language, and a
+# function of the program is a value of it; but C calls such a function
+# through the thunk `emit/callback_thunk.hero` writes, which forwards an `@`
+# or a `lent` slot as the pointer C hands it and checks nothing of it. The
+# sitting measured what that admits on three platforms: a handle C freed
+# written back through a copy, `heap-use-after-free` at exit 0; one pointer
+# handed to two `@` slots, so `@` parameters alias (design.md §4.8); a null
+# slot read through, blamed on the program. Until the thunk carries the five
+# duties the sitting named (each slot's handles cleared and checked, a null
+# slot and an overlap refused naming the callback, `const` for a `lent`
+# slot, a twin where a function's slot and the type's differ by it), the
+# mark is refused here, at every depth of a callback's type, never half
+# checked.
+function marked(c: state.Checker, ty: i64) -> bool
+    return match table.get(c.out.types, ty)
+        .function_ty f                                            => f.modes.len > 0
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .array | .fixed | .map | .fallible | .named | .case_ty    => false
+        .failure | .generic | .error | .thread_ty | .mailbox_ty   => false
+
+# One refusal, and it picks the message by WHERE the refused type is.
+# A callback that is itself fine and carries something that is not gets
+# the level named; everything else gets the vocabulary message. Splitting
+# it here rather than at the two call sites is what keeps the result and
+# the parameter saying the same thing about the same type.
+function refused(@c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, what: str, span: token.Span)
+    carried = carried_refusal(c, decls, ty)
+
+    if carried < 0 && marked(c, ty)
+        state.push_diagnostic(@c, callback_mark(callback: state.show(c, s, decls, ty), what: what, span: span))
+        return
+
+    if carried >= 0
+        state.push_diagnostic(
+            @c,
+            ffi_errors.ffi_callback_carries(callback: state.show(c, s, decls, ty), carried: state.show(c, s, decls, carried), what: what, span: span)
+        )
+        return
+    state.push_diagnostic(
+        @c,
+        ffi_errors.ffi_type(name: state.show(c, s, decls, ty), what: what, span: span)
+    )
+
+# The first type INSIDE a callback that cannot cross, or -1 when the
+# refusal is not of that shape. Parameters before the result, in the
+# order written, so the message names the leftmost thing the reader has
+# to change — which is where their eye already is.
+function carried_refusal(c: state.Checker, decls: [ast.Decl], ty: i64) -> i64
+    match table.get(c.out.types, ty)
+        .function_ty f =>
+            for p in table.params_of(c.out.types, f.params)
+                if !crosses_the_boundary(c, decls, p)
+                    return p
+
+            if !crosses_the_boundary(c, decls, f.result)
+                return f.result
+
+            return -1
+        .named _ | .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .error                  => return -1
+        .array | .fixed | .map | .fallible | .case_ty | .failure | .generic | .thread_ty | .mailbox_ty => return -1
+
+    return -1
+
+# A callback type whose positions carry a mark, `@` or `lent` (panel 261's
+# R4): the same code as `ffi_errors.ffi_callback_carries`, since the class means *this
+# extern's declared type is wrong*, and a message of its own, since the
+# callback may stand there and what it carries is what is refused.
+function callback_mark(callback: str, what: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_type",
+        message: "`" + callback + "` is " + what + " whose positions carry a mark, and a callback C calls takes each value with neither mark (spec § 13): C would hand a marked function places this compiler does not check",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "write the callback's type with no mark, `@` or `lent`, and hand C a function of the program that takes each value by copy; where C hands a place to fill or to read, a group's record or a `ptr` names it"
+    )
+    return d
