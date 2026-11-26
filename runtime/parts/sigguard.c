@@ -469,11 +469,14 @@ static _Thread_local HeroSignalStack hero_signal_stack;
 #define HERO_SIG_HELD 6
 
 #if defined(HERO_SIG_WRAPS)
-/* `parts/sigentries.c`, below: is this thread inside a wrapped handler? */
+/* `parts/sigentries.c`, below: is this thread inside a wrapped handler? And
+ * the top of the coroutine range a frame lies on (defect 2852). */
 static int hero_sig_inside(HeroSignalStack *own);
+static bool hero_sig_coroutine_top(uintptr_t frame, uintptr_t *top);
 #elif defined(HERO_SIG_REBIND)
 /* `parts/rebind.c`, below: is this thread inside a trampolined handler? */
 static int hero_rebind_inside(void);
+static bool hero_rebind_coroutine_top(uintptr_t frame, uintptr_t *top);
 #endif
 
 /* The key, made once by the first claim, `main`'s, before any thunk exists;
@@ -699,8 +702,24 @@ static void hero_callback_asked(const char *what, void *ret, void *frame) {
         return;
     }
     /* A record is two words, so the highest one the walk may read starts at
-     * `top`; each step climbs, so the walk ends inside the stack. */
+     * `top`; each step climbs, so the walk ends inside the stack. And where
+     * the thunk runs on a coroutine's stack `makecontext` handed out, carved
+     * from the thread's own, the walk ends at that range's top (defect 2852):
+     * the coroutine's first record is `makecontext`'s, none on glibc and the
+     * range's very top on Darwin, so the walk climbed past it into words of
+     * the thread's stack a call before had left, where one naming the
+     * delivery refused a correct program in a handler's words it does not
+     * have (`mj_carved` under `--sanitize` on this Mac). A frame of the
+     * coroutine's lies inside its range; a delivery that called the function
+     * there put its frame there too. */
     uintptr_t top = hi - 2 * sizeof(uintptr_t);
+    uintptr_t coroutine = 0;
+#if defined(HERO_SIG_WRAPS)
+    bool on_coroutine = hero_sig_coroutine_top(fp, &coroutine);
+#else
+    bool on_coroutine = hero_rebind_coroutine_top(fp, &coroutine);
+#endif
+    if (on_coroutine && coroutine - 2 * sizeof(uintptr_t) < top) top = coroutine - 2 * sizeof(uintptr_t);
     for (int up = 0; up < HERO_SIGNAL_WALK; up += 1) {
         uintptr_t next = ((const uintptr_t *)fp)[0];
         if (next <= fp || next > top || (next & (sizeof(uintptr_t) - 1)) != 0) return;
