@@ -40,7 +40,7 @@ package moves its row in the same change. There is no cycle.
 | 0 | `os` | the process's world: environment, working folder, who and where it runs, the machine's processes, users and groups, the program's stop on Ctrl-C, the signals it counts |  | `hero_sys.h`, `hero_os.h`, `hero_procs.h`, `hero_users.h`, `hero_net.h` (the stop, and Ctrl-C counted in its place) |
 | 0 | `hash` | checksums and fast non-cryptographic hashes: CRC-32, Adler-32, FNV |  |  |
 | 0 | `sets` | set operations over a `{K: bool}`, since the language has no set type |  |  |
-| 0 | `errors` | context added to a failure without losing its code, several failures joined, a failure told to a person |  |  |
+| 0 | `errors` | context added to a failure without losing its code, several failures joined, a failure told to a person, a failure dropped on purpose where it cannot matter |  |  |
 | 0 | `threads` | a function run on another thread and joined: the language's own doors, made safe to call |  | `hero_os.h` |
 | 0 | `containers/ordered` | an ordered map and set: ranks, ranges, the nearest keys |  |  |
 | 0 | `containers/deque` | a double-ended queue, bounded or not |  |  |

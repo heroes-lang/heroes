@@ -149,11 +149,11 @@ capability failure/backtrace  where in the program a failure began
   python  BaseException.__traceback__, BaseException.with_traceback, traceback.extract_tb, traceback.format_tb, traceback.print_tb, traceback.walk_tb, traceback.extract_stack, traceback.format_stack, traceback.print_stack, traceback.walk_stack, traceback.StackSummary, traceback.FrameSummary, traceback.clear_frames, traceback.print_last, traceback.format_list, traceback.print_list, traceback.BUILTIN_EXCEPTION_LIMIT
 
 capability failure/suppress  a failure ignored on purpose
-  heroes  built-in .default
+  heroes  errors.ignore
   go      -
   rust    -
   python  contextlib.suppress, traceback.suppress
-  note    `.default(v)`, or a `match` arm that does nothing; `_` never drops a `T?` (spec § 5), so a failure ignored is always written so
+  note    `_` never drops a `T?` (spec § 5), so a failure ignored is written so: `errors.ignore(r)` where a call is made for its effect and its failure cannot change what the program does next (a close on the way out of another failure, a line to standard error), where Go writes `_ = c.Close()` and Rust `let _ = s.shutdown(...)`, both syntax and no library's; it takes a `()?` alone, so no value, and no failure a value holds, is dropped with it; `.default(v)` where a value stands in for the failure
 
 capability failure/implicit-context  a failure raised while another is being handled, the first kept beside it
   heroes  refused: the language has no exceptions, so no failure is raised while another is handled; a failure made while answering another names it with `errors.context` or joins it with `errors.combine`
