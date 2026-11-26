@@ -1,0 +1,116 @@
+# Linearizable reads without a log entry, by ReadIndex (the dissertation's
+# section 6.4): a leader answers a read only once it has committed an entry
+# of its own term (so its commit index is at least every entry committed
+# before it led), and once a majority has answered a round of AppendEntries
+# sent after the read arrived (so no later leader had been elected when the
+# read was served). A leader cut off from its majority never answers: its
+# reads wait until their time runs out, and are refused, never served stale.
+
+use kv/store
+use raft/log
+use raft/node
+
+## Reads
+
+# Starts a read of `key` for `client`: a new round of confirmation,
+# carried by the next AppendEntries to every member.
+#
+# - `n`: the leader.
+# - `client`: the client.
+# - `seq`: its sequence number.
+# - `key`: the key read.
+function start(@n: node.Node, client: i64, seq: i64, key: str)
+    n.round @ n.round + 1
+    n.reads @ n.reads.push(
+        node.Read(client: client, seq: seq, key: key, round: n.round, deadline: n.now + n.settings.read_timeout)
+    )
+    serve(@n)
+
+# Answers every read whose leader is now confirmed, and refuses every read
+# whose time ran out; the others keep waiting.
+#
+# - `n`: the node; a node that does not lead holds no read.
+function serve(@n: node.Node)
+    if n.role != .leader || n.reads.len() == 0
+        return
+    own = log.term_at(n.log, index: n.commit).default(0) == n.term
+    waiting: [node.Read] @= []
+
+    for r in n.reads
+        if own && is_confirmed(n, round: r.round)
+            answer = store.read(n.machine, key: r.key)
+            node.send(
+                @n,
+                to: r.client,
+                body: .client_reply(seq: r.seq, outcome: .answered(answer: answer, index: n.applied))
+            )
+        else if n.now >= r.deadline
+            why = f"no majority confirmed node {n.id} still leads within {n.settings.read_timeout}ms"
+            node.send(@n, to: r.client, body: .client_reply(seq: r.seq, outcome: .unavailable(why: why)))
+        else
+            waiting @ waiting.push(r)
+
+    n.reads @ waiting
+
+# Whether a majority, the leader counted, has answered `round` or a later
+# one.
+#
+# - `n`: the leader.
+# - `round`: the round.
+function is_confirmed(n: node.Node lent, round: i64) -> bool
+    voters: [i64] @= [n.id]
+
+    for peer in node.peers(n)
+        match n.progress[peer]
+            .ok p =>
+                if p.round >= round
+                    voters @ voters.push(peer)
+            .err _ => _ = 0
+
+    return node.is_quorum(n, voters: voters)
+
+## Tests
+
+# A leader of term 1 of three members, its noop committed.
+function leader() -> node.Node
+    n @= node.new_node(id: 1, members: [1, 2, 3], settings: node.default_settings(), seed: 2, now: 0)
+    n.role @ .leader
+    n.term @ 1
+    n.log @ log.sample(count: 1, term: 1)
+    n.commit @ 1
+    n.applied @ 1
+    n.progress[2] @ node.Progress(next: 2, matched: 1, sending: false, offset: 0, round: 0)
+    n.progress[3] @ node.Progress(next: 2, matched: 1, sending: false, offset: 0, round: 0)
+    return n
+
+test "start and serve: a read waits for its round, then is answered"
+    n @= leader()
+    start(@n, client: 101, seq: 1, key: "a")
+    assert n.outbox.len() == 0
+    assert n.reads.len() == 1
+    n.progress[2] @ node.Progress(next: 2, matched: 1, sending: false, offset: 0, round: 1)
+    serve(@n)
+    assert n.reads.len() == 0
+    assert n.outbox[0].body == .client_reply(seq: 1, outcome: .answered(answer: .missing, index: 1))
+
+test "serve: a leader cut off refuses its read once its time runs out"
+    n @= leader()
+    start(@n, client: 101, seq: 1, key: "a")
+    n.now @ 399
+    serve(@n)
+    assert n.reads.len() == 1
+    n.now @ 400
+    serve(@n)
+    assert n.reads.len() == 0
+
+    match n.outbox[0].body
+        .client_reply c => assert c.outcome == .unavailable(why: "no majority confirmed node 1 still leads within 400ms")
+        .vote_request _ | .vote_reply _ | .append_request _ | .append_reply _ | .snapshot_request _ | .snapshot_reply _ | .client_request _ => assert false
+
+test "serve: no answer before an entry of the leader's term commits"
+    n @= leader()
+    n.term @ 2
+    start(@n, client: 101, seq: 1, key: "a")
+    n.progress[2] @ node.Progress(next: 2, matched: 1, sending: false, offset: 0, round: 1)
+    serve(@n)
+    assert n.reads.len() == 1

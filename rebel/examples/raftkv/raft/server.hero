@@ -1,0 +1,252 @@
+# The two doors into a node: a tick of the clock, and a message. A tick
+# fires the election timer of a member that has heard no leader, and the
+# heartbeat of a leader; a message is read under the rules every RPC shares
+# (the Raft paper's figure 2, "Rules for Servers": a later term makes the
+# receiver a follower of it, an earlier one is answered and goes no further)
+# and handed to the part of the algorithm it belongs to. A member that heard
+# from its leader within the shortest election timeout ignores a request
+# for its vote, so a removed member cannot disrupt the cluster it left (the
+# dissertation's section 4.2.3).
+
+use kv/op
+use raft/election
+use raft/message
+use raft/node
+use raft/reads
+use raft/replication
+use raft/snapshot
+
+## Ticks
+
+# Lets the time pass to `now`: a leader's heartbeat and its reads' time,
+# a member's election timer.
+#
+# - `n`: the node.
+# - `now`: the time, never before the last one it was given.
+function tick(@n: node.Node, now: i64)
+    n.now @ now
+
+    if n.role == .leader
+        if now >= n.heartbeat_due
+            replication.broadcast(@n)
+            n.heartbeat_due @ now + n.settings.heartbeat
+        reads.serve(@n)
+        return
+
+    if now >= n.election_due
+        if node.is_member(n)
+            election.campaign(@n)
+        else
+            node.reset_election(@n)
+
+# Starts an election now, as the timer would: what Raft's leadership
+# transfer and a test of elections do.
+#
+# - `n`: the node.
+# - `now`: the time.
+function campaign_now(@n: node.Node, now: i64)
+    n.now @ now
+
+    if n.role != .leader && node.is_member(n)
+        election.campaign(@n)
+
+## Messages
+
+# Reads `m`, sent to `n`.
+#
+# - `n`: the node.
+# - `m`: the message.
+# - `now`: the time it arrives.
+function receive(@n: node.Node, m: message.Envelope, now: i64)
+    n.now @ now
+
+    match m.body
+        .client_request c =>
+            on_client_request(@n, client: m.from, seq: c.seq, operation: c.operation)
+            return
+        .client_reply _ => return
+        .vote_request _ =>
+            if m.term > n.term && is_leader_alive(n)
+                return
+        .vote_reply _ | .append_request _ | .append_reply _ | .snapshot_request _ | .snapshot_reply _ => _ = 0
+
+    if m.term > n.term
+        node.enter_term(@n, term: m.term)
+
+    if m.term < n.term
+        refuse_older(@n, m)
+        return
+
+    match m.body
+        .vote_request v => election.on_vote_request(@n, m, last_index: v.last_index, last_term: v.last_term)
+        .vote_reply v   => election.on_vote_reply(@n, m, granted: v.granted)
+        .append_request a => replication.on_append_request(
+            @n,
+            m,
+            prev_index: a.prev_index,
+            prev_term: a.prev_term,
+            entries: a.entries,
+            commit: a.commit,
+            round: a.round
+        )
+        .append_reply a => replication.on_append_reply(@n, m, success: a.success, index: a.index, round: a.round)
+        .snapshot_request s =>
+            replication.follow(@n, leader: m.from)
+            snapshot.on_request(
+                @n,
+                m,
+                last_index: s.last_index,
+                last_term: s.last_term,
+                offset: s.offset,
+                data: s.data,
+                done: s.done
+            )
+        .snapshot_reply s => snapshot.on_reply(@n, m, last_index: s.last_index, offset: s.offset, done: s.done)
+        .client_request _ => _ = 0
+        .client_reply _   => _ = 0
+
+# Whether `n` follows a leader it heard from within the shortest election
+# timeout: then a candidate's request is no reason to leave it.
+#
+# - `n`: the node.
+function is_leader_alive(n: node.Node lent) -> bool
+    if n.role == .leader
+        return true
+    return !n.leader.is_err() && n.now - n.heard < n.settings.election_min
+
+# Answers a request of an earlier term with `n`'s term, so its sender learns
+# it is behind; a reply of an earlier term is dropped.
+#
+# - `n`: the node.
+# - `m`: the message.
+function refuse_older(@n: node.Node, m: message.Envelope)
+    match m.body
+        .vote_request _ => node.send(@n, to: m.from, body: .vote_reply(granted: false))
+        .append_request a =>
+            replication.on_append_request(
+                @n,
+                m,
+                prev_index: a.prev_index,
+                prev_term: a.prev_term,
+                entries: [],
+                commit: 0,
+                round: a.round
+            )
+        .snapshot_request s => node.send(
+            @n,
+            to: m.from,
+            body: .snapshot_reply(last_index: s.last_index, offset: 0, done: false)
+        )
+        .vote_reply _ | .append_reply _ | .snapshot_reply _ | .client_request _ | .client_reply _ => _ = 0
+
+## Clients
+
+# Takes a client's operation: a follower names its leader; a leader starts
+# a read, or appends a write and sends it at once. A write already in flight
+# from that client is not appended twice.
+#
+# - `n`: the node.
+# - `client`: the client.
+# - `seq`: its sequence number.
+# - `operation`: the operation.
+function on_client_request(@n: node.Node, client: i64, seq: i64, operation: op.Op)
+    if n.role != .leader
+        outcome: message.Outcome = match n.leader
+            .ok l  => .redirect(leader: l)
+            .err _ => .no_leader
+
+        node.send(@n, to: client, body: .client_reply(seq: seq, outcome: outcome))
+        return
+
+    match operation
+        .get g =>
+            reads.start(@n, client: client, seq: seq, key: g.key)
+            replication.broadcast(@n)
+            return
+        .put _ | .delete _ | .append _ | .swap _ => _ = 0
+
+    for p in n.pending
+        if p.client == client && p.seq == seq
+            return
+
+    index = replication.propose(@n, .command(client: client, seq: seq, operation: operation))
+    n.pending @ n.pending.push(node.Pending(client: client, seq: seq, index: index))
+    replication.broadcast(@n)
+    apply_if_alone(@n)
+
+# A leader alone commits on its own: what it just appended is applied now.
+#
+# - `n`: the leader.
+function apply_if_alone(@n: node.Node)
+    if n.members.len() == 1
+        replication.advance_commit(@n)
+
+## Tests
+
+# Three nodes of a fresh cluster, by number.
+function cluster() -> [node.Node]
+    out: [node.Node] @= []
+
+    for id in [1, 2, 3]
+        out @ out.push(node.new_node(id: id, members: [1, 2, 3], settings: node.default_settings(), seed: 11, now: 0))
+
+    return out
+
+# Hands every message in the nodes' outboxes to its receiver, in order,
+# until none is left; answers how many were handed.
+#
+# - `nodes`: the nodes, `nodes[k]` numbered `k + 1`.
+# - `now`: the time every message arrives.
+function settle(@nodes: [node.Node], now: i64) -> i64
+    handed: i64 @= 0
+    moved: bool @= true
+
+    while moved
+        moved @ false
+
+        for k in range(from: 0, to: nodes.len())
+            box = nodes[k].outbox
+            nodes[k].outbox @ []
+
+            for m in box
+                if m.to >= 1 && m.to <= nodes.len()
+                    receive(@nodes[m.to - 1], m, now: now)
+                    handed @ handed + 1
+                    moved @ true
+
+    return handed
+
+test "receive: an election, then a write replicated and committed on every node"
+    nodes @= cluster()
+    campaign_now(@nodes[0], now: 10)
+    _ = settle(@nodes, now: 10)
+    assert nodes[0].role == .leader
+    on_client_request(@nodes[0], client: 101, seq: 1, operation: .put(key: "a", value: "1"))
+    _ = settle(@nodes, now: 10)
+    tick(@nodes[0], now: 100)
+    _ = settle(@nodes, now: 100)
+
+    for n in nodes
+        assert n.commit == 2
+        assert n.applied == 2
+
+test "receive: a later term turns a leader into a follower, an older one is refused"
+    nodes @= cluster()
+    campaign_now(@nodes[0], now: 10)
+    _ = settle(@nodes, now: 10)
+    nodes[1].heard @ -1000
+    campaign_now(@nodes[1], now: 400)
+    _ = settle(@nodes, now: 400)
+    assert nodes[1].role == .leader
+    assert nodes[0].role == .follower
+    stale = message.Envelope(from: 1, to: 3, term: 1, body: .vote_request(last_index: 9, last_term: 9))
+    receive(@nodes[2], stale, now: 500)
+    assert nodes[2].outbox[nodes[2].outbox.len() - 1].body == .vote_reply(granted: false)
+
+test "on_client_request: a follower names the leader, or says it knows none"
+    nodes @= cluster()
+    on_client_request(@nodes[1], client: 101, seq: 1, operation: .get(key: "a"))
+    assert nodes[1].outbox[0].body == .client_reply(seq: 1, outcome: .no_leader)
+    nodes[1].leader @ ok(3)
+    on_client_request(@nodes[1], client: 101, seq: 2, operation: .get(key: "a"))
+    assert nodes[1].outbox[1].body == .client_reply(seq: 2, outcome: .redirect(leader: 3))

@@ -1,0 +1,254 @@
+# Snapshots and log compaction (the Raft paper's section 7): a node whose
+# applied entries have run `snapshot_every` past its last snapshot writes
+# the store and the members as of its last applied index, and forgets the
+# entries it covers; a leader whose follower needs an entry it forgot sends
+# its snapshot instead, InstallSnapshot, one part at a time, each part
+# acknowledged before the next (the paper's figure 13, its `offset` and
+# `done`); the follower keeps whatever of its log follows the snapshot and
+# matches it, and throws the rest away.
+
+use <rebel>/bytes
+use <rebel>/math
+
+use kv/image
+use kv/store
+use raft/entry
+use raft/log
+use raft/membership
+use raft/message
+use raft/node
+
+## Taking one
+
+# Takes a snapshot where the applied entries have run `snapshot_every`
+# past the last one.
+#
+# - `n`: the node.
+function take_if_due(@n: node.Node)
+    if n.applied - n.log.base_index >= n.settings.snapshot_every
+        take(@n)
+
+# Takes a snapshot at the last applied index, and compacts the log to it.
+#
+# - `n`: the node; its applied index is above its log's base.
+function take(@n: node.Node)
+    index = n.applied
+    term = log.term_at(n.log, index: index).must()
+    members = membership.members_at(n.log, base: n.snapshot, index: index)
+    data = image.encode_image(members, n.machine)
+    n.snapshot @ node.Snapshot(last_index: index, last_term: term, members: members, data: data)
+    dropped = index - n.log.base_index
+    log.compact_to(@n.log, index: index, term: term)
+    n.unsaved.snapshot @ true
+    n.unsaved.rewrite @ true
+    node.tell(@n, f"snapshots at {index} (term {term}, {data.len()} bytes) and drops {dropped} entries")
+
+## Sending one
+
+# Sends `peer` the next part of the leader's snapshot, from the byte its
+# progress says; a snapshot newer than the one in flight starts again from
+# its first byte.
+#
+# - `n`: the leader.
+# - `peer`: a follower it tracks.
+function send_part(@n: node.Node, peer: i64)
+    p @= n.progress[peer].must()
+
+    if !p.sending
+        p.sending @ true
+        p.offset @ 0
+        n.progress[peer] @ p
+    data = n.snapshot.data
+    from = math.min_i64(a: p.offset, b: data.len())
+    to = math.min_i64(a: from + n.settings.chunk, b: data.len())
+    body: message.Body = .snapshot_request(
+        last_index: n.snapshot.last_index,
+        last_term: n.snapshot.last_term,
+        offset: from,
+        data: data.slice(from: from, to: to),
+        done: to == data.len()
+    )
+    node.send(@n, to: peer, body: body)
+
+# Reads a follower's answer to a part: the next part, or, once the whole is
+# installed, the entries after it.
+#
+# - `n`: the leader.
+# - `m`: the reply.
+# - `last_index`: the snapshot's last index the follower answers for.
+# - `offset`: the next byte it wants.
+# - `done`: whether it installed the snapshot.
+function on_reply(@n: node.Node, m: message.Envelope, last_index: i64, offset: i64, done: bool)
+    if n.role != .leader || m.term != n.term || n.progress[m.from].is_err()
+        return
+    p @= n.progress[m.from].must()
+
+    if !p.sending
+        return
+
+    if done
+        p.sending @ false
+        p.offset @ 0
+
+        if last_index > p.matched
+            p.matched @ last_index
+        p.next @ p.matched + 1
+        n.progress[m.from] @ p
+        return
+
+    if last_index != n.snapshot.last_index
+        p.offset @ 0
+    else
+        p.offset @ offset
+    n.progress[m.from] @ p
+    send_part(@n, peer: m.from)
+
+## Receiving one
+
+# Takes a part of the leader's snapshot; the last part installs it. A part
+# that does not follow on from what came (lost or given twice by the
+# network) is answered with the byte wanted, and a snapshot the node already
+# holds the entries of is answered as installed.
+#
+# - `n`: the follower; the message is of its term.
+# - `m`: the request.
+# - `last_index`: the snapshot's last index.
+# - `last_term`: its term.
+# - `offset`: the first byte of this part.
+# - `data`: the part.
+# - `done`: whether it is the last.
+function on_request(@n: node.Node, m: message.Envelope, last_index: i64, last_term: i64, offset: i64, data: [u8], done: bool)
+    if last_index <= n.commit
+        reply(@n, to: m.from, last_index: last_index, offset: 0, done: true)
+        return
+
+    if offset == 0
+        n.incoming @ node.Incoming(last_index: last_index, last_term: last_term, data: [], parts: 0)
+
+    if n.incoming.last_index != last_index || offset != n.incoming.data.len()
+        wanted = if n.incoming.last_index == last_index
+            n.incoming.data.len()
+        else
+            0
+        reply(@n, to: m.from, last_index: last_index, offset: wanted, done: false)
+        return
+    gathered @= n.incoming.data
+    bytes.push_all(to: @gathered, from: data)
+    n.incoming.data @ gathered
+    n.incoming.parts @ n.incoming.parts + 1
+
+    if !done
+        reply(@n, to: m.from, last_index: last_index, offset: gathered.len(), done: false)
+        return
+
+    match image.decode_image(gathered)
+        .ok held =>
+            install(@n, held: held, leader: m.from)
+            reply(@n, to: m.from, last_index: last_index, offset: gathered.len(), done: true)
+        .err e =>
+            node.tell(@n, "refuses a snapshot it cannot read: " + e.msg)
+            n.incoming @ node.Incoming(last_index: 0, last_term: 0, data: [], parts: 0)
+            reply(@n, to: m.from, last_index: last_index, offset: 0, done: false)
+
+# Installs the snapshot `n.incoming` gathered, whose contents are `held`.
+#
+# - `n`: the follower.
+# - `held`: the snapshot's members and store.
+# - `leader`: who sent it.
+function install(@n: node.Node, held: image.Image, leader: i64)
+    index = n.incoming.last_index
+    term = n.incoming.last_term
+
+    if log.holds(n.log, index: index, term: term)
+        log.compact_to(@n.log, index: index, term: term)
+    else
+        log.reset_to(@n.log, index: index, term: term)
+    n.snapshot @ node.Snapshot(last_index: index, last_term: term, members: held.members, data: n.incoming.data)
+    n.machine @ held.machine
+    n.members @ membership.members_of(n.log, base: n.snapshot)
+    n.commit @ index
+    n.applied @ index
+    n.unsaved.snapshot @ true
+    n.unsaved.rewrite @ true
+    node.tell(
+        @n,
+        f"installs a snapshot at {index} (term {term}) from {leader}: {n.incoming.data.len()} bytes in {n.incoming.parts} parts"
+    )
+    n.incoming @ node.Incoming(last_index: 0, last_term: 0, data: [], parts: 0)
+
+function reply(@n: node.Node, to: i64, last_index: i64, offset: i64, done: bool)
+    node.send(@n, to: to, body: .snapshot_reply(last_index: last_index, offset: offset, done: done))
+
+## Tests
+
+# A node of three members that applied `count` puts, one a key.
+function applied(count: i64) -> node.Node
+    n @= node.new_node(id: 1, members: [1, 2, 3], settings: node.default_settings(), seed: 9, now: 0)
+    n.term @ 1
+
+    for k in range(from: 1, to: count + 1)
+        e = entry.Entry(
+            index: k,
+            term: 1,
+            payload: .command(client: 101, seq: k, operation: .put(key: f"k{k}", value: "v"))
+        )
+        log.append(@n.log, e)
+        _ = store.apply(@n.machine, client: 101, seq: k, o: .put(key: f"k{k}", value: "v"))
+
+    n.commit @ count
+    n.applied @ count
+    return n
+
+test "take: the log compacted to the applied index, the image holding the store"
+    n @= applied(20)
+    take_if_due(@n)
+    assert n.log.base_index == 20
+    assert log.last_index(n.log) == 20
+    assert n.snapshot.last_index == 20
+    assert image.decode_image(n.snapshot.data).must().machine == n.machine
+    assert n.unsaved.snapshot && n.unsaved.rewrite
+
+test "send_part and on_request: parts gathered in order, then installed"
+    leader @= applied(20)
+    take(@leader)
+    leader.role @ .leader
+    leader.progress[2] @ node.Progress(next: 1, matched: 0, sending: false, offset: 0, round: 0)
+    follower @= node.new_node(id: 2, members: [1, 2, 3], settings: node.default_settings(), seed: 9, now: 0)
+    follower.term @ 1
+    rounds: i64 @= 0
+
+    while leader.progress[2].must().sending || rounds == 0
+        send_part(@leader, peer: 2)
+        request = leader.outbox[leader.outbox.len() - 1]
+
+        match request.body
+            .snapshot_request s => on_request(
+                @follower,
+                request,
+                last_index: s.last_index,
+                last_term: s.last_term,
+                offset: s.offset,
+                data: s.data,
+                done: s.done
+            )
+            .vote_request _ | .vote_reply _ | .append_request _ | .append_reply _ | .snapshot_reply _ | .client_request _ | .client_reply _ => assert false
+
+        answer = follower.outbox[follower.outbox.len() - 1]
+
+        match answer.body
+            .snapshot_reply s => on_reply(@leader, answer, last_index: s.last_index, offset: s.offset, done: s.done)
+            .vote_request _ | .vote_reply _ | .append_request _ | .append_reply _ | .snapshot_request _ | .client_request _ | .client_reply _ => assert false
+
+        rounds @ rounds + 1
+
+    assert rounds > 1
+    assert follower.applied == 20
+    assert follower.machine == leader.machine
+    assert follower.members == [1, 2, 3]
+    assert leader.progress[2].must().next == 21
+
+test "on_request: a part out of order asks for the byte wanted"
+    n @= node.new_node(id: 2, members: [1, 2, 3], settings: node.default_settings(), seed: 9, now: 0)
+    m = message.Envelope(from: 1, to: 2, term: 1, body: .vote_reply(granted: false))
+    on_request(@n, m, last_index: 9, last_term: 1, offset: 10, data: [1], done: false)
+    assert n.outbox[0].body == .snapshot_reply(last_index: 9, offset: 0, done: false)

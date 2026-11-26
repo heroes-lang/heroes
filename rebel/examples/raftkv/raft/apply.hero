@@ -1,0 +1,85 @@
+# Applying committed entries to the state machine, in index order and each
+# once (the Raft paper's figure 2: "If commitIndex > lastApplied: increment
+# lastApplied, apply log[lastApplied] to state machine"). A leader answers
+# the client whose write it was; a leader whose own removal commits steps
+# down (the dissertation's section 4.2.2); and a node whose log has grown
+# past its snapshot by `snapshot_every` entries takes a new one.
+
+use kv/store
+use raft/entry
+use raft/log
+use raft/node
+use raft/reads
+use raft/snapshot
+
+## Applying
+
+# Applies every committed entry not yet applied, then answers the reads
+# that were waiting for them and takes a snapshot where one is due.
+#
+# - `n`: the node.
+function apply_committed(@n: node.Node)
+    while n.applied < n.commit
+        index = n.applied + 1
+        e = log.entry_at(n.log, index: index)
+        n.applied @ index
+
+        match e.payload
+            .noop => _ = 0
+            .command c =>
+                answer = store.apply(@n.machine, client: c.client, seq: c.seq, o: c.operation)
+                answer_client(@n, client: c.client, seq: c.seq, answer: answer, index: index)
+            .config c =>
+                node.tell(@n, "applies members " + entry.format_members(c.members))
+
+                if n.role == .leader && !node.contains_member(c.members, n.id)
+                    node.tell(@n, "steps down: it is no longer a member")
+                    node.become_follower(@n)
+                    n.leader @ fail(code: "not_found", msg: "no leader: no longer a member")
+
+    reads.serve(@n)
+    snapshot.take_if_due(@n)
+
+# Answers the client of the write at `index`, where `n` leads and still
+# holds it pending.
+#
+# - `n`: the node.
+# - `client`: the client.
+# - `seq`: its sequence number.
+# - `answer`: the store's answer.
+# - `index`: the entry's index.
+function answer_client(@n: node.Node, client: i64, seq: i64, answer: store.Answer, index: i64)
+    if n.role != .leader
+        return
+    kept: [node.Pending] @= []
+    found: bool @= false
+
+    for p in n.pending
+        if p.client == client && p.seq == seq && p.index == index
+            found @ true
+        else
+            kept @ kept.push(p)
+
+    if found
+        n.pending @ kept
+        node.send(@n, to: client, body: .client_reply(seq: seq, outcome: .answered(answer: answer, index: index)))
+
+## Tests
+
+test "apply_committed: each committed entry once, and the client answered"
+    n @= node.new_node(id: 1, members: [1], settings: node.default_settings(), seed: 1, now: 0)
+    n.role @ .leader
+    n.term @ 1
+    log.append(
+        @n.log,
+        entry.Entry(index: 1, term: 1, payload: .command(client: 101, seq: 1, operation: .put(key: "a", value: "1")))
+    )
+    n.pending @ [node.Pending(client: 101, seq: 1, index: 1)]
+    n.commit @ 1
+    apply_committed(@n)
+    assert n.applied == 1
+    assert store.read(n.machine, key: "a") == .value(v: "1")
+    assert n.pending.len() == 0
+    assert n.outbox[0].body == .client_reply(seq: 1, outcome: .answered(answer: .done, index: 1))
+    apply_committed(@n)
+    assert n.outbox.len() == 1
