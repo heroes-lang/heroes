@@ -288,25 +288,74 @@ static int hero_fs_win_hop(char current[HERO_FS_PATH_MAX]) {
     return 1;
 }
 
-/* The landing of a link whose chain Windows' own open followed to nothing:
- * the chain read link by link, as POSIX's arm reads it, forty deep at most,
+/* The chain of links at `path` read by its text, as POSIX's arm reads it,
+ * into `current`: 1 where it ends, `current` then the name at its end; 0
+ * with `hero_fs_why` set where it cannot be followed, forty deep at most,
  * the runtime then refusing with the system's number for a chain it cannot
  * resolve, ERROR_CANT_RESOLVE_FILENAME, as it refuses with ELOOP there. */
-static HeroStr hero_fs_win_text_landing(const char *path) {
-    char current[HERO_FS_PATH_MAX];
+static int hero_fs_win_text_chain(const char *path, char current[HERO_FS_PATH_MAX]) {
     size_t length = strlen(path);
-    if (length >= sizeof current) {
+    if (length >= HERO_FS_PATH_MAX) {
         hero_fs_why_code = -(int64_t)ERROR_FILENAME_EXCED_RANGE;
-        return hero_str_from_bytes("", 0);
+        return 0;
     }
     memcpy(current, path, length + 1);
     for (int hops = 0; hops < 40; hops += 1) {
         int hop = hero_fs_win_hop(current);
-        if (hop < 0) return hero_str_from_bytes("", 0);
-        if (hop == 0) return hero_fs_found_path(current);
+        if (hop < 0) return 0;
+        if (hop == 0) return 1;
     }
     hero_fs_why_code = -(int64_t)ERROR_CANT_RESOLVE_FILENAME;
-    return hero_str_from_bytes("", 0);
+    return 0;
+}
+
+/* Whether nothing stands at `name`, the name itself asked and no link
+ * followed: the system finds no file there, or no folder on the way to it,
+ * as POSIX's `lstat` fails with ENOENT. Anything else, something there or a
+ * name the system will not look at, is no such answer. */
+static int hero_fs_win_nothing_at(const char *name) {
+    wchar_t *wide = hero_win_wide(name, NULL);
+    if (wide == NULL) return 0;
+    DWORD attrs = GetFileAttributesW(wide);
+    /* Read before `hero_release`, which may move the last error. */
+    DWORD why = attrs == INVALID_FILE_ATTRIBUTES ? GetLastError() : 0;
+    hero_release(wide);
+    return attrs == INVALID_FILE_ATTRIBUTES && (why == ERROR_FILE_NOT_FOUND || why == ERROR_PATH_NOT_FOUND);
+}
+
+/* WHETHER THE SYSTEM'S REFUSAL TO FOLLOW A CHAIN IS A CHAIN THAT ENDS AT
+ * NOTHING, WHATEVER NUMBER IT GAVE (defect d-windows-ci-4-1, its second
+ * repair). Windows fixes a link's kind when it is made, a file's or a
+ * folder's (`hero_fs_symlink` below), and a link made to a link whose chain
+ * then ended at nothing is a file's whatever the link it names is: the
+ * compiler's own tests make `via`, a file's link, to `to-gone`, a folder's
+ * link whose folder was removed. Windows' open of that chain failed with
+ * neither ERROR_FILE_NOT_FOUND nor ERROR_PATH_NOT_FOUND, the two numbers the
+ * arms below read as nothing at the end, so `via` was told *a link to a
+ * chain of links the system cannot follow* on the CI's Windows x86-64 leg
+ * (run 45809762298), while in the same run a file's link to a file's link to
+ * nothing and a folder's link to nothing were told *a link to nothing*, which
+ * only one of the two numbers gives. Which number the kinds' mismatch gives
+ * is unmeasured: the box was off on 2026-11-26 and the run's log prints the
+ * words alone. A question rather than a premise: whether the I/O manager
+ * opens the name a file's link names as no folder, so that a folder's link
+ * there is refused before it is followed (STATUS_FILE_IS_A_DIRECTORY,
+ * ERROR_ACCESS_DENIED, 5), and the converse (ERROR_DIRECTORY, 267).
+ *
+ * So a refusal with any other number asks the chain's text: where it ends at
+ * a name where nothing stands, the chain ends at nothing, as POSIX's
+ * `readlink` finds it, and that name is the landing; where it ends at
+ * something that stands, or cannot be read, the system's refusal is the
+ * answer with its own number, since the runtime never writes through a chain
+ * the system will not follow to a file that is there (a symbolic link
+ * evaluation policy's refusal among them). A loop keeps the system's
+ * ERROR_CANT_RESOLVE_FILENAME (1921). `current` is the chain's end where the
+ * answer is 1; `hero_fs_why` is left as it was either way. */
+static int hero_fs_win_ends_at_nothing(const char *path, char current[HERO_FS_PATH_MAX]) {
+    int64_t kept = hero_fs_why_code;
+    int ends = hero_fs_win_text_chain(path, current) && hero_fs_win_nothing_at(current);
+    hero_fs_why_code = kept;
+    return ends;
 }
 #endif
 
@@ -318,7 +367,9 @@ static HeroStr hero_fs_win_text_landing(const char *path) {
  * (ELOOP, the limit Linux itself stops at), or longer than HERO_FS_PATH_MAX.
  * Windows asks its own open of the chain first, which answers a loop by
  * itself, and reads a chain that ends at nothing by its text, the same forty
- * deep (`hero_fs_win_text_landing`, defect d-windows-ci-4-1).
+ * deep (`hero_fs_win_text_chain`, defect d-windows-ci-4-1): where the open
+ * finds nothing at the end, and where it refuses for another reason and the
+ * text ends at a name where nothing stands (`hero_fs_win_ends_at_nothing`).
  *
  * Only the LAST part of the path is followed. A link among the directories on
  * the way is the kernel's to follow, and it follows it the same way for the
@@ -332,8 +383,15 @@ HeroStr hero_fs_landing(const char *path) {
                            OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
     if (h == INVALID_HANDLE_VALUE) {
         DWORD e = GetLastError();
+        char current[HERO_FS_PATH_MAX];
         /* Nothing at the chain's end: read by its text (defect d-windows-ci-4-1). */
-        if (e == ERROR_FILE_NOT_FOUND || e == ERROR_PATH_NOT_FOUND) return hero_fs_win_text_landing(path);
+        if (e == ERROR_FILE_NOT_FOUND || e == ERROR_PATH_NOT_FOUND) {
+            if (!hero_fs_win_text_chain(path, current)) return hero_str_from_bytes("", 0);
+            return hero_fs_found_path(current);
+        }
+        /* Another refusal whose chain's text ends at nothing (defect
+         * d-windows-ci-4-1): the name at its end. */
+        if (hero_fs_win_ends_at_nothing(path, current)) return hero_fs_found_path(current);
         hero_fs_why_code = (int64_t)e;
         return hero_str_from_bytes("", 0);
     }
@@ -437,8 +495,11 @@ HeroStr hero_fs_landing(const char *path) {
  * `hero_fs_landing`'s Windows arm follows one, forty deep at most
  * (ERROR_CANT_RESOLVE_FILENAME, the runtime's refusal), and a loop is the
  * open's own refusal. Until defect d-windows-ci-4-1 a dangling link there was
- * no answer, as that arm gave none. UNRUN on Windows: every measurement of
- * this door is this Mac's, and the CI's Windows leg judges the repair. */
+ * no answer, as that arm gave none; and until its second repair, one whose
+ * open the system refused with another number than nothing found, a file's
+ * link to a folder's link to nothing (`hero_fs_win_ends_at_nothing`). UNRUN
+ * on Windows: every measurement of this door is this Mac's, and the CI's
+ * Windows leg judges the repair. */
 
 /* `path` with its separators at the end taken away, the root's own kept:
  * `/`, and on Windows `\` and `C:\`. */
@@ -528,7 +589,11 @@ HeroStr hero_fs_resolved_shown(const char *path, int64_t *status, int64_t *marks
             return shown;
         }
         DWORD e = GetLastError();
-        if (e != ERROR_FILE_NOT_FOUND && e != ERROR_PATH_NOT_FOUND) {
+        /* Another refusal is the answer, but where the chain's text at
+         * `pending` ends at nothing (defect d-windows-ci-4-1, beside
+         * `hero_fs_landing`'s arm). */
+        char end[HERO_FS_PATH_MAX];
+        if (e != ERROR_FILE_NOT_FOUND && e != ERROR_PATH_NOT_FOUND && !hero_fs_win_ends_at_nothing(pending, end)) {
             hero_fs_why_code = (int64_t)e;
             return hero_str_from_bytes("", 0);
         }
