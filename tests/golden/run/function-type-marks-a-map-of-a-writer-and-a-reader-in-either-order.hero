@@ -1,0 +1,22 @@
+# Panel 261's R3 (2026-11-26, ratified): the sitting critic's `t6`, a map of a
+# reader and a writer with no type written, in either order, takes
+# `{str: (function(@Store, i64) -> i64)}`; until the join the reader first
+# was `type_mismatch`. Prints 3, 2, 4, then 2.
+record Store
+    n: i64
+
+function set(@s: Store, k: i64) -> i64
+    s.n @ k
+    return s.n
+
+function get(s: Store lent, k: i64) -> i64
+    return s.n + k
+
+function main()
+    st @= Store(n: 1)
+    writers_first = {"SET": set, "GET": get}
+    readers_first = {"GET": get, "SET": set}
+    print(writers_first["GET"].must()(@st, 2))
+    print(readers_first["SET"].must()(@st, 2))
+    print(readers_first["GET"].must()(@st, 2))
+    print(st.n)

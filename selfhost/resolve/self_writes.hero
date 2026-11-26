@@ -1,0 +1,100 @@
+# A write of a place with itself is no write (panel 261's R3; spec § 5, *an
+# `@` argument counting and `x @ x` not*). `x @ x`, `a.n @ a.n` and `xs[i] @
+# xs[i]` leave the place as it was, so they do not make a cell one something
+# re-binds or an `@` parameter one something writes: a signature that says
+# `@` and changes nothing is the class `never_rebound` closes (panel 210),
+# and with a `lent` that fits where `@` is asked (`check/type_fit.hero`), no
+# function needs such a line to stand in a table of writers.
+#
+# The walk counts every re-binding as `place` meets it (`resolve/walk.hero`),
+# and this pass, after it, takes each self-write off its root's count: a
+# narrowing that asks the statement's own two sides, never what surrounds it.
+# Read across the tree on 2026-11-26 by the sitting's census, five such lines
+# stand, each beside another write of its place.
+
+use ast
+use resolve/state
+use resolved
+use source
+
+# Every self-write taken off its root's count. A cell it leaves with none is
+# left to the checker (`Local.deferred`), whose verdict says why
+# (`resolve/written_nowhere.hero`'s `verdict`), as a cell a value line
+# computes from is (defect 630); an `@` parameter is told by
+# `written_nowhere.report`, which says why too.
+function uncount(@r: state.Resolver, a: ast.Ast, s: source.Source)
+    for stmt in a.stmts
+        match stmt.kind
+            .mutate m =>
+                if same_place(a, s, place: m.place, value: m.value)
+                    match r.out.uses[root_of(a, m.place)]
+                        .local l =>
+                            if r.out.locals[l.at].writes > 0
+                                r.out.locals[l.at].writes @ r.out.locals[l.at].writes - 1
+
+                                if r.out.locals[l.at].writes == 0 && r.out.locals[l.at].kind == .cell
+                                    r.out.locals[l.at].deferred @ true
+                        .unresolved | .top | .builtin | .module => continue
+            .bind | .declare | .return_stmt | .break_stmt | .continue_stmt => continue
+            .assert_stmt | .while_stmt | .for_in | .expr_stmt | .error     => continue
+
+# The first place rooted at local `at` that is re-bound with itself, as
+# written, which its verdict quotes: the line is still there, so writing `=`
+# or taking the `@` away leaves it refused, and neither repair is `certain`.
+function written_by_itself(a: ast.Ast, s: source.Source, out: resolved.Resolved, at: i64) -> str?
+    for stmt in a.stmts
+        match stmt.kind
+            .mutate m =>
+                if same_place(a, s, place: m.place, value: m.value)
+                    match out.uses[root_of(a, m.place)]
+                        .local l =>
+                            if l.at == at
+                                return ok(source.span_text(s, a.exprs[m.place].span))
+                        .unresolved | .top | .builtin | .module => continue
+            .bind | .declare | .return_stmt | .break_stmt | .continue_stmt => continue
+            .assert_stmt | .while_stmt | .for_in | .expr_stmt | .error     => continue
+
+    return fail(code: "none", msg: "no self-write of this local")
+
+# The two sides are one place, written alike: a name, a field of one, or an
+# element at an index that is itself such a place or an integer written out,
+# so evaluating the right side twice reaches what the left names (a call in
+# an index might not, and is never one).
+function same_place(a: ast.Ast, s: source.Source, place: i64, value: i64) -> bool
+    if !plain_place(a, place) || !plain_place(a, value)
+        return false
+    return squeezed(source.span_text(s, a.exprs[place].span)) == squeezed(source.span_text(s, a.exprs[value].span))
+
+function plain_place(a: ast.Ast, id: i64) -> bool
+    return match a.exprs[id].kind
+        .name => true
+        .field f => plain_place(a, f.base)
+        .index i => plain_place(a, i.base) && (plain_place(a, i.index) || a.exprs[i.index].kind == .int_lit)
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .interp | .null_ptr | .hole => false
+        .unary | .binary | .field_name | .call | .method | .variant_case | .array | .map => false
+        .try_expr | .if_expr | .match_expr | .error => false
+
+# The text without its blanks, so a place broken across lines reads as one.
+function squeezed(text: str) -> str
+    out: [str] @= []
+
+    for one in text.chars()
+        if one != " " && one != "\n"
+            out @ out.push(one)
+
+    return join(out, "")
+
+# The name a place is rooted at, which `resolve/writes.write_root` recorded.
+function root_of(a: ast.Ast, id: i64) -> i64
+    at: i64 @= id
+    walking: bool @= true
+
+    while walking
+        match a.exprs[at].kind
+            .field f                                                                    => at @ f.base
+            .index i                                                                    => at @ i.base
+            .name | .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .interp  => walking @ false
+            .null_ptr | .hole | .unary | .binary | .field_name | .call | .method        => walking @ false
+            .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => walking @ false
+
+    return at

@@ -1,0 +1,58 @@
+# Panel 261's R3 (2026-11-26, ratified): an `if`'s branches and a `match`'s
+# arms that give a writer and a reader, or a named value and a nameless one,
+# take the type each fits in either order; until the join each mixed pair was
+# `type_mismatch`, in both orders. With no argument the program takes each
+# `else` and `_` arm: prints 2, 4, 6, 3, 3, 3.
+record App
+    n: i64
+
+function bump(@a: App, x: i64) -> i64
+    a.n @ a.n + x
+    return a.n
+
+function peek(a: App lent, x: i64) -> i64
+    return a.n + x
+
+function blank(n: i64, s: str) -> i64
+    return n + s.len()
+
+function main()
+    app @= App(n: 1)
+    k = args().len()
+
+    w = if k > 5
+        bump
+    else
+        peek
+
+    r = if k > 5
+        peek
+    else
+        bump
+
+    m = match k
+        3 => peek
+        _ => bump
+
+    print(w(@app, 1))
+    print(r(@app, 3))
+    print(m(@app, 2))
+    named: (function(n: i64, s: str) -> i64) = blank
+
+    h1 = if k > 5
+        named
+    else
+        blank
+
+    h2 = if k > 5
+        blank
+    else
+        named
+
+    h3 = match k
+        3 => blank
+        _ => named
+
+    print(h1(1, "ab"))
+    print(h2(1, "ab"))
+    print(h3(1, "ab"))

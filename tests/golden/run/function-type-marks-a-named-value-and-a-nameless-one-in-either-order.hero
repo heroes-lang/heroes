@@ -1,0 +1,18 @@
+# Panel 261's R3 (2026-11-26, ratified): a value whose type names its
+# parameters and a function whose parameters share no type, so it names none,
+# in a list and a map in either order, take the type that names them; until
+# the join, the nameless one first refused the named one, `type_mismatch`, at
+# the base with no mark at all. Prints 3, 3, 3, 3.
+function blank(n: i64, s: str) -> i64
+    return n + s.len()
+
+function main()
+    named: (function(n: i64, s: str) -> i64) = blank
+    xs = [blank, named]
+    ys = [named, blank]
+    m = {"b": blank, "n": named}
+    k = {"n": named, "b": blank}
+    print(xs[1](1, "zz"))
+    print(ys[1](1, "zz"))
+    print(m["b"].must()(1, "zz"))
+    print(k["b"].must()(1, "zz"))

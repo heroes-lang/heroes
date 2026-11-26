@@ -1,0 +1,27 @@
+# Panel 261's R3 (2026-11-26, ratified): the join widens a function value's
+# marks and names alone. A writer beside a by-value function has no type both
+# fit, so the literal is refused in either order, `type_mismatch` where the
+# second meets the first; and a table of readers alone is a `lent` table,
+# into which a writer pushed later is refused, since its calls write no `@`.
+record App
+    n: i64
+
+function bump(@a: App, x: i64) -> i64
+    a.n @ a.n + x
+    return a.n
+
+function peek(a: App lent, x: i64) -> i64
+    return a.n + x
+
+function copy(a: App, x: i64) -> i64
+    return a.n * x
+
+function main()
+    app @= App(n: 1)
+    xs = [bump, copy]  #~ type_mismatch
+    ys = [copy, bump]  #~ type_mismatch
+    print(xs.len() + ys.len())
+    readers @= [peek]
+    readers @ readers.push(bump)  #~ type_mismatch
+    print(readers[0](app, 1))
+    print(bump(@app, 1))
