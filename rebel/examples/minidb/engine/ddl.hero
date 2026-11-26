@@ -1,0 +1,181 @@
+# The statements that change the catalogue: `CREATE TABLE`, which also
+# makes the unique index a `UNIQUE` column or a `PRIMARY KEY` other than an
+# `INTEGER PRIMARY KEY` needs; `CREATE INDEX`, which fills the new index from
+# the table's rows; and `DROP`, which frees every page of the trees it
+# drops. Each writes its row of the schema table, and so moves the schema's
+# version.
+
+use <rebel>/sql
+
+use catalog/schema
+use sql/ast
+use storage/btree
+use storage/pager
+use values/row
+use values/sortkey
+use values/value
+
+## CREATE
+
+# Makes a table; answers whether it did, false where `IF NOT EXISTS` found
+# one.
+#
+# - `p`: the pager, writing.
+# - `cat`: the catalogue.
+# - `table`: its name.
+# - `columns`: its columns as declared.
+# - `if_not_exists`: whether a table of that name is let be.
+# - `text`: the statement's text, kept in the schema.
+#
+# Fails `exists` where a table of that name is there, `invalid` for two
+# columns of one name or two primary keys.
+function create_table(@p: pager.Pager, cat: schema.Catalog lent, table: str, columns: [ast.ColumnDef], if_not_exists: bool, text: str) -> bool?
+    if !cat.tables[table].is_err()
+        if if_not_exists
+            return ok(false)
+        return value.refuse(code: sql.EXISTS, state: "42P07", message: f"table {table} already exists")
+    primaries @= 0
+
+    for k in range(from: 0, to: columns.len())
+        if columns[k].primary
+            primaries @ primaries + 1
+
+        for j in range(from: 0, to: k)
+            if columns[j].name == columns[k].name
+                return value.refuse(
+                    code: sql.INVALID,
+                    state: "42701",
+                    message: f"the column {columns[k].name} is declared twice"
+                )
+
+    if primaries > 1
+        return value.refuse(code: sql.INVALID, state: "42P16", message: f"table {table} has {primaries} primary keys")
+    root = btree.create(@p, table: true)?
+    schema.add(@p, kind: "table", name: table, table: table, root: root, text: text)?
+    made @= 0
+
+    for c in columns
+        if c.unique || c.primary && c.type_name != "INTEGER"
+            made @ made + 1
+            index = f"autoindex_{table}_{made}"
+            index_root = btree.create(@p, table: false)?
+            schema.add(@p, kind: "autoindex", name: index, table: table, root: index_root, text: f"CREATE UNIQUE INDEX {index} ON {table} ({c.name})")?
+
+    return ok(true)
+
+# Makes an index and fills it from the table's rows; answers whether it did,
+# false where `IF NOT EXISTS` found one.
+#
+# - `p`: the pager, writing.
+# - `cat`: the catalogue.
+# - `index`: its name.
+# - `table`: its table's name.
+# - `columns`: its columns' names.
+# - `unique`: whether two rows may not share its values.
+# - `if_not_exists`: whether an index of that name is let be.
+# - `text`: the statement's text.
+#
+# Fails `exists` where an index of that name is there, or where a unique
+# index meets two rows that share its values; `not_found` for a table or a
+# column that is not there.
+function create_index(@p: pager.Pager, cat: schema.Catalog lent, index: str, table: str, columns: [str], unique: bool, if_not_exists: bool, text: str) -> bool?
+    if !cat.indexes[index].is_err()
+        if if_not_exists
+            return ok(false)
+        return value.refuse(code: sql.EXISTS, state: "42P07", message: f"index {index} already exists")
+    t = schema.table_named(cat, name: table)?
+    places: [i64] @= []
+
+    for c in columns
+        places @ places.push(schema.column_index(t, name: c)?)
+
+    root = btree.create(@p, table: false)?
+    i = schema.Index(
+        name: index,
+        table: table,
+        columns: places,
+        unique: unique,
+        root: root,
+        automatic: false,
+        text: text,
+        schema_rowid: 0
+    )
+
+    for entry in btree.scan(@p, root: t.root, span: btree.whole())?
+        values = row.decode(entry.value)?
+        rowid = sortkey.rowid_of(entry.key)?
+
+        if unique
+            unique_against(@p, t: t, i: i, values: values)?
+        btree.insert(@p, root: root, key: schema.index_key(i, values: values, rowid: rowid), value: [], replace: false)?
+
+    schema.add(@p, kind: "index", name: index, table: table, root: root, text: text)?
+    return ok(true)
+
+function unique_against(@p: pager.Pager, t: schema.Table, i: schema.Index, values: [sql.Value]) -> ()?
+    own = schema.index_values(i, values: values, rowid: -1)
+
+    for v in own
+        if v == .null_value
+            return ok()
+
+    prefix = sortkey.of(own)
+
+    if btree.scan(@p, root: i.root, span: btree.Span(low: prefix, high: sortkey.after_prefix(prefix), to_end: false))?.len() > 0
+        return value.refuse(
+            code: sql.EXISTS,
+            state: "23505",
+            message: f"UNIQUE constraint failed: {t.name} has two rows sharing the values of {i.name}"
+        )
+    return ok()
+
+## DROP
+
+# Drops a table and its indexes, every page freed; answers whether it did,
+# false where `IF EXISTS` found none.
+#
+# - `p`: the pager, writing.
+# - `cat`: the catalogue.
+# - `table`: its name.
+# - `if_exists`: whether a table that is not there is let be.
+#
+# Fails `not_found` where the table is not there and `if_exists` is false.
+function drop_table(@p: pager.Pager, cat: schema.Catalog lent, table: str, if_exists: bool) -> bool?
+    if cat.tables[table].is_err() && if_exists
+        return ok(false)
+    t = schema.table_named(cat, name: table)?
+
+    for i in schema.indexes_of(cat, table: table)
+        btree.destroy(@p, root: i.root)?
+        schema.remove(@p, schema_rowid: i.schema_rowid)?
+
+    btree.destroy(@p, root: t.root)?
+    schema.remove(@p, schema_rowid: t.schema_rowid)?
+    return ok(true)
+
+# Drops an index, its pages freed; answers whether it did, false where `IF
+# EXISTS` found none.
+#
+# - `p`: the pager, writing.
+# - `cat`: the catalogue.
+# - `index`: its name.
+# - `if_exists`: whether an index that is not there is let be.
+#
+# Fails `not_found` where it is not there, `invalid` for an index a `UNIQUE`
+# or a `PRIMARY KEY` made, which only its table's drop takes.
+function drop_index(@p: pager.Pager, cat: schema.Catalog lent, index: str, if_exists: bool) -> bool?
+    match cat.indexes[index]
+        .ok i =>
+            if i.automatic
+                return value.refuse(
+                    code: sql.INVALID,
+                    state: "2BP01",
+                    message: f"index {index} belongs to a UNIQUE or PRIMARY KEY constraint and cannot be dropped"
+                )
+            btree.destroy(@p, root: i.root)?
+            schema.remove(@p, schema_rowid: i.schema_rowid)?
+            return ok(true)
+        .err _ =>
+            if if_exists
+                return ok(false)
+            return value.refuse(code: sql.NOT_FOUND, state: "42704", message: f"no such index: {index}")

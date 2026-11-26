@@ -1,0 +1,416 @@
+# A `SELECT` run: its tables joined by nested loops, each read the way the
+# planner chose with the rows of the tables before it as the bounds' values;
+# the `WHERE` kept to the rows where it is true; the groups of a `GROUP BY`,
+# or of a query with an aggregate and no `GROUP BY`, in the order of their
+# keys, as SQLite's temporary B-tree gives them; `HAVING`; the items;
+# `DISTINCT`; `ORDER BY`, stable, by SQL's order of values with `NULL`s
+# first; `OFFSET` and `LIMIT`. An `ORDER BY` may name an item by its alias
+# or its place, `ORDER BY 2`.
+
+use <rebel>/bytes
+use <rebel>/lists
+use <rebel>/sql
+
+use catalog/schema
+use engine/aggregate
+use engine/eval
+use engine/fetch
+use engine/planner
+use engine/scope
+use sql/ast
+use sql/printer
+use storage/pager
+use values/sortkey
+use values/value
+
+## Answers
+
+# What a query answers.
+record Answer
+    # Its columns' names.
+    columns: [str]
+    # Its rows, each one value per column.
+    rows: [[sql.Value]]
+
+# An item expanded: its expression and the name its column takes.
+record Output
+    expr: ast.Expr
+    name: str
+
+# A row produced, with the values it is ordered by.
+record Produced
+    values: [sql.Value]
+    order_by: [sql.Value]
+
+# A query made ready to run: its tables, items, accesses and terms.
+record Prepared
+    sc: scope.Scope
+    outputs: [Output]
+    accesses: [planner.Access]
+    order_terms: [ast.Expr]
+    descending: [bool]
+    grouped: bool
+    calls: [ast.Expr]
+
+## Preparing
+
+function prepare(cat: schema.Catalog lent, q: ast.Select) -> Prepared?
+    sc = scope.bind(cat, sources: q.sources)?
+    outputs = outputs_of(sc, items: q.items)?
+    order_terms: [ast.Expr] @= []
+    descending: [bool] @= []
+
+    for o in q.order_by
+        order_terms @ order_terms.push(ordered_term(o.expr, outputs: outputs)?)
+        descending @ descending.push(o.descending)
+
+    checked: [ast.Expr] @= []
+
+    for out in outputs
+        checked @ checked.push(out.expr)
+
+    for t in order_terms
+        checked @ checked.push(t)
+
+    with_having = lists.concat(xs: checked, then: optional(q.having))
+    calls = aggregate.calls_in(with_having)?
+
+    for e in lists.concat(xs: lists.concat(xs: with_having, then: q.group_by), then: optional(q.where))
+        _ = planner.tables_read(e, sc: sc)?
+
+    for e in lists.concat(xs: optional(q.where), then: q.group_by)
+        if aggregate.has_aggregate(e)
+            return value.refuse(code: sql.INVALID, state: "42803", message: "an aggregate in WHERE or GROUP BY")
+
+    accesses = accesses_of(cat, sc: sc, sources: q.sources, where: q.where)?
+    grouped = q.group_by.len() > 0 || calls.len() > 0
+    return ok(
+        Prepared(sc: sc, outputs: outputs, accesses: accesses, order_terms: order_terms, descending: descending, grouped: grouped, calls: calls)
+    )
+
+# `[e]` for a part written, `[]` for one left out.
+function optional(e: ast.Expr?) -> [ast.Expr]
+    return match e
+        .ok x  => [x]
+        .err _ => []
+
+function outputs_of(sc: scope.Scope lent, items: [ast.Item]) -> [Output]?
+    found: [Output] @= []
+
+    for item in items
+        if item.star
+            for named in scope.star(sc, table: item.star_table)?
+                owner = sc.sources[scope.source_of(sc, at: named.at)].alias
+                found @ found.push(Output(expr: .column(table: owner, name: named.name), name: named.name))
+        else
+            found @ found.push(Output(expr: item.expr, name: name_of(item)))
+
+    return ok(found)
+
+function name_of(item: ast.Item) -> str
+    if item.alias != ""
+        return item.alias
+
+    return match item.expr
+        .column c => c.name
+        .literal _ | .parameter _ | .negate _ | .negation _ | .binary _ | .is_null _ | .in_list _ | .between _ | .like _ | .choice _ | .call _ =>
+            printer.text_of(item.expr)
+
+# An `ORDER BY` term: an item's place, `ORDER BY 2`, or an alias, stands for
+# the item's expression.
+function ordered_term(e: ast.Expr, outputs: [Output]) -> ast.Expr?
+    match e
+        .literal l =>
+            match l.value
+                .integer n =>
+                    if n.v < 1 || n.v > outputs.len()
+                        return value.refuse(
+                            code: sql.INVALID,
+                            state: "42P10",
+                            message: f"ORDER BY {n.v} names no item: there are {outputs.len()}"
+                        )
+                    return ok(outputs[n.v - 1].expr)
+                .null_value | .boolean _ | .float _ | .text _ | .blob _ | .instant _ => return ok(e)
+        .column c =>
+            if c.table == ""
+                for out in outputs
+                    if out.name == c.name && !is_column_named(out.expr, name: c.name)
+                        return ok(out.expr)
+
+            return ok(e)
+        .parameter _ | .negate _ | .negation _ | .binary _ | .is_null _ | .in_list _ | .between _ | .like _ | .choice _ | .call _ =>
+            return ok(e)
+
+function is_column_named(e: ast.Expr, name: str) -> bool
+    return match e
+        .column c => c.name == name
+        .literal _ | .parameter _ | .negate _ | .negation _ | .binary _ | .is_null _ | .in_list _ | .between _ | .like _ | .choice _ | .call _ =>
+            false
+
+# Each table's access: an inner join's may use the `WHERE` and its `ON`; a
+# left join's only its `ON`, since a `WHERE` on it judges the row after its
+# `NULL`s are put in.
+function accesses_of(cat: schema.Catalog lent, sc: scope.Scope lent, sources: [ast.Source], where: ast.Expr?) -> [planner.Access]?
+    found: [planner.Access] @= []
+    shared: [ast.Expr] @= []
+
+    for w in optional(where)
+        shared @ planner.conjuncts(w)
+
+    for k in range(from: 0, to: sources.len())
+        conditions @= shared
+
+        if sources[k].join == .left
+            conditions @ []
+
+        for on in optional(sources[k].on)
+            conditions @ lists.concat(xs: conditions, then: planner.conjuncts(on))
+
+        found @ found.push(planner.choose(cat, sc: sc, k: k, conditions: conditions)?)
+
+    return ok(found)
+
+## Running
+
+# The rows `q` answers.
+#
+# - `p`: the pager, holding a snapshot.
+# - `cat`: the catalogue.
+# - `q`: the query.
+# - `params`: its parameters, `?1` first.
+#
+# Fails `not_found` for a table or a column that is not there, `invalid` for
+# a type mismatch, and where a page is damaged.
+function run(@p: pager.Pager, cat: schema.Catalog lent, q: ast.Select, params: [sql.Value]) -> Answer?
+    prepared = prepare(cat, q: q)?
+    sc = prepared.sc
+    base = eval.Env(scope: sc, values: scope.nulls(sc), params: params, aggregates: [], totals: [])
+    joined = joined_rows(@p, cat: cat, sources: q.sources, prepared: prepared, base: base)?
+    kept: [[sql.Value]] @= []
+
+    for r in joined
+        if passes(q.where, values: r, base: base, what: "WHERE")?
+            kept @ kept.push(r)
+
+    produced: [Produced] @= []
+
+    if prepared.grouped
+        produced @ grouped_rows(kept, q: q, prepared: prepared, base: base)?
+    else
+        for r in kept
+            produced @ produced.push(produce(prepared, values: r, base: base, calls: [], totals: [])?)
+
+    if q.distinct
+        produced @ distinct_rows(produced)
+
+    if prepared.order_terms.len() > 0
+        produced @ lists.sort_by_with(produced, state: prepared.descending, less: ordered_before)
+    first @= 0
+    count @= produced.len()
+
+    for e in optional(q.offset)
+        first @ clamp_count(n: limit_of(e, base: base, what: "OFFSET")?, most: produced.len())
+
+    for e in optional(q.limit)
+        n = limit_of(e, base: base, what: "LIMIT")?
+
+        if n >= 0
+            count @ n
+
+    last = clamp_count(n: first + clamp_count(n: count, most: produced.len()), most: produced.len())
+    rows: [[sql.Value]] @= []
+
+    for k in range(from: first, to: last)
+        rows @ rows.push(produced[k].values)
+
+    names: [str] @= []
+
+    for out in prepared.outputs
+        names @ names.push(out.name)
+
+    return ok(Answer(columns: names, rows: rows))
+
+# Whether a `WHERE`, an `ON` or a `HAVING` is true of a row; one left out is.
+function passes(condition: ast.Expr?, values: [sql.Value], base: eval.Env, what: str) -> bool?
+    for c in optional(condition)
+        env @= base
+        env.values @ values
+        return ok(value.is_true(value.truth(eval.eval(c, env: env)?, what: what)?))
+
+    return ok(true)
+
+# The rows of every table joined, nested loops in the `FROM`'s order.
+function joined_rows(@p: pager.Pager, cat: schema.Catalog lent, sources: [ast.Source], prepared: Prepared, base: eval.Env) -> [[sql.Value]]?
+    partial: [[sql.Value]] @= [base.values]
+    sc = prepared.sc
+
+    for k in range(from: 0, to: sources.len())
+        b = sc.sources[k]
+        a = prepared.accesses[k]
+        next_rows: [[sql.Value]] @= []
+
+        # A scan of the whole table reads the same rows for every outer row,
+        # so it is read once.
+        whole: [fetch.Fetched] @= []
+
+        if planner.is_full(a)
+            whole @ fetch.rows_of(@p, cat: cat, t: b.table, a: a, env: base)?
+
+        for r in partial
+            env @= base
+            env.values @ r
+            candidates @= whole
+
+            if !planner.is_full(a)
+                candidates @ fetch.rows_of(@p, cat: cat, t: b.table, a: a, env: env)?
+            matched @= false
+
+            for f in candidates
+                joined = scope.with_table(joined: r, scope: sc, k: k, values: f.values, rowid: f.rowid)
+
+                if passes(sources[k].on, values: joined, base: base, what: "ON")?
+                    matched @ true
+                    next_rows @ next_rows.push(joined)
+
+            if !matched && b.join == .left
+                next_rows @ next_rows.push(r)
+
+        partial @ next_rows
+
+    return ok(partial)
+
+function produce(prepared: Prepared, values: [sql.Value], base: eval.Env, calls: [ast.Expr], totals: [sql.Value]) -> Produced?
+    env @= base
+    env.values @ values
+    env.aggregates @ calls
+    env.totals @ totals
+    out: [sql.Value] @= []
+
+    for o in prepared.outputs
+        out @ out.push(eval.eval(o.expr, env: env)?)
+
+    keys_of: [sql.Value] @= []
+
+    for t in prepared.order_terms
+        keys_of @ keys_of.push(eval.eval(t, env: env)?)
+
+    return ok(Produced(values: out, order_by: keys_of))
+
+# The groups of the kept rows, in the order of their keys; a query with an
+# aggregate and no `GROUP BY` is one group, even of no row.
+function grouped_rows(kept: [[sql.Value]], q: ast.Select, prepared: Prepared, base: eval.Env) -> [Produced]?
+    slots: {[u8]: i64} @= {}
+    group_keys: [[u8]] @= []
+    members: [[[sql.Value]]] @= []
+
+    for r in kept
+        env @= base
+        env.values @ r
+        key_values: [sql.Value] @= []
+
+        for g in q.group_by
+            key_values @ key_values.push(eval.eval(g, env: env)?)
+
+        key = sortkey.of(key_values)
+
+        match slots[key]
+            .ok slot => members[slot] @ members[slot].push(r)
+            .err _ =>
+                slots[key] @ group_keys.len()
+                group_keys @ group_keys.push(key)
+                members @ members.push([r])
+
+    if q.group_by.len() == 0 && members.len() == 0
+        group_keys @ [[]]
+        members @ [[]]
+    found: [Produced] @= []
+
+    for slot in sorted_slots(group_keys)
+        rows = members[slot]
+        first_row @= base.values
+
+        if rows.len() > 0
+            first_row @ rows[0]
+        totals = aggregate.totals(prepared.calls, rows: rows, base: base)?
+        env @= base
+        env.values @ first_row
+        env.aggregates @ prepared.calls
+        env.totals @ totals
+
+        if passes(q.having, values: first_row, base: env, what: "HAVING")?
+            found @ found.push(produce(prepared, values: first_row, base: base, calls: prepared.calls, totals: totals)?)
+
+    return ok(found)
+
+# The slots of the groups in the order of their keys' bytes.
+function sorted_slots(group_keys: [[u8]]) -> [i64]
+    return lists.sort_by_with(range(from: 0, to: group_keys.len()), state: group_keys, less: key_before)
+
+function key_before(state: [[u8]], a: i64, b: i64) -> bool
+    return bytes.compare(a: state[a], b: state[b]) < 0
+
+function distinct_rows(produced: [Produced]) -> [Produced]
+    seen: {[u8]: bool} @= {}
+    found: [Produced] @= []
+
+    for r in produced
+        key = sortkey.of(r.values)
+
+        if !seen[key].default(false)
+            seen[key] @ true
+            found @ found.push(r)
+
+    return found
+
+# Whether `a` orders before `b` by the `ORDER BY`'s terms, each ascending or,
+# where `state` says so, descending.
+function ordered_before(state: [bool], a: Produced, b: Produced) -> bool
+    for k in range(from: 0, to: state.len())
+        c = value.order(a: a.order_by[k], b: b.order_by[k])
+
+        if c != 0
+            return c < 0 != state[k]
+
+    return false
+
+function limit_of(e: ast.Expr, base: eval.Env, what: str) -> i64?
+    match eval.eval(e, env: base)?
+        .integer n => return ok(n.v)
+        .null_value | .boolean _ | .float _ | .text _ | .blob _ | .instant _ =>
+            return value.refuse(code: sql.INVALID, state: value.MISMATCH, message: f"{what} takes an integer")
+
+function clamp_count(n: i64, most: i64) -> i64
+    if n < 0
+        return 0
+
+    if n > most
+        return most
+    return n
+
+## EXPLAIN
+
+# The plan of `q`, drawn as SQLite's shell draws `EXPLAIN QUERY PLAN`.
+#
+# - `cat`: the catalogue.
+# - `q`: the query.
+#
+# Fails where `q` names a table or a column that is not there.
+function plan(cat: schema.Catalog lent, q: ast.Select) -> [str]?
+    prepared = prepare(cat, q: q)?
+    steps: [str] @= []
+
+    for k in range(from: 0, to: prepared.accesses.len())
+        steps @ steps.push(planner.describe(prepared.sc.sources[k], a: prepared.accesses[k]))
+
+    if prepared.grouped && q.group_by.len() > 0
+        steps @ steps.push("USE TEMP B-TREE FOR GROUP BY")
+
+    if q.distinct
+        steps @ steps.push("USE TEMP B-TREE FOR DISTINCT")
+
+    if q.order_by.len() > 0
+        steps @ steps.push("USE TEMP B-TREE FOR ORDER BY")
+
+    if steps.len() == 0
+        steps @ steps.push("SCAN CONSTANT ROW")
+    return ok(planner.drawn(steps))

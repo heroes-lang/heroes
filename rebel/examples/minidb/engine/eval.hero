@@ -1,0 +1,426 @@
+# Expressions evaluated over a joined row: columns read from their places,
+# parameters from the statement's list, operators by `values/value`'s rules,
+# `AND` and `OR` by three-valued logic and short-circuited where the left
+# side decides, `IN` with SQL's answer for a `NULL` in its list (`x NOT IN
+# (1, NULL)` is never true), `LIKE` with `%` and `_` and ASCII letters of
+# either case, `CASE`, and the scalar functions minidb knows. An aggregate
+# is evaluated once per group elsewhere; here it is read from the group's
+# totals.
+
+use <rebel>/sql
+use <rebel>/strings
+
+use engine/scope
+use sql/ast
+use sql/parser
+use values/value
+
+## The environment
+
+# What an expression is evaluated against.
+record Env
+    # The tables whose columns it may name.
+    scope: scope.Scope
+    # The joined row.
+    values: [sql.Value]
+    # The statement's parameters, `?1` first.
+    params: [sql.Value]
+    # The aggregate calls of a grouped query, and each one's value for the
+    # group being evaluated.
+    aggregates: [ast.Expr]
+    totals: [sql.Value]
+
+# An environment of no table: values and parameters alone.
+#
+# - `params`: the statement's parameters.
+function plain(params: [sql.Value]) -> Env
+    return Env(scope: scope.empty(), values: [], params: params, aggregates: [], totals: [])
+
+## Evaluation
+
+# The value of `e`.
+#
+# - `e`: the expression, whose nesting the parser bounds.
+# - `env`: what it is evaluated against.
+#
+# Fails with the code of the operation that fails: `not_found` for a column
+# no table has, `invalid` for a type mismatch or a division by zero,
+# `does_not_fit` for an overflow.
+function eval(e: ast.Expr, env: Env lent) -> sql.Value?
+    match e
+        .literal l => return ok(l.value)
+        .column c  => return ok(env.values[scope.resolve(env.scope, table: c.table, name: c.name)?])
+        .parameter p =>
+            if p.number > env.params.len()
+                return value.refuse(
+                    code: sql.INVALID,
+                    state: "42P02",
+                    message: f"no value given for the parameter ?{p.number}"
+                )
+            return ok(env.params[p.number - 1])
+        .negate n   => return value.negate(eval(n.args[0], env: env)?)
+        .negation n => return ok(value.negation(value.truth(eval(n.args[0], env: env)?, what: "NOT")?))
+        .binary b   => return binary(b.op, operands: b.args, env: env)
+        .is_null n =>
+            is_null = eval(n.args[0], env: env)? == .null_value
+            return ok(.boolean(v: is_null != n.negated))
+        .in_list l => return ok(negated_if(l.negated, v: in_list(l.args, env: env)?))
+        .between b => return ok(negated_if(b.negated, v: between(b.args, env: env)?))
+        .like l    => return ok(negated_if(l.negated, v: like(l.args, env: env)?))
+        .choice c  => return choice(c.args, env: env)
+        .call c =>
+            for k in range(from: 0, to: env.aggregates.len())
+                if env.aggregates[k] == e
+                    return ok(env.totals[k])
+
+            if is_aggregate(c.name)
+                return value.refuse(
+                    code: sql.INVALID,
+                    state: "42803",
+                    message: f"{c.name}() is an aggregate, not allowed here"
+                )
+            return scalar(c.name, operands: c.args, env: env)
+
+function negated_if(negated: bool, v: sql.Value) -> sql.Value
+    if negated
+        return value.negation(v)
+    return v
+
+function binary(op: ast.Binary, operands: [ast.Expr], env: Env lent) -> sql.Value?
+    left = eval(operands[0], env: env)?
+
+    match op
+        .both =>
+            l = value.truth(left, what: "AND")?
+
+            if l == .boolean(v: false)
+                return ok(l)
+            return ok(value.both(a: l, b: value.truth(eval(operands[1], env: env)?, what: "AND")?))
+        .either =>
+            l = value.truth(left, what: "OR")?
+
+            if value.is_true(l)
+                return ok(l)
+            return ok(value.either(a: l, b: value.truth(eval(operands[1], env: env)?, what: "OR")?))
+        .add | .subtract | .multiply | .divide | .remainder | .concat | .equal | .not_equal | .less | .less_equal | .greater | .greater_equal =>
+            _ = 0
+
+    right = eval(operands[1], env: env)?
+
+    return match op
+        .add            => value.arithmetic("+", a: left, b: right)
+        .subtract       => value.arithmetic("-", a: left, b: right)
+        .multiply       => value.arithmetic("*", a: left, b: right)
+        .divide         => value.arithmetic("/", a: left, b: right)
+        .remainder      => value.arithmetic("%", a: left, b: right)
+        .concat         => ok(value.concat(a: left, b: right))
+        .equal          => value.compared("=", a: left, b: right)
+        .not_equal      => value.compared("<>", a: left, b: right)
+        .less           => value.compared("<", a: left, b: right)
+        .less_equal     => value.compared("<=", a: left, b: right)
+        .greater        => value.compared(">", a: left, b: right)
+        .greater_equal  => value.compared(">=", a: left, b: right)
+        .both | .either => ok(.null_value)
+
+# `x IN (...)`: true where a member equals `x`; else `NULL` where `x` or a
+# member is `NULL`; else false.
+function in_list(operands: [ast.Expr], env: Env lent) -> sql.Value?
+    x = eval(operands[0], env: env)?
+
+    if x == .null_value
+        return ok(.null_value)
+    saw_null @= false
+
+    for member in operands.slice(from: 1, to: operands.len())
+        m = eval(member, env: env)?
+
+        if m == .null_value
+            saw_null @ true
+        else if value.compare(a: x, b: m)? == 0
+            return ok(.boolean(v: true))
+
+    if saw_null
+        return ok(.null_value)
+    return ok(.boolean(v: false))
+
+function between(operands: [ast.Expr], env: Env lent) -> sql.Value?
+    x = eval(operands[0], env: env)?
+    low = value.compared(">=", a: x, b: eval(operands[1], env: env)?)?
+    high = value.compared("<=", a: x, b: eval(operands[2], env: env)?)?
+    return ok(value.both(a: low, b: high))
+
+function like(operands: [ast.Expr], env: Env lent) -> sql.Value?
+    subject = eval(operands[0], env: env)?
+    pattern = eval(operands[1], env: env)?
+
+    if subject == .null_value || pattern == .null_value
+        return ok(.null_value)
+
+    match subject
+        .text s =>
+            match pattern
+                .text p => return ok(.boolean(v: matches(text: s.v, pattern: p.v)))
+                .null_value | .boolean _ | .integer _ | .float _ | .blob _ | .instant _ => _ = 0
+        .null_value | .boolean _ | .integer _ | .float _ | .blob _ | .instant _ => _ = 0
+
+    return value.refuse(
+        code: sql.INVALID,
+        state: value.MISMATCH,
+        message: f"LIKE takes texts, not {sql.kind_of(subject)} and {sql.kind_of(pattern)}"
+    )
+
+# Whether `text` matches `pattern`, where `%` matches any characters and
+# `_` one, an ASCII letter of either case its other case. The matcher keeps
+# the last `%` and tries again from it on a mismatch, so it runs in time
+# proportional to the text times the pattern at worst, never exponential.
+#
+# - `text`: the text.
+# - `pattern`: the pattern.
+function matches(text: str, pattern: str) -> bool
+    t = text.chars()
+    p = pattern.chars()
+    ti @= 0
+    pi @= 0
+    star @= -1
+    resume @= 0
+
+    while ti < t.len()
+        if pi < p.len() && p[pi] == "%"
+            star @ pi
+            pi @ pi + 1
+            resume @ ti
+        else if pi < p.len() && (p[pi] == "_" || same_letter(a: t[ti], b: p[pi]))
+            ti @ ti + 1
+            pi @ pi + 1
+        else if star >= 0
+            pi @ star + 1
+            resume @ resume + 1
+            ti @ resume
+        else
+            return false
+
+    while pi < p.len() && p[pi] == "%"
+        pi @ pi + 1
+
+    return pi == p.len()
+
+function same_letter(a: str, b: str) -> bool
+    return a == b || strings.to_lower_ascii(a) == strings.to_lower_ascii(b)
+
+function choice(operands: [ast.Expr], env: Env lent) -> sql.Value?
+    last = operands.len() - 1
+    k @= 0
+
+    while k < last
+        if value.is_true(value.truth(eval(operands[k], env: env)?, what: "CASE WHEN")?)
+            return eval(operands[k + 1], env: env)
+        k @ k + 2
+
+    return eval(operands[last], env: env)
+
+## Functions
+
+# Whether `name` is an aggregate's: `COUNT`, `SUM`, `AVG`, `MIN`, `MAX` or
+# `GROUP_CONCAT`.
+#
+# - `name`: a function's name, in upper case.
+function is_aggregate(name: str) -> bool
+    return name == "COUNT" || name == "SUM" || name == "AVG" || name == "MIN" || name == "MAX" || name == "GROUP_CONCAT"
+
+function scalar(name: str, operands: [ast.Expr], env: Env lent) -> sql.Value?
+    given: [sql.Value] @= []
+
+    for a in operands
+        given @ given.push(eval(a, env: env)?)
+
+    if name == "COALESCE" || name == "IFNULL"
+        for v in given
+            if v != .null_value
+                return ok(v)
+
+        return ok(.null_value)
+
+    arity_ok = match name
+        "LENGTH" | "UPPER" | "LOWER" | "ABS" | "TYPEOF" => given.len() == 1
+        "NULLIF"                                        => given.len() == 2
+        "ROUND"                                         => given.len() == 1 || given.len() == 2
+        "SUBSTR"                                        => given.len() == 2 || given.len() == 3
+        _                                               => false
+
+    if !arity_ok
+        return value.refuse(
+            code: sql.NOT_FOUND,
+            state: "42883",
+            message: f"no function {name} of {given.len()} arguments"
+        )
+    first = given[0]
+
+    if name == "TYPEOF"
+        return ok(.text(v: sql.kind_of(first)))
+
+    if name == "NULLIF"
+        if value.compared("=", a: first, b: given[1])? == .boolean(v: true)
+            return ok(.null_value)
+        return ok(first)
+
+    if first == .null_value
+        return ok(.null_value)
+
+    return match name
+        "LENGTH" => ok(.integer(v: text_arg(name, v: first)?.chars().len()))
+        "UPPER"  => ok(.text(v: strings.to_upper(text_arg(name, v: first)?)))
+        "LOWER"  => ok(.text(v: strings.to_lower(text_arg(name, v: first)?)))
+        "ABS"    => absolute(first)
+        "ROUND"  => rounded(first, places: given.slice(from: 1, to: given.len()))
+        _        => substring(text_arg(name, v: first)?, bounds: given.slice(from: 1, to: given.len()))
+
+function text_arg(name: str, v: sql.Value) -> str?
+    match v
+        .text t => return ok(t.v)
+        .null_value | .boolean _ | .integer _ | .float _ | .blob _ | .instant _ =>
+            return value.refuse(
+                code: sql.INVALID,
+                state: value.MISMATCH,
+                message: f"{name}() takes a text, not {sql.kind_of(v)}"
+            )
+
+function integer_arg(name: str, v: sql.Value) -> i64?
+    match v
+        .integer n => return ok(n.v)
+        .null_value | .boolean _ | .float _ | .text _ | .blob _ | .instant _ =>
+            return value.refuse(
+                code: sql.INVALID,
+                state: value.MISMATCH,
+                message: f"{name}() takes an integer, not {sql.kind_of(v)}"
+            )
+
+function absolute(v: sql.Value) -> sql.Value?
+    match v
+        .integer n =>
+            if n.v < 0
+                return value.negate(v)
+            return ok(v)
+        .float x =>
+            if x.v < 0.0
+                return ok(.float(v: -x.v))
+            return ok(v)
+        .null_value | .boolean _ | .text _ | .blob _ | .instant _ =>
+            return value.refuse(
+                code: sql.INVALID,
+                state: value.MISMATCH,
+                message: f"ABS() takes a number, not {sql.kind_of(v)}"
+            )
+
+# `ROUND(x)` or `ROUND(x, n)`: a float rounded to `n` places, half away from
+# zero; an integer as it is.
+function rounded(v: sql.Value, places: [sql.Value]) -> sql.Value?
+    n @= 0
+
+    if places.len() == 1
+        n @ integer_arg("ROUND", v: places[0])?
+
+    if n < 0 || n > 15
+        return value.refuse(code: sql.INVALID, state: "22023", message: f"ROUND() takes 0 to 15 places, not {n}")
+
+    match v
+        .integer _ => return ok(v)
+        .float x =>
+            scale @= 1.0
+
+            for _ in range(from: 0, to: n)
+                scale @ scale * 10.0
+
+            whole = to_i64(away_from_zero(x.v * scale)).default(0)
+            return value.finite(to_f64(whole) / scale)
+        .null_value | .boolean _ | .text _ | .blob _ | .instant _ =>
+            return value.refuse(
+                code: sql.INVALID,
+                state: value.MISMATCH,
+                message: f"ROUND() takes a number, not {sql.kind_of(v)}"
+            )
+
+function away_from_zero(x: f64) -> f64
+    if x < 0.0
+        return x - 0.5
+    return x + 0.5
+
+# `SUBSTR(s, start)` or `SUBSTR(s, start, count)`, in characters, `start`
+# counted from 1; a start or a count past the text takes what is there.
+function substring(s: str, bounds: [sql.Value]) -> sql.Value?
+    characters = s.chars()
+    start = integer_arg("SUBSTR", v: bounds[0])? - 1
+    count @= characters.len()
+
+    if bounds.len() == 2
+        count @ integer_arg("SUBSTR", v: bounds[1])?
+    first = clamp(n: start, low: 0, high: characters.len())
+    last = clamp(n: start + clamp(n: count, low: 0, high: characters.len()), low: first, high: characters.len())
+    return ok(.text(v: characters.slice(from: first, to: last).join("")))
+
+function clamp(n: i64, low: i64, high: i64) -> i64
+    if n < low
+        return low
+
+    if n > high
+        return high
+    return n
+
+## Tests
+
+function evaluated(source_text: str) -> sql.Value?
+    return eval(parsed(source_text), env: plain([.integer(v: 7), .null_value]))
+
+function parsed(source_text: str) -> ast.Expr
+    match parsed_query(source_text)
+        .query q => return q.select.items[0].expr
+        .create_table _ | .create_index _ | .drop_table _ | .drop_index _ | .insert _ | .update _ | .delete _ | .explain _ | .begin | .commit | .rollback | .check =>
+            return ast.null_literal()
+
+function parsed_query(source_text: str) -> ast.Statement
+    return parser.parse_one("SELECT " + source_text).must()
+
+test "eval: NULL through AND, OR, NOT and comparison"
+    assert evaluated("NULL AND FALSE").must() == .boolean(v: false)
+    assert evaluated("NULL OR TRUE").must() == .boolean(v: true)
+    assert evaluated("NOT (NULL = 1)").must() == .null_value
+    assert evaluated("1 = 1 AND NULL").must() == .null_value
+
+test "eval: IN with a NULL in its list, NOT IN never true then"
+    assert evaluated("7 IN (1, NULL, 7)").must() == .boolean(v: true)
+    assert evaluated("3 IN (1, NULL)").must() == .null_value
+    assert evaluated("3 NOT IN (1, NULL)").must() == .null_value
+    assert evaluated("3 NOT IN (1, 2)").must() == .boolean(v: true)
+
+test "eval: parameters, BETWEEN, CASE, COALESCE, a parameter not given refused"
+    assert evaluated("?1 BETWEEN 1 AND 10").must() == .boolean(v: true)
+    assert evaluated("CASE WHEN ?2 IS NULL THEN 'none' ELSE 'some' END").must() == .text(v: "none")
+    assert evaluated("CASE ?1 WHEN 7 THEN 'seven' END").must() == .text(v: "seven")
+    assert evaluated("COALESCE(?2, ?1)").must() == .integer(v: 7)
+    assert evaluated("?3").is_err()
+
+test "eval: a short-circuited AND never evaluates its right side"
+    assert evaluated("FALSE AND 1 / 0 = 1").must() == .boolean(v: false)
+    assert evaluated("TRUE AND 1 / 0 = 1").is_err()
+
+test "eval: a number is no truth value; an aggregate outside a group refused"
+    assert evaluated("1 AND TRUE").is_err()
+    assert evaluated("COUNT(*)").is_err()
+
+test "matches: LIKE's % and _, letters of either case, and a pattern that would backtrack"
+    assert matches(text: "Grace Hopper", pattern: "g%r")
+    assert matches(text: "abc", pattern: "a_c")
+    assert !matches(text: "abc", pattern: "a_")
+    assert matches(text: "", pattern: "%")
+    assert matches(text: "naïve", pattern: "na_ve")
+    assert !matches(text: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaab", pattern: "%a%a%a%a%a%a%c")
+
+test "scalar: LENGTH in characters, SUBSTR past the end, ROUND, ABS of the smallest integer"
+    assert evaluated("LENGTH('naïve')").must() == .integer(v: 5)
+    assert evaluated("SUBSTR('naïve', 3)").must() == .text(v: "ïve")
+    assert evaluated("SUBSTR('abc', 2, 99)").must() == .text(v: "bc")
+    assert evaluated("SUBSTR('abc', -5, 2)").must() == .text(v: "")
+    assert evaluated("ROUND(2.375, 2)").must() == .float(v: 2.38)
+    assert evaluated("ROUND(-2.5)").must() == .float(v: -3.0)
+    assert evaluated("ABS(-9223372036854775808)").is_err()
+    assert evaluated("UPPER(NULL)").must() == .null_value
+    assert evaluated("NOSUCH(1)").is_err()

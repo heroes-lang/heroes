@@ -1,0 +1,540 @@
+# A connection to a minidb database, answering the contract every driver of
+# Rebel's `sql` keeps, name for name: `open`, `close`, `exec`, `query`,
+# `query_one`, `exec_script`, `begin`, `commit`, `rollback`,
+# `in_transaction`, `is_closed`, `ping`, over `sql.Value`, `sql.Rows` and
+# `sql.Result`, with SQLite's `?1` placeholders. A program written against
+# `sql/sqlite` moves to minidb by its `use` and its `open`.
+#
+# A statement outside `BEGIN` is a transaction of its own, committed when it
+# succeeds and rolled back when it fails. Inside `BEGIN`, a statement that
+# fails leaves the transaction failed, as PostgreSQL does: every statement
+# after it is refused until `ROLLBACK`, and `COMMIT` rolls it back. Before
+# each statement the connection takes its snapshot, and reads the catalogue
+# again where another connection changed the schema.
+
+use <rebel>/errors
+use <rebel>/fs
+use <rebel>/sql
+
+use catalog/schema
+use engine/ddl
+use engine/integrity
+use engine/select
+use engine/write
+use sql/ast
+use sql/parser
+use storage/btree
+use storage/pager
+use storage/wal
+use values/value
+
+## Connections
+
+# A connection.
+record Db
+    # The database file's path.
+    path: str
+    # The pager.
+    p: pager.Pager
+    # The catalogue as of the last statement.
+    cat: schema.Catalog
+    # Whether a `BEGIN` opened a transaction not yet ended.
+    in_tx: bool
+    # Whether a statement of that transaction failed.
+    failed: bool
+    # Whether `close` or `crash` ended the connection.
+    closed: bool
+
+# A connection opened, and what recovery found in its log.
+record Opened
+    # The connection.
+    db: Db
+    # What recovery found.
+    recovery: wal.Recovery
+    # Whether the open made the database.
+    created: bool
+
+# The pages a log holds before a commit copies them into the database file.
+constant AUTO_CHECKPOINT: i64
+    1000
+
+# Opens the database at `path`, made where it is not there, its log
+# recovered.
+#
+# - `path`: the database file's path.
+# - `options`: the page size of a new database, the cache's size, the spill
+#   limit.
+#
+# Fails as `pager.open` does, and `invalid` where the schema is damaged.
+function open(path: str, options: pager.Options) -> Opened?
+    opened = pager.open(path, options: options)?
+    p @= opened.pager
+    pager.begin_read(@p)?
+    cat = schema.load(@p)
+    pager.end_read(@p)
+
+    match cat
+        .ok c => return ok(
+            Opened(db: Db(path: path, p: p, cat: c, in_tx: false, failed: false, closed: false), recovery: opened.recovery, created: opened.created)
+        )
+        .err e =>
+            _ = pager.close(@p).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# Closes the connection, a transaction still open rolled back.
+#
+# - `db`: the connection.
+#
+# Fails where a file cannot be closed.
+function close(@db: Db) -> ()?
+    if db.closed
+        return ok()
+    db.closed @ true
+    return pager.close(@db.p)
+
+# Ends the connection as a power cut would: see `pager.crash`; answers what
+# it left in the log.
+#
+# - `db`: the connection.
+#
+# Fails where a file cannot be written or closed.
+function crash(@db: Db) -> pager.Cut?
+    if db.closed
+        return ok(pager.Cut(frames: 0, torn: false))
+    db.closed @ true
+    return pager.crash(@db.p)
+
+# Whether `close` or `crash` has ended the connection.
+#
+# - `db`: the connection.
+function is_closed(db: Db) -> bool
+    return db.closed
+
+# Whether a `BEGIN` opened a transaction not yet ended.
+#
+# - `db`: the connection.
+function in_transaction(db: Db) -> bool
+    return db.in_tx
+
+# Answers where the connection is open; there is no wire to cross.
+#
+# - `db`: the connection.
+#
+# Fails `closed` where it is closed.
+function ping(db: Db) -> ()?
+    if db.closed
+        return fail(code: sql.CLOSED, msg: "the connection is closed")
+    return ok()
+
+## Statements
+
+# What a statement answered.
+variant Outcome
+    # The rows of a `SELECT`.
+    rows
+        # The rows.
+        answer: sql.Rows
+    # The rows an `INSERT`, `UPDATE` or `DELETE` changed.
+    changed
+        # What changed.
+        result: sql.Result
+    # The lines of an `EXPLAIN` or an integrity check.
+    lines
+        # The lines.
+        text: [str]
+    # A statement that answers nothing: a `CREATE`, a `BEGIN`.
+    done
+
+# Runs one statement already parsed.
+#
+# - `db`: the connection.
+# - `s`: the statement and its text.
+# - `params`: its parameters, `?1` first.
+#
+# Fails with the statement's own failure; outside `BEGIN` it is then rolled
+# back, inside it the transaction fails.
+function run(@db: Db, s: parser.Parsed, params: [sql.Value]) -> Outcome?
+    if db.closed
+        return fail(code: sql.CLOSED, msg: "the connection is closed")
+
+    match s.statement
+        .begin =>
+            if db.in_tx
+                return refuse_state(state: "25001", message: "a transaction is open already")
+            pager.begin_read(@db.p)?
+            reloaded(@db)?
+            db.in_tx @ true
+            return ok(.done)
+        .commit =>
+            if !db.in_tx
+                return refuse_state(state: "25P01", message: "no transaction is open")
+            db.in_tx @ false
+
+            if db.failed
+                db.failed @ false
+                pager.rollback(@db.p)?
+                pager.end_read(@db.p)
+                return refuse_state(state: "40P01", message: "the transaction failed, so COMMIT rolled it back")
+            _ = pager.commit(@db.p)?
+            pager.end_read(@db.p)
+            checkpoint_if_long(@db)
+            return ok(.done)
+        .rollback =>
+            if !db.in_tx
+                return refuse_state(state: "25P01", message: "no transaction is open")
+            db.in_tx @ false
+            db.failed @ false
+            pager.rollback(@db.p)?
+            pager.end_read(@db.p)
+            return ok(.done)
+        .create_table _ | .create_index _ | .drop_table _ | .drop_index _ | .insert _ | .update _ | .delete _ | .query _ | .explain _ | .check =>
+            _ = 0
+
+    if db.failed
+        return refuse_state(state: "25P02", message: "the transaction failed: statements are refused until ROLLBACK")
+    writes = !ast.is_read_only(s.statement)
+    answer = statement_in_snapshot(@db, s: s, params: params, writes: writes)
+
+    if db.in_tx
+        if answer.is_err()
+            db.failed @ true
+        return answer
+
+    if answer.is_err() || !writes
+        _ = pager.rollback(@db.p).is_err()
+        pager.end_read(@db.p)
+        return answer
+    committed = pager.commit(@db.p)
+    pager.end_read(@db.p)
+
+    match committed
+        .ok _ =>
+            checkpoint_if_long(@db)
+            return answer
+        .err e => return fail(code: e.code, msg: e.msg)
+
+function statement_in_snapshot(@db: Db, s: parser.Parsed, params: [sql.Value], writes: bool) -> Outcome?
+    if writes
+        pager.begin_write(@db.p)?
+    else
+        pager.begin_read(@db.p)?
+    reloaded(@db)?
+    return executed(@db, s: s, params: params)
+
+# Reads the catalogue again where another connection changed the schema.
+function reloaded(@db: Db) -> ()?
+    if pager.read_header(@db.p)?.schema_version != db.cat.version
+        db.cat @ schema.load(@db.p)?
+    return ok()
+
+function executed(@db: Db, s: parser.Parsed, params: [sql.Value]) -> Outcome?
+    match s.statement
+        .query q =>
+            a = select.run(@db.p, cat: db.cat, q: q.select, params: params)?
+            return ok(.rows(answer: rows_of(a)))
+        .insert i => return changed(
+            write.insert(@db.p, cat: db.cat, table: i.table, columns: i.columns, rows: i.rows, query: i.query, params: params)?
+        )
+        .update u => return changed(
+            write.update(@db.p, cat: db.cat, table: u.table, sets: u.sets, where: u.where, params: params)?
+        )
+        .delete d => return changed(write.delete(@db.p, cat: db.cat, table: d.table, where: d.where, params: params)?)
+        .create_table t =>
+            _ = ddl.create_table(@db.p, cat: db.cat, table: t.table, columns: t.columns, if_not_exists: t.if_not_exists, text: s.text)?
+            return schema_changed(@db)
+        .create_index i =>
+            _ = ddl.create_index(@db.p, cat: db.cat, index: i.index, table: i.table, columns: i.columns, unique: i.unique, if_not_exists: i.if_not_exists, text: s.text)?
+            return schema_changed(@db)
+        .drop_table d =>
+            _ = ddl.drop_table(@db.p, cat: db.cat, table: d.table, if_exists: d.if_exists)?
+            return schema_changed(@db)
+        .drop_index d =>
+            _ = ddl.drop_index(@db.p, cat: db.cat, index: d.index, if_exists: d.if_exists)?
+            return schema_changed(@db)
+        .explain e                   => return ok(.lines(text: explained(db.cat, inner: e.inner[0])?))
+        .check                       => return ok(.lines(text: integrity.check(@db.p, cat: db.cat)?))
+        .begin | .commit | .rollback => return ok(.done)
+
+function changed(result: sql.Result) -> Outcome?
+    return ok(.changed(result: result))
+
+function schema_changed(@db: Db) -> Outcome?
+    db.cat @ schema.load(@db.p)?
+    return ok(.done)
+
+function explained(cat: schema.Catalog, inner: ast.Statement) -> [str]?
+    return match inner
+        .query q  => select.plan(cat, q: q.select)
+        .update u => write.plan(cat, table: u.table, where: u.where)
+        .delete d => write.plan(cat, table: d.table, where: d.where)
+        .create_table _ | .create_index _ | .drop_table _ | .drop_index _ | .insert _ | .explain _ | .begin | .commit | .rollback | .check =>
+            ok([])
+
+function rows_of(a: select.Answer) -> sql.Rows
+    columns: [sql.Column] @= []
+
+    for name in a.columns
+        columns @ columns.push(sql.Column(name: name, type_name: ""))
+
+    found: [sql.Row] @= []
+
+    for values in a.rows
+        found @ found.push(sql.Row(names: a.columns, values: values))
+
+    return sql.Rows(columns: columns, rows: found)
+
+function refuse_state<T>(state: str, message: str) -> T?
+    return fail(code: sql.INVALID, msg: sql.failure_message(database_code: state, message: message))
+
+# After a commit, the log copied into the database file once it holds more
+# than `AUTO_CHECKPOINT` frames; a checkpoint another connection holds off
+# waits for the next commit.
+function checkpoint_if_long(@db: Db)
+    if db.p.log.frames > AUTO_CHECKPOINT
+        _ = pager.checkpoint(@db.p).is_err()
+
+# Copies the log into the database file; answers the pages copied.
+#
+# - `db`: the connection, outside a transaction.
+#
+# Fails `timeout` where another connection writes or holds a snapshot.
+function checkpoint(@db: Db) -> i64?
+    if db.in_tx
+        return refuse_state(state: "25001", message: "a checkpoint inside a transaction")
+    return pager.checkpoint(@db.p)
+
+## What the shell asks
+
+# The catalogue as of now, read again where another connection changed the
+# schema.
+#
+# - `db`: the connection.
+#
+# Fails `closed` where the connection is closed, and where the schema
+# cannot be read.
+function catalog(@db: Db) -> schema.Catalog?
+    if db.closed
+        return fail(code: sql.CLOSED, msg: "the connection is closed")
+
+    if db.in_tx
+        reloaded(@db)?
+        return ok(db.cat)
+    pager.begin_read(@db.p)?
+    read = reloaded(@db)
+    pager.end_read(@db.p)
+    read?
+    return ok(db.cat)
+
+# The shape of the tree of the table or index `name`.
+#
+# - `db`: the connection.
+# - `name`: a table's or an index's name.
+#
+# Fails `not_found` where there is neither, and where a page is damaged.
+function shape(@db: Db, name: str) -> btree.Shape?
+    cat = catalog(@db)?
+    root @= 0
+
+    match cat.tables[name]
+        .ok t  => root @ t.root
+        .err _ => root @ cat.indexes[name]?.root
+
+    if !db.in_tx
+        pager.begin_read(@db.p)?
+    found = btree.shape_of(@db.p, root: root)
+
+    if !db.in_tx
+        pager.end_read(@db.p)
+    return found
+
+## The contract of `sql`
+
+# Runs one statement that answers no rows.
+#
+# - `db`: the connection.
+# - `statement`: the statement's text.
+# - `params`: its parameters, `?1` first.
+#
+# Fails as the statement fails, and `invalid` where `statement` holds more
+# than one statement.
+function exec(@db: Db, statement: str, params: [sql.Value]) -> sql.Result?
+    match run(@db, s: one(statement)?, params: params)?
+        .changed c => return ok(c.result)
+        .rows _ | .lines _ | .done => return ok(
+            sql.Result(rows_affected: 0, last_id: fail(code: sql.UNSUPPORTED, msg: "the statement inserts no row"))
+        )
+
+# The rows of one statement.
+#
+# - `db`: the connection.
+# - `statement`: the statement's text.
+# - `params`: its parameters, `?1` first.
+#
+# Fails as the statement fails, and `invalid` where it answers no rows.
+function query(@db: Db, statement: str, params: [sql.Value]) -> sql.Rows?
+    match run(@db, s: one(statement)?, params: params)?
+        .rows r                       => return ok(r.answer)
+        .changed _ | .lines _ | .done => return refuse_state(state: "42601", message: "the statement answers no rows")
+
+# The first row of one statement.
+#
+# - `db`: the connection.
+# - `statement`: the statement's text.
+# - `params`: its parameters, `?1` first.
+#
+# Fails `not_found` where it answers no row, and as `query` does.
+function query_one(@db: Db, statement: str, params: [sql.Value]) -> sql.Row?
+    answer = query(@db, statement: statement, params: params)?
+
+    if answer.rows.len() == 0
+        return fail(code: sql.NOT_FOUND, msg: "the query answered no row")
+    return ok(answer.rows[0])
+
+# Runs every statement of `script`, with no parameters, stopping at the
+# first that fails.
+#
+# - `db`: the connection.
+# - `script`: statements separated by semicolons.
+#
+# Fails as the first failing statement fails.
+function exec_script(@db: Db, script: str) -> ()?
+    for s in parser.parse(script)?
+        _ = run(@db, s: s, params: [])?
+
+    return ok()
+
+# Opens a transaction.
+#
+# - `db`: the connection.
+#
+# Fails `invalid` inside another.
+function begin(@db: Db) -> ()?
+    _ = run(@db, s: one("BEGIN")?, params: [])?
+    return ok()
+
+# Commits the open transaction.
+#
+# - `db`: the connection.
+#
+# Fails `invalid` where none is open or a statement of it failed.
+function commit(@db: Db) -> ()?
+    _ = run(@db, s: one("COMMIT")?, params: [])?
+    return ok()
+
+# Rolls the open transaction back.
+#
+# - `db`: the connection.
+#
+# Fails `invalid` where none is open.
+function rollback(@db: Db) -> ()?
+    _ = run(@db, s: one("ROLLBACK")?, params: [])?
+    return ok()
+
+function one(statement: str) -> parser.Parsed?
+    found = parser.parse(statement)?
+
+    if found.len() != 1
+        return refuse_state(state: "42601", message: f"expected one statement, found {found.len()}")
+    return ok(found[0])
+
+## Tests
+
+function test_db(name: str) -> Db
+    folder = "build/minidb-tests"
+    fs.make_dir_all(folder).must()
+    file = folder + "/" + name
+
+    for suffix in ["", "-wal", "-lock", "-read"]
+        if fs.exists(file + suffix).must()
+            fs.remove(file + suffix).must()
+
+    return open(file, options: pager.Options(page_size: 512, cache_pages: 8, spill_limit: 8)).must().db
+
+# The rows of a query as text, one line each, values joined by `|`, or the
+# lines of an integrity check.
+function lines_of(@db: Db, statement: str) -> [str]
+    found: [str] @= []
+
+    match run(@db, s: one(statement).must(), params: []).must()
+        .rows r =>
+            for row in r.answer.rows
+                found @ found.push(row.values.map(value.display).join("|"))
+        .lines l           => found @ l.text
+        .changed _ | .done => _ = 0
+
+    return found
+
+function shop(name: str) -> Db
+    db @= test_db(name)
+    exec_script(
+        @db,
+        script: "CREATE TABLE c (id INTEGER PRIMARY KEY, name TEXT NOT NULL, city TEXT); CREATE TABLE o (id INTEGER PRIMARY KEY, cid INTEGER, amount INTEGER); CREATE INDEX o_cid ON o (cid); INSERT INTO c (name, city) VALUES ('ann', 'x'), ('bob', NULL), ('cy', 'y'); INSERT INTO o (cid, amount) VALUES (1, 10), (1, 20), (2, 5), (NULL, 7)"
+    ).must()
+    return db
+
+test "query: an inner join, a left join's NULLs, groups in their keys' order, HAVING"
+    db @= shop("db-joins.db")
+    assert lines_of(@db, statement: "SELECT c.name, o.amount FROM c JOIN o ON o.cid = c.id ORDER BY o.amount") == ["bob|5", "ann|10", "ann|20"]
+    assert lines_of(@db, statement: "SELECT c.name, COUNT(o.id), SUM(o.amount) FROM c LEFT JOIN o ON o.cid = c.id GROUP BY c.name") == ["ann|2|30", "bob|1|5", "cy|0|NULL"]
+    assert lines_of(@db, statement: "SELECT cid, COUNT(*) FROM o GROUP BY cid HAVING COUNT(*) < 2") == ["NULL|1", "2|1"]
+    assert lines_of(@db, statement: "SELECT COUNT(*), MAX(amount) FROM o WHERE amount > 100") == ["0|NULL"]
+    errors.ignore(close(@db))
+
+test "query: ORDER BY with NULLs first, by an alias and by a place, DISTINCT, LIMIT and OFFSET"
+    db @= shop("db-order.db")
+    assert lines_of(@db, statement: "SELECT city FROM c ORDER BY city") == ["NULL", "x", "y"]
+    assert lines_of(@db, statement: "SELECT name AS n FROM c ORDER BY n DESC LIMIT 2") == ["cy", "bob"]
+    assert lines_of(@db, statement: "SELECT name, id FROM c ORDER BY 2 DESC LIMIT 1 OFFSET 1") == ["bob|2"]
+    assert lines_of(@db, statement: "SELECT DISTINCT cid FROM o ORDER BY cid") == ["NULL", "1", "2"]
+    assert lines_of(@db, statement: "SELECT name FROM c LIMIT -1 OFFSET 99").len() == 0
+    errors.ignore(close(@db))
+
+test "exec: an UPDATE keeps the index in step, a unique conflict refused, a statement that fails leaves nothing"
+    db @= shop("db-update.db")
+    assert exec(@db, statement: "UPDATE o SET cid = 3 WHERE cid = 1", params: []).must().rows_affected == 2
+    assert lines_of(@db, statement: "SELECT COUNT(*) FROM o WHERE cid = 3") == ["2"]
+    assert lines_of(@db, statement: "SELECT COUNT(*) FROM o WHERE cid = 1") == ["0"]
+    exec_script(@db, script: "CREATE UNIQUE INDEX c_name ON c (name)").must()
+    assert exec(@db, statement: "INSERT INTO c (name) VALUES ('zed'), ('ann')", params: []).is_err()
+    assert lines_of(@db, statement: "SELECT COUNT(*) FROM c") == ["3"]
+    assert exec(@db, statement: "UPDATE c SET id = 1 WHERE id = 2", params: []).is_err()
+    assert lines_of(@db, statement: "PRAGMA integrity_check") == ["ok"]
+    errors.ignore(close(@db))
+
+test "exec: parameters bound by number, the rowid given and its next, a DELETE through the index"
+    db @= shop("db-params.db")
+    r = exec(
+        @db,
+        statement: "INSERT INTO c (id, name) VALUES (?1, ?2)",
+        params: [.integer(v: 40), .text(v: "dee")]
+    ).must()
+    assert r.last_id.must() == 40
+    assert exec(@db, statement: "INSERT INTO c (name) VALUES ('eve')", params: []).must().last_id.must() == 41
+    assert query_one(@db, statement: "SELECT name FROM c WHERE id = ?1", params: [.integer(v: 41)]).must().values == [.text(v: "eve")]
+    assert query_one(@db, statement: "SELECT name FROM c WHERE id = 99", params: []).is_err()
+    assert exec(@db, statement: "DELETE FROM o WHERE cid = 1", params: []).must().rows_affected == 2
+    assert lines_of(@db, statement: "SELECT amount FROM o ORDER BY amount") == ["5", "7"]
+    errors.ignore(close(@db))
+
+test "transactions: a failed statement fails the transaction until ROLLBACK; COMMIT rolls it back"
+    db @= shop("db-tx.db")
+    begin(@db).must()
+    exec_script(@db, script: "DELETE FROM o").must()
+    assert exec(@db, statement: "INSERT INTO nowhere VALUES (1)", params: []).is_err()
+    assert query(@db, statement: "SELECT 1", params: []).is_err()
+    assert commit(@db).is_err()
+    assert !in_transaction(db)
+    assert lines_of(@db, statement: "SELECT COUNT(*) FROM o") == ["4"]
+    assert !begin(@db).is_err()
+    errors.ignore(close(@db))
+
+test "catalogue: another connection's CREATE seen at the next statement, a dropped table's pages freed"
+    a @= shop("db-two.db")
+    b @= open(a.path, options: pager.Options(page_size: 512, cache_pages: 8, spill_limit: 8)).must().db
+    exec_script(@a, script: "CREATE TABLE n (v INTEGER); INSERT INTO n VALUES (1)").must()
+    assert lines_of(@b, statement: "SELECT v FROM n") == ["1"]
+    exec_script(@b, script: "DROP TABLE o").must()
+    assert query(@a, statement: "SELECT * FROM o", params: []).is_err()
+    assert lines_of(@a, statement: "PRAGMA integrity_check") == ["ok"]
+    errors.ignore(close(@a))
+    errors.ignore(close(@b))
