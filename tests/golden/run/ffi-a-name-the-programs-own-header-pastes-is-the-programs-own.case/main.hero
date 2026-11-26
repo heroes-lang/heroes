@@ -1,0 +1,22 @@
+# A name the program's own header pastes is the program's own word, paired
+# with no release (lane p261-beside, 2026-11-26; panel 245's R3; the draft
+# d-p261-math-linux). Bulk regression case, a correct program.
+#
+# `pasted.h`, the case's own, declares `zlibVersion` by a macro that pastes
+# the name, so clang's text dump places the declaration in
+# `<scratch space>`, a buffer of its own, and then `zlib.h` declares it
+# again. The compiler read the buffer as the file `scratch space>`, which
+# `.` holds wherever `.` is a folder the build names (`C_INCLUDE_PATH=.`
+# here, a program built from its own folder for its packages' units), so
+# this program was refused `ffi_unpaired_release` beside the platform's
+# zlib, *"declared by a header of `.`"*, on this Mac and in the Linux arm64
+# image until the repair. The declaration is now read in `pasted.h`, the
+# file that expanded the macro, the program's own, and the name is judged
+# by `zlib.h`'s, the platform's beside the platform's library. Windows has
+# no zlib, and the case is judged where the header is.
+
+extern "pasted.h" link "z"
+    function zlibVersion() -> cstr
+
+function main()
+    print(validated(c: zlibVersion()).default("").len() > 0)

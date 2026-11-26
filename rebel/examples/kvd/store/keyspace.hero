@@ -187,14 +187,31 @@ function length_of(v: Value lent) -> i64
 # - `db`: the keyspace.
 # - `key`: the key.
 function touch(@db: Db, key: [u8])
-    db.touched @ db.touched.push(key)
+    add_key(list: @db.touched, key: key)
+
+# Adds `key` at the end of `list`, the caller's own, in place: a list
+# reached through a field would be copied whole by a `push` written there
+# (spec § 10), which a replay of a long log would pay once per command.
+#
+# - `list`: the keys.
+# - `key`: the key added.
+function add_key(@list: [[u8]], key: [u8])
+    list @ list.push(key)
+
+# Adds `words` at the end of `list`, the caller's own, in place, as
+# `add_key` does.
+#
+# - `list`: the commands.
+# - `words`: the command added.
+function add_command(@list: [[[u8]]], words: [[u8]])
+    list @ list.push(words)
 
 # Records the command `words` as one the append-only file must hold.
 #
 # - `db`: the keyspace.
 # - `words`: the command, as the file replays it.
 function log(@db: Db, words: [[u8]])
-    db.effects @ db.effects.push(words)
+    add_command(list: @db.effects, words: words)
 
 # The keys changed since the last call, emptied.
 #
