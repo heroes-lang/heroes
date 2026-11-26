@@ -1,0 +1,281 @@
+# The two-pass assembler. The first pass reads every statement, expands its
+# pseudo-instructions and gives each its section, its offset and its size,
+# so that every label has an address once the sections are laid out: the
+# code (`.text`) at the load address, the data (`.data`, `.rodata`, `.bss`)
+# after it on a 16-byte boundary. The second pass encodes each statement at
+# its address, every symbol known. Every error of every line is collected
+# and told together, as a compiler tells them, and an image is made only
+# from a source with none.
+
+use <rebel>/bytes
+use <rebel>/lists
+use <rebel>/strings
+
+use asm/data
+use asm/emit
+use asm/lexer
+use asm/pseudo
+use asm/syntax
+use image/format
+use isa/ops
+
+## Sections
+
+# The code's section.
+constant TEXT: i64
+    0
+
+# The data's section.
+constant DATA: i64
+    1
+
+# A statement where the first pass put it.
+record Placed
+    # The statement as written.
+    s: syntax.Statement
+    # Its base instructions, for an instruction; none for a directive.
+    code: [syntax.Statement]
+    # `TEXT` or `DATA`.
+    section: i64
+    # Its offset in its section.
+    offset: i64
+    # How many bytes it takes.
+    size: i64
+
+# A label's section and offset, before the sections have addresses.
+record Label
+    # `TEXT` or `DATA`.
+    section: i64
+    # Its offset in its section.
+    offset: i64
+
+# What the first pass learns.
+record Layout
+    # Every statement, placed.
+    placed: [Placed]
+    # Every label.
+    labels: {str: Label}
+    # Every `.equ` and `.set`.
+    equates: {str: i64}
+    # Each section's size.
+    sizes: [i64]
+    # The errors found, each a line of its own.
+    errors: [str]
+
+## Assembling
+
+# The program `source` assembles to, loaded at `base`.
+#
+# - `source`: the assembly text.
+# - `base`: the load address, where the code begins.
+#
+# Its entry is the label `_start` where the source defines one, else `base`.
+# Fails `invalid` where any line is wrong, the message holding one line per
+# error in the source's order.
+function assemble(source: str, base: i64) -> format.Program?
+    layout = first_pass(source)
+
+    if layout.errors.len() > 0
+        return fail(code: "invalid", msg: layout.errors.join("\n"))
+    data_base = (base + layout.sizes[TEXT] + 15) / 16 * 16
+    symbols: {str: i64} @= layout.equates
+    named: [format.Symbol] @= []
+
+    for name in keys(layout.labels)
+        at = layout.labels[name].must()
+        address: i64 @= base + at.offset
+
+        if at.section == DATA
+            address @ data_base + at.offset
+        symbols[name] @ address
+        named @ named.push(format.Symbol(name: name, address: address))
+
+    code: [u8] @= []
+    stored: [u8] @= []
+    problems: [str] @= []
+
+    for p in layout.placed
+        address: i64 @= base + p.offset
+
+        if p.section == DATA
+            address @ data_base + p.offset
+        made = second_pass(p: p, address: address, symbols: symbols)
+
+        match made
+            .ok out =>
+                if p.section == TEXT
+                    bytes.push_all(to: @code, from: out)
+                else
+                    bytes.push_all(to: @stored, from: out)
+            .err e => problems @ problems.push(e.msg)
+
+    if problems.len() > 0
+        return fail(code: "invalid", msg: problems.join("\n"))
+
+    while base + code.len() < data_base && stored.len() > 0
+        code @ code.push(0)
+
+    entry = symbols["_start"].default(base)
+    return ok(
+        format.Program(base: base, entry: entry, image: bytes.concat([code, stored]), symbols: lists.sort_by(named, less: before))
+    )
+
+# Whether symbol `a` is listed before `b`: by address, then by name.
+function before(a: format.Symbol, b: format.Symbol) -> bool
+    if a.address != b.address
+        return a.address < b.address
+    return strings.compare(a: a.name, b: b.name) < 0
+
+## The first pass
+
+function first_pass(source: str) -> Layout
+    out @= Layout(placed: [], labels: {}, equates: {}, sizes: [0, 0], errors: [])
+    section: i64 @= TEXT
+
+    for line in lexer.lines(source)
+        read = syntax.statement(line)
+
+        match read
+            .err e => out.errors @ out.errors.push(e.msg)
+            .ok s  => section @ place(@out, s: s, section: section)
+
+    return out
+
+# Places `s` in `section`, defining its labels; answers the section the
+# next statement stands in.
+function place(@out: Layout, s: syntax.Statement, section: i64) -> i64
+    for label in s.labels
+        if !out.labels[label].is_err() || !out.equates[label].is_err()
+            out.errors @ out.errors.push(f"line {s.line}: \"{label}\" is defined twice")
+        else
+            out.labels[label] @ Label(section: section, offset: out.sizes[section])
+
+    name = strings.to_lower_ascii(s.name)
+
+    if name == "" || name == ".globl" || name == ".global" || name == ".type" || name == ".size" || name == ".option" || name == ".file"
+        return section
+
+    if name == ".text"
+        return TEXT
+
+    if name == ".data" || name == ".rodata" || name == ".bss"
+        return DATA
+
+    if name == ".section"
+        return section_named(@out, s: s, section: section)
+
+    if name == ".equ" || name == ".set"
+        define(@out, s: s)
+        return section
+    statement = syntax.Statement(line: s.line, labels: s.labels, name: name, operands: s.operands)
+
+    if name[0] == '.'
+        if !data.is_data(name)
+            out.errors @ out.errors.push(f"line {s.line}: no directive is named {name}")
+            return section
+        sized = data.size_of(s: statement, offset: out.sizes[section], known: out.equates)
+        put(
+            @out,
+            p: Placed(s: statement, code: [], section: section, offset: out.sizes[section], size: sized.default(0)),
+            failed: sized
+        )
+        return section
+    expanded = pseudo.expand(statement, known: out.equates)
+    code = expanded.default([])
+
+    for c in code
+        if ops.spec_named(c.name).is_err()
+            out.errors @ out.errors.push(f"line {s.line}: no instruction or pseudo-instruction is named \"{c.name}\"")
+            return section
+
+    put(
+        @out,
+        p: Placed(s: statement, code: code, section: section, offset: out.sizes[section], size: 4 * code.len()),
+        failed: expanded
+    )
+    return section
+
+# Keeps `p` and moves its section on by its size, or keeps the error.
+function put<T>(@out: Layout, p: Placed, failed: T?)
+    match failed
+        .err e => out.errors @ out.errors.push(e.msg)
+        .ok _ =>
+            out.placed @ out.placed.push(p)
+            out.sizes[p.section] @ out.sizes[p.section] + p.size
+
+function section_named(@out: Layout, s: syntax.Statement, section: i64) -> i64
+    named = match s.operands.len()
+        1 => syntax_name(s.operands[0])
+        _ => ""
+
+    if named == ".text" || strings.has_prefix(s: named, prefix: ".text.")
+        return TEXT
+
+    if named == ".data" || named == ".rodata" || named == ".bss" || strings.has_prefix(s: named, prefix: ".data.") || strings.has_prefix(s: named, prefix: ".rodata.")
+        return DATA
+    out.errors @ out.errors.push(f"line {s.line}: .section names .text, .data, .rodata or .bss here")
+    return section
+
+function syntax_name(o: syntax.Operand) -> str
+    return match o
+        .value v                          => v.e.symbol
+        .register _ | .memory _ | .text _ => ""
+
+# `.equ name, value`: the value a plain number or an earlier `.equ`.
+function define(@out: Layout, s: syntax.Statement)
+    if s.operands.len() != 2
+        out.errors @ out.errors.push(f"line {s.line}: {s.name} takes a name and a value")
+        return
+    name = syntax_name(s.operands[0])
+    value = data.number(s: s, at: 1, known: out.equates)
+
+    if name == "" || value.is_err()
+        out.errors @ out.errors.push(f"line {s.line}: {s.name} takes a name and a number or an earlier .equ")
+        return
+
+    if !out.labels[name].is_err()
+        out.errors @ out.errors.push(f"line {s.line}: \"{name}\" is defined twice")
+        return
+    out.equates[name] @ value.must()
+
+## The second pass
+
+function second_pass(p: Placed, address: i64, symbols: {str: i64}) -> [u8]?
+    if p.code.len() == 0 && p.s.name[0] == '.'
+        return data.bytes_of(s: p.s, offset: p.offset, in_code: p.section == TEXT, symbols: symbols)
+    out: [u8] @= []
+
+    for k in range(from: 0, to: p.code.len())
+        w = emit.encode(s: p.code[k], pc: address + 4 * k, symbols: symbols)?
+
+        for b in range(from: 0, to: 4)
+            out @ out.push(to_u8(w >> 8 * b & 0xff).must())
+
+    return ok(out)
+
+## Tests
+
+test "assemble: labels forward and back, a data section after the code, the entry"
+    source = ".text\n_start:\n  la a0, msg\n  j end\nback: nop\nend:\n  beq zero, zero, back\n.data\nmsg: .asciz \"hi\"\n"
+    p = assemble(source, base: 0x8000_0000).must()
+    assert p.entry == 0x8000_0000
+    assert p.image.len() == 16 + 16 + 3
+    assert p.image.slice(from: 32, to: 35) == [0x68, 0x69, 0]
+    assert p.symbols[0] == format.Symbol(name: "_start", address: 0x8000_0000)
+    assert p.symbols[3] == format.Symbol(name: "msg", address: 0x8000_0020)
+
+test "assemble: every error of every line, told together and in order"
+    source = "start: addd a0, a1\n  li a0\nstart: nop\n  .quad 5\n  beq a0, a1, nowhere\n"
+
+    match assemble(source, base: 0x8000_0000)
+        .ok _ => assert false
+        .err e =>
+            lines = strings.split(s: e.msg, sep: "\n")
+            assert lines.len() == 4
+            assert strings.has_prefix(s: lines[0], prefix: "line 1: ")
+            assert strings.has_prefix(s: lines[3], prefix: "line 4: ")
+
+test "assemble: an .equ before its use sizes a .space, and a source with nothing"
+    p = assemble(".equ SIZE, 8\n.data\nbuf: .space SIZE\n.word SIZE\n", base: 0x8000_0000).must()
+    assert p.image.len() == 12
+    assert assemble("", base: 0x8000_0000).must().image.len() == 0
