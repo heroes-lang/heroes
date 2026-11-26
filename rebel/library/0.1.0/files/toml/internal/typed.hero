@@ -1,0 +1,157 @@
+# A member of a table read by its kind, the readers `toml.text_at`,
+# `int_at`, `bool_at` and `items_at` stand on: the member a key names, the
+# kind a value is named by in a message, and each reader failing with the key
+# and the kind it found.
+
+use toml
+
+# The member `key` of the table `v`.
+function member_of(v: toml.Value, key: str) -> toml.Value?
+    match v
+        .table t =>
+            match t.members[key]
+                .ok found => return ok(found)
+                .err _ => return fail(
+                    code: toml.NOT_FOUND,
+                    msg: f"no key \"{key}\" in a table holding {keys_named(keys(t.members))}"
+                )
+        .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ =>
+            return fail(code: toml.INVALID, msg: f"expected a table, found {kind_named(v)}")
+
+# The kind of `v` for a message, with its article: `a text`, `an integer`.
+function kind_named(v: toml.Value) -> str
+    return match v
+        .text _            => "a text"
+        .integer _         => "an integer"
+        .float _           => "a float"
+        .boolean _         => "a boolean"
+        .date_time _       => "a date-time with an offset"
+        .local_date_time _ => "a local date-time"
+        .local_date _      => "a local date"
+        .local_time _      => "a local time"
+        .array _           => "an array"
+        .table _           => "a table"
+
+# The keys `names` for a message: `no keys`, or up to eight of them quoted and
+# how many more there are.
+function keys_named(names: [str]) -> str
+    if names.len() == 0
+        return "no keys"
+    shown: [str] @= []
+
+    for name in names
+        if shown.len() < 8
+            shown @ shown.push(f"\"{name}\"")
+
+    if names.len() > 8
+        return f"the keys {shown.join(", ")} and {names.len() - 8} more"
+    return f"the keys {shown.join(", ")}"
+
+# The failure of a member `key` that is `found` where `expected` was asked.
+function wrong_kind<T>(key: str, expected: str, found: toml.Value) -> T?
+    return fail(code: toml.INVALID, msg: f"the member \"{key}\": expected {expected}, found {kind_named(found)}")
+
+# The text of the member `key` of the table `v`.
+function text_at(v: toml.Value, key: str) -> str?
+    found = member_of(v, key: key)?
+
+    match found
+        .text t => return ok(t.v)
+        .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+            return wrong_kind(key: key, expected: "a text", found: found)
+
+# The integer of the member `key` of the table `v`.
+function int_at(v: toml.Value, key: str) -> i64?
+    found = member_of(v, key: key)?
+
+    match found
+        .integer i => return ok(i.v)
+        .text _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+            return wrong_kind(key: key, expected: "an integer", found: found)
+
+# The boolean of the member `key` of the table `v`.
+function bool_at(v: toml.Value, key: str) -> bool?
+    found = member_of(v, key: key)?
+
+    match found
+        .boolean b => return ok(b.v)
+        .text _ | .integer _ | .float _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+            return wrong_kind(key: key, expected: "a boolean", found: found)
+
+# The items of the array in the member `key` of the table `v`.
+function items_at(v: toml.Value, key: str) -> [toml.Value]?
+    found = member_of(v, key: key)?
+
+    match found
+        .array a => return ok(a.items)
+        .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .table _ =>
+            return wrong_kind(key: key, expected: "an array", found: found)
+
+test "member_of: a key held, one absent with the keys named, more than eight keys, and not a table"
+    doc = toml.parse("a = 1\nb = \"x\"").must()
+    assert member_of(doc, key: "a").must() == .integer(v: 1)
+
+    match member_of(doc, key: "c")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "no key \"c\" in a table holding the keys \"a\", \"b\""
+
+    match member_of(toml.parse("").must(), key: "c")
+        .ok _  => assert false
+        .err e => assert e.msg == "no key \"c\" in a table holding no keys"
+
+    many = toml.parse("a=1\nb=1\nc=1\nd=1\ne=1\nf=1\ng=1\nh=1\ni=1\nj=1").must()
+
+    match member_of(many, key: "z")
+        .ok _  => assert false
+        .err e => assert e.msg == "no key \"z\" in a table holding the keys \"a\", \"b\", \"c\", \"d\", \"e\", \"f\", \"g\", \"h\" and 2 more"
+
+    match member_of(.array(items: []), key: "a")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "expected a table, found an array"
+
+test "kind_named: every kind with its article"
+    doc = toml.parse(
+        "t = \"s\"\ni = 1\nf = 1.5\nb = true\nd = 1979-05-27T07:32:00Z\nl = 1979-05-27T07:32:00\nld = 1979-05-27\nlt = 07:32:00\na = []\ntb = {}"
+    ).must()
+    named: [str] @= []
+
+    for key in ["t", "i", "f", "b", "d", "l", "ld", "lt", "a", "tb"]
+        named @ named.push(kind_named(member_of(doc, key: key).must()))
+
+    assert named == ["a text", "an integer", "a float", "a boolean", "a date-time with an offset", "a local date-time", "a local date", "a local time", "an array", "a table"]
+
+test "text_at, int_at, bool_at, items_at: found, the empty key, characters of more than one byte, and each wrong kind"
+    doc = toml.parse(
+        "name = \"Zoë\"\nport = 8080\nratio = 0.5\ntls = false\ntags = [\"a\"]\nempty = []\n\"\" = \"\""
+    ).must()
+    assert text_at(doc, key: "name").must() == "Zoë"
+    assert text_at(doc, key: "").must() == ""
+    assert int_at(doc, key: "port").must() == 8080
+    assert !bool_at(doc, key: "tls").must()
+    assert items_at(doc, key: "tags").must() == [.text(v: "a")]
+    assert items_at(doc, key: "empty").must() == []
+
+    match text_at(doc, key: "port")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the member \"port\": expected a text, found an integer"
+
+    match int_at(doc, key: "ratio")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the member \"ratio\": expected an integer, found a float"
+
+    match bool_at(doc, key: "name")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the member \"name\": expected a boolean, found a text"
+
+    match items_at(doc, key: "tls")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the member \"tls\": expected an array, found a boolean"
+
+    match int_at(doc, key: "host")
+        .ok _  => assert false
+        .err e => assert e.code == "not_found"
+
+test "int_at: the largest and the smallest integer TOML holds"
+    doc = toml.parse("hi = 9_223_372_036_854_775_807\nlo = -9_223_372_036_854_775_808").must()
+    assert int_at(doc, key: "hi").must() == 9_223_372_036_854_775_807
+    assert int_at(doc, key: "lo").must() == -9_223_372_036_854_775_807 - 1
