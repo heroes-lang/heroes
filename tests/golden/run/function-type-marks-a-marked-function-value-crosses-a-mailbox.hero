@@ -1,0 +1,21 @@
+# Panel 261's R6 (2026-11-26, ratified): a function value is code and carries
+# no place, so a value of `(function(@App, i64) -> ())` crosses a mailbox as
+# any value does, and the receiving thread calls it on a place of its own.
+# Prints 11.
+record App
+    n: i64
+
+function bump(@a: App, k: i64)
+    a.n @ a.n + k
+
+function worker(box: (mailbox (function(@App, i64) -> ()))) -> i64
+    h = box.receive(within_ms: -1).must()
+    own @= App(n: 1)
+    h(@own, 10)
+    return own.n
+
+function main()
+    box: (mailbox (function(@App, i64) -> ())) = mailbox()
+    t = spawn(worker, box).must()
+    box.send(bump).must()
+    print(t.wait())

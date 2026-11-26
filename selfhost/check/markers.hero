@@ -67,9 +67,9 @@ function refused_as_value(@c: state.Checker, s: source.Source, decls: [ast.Decl]
     match decls[decl].kind
         .function_decl fd =>
             # A function of the program is a value of the type its signature
-            # writes, each mode with it (panel 261); an `extern`'s `@` is a
-            # cell C writes and its `lent` panel 171's, which no Heroes value
-            # carries across.
+            # writes, each mark with it (panel 261's R1); an `extern`'s `@` is
+            # the place C writes and its `lent` record C's pointer to const,
+            # marks a function type does not carry (R5).
             if !fd.value.is_extern
                 return false
 
@@ -81,9 +81,10 @@ function refused_as_value(@c: state.Checker, s: source.Source, decls: [ast.Decl]
                     )
                     return true
 
-                # A parameter lent read-only is handed a place, which no
-                # function type carries either (panel 217's R2).
-                if p.lent && !p.mutable && (!fd.value.is_extern || !pointer_crossed(c, p))
+                # A parameter lent read-only to C is handed a place, C's
+                # pointer to const (panel 217's R2), but for a `cstr` or a
+                # `ptr`, which crosses as the pointer it is (panel 171).
+                if p.lent && !p.mutable && !pointer_crossed(c, p)
                     state.push_diagnostic(
                         @c,
                         data_errors.lent_parameter_as_value(name: source.span_text(s, span), param: source.span_text(s, p.name), span: span)

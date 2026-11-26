@@ -1,0 +1,24 @@
+# Panel 261's R5 (2026-11-26, ratified): a function of the program is a value
+# of the type its signature writes, marks included, but a function of an
+# `extern` group whose parameter is `@`, C's out-parameter, or a record lent
+# to C, C's pointer to const, is no value: those marks are C's, beside words
+# no function type carries (`counted_by`, `consumes`, ...), so a call through
+# such a value would skip what the call by name does. The messages said *no
+# function type carries an `@`* until R5, false since R1. A C function with
+# neither mark stays a value.
+extern "math.h"
+    function frexp(x: f64, @e: i32) -> f64
+
+extern "time.h"
+    record Tm tag tm partial
+        tm_year: i32
+    function asctime(t: Tm lent) -> cstr
+
+extern "stdlib.h"
+    function abs(n: i32) -> i32
+
+function main()
+    _ = frexp  #~ mutable_parameter_as_value
+    _ = asctime  #~ lent_parameter_as_value
+    h = abs
+    print(h(-3))

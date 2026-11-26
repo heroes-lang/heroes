@@ -1,0 +1,25 @@
+# Panel 261's R7 (2026-11-26, ratified): a value whose marks differ from the
+# type asked is `type_mismatch`, both types printed with their marks, and a
+# note names the first position whose mark differs and both marks, since a
+# reader who does not see the `@` reads the message as one about types; the
+# `lent` that fits where `@` is asked is never named so.
+record App
+    n: i64
+
+function bump(@a: App)
+    a.n @ a.n + 1
+
+function peek(a: App lent) -> i64
+    return a.n
+
+function apply<T>(f: (function(T) -> ()), x: T)
+    f(x)
+
+function main()
+    app = App(n: 0)
+    plain: (function(App) -> ()) = bump  #~ type_mismatch
+    apply(bump, app)  #~ type_mismatch
+    reader: (function(App) -> i64) = peek  #~ type_mismatch
+    _ = plain
+    _ = reader
+    print(app.n)

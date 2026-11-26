@@ -22,6 +22,7 @@ use check/state
 use check/table
 use check/thread_types
 use check/type_fit
+use diag
 use resolved
 use source
 use token
@@ -152,7 +153,12 @@ function mismatch_shape(@c: state.Checker, s: source.Source, decls: [ast.Decl], 
         return
     a = state.show(c, s, decls, param)
     b = state.show(c, s, decls, got)
-    state.push_diagnostic(@c, value_errors.mismatch(expected: a, got: b, span: span))
+    d: diag.Diagnostic @= value_errors.mismatch(expected: a, got: b, span: span)
+    marks = generic_runs.marks_note(c, expected: param, got: got)
+
+    if !marks.is_err()
+        d.notes @ d.notes.push(marks.must())
+    state.push_diagnostic(@c, d)
 
 # THE CONTEXT BINDS WHAT THE ARGUMENTS LEFT (panel 105, ratified
 # 2026-09-03; the defect is 006). `wanted<A>(what: str) ->

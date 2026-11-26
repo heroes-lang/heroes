@@ -1,0 +1,25 @@
+# Panel 261's R6 (2026-11-26, ratified): `spawn` and `spawn_sized` run `f(x)`
+# on a copy of `x`, so a body whose parameter is `@` or `lent`, the caller's
+# place, is `thread_body` (threads share nothing but a mailbox, spec § 11),
+# named by its function or through a value whose type carries the mark; the
+# value's own refusal, which said it until R1, retired.
+record Cfg
+    n: i64
+
+function bump(@n: i64) -> i64
+    n @ n + 1
+    return n
+
+function get(c: Cfg lent) -> i64
+    return c.n
+
+function main()
+    h: (function(@i64) -> i64) = bump
+    t = spawn(bump, 1)  #~ thread_body
+    u = spawn(get, Cfg(n: 4))  #~ thread_body
+    v = spawn_sized(bump, 1, bytes: 65536)  #~ thread_body
+    w = spawn(h, 2)  #~ thread_body
+    _ = t
+    _ = u
+    _ = v
+    _ = w
