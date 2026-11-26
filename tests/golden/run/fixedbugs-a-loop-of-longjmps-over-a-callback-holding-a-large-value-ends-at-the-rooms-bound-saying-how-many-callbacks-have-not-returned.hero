@@ -1,0 +1,93 @@
+# Added 2026-11-25, panel 259's R1 and R2 (provisional, author ratification
+# pending), lane land259: C's `longjmp` jumps 5,000 times over a callback
+# holding a 256 KB record. A correct program, whose end spec section 13
+# states: what the frames C leaves held stays held until the program ends,
+# counted against 1 GiB for the whole program, past which it aborts saying how
+# many callbacks have not returned. Here each callback left holds the record
+# and the call's result, 512 KiB, so the room is full when 2,047 callbacks C
+# called have not returned, the last of them the one whose take stops it
+# (this Mac and Linux arm64 alike: the room counts its blocks' bytes, the same
+# on every platform). Before panel 259 the jump's takes were given back by
+# their frames' addresses (panel 258's R1) and the loop ran to its end; the
+# words then named no count.
+extern "fixedbugs-2704-longjmp.h"
+    function ab_try(cb: (function(i64) -> i64)) -> i64
+    function ab_throw()
+
+record E0
+    x: i64
+
+record E1
+    a: E0
+    b: E0
+    c: E0
+    d: E0
+    e: E0
+    f: E0
+    g: E0
+    h: E0
+
+record E2
+    a: E1
+    b: E1
+    c: E1
+    d: E1
+    e: E1
+    f: E1
+    g: E1
+    h: E1
+
+record E3
+    a: E2
+    b: E2
+    c: E2
+    d: E2
+    e: E2
+    f: E2
+    g: E2
+    h: E2
+
+record E4
+    a: E3
+    b: E3
+    c: E3
+    d: E3
+    e: E3
+    f: E3
+    g: E3
+    h: E3
+
+record E5
+    a: E4
+    b: E4
+    c: E4
+    d: E4
+    e: E4
+    f: E4
+    g: E4
+    h: E4
+
+function e4(n: i64) -> E4
+    v0 = E0(x: n)
+    v1 = E1(a: v0, b: v0, c: v0, d: v0, e: v0, f: v0, g: v0, h: v0)
+    v2 = E2(a: v1, b: v1, c: v1, d: v1, e: v1, f: v1, g: v1, h: v1)
+    v3 = E3(a: v2, b: v2, c: v2, d: v2, e: v2, f: v2, g: v2, h: v2)
+    return E4(a: v3, b: v3, c: v3, d: v3, e: v3, f: v3, g: v3, h: v3)
+
+function e5(n: i64) -> E5
+    v4 = e4(n)
+    return E5(a: v4, b: v4, c: v4, d: v4, e: v4, f: v4, g: v4, h: v4)
+
+function thrown(n: i64) -> i64
+    v = e5(n)
+    ab_throw()
+    return v.a.a.a.a.a.x
+
+function main()
+    print("jumping over a callback that holds a 256 KB record")
+    sum: i64 @= 0
+
+    for _ in range(from: 0, to: 5000)
+        sum @ sum + ab_try(cb: thrown)
+
+    print("jumped, sum ", sum)

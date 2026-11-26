@@ -1,0 +1,2 @@
+jumping over a callback that holds a 256 KB record
+!panic: the room large values take off the stack is full, 1 GiB for the whole program, while 2047 callbacks C called have not returned

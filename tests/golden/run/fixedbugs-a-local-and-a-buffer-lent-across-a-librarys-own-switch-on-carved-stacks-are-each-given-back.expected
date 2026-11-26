@@ -1,0 +1,6 @@
+body holds 8 lent 10 20 11 21
+coroutine 1 lent 31 41
+body holds 8
+coroutine 0 lent 30 40
+body holds 8 coroutines 2 1002
+lent carved: 8

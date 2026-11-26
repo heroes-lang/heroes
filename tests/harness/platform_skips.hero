@@ -340,6 +340,21 @@ function unbuildable_on_windows() -> [Skip]
         Skip(name: "tests/golden/run/fixedbugs-a-context-in-a-static-page-made-unreadable-before-the-next-save-runs.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-a-jmp-buf-in-an-alternate-stack-unmapped-while-registered-before-the-next-save-runs.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-a-context-in-an-alternate-stack-unmapped-while-registered-before-the-next-save-runs.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-a-coroutine-librarys-own-switch-onto-stacks-carved-from-the-threads-own-leaves-a-large-value-alone.hero", why: SYSV_SWITCH_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-one-coroutine-switched-onto-a-stack-carved-from-the-threads-own-leaves-a-large-value-alone.hero", why: SYSV_SWITCH_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-coroutines-carved-from-the-extern-calls-own-frame-each-keep-their-large-values.hero", why: SYSV_SWITCH_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-coroutines-carved-inside-a-carved-coroutine-each-keep-their-large-values.hero", why: SYSV_SWITCH_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-coroutines-on-stacks-carved-from-a-spawned-threads-own-leave-its-large-value-alone.hero", why: SYSV_SWITCH_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-a-local-and-a-buffer-lent-across-a-librarys-own-switch-on-carved-stacks-are-each-given-back.hero", why: SYSV_SWITCH_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-a-coroutine-holding-a-large-value-across-its-own-switch-on-a-carved-stack-leaves-the-callers-alone.hero", why: SYSV_SWITCH_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-a-function-giving-back-its-large-value-after-a-carved-coroutine-yielded-keeps-it-whole.hero", why: SYSV_SWITCH_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-coroutines-copied-out-and-in-of-one-carved-region-each-keep-their-large-values.hero", why: SYSV_SWITCH_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-a-c-longjmp-inside-coroutines-copied-out-and-in-of-one-carved-region-keeps-their-large-values.hero", why: SYSV_SWITCH_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-coroutines-copied-out-and-in-of-a-region-carved-from-the-threads-own-leave-a-large-value-alone.hero", why: SYSV_SWITCH_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-coroutines-copied-out-and-in-of-a-carved-region-ended-first-to-last-leave-a-large-value-alone.hero", why: SYSV_SWITCH_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-coroutines-copied-out-and-in-of-a-heap-region-each-keep-their-large-values.hero", why: SYSV_SWITCH_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-coroutines-copied-out-and-in-of-a-heap-region-ended-first-to-last-each-keep-their-large-values.hero", why: SYSV_SWITCH_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-coroutines-copied-out-and-in-of-one-heap-region-over-makecontext-each-keep-their-large-values.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
     ]
 
 # Why the program at `source` is not built on this machine: one of
@@ -606,7 +621,14 @@ test "every program Windows cannot build is a file that exists, skipped there al
     # headers, compiled alone by `zig cc` 0.15.2 for both Windows targets on
     # 2026-11-25, were refused at `sys/mman.h` or `ucontext.h` not found
     # (`POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS`).
-    assert unbuildable_on_windows().len() == 151
+    # Then 15 of panel 259's R1 (lane land259), the shapes the sitting ran
+    # under its route: 14 bind the System V switch their headers write, which
+    # stops itself with `#error` on Windows (`SYSV_SWITCH_ON_WINDOWS`), and 1
+    # binds POSIX's contexts (`POSIX_CONTEXT_SHAPES_ON_WINDOWS`). Their headers,
+    # compiled alone by `zig cc` 0.15.2 for both Windows targets on
+    # 2026-11-25, were refused at that `#error` (the six System V headers) or
+    # at `ucontext.h` not found (the context header).
+    assert unbuildable_on_windows().len() == 166
 
     for one in unbuildable_on_windows()
         assert strings.has_prefix(s: one.name, prefix: "tests/golden/run/")

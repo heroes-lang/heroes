@@ -110,3 +110,13 @@ function main()
     a = cr_resume(k: 0)
     b = cr_resume(k: 1)
     print("jumped inside a coroutine: ", a, " ", b)
+
+# Corrected 2026-11-25, lane land259 (panel 259's R1 and R2, provisional,
+# author ratification pending): the fix above is gone. No take is judged
+# given back by its frame's address any more, since an order of addresses a
+# switch of stacks C makes can falsify handed live values to other frames
+# (panel 259's cells); what the frames C left held stays held until the
+# program ends, counted against the room's 1 GiB, the end spec section 13
+# promises such a program. So this loop now ends at that bound's abort,
+# which says how many callbacks C called have not returned, and the case's
+# `.expected` was changed by hand that day to pin it.

@@ -1,0 +1,32 @@
+# Added 2026-11-25, panel 259's R1 and R2 (provisional, author ratification
+# pending), lane land259: C `longjmp`s 20,000 times out of a call lent a
+# 64 KiB buffer. A correct program: the region a lend C leaves stays lent, and
+# every lent region's mapped bytes, its extent rounded to pages and a guard
+# page, count against the room's 1 GiB with the large values (spec section
+# 13), so the loop ends at that bound's abort, saying how many callbacks C
+# called have not returned: 13,108 on this Mac's 16 KiB pages, 15,421 on Linux
+# arm64's 4 KiB pages, so the case pins the words up to the number. Before
+# panel 259 the regions were given back by their frames' addresses (panel
+# 258's R1); before panel 258 nothing bounded them (`lendjump`, 334.7 MB
+# resident after 20,000 jumps of a 4 KiB lend).
+extern "fixedbugs-2752-levels.h"
+    function lv_try(cb: (function(i64) -> i64), n: i64) -> i64
+    function lv_fill_throw(@md: [u8] counted_by 65536 lent) -> i32
+
+function body(n: i64) -> i64
+    md: [u8] @= []
+    print_nothing(n: lv_fill_throw(@md))
+    return md.len() + n
+
+function print_nothing(n: i32)
+    if n == 99
+        print("never")
+
+function main()
+    print("jumping out of calls lent 64 KiB")
+    total: i64 @= 0
+
+    for _ in range(from: 0, to: 20000)
+        total @ total + lv_try(cb: body, n: 1)
+
+    print("jumped, sum ", total)
