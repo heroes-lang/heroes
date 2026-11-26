@@ -1,0 +1,148 @@
+# The searches and the sort whose test or order reads a value the caller
+# hands beside the list, since a function value holds none of its own (spec
+# § 9): what `index_where`, `find` and `sort_by` do, with `state` handed to
+# each call of the caller's function, as `web.before_with` hands a server's
+# state to each step. The sort is `ordering`'s merge sort with the state
+# passed to every comparison: runs of `ordering.RUN` elements ordered by
+# insertion, then merged in pairs of runs twice as long, an element moved past
+# another only where `less` says it goes before it, so equal elements keep
+# their places and an order that contradicts itself reads no index past the
+# end.
+
+use lists/internal/codes
+use lists/internal/ordering
+use lists/internal/samples
+
+# The index of the first element of `xs` `accepts` accepts with `state`,
+# failing `not_found` where there is none.
+function index_where_with<T, S>(xs: [T], state: S, accepts: (function(state: S, item: T) -> bool)) -> i64?
+    for at in range(from: 0, to: xs.len())
+        if accepts(state: state, item: xs[at])
+            return ok(at)
+
+    return fail(code: codes.NOT_FOUND, msg: codes.none_is(count: xs.len(), what: "accepted"))
+
+# The first element of `xs` `accepts` accepts with `state`, failing
+# `not_found` where there is none.
+function find_with<T, S>(xs: [T], state: S, accepts: (function(state: S, item: T) -> bool)) -> T?
+    for x in xs
+        if accepts(state: state, item: x)
+            return ok(x)
+
+    return fail(code: codes.NOT_FOUND, msg: codes.none_is(count: xs.len(), what: "accepted"))
+
+# Orders the elements of `xs` from `from` up to `to` by insertion, in place,
+# `less` reading `state`.
+function insertion_sort_with<T, S>(@xs: [T], from: i64, to: i64, state: S, less: (function(state: S, a: T, b: T) -> bool))
+    at: i64 @= from + 1
+
+    while at < to
+        moving = xs[at]
+        place: i64 @= at
+
+        while place > from && less(state: state, a: moving, b: xs[place - 1])
+            xs[place] @ xs[place - 1]
+            place @ place - 1
+
+        xs[place] @ moving
+        at @ at + 1
+
+# Merges the runs of `src` from `from` to `mid` and from `mid` to `to` into
+# the same places of `dst`, the second run's element first only where `less`
+# says so.
+function merge_with<T, S>(src: [T] lent, @dst: [T], from: i64, mid: i64, to: i64, state: S, less: (function(state: S, a: T, b: T) -> bool))
+    left: i64 @= from
+    right: i64 @= mid
+    at: i64 @= from
+
+    while at < to
+        if right < to && (left >= mid || less(state: state, a: src[right], b: src[left]))
+            dst[at] @ src[right]
+            right @ right + 1
+        else
+            dst[at] @ src[left]
+            left @ left + 1
+        at @ at + 1
+
+# The elements of `xs` in the order `less` gives with `state`, equal ones in
+# their places.
+function sort_by_with<T, S>(xs: [T], state: S, less: (function(state: S, a: T, b: T) -> bool)) -> [T]
+    sorted: [T] @= xs
+    count = xs.len()
+    start: i64 @= 0
+
+    while start < count
+        end: i64 @= count
+
+        if ordering.RUN < count - start
+            end @ start + ordering.RUN
+        insertion_sort_with(@sorted, from: start, to: end, state: state, less: less)
+        start @ end
+
+    spare: [T] @= xs
+    width: i64 @= ordering.RUN
+
+    while width < count
+        from: i64 @= 0
+
+        while from < count
+            mid: i64 @= count
+            to: i64 @= count
+
+            if width < count - from
+                mid @ from + width
+
+            if width < count - mid
+                to @ mid + width
+            merge_with(src: sorted, dst: @spare, from: from, mid: mid, to: to, state: state, less: less)
+            from @ to
+
+        sorted @ spare
+        width @ width * 2
+
+    return sorted
+
+test "index_where_with: the first accepted, none, every one, an empty list, and texts of more than one byte"
+    nothing: [samples.Card] = []
+    hand = [samples.Card(rank: 3, suit: "h"), samples.Card(rank: 5, suit: "s"), samples.Card(rank: 9, suit: "s")]
+    assert index_where_with(hand, state: "s", accepts: samples.of_suit).must() == 1
+    assert index_where_with(hand, state: "h", accepts: samples.of_suit).must() == 0
+
+    match index_where_with(hand, state: "d", accepts: samples.of_suit)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "none of the 3 elements of the list is accepted"
+
+    match index_where_with(nothing, state: "s", accepts: samples.of_suit)
+        .ok _  => assert false
+        .err e => assert e.msg == "an empty list holds no element that is accepted"
+
+    assert index_where_with(["più", "così"], state: "così", accepts: samples.is_text).must() == 1
+
+test "find_with: the first of two accepted, none, one, and an empty list"
+    nothing: [samples.Card] = []
+    hand = [samples.Card(rank: 3, suit: "h"), samples.Card(rank: 5, suit: "s"), samples.Card(rank: 9, suit: "s")]
+    assert find_with(hand, state: "s", accepts: samples.of_suit).must() == samples.Card(rank: 5, suit: "s")
+    assert find_with([samples.Card(rank: 1, suit: "c")], state: "c", accepts: samples.of_suit).must().rank == 1
+
+    match find_with(hand, state: "d", accepts: samples.of_suit)
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && e.msg == "none of the 3 elements of the list is accepted"
+
+    assert find_with(nothing, state: "s", accepts: samples.of_suit).is_err()
+
+test "sort_by_with: by the distance to a value handed alongside, equal ones in their places, every length around a run and a merge"
+    assert sort_by_with([9, 1, 6, 4, 5], state: 5, less: samples.nearer) == [5, 6, 4, 9, 1]
+    assert sort_by_with([7, 3, 5], state: 5, less: samples.nearer) == [5, 7, 3]
+
+    for count in [0, 1, 2, 15, 16, 17, 31, 32, 33, 100]
+        xs: [i64] @= []
+
+        for i in range(from: 0, to: count)
+            xs @ xs.push(i * 37 % 11)
+
+        sorted = sort_by_with(xs, state: 0, less: samples.nearer)
+        assert sorted == sort(xs)
+
+test "sort_by_with: an order that contradicts itself never reads past the end"
+    xs = [5, 3, 8, 1, 9, 2, 7, 4, 6, 0, 11, 13, 12, 10, 15, 14, 17, 16, 19, 18]
+    assert sort_by_with(xs, state: 0, less: samples.always_with).len() == xs.len()
