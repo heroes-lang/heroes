@@ -238,7 +238,11 @@ function run_one(@db: keyspace.Db, argv: [[u8]], specs: {str: table.Spec}) -> bo
     if spec.scope != .data || !spec.write || !table.fits(spec, count: argv.len())
         return fail(code: INVALID, msg: f"the log holds '{name}' with {argv.len()} words, which kvd does not replay")
 
-    return match table.run(@db, argv: argv, name: name, now: LOADING)
+    answer = table.run(@db, argv: argv, name: name, now: LOADING)
+    _ = keyspace.drain_effects(@db)
+    _ = keyspace.drain_touched(@db)
+
+    return match answer
         .error _ => ok(false)
         .simple _ | .integer _ | .bulk _ | .null_value | .array _ | .mapping _ | .set _ | .double _ | .boolean _ | .big_number _ | .verbatim _ | .pushed _ => ok(
             true
