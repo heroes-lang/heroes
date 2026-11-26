@@ -1,0 +1,402 @@
+# The append-only file: every command that changed the keyspace, written
+# in RESP as a client sends it, appended as it runs and replayed at start,
+# as Redis's AOF is. The log comes in parts numbered by a generation,
+# `kvd.<n>.aof`, in the manner of Redis 7's multi-part AOF: a snapshot
+# names the generation that follows it, so loading reads the snapshot, then
+# that part and every later one in order; a save begins the next part
+# before it writes, so what runs while a background save works lands in a
+# part the new snapshot leaves to be replayed.
+#
+# Times in the file are moments, never spans (`SET ... PXAT`,
+# `PEXPIREAT`), and a key found expired is logged as a `DEL`, so a replay
+# runs the same commands to the same keyspace on any day. A transaction is
+# written between `MULTI` and `EXEC`, and replayed whole or not at all.
+#
+# A crash may cut the last command short: the bytes of the last part after
+# its last whole command are dropped and counted, as Redis's
+# `aof-load-truncated` does; bytes that are no command anywhere else refuse
+# the load.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/path
+use <rebel>/redis
+
+use commands/table
+use protocol/request
+use protocol/words
+use store/keyspace
+
+# The code of a log that cannot be replayed.
+constant INVALID: str
+    "invalid"
+
+# The moment a replay runs at: before every moment a key may expire at, so
+# no key expires while the log is read, as Redis expires none while it
+# loads; the commands' own moments decide.
+constant LOADING: i64
+    0
+
+# The open log, or none where the server keeps no log.
+record Writer
+    # The data folder.
+    dir: str
+    # The generation of the part being written.
+    generation: i64
+    # The part, open to append; a failure where the log is off.
+    file: io.Stream?
+    # When the part is put on the storage: `always`, after each command;
+    # `everysec`, by the server's timer; `no`, when the system chooses.
+    fsync: str
+    # The bytes the part holds.
+    size: i64
+    # Whether bytes were written since the part was last put on the
+    # storage.
+    unsynced: bool
+    # The last write's failure, "" while every one succeeded.
+    last_error: str
+
+# What replaying the log found.
+record Replayed
+    # The commands run, a transaction's counting one each.
+    commands: i64
+    # The parts read.
+    parts: i64
+    # The bytes dropped after the last whole command of the last part.
+    dropped: i64
+    # The commands that answered an error as they ran.
+    refused: i64
+    # The generation to go on writing: the last part read, or the first
+    # asked where none was there.
+    generation: i64
+    # The length the last part keeps once the bytes dropped are cut off.
+    kept: i64
+
+# The path of the part `generation` in `dir`.
+#
+# - `dir`: the data folder.
+# - `generation`: the part's number.
+function path_of(dir: str, generation: i64) -> str
+    return path.join_all([dir, f"kvd.{generation}.aof"])
+
+# The path of the snapshot in `dir`.
+#
+# - `dir`: the data folder.
+function snapshot_path(dir: str) -> str
+    return path.join_all([dir, "kvd.snapshot"])
+
+# A writer that writes nothing: the log is off.
+#
+# - `dir`: the data folder.
+# - `generation`: the generation a later `begin` starts from.
+function off(dir: str, generation: i64) -> Writer
+    return Writer(
+        dir: dir,
+        generation: generation,
+        file: fail(code: "closed", msg: "the append-only file is off"),
+        fsync: "no",
+        size: 0,
+        unsynced: false,
+        last_error: ""
+    )
+
+# The part `generation` of `dir` opened to append, made where it is not
+# there.
+#
+# - `dir`: the data folder.
+# - `generation`: the part's number.
+# - `fsync`: `always`, `everysec` or `no`.
+#
+# Fails as `fs.open_with` fails.
+function begin(dir: str, generation: i64, fsync: str) -> Writer?
+    stream = fs.open_with(path_of(dir, generation: generation), access: .append, permission: 0o644)?
+
+    size = match io.size(stream)
+        .ok n  => n
+        .err _ => 0
+
+    return ok(
+        Writer(dir: dir, generation: generation, file: ok(stream), fsync: fsync, size: size, unsynced: false, last_error: "")
+    )
+
+# Whether `w` writes a log.
+#
+# - `w`: the writer.
+function is_on(w: Writer lent) -> bool
+    return !w.file.is_err()
+
+# Closes the part `w` writes, putting it on the storage first.
+#
+# - `w`: the writer, which writes nothing after.
+function close(@w: Writer)
+    match w.file
+        .ok s =>
+            stream @= s
+            _ = io.sync(stream).is_err()
+            _ = io.close(@stream).is_err()
+        .err _ => _ = 0
+
+    w.file @ fail(code: "closed", msg: "the append-only file is closed")
+
+# Closes the part `w` writes and opens the next generation's.
+#
+# - `w`: the writer.
+#
+# Fails as `begin` does, the writer then off.
+function next_part(@w: Writer) -> ()?
+    on = is_on(w)
+    close(@w)
+
+    if !on
+        w.generation @ w.generation + 1
+        return ok()
+    w @ begin(dir: w.dir, generation: w.generation + 1, fsync: w.fsync)?
+    return ok()
+
+# The bytes of `batch` as the log holds them, between `MULTI` and `EXEC`
+# where `transaction` and it holds more than one command.
+#
+# - `batch`: the commands, each its words.
+# - `transaction`: whether they ran as one transaction.
+function encode(batch: [[[u8]]], transaction: bool) -> [u8]
+    out: [u8] @= []
+    wrapped = transaction && batch.len() > 1
+
+    if wrapped
+        add(out: @out, more: redis.encode_command([bytes.from_text("MULTI")]))
+
+    for command in batch
+        add(out: @out, more: redis.encode_command(command))
+
+    if wrapped
+        add(out: @out, more: redis.encode_command([bytes.from_text("EXEC")]))
+    return out
+
+# Appends `more` to `out`, the caller's own.
+#
+# - `out`: the bytes so far.
+# - `more`: the bytes added.
+function add(@out: [u8], more: [u8])
+    for c in more
+        out @ out.push(c)
+
+# Appends `batch` to the log, putting it on the storage at once where the
+# policy is `always`. A failure is kept in `last_error`, as Redis keeps
+# `aof_last_write_status`, and the server goes on.
+#
+# - `w`: the writer.
+# - `batch`: the commands one client command made, each its words.
+# - `transaction`: whether they ran as one transaction.
+function append(@w: Writer, batch: [[[u8]]], transaction: bool)
+    if batch.len() == 0
+        return
+    data = encode(batch, transaction: transaction)
+
+    match w.file
+        .ok stream =>
+            match io.write(stream, data: data)
+                .ok _ =>
+                    w.size @ w.size + data.len()
+                    w.unsynced @ true
+                    w.last_error @ ""
+                .err e => w.last_error @ e.msg
+
+            if w.fsync == "always"
+                sync(@w)
+        .err _ => _ = 0
+
+# Puts on the storage what was written since the last time.
+#
+# - `w`: the writer.
+function sync(@w: Writer)
+    if !w.unsynced
+        return
+
+    match w.file
+        .ok stream =>
+            match io.sync(stream)
+                .ok _  => w.unsynced @ false
+                .err e => w.last_error @ e.msg
+        .err _ => _ = 0
+
+# Runs the logged command `argv` over `db`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words.
+# - `specs`: the command table.
+#
+# Fails `invalid` where it is no command the log may hold, or has words its
+# arity refuses; answers whether it ran without an error reply.
+function run_one(@db: keyspace.Db, argv: [[u8]], specs: {str: table.Spec}) -> bool?
+    name = words.upper(argv[0])
+
+    spec = match specs[name]
+        .ok s  => s
+        .err _ => return fail(code: INVALID, msg: f"the log holds the command '{name}', which kvd does not replay")
+
+    if spec.scope != .data || !spec.write || !table.fits(spec, count: argv.len())
+        return fail(code: INVALID, msg: f"the log holds '{name}' with {argv.len()} words, which kvd does not replay")
+
+    return match table.run(@db, argv: argv, name: name, now: LOADING)
+        .error _ => ok(false)
+        .simple _ | .integer _ | .bulk _ | .null_value | .array _ | .mapping _ | .set _ | .double _ | .boolean _ | .big_number _ | .verbatim _ | .pushed _ => ok(
+            true
+        )
+
+# Replays the part `data` over `db`, adding what it found to `found`.
+#
+# - `db`: the keyspace.
+# - `data`: the part's bytes.
+# - `last`: whether it is the last part, where a cut command is dropped.
+# - `specs`: the command table.
+# - `found`: the counts so far, the caller's own.
+#
+# Fails `invalid` where its bytes are no commands, or a cut command stands
+# in a part that is not the last.
+function replay_part(@db: keyspace.Db, data: [u8], last: bool, specs: {str: table.Spec}, @found: Replayed) -> ()?
+    at @= 0
+    held: [[[u8]]] @= []
+    in_multi @= false
+    held_from @= 0
+
+    while at < data.len()
+        match request.next_request(data, from: at)
+            .whole w =>
+                if w.words.len() > 0
+                    name = words.upper(w.words[0])
+
+                    if name == "MULTI"
+                        in_multi @ true
+                        held_from @ at
+                        held @ []
+                    else if name == "EXEC"
+                        for argv in held
+                            if !run_one(@db, argv: argv, specs: specs)?
+                                found.refused @ found.refused + 1
+                            found.commands @ found.commands + 1
+
+                        in_multi @ false
+                        held @ []
+                    else if in_multi
+                        held @ held.push(w.words)
+                    else
+                        if !run_one(@db, argv: w.words, specs: specs)?
+                            found.refused @ found.refused + 1
+                        found.commands @ found.commands + 1
+                at @ w.next
+            .partial =>
+                if !last
+                    return fail(code: INVALID, msg: f"a part of the log ends inside a command at byte {at}")
+                found.dropped @ found.dropped + data.len() - at
+                at @ data.len()
+            .broken b => return fail(
+                code: INVALID,
+                msg: f"the log holds bytes that are no command at byte {at}: {b.reason}"
+            )
+
+    if in_multi
+        if !last
+            return fail(code: INVALID, msg: "a part of the log ends inside a transaction")
+        found.dropped @ found.dropped + data.len() - held_from
+    return ok()
+
+# Replays every part of `dir` from `generation` on, in order, over `db`,
+# and answers the counts and the part to go on writing: the last one read,
+# or `generation` where none was there.
+#
+# - `db`: the keyspace, as the snapshot left it.
+# - `dir`: the data folder.
+# - `generation`: the first part's number.
+#
+# Fails `invalid` as `replay_part` does, the message naming the part, and
+# as `fs.read_bytes` fails.
+function replay(@db: keyspace.Db, dir: str, generation: i64) -> Replayed?
+    specs = table.by_name()
+    found @= Replayed(commands: 0, parts: 0, dropped: 0, refused: 0, generation: generation, kept: 0)
+    n @= generation
+
+    while fs.exists(path_of(dir, generation: n)).default(false)
+        data = fs.read_bytes(path_of(dir, generation: n))?
+        last = !fs.exists(path_of(dir, generation: n + 1)).default(false)
+
+        match replay_part(@db, data: data, last: last, specs: specs, found: @found)
+            .ok _  => _ = 0
+            .err e => return fail(code: e.code, msg: f"kvd.{n}.aof: {e.msg}")
+
+        found.parts @ found.parts + 1
+        found.generation @ n
+        found.kept @ data.len() - found.dropped
+        n @ n + 1
+
+    _ = keyspace.drain_effects(@db)
+    _ = keyspace.drain_touched(@db)
+    return ok(found)
+
+# Removes the parts of `dir` before `generation`, which a snapshot has made
+# needless.
+#
+# - `dir`: the data folder.
+# - `generation`: the first part to keep.
+function remove_before(dir: str, generation: i64)
+    n @= generation - 1
+
+    while n >= 0 && fs.exists(path_of(dir, generation: n)).default(false)
+        _ = fs.remove(path_of(dir, generation: n)).is_err()
+        n @ n - 1
+
+test "encode: one command, and a transaction between MULTI and EXEC"
+    one = encode([[bytes.from_text("DEL"), bytes.from_text("k")]], transaction: false)
+    assert one == bytes.from_text("*2\r\n$3\r\nDEL\r\n$1\r\nk\r\n")
+    two = encode(
+        [[bytes.from_text("DEL"), bytes.from_text("a")], [bytes.from_text("DEL"), bytes.from_text("b")]],
+        transaction: true
+    )
+    assert bytes.has_prefix(s: two, prefix: bytes.from_text("*1\r\n$5\r\nMULTI\r\n"))
+    assert bytes.has_suffix(s: two, suffix: bytes.from_text("*1\r\n$4\r\nEXEC\r\n"))
+
+test "replay_part: commands run, a cut last command and an unended transaction dropped"
+    db @= keyspace.new()
+    found @= Replayed(commands: 0, parts: 0, dropped: 0, refused: 0, generation: 0, kept: 0)
+    data @= encode([[bytes.from_text("SET"), bytes.from_text("a"), bytes.from_text("1")]], transaction: false)
+    add(
+        out: @data,
+        more: encode([[bytes.from_text("INCRBY"), bytes.from_text("a"), bytes.from_text("2")], [bytes.from_text("SET"), bytes.from_text("b"), bytes.from_text("x")]], transaction: true)
+    )
+    add(out: @data, more: bytes.from_text("*1\r\n$5\r\nMULTI\r\n*2\r\n$3\r\nDEL\r\n$1\r\na\r\n*3\r\n$3\r\nSET"))
+    replay_part(@db, data: data, last: true, specs: table.by_name(), found: @found).must()
+    assert found.commands == 3
+    assert found.dropped > 0
+    assert keyspace.size(db) == 2
+
+test "replay_part: a cut command in a part that is not the last, and bytes that are no command, refuse the load"
+    db @= keyspace.new()
+    found @= Replayed(commands: 0, parts: 0, dropped: 0, refused: 0, generation: 0, kept: 0)
+    assert replay_part(
+        @db,
+        data: bytes.from_text("*2\r\n$3\r\nDEL"),
+        last: false,
+        specs: table.by_name(),
+        found: @found
+    ).is_err()
+    assert replay_part(
+        @db,
+        data: bytes.from_text("*1\r\n:5\r\n"),
+        last: true,
+        specs: table.by_name(),
+        found: @found
+    ).is_err()
+    assert replay_part(
+        @db,
+        data: bytes.from_text("*1\r\n$4\r\nPING\r\n"),
+        last: true,
+        specs: table.by_name(),
+        found: @found
+    ).is_err()
+    assert replay_part(
+        @db,
+        data: bytes.from_text("*1\r\n$3\r\nGET\r\n"),
+        last: true,
+        specs: table.by_name(),
+        found: @found
+    ).is_err()
