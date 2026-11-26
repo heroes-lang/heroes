@@ -310,16 +310,14 @@ function unit_fields(@found: [GateNote], c: state.Checked, s: source.Source, dec
 # generated hash — key position ONLY, measured, because hash is called
 # only for a key.
 function element_said(c: state.Checked, decls: [ast.Decl], element: i64, container: str, @memo: {i64: [Said]}) -> [Said]
-    fall: bool @= false
-
     match table.get(c.types, element)
         .unit => return [Said(code: "unit_element", what: "`()` as the element of " + container)]
         .ptr => return [Said(code: "pointer_element", what: "`ptr` as the element of " + container)]
         .cstr => return [Said(code: "pointer_element", what: "`cstr` as the element of " + container)]
         .fixed => return [Said(code: "fixed_element", what: "a fixed array as the element of " + container)]
-        .int_ty | .float_ty | .bool | .str | .thread_ty | .mailbox_ty => fall @ fall
-        .array | .map | .fallible | .function_ty | .named => fall @ fall
-        .case_ty | .failure | .generic | .error => fall @ fall
+        .int_ty | .float_ty | .bool | .str | .thread_ty | .mailbox_ty => _ = 0
+        .array | .map | .fallible | .function_ty | .named => _ = 0
+        .case_ty | .failure | .generic | .error => _ = 0
 
     if container == "a map key"
         reached = key_pointer.reaches_pointer(c, decls, ty: element)

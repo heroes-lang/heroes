@@ -30,6 +30,7 @@ use resolve/cycles
 use resolve/decls as resolve_decls
 use resolve/plain_literal
 use resolve/rest_zero
+use resolve/self_writes
 use resolve/state
 use resolve/top
 use resolve/unused_sweep
@@ -94,7 +95,8 @@ function resolve_within(a: ast.Ast, s: source.Source, decls: [ast.Decl], uses: [
     top.unused_uses(@r, s, uses)
 
     # Before the sweep, which leaves the cells marked here to the checker
-    # (defect 630).
+    # (defect 630); a write of a place with itself first, which is none.
+    self_writes.uncount(@r, a, s)
     value_lines.leave_to_the_checker(@r, a, s, decls)
     value_calls.leave_to_the_checker(@r, a, s, decls)
     unused_sweep.report(@r, s)

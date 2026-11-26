@@ -243,12 +243,7 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 return state.record_expr(@c, at: id, ty: state.error_ty_of(c))
 
             # Its lead first (defect 2596): `check/waiting_order.hero`'s `led`.
-            led = settle_order.led(@c, a, r, s, decls, ids: items.elements)
-            first = synth(@c, a, r, s, decls, led[0])
-
-            for other in led.slice(from: 1, to: led.len())
-                check(@c, a, r, s, decls, id: other, expected: first)
-
+            first = joined(@c, a, r, s, decls, led: settle_order.led(@c, a, r, s, decls, ids: items.elements))
             return state.record_expr(@c, at: id, ty: table.intern(@c.out.types, .array(element: first)))
         .map entries =>
             if entries.entries.len() == 0
@@ -256,13 +251,8 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 return state.record_expr(@c, at: id, ty: state.error_ty_of(c))
             keys_led = settle_order.led(@c, a, r, s, decls, ids: settle_order.parts_of(entries.entries, key: true))
             values_led = settle_order.led(@c, a, r, s, decls, ids: settle_order.parts_of(entries.entries, key: false))
-            key = synth(@c, a, r, s, decls, keys_led[0])
-            value = synth(@c, a, r, s, decls, values_led[0])
-
-            for n in range(from: 1, to: entries.entries.len())
-                check(@c, a, r, s, decls, id: keys_led[n], expected: key)
-                check(@c, a, r, s, decls, id: values_led[n], expected: value)
-
+            key = joined(@c, a, r, s, decls, led: keys_led)
+            value = joined(@c, a, r, s, decls, led: values_led)
             return state.record_expr(
                 @c,
                 at: id,
@@ -307,6 +297,34 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
             )
 
     return state.record_expr(@c, at: id, ty: state.error_ty_of(c))
+
+# A literal's parts in their lead's order (`settle_order.led`), each checked
+# against the lead's type; but where the lead is a function value, a part
+# whose type is its own is read and joined with it (panel 261's R3,
+# `type_fit.joined_type`), so the parts take the type each of them fits in any
+# order, and a part that needs a type from its context is checked last.
+function joined(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], led: [i64]) -> i64
+    lead: i64 @= synth(@c, a, r, s, decls, led[0])
+    later: [i64] @= []
+
+    for other in led.slice(from: 1, to: led.len())
+        if !table.is_function_ty(c.out.types, lead) || settle_order.weight(@c, a, r, s, decls, id: other, depth: settle_order.LOOK) > 0
+            later @ later.push(other)
+            continue
+        got = synth(@c, a, r, s, decls, other)
+        wider = type_fit.joined_type(@c.out.types, a: lead, b: got)
+
+        # A nameless written type refused where it is written keeps the lead
+        # it gave, its shadow quiet (`mismatch.compare`, defect 554).
+        if wider.is_err() || type_fit.unnamed_shadow(c.out.types, c.out.written_types, a: lead, b: got)
+            mismatch.compare(@c, s, decls, expected: lead, got: got, span: a.exprs[other].span)
+        else
+            lead @ wider.must()
+
+    for other in later
+        check(@c, a, r, s, decls, id: other, expected: lead)
+
+    return lead
 
 # An if/while condition: a bool, or the no-truthiness message.
 function condition(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], cond: i64)

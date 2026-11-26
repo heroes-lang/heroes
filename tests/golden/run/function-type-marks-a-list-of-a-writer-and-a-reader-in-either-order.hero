@@ -1,0 +1,23 @@
+# Panel 261's R3 (2026-11-26, ratified): a list of a writer and a reader
+# takes the type both fit, in either order, `[(function(@App, i64) -> i64)]`;
+# until the join a literal's element type was its first element's, so the
+# reader first was refused. Prints 2, 3, 4, 7, then 7.
+record App
+    n: i64
+
+function bump(@a: App, x: i64) -> i64
+    a.n @ a.n + x
+    return a.n
+
+function peek(a: App lent, x: i64) -> i64
+    return a.n + x
+
+function main()
+    app @= App(n: 1)
+    writers_first = [bump, peek]
+    readers_first = [peek, bump]
+    print(writers_first[0](@app, 1))
+    print(writers_first[1](@app, 1))
+    print(readers_first[0](@app, 2))
+    print(readers_first[1](@app, 5))
+    print(app.n)

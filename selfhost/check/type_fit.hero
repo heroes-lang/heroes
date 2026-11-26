@@ -109,6 +109,95 @@ function lent_where_at(wanted: [str], got: [str]) -> [str]
 
     return out
 
+# The least type two values both fit, where they are function values that
+# differ in their runs alone (panel 261's R3), so the elements of a list or a
+# map, the branches of an `if` and the arms of a `match` take one type in any
+# order: a position one writes `@` and the other `lent` is `@`, and a position
+# one names and the other leaves unnamed takes the name, the two widenings
+# `fits` makes. The join is commutative, and each side fits what it answers;
+# anything else answers none, and the caller tells the mismatch it told
+# before.
+function joined_type(@t: table.Types, a: i64, b: i64) -> i64?
+    if a == b
+        return ok(a)
+
+    match table.get(t, a)
+        .function_ty x =>
+            match table.get(t, b)
+                .function_ty y =>
+                    params = table.params_of(t, x.params)
+
+                    if params != table.params_of(t, y.params) || x.result != y.result
+                        return apart()
+                    modes = joined_runs(
+                        one: table.modes_of(t, x.modes, count: params.len()),
+                        other: table.modes_of(t, y.modes, count: params.len()),
+                        marks: true
+                    )
+                    labels = joined_runs(
+                        one: named_run(table.labels_of(t, x.labels), count: params.len()),
+                        other: named_run(table.labels_of(t, y.labels), count: params.len()),
+                        marks: false
+                    )
+
+                    if modes.is_err() || labels.is_err()
+                        return apart()
+                    kept = kept_names(labels.must())
+                    return ok(table.intern_function(@t, params, labels: kept, modes: modes.must(), result: x.result))
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return apart()
+                .array | .fixed | .map | .fallible | .named | .case_ty    => return apart()
+                .failure | .generic | .error | .thread_ty | .mailbox_ty   => return apart()
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return apart()
+        .array | .fixed | .map | .fallible | .named | .case_ty    => return apart()
+        .failure | .generic | .error | .thread_ty | .mailbox_ty   => return apart()
+
+    return apart()
+
+function apart() -> i64?
+    return fail(code: "apart", msg: "the two values are not function values that differ in their runs alone")
+
+# Two runs position by position: equal stays, an empty one takes the other,
+# and of two marks `@` takes `lent`; any other pair is apart.
+function joined_runs(one: [str], other: [str], marks: bool) -> [str]?
+    out: [str] @= []
+    i: i64 @= 0
+
+    while i < one.len()
+        x = one[i]
+        y = other[i]
+
+        if x == y || y.len() == 0 && !marks
+            out @ out.push(x)
+        else if x.len() == 0 && !marks
+            out @ out.push(y)
+        else if marks && (x == "@" && y == "lent" || x == "lent" && y == "@")
+            out @ out.push("@")
+        else
+            return fail(code: "apart", msg: "the position differs")
+        i @ i + 1
+
+    return ok(out)
+
+# A run of names one entry per position, `""` where a type names none.
+function named_run(names: [str], count: i64) -> [str]
+    if names.len() == count
+        return names
+    out: [str] @= []
+
+    for _ in range(from: 0, to: count)
+        out @ out.push("")
+
+    return out
+
+# A run of names as a type keeps it: none where no position is named, so a
+# join of two nameless types is the nameless type itself.
+function kept_names(names: [str]) -> [str]
+    for name in names
+        if name.len() > 0
+            return names
+
+    return []
+
 # Whether `a` and `b` are one function type but for the names of its
 # parameters, where the nameless one is a type the program WROTE with two
 # positions of one type (defect 554). `check/type_labels.hero` refuses that
