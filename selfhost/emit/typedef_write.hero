@@ -1,0 +1,115 @@
+# One item of `emit/typeorder.hero`'s walk written, after every need it holds
+# by value that is not written yet (design.md §4.2, §4.20; panel 261's R8):
+# the typedefs in the walk's post-order, and a cycle through a function
+# typedef written with the struct declared ahead. Out of `typeorder.hero`
+# with R8, which took that file past its ceiling; the walk there computes
+# the order, and this writes it.
+
+use ast
+use check/state
+use check/table
+use emit/ctype
+use emit/types
+use emit/writer
+use source
+
+# What `definitions` has written, what it is writing, and the structs it
+# has declared ahead of their definition.
+record Written
+    done: {i64: bool}
+    entered: {i64: bool}
+    forwarded: {i64: bool}
+    owed_blank: bool
+
+# One item of the walk's order, after every need it holds by value that is
+# not written yet (panel 261's R8, found by its compiler-engineer). The walk is a
+# post-order, so in a program whose types form no cycle every need is written
+# already and this writes the order as it stands, byte for byte. A function
+# type's typedef is a POINTER and the one item that may close a cycle: a
+# record holding a handler that takes the record, `record Box { f:
+# (function(Box, i64) -> i64) }`, a typedef C needs before the struct whose
+# field it types, while it names that struct. C needs no complete struct in a
+# function declarator that defines nothing (C11 6.7.6.3p12), so a struct this
+# unit defines that such a typedef names before it is written is declared
+# ahead, `typedef struct h_Box h_Box;`, which C11 lets the definition repeat;
+# every other need is written first, and a struct whose function-typed field
+# the walk reached after it is written after that typedef.
+function write_item(@w: writer.Writer, @at: Written, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], graph: {i64: [i64]}, item: i64)
+    if !at.done[item].is_err() || !at.entered[item].is_err()
+        return
+    at.entered[item] @ true
+    pointer = is_function_typedef(c, item)
+    needs = graph[item].default([])
+
+    for need in needs
+        if at.done[need].is_err() && (!pointer || struct_named(c, names, decls, item: need).len() == 0)
+            write_item(@w, @at, c, names, s, decls, graph: graph, item: need)
+
+    if pointer
+        for need in needs
+            spelled = struct_named(c, names, decls, item: need)
+
+            if at.done[need].is_err() && at.forwarded[need].is_err() && spelled.len() > 0
+                writer.line(@w, text: "typedef struct " + spelled + " " + spelled + ";")
+                at.forwarded[need] @ true
+
+    written(@w, @at, c, names, s, decls, item: item)
+    at.done[item] @ true
+
+function is_function_typedef(c: state.Checked, item: i64) -> bool
+    if item % 2 == 0
+        return false
+
+    return match table.get(c.types, item / 2)
+        .function_ty                                                       => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => false
+        .array | .fixed | .map | .named | .fallible                        => false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
+
+# The typedef of one item, as the walk's order writes it.
+function written(@w: writer.Writer, @at: Written, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], item: i64)
+    if item % 2 == 0
+        types.declared(@w, c, names, s, decls, decl: item / 2)
+        at.owed_blank @ false
+        return
+    ty = item / 2
+
+    match table.get(c.types, ty)
+        .fallible o =>
+            types.option(@w, c, names, name: ctype.option_of(names, ty: ty), payload: o.payload)
+            at.owed_blank @ false
+        .function_ty fn_ty =>
+            types.function_type(
+                @w,
+                c,
+                names,
+                name: names.funcs[ty].must(),
+                params: fn_ty.params,
+                modes: fn_ty.modes,
+                result: fn_ty.result
+            )
+            at.owed_blank @ true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => return
+        .array | .fixed | .map | .named | .thread_ty | .mailbox_ty => return
+        .case_ty | .failure | .generic | .error                    => return
+
+# The C struct an item's typedef defines, or "" where this unit defines none:
+# a function type's typedef is a pointer, and a group's record is the header's.
+function struct_named(c: state.Checked, names: ctype.Names, decls: [ast.Decl], item: i64) -> str
+    if item % 2 == 1
+        ty = item / 2
+
+        match table.get(c.types, ty)
+            .fallible                                                          => return ctype.option_of(names, ty: ty)
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return ""
+            .array | .fixed | .map | .named | .function_ty                     => return ""
+            .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return ""
+    decl = item / 2
+
+    match decls[decl].kind
+        .record_decl rec =>
+            if rec.header.is_err()
+                return ctype.of(names, decl: decl)
+            return ""
+        .variant_decl                                => return ctype.of(names, decl: decl)
+        .constant_decl | .function_decl | .test_decl => return ""

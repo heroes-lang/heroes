@@ -1,0 +1,18 @@
+# Panel 261's R8 (2026-11-26, ratified): a record holding, as a field, a
+# function value that takes the record, no mark anywhere. Found by the
+# sitting's compiler-engineer: `check` passed and `build` exited 2, *unknown
+# type name*, at the base and on `main` before this repair, the function
+# type's typedef written before the struct it names and the struct after the
+# typedef its field needs, a cycle the walk of `emit/typeorder.hero` took for
+# a tree. C needs no complete struct in a function declarator that defines
+# nothing, so the struct is declared ahead of the typedef. Prints 13.
+record Box
+    n: i64
+    f: (function(Box, i64) -> i64)
+
+function add_n(b: Box, x: i64) -> i64
+    return b.n + x
+
+function main()
+    b = Box(n: 3, f: add_n)
+    print(b.f(b, 10))

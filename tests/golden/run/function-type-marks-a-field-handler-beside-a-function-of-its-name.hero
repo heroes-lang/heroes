@@ -1,0 +1,21 @@
+# Panel 261's R2 and R8 (2026-11-26, ratified): a field holding an `@`
+# function beside a top-level function of the same name. At a dot the field
+# comes first (panel 079, design.md §4.11), and its marks are its type's,
+# never those of the function that shares its name. Prints 20, then 20 for
+# `b.n`, then 21 from the top-level `f` called by name.
+record Box
+    n: i64
+    f: (function(@Box, i64) -> i64)
+
+function double_it(@b: Box, x: i64) -> i64
+    b.n @ x * 2
+    return b.n
+
+function f(b: Box, x: i64) -> i64
+    return b.n + x
+
+function main()
+    b @= Box(n: 3, f: double_it)
+    print(b.f(@b, 10))
+    print(b.n)
+    print(f(b, 1))
