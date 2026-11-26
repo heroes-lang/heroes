@@ -44,15 +44,14 @@
  *    outside it, or below the frame making it on its own range, re-enters a
  *    handler's frames and stands as an entry of its own. A landing at or below
  *    a standing entry on its range is that handler running again.
- * 7. The known stacks are learned where `makecontext` is called (an assembly
- *    wrapper in `sigjump_make.c`: the C library reads `uc_stack` nowhere
- *    else), and nothing tells this route one has ended: a stale range is
- *    never asked about an entry, only about a target, where it costs a told
- *    refusal. Where contexts fall to route A no switch's target is read, so
- *    a range is held from its `makecontext` on (defect 2745). Where
- *    `makecontext` is not wrapped no range is known, and a save made inside
- *    a `swapcontext` the thread made, before it returned, names a target on a
- *    coroutine's stack (`sigjump_save.c`'s placement, defect d-lane-d2745-2).
+ * 7. The known stacks are learned where `makecontext` is called (a wrapper in
+ *    `sigjump_make.c` on every architecture, since defect d-lane-ctx-after-1:
+ *    the C library reads `uc_stack` nowhere else), and nothing tells this
+ *    route one has ended: a stale range is never asked about an entry, only
+ *    about a target, where it costs a told refusal. Where contexts fall to
+ *    route A no switch's target is read, so a range is held from its
+ *    `makecontext` on (defect 2745), and a switch to the very context
+ *    `makecontext` was handed lands at its range's top.
  * Route A obeys the same rules (defect 2745): its trusted record holds a
  * frame just below the target's stack pointer, on the target's stack, and
  * that bound is judged here as route C's decoded target is, but for whether
@@ -173,14 +172,29 @@ void hero_sig_known_stack(const void *context, bool held) {
 }
 
 /* Route A's switch to `context`: the range `makecontext` was handed it for,
- * where one was, entered (a pointer compared, nothing of the context read). */
-static void hero_sig_range_switched(const void *context) {
-    if (context == NULL || !atomic_load_explicit(&hero_sig_stack_any, memory_order_acquire)) return;
+ * where one was, entered (a pointer compared, nothing of the context read);
+ * that range's slot, -1 where none was. */
+static int hero_sig_range_switched(const void *context) {
+    if (context == NULL || !atomic_load_explicit(&hero_sig_stack_any, memory_order_acquire)) return -1;
+    int made = -1;
     for (int i = 0; i < HERO_SIG_STACKS; i += 1) {
         if (atomic_load(&hero_sig_stack_ctx[i]) == (uintptr_t)context) {
             atomic_fetch_or_explicit(&hero_sig_stack_state[i], HERO_SIG_RANGE_ENTERED, memory_order_relaxed);
+            made = i;
         }
     }
+    return made;
+}
+
+/* The top of the range in slot `i`, where a context `makecontext` made for it
+ * starts (rule 4 judges a stack pointer by the byte below it, which is the
+ * range's); false where the slot is being written or names no range now. */
+static bool hero_sig_range_top(int i, uintptr_t *t) {
+    unsigned before = atomic_load(&hero_sig_stack_seq[i]);
+    uintptr_t l = atomic_load(&hero_sig_stack_lo[i]), h = atomic_load(&hero_sig_stack_hi[i]);
+    if ((before & 1) != 0 || atomic_load(&hero_sig_stack_seq[i]) != before || h <= l) return false;
+    *t = h;
+    return true;
 }
 
 /* The slot of the known range holding `at`, -1 where none does. */

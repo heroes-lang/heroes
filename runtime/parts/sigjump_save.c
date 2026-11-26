@@ -30,37 +30,20 @@
 static bool hero_jmp_recording(void) { return atomic_load_explicit(&hero_jmp_decoding, memory_order_acquire) == 0; }
 static bool hero_ctx_recording(void) { return atomic_load_explicit(&hero_ctx_decoding, memory_order_acquire) == 0; }
 
-#if defined(HERO_JMP_DECODES) && !defined(HERO_JMP_MAKES)
-#error the placement below is route A's: where `makecontext` is not wrapped, neither family decodes
-#endif
-
-/* WHERE `makecontext` IS NOT WRAPPED (glibc's architectures other than aarch64
- * and x86-64; defect d-lane-d2745-2) no stack `makecontext` hands out is known,
- * so a coroutine carved from the thread's own stack is that stack to rule 4,
- * and a handler's jump into it was judged to leave the handler, which a
- * target above it on that stack does: the program's function then ran inside
- * the signal (three rows of 2702 and 2705, simulated by `HERO_JMP_NO_DECODE`
- * with `HERO_JMP_NO_MAKE` on Linux arm64). What this runtime does see is its
- * own `swapcontext`: from the switch until it returns in its frame, the
- * thread runs on the stack the swap entered, a coroutine's, and only that
- * frame's return brings it back where it was (`elsewhere`). A save made there
- * names a target on a stack a context switch entered and this runtime never
- * sees end, so a jump to it from a handler leaves no entry but by leaving the
- * alternate stack the entry was pushed on, and every entry it keeps is told
- * as ONSTACK, as route C tells a jump onto a coroutine's stack. */
-#if !defined(HERO_JMP_MAKES)
-static void hero_jmp_prune_away(HeroSignalStack *own, uintptr_t t) {
-    for (int i = own->depth - 1; i >= 0; i -= 1) {
-        HeroSigEntry *e = &own->entries[i];
-        if (e->dead || hero_sig_pinned(e)) continue;
-        if (e->alt_hi > e->alt_lo && !hero_sig_holds(e->alt_lo, e->alt_hi, t)) {
-            hero_sig_drop(own, i);
-        } else if (e->unsure == 0) {
-            e->unsure = 3;
-        }
-    }
+/* Route A's target for a switch to the context `ucp` (rules 4 to 7): the trusted
+ * record's frame where one is; else, where `ucp` is the very context
+ * `makecontext` was handed for a known range (slot `made`), the top of that
+ * range, where `makecontext` started it, since any later save into it would
+ * have left a record; else none, and false. Until defect d-lane-ctx-after-1 a
+ * switch into a context `makecontext` made, whose record `makecontext` drops,
+ * was told as a jump to a buffer the runtime holds no record of, in words
+ * naming a copy, a refill or a full table the program has none of. */
+static bool hero_jmp_switch_target(HeroSignalStack *own, const ucontext_t *ucp, int made, uintptr_t *t, bool *back) {
+    if (hero_jmp_target(own, ucp, t, back)) return true;
+    if (made < 0 || !hero_sig_range_top(made, t)) return false;
+    *back = false;
+    return true;
 }
-#endif
 
 static _Noreturn void hero_jmp_go(hero_jmp_jump_fn real, struct __jmp_buf_tag *env, int val) {
 #if defined(HERO_JMP_ASAN)
@@ -92,17 +75,6 @@ static void hero_jmp_jump(const void *env) {
         uintptr_t t = 0;
         bool back = false;
         if (hero_jmp_recorded(own, env, standing, &t, &back)) {
-#if !defined(HERO_JMP_MAKES)
-            /* The jump lands where its save was made, so the thread runs
-             * there: inside a swap of its own, or back where it was. */
-            own->elsewhere = hero_jmp_saved_away(own, env) ? 1 : 0;
-            if (own->elsewhere != 0) {
-                if (standing) hero_jmp_prune_away(own, t);
-                hero_jmp_landed(own, t, back);
-                if (standing && !hero_sig_standing(own)) hero_signal_jump_checked();
-                return;
-            }
-#endif
             if (standing) {
                 hero_sig_landing(own, t);
                 hero_sig_prune_to(own, t, true);
@@ -128,8 +100,9 @@ static void hero_jmp_set(const ucontext_t *ucp) {
         t = hero_jmp_context_sp(ucp);
         hero_sig_range_entered(t);
     } else {
-        hero_sig_range_switched(ucp);
-        if (!hero_jmp_recorded(own, ucp, standing, &t, &back)) {
+        int made = hero_sig_range_switched(ucp);
+        if (!hero_jmp_switch_target(own, ucp, made, &t, &back)) {
+            hero_jmp_unfollowed(own, ucp, standing);
             if (standing && !hero_sig_standing(own)) hero_signal_jump_checked();
             return;
         }
@@ -255,13 +228,13 @@ int(swapcontext)(ucontext_t *restrict oucp, const ucontext_t *restrict ucp) {
         bool field = !hero_ctx_recording();
         uintptr_t t = field ? hero_jmp_context_sp(ucp) : 0;
         bool back = false;
-        bool known = field || hero_jmp_target(own, ucp, &t, &back);
+        bool known = field;
         if (field) {
             hero_sig_range_entered(t);
             watched = hero_sig_range_watch(t, &seq);
             entered = t;
         } else {
-            hero_sig_range_switched(ucp);
+            known = hero_jmp_switch_target(own, ucp, hero_sig_range_switched(ucp), &t, &back);
         }
         if (known) hero_sig_landing(own, t);
         for (int i = 0; i < own->depth && n < HERO_SIG_DEPTH; i += 1) {
@@ -286,16 +259,7 @@ int(swapcontext)(ucontext_t *restrict oucp, const ucontext_t *restrict ucp) {
             }
         }
     }
-#if !defined(HERO_JMP_MAKES)
-    /* The thread runs on the stack the swap enters until this frame returns
-     * (the placement above). */
-    int away = own != NULL ? own->elsewhere : 0;
-    if (own != NULL) own->elsewhere = 1;
-#endif
     int r = atomic_load_explicit(&hero_ctx_real_swap, memory_order_relaxed)(oucp, ucp);
-#if !defined(HERO_JMP_MAKES)
-    if (own != NULL) own->elsewhere = away;
-#endif
     /* Back in this frame: where no switch was made from the range entered
      * and the context did not move, its coroutine returned through `uc_link`
      * and the range holds no frames of it any more (defect 2706,

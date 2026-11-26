@@ -73,6 +73,20 @@ static void hero_rebind_unfollowed(HeroSignalStack *own, const void *buf, bool s
     }
 }
 
+/* Route A's target for a switch to the context `uc` (rules 4 to 7): the trusted
+ * record's frame where one is; else, where `uc` is the very context
+ * `makecontext` was handed for a known range (slot `made`), the top of that
+ * range, where `makecontext` started it, since any later save into it would
+ * have left a record; else none, and false (defect d-lane-ctx-after-1: such a
+ * switch, whose record `makecontext` drops, was told as a jump to a buffer the
+ * runtime holds no record of). */
+static bool hero_rebind_switch_target(HeroSignalStack *own, const void *uc, int made, uintptr_t *t, bool *back) {
+    if (hero_rebind_target(own, uc, t, back)) return true;
+    if (made < 0 || !hero_rebind_range_top(made, t)) return false;
+    *back = false;
+    return true;
+}
+
 /* A jump of the setjmp family to `env`: its target decoded at every jump,
  * inside a handler or not (one word of a buffer the C library reads next), so
  * a landing in frames already left is seen wherever it happens. Where the
@@ -117,8 +131,8 @@ static void hero_rebind_set(const void *uc) {
         t = hero_rebind_ctx_sp(uc);
         hero_rebind_range_entered(t);
     } else {
-        hero_rebind_range_switched(uc);
-        if (!hero_rebind_target(own, uc, &t, &back)) {
+        int made = hero_rebind_range_switched(uc);
+        if (!hero_rebind_switch_target(own, uc, made, &t, &back)) {
             hero_rebind_unfollowed(own, uc, standing);
             if (standing && !hero_rebind_standing(own)) hero_signal_jump_checked();
             return;
@@ -166,14 +180,14 @@ __attribute__((noinline)) static int hero_rebind_swapcontext(void *from, const v
         bool field = hero_rebind_decoding(HERO_REBIND_CTX);
         uintptr_t t = 0;
         bool back = false;
-        bool known = field || hero_rebind_target(own, to, &t, &back);
+        bool known = field;
         if (field) {
             entered = hero_rebind_ctx_sp(to);
             hero_rebind_range_entered(entered);
             watched = hero_rebind_range_watch(entered, &seq);
             hero_rebind_landing(own, entered);
         } else {
-            hero_rebind_range_switched(to);
+            known = hero_rebind_switch_target(own, to, hero_rebind_range_switched(to), &t, &back);
             if (known) hero_rebind_landing(own, t);
         }
         for (int i = 0; i < own->depth && n < HERO_SIG_DEPTH; i += 1) {

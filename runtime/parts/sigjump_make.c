@@ -12,23 +12,33 @@
  * 255's R3, defect 2702; design.md §1.12). Needs `sigjump_save.c`.
  *
  * The C library reads `uc_stack` here and nowhere else, so the range noted is
- * the one the context will run on. `makecontext`'s arguments are variadic,
- * which `musttail` refuses, so the wrapper is assembly: the argument registers
- * kept, the range noted, then a branch to the C library's own with the stack
- * as the caller left it (Darwin's `parts/rebind_jump.c` does the same). Where
- * the context's own field does not decode (route A for contexts) its record
- * goes, the context now naming another stack, and its range is held
- * (defect 2745). On glibc's other architectures
- * no wrapper is defined (`HERO_JMP_MAKES`, `sigjump.c`) and no context stack
- * is known there. This file said until defect d-lane-d2745-2 that a
- * coroutine's frames are then of unknown extent, which proves no handler
- * left: false of a coroutine carved from the thread's own stack, which rule 4
- * judged as that stack, so a handler's jump into it ran the program's function
- * inside the signal. What a save made while the thread runs inside a
- * `swapcontext` of its own tells a jump instead is `sigjump_save.c`'s
- * placement. */
+ * the one the context will run on. Where the context's own field does not
+ * decode (route A for contexts) its record goes, the context now naming
+ * another stack, and its range is held (defect 2745).
+ *
+ * ON AARCH64 AND X86-64 THE WRAPPER IS ASSEMBLY: `makecontext`'s arguments are
+ * variadic, which `musttail` refuses, so the argument registers are kept, the
+ * range noted, then a branch to the C library's own with the stack as the
+ * caller left it (Darwin's `parts/rebind_jump.c` does the same), every
+ * argument passed on whatever their count.
+ *
+ * ON GLIBC'S OTHER ARCHITECTURES THE WRAPPER IS C (defect d-lane-ctx-after-1):
+ * until then no wrapper stood there, no stack was known, and a coroutine
+ * started by `setcontext`, or a handler's `setcontext` into a context
+ * `makecontext` made, ran the program's function inside the signal; a save
+ * made inside a `swapcontext` the thread made stood in for the range (step
+ * 187b's placement, now gone), which no `setcontext` reached. C cannot pass a
+ * variadic list on, so the wrapper reads up to `HERO_JMP_MAKE_ARGS` of them,
+ * each as a `long`, the width of one argument's slot on each of glibc's
+ * architectures and the type glibc's own `makecontext` reads them as on the
+ * 64-bit ones, and calls the C library's own with that many: one that reads
+ * `argc` of them reads the program's own bits. A `makecontext` given more is
+ * stopped, saying so, before anything is made: passing a part of them on
+ * would start the coroutine with words the program never gave. It is the
+ * one wrapper `HERO_JMP_MAKE_IN_C` builds on aarch64 too, so the path glibc's
+ * other architectures take is run there (`sigjump.c`). */
 
-#if !defined(_WIN32) && !defined(__APPLE__) && defined(HERO_JMP_MAKES)
+#if !defined(_WIN32) && !defined(__APPLE__)
 
 __attribute__((used, visibility("hidden"))) void hero_sig_made_context(const void *context);
 __attribute__((used, visibility("hidden"))) void hero_sig_made_context(const void *context) {
@@ -40,7 +50,7 @@ __attribute__((used, visibility("hidden"))) void hero_sig_made_context(const voi
     if (hero_ctx_recording()) hero_jmp_forget(context);
 }
 
-#if defined(__aarch64__)
+#if defined(HERO_JMP_MAKE_ASM) && defined(__aarch64__)
 __asm__(".text\n.p2align 2\n.globl makecontext\n.type makecontext, %function\n"
         "makecontext:\n"
         "  stp x29, x30, [sp, #-80]!\n"
@@ -59,7 +69,7 @@ __asm__(".text\n.p2align 2\n.globl makecontext\n.type makecontext, %function\n"
         "  ldr x16, [x16, :lo12:hero_ctx_real_make]\n"
         "  br x16\n"
         ".size makecontext, .-makecontext\n");
-#elif defined(__x86_64__)
+#elif defined(HERO_JMP_MAKE_ASM) && defined(__x86_64__)
 __asm__(".text\n.globl makecontext\n.type makecontext, @function\n"
         "makecontext:\n"
         "  endbr64\n"
@@ -81,6 +91,39 @@ __asm__(".text\n.globl makecontext\n.type makecontext, @function\n"
         "  mov hero_ctx_real_make(%rip), %r11\n"
         "  jmp *%r11\n"
         ".size makecontext, .-makecontext\n");
+#else
+#include <stdarg.h>
+
+/* The count of arguments the C wrapper passes on, read in eights. */
+#define HERO_JMP_MAKE_ARGS 64
+#define HERO_JMP_MAKE_8(a, k) a[k], a[k + 1], a[k + 2], a[k + 3], a[k + 4], a[k + 5], a[k + 6], a[k + 7]
+
+/* `makecontext` is no signal-safe call, so the stop is the runtime's ordinary
+ * panic. */
+static _Noreturn void hero_jmp_make_refuse(int argc) {
+    char said[320];
+    snprintf(said, sizeof said,
+             "`makecontext` was given %d arguments for its function, and on this machine this runtime passes at "
+             "most %d of them on to the C library's own `makecontext`, which would start the coroutine with words "
+             "the program never gave: give the function at most %d arguments, or one pointer to a record holding "
+             "them",
+             argc, HERO_JMP_MAKE_ARGS, HERO_JMP_MAKE_ARGS);
+    hero_panic(said);
+}
+
+void(makecontext)(ucontext_t *ucp, void (*func)(void), int argc, ...) {
+    if (argc > HERO_JMP_MAKE_ARGS) hero_jmp_make_refuse(argc);
+    long a[HERO_JMP_MAKE_ARGS];
+    memset(a, 0, sizeof a);
+    va_list ap;
+    va_start(ap, argc);
+    for (int i = 0; i < argc; i += 1) a[i] = va_arg(ap, long);
+    va_end(ap);
+    hero_sig_made_context(ucp);
+    atomic_load_explicit(&hero_ctx_real_make, memory_order_relaxed)(
+        ucp, func, argc, HERO_JMP_MAKE_8(a, 0), HERO_JMP_MAKE_8(a, 8), HERO_JMP_MAKE_8(a, 16), HERO_JMP_MAKE_8(a, 24),
+        HERO_JMP_MAKE_8(a, 32), HERO_JMP_MAKE_8(a, 40), HERO_JMP_MAKE_8(a, 48), HERO_JMP_MAKE_8(a, 56));
+}
 #endif
 
 #endif
