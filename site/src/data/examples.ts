@@ -172,6 +172,7 @@ export const groups: Group[] = [
       'rebel/notes',
       'rebel/auth',
       'rebel/chat',
+      'rebel/kvd',
       'rebel/searchd',
       'rebel/registry',
       'rebel/gateway',
