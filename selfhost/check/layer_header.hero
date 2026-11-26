@@ -93,12 +93,18 @@ function undeclared(header: str, span: token.Span, through: str, library: str) -
     return d
 
 # The refusal of a group saying `layer` whose header is not the layer's and
-# reaches none of its files, at the word, with the word taken out as its
-# certain fix.
-function unreached(header: str, word: token.Span, from: i64) -> diag.Diagnostic
+# reaches none of its files, and whose library, `library` as a sentence names
+# it ("" for none), calls none of the layer, at the word, with the word taken
+# out as its certain fix.
+function unreached(header: str, word: token.Span, from: i64, library: str) -> diag.Diagnostic
+    linked: str @= ""
+
+    # A group linking a library is told what that library calls too (R3).
+    if library.len() > 0
+        linked @ ", and " + library + " calls none of the layer"
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: UNREACHED,
-        message: "this group says `" + keywords.WORD_LAYER + "`, and `" + bare(header) + "` is none of the platform layer's headers and includes none of them, so nothing it binds is the layer's: take the word out, or name the layer's header that declares what this group binds",
+        message: "this group says `" + keywords.WORD_LAYER + "`, and `" + bare(header) + "` is none of the platform layer's headers and includes none of them" + linked + ", so nothing it binds is the layer's: take the word out, or name the layer's header that declares what this group binds",
         span: word
     )
     d.notes @ d.notes.push(

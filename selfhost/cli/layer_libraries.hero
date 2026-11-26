@@ -1,0 +1,281 @@
+# What a library the program names calls of the platform layer (design.md
+# §1.11, §4.19; panel 260's R3, provisional, author ratification pending).
+#
+# **A group whose `link` or `pkgconfig` library calls the layer binds it**,
+# as one whose header is or reaches the layer's does (`cli/layer_bound.hero`),
+# so it says `layer`, and a group saying `layer` over a header that reaches
+# none of the layer is right where its library calls the layer: the
+# program's own library compiled against `hero_time.h`, `extern "libnow.h"
+# layer link "now"`, builds.
+#
+# **Asked of one link of the program's libraries, each loaded whole, before
+# any unit compiles**: no linker names an object of an archive it did not
+# load, and the compiler starts no reader of a library's symbols
+# (`cli/supplied_probe.hero`), so the libraries are linked with every object
+# they hold and no layer, and the names of the layer's the linker reports
+# undefined, referred to from a library's object, are what that library
+# calls. Its words are the link's own: the target's, the folders `--library`
+# names, the packages' answers and each `link` name; a library the link did
+# not open is not judged here, its group left to the link that tells it.
+#
+# **Asked only where a group says `layer`** (R5): a program none of whose
+# groups says it asks nothing of the layer, and a library of its calling the
+# layer leaves its own link short, told at that link (`cli/layer_link.hero`).
+# So a library calling the layer beside an unrelated group saying `layer`
+# (the critic's `linkmixed`) is told before any link, on every platform
+# alike, where it built on Apple's linker and was refused with a false
+# sentence on GNU ld until panel 260.
+
+use ast
+use check/layer_header
+use cli/libraries
+use cli/library_needs
+use cli/link_flags
+use cli/link_folds
+use cli/link_report
+use cli/pkgconfig_missing
+use cli/strings
+use cli/supplied_probe
+use cli/toolchain
+use diag
+use emit/externs as emit_externs
+use keywords
+use source
+use token
+
+# What the link of the program's libraries is asked with: the folders
+# `--library` names, each `link` group's library, and the packages' answers.
+record Linking
+    folders: [str]
+    names: [str]
+    pkgconfig_flags: [str]
+
+# The program's: each `link` group's library but one the C runtime holds, as
+# a build's link names them (`cli/produce.hero`), with `folders` and the
+# packages' answers `pkgconfig_flags`.
+function linking_of(s: source.Source, decls: [ast.Decl], folders: [str], pkgconfig_flags: [str]) -> Linking
+    names: [str] @= []
+
+    for decl in decls
+        named = library_needs.group_span(decl, want_pkgconfig: false)
+
+        if !named.is_err()
+            name = emit_externs.unquoted(s, span: named.must())
+
+            if !libraries.in_the_c_runtime(library: name) && !strings_hold(names, one: name)
+                names @ names.push(name)
+
+    return Linking(folders: folders, names: names, pkgconfig_flags: pkgconfig_flags)
+
+# What the program's libraries call of the layer: each library's name with
+# the layer's names its objects refer to, in the linker's order; the
+# libraries the link did not open, whose groups are not judged; and whether
+# the link was asked at all.
+record Needs
+    calls: {str: [str]}
+    unread: [str]
+    asked: bool
+
+function unasked() -> Needs
+    none: [str] = []
+    return Needs(calls: {}, unread: none, asked: false)
+
+# The libraries' needs, asked where `wanted` (`layer_bound.wanted`), of one
+# link; `names` are the names the layer's headers declare.
+function asked(t: toolchain.Toolchain, s: source.Source, decls: [ast.Decl], linking: Linking, names: {str: str}, wanted: bool) -> Needs
+    if !wanted
+        return unasked()
+    libs = library_needs.names_of(s, decls, linked: linking.pkgconfig_flags)
+
+    if libs.len() == 0
+        return unasked()
+    line = needs_line(t, linking: linking)
+    heard: supplied_probe.Probe @= supplied_probe.probe(t, line: line, names: [], tag: "layer-needs", trace: false)
+    cut = link_folds.cut_flag(heard.said)
+
+    # A linker that stopped at its count of errors is asked again with the
+    # word that lifts it (`cli/link_folds.hero`, defect 2501).
+    if !heard.linked && cut.len() > 0
+        heard @ supplied_probe.probe(t, line: line.push("-Wl," + cut), names: [], tag: "layer-needs", trace: false)
+    opened = supplied_probe.files_of(heard: heard, line: line, named: libs, msvc: link_flags.msvc(t.target))
+    out: Needs @= Needs(calls: {}, unread: [], asked: true)
+
+    for lib in libs
+        read: bool @= false
+
+        for file in opened
+            if library_needs.library_named(file: file, names: [lib]) == lib
+                read @ true
+
+        if !read
+            out.unread @ out.unread.push(lib)
+
+    if heard.linked
+        return out
+
+    for one in link_report.references(heard.said)
+        lib = library_needs.library_named(file: one.file, names: libs)
+
+        if lib == "" || names[one.symbol].is_err()
+            continue
+        had = out.calls[lib].default([])
+
+        if !strings_hold(had, one: one.symbol)
+            out.calls[lib] @ had.push(one.symbol)
+
+    return out
+
+# The link of every library of the program's loaded whole, with no object of
+# the program's and no layer, unresolved names left to be reported: GNU ld's
+# and lld's `--whole-archive`, Apple's `-all_load`, a Windows linker's
+# `/WHOLEARCHIVE:` of each `<name>.lib` with no limit to its errors.
+function needs_line(t: toolchain.Toolchain, linking: Linking) -> [str]
+    line: [str] @= strings.with_all(list: ["clang"], more: link_flags.target_words(t.target))
+
+    for dir in linking.folders
+        line @ strings.with_all(list: line, more: ["-L", dir])
+
+    words: [str] @= libraries.link_words(linking.pkgconfig_flags)
+
+    for name in linking.names
+        words @ words.push("-l" + name)
+
+    if link_flags.msvc(t.target)
+        line @ strings.with_all(list: line, more: words)
+
+        for word in words
+            if strings.starts_with(text: word, prefix: "-l") && word.len() > 2
+                line @ line.push("-Wl,/WHOLEARCHIVE:" + word.slice(from: 2, to: word.len()) + ".lib")
+
+        return line.push("-Wl,/errorlimit:0")
+
+    if link_flags.apple(t.target)
+        return strings.with_all(list: line, more: words).push("-Wl,-all_load")
+    line @ line.push("-Wl,--whole-archive")
+    line @ strings.with_all(list: line, more: words)
+    return line.push("-Wl,--no-whole-archive")
+
+# What the libraries of the group whose string starts at `group.start` call
+# of the layer: the names, each once, the first library calling them, and
+# whether a library of the group's went unread.
+record Called
+    symbols: [str]
+    library: str
+    unread: bool
+
+function called(s: source.Source, decls: [ast.Decl], needs: Needs, group: token.Span) -> Called
+    out: Called @= Called(symbols: [], library: "", unread: false)
+
+    if !needs.asked
+        return out
+
+    for lib in libraries_of(s, decls, group: group, needs: needs)
+        if strings_hold(needs.unread, one: lib)
+            out.unread @ true
+
+        for symbol in needs.calls[lib].default([])
+            if out.library.len() == 0
+                out.library @ lib
+
+            if !strings_hold(out.symbols, one: symbol)
+                out.symbols @ out.symbols.push(symbol)
+
+    return out
+
+# The library names the group at `group` links: its `link` name, or each
+# library a `pkgconfig` group's answer carries among those `needs` read.
+function libraries_of(s: source.Source, decls: [ast.Decl], group: token.Span, needs: Needs) -> [str]
+    out: [str] @= []
+
+    for decl in decls
+        head = layer_header.head_of(decl)
+
+        if head.header.is_err() || head.header.must().start != group.start || head.library.is_err()
+            continue
+
+        match head.library.must()
+            .link l =>
+                return [emit_externs.unquoted(s, span: l.name)]
+            .pkgconfig pk =>
+                pkg = emit_externs.unquoted(s, span: pk.name)
+
+                for lib in keys(needs.calls)
+                    lacked = pkgconfig_missing.Lacked(name: lib, kind: "library", words: ["-l" + lib], found: true)
+
+                    if pkgconfig_missing.answers(pkgconfig: pkg, build: "build", lacked: lacked)
+                        out @ out.push(lib)
+
+                return out
+
+    return out
+
+# A group that does not say `layer` whose library calls the layer, told at
+# its string with the word inserted after it: `certain` where this group is
+# the one naming that library, a `guess` where others name it too, since the
+# word then belongs on each of them.
+function undeclared(s: source.Source, decls: [ast.Decl], spelled: str, span: token.Span, call: Called) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: layer_header.UNDECLARED,
+        message: "the library `" + call.library + "` this group links calls " + listed(call.symbols) + " of the platform layer's, and this group does not say `" + keywords.WORD_LAYER + "`: write `" + keywords.WORD_LAYER + "` after `" + layer_header.bare(spelled) + "`'s string, before the library",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a group binds the platform layer where its header is or includes one of the layer's, or where the library it links calls the layer; " + layer_header.WHY
+    )
+    certainty: diag.Certainty @= .certain
+
+    if groups_naming(s, decls, library: call.library) > 1
+        certainty @ .guess
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "say `" + keywords.WORD_LAYER + "` after the header", replacement: " " + keywords.WORD_LAYER, span: token.Span(start: span.end, end: span.end), certainty: certainty)
+    )
+    return d
+
+# A group's library as a sentence names it: "the library `now` it links", or
+# "the libraries `pkg-config` answers for `raylib`"; "" for a group with none.
+function said_of(s: source.Source, library: ast.Library?) -> str
+    if library.is_err()
+        return ""
+
+    match library.must()
+        .link l => return "the library `" + emit_externs.unquoted(s, span: l.name) + "` it links"
+        .pkgconfig pk => return "the libraries `pkg-config` answers for `" + emit_externs.unquoted(s, span: pk.name) + "`"
+
+    return ""
+
+# How many groups, by their strings, link the library `library` by name.
+function groups_naming(s: source.Source, decls: [ast.Decl], library: str) -> i64
+    seen: {i64: bool} @= {}
+
+    for decl in decls
+        head = layer_header.head_of(decl)
+        named = library_needs.group_span(decl, want_pkgconfig: false)
+
+        if !head.header.is_err() && !named.is_err() && emit_externs.unquoted(s, span: named.must()) == library
+            seen[head.header.must().start] @ true
+
+    return keys(seen).len()
+
+# Names as a sentence lists them: `a`, `a` and `b`, `a`, `b` and `c`.
+function listed(names: [str]) -> str
+    return library_needs.listed(names)
+
+function strings_hold(list: [str], one: str) -> bool
+    for item in list
+        if item == one
+            return true
+
+    return false
+
+## Tests
+
+test "the libraries' link loads each whole, with no object of the program's and no layer (panel 260)"
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    linking = Linking(folders: ["lib"], names: ["now"], pkgconfig_flags: [])
+    t.target @ "aarch64-unknown-linux-gnu"
+    assert needs_line(t, linking: linking) == ["clang", "-L", "lib", "-Wl,--whole-archive", "-lnow", "-Wl,--no-whole-archive"]
+    t.target @ "arm64-apple-darwin25.0.0"
+    assert needs_line(t, linking: linking) == ["clang", "-Wl,-reproducible", "-L", "lib", "-lnow", "-Wl,-all_load"]
+    t.target @ "x86_64-pc-windows-msvc"
+    assert needs_line(t, linking: linking) == ["clang", "-Wl,/Brepro", "-L", "lib", "-lnow", "-Wl,/WHOLEARCHIVE:now.lib", "-Wl,/errorlimit:0"]
+    assert !asked(t, source.new_source(name: "m.hero", text: ""), [], linking: linking, names: {}, wanted: false).asked

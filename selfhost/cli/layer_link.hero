@@ -1,32 +1,38 @@
 # A refused link missing a name the platform layer's headers declare, told as
-# what it is (design.md §1.11, §4.19, §4.17; panel 260's R2,
+# what it is (design.md §1.11, §4.19, §4.17; panel 260's R2 and R3,
 # provisional, author ratification pending), asked before every other reader
 # of a refused link (`cli/whose.hero`).
 #
 # **A program none of whose groups says `layer` links none of the layer**, so
 # its link misses the name wherever something it links calls the layer
-# without a group saying so: told at the binding that names it, or at the
-# group whose header is the program's
+# without a group saying so: told at the groups linking the library the
+# linker says refers to it (R3: a library of the program's compiled against
+# the layer, `extern "libnow.h" link "now"`, says `layer` before `link`), at
+# the binding that names it, or at the group whose header is the program's
 # own and puts the call in its code. Never as `internal error: linking
 # failed`, and never as a name no group says which library has.
 #
-# **A program one of whose groups says `layer` links the archive**: a layer
-# name its link misses is left to the other readers.
+# **A program one of whose groups says `layer` links the archive**, inside
+# GNU ld's group of the libraries (`link.link_line`): a layer name its
+# link misses is left to the other readers.
 
 use ast
 use check/layer_header
 use cli/layer_bound
+use cli/layer_libraries
+use cli/library_needs
 use cli/link_report
 use cli/runtime_bound
 use cli/toolchain
 use diag
+use emit/externs as emit_externs
 use source
 use token
 
 # The diagnostics for a refused link's `message`: one per name it reports that
 # a header of the layer declares, each told once; none where it reports none,
-# the other readers' then.
-function told(message: str, s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain) -> [diag.Diagnostic]
+# the other readers' then. `linked` are the packages' answers' words.
+function told(message: str, s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, linked: [str]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= []
     refs = link_report.references(message)
 
@@ -36,6 +42,8 @@ function told(message: str, s: source.Source, decls: [ast.Decl], t: toolchain.To
     if layer_header.declared(decls)
         return out
     names = layer_bound.declared_names(t.runtime)
+    libs = library_needs.names_of(s, decls, linked: linked)
+    calls: {str: [str]} @= {}
     told_names: {str: bool} @= {}
 
     for one in refs
@@ -45,6 +53,11 @@ function told(message: str, s: source.Source, decls: [ast.Decl], t: toolchain.To
             continue
         told_names[one.symbol] @ true
 
+        lib = library_needs.library_named(file: one.file, names: libs)
+
+        if lib.len() > 0
+            calls[lib] @ calls[lib].default([]).push(one.symbol)
+            continue
         at = binding_of(s, decls, name: one.symbol)
 
         if !at.is_err()
@@ -54,6 +67,25 @@ function told(message: str, s: source.Source, decls: [ast.Decl], t: toolchain.To
 
         if !own.is_err()
             out @ out.push(missing(name: one.symbol, header: header.must(), span: own.must(), bound: false))
+
+    # ORDER: by library name, as `sort` orders a `str`, so two machines tell
+    # one link in one order; each group linking it, in the order they stand.
+    for lib in sort(keys(calls))
+        call = layer_libraries.Called(symbols: calls[lib].must(), library: lib, unread: false)
+        seen: {i64: bool} @= {}
+
+        for decl in decls
+            head = layer_header.head_of(decl)
+            named = library_needs.group_span(decl, want_pkgconfig: false)
+
+            if head.header.is_err() || named.is_err() || !seen[head.header.must().start].is_err()
+                continue
+
+            if emit_externs.unquoted(s, span: named.must()) == lib
+                seen[head.header.must().start] @ true
+                out @ out.push(
+                    layer_libraries.undeclared(s, decls, spelled: source.span_text(s, head.header.must()), span: head.header.must(), call: call)
+                )
 
     return out
 

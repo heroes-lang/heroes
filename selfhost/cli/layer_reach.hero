@@ -300,6 +300,7 @@ function whole_layer_linked(t: toolchain.Toolchain, dir: str, level: str, saniti
         search_library: none,
         pkgconfig_flags: none,
         link_names: none,
+        layer: [],
         judging: supplied.nothing()
     )
 
@@ -425,6 +426,7 @@ test "a float's % is the runtime's own, the C library's fmod bit for bit over nu
             search_library: none,
             pkgconfig_flags: none,
             link_names: libm,
+            layer: [],
             judging: supplied.nothing()
         ).must()
         said = dir + "/rem" + level + ".txt"
