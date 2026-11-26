@@ -1,0 +1,13 @@
+== check c1_control_missing.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at c1_control_missing.hero:14:18
+     |
+  14 |     h: (function(@App) -> ()) = bump
+     |                  ^
+check exit 1
+build --permissive exit 1
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at c1_control_missing.hero:14:18
+     |
+  14 |     h: (function(@App) -> ()) = bump
+     |                  ^

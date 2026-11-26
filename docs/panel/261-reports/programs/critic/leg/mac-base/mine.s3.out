@@ -1,0 +1,25 @@
+== check main.hero
+error[expected_function_type_params_close]: expected `)`, or `,` and another parameter type, found a name (`lent`)
+  at main.hero:7:44
+    |
+  7 | function drive<S>(@s: S, pick: (function(S lent) -> (function(@S, i64) -> i64)), x: i64) -> i64
+    |                                            ^^^^
+
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at main.hero:7:63
+    |
+  7 | function drive<S>(@s: S, pick: (function(S lent) -> (function(@S, i64) -> i64)), x: i64) -> i64
+    |                                                               ^
+
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at machine.hero:5:23
+    |
+  5 |     steps: [(function(@Machine, i64) -> i64)]
+    |                       ^
+
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at machine.hero:7:46
+    |
+  7 | function first(m: Machine lent) -> (function(@Machine, i64) -> i64)
+    |                                              ^
+check exit 1

@@ -1,0 +1,7 @@
+== check q5_fit_table.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at q5_fit_table.hero:20:23
+     |
+  20 |     table: [(function(@App, i64) -> i64)] = [count, health, logout]
+     |                       ^
+check exit 1

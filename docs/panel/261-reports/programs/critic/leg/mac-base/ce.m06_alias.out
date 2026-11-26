@@ -1,0 +1,7 @@
+== check m06_alias.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at m06_alias.hero:12:18
+     |
+  12 |     h: (function(@a: App, @b: App) -> ()) = both
+     |                  ^
+check exit 1

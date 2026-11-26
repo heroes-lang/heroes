@@ -1,0 +1,7 @@
+== check v4_shapes.hero
+check exit 0
+build  exit 0
+40040
+4702111234474983745
+42
+run exit 0

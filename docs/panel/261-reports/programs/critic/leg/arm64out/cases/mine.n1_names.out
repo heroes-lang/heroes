@@ -1,0 +1,5 @@
+== check n1_names.hero
+check exit 0
+build  exit 0
+8
+run exit 0

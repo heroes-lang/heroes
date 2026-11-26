@@ -1,0 +1,13 @@
+== check m03_three_types.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at m03_three_types.hero:17:18
+     |
+  17 |     g: (function(@App) -> ()) = read  #~ type_mismatch
+     |                  ^
+
+error[expected_function_type_params_close]: expected `)`, or `,` and another parameter type, found a name (`lent`)
+  at m03_three_types.hero:18:22
+     |
+  18 |     h: (function(App lent) -> ()) = copy  #~ type_mismatch
+     |                      ^^^^
+check exit 1

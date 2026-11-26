@@ -1,0 +1,7 @@
+error[ffi_callback_type]: `cb` of `sqlite3_update_hook` is not the callback the header declares — clang read the header, and it says `void (*)(void *, int, const char *, const char *, long long)`
+  at update_hook.hero:10:5
+     |
+  10 |     function sqlite3_update_hook(db: Db, cb: (function(data: ptr, op: i32, base: cstr, table: cstr, row: i64) -> ()), …
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: spec § 13: a callback is declared with the header's own parameter and result types — each parameter at its width and sign, and `()` where the header says void
+exit 1

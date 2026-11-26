@@ -1,0 +1,7 @@
+== check m01_at_value.hero
+check exit 0
+build  exit 0
+2
+5
+5
+run exit 0

@@ -1,0 +1,15 @@
+== check q8_spawn.hero
+error[thread_body]: a thread runs `f(x)` on a copy of `x`, and the `f` given has type `(function(@i64) -> i64)`, whose parameter is the caller's place — threads share nothing but a mailbox
+  at q8_spawn.hero:16:15
+     |
+  16 |     t = spawn(bump, x)  #~ thread_body
+     |               ^^^^
+  note: take the value by copy, `function body(x: T) -> R`, and send back what changed through the thread's result or a mailbox
+
+error[thread_body]: a thread runs `f(x)` on a copy of `x`, and the `f` given has type `(function(Cfg lent) -> i64)`, whose parameter is the caller's place — threads share nothing but a mailbox
+  at q8_spawn.hero:17:15
+     |
+  17 |     u = spawn(get, Cfg(n: 4))  #~ thread_body
+     |               ^^^
+  note: take the value by copy, `function body(x: T) -> R`, and send back what changed through the thread's result or a mailbox
+check exit 1

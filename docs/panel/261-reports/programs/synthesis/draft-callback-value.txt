@@ -1,0 +1,23 @@
+title: Defect <number>: A C function of an `extern` group that takes a callback, called through a function value, hands C the program's function without its thunk, so a correct program is refused at run time with a false message
+labels: kind:defect, class:blocking, area:emit
+milestone: M-rebel-library
+state: open
+---
+Filed 2026-11-26
+
+### What happens
+
+a pool allocator whose free list hands the last address given back out first, and `hand_fresh(cb: (function(h: Node) -> i32))` handing the callback C's fresh node by value: called by name, `hand_fresh(peek)` prints `11`; bound `f = hand_fresh` and called `f(peek)`, it aborts, exit 134, *"panic: a C handle reached the argument `n` of `node_peek` at an address a call marked `consumes` or `transfers` ended, and nothing has handed that address out since: a copy made before the ending call"*, false, C having handed that address out again; the emitted C hands `t2(t3)` with `t3` the function itself, where the call by name hands `hero_callback_of(...)`, the thunk; the same on df92f9281, on a60dfb77f and under panel 261's route
+
+### Where to look
+
+`selfhost/emit/` (an extern standing as a value: `__builtin_choose_expr` picking the C function itself or `hero_value_<f>`, and `hero_callback_of`), `selfhost/emit/callback_thunk.hero`
+
+### Origin
+
+2026-11-26, panel 261's synthesis, attacking the shapes beside the sitting's C boundary (CLAUDE.md § RUN IT): `docs/panel/261-reports/programs/synthesis/ext/callback_through_value.hero` with `pool.h` (the allocator is the ffi-pragmatist's `reuse/shapes.h`), and `extern_callback_value.hero` with `ext3.h`, whose emitted C (`ecv.c` against `ecb.c` by name) shows the two calls. Run by the base's stage 2 (`sources 4dcf3a9f20257573`), the trunk's stage 3 at a60dfb77f (`sources 6e60cb9f65cc1298`) and the sitting's route (`sources 7cc4a75a5a7c6bf1`): `11` then exit 134 on each. The thunk (`callback_thunk.hero`'s comment, lines 1 to 30) is where a callback's handles are cleared, its result checked and its entry counted (`hero_callback_entered`, `hero_callback_left`), so a call through the value also skips the count of callbacks C has not returned from (read in the emitted C, unrun as a jump). A C function that takes a callback and no handle runs right through the value (`extern_callback_value.hero`: `42`), so the class is every check the thunk makes. Panel 261's resolution puts five duties of the C boundary in the thunk, which this route would skip.
+
+### Class
+
+**blocking**, 2026-11-26: a correct program refused at run time with a false message.
+

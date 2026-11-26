@@ -1,0 +1,18 @@
+visit_body.hero:16:175: error: incompatible function pointer types passing 'h_0fn_nftwcb' (aka 'int (*)(const char *, struct stat *, int, struct FTW *)') to parameter of type '__nftw_func_t' (aka 'int (*)(const char *, const struct stat *, int, struct FTW *)') [-Wincompatible-function-pointer-types]
+   16 | __attribute__((__unused__)) static void hero_ffi_probe_h_visitbody_nftw(const char * hero_a0, h_0fn_nftwcb hero_a1, int32_t hero_a2, int32_t hero_a3) { (void)(nftw)(hero_a0, hero_a1, hero_a2, hero_a3); }
+      |                                                                                                                                                                               ^~~~~~~
+In file included from nftw_proposal_C.c:28:
+In file included from ./nftw_unit.h:10:
+/usr/include/ftw.h:179:51: note: passing argument to parameter '__func' here
+  179 | extern int nftw (const char *__dir, __nftw_func_t __func, int __descriptors,
+      |                                                   ^
+visit_body.hero:32:91: error: incompatible function pointer types passing 'h_0fn_nftwcb' (aka 'int (*)(const char *, struct stat *, int, struct FTW *)') to parameter of type '__nftw_func_t' (aka 'int (*)(const char *, const struct stat *, int, struct FTW *)') [-Wincompatible-function-pointer-types]
+   32 |     { HERO_NODEBUG h_0fn_nftwcb hero_v = h_visitbody_visit; int32_t hero_r = nftw("tree", (h_0fn_nftwcb)hero_callback_of((void (*)(void))hero_v), 8, FTW_PHYS); hero_print_int(hero_r); hero_print_end(); }
+      |                                                                                           ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from nftw_proposal_C.c:28:
+In file included from ./nftw_unit.h:10:
+/usr/include/ftw.h:179:51: note: passing argument to parameter '__func' here
+  179 | extern int nftw (const char *__dir, __nftw_func_t __func, int __descriptors,
+      |                                                   ^
+2 errors generated.
+build exit 1

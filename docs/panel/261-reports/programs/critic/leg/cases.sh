@@ -1,0 +1,41 @@
+#!/bin/sh
+# The critic, panel 261's second reading: every case the compiler-engineer
+# kept, my three shapes and the ffi shapes, under one compiler.
+#   sh cases.sh <compiler> <root holding docs/panel/261-reports/programs/compiler-engineer, mine, ffi> <out>
+# For each program: `check`, then where it checks `build` and the binary under
+# `timeout 60`, output bounded by `head -c`; `--permissive` for the two
+# control-arm cases. One file per program in <out>.
+set -u
+H=$1; R=$2; O=$3
+mkdir -p "$O"
+one() { # <dir> <file> <tag> [build flags]
+    d=$1; f=$2; t=$3; shift 3
+    ( cd "$d" || exit 1
+      { echo "== check $f"; { "$H" check "$f" 2>&1; echo "check exit $?"; } | head -c 6000
+        if "$H" check "$f" >/dev/null 2>&1 || [ "$#" -gt 0 ]; then
+          rm -f "$t.bin"
+          "$H" build "$f" "$@" -o "$t.bin" > "$t.build.log" 2>&1; b=$?
+          echo "build $* exit $b"; [ $b -eq 0 ] || head -c 3000 "$t.build.log"
+          if [ -x "$t.bin" ]; then { timeout 60 "./$t.bin" 2>&1; echo "run exit $?"; } | head -c 20000; fi
+        fi
+      } > "$O/$t.out" 2>&1 )
+}
+C=$R/docs/panel/261-reports/programs/compiler-engineer
+for f in "$C"/*.hero; do n=$(basename "$f" .hero); case "$n" in ._*) continue ;; esac; one "$C" "$n.hero" "ce.$n"; done
+one "$C" c1_control_missing.hero ce.c1_control_missing.permissive --permissive
+one "$C" m05_extra_at.hero ce.m05_extra_at.permissive --permissive
+if [ -d /out ]; then DIRS="knot"; else DIRS="knot router_k router_b router_a lib_value"; fi
+for d in $DIRS; do one "$C/$d" main.hero "ce.$d"; done
+M=$R/mine
+for n in s1_map_callee s2_lent_callee_nested s2b_at_callee_nested n1_names n2_names; do one "$M" "$n.hero" "mine.$n"; done
+one "$M/s3" main.hero mine.s3
+one "$R/ffi/shapes" v4_shapes.hero ffi.v4_shapes
+echo done > "$O/DONE"
+# Appended 11:52: the compiler kept for a later container, and the ffi
+# bindings of Linux written as the route lets a program write them.
+[ -d /out ] && cp "$H" /out/heroes-route.saved 2>/dev/null
+X=${EXTRA:-/out/extra}
+if [ -d "$X" ]; then for d in "$X"/*/; do n=$(basename "$d"); one "$d" main.hero "extra.$n"; done; fi
+# On Linux, one router last: route (k), the one two seats approve.
+[ -d /out ] && one "$C/router_k" main.hero ce.router_k
+echo done > "$O/DONE2"

@@ -1,0 +1,8 @@
+4 4 30
+0 5
+0
+panic: a C handle reached the handle the callback `shapes_body.take_copy` left in its `@h` at an address a call marked `consumes` or `transfers` ended, and nothing has handed that address out since: a copy made before the ending call, which C would read or free after the program gave it back. The handle is at 0x5555555b0a70
+  called from 0x90f4, in shapes_body.take_copy
+  called from 0x9300, in shapes_body.main
+Aborted
+run exit 134

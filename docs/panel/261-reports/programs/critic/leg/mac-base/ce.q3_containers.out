@@ -1,0 +1,25 @@
+== check q3_containers.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at q3_containers.hero:15:40
+     |
+  15 | function pick(want: bool) -> (function(@App, i64) -> i64)?
+     |                                        ^
+
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at q3_containers.hero:22:24
+     |
+  22 |     m: {str: (function(@App, i64) -> i64)} = {"inc": inc, "dec": dec}
+     |                        ^
+
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at q3_containers.hero:24:20
+     |
+  24 |     hs: [(function(@App, i64) -> i64)] @= []
+     |                    ^
+
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at q3_containers.hero:38:23
+     |
+  38 |     empty: [(function(@App, i64) -> i64)] = []
+     |                       ^
+check exit 1

@@ -1,0 +1,7 @@
+== check n2_names.hero
+error[type_mismatch]: expected `(function(i64) -> i64)`, found `(function(x: i64) -> i64)`
+  at n2_names.hero:11:17
+     |
+  11 |     print(apply(g, 4))
+     |                 ^
+check exit 1

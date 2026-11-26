@@ -1,0 +1,10 @@
+1 0 5 Operation not permitted
+0
+0 1 4096 tree
+1 0 5 tree/a.txt
+1 1 4096 tree/sub
+2 0 10 tree/sub/b.txt
+0
+0
+seen
+run exit 0

@@ -1,0 +1,8 @@
+visitbody.c:348:16: error: static assertion failed due to requirement '__builtin_types_compatible_p(int (*)(const char *, const struct stat *, int, struct FTW *), int (*)(const char *, struct stat *, int, struct FTW *))': heroes-callback visit_body.visit: the thunk C is handed has its value's type
+  348 | _Static_assert(__builtin_types_compatible_p(__typeof__(&h_0cb_visitbody_visit), __typeof__(&h_visitbody_visit)), "heroes-callback visit_body.visit: the thunk C is handed has its value's type");
+      |                ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+visit_body.hero:32:33: error: incompatible function pointer types initializing 'h_0fn_nftwcb' (aka 'int (*)(const char *, const struct stat *, int, struct FTW *)') with an expression of type 'int32_t (const char *, struct stat *, int32_t, struct FTW *)' (aka 'int (const char *, struct stat *, int, struct FTW *)') [-Wincompatible-function-pointer-types]
+   32 |     { HERO_NODEBUG h_0fn_nftwcb hero_v = h_visitbody_visit; int32_t hero_r = nftw("tree", (h_0fn_nftwcb)hero_callback_of((void (*)(void))hero_v), 8, FTW_PHYS); hero_print_int(hero_r); hero_print_end(); }
+      |                                 ^        ~~~~~~~~~~~~~~~~~
+2 errors generated.
+build exit 1

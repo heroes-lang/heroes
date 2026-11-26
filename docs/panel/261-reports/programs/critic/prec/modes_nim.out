@@ -1,0 +1,1 @@
+/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/261-critic-scratch/r2/prec/modes.nim(9, 12) Error: type mismatch: got 'None' for 'peek' but expected 'H = proc (x: var int){.nimcall.}'

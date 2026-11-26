@@ -1,0 +1,6 @@
+== check q2_disjoint.hero
+check exit 0
+build  exit 0
+5
+7
+run exit 0

@@ -1,0 +1,7 @@
+== check main.hero
+check exit 0
+build  exit 0
+1 [ 2 [ 3 ] 4 ] 5
+0
+2
+run exit 0

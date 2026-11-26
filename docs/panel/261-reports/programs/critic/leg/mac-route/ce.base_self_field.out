@@ -1,0 +1,17 @@
+== check base_self_field.hero
+check exit 0
+build  exit 2
+internal error: compiling the generated C failed:
+baseselffield.c:18:56: error: unexpected type name 'int64_t': expected identifier
+   18 | typedef int64_t (*h_0fn_2a0f965c)(h_baseselffield_Box, int64_t);
+      |                                                        ^
+baseselffield.c:18:35: error: a parameter list without types is only allowed in a function definition
+   18 | typedef int64_t (*h_0fn_2a0f965c)(h_baseselffield_Box, int64_t);
+      |                                   ^
+base_self_field.hero:12:74: error: passing arguments to a function without a prototype is deprecated in all versions of C and is not supported in C23 [-Werror,-Wdeprecated-non-prototype]
+   12 |     t4 = h0_b; t5 = t4.f_f; t6 = h0_b; t7 = ((__INT64_TYPE__)10); t8 = t5(t6, t7); hero_print_int(t8); hero_print_end(); return;
+      |                                                                          ^
+3 errors generated.
+
+the generated C is at build/tu-1c016e416d72df6e/baseselffield.c
+error: clang refused the generated C

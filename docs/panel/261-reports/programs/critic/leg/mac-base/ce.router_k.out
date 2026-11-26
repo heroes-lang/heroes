@@ -1,0 +1,14 @@
+== check main.hero
+note: the package `rebel` is read from the folder `../../../../../../rebel/library/0.1.0/files/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at main.hero:16:31
+     |
+  16 |     handlers: {str: (function(@App, web.Found, http.Request) -> http.Response?)}
+     |                               ^
+
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at main.hero:21:76
+     |
+  21 | …pp: App, method: str, pattern: str, name: str, by: (function(@App, web.Found, http.Request) -> http.Response?)) -> ()?
+     |                                                               ^
+check exit 1

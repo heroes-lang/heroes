@@ -1,0 +1,21 @@
+phdr_body.hero:15:125: error: incompatible function pointer types passing 'h_0fn_phdrcb' (aka 'int (*)(const struct dl_phdr_info *, unsigned long, void *)') to parameter of type 'int (*)(struct dl_phdr_info *, size_t, void *)' (aka 'int (*)(struct dl_phdr_info *, unsigned long, void *)') [-Wincompatible-function-pointer-types]
+   15 | __attribute__((__unused__)) static void hero_ffi_probe_phdr(h_0fn_phdrcb hero_a0, void * hero_a1) { (void)(dl_iterate_phdr)(hero_a0, hero_a1); }
+      |                                                                                                                             ^~~~~~~
+In file included from phdr_lent.c:28:
+In file included from ./phdr_unit.h:8:
+/usr/include/link.h:184:35: note: passing argument to parameter '__callback' here
+  184 | extern int dl_iterate_phdr (int (*__callback) (struct dl_phdr_info *,
+      |                                   ^
+phdr_body.hero:17:57: error: read-only variable is not assignable
+   17 |     t1 = (*ph0_info).dlpi_phnum; (*ph0_info).dlpi_phnum = t1;
+      |                                  ~~~~~~~~~~~~~~~~~~~~~~ ^
+phdr_body.hero:27:90: error: incompatible function pointer types passing 'h_0fn_phdrcb' (aka 'int (*)(const struct dl_phdr_info *, unsigned long, void *)') to parameter of type 'int (*)(struct dl_phdr_info *, size_t, void *)' (aka 'int (*)(struct dl_phdr_info *, unsigned long, void *)') [-Wincompatible-function-pointer-types]
+   27 |     { HERO_NODEBUG h_0fn_phdrcb hero_v = h_phdrbody_walked; int hero_r = dl_iterate_phdr((h_0fn_phdrcb)hero_callback_of((void (*)(void))hero_v), (void *)0); hero_print_int(hero_r); hero_print_end(); }
+      |                                                                                          ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from phdr_lent.c:28:
+In file included from ./phdr_unit.h:8:
+/usr/include/link.h:184:35: note: passing argument to parameter '__callback' here
+  184 | extern int dl_iterate_phdr (int (*__callback) (struct dl_phdr_info *,
+      |                                   ^
+3 errors generated.
+build exit 1

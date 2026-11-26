@@ -1,0 +1,5 @@
+./tests/golden/run/adversarial-str-self-assign.hero:14:     s @ s
+./tests/golden/run/records-own-strings.hero:43:     q @ q
+./tests/golden/run/adversarial-aggregate-overwrite.hero:58:     s @ s
+./tests/golden/run/fixedbugs-field-path-store-leaked.hero:49:     q.right @ q.right
+./rebel/library/0.1.0/files/json/jq/internal/regexes.hero:50:             inline @ inline

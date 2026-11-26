@@ -1,0 +1,5 @@
+== check w2_unwritten_cell.hero
+check exit 0
+build  exit 0
+1
+run exit 0

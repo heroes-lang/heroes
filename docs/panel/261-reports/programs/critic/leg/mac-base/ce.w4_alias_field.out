@@ -1,0 +1,7 @@
+== check w4_alias_field.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at w4_alias_field.hero:11:18
+     |
+  11 |     h: (function(@a: App, @b: App) -> ())
+     |                  ^
+check exit 1

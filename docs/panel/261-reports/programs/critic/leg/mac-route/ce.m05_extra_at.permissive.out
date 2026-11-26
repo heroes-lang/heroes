@@ -1,0 +1,11 @@
+== check m05_extra_at.hero
+error[marker_mismatch]: `fs[0]` does not change this argument — the `@` says it does
+  at m05_extra_at.hero:10:18
+     |
+  10 |     print(fs[0](@x))  #~ marker_mismatch
+     |                  ^
+check exit 1
+build --permissive exit 0
+6
+3
+run exit 0

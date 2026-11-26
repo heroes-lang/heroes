@@ -1,0 +1,72 @@
+4 4 30
+0 5
+0
+=================================================================
+==2371==ERROR: AddressSanitizer: heap-use-after-free on address 0xfc5fa69e00e0 at pc 0xaaaab1bf8d90 bp 0xffffd6baa010 sp 0xffffd6baa008
+WRITE of size 8 at 0xfc5fa69e00e0 thread T0
+    #0 0xaaaab1bf8d8c in hand_over /work/shapes/./shapes.h:34:41
+    #1 0xaaaab1bf8984 in h_shapesbody_main /work/shapes/shapes_body.hero:63:20
+    #2 0xaaaab1bf8ff8 in main /work/shapes/shapesbody.c:1353:5
+    #3 0xffffa7892258  (/lib/aarch64-linux-gnu/libc.so.6+0x22258) (BuildId: 4c1eca4527d1163b2dde55860b69f270158febb4)
+    #4 0xffffa7892338 in __libc_start_main (/lib/aarch64-linux-gnu/libc.so.6+0x22338) (BuildId: 4c1eca4527d1163b2dde55860b69f270158febb4)
+    #5 0xaaaab1b0c9ec in _start (/work/shapes/shapes_copy_san.bin+0x8c9ec) (BuildId: 49e3b74639fc7fd1e8f9a1f6bd6e3b52d8564afc)
+
+0xfc5fa69e00e0 is located 0 bytes inside of 64-byte region [0xfc5fa69e00e0,0xfc5fa69e0120)
+freed by thread T0 here:
+    #0 0xaaaab1bb5644 in free (/work/shapes/shapes_copy_san.bin+0x135644) (BuildId: 49e3b74639fc7fd1e8f9a1f6bd6e3b52d8564afc)
+    #1 0xaaaab1bf7938 in node_free /work/shapes/./shapes.h:30:67
+    #2 0xaaaab1bf8148 in h_shapesbody_take_copy /work/shapes/shapes_body.hero:44:332
+    #3 0xaaaab1bf8704 in h_0cb_shapesbody_take_copy /work/shapes/shapesbody.c:318:27
+    #4 0xaaaab1bf8c3c in hand_over /work/shapes/./shapes.h:33:5
+    #5 0xaaaab1bf8984 in h_shapesbody_main /work/shapes/shapes_body.hero:63:20
+    #6 0xaaaab1bf8ff8 in main /work/shapes/shapesbody.c:1353:5
+    #7 0xffffa7892258  (/lib/aarch64-linux-gnu/libc.so.6+0x22258) (BuildId: 4c1eca4527d1163b2dde55860b69f270158febb4)
+    #8 0xffffa7892338 in __libc_start_main (/lib/aarch64-linux-gnu/libc.so.6+0x22338) (BuildId: 4c1eca4527d1163b2dde55860b69f270158febb4)
+    #9 0xaaaab1b0c9ec in _start (/work/shapes/shapes_copy_san.bin+0x8c9ec) (BuildId: 49e3b74639fc7fd1e8f9a1f6bd6e3b52d8564afc)
+
+previously allocated by thread T0 here:
+    #0 0xaaaab1bb5a9c in calloc (/work/shapes/shapes_copy_san.bin+0x135a9c) (BuildId: 49e3b74639fc7fd1e8f9a1f6bd6e3b52d8564afc)
+    #1 0xaaaab1bf795c in node_new /work/shapes/./shapes.h:26:23
+    #2 0xaaaab1bf7fd8 in h_shapesbody_take_copy /work/shapes/shapes_body.hero:40:143
+    #3 0xaaaab1bf8704 in h_0cb_shapesbody_take_copy /work/shapes/shapesbody.c:318:27
+    #4 0xaaaab1bf8c3c in hand_over /work/shapes/./shapes.h:33:5
+    #5 0xaaaab1bf8984 in h_shapesbody_main /work/shapes/shapes_body.hero:63:20
+    #6 0xaaaab1bf8ff8 in main /work/shapes/shapesbody.c:1353:5
+    #7 0xffffa7892258  (/lib/aarch64-linux-gnu/libc.so.6+0x22258) (BuildId: 4c1eca4527d1163b2dde55860b69f270158febb4)
+    #8 0xffffa7892338 in __libc_start_main (/lib/aarch64-linux-gnu/libc.so.6+0x22338) (BuildId: 4c1eca4527d1163b2dde55860b69f270158febb4)
+    #9 0xaaaab1b0c9ec in _start (/work/shapes/shapes_copy_san.bin+0x8c9ec) (BuildId: 49e3b74639fc7fd1e8f9a1f6bd6e3b52d8564afc)
+
+SUMMARY: AddressSanitizer: heap-use-after-free /work/shapes/./shapes.h:34:41 in hand_over
+Shadow bytes around the buggy address:
+  0xfc5fa69dfe00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0xfc5fa69dfe80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0xfc5fa69dff00: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0xfc5fa69dff80: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0xfc5fa69e0000: fa fa fa fa fd fd fd fd fd fd fd fa fa fa fa fa
+=>0xfc5fa69e0080: 00 00 00 00 00 00 00 00 fa fa fa fa[fd]fd fd fd
+  0xfc5fa69e0100: fd fd fd fd fa fa fa fa 00 00 00 00 00 00 00 00
+  0xfc5fa69e0180: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0xfc5fa69e0200: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0xfc5fa69e0280: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+  0xfc5fa69e0300: fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa fa
+Shadow byte legend (one shadow byte represents 8 application bytes):
+  Addressable:           00
+  Partially addressable: 01 02 03 04 05 06 07 
+  Heap left redzone:       fa
+  Freed heap region:       fd
+  Stack left redzone:      f1
+  Stack mid redzone:       f2
+  Stack right redzone:     f3
+  Stack after return:      f5
+  Stack use after scope:   f8
+  Global redzone:          f9
+  Global init order:       f6
+  Poisoned by user:        f7
+  Container overflow:      fc
+  Array cookie:            ac
+  Intra object redzone:    bb
+  ASan internal:           fe
+  Left alloca redzone:     ca
+  Right alloca redzone:    cb
+==2371==ABORTING
+run exit 1

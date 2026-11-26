@@ -1,0 +1,13 @@
+== check q7_nested_type.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at q7_nested_type.hero:13:34
+     |
+  13 | function run_twice(@h: (function(@App) -> ()), @a: App)
+     |                                  ^
+
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at q7_nested_type.hero:18:37
+     |
+  18 | function call_moded<T>(f: (function(@T) -> ()), @x: T)
+     |                                     ^
+check exit 1

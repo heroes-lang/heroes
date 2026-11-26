@@ -1,0 +1,10 @@
+== check main.hero
+check exit 0
+build  exit 1
+error[ffi_callback_type]: `visit` of `nftw` is not the callback the header declares — clang read the header, and it says `int (*)(const char *, const struct stat *, int, struct FTW *)`
+  at main.hero:11:5
+     |
+  11 |     function nftw(path: cstr lent, visit: (function(path: cstr, sb: Stat lent, flag: i32, @at: Ftw) -> i32), fds: i32,…
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: spec § 13: a callback is declared with the header's own parameter and result types — each parameter at its width and sign, and `()` where the header says void
+  note: a pointee the header marks `const` has no spelling here unless it is `const char *`, which is `cstr` — design.md Part 8 wart 19 names this and the four causes measured beside it

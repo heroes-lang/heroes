@@ -1,0 +1,7 @@
+== check m04_missing_at.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at m04_missing_at.hero:11:18
+     |
+  11 |     h: (function(@App) -> ()) = bump
+     |                  ^
+check exit 1

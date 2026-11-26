@@ -1,0 +1,13 @@
+== check main.hero
+note: the package `rebel` is read from the folder `../../../../../../rebel/library/0.1.0/files/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+check exit 0
+build  exit 0
+GET / -> 200 home, visit 1
+GET /notes/intro -> 200 intro: hello
+GET /notes/later -> 404 no note later
+POST /notes/later -> 200 saved later
+GET /notes/later -> 200 later: saved #2
+GET /health -> 200 ok
+GET / -> 200 home, visit 2
+GET /nowhere -> not_found
+run exit 0

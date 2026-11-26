@@ -1,0 +1,8 @@
+4 4 30
+0 5
+0
+panic: a C handle reached the argument `n` of `node_peek` at an address a call marked `consumes` or `transfers` ended, and nothing has handed that address out since: a copy made before the ending call, which C would read or free after the program gave it back. The handle is at 0x555555596530
+  at shapes_body.hero:54:8, in shapes_body.peek_at
+  called from 0xa567, in shapes_body.main
+Aborted
+run exit 134

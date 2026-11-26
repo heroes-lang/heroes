@@ -1,0 +1,7 @@
+== check k_constant_table.hero
+check exit 0
+build  exit 0
+1
+2
+3
+run exit 0

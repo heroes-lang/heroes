@@ -1,0 +1,13 @@
+== check r6_three_typedefs.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at r6_three_typedefs.hero:20:18
+     |
+  20 |     f: (function(@App) -> i64) = inc
+     |                  ^
+
+error[expected_function_type_params_close]: expected `)`, or `,` and another parameter type, found a name (`lent`)
+  at r6_three_typedefs.hero:21:22
+     |
+  21 |     g: (function(App lent) -> i64) = look
+     |                      ^^^^
+check exit 1

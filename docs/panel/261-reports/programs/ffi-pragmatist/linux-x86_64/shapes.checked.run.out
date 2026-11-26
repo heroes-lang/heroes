@@ -1,0 +1,10 @@
+4 4 30
+0 5
+0
+40040
+42
+panic: a dead C handle reached the handle the callback `shapes_body.take` left in its `@h`: a call marked `consumes` or `transfers` ended this handle's life and emptied the binding, field or element it was read from, so the program is using a handle after giving it back. Give a handle back once, after its last use; a handle that must outlive one release holds a reference, which `retains` says
+  called from 0x9094, in shapes_body.take
+  called from 0x9342, in shapes_body.main
+Aborted
+run exit 134

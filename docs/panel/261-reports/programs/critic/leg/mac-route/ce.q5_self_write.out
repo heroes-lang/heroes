@@ -1,0 +1,6 @@
+== check q5_self_write.hero
+check exit 0
+build  exit 0
+2
+3
+run exit 0

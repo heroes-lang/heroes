@@ -1,0 +1,6 @@
+== check m02_lent_value.hero
+check exit 0
+build  exit 0
+7
+7
+run exit 0

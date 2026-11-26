@@ -1,0 +1,8 @@
+== check main.hero
+note: the package `rebel` is read from the folder `../../../../../../rebel/library/0.1.0/files/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at main.hero:10:33
+     |
+  10 | function add_two(add: (function(@web.Router, method: str, pattern: str, name: str) -> ()?), @rt: web.Router) -> ()?
+     |                                 ^
+check exit 1

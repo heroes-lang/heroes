@@ -1,0 +1,7 @@
+== check q5_self_write.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at q5_self_write.hero:13:23
+     |
+  13 |     table: [(function(@App, i64) -> i64)] = [health]
+     |                       ^
+check exit 1

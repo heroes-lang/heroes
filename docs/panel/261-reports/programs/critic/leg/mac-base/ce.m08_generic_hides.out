@@ -1,0 +1,8 @@
+== check m08_generic_hides.hero
+error[mutable_parameter_as_value]: `bump` changes its argument `a` through `@`, and a function value cannot: no function type carries an `@` (§ 9), so `bump` is only called by name, its `a` marked `@` at the call
+  at m08_generic_hides.hero:15:11
+     |
+  15 |     apply(bump, app)  #~ type_mismatch
+     |           ^^^^
+  note: spec § 9: the `@` is written at the call too, so a call that changes an argument never looks like one that reads it, and a value called `f(x)` would hide it. To hand the work around as a value, write a function without `@` that returns the new value — `function next(n: i64) -> i64` — and assign what it returns
+check exit 1

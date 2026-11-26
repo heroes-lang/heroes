@@ -1,0 +1,17 @@
+== check f4_field_first.hero
+check exit 0
+build  exit 2
+internal error: compiling the generated C failed:
+f4fieldfirst.c:18:35: error: unknown type name 'h_f4fieldfirst_Box'
+   18 | typedef int64_t (*h_0fn_3473c386)(h_f4fieldfirst_Box *, int64_t);
+      |                                   ^
+f4_field_first.hero:16:34: error: incompatible function pointer types assigning to 'h_0fn_3473c386' (aka 'long long (*)(int *, long long)') from 'int64_t (h_f4fieldfirst_Box *, int64_t)' (aka 'long long (struct h_f4fieldfirst_Box *, long long)') [-Wincompatible-function-pointer-types]
+   16 |     t1 = ((__INT64_TYPE__)3); t2 = h_f4fieldfirst_double_it; t3 = (h_f4fieldfirst_Box){.f_n = t1, .f_f = t2}; h0_b = t3;
+      |                                  ^ ~~~~~~~~~~~~~~~~~~~~~~~~
+f4_field_first.hero:17:64: error: incompatible pointer types passing 'h_f4fieldfirst_Box *' (aka 'struct h_f4fieldfirst_Box *') to parameter of type 'int *' [-Werror,-Wincompatible-pointer-types]
+   17 |     t4 = h0_b; t5 = t4.f_f; t6 = ((__INT64_TYPE__)10); t7 = t5(&h0_b, t6); hero_print_int(t7); hero_print_end();
+      |                                                                ^~~~~
+3 errors generated.
+
+the generated C is at build/tu-51d6a7d536d04a28/f4fieldfirst.c
+error: clang refused the generated C

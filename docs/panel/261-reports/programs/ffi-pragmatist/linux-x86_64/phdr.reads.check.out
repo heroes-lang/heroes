@@ -1,0 +1,8 @@
+error[never_rebound]: `info` is an `@` parameter and nothing writes it — every caller's place comes back exactly as it was lent: write `info` where the body meant to change it, or remove the `@` here and at every call
+  at phdr_reads.hero:14:18
+     |
+  14 | function walked(@info: PhdrInfo, size: u64, data: ptr) -> i32
+     |                  ^^^^
+  fix (guess): take it read-only in place, the caller's own cell and no copy: `info: PhdrInfo lent`, with no `@` at the calls
+  fix (guess): remove the `@`: `info` is read, never written
+exit 1

@@ -1,0 +1,17 @@
+== check m07_lent_beside_at.hero
+error[aliased_mutable_arguments]: `app` is lent read-only, the caller's own place, beside this call's `a` argument, `@app`, which writes the same value — the callee reads it after that write, where a copy would not
+  at m07_lent_beside_at.hero:20:25
+     |
+  20 |     print(h(a: @app, b: app))  #~ aliased_mutable_arguments
+     |                         ^^^
+  note: a value lent with `lent` is the caller's own place, not a copy, so a write through an `@` argument of the same call is seen by the read; no aliasing exists among the values this language owns (panel 010)
+  fix (guess): read what the call needs before it, `n = app`, and pass that; or make the two places different, distinct fields or distinct literal indices
+
+error[aliased_mutable_arguments]: `app` is lent read-only, the caller's own place, beside `@app`, in a call among this call's arguments that runs before it, which writes the same value — the callee reads it after that write, where a copy would not
+  at m07_lent_beside_at.hero:22:13
+     |
+  22 |     print(l(app, touch(@app)))  #~ aliased_mutable_arguments
+     |             ^^^
+  note: a value lent with `lent` is the caller's own place, not a copy, so a write through an `@` argument of the same call is seen by the read; no aliasing exists among the values this language owns (panel 010)
+  fix (guess): read what the call needs before it, `n = app`, and pass that; or make the two places different, distinct fields or distinct literal indices
+check exit 1

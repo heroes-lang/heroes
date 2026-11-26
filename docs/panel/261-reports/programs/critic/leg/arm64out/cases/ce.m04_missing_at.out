@@ -1,0 +1,8 @@
+== check m04_missing_at.hero
+error[marker_mismatch]: `h` changes this argument, so the call site writes `@` too
+  at m04_missing_at.hero:12:7
+     |
+  12 |     h(app)  #~ marker_mismatch
+     |       ^^^
+  fix (certain): mark the argument: `@x`
+check exit 1
