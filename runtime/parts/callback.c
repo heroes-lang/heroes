@@ -24,19 +24,54 @@
  *
  * THE COUNT. Each thunk's first line enters (`hero_callback_entered`, which
  * calls `hero_callback_in`) and the line after its call returns (`hero_callback_left`):
- * the thread's count of thunks entered and not yet left. It is a plain thread-local
- * number, written by its own thread and read by it (in the end of `main`)
- * or by nobody (a thread's end adds what it still holds to one atomic sum), so
- * a callback costs two stores and a callback called a million times in a
- * sort costs no lock. A frame a jump abandoned never leaves, so the count
- * stays above zero for the rest of the thread: **at the end of the program a
- * count above zero says some callback's frame never finished**, abandoned by a
- * jump, or suspended on a coroutine nobody resumed, and either holds what it
- * held. The leak gate (`hero_runtime_check_leaks`, `parts/alloc.c`) then does
- * not read the heap-block balance as a missing decref: it cannot tell the
- * blocks those frames held from a leak of the compiler's, and saying *this is
- * a compiler bug* of a correct program was false (panel 257's ffi-pragmatist:
- * libpng's error path, 27 runs of 27).
+ * the thread's count of thunks entered and not yet left. A frame a jump
+ * abandoned never leaves, so the count stays above zero for the rest of the
+ * thread: **at the end of the program a count above zero says some callback's
+ * frame never finished**, abandoned by a jump, or suspended on a coroutine
+ * nobody resumed, and either holds what it held. The leak gate
+ * (`hero_runtime_check_leaks`, `parts/alloc.c`) then does not read the
+ * heap-block balance as a missing decref: it cannot tell the blocks those
+ * frames held from a leak of the compiler's, and saying *this is a compiler
+ * bug* of a correct program was false (panel 257's ffi-pragmatist: libpng's
+ * error path, 27 runs of 27).
+ *
+ * EVERY THREAD'S COUNT IS THE PROCESS'S, READ WHILE THE THREAD RUNS (defect
+ * 2854). Until 2026-11-26 each count was a thread-local that
+ * joined one atomic sum only when its thread ended, so the room's abort
+ * (`parts/frame.c`), which tells the count while other threads of the program
+ * still run, said the calling thread's alone: two threads jumping over
+ * callbacks that hold room filled the gibibyte together and the abort said
+ * 829, 1,286, 1,198 or 919 callbacks had not returned (four runs, this Mac),
+ * where the two had left about 2,047 between them. So the counts live here,
+ * one atomic per thread that may run a callback: `[0]` the thread that runs
+ * `main`, `[1 + i]` the thread in the spawn table's slot `i` (`parts/spawn.c`),
+ * the only threads a callback runs on (`parts/thread.c`'s guard). Each is
+ * written by one thread at a time, its own, with a relaxed load and a relaxed
+ * store, which the three targets compile to the plain load and store a
+ * thread-local cost (a read-modify-write is never needed: no other thread
+ * writes it), so a callback called a million times in a sort still costs no
+ * lock and no locked instruction. A thread's count is never moved at its end:
+ * it stays in its slot, and the next thread the slot starts goes on from it,
+ * ordered after it by the join that freed the slot, so the sum of the table
+ * is every thread's, ended or running, and nothing is ever read twice or
+ * missed in a move. A thread C ended (`pthread_exit`, Windows' `ExitThread`,
+ * which runs no handler of this runtime's) keeps its count with it, which the
+ * end of a thread used to drop on Windows.
+ *
+ * THE READ TAKES NO LOCK, so it cannot deadlock under any lock the reader
+ * holds: the room's abort runs inside the lend regions' lock where a lend
+ * takes room (`parts/lend_aside.c`, `hero_frame_room_hold` under
+ * `hero_lend_aside_lock`), and a read that waited there for the spawn table's
+ * lock, or a slot's, could wait on a thread that waits for the lend's.
+ * It is 257 lock-free atomic loads (asserted below), each a value its count
+ * held at some moment of the read, never a torn one, and exact for a thread
+ * whose last callback the program's own synchronisation orders before the
+ * read (a `wait`, a mailbox, a lock); a thread still entering callbacks while
+ * the abort reads is counted as it stood at that load. A thread the program
+ * did not start has no count (`hero_callback_mine` NULL): it is refused by
+ * name at the entry of the function C called (`hero_thread_guard`) before
+ * that function runs, so the entry and the leave it would count never
+ * frame a body.
  *
  * LEAKSANITIZER, WHERE IT STANDS (Linux). It is a leak detector and the blocks
  * those frames held are, to it, leaked: it would end the correct program with
@@ -52,8 +87,8 @@
  *
  * COUNTS CROSS THREADS ONLY AS A SUM. A callback entered on one thread may
  * return on another (a coroutine resumed on a different thread), so one
- * thread's count may be negative and another's positive: a thread's end adds
- * its own, and the gate reads the sum with the main thread's.
+ * thread's count may be negative and another's positive: every reader reads
+ * the sum of the table.
  *
  * AND THE COUNT IS TOLD WHERE THE PROGRAM STOPS FOR WHAT THOSE FRAMES HELD:
  * by the gates' words (panel 258's R1, below), and by the room's abort, which
@@ -64,26 +99,47 @@
 #include <windows.h>
 #endif
 
-/* The thread's count of callbacks entered and not left. */
-static _Thread_local int64_t hero_callback_inside = 0;
-static _Atomic int64_t hero_callbacks_unfinished_by_ended = 0;
+/* One count for the thread that runs `main` and one for each slot of the
+ * spawn table, `HERO_SPAWN_SLOTS` (`parts/spawn.c`, which asserts the two
+ * agree). */
+#define HERO_CALLBACK_MAIN 0
+#define HERO_CALLBACK_THREADS (1 + 256)
 
-static void hero_callback_in(void) { hero_callback_inside += 1; }
+_Static_assert(__atomic_always_lock_free(sizeof(int64_t), 0),
+               "a callback count is read by another thread without a lock, so it must be a lock-free atomic");
 
-void hero_callback_left(void) { hero_callback_inside -= 1; }
+/* Callbacks entered and not left, by the thread that entered or left them. */
+static _Atomic int64_t hero_callback_counts[HERO_CALLBACK_THREADS];
 
-/* A thread the program started ends: what it still holds joins the sum. */
-static void hero_callback_thread_ends(void) {
-    int64_t held = hero_callback_inside;
-    if (held != 0) atomic_fetch_add_explicit(&hero_callbacks_unfinished_by_ended, held, memory_order_relaxed);
-    hero_callback_inside = 0;
+/* This thread's count in the table; NULL on a thread the program did not
+ * start, whose callback is refused before its body runs. */
+static _Thread_local _Atomic int64_t *hero_callback_mine = NULL;
+
+/* The thread claims its count, `at` in the table, before any Heroes code runs
+ * on it (`hero_thread_claim`, `parts/thread.c`). */
+static void hero_callback_claim(size_t at) { hero_callback_mine = &hero_callback_counts[at]; }
+
+/* One more, or one less, on this thread's count: its own thread is the only
+ * writer, so a load and a store, both relaxed, are the whole of it. */
+static void hero_callback_step(int64_t by) {
+    _Atomic int64_t *mine = hero_callback_mine;
+    if (mine == NULL) return;
+    atomic_store_explicit(mine, atomic_load_explicit(mine, memory_order_relaxed) + by, memory_order_relaxed);
 }
 
-/* Callbacks entered and not left, at the end of the program: the main
- * thread's own, and every ended thread's. Positive says a frame never
+static void hero_callback_in(void) { hero_callback_step(1); }
+
+void hero_callback_left(void) { hero_callback_step(-1); }
+
+/* Callbacks entered and not left in the whole program, every thread's, ended
+ * or running, read without a lock (above). Positive says a frame never
  * finished. */
 static int64_t hero_callbacks_unfinished(void) {
-    return hero_callback_inside + atomic_load_explicit(&hero_callbacks_unfinished_by_ended, memory_order_relaxed);
+    int64_t sum = 0;
+    for (size_t at = 0; at < HERO_CALLBACK_THREADS; at += 1) {
+        sum += atomic_load_explicit(&hero_callback_counts[at], memory_order_relaxed);
+    }
+    return sum;
 }
 
 /* THE GATES' WORDS WHERE A CALLBACK NEVER RETURNED (panel 258's R1,

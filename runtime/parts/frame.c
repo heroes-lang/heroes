@@ -100,9 +100,13 @@ static _Atomic size_t hero_frame_held = 0;
  * count is the fact this runtime has. It was 1,261 at the abort of the
  * sitting's `asm_jump`, a jump nothing sees, and 2,047 at its blind q5 and q6,
  * a coroutine left for good and a seen `longjmp` (one run each). The count is
- * `parts/callback.c`'s, the calling thread's and every ended thread's, and the
- * words name no cause of it, since a jump, an exception and a coroutine nobody
- * resumes each leave one. Where none is unreturned, the room's words alone. */
+ * `parts/callback.c`'s, the whole program's, every thread's, running or ended,
+ * read with no lock, so it is read here under the lend regions' lock without
+ * a wait (until defect 2854, 2026-11-26, the calling thread's and
+ * the ended threads' alone, so another thread still running left its
+ * callbacks out of the number); and the words name no cause of it, since a
+ * jump, an exception and a coroutine nobody resumes each leave one. Where
+ * none is unreturned, the room's words alone. */
 static _Noreturn void hero_frame_exhausted(void *caller) {
     int64_t left = hero_callbacks_unfinished();
     char tail[128];
