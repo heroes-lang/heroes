@@ -35,3 +35,9 @@ tracked because a program a seat wrote to fail is no program the tree's checks s
 | `docs/panel/261-reports/programs/synthesis/ext` | 13 |
 | `docs/panel/261-reports/programs/synthesis/mw` | 9 |
 | `docs/panel/261-reports/programs/synthesis/probe` | 10 |
+
+## Added 2026-11-26, after the sitting's commit: the precedent probes
+
+The two folders `programs/critic/prec/` and `programs/synthesis/prec/` (the Swift, Nim and Rust programs the critic and the synthesis ran on the three compilers of the author's Mac, with their outputs, 18 files) are kept whole in `evidence-precedent.tar.xz` beside this file, paths kept, so a citation reads the same once unpacked: `tar -xJf docs/panel/261-reports/evidence-precedent.tar.xz` from the repository's root. They were tracked in the tree by the sitting's commit (`e74a3ed7f`) and left it the same afternoon, because the records check `records/citations` told three of them, `fit.rs`, `q2.rs` and `readonly_mut.rs`, a file of Rust outside the Rust bootstrap (CI run 45826172756 of `1e56b5da5`, job *Linux x86-64, the net 5 of 7*). Their text is unchanged.
+
+- archive: 2904 bytes, sha256 `d5f8a3ef53cebae3a16d93c0ed61919d46f532d232a1fe890b8210e68865c4bf`
