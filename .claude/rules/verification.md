@@ -570,7 +570,12 @@ filed and repaired in a later batch. So, from batch 16:
    `deploy-site.yml`'s `paths:`, a push publishing the site; and, where the batch moved the emitted
    C, the Linux bless of the emissions of the cases this Mac skips (`/step`
    § 5's checklist, the author's instruction of 2026-10-11, after defects 558
-   and 604). Nothing else. Measured the first day:
+   and 604); **and Rebel's index check where the push touches `rebel/`**,
+   `heroes run rebel/generators/rebel_index/main.hero -- check <compiler>`,
+   beside the site's build (author, 2026-11-26, the answer *5a*; it reads no
+   outside data and takes about twelve minutes on this Mac): the fifth push's
+   Rebel pipeline read its `rebel_index` step red, a page of `backup` stale
+   since step 195a, and its three generator tests never ran. Nothing else. Measured the first day:
    `run` split into one harness process per case, a pool of 7, read gate B
    18:39 against 19:56 whole, the load at 10 on this Mac's 8 cores and each
    process's four seconds eating the gain; so `run` stays whole until it can

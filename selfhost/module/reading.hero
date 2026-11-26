@@ -510,22 +510,44 @@ test "what stands where a file is read is told as what it is, and the door waits
 # one that ends at nothing, so the first two rows read as loops there. The
 # junction is Windows' own link, made by `mklink /J`; where this machine
 # makes no link, the rows have nothing to hold.
+#
+# Its second repair: Windows fixes a link's kind when it is made, so `via`,
+# made when `to-gone`'s folder was already gone, is a file's link to a
+# folder's link, and the CI's Windows leg still told it as a loop (run
+# 45809762298); `to-came` is the converse, a folder's link to a file's link
+# to nothing. A chain that ends at nothing resolves to the place at its end,
+# `files.resolved`'s answer, and a loop to none.
 test "a chain of links that ends at nothing is a link to nothing, and one that loops a loop (defect d-windows-ci-4-1)"
     dir = "build/selftest-reading-chains"
     loop = "a link to a chain of links the system cannot follow"
     assert !process.remove_tree(dir).is_err()
     assert !process.mkdir_all(dir + "/gone").is_err()
+    assert !process.mkdir_all(dir + "/came").is_err()
 
     if !files.symbolic_link(target: "gone", name: dir + "/to-gone").is_err()
         assert !process.remove_tree(dir + "/gone").is_err()
         assert !files.symbolic_link(target: "to-gone", name: dir + "/via").is_err()
+        assert !files.symbolic_link(target: "came", name: dir + "/to-came").is_err()
+        assert !process.remove_tree(dir + "/came").is_err()
+        assert !files.symbolic_link(target: "nowhere", name: dir + "/came").is_err()
         assert !files.symbolic_link(target: "itself", name: dir + "/itself").is_err()
         assert !files.symbolic_link(target: "pong", name: dir + "/ping").is_err()
         assert !files.symbolic_link(target: "ping", name: dir + "/pong").is_err()
 
-        for row in [["to-gone", "a link to nothing"], ["via", "a link to nothing"], ["itself", loop], ["ping", loop]]
+        separator = if process.exe_suffix() == ".exe"
+            "\\"
+        else
+            "/"
+        place = files.resolved(dir).must()
+
+        for row in [["to-gone", "a link to nothing", "gone"], ["via", "a link to nothing", "gone"], ["to-came", "a link to nothing", "nowhere"], ["itself", loop, ""], ["ping", loop, ""]]
             path = dir + "/" + row[0]
             assert stands.said(path) == row[1] && !stands.is_file(path) && !stands.is_special(path)
+
+            if row[2] == ""
+                assert files.resolved(path).is_err()
+            else
+                assert files.resolved(path).must() == place + separator + row[2]
             assert stands.unread_said(opened: path, named: "m.hero") == "cannot read `m.hero`: " + row[1] + " stands there, where a source is a file: rename it to keep it, or remove it and put the file there"
             assert text_of(path).is_err()
 

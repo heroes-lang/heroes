@@ -730,6 +730,14 @@ test "a private name keeps one part of a path within 244 bytes, cut at a charact
 # a folder this user may not write, 13, where the system refuses it (root
 # writes one, and Windows keeps no read-only folder). The shapes git cannot
 # hold; the fetch form holds the link's words for a file and a loop.
+#
+# Defect d-windows-ci-5-2: Windows has no FIFO in its file system, and on the
+# CI's Windows x86-64 leg Git's `mkfifo` ended at exit 0 having made no name
+# a folder could not be made under (run 45809762298: `fifo/b` was made, its
+# message ""), as `module/fingerprint.hero`'s case read it on 2026-11-19. So
+# a FIFO is asked of the name itself, and where none stands the test holds
+# the one reason it may, that this is Windows; on any other system a FIFO not
+# made fails it.
 test "a folder that cannot be made is told by the reason its own mkdir gave (defect d-lane-blocking-small2-1)"
     dir = "build/selftest-made-dir"
     assert !process.remove_tree(dir).is_err()
@@ -744,7 +752,9 @@ test "a folder that cannot be made is told by the reason its own mkdir gave (def
         err: process.discard()
     )
 
-    if fifo.started && fifo.code == 0
+    if !fifo.started || fifo.code != 0 || !files.is_special(dir + "/fifo")
+        assert process.exe_suffix() == ".exe"
+    else
         assert message_of(process.made_dir(dir + "/fifo/b")) == taken + "a FIFO stands at `" + dir + "/fifo`, where a folder is made: rename it to keep it, or remove it"
 
     if !files.symbolic_link(target: "loop", name: dir + "/loop").is_err()

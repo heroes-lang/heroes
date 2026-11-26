@@ -311,3 +311,13 @@ labels, the grading mechanical and its files archived.
 ## Author's verdict
 
 **Pending.** The decision's draft is `docs/panel/259-reports/decision-draft.md`, filed with this sitting as `panel 259`.
+
+**Ratified by the author's reading, 2026-11-26, at about 14:06**, in conversation (the answer *3b* to the
+coordinator's recommendation, meant as: *ratify, and hold the sitting on § 13's handler sentence before the tag, not
+after it*; the coordinator had recommended after). Landed in steps 192a to 192d (`3f9fe858d`, `91af7813b`,
+`168d3d6c7`, `57a249390`), on `main` and pushed at `a60dfb77f`. **The price it states, as measured at the landing**:
+a lend costs 29.4 % more and a call of three 32 KB takes 30.3 % more (`cost.sh`, `-O2`, instructions retired, load
+117 to 146, so a count and not a duration), and `lendjump` holds 336.7 MB to the end of the program, counted against
+the room's 1 GiB. **What the author asks beside it**: a sitting on spec § 13's handler sentence (*"may abort"*), which
+this sitting's blind reading found read as covering every switch C makes by 3 of 5 `now` readers of t1 and 4 of 5 of
+t2; it is panel 262 and it sits before the milestone's tag.

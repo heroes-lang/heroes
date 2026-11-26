@@ -103,3 +103,14 @@ The compiler-engineer's and the ffi-pragmatist's (table above), at the landing o
 ## Author's verdict
 
 **Pending.** Decision issue 2758, opened with this sitting as `panel 258`.
+
+**Partly ratified by the author's reading, 2026-11-26, at about 14:06**, in conversation (the answer *4a* to the
+coordinator's recommendation, meant as: *ratify the parts that landed, and put on record that the healing half is
+superseded by panel 259*). **What it ratifies**: R1's gates' half, the true words of the handle, lease and scratch
+gates, `wait` on a thread C ended, and the allocator's signal stop, landed in step 175a (`9c17c9560`) and untouched
+by panel 259's route. **What it records**: R1's healing half, the large-value room and the lend regions healing by the
+address of the frame that took each entry (steps 175a to 175c and 181a's lanes, `9c17c9560`, `02b426309`,
+`39e94f1ea`, `f767e0d4e`), is replaced by panel 259's R1, route E, which stops judging by address altogether (step
+192a, `3f9fe858d`; panel 259's resolution, ratified the same day). **What it does not answer**: R2, the unwinder that
+releases the abandoned values at the return of the extern call, stays provisional and pending as this sitting wrote
+it; decision issue 2758 stays open for it.
