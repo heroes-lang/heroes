@@ -2,8 +2,8 @@
 # keeps: its database, its rooms, every WebSocket, the bridge's MQTT and
 # NATS clients. Each connection the listener accepts is handed whole to a
 # reader thread (`server/readers`), which reads its one HTTP request within
-# `REQUEST_MS` and hands the connection back with the request, ringing the
-# loop's doorbell; the loop then routes it: the API's routes are answered
+# `REQUEST_MS` and hands the connection back with the request through a
+# mailbox the loop's poll set waits on; the loop then routes it: the API's routes are answered
 # and their connections closed; a sign-in is parked while its password is
 # hashed on a thread of its own (`hashing`), whose datagram the loop hears;
 # and `/socket` is upgraded to a WebSocket that stays in the loop, read as
@@ -154,15 +154,13 @@ function on_read(@srv: state.Server, set: poll.Set, @reader: io.Reader, r: http.
             else
                 answer_and_close(@reader.stream, r: r, response: api.answer(@srv, found: found, r: r))
 
-# Answers every request the readers have handed over, and drains the
-# doorbell's datagrams that told of them.
+# Answers every request the readers have handed over: what the mailbox holds
+# when the set tells it readable.
 #
 # - `srv`: the server.
 # - `set`: the poll set.
-# - `crew`: the readers' mailboxes and the doorbell.
-function on_doorbell(@srv: state.Server, set: poll.Set, crew: Crew lent)
-    errors.ignore(errors.discard_value(net.receive(crew.doorbell)))
-
+# - `crew`: the readers' mailboxes.
+function on_reads(@srv: state.Server, set: poll.Set, crew: Crew lent)
     while true
         match readers.next_read(crew.reads)
             .err _ => return
@@ -377,7 +375,7 @@ function watch(srv: state.Server lent, set: poll.Set, @w: Watch)
 # - `l`: the listener.
 # - `listening`: the listener's key.
 # - `hashed`: the key of the socket the hashing threads tell.
-# - `crew`: the readers' mailboxes, the doorbell and its key.
+# - `crew`: the readers' mailboxes and the key of the one of requests read.
 function run_loop(@srv: state.Server, set: poll.Set, l: net.Listener lent, listening: i64, hashed: i64, crew: Crew lent)
     w @= Watch(mqtt_key: -1, mqtt_streams: [], nats_key: -1, nats_streams: [])
     watch(srv, set: set, @w)
@@ -400,8 +398,8 @@ function run_loop(@srv: state.Server, set: poll.Set, l: net.Listener lent, liste
         for e in events
             if e.key == listening
                 readers.hand(l, conns: crew.conns, deadline_ms: REQUEST_MS)
-            else if e.key == crew.doorbell_key
-                on_doorbell(@srv, set: set, crew: crew)
+            else if e.key == crew.reads_key
+                on_reads(@srv, set: set, crew: crew)
             else if e.key == relinking
                 _ = mirroring.relink(@srv.links)
             else if e.key == hashed
@@ -497,10 +495,8 @@ record Crew
     conns: (mailbox net.Conn)
     # The requests read, each with its connection.
     reads: (mailbox readers.Read)
-    # The socket the readers ring after each hand-over.
-    doorbell: net.UdpSocket
     # Its key in the poll set.
-    doorbell_key: i64
+    reads_key: i64
 
 # How many readers read new connections' requests at once: each holds one
 # connection for its request's deadline at most.
@@ -508,7 +504,7 @@ constant READERS: i64
     8
 
 # Waits on the listener, the bridge, the hashing socket and the readers'
-# doorbell in a poll set, starts the readers, tells the starter where the
+# mailbox of requests read in a poll set, starts the readers, tells the starter where the
 # server listens, and serves until the program's stop; then closes the
 # readers' mailbox, closes what they had handed over unanswered, and waits
 # for every reader.
@@ -517,8 +513,8 @@ constant READERS: i64
 # - `s`: the settings, which name the starter's socket.
 # - `l`: the listener.
 #
-# Fails as `poll.make`, `poll.add_listener`, `net.open_udp` and `told.ready`
-# fail; the set and the doorbell are closed whatever it answers.
+# Fails as `poll.make`, `poll.add_listener`, `poll.add_mailbox` and
+# `told.ready` fail; the set is closed whatever it answers.
 function serve_started(@srv: state.Server, s: settings.Settings, l: net.Listener lent) -> ()?
     set @= poll.make(4096)?
 
@@ -528,40 +524,32 @@ function serve_started(@srv: state.Server, s: settings.Settings, l: net.Listener
             errors.ignore(poll.close(@set))
             return fail(code: e.code, msg: e.msg)
 
-    bell @= match net.open_udp(host: "127.0.0.1", port: 0)
-        .ok u => u
-        .err e =>
-            errors.ignore(poll.close(@set))
-            return fail(code: e.code, msg: e.msg)
-
-    ended = with_doorbell(@srv, set: set, s: s, l: l, hashed: hashed, bell: bell)
-    errors.ignore(net.close_udp(@bell))
+    ended = with_readers(@srv, set: set, s: s, l: l, hashed: hashed)
     closed = poll.close(@set)
     ended?
     return closed
 
-# `serve_started`'s work once the doorbell is open.
+# `serve_started`'s work once the set waits on the hashing socket.
 #
 # - `srv`: the server.
 # - `set`: the poll set.
 # - `s`: the settings.
 # - `l`: the listener.
 # - `hashed`: the hashing socket's key.
-# - `bell`: the doorbell, which the caller closes.
-function with_doorbell(@srv: state.Server, set: poll.Set, s: settings.Settings, l: net.Listener lent, hashed: i64, bell: net.UdpSocket) -> ()?
-    bell_key = poll.add_udp(set, u: bell, interest: .read)?
-    listening = tell_ready(set, s: s, l: l)?
+function with_readers(@srv: state.Server, set: poll.Set, s: settings.Settings, l: net.Listener lent, hashed: i64) -> ()?
     conns: (mailbox net.Conn) = mailbox()
     reads: (mailbox readers.Read) = mailbox()
+    reads_key = poll.add_mailbox(set, m: reads)?
+    listening = tell_ready(set, s: s, l: l)?
     pool: [(thread i64)] @= []
-    handed = readers.Start(conns: conns, reads: reads, doorbell: bell.address.port)
+    handed = readers.Start(conns: conns, reads: reads)
 
     while pool.len() < READERS
         match spawn(readers.work, handed)
             .ok t  => pool @ pool.push(t)
             .err _ => break
 
-    crew = Crew(conns: conns, reads: reads, doorbell: bell, doorbell_key: bell_key)
+    crew = Crew(conns: conns, reads: reads, reads_key: reads_key)
     run_loop(@srv, set: set, l: l, listening: listening, hashed: hashed, crew: crew)
     conns.close()
     reads.close()
