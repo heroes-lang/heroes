@@ -1,0 +1,171 @@
+# One base instruction's word: its row of the table says which operands it
+# takes and how they are encoded; each operand is checked for its kind and
+# each value for its field, a refusal naming the line. A branch or a jump
+# names its target, and the offset is the distance from this instruction to
+# it; a CSR is named or numbered.
+
+use <rebel>/errors
+
+use asm/lexer
+use asm/operands as o
+use asm/resolve
+use asm/syntax
+use cpu/csr
+use isa/encoding
+use isa/ops
+
+## Encoding
+
+# The word of the base instruction `s` at `pc`.
+#
+# - `s`: the statement, a base instruction: pseudo-instructions are expanded
+#   before.
+# - `pc`: its address.
+# - `symbols`: every symbol's value.
+#
+# Fails `invalid` where `s` names no instruction, its operands are not the
+# ones it takes, a value names no symbol or does not fit its field.
+function encode(s: syntax.Statement, pc: i64, symbols: {str: i64}) -> i64?
+    spec = errors.context(ops.spec_named(s.name), what: f"line {s.line}")?
+    return errors.context(fields(s: s, spec: spec, pc: pc, symbols: symbols), what: f"line {s.line}")
+
+function fields(s: syntax.Statement, spec: ops.Spec, pc: i64, symbols: {str: i64}) -> i64?
+    return match spec.format
+        .r =>
+            o.count(s, n: 3)?
+            ok(encoding.encode_r(spec: spec, rd: o.reg(s, at: 0)?, rs1: o.reg(s, at: 1)?, rs2: o.reg(s, at: 2)?))
+        .i =>
+            o.count(s, n: 3)?
+            encoding.encode_i(
+                spec: spec,
+                rd: o.reg(s, at: 0)?,
+                rs1: o.reg(s, at: 1)?,
+                imm: number(s: s, at: 2, pc: pc, symbols: symbols)?
+            )
+        .shift =>
+            o.count(s, n: 3)?
+            encoding.encode_shift(
+                spec: spec,
+                rd: o.reg(s, at: 0)?,
+                rs1: o.reg(s, at: 1)?,
+                shamt: number(s: s, at: 2, pc: pc, symbols: symbols)?
+            )
+        .load =>
+            o.count(s, n: 2)?
+            encoding.encode_i(
+                spec: spec,
+                rd: o.reg(s, at: 0)?,
+                rs1: o.base(s, at: 1)?,
+                imm: offset(s: s, at: 1, pc: pc, symbols: symbols)?
+            )
+        .s =>
+            o.count(s, n: 2)?
+            encoding.encode_s(
+                spec: spec,
+                rs1: o.base(s, at: 1)?,
+                rs2: o.reg(s, at: 0)?,
+                imm: offset(s: s, at: 1, pc: pc, symbols: symbols)?
+            )
+        .b =>
+            o.count(s, n: 3)?
+            encoding.encode_b(
+                spec: spec,
+                rs1: o.reg(s, at: 0)?,
+                rs2: o.reg(s, at: 1)?,
+                offset: number(s: s, at: 2, pc: pc, symbols: symbols)? - pc
+            )
+        .u =>
+            o.count(s, n: 2)?
+            encoding.encode_u(spec: spec, rd: o.reg(s, at: 0)?, imm20: number(s: s, at: 1, pc: pc, symbols: symbols)?)
+        .j =>
+            o.count(s, n: 2)?
+            encoding.encode_j(
+                spec: spec,
+                rd: o.reg(s, at: 0)?,
+                offset: number(s: s, at: 1, pc: pc, symbols: symbols)? - pc
+            )
+        .jalr => jump_register(s: s, spec: spec, pc: pc, symbols: symbols)
+        .system =>
+            o.count(s, n: 0)?
+            ok(encoding.encode_fixed(spec))
+        .fence => ok(encoding.encode_fixed(spec))
+        .csr =>
+            o.count(s, n: 3)?
+            encoding.encode_csr(
+                spec: spec,
+                rd: o.reg(s, at: 0)?,
+                csr: csr_number(s: s, symbols: symbols)?,
+                source: o.reg(s, at: 2)?
+            )
+        .csri =>
+            o.count(s, n: 3)?
+            encoding.encode_csr(
+                spec: spec,
+                rd: o.reg(s, at: 0)?,
+                csr: csr_number(s: s, symbols: symbols)?,
+                source: number(s: s, at: 2, pc: pc, symbols: symbols)?
+            )
+
+# `jalr rd, offset(rs1)`, or `jalr rd, rs1, offset` as older sources write it.
+function jump_register(s: syntax.Statement, spec: ops.Spec, pc: i64, symbols: {str: i64}) -> i64?
+    rd = o.reg(s, at: 0)?
+
+    if s.operands.len() == 3
+        return encoding.encode_i(
+            spec: spec,
+            rd: rd,
+            rs1: o.reg(s, at: 1)?,
+            imm: number(s: s, at: 2, pc: pc, symbols: symbols)?
+        )
+    o.count(s, n: 2)?
+    return encoding.encode_i(
+        spec: spec,
+        rd: rd,
+        rs1: o.base(s, at: 1)?,
+        imm: offset(s: s, at: 1, pc: pc, symbols: symbols)?
+    )
+
+function number(s: syntax.Statement, at: i64, pc: i64, symbols: {str: i64}) -> i64?
+    return resolve.value(e: o.value(s, at: at)?, pc: pc, symbols: symbols, line: s.line)
+
+function offset(s: syntax.Statement, at: i64, pc: i64, symbols: {str: i64}) -> i64?
+    return resolve.value(e: o.offset(s, at: at)?, pc: pc, symbols: symbols, line: s.line)
+
+# The CSR the second operand names: a CSR's name, else a number or a
+# symbol's value.
+function csr_number(s: syntax.Statement, symbols: {str: i64}) -> i64?
+    e = o.value(s, at: 1)?
+
+    if e.symbol != "" && e.addend == 0
+        named = csr.names()[e.symbol]
+
+        if !named.is_err()
+            return named
+    return resolve.value(e: e, pc: 0, symbols: symbols, line: s.line)
+
+## Tests
+
+function word_of(source: str, pc: i64) -> i64?
+    return encode(
+        s: syntax.statement(lexer.lines(source)[0]).must(),
+        pc: pc,
+        symbols: {"loop": 0x8000_0000, "far": 0x8000_2000}
+    )
+
+# Words observed from clang 22.1.8 `--target=riscv32 -march=rv32im_zicsr`
+# and `llvm-objdump -d` in the Linux arm64 image, run on 2026-11-26.
+test "encode: one word of each format, as LLVM's assembler writes them"
+    assert word_of("add a0, a1, a2", pc: 0).must() == 0x00c5_8533
+    assert word_of("lw a0, 8(sp)", pc: 0).must() == 0x0081_2503
+    assert word_of("sw ra, 12(sp)", pc: 0).must() == 0x0011_2623
+    assert word_of("bne a0, zero, loop", pc: 0x8000_0008).must() == 0xfe05_1ce3
+    assert word_of("jal ra, loop", pc: 0x8000_0010).must() == 0xff1f_f0ef
+    assert word_of("lui a0, 0x80000", pc: 0).must() == 0x8000_0537
+    assert word_of("jalr ra, 0(t1)", pc: 0).must() == 0x0003_00e7
+    assert word_of("csrrs a0, mcause, zero", pc: 0).must() == 0x3420_2573
+    assert word_of("csrrwi zero, mstatus, 8", pc: 0).must() == 0x3004_5073
+    assert word_of("mulhu a0, a1, a2", pc: 0).must() == 0x02c5_b533
+
+test "encode: what no instruction takes, each refused with its line"
+    for source in ["addd a0, a1, a2", "add a0, a1", "addi a0, a1, 4096", "lw a0, a1", "beq a0, a1, far", "slli a0, a0, 32", "csrrs a0, nosuch, zero", "ecall a0"]
+        assert word_of(source, pc: 0x8000_0000).is_err()

@@ -1,0 +1,263 @@
+# One step of the hart: take a pending timer interrupt, or fetch the word at
+# the pc, decode it and do what it says, as RV32IM, Zicsr and machine mode
+# define it. Every way an instruction can go wrong is a trap, taken into the
+# program's handler where `mtvec` names one; without one, `ecall` is the
+# environment's (`cpu/environment.hero`) and any other trap stops the
+# machine and says why, so no program, however wrong, makes the emulator
+# itself abort.
+
+use <rebel>/errors
+
+use cpu/bus
+use cpu/clint
+use cpu/csr
+use cpu/environment
+use cpu/machine
+use cpu/trap
+use isa/decode
+use isa/word
+
+## Events
+
+# What one step did.
+variant Event
+    # An instruction ran, or a trap was taken into the program's handler.
+    retired
+    # The timer's interrupt was taken into the handler; no instruction ran.
+    interrupted
+    # `ebreak` with no handler: the pc is past it, and a debugger stops here.
+    breakpoint
+    # `exit` was called.
+    exited
+        # The status the program gave.
+        code: i64
+    # A trap with no handler: the machine stops, its pc on the instruction.
+    trapped
+        # The cause, as `mcause` would hold it.
+        cause: i64
+        # The address or word at fault, as `mtval` would hold it.
+        value: i64
+    # `wfi` with no interrupt enabled that could ever wake the hart.
+    stalled
+
+## The step
+
+# Runs one step of `m`.
+#
+# - `m`: the machine; its registers, pc, CSRs, counters and memory move.
+function step(@m: machine.Machine) -> Event
+    if machine.interrupt_ready(m)
+        machine.enter_trap(@m, cause: trap.TIMER_INTERRUPT, value: 0)
+        return .interrupted
+    fetched = bus.fetch(m.bus, at: m.pc)
+
+    if fetched.is_err()
+        return fault(
+            @m,
+            failed: fetched,
+            misaligned: trap.INSTRUCTION_MISALIGNED,
+            access: trap.INSTRUCTION_ACCESS,
+            at: m.pc
+        )
+    raw = fetched.must()
+    decoded = decode.decode(raw)
+
+    if decoded.is_err()
+        return exception(@m, cause: trap.ILLEGAL_INSTRUCTION, value: raw)
+    return execute(@m, d: decoded.must())
+
+# Does what `d` says, the pc at the instruction.
+function execute(@m: machine.Machine, d: decode.Decoded) -> Event
+    pc = m.pc
+    a = machine.reg(m, n: d.rs1)
+    b = machine.reg(m, n: d.rs2)
+
+    match d.op
+        .lui => machine.set_reg(@m, n: d.rd, value: d.imm)
+        .auipc => machine.set_reg(@m, n: d.rd, value: word.add(a: pc, b: d.imm))
+        .jal => return jump(@m, d: d, target: word.add(a: pc, b: d.imm))
+        .jalr => return jump(@m, d: d, target: word.add(a: a, b: d.imm) & 0xffff_fffe)
+        .beq => return branch(@m, d: d, taken: a == b)
+        .bne => return branch(@m, d: d, taken: a != b)
+        .blt => return branch(@m, d: d, taken: word.less_signed(a: a, b: b))
+        .bge => return branch(@m, d: d, taken: !word.less_signed(a: a, b: b))
+        .bltu => return branch(@m, d: d, taken: word.less_unsigned(a: a, b: b))
+        .bgeu => return branch(@m, d: d, taken: !word.less_unsigned(a: a, b: b))
+        .lb => return load(@m, d: d, width: 1, signed: true)
+        .lh => return load(@m, d: d, width: 2, signed: true)
+        .lw => return load(@m, d: d, width: 4, signed: false)
+        .lbu => return load(@m, d: d, width: 1, signed: false)
+        .lhu => return load(@m, d: d, width: 2, signed: false)
+        .sb => return store(@m, d: d, width: 1)
+        .sh => return store(@m, d: d, width: 2)
+        .sw => return store(@m, d: d, width: 4)
+        .addi => machine.set_reg(@m, n: d.rd, value: word.add(a: a, b: d.imm))
+        .slti => machine.set_reg(@m, n: d.rd, value: flag(word.less_signed(a: a, b: d.imm)))
+        .sltiu => machine.set_reg(@m, n: d.rd, value: flag(word.less_unsigned(a: a, b: d.imm)))
+        .xori => machine.set_reg(@m, n: d.rd, value: a ^ d.imm)
+        .ori => machine.set_reg(@m, n: d.rd, value: a | d.imm)
+        .andi => machine.set_reg(@m, n: d.rd, value: a & d.imm)
+        .slli => machine.set_reg(@m, n: d.rd, value: word.shift_left(a: a, by: d.imm))
+        .srli => machine.set_reg(@m, n: d.rd, value: word.shift_right(a: a, by: d.imm))
+        .srai => machine.set_reg(@m, n: d.rd, value: word.shift_right_arith(a: a, by: d.imm))
+        .add => machine.set_reg(@m, n: d.rd, value: word.add(a: a, b: b))
+        .sub => machine.set_reg(@m, n: d.rd, value: word.subtract(a: a, b: b))
+        .sll => machine.set_reg(@m, n: d.rd, value: word.shift_left(a: a, by: b))
+        .slt => machine.set_reg(@m, n: d.rd, value: flag(word.less_signed(a: a, b: b)))
+        .sltu => machine.set_reg(@m, n: d.rd, value: flag(word.less_unsigned(a: a, b: b)))
+        .xor => machine.set_reg(@m, n: d.rd, value: a ^ b)
+        .srl => machine.set_reg(@m, n: d.rd, value: word.shift_right(a: a, by: b))
+        .sra => machine.set_reg(@m, n: d.rd, value: word.shift_right_arith(a: a, by: b))
+        .or => machine.set_reg(@m, n: d.rd, value: a | b)
+        .and => machine.set_reg(@m, n: d.rd, value: a & b)
+        .mul => machine.set_reg(@m, n: d.rd, value: word.multiply(a: a, b: b))
+        .mulh => machine.set_reg(@m, n: d.rd, value: word.multiply_high(a: a, b: b))
+        .mulhsu => machine.set_reg(@m, n: d.rd, value: word.multiply_high_signed_unsigned(a: a, b: b))
+        .mulhu => machine.set_reg(@m, n: d.rd, value: word.multiply_high_unsigned(a: a, b: b))
+        .div => machine.set_reg(@m, n: d.rd, value: word.divide(a: a, b: b))
+        .divu => machine.set_reg(@m, n: d.rd, value: word.divide_unsigned(a: a, b: b))
+        .rem => machine.set_reg(@m, n: d.rd, value: word.remainder(a: a, b: b))
+        .remu => machine.set_reg(@m, n: d.rd, value: word.remainder_unsigned(a: a, b: b))
+        .fence => _ = 0
+        .ecall => return environment_call(@m)
+        .ebreak => return break_point(@m)
+        .mret => return trap_return(@m)
+        .wfi => return wait_for_interrupt(@m)
+        .csrrw | .csrrs | .csrrc => return csr_access(@m, d: d, source: a)
+        .csrrwi | .csrrsi | .csrrci => return csr_access(@m, d: d, source: d.rs1)
+
+    return retire(@m, next: word.add(a: pc, b: 4))
+
+# The pc moves to `next`, and both counters count the instruction.
+function retire(@m: machine.Machine, next: i64) -> Event
+    m.pc @ next
+    m.counters.cycles @ m.counters.cycles + 1
+    m.counters.retired @ m.counters.retired + 1
+    return .retired
+
+# 1 for `true`, 0 for `false`: what `slt` writes.
+function flag(b: bool) -> i64
+    if b
+        return 1
+    return 0
+
+## Control transfer
+
+function jump(@m: machine.Machine, d: decode.Decoded, target: i64) -> Event
+    if target % 4 != 0
+        return exception(@m, cause: trap.INSTRUCTION_MISALIGNED, value: target)
+    link = word.add(a: m.pc, b: 4)
+    machine.set_reg(@m, n: d.rd, value: link)
+    return retire(@m, next: target)
+
+function branch(@m: machine.Machine, d: decode.Decoded, taken: bool) -> Event
+    if !taken
+        return retire(@m, next: word.add(a: m.pc, b: 4))
+    target = word.add(a: m.pc, b: d.imm)
+
+    if target % 4 != 0
+        return exception(@m, cause: trap.INSTRUCTION_MISALIGNED, value: target)
+    return retire(@m, next: target)
+
+## Memory
+
+function load(@m: machine.Machine, d: decode.Decoded, width: i64, signed: bool) -> Event
+    at = word.add(a: machine.reg(m, n: d.rs1), b: d.imm)
+    loaded = bus.load(@m.bus, at: at, width: width, now: m.counters.cycles)
+
+    if loaded.is_err()
+        return fault(@m, failed: loaded, misaligned: trap.LOAD_MISALIGNED, access: trap.LOAD_ACCESS, at: at)
+    value: i64 @= loaded.must()
+
+    if signed
+        value @ word.sign_extend(x: value, bits: 8 * width)
+    machine.set_reg(@m, n: d.rd, value: value)
+    return retire(@m, next: word.add(a: m.pc, b: 4))
+
+function store(@m: machine.Machine, d: decode.Decoded, width: i64) -> Event
+    at = word.add(a: machine.reg(m, n: d.rs1), b: d.imm)
+    stored = bus.store(@m.bus, at: at, width: width, value: machine.reg(m, n: d.rs2))
+
+    if stored.is_err()
+        return fault(@m, failed: stored, misaligned: trap.STORE_MISALIGNED, access: trap.STORE_ACCESS, at: at)
+    return retire(@m, next: word.add(a: m.pc, b: 4))
+
+# The trap a failed access means: its code says which of the two causes.
+function fault<T>(@m: machine.Machine, failed: T?, misaligned: i64, access: i64, at: i64) -> Event
+    cause: i64 @= access
+
+    if errors.has_code(failed, code: bus.MISALIGNED)
+        cause @ misaligned
+    return exception(@m, cause: cause, value: at)
+
+## The system
+
+# A synchronous trap: into the handler where there is one, the counters
+# counting the cycle and not the instruction; else the machine stops.
+function exception(@m: machine.Machine, cause: i64, value: i64) -> Event
+    if !machine.has_handler(m)
+        return .trapped(cause: cause, value: value)
+    machine.enter_trap(@m, cause: cause, value: value)
+    m.counters.cycles @ m.counters.cycles + 1
+    return .retired
+
+function environment_call(@m: machine.Machine) -> Event
+    if machine.has_handler(m)
+        return exception(@m, cause: trap.ENVIRONMENT_CALL, value: 0)
+    answer = environment.call(@m)
+
+    match answer
+        .exited e =>
+            _ = retire(@m, next: word.add(a: m.pc, b: 4))
+            return .exited(code: e.code)
+        .returned r => machine.set_reg(@m, n: 10, value: r.value)
+
+    return retire(@m, next: word.add(a: m.pc, b: 4))
+
+function break_point(@m: machine.Machine) -> Event
+    if machine.has_handler(m)
+        return exception(@m, cause: trap.BREAKPOINT, value: m.pc)
+    _ = retire(@m, next: word.add(a: m.pc, b: 4))
+    return .breakpoint
+
+function trap_return(@m: machine.Machine) -> Event
+    machine.leave_trap(@m)
+    m.counters.cycles @ m.counters.cycles + 1
+    m.counters.retired @ m.counters.retired + 1
+    return .retired
+
+# `wfi`: the hart sleeps until the timer's interrupt is pending, the cycles
+# passing, then goes on after it, as the specification lets it whether or
+# not `MIE` would take the interrupt. With the timer's interrupt not enabled
+# in `mie`, or never due, nothing could wake it.
+function wait_for_interrupt(@m: machine.Machine) -> Event
+    due = clint.due_at(m.bus.clint)
+
+    if m.csrs.enabled & csr.TIMER_BIT == 0 || due < 0
+        return .stalled
+
+    if due > m.counters.cycles
+        m.counters.cycles @ due
+    return retire(@m, next: word.add(a: m.pc, b: 4))
+
+# `csrrw`, `csrrs`, `csrrc` and their immediate forms: the CSR's old value
+# goes to `rd`, and the CSR takes `source`, or its bits set or cleared. A
+# set or clear by nothing (`x0`, or the immediate 0) writes nothing, so a
+# read-only CSR may be read so.
+function csr_access(@m: machine.Machine, d: decode.Decoded, source: i64) -> Event
+    old = csr.read(m.csrs, counters: m.counters, timer_pending: machine.timer_pending(m), number: d.imm)
+
+    if old.is_err()
+        return exception(@m, cause: trap.ILLEGAL_INSTRUCTION, value: d.raw)
+    writes = d.op == .csrrw || d.op == .csrrwi || d.rs1 != 0
+    new: i64 @= source
+
+    if d.op == .csrrs || d.op == .csrrsi
+        new @ old.must() | source
+    else if d.op == .csrrc || d.op == .csrrci
+        new @ old.must() & ~source & word.MASK
+
+    if writes && csr.write(@m.csrs, number: d.imm, value: new).is_err()
+        return exception(@m, cause: trap.ILLEGAL_INSTRUCTION, value: d.raw)
+    machine.set_reg(@m, n: d.rd, value: old.must())
+    return retire(@m, next: word.add(a: m.pc, b: 4))

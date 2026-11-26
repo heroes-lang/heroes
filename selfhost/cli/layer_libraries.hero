@@ -199,7 +199,10 @@ function libraries_of(s: source.Source, decls: [ast.Decl], group: token.Span, ne
             .pkgconfig pk =>
                 pkg = emit_externs.unquoted(s, span: pk.name)
 
-                for lib in keys(needs.calls)
+                # ORDER: by name, as `sort` orders a `str`. `called` names the
+                # first library of this list, so which one is first must not
+                # follow a map's order.
+                for lib in sort(keys(needs.calls))
                     lacked = pkgconfig_missing.Lacked(name: lib, kind: "library", words: ["-l" + lib], found: true)
 
                     if pkgconfig_missing.answers(pkgconfig: pkg, build: "build", lacked: lacked)
@@ -254,6 +257,7 @@ function groups_naming(s: source.Source, decls: [ast.Decl], library: str) -> i64
         if !head.header.is_err() && !named.is_err() && emit_externs.unquoted(s, span: named.must()) == library
             seen[head.header.must().start] @ true
 
+    # ORDER: none — only the count is read, which every order gives.
     return keys(seen).len()
 
 # Names as a sentence lists them: `a`, `a` and `b`, `a`, `b` and `c`.

@@ -42,6 +42,13 @@
 # The two shapes name their parameters differently on purpose: the names are
 # part of a function's type, so an order given where an equality is asked is a
 # compile error.
+#
+# A test or an order that reads a value of the caller's, a name to look for
+# or the point distances are measured from, takes it as `state` beside the
+# list, since a function value holds none of its own (spec § 9):
+# `index_where_with`, `find_with` and `sort_by_with` hand it to every call,
+# as `(function(state: S, item: T) -> bool)` and `(function(state: S, a: T,
+# b: T) -> bool)`.
 
 use lists/internal/arrangements
 use lists/internal/building
@@ -56,6 +63,7 @@ use lists/internal/removing
 use lists/internal/samples
 use lists/internal/searching
 use lists/internal/selecting
+use lists/internal/stated
 
 ## Codes
 
@@ -557,6 +565,36 @@ function index_where<T>(xs: [T], accepts: (function(T) -> bool)) -> i64?
 function index_where_last<T>(xs: [T], accepts: (function(T) -> bool)) -> i64?
     return searching.index_where_last(xs: xs, accepts: accepts)
 
+# The index of the first element of `xs` that `accepts` accepts with
+# `state`: `index_where` for a test that reads a value of the caller's, a
+# name or a key, since a function value holds none of its own (spec § 9).
+#
+# - `xs`: the list to search.
+# - `state`: the value handed to every call of `accepts`, read and never
+#   changed; handing it costs no copy of its bytes where `accepts` only reads
+#   it (README § B1).
+# - `accepts`: called with `state` and each element from the first, until it
+#   answers `true`.
+#
+# Fails `not_found` where it accepts none. See also `find_with`,
+# `index_where`.
+function index_where_with<T, S>(xs: [T], state: S, accepts: (function(state: S, item: T) -> bool)) -> i64?
+    return stated.index_where_with(xs, state: state, accepts: accepts)
+
+# The first element of `xs` that `accepts` accepts with `state`: the
+# built-in `find` for a test that reads a value of the caller's, a name or a
+# key.
+#
+# - `xs`: the list to search.
+# - `state`: the value handed to every call of `accepts`, read and never
+#   changed.
+# - `accepts`: called with `state` and each element from the first, until it
+#   answers `true`.
+#
+# Fails `not_found` where it accepts none. See also `index_where_with`.
+function find_with<T, S>(xs: [T], state: S, accepts: (function(state: S, item: T) -> bool)) -> T?
+    return stated.find_with(xs, state: state, accepts: accepts)
+
 # How many elements of `xs` `same` says are `value`.
 #
 # - `xs`: the list to count in.
@@ -624,6 +662,23 @@ function equal_by<T>(left: [T], right: [T], same: (function(left: T, right: T) -
 # `min_n_by`.
 function sort_by<T>(xs: [T], less: (function(a: T, b: T) -> bool)) -> [T]
     return ordering.sort_by(xs: xs, less: less)
+
+# The elements of `xs` in the order `less` gives with `state`, elements that
+# are equal by it keeping the places they had among themselves: `sort_by` for
+# an order that reads a value of the caller's, the field a request asked to
+# sort by or the point distances are measured from.
+#
+# - `xs`: the list to sort; it is left as it was.
+# - `state`: the value handed to every call of `less`, read and never
+#   changed.
+# - `less`: the order, called with `state` and two elements, true where `a`
+#   goes before `b`; it is called about n times the logarithm of n for a list
+#   of n.
+#
+# An order that contradicts itself gives a list in no promised order and never
+# aborts. See also `sort_by`.
+function sort_by_with<T, S>(xs: [T], state: S, less: (function(state: S, a: T, b: T) -> bool)) -> [T]
+    return stated.sort_by_with(xs, state: state, less: less)
 
 # Whether `xs` is in the order `less` gives: no element goes before the one
 # that precedes it.
@@ -1176,6 +1231,19 @@ test "index_where: the first even number"
 test "index_where_last: the last even number"
     assert index_where_last([1, 4, 6, 7], samples.is_even).must() == 2
 
+# The place of the first card of a suit, the suit handed alongside;
+# `samples.of_suit` is `function of_suit(state: str, item: samples.Card) ->
+# bool`, true where `item.suit == state`.
+test "index_where_with: the first spade of a hand"
+    hand = [samples.Card(rank: 3, suit: "h"), samples.Card(rank: 5, suit: "s")]
+    assert index_where_with(hand, state: "s", accepts: samples.of_suit).must() == 1
+
+# The first card of a suit, the suit handed alongside; `samples.of_suit` as
+# above.
+test "find_with: the first heart of a hand"
+    hand = [samples.Card(rank: 3, suit: "s"), samples.Card(rank: 8, suit: "h")]
+    assert find_with(hand, state: "h", accepts: samples.of_suit).must().rank == 8
+
 # How often a word occurs; `samples.same_text` is
 # `function same_text(left: str, right: str) -> bool`, true where
 # `left == right`.
@@ -1206,6 +1274,12 @@ test "equal_by: two lists, then one longer"
 # where `a.len() < b.len()`.
 test "sort_by: words by their length"
     assert sort_by(["ccc", "a", "bb", "d"], samples.by_length) == ["a", "d", "bb", "ccc"]
+
+# Numbers ordered by how near they stand to a point handed alongside;
+# `samples.nearer` is `function nearer(state: i64, a: i64, b: i64) -> bool`,
+# true where `a` stands nearer to `state` than `b`.
+test "sort_by_with: numbers by their distance to 5"
+    assert sort_by_with([9, 1, 6, 4, 5], state: 5, less: samples.nearer) == [5, 6, 4, 9, 1]
 
 # Whether numbers are already sorted; `samples.ascending` is
 # `function ascending(a: i64, b: i64) -> bool`, true where `a < b`.

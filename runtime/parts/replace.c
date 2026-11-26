@@ -147,10 +147,12 @@ static HeroStr hero_fs_found_path(const char *path) {
  * the link; a junction holds an absolute one. Both hold it as Windows' own
  * kernel names a file, `\??\C:\dir`, which a Win32 call takes as `C:\dir`,
  * `\??\UNC\server\share` as `\\server\share`, and any other `\??\` name, a
- * volume's GUID, behind `\\?\`. UNRUN on Windows: the box was off on
- * 2026-11-25, and the CI's Windows leg judges it after the push; cross-compiled
- * against mingw-w64's headers by `zig cc -target x86_64-windows-gnu`, never
- * against MSVC's, which the CI builds with. */
+ * volume's GUID, behind `\\?\`. Unrun on Windows when it was written
+ * (the box was off on 2026-11-25); RUN on the box on 2026-11-26 with the
+ * second repair below, built by MSVC's target: the tests of
+ * `module/reading.hero` and `cli/stub.hero` that hold every shape pass
+ * there; whether its junction row, made by `mklink /J` and skipped where
+ * none is made, ran there is unread. */
 #if !defined(SYMLINK_FLAG_RELATIVE)
 #define SYMLINK_FLAG_RELATIVE 0x1
 #endif
@@ -335,12 +337,16 @@ static int hero_fs_win_nothing_at(const char *name) {
  * chain of links the system cannot follow* on the CI's Windows x86-64 leg
  * (run 45809762298), while in the same run a file's link to a file's link to
  * nothing and a folder's link to nothing were told *a link to nothing*, which
- * only one of the two numbers gives. Which number the kinds' mismatch gives
- * is unmeasured: the box was off on 2026-11-26 and the run's log prints the
- * words alone. A question rather than a premise: whether the I/O manager
- * opens the name a file's link names as no folder, so that a folder's link
- * there is refused before it is followed (STATUS_FILE_IS_A_DIRECTORY,
- * ERROR_ACCESS_DENIED, 5), and the converse (ERROR_DIRECTORY, 267).
+ * only one of the two numbers gives. Measured on the box on 2026-11-26 (a
+ * probe opening each shape as these arms do): a file's link to a folder's
+ * link to nothing fails with ERROR_ACCESS_DENIED (5), a folder's link to a
+ * file's link to nothing with ERROR_DIRECTORY (267), a link to nothing and a
+ * file's link to a file's link to nothing with ERROR_FILE_NOT_FOUND (2), a
+ * loop with ERROR_CANT_RESOLVE_FILENAME (1921); a file's link to a folder's
+ * link to a folder that is there fails with 5 as well, and a folder's link to
+ * a folder's link to one opens. Every link opens as itself
+ * (FILE_FLAG_OPEN_REPARSE_POINT), and `GetFileAttributesW` of a name where
+ * nothing stands fails with 2.
  *
  * So a refusal with any other number asks the chain's text: where it ends at
  * a name where nothing stands, the chain ends at nothing, as POSIX's
@@ -497,9 +503,10 @@ HeroStr hero_fs_landing(const char *path) {
  * open's own refusal. Until defect d-windows-ci-4-1 a dangling link there was
  * no answer, as that arm gave none; and until its second repair, one whose
  * open the system refused with another number than nothing found, a file's
- * link to a folder's link to nothing (`hero_fs_win_ends_at_nothing`). UNRUN
- * on Windows: every measurement of this door is this Mac's, and the CI's
- * Windows leg judges the repair. */
+ * link to a folder's link to nothing (`hero_fs_win_ends_at_nothing`). Run
+ * on the box on 2026-11-26: `module/reading.hero`'s test asks this door of a
+ * link to a folder that is gone, a file's link to a folder's link to nothing,
+ * the converse and two loops, and passes there. */
 
 /* `path` with its separators at the end taken away, the root's own kept:
  * `/`, and on Windows `\` and `C:\`. */

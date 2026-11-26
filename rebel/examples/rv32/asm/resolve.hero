@@ -1,0 +1,68 @@
+# A value's number, once the first pass has given every symbol its value:
+# the symbol's value plus the number, then the part the operand takes.
+# `%hi` and `%lo` split a value so that `lui` of the one and `addi` of the
+# other give it back, `%hi` rounding up where the low part's sign is set; the
+# `pc_` parts split a distance from the instruction the same way.
+
+use asm/syntax
+use isa/word
+
+## Resolving
+
+# The number `e` stands for in an instruction at `pc`.
+#
+# - `e`: the value.
+# - `pc`: the address of the instruction or the directive it stands in.
+# - `symbols`: every symbol's value.
+# - `line`: the statement's line, for the message.
+#
+# Fails `invalid` where `e` names a symbol no label or `.equ` defines.
+function value(e: syntax.Expr, pc: i64, symbols: {str: i64}, line: i64) -> i64?
+    base: i64 @= 0
+
+    if e.symbol != ""
+        base @ match symbols[e.symbol]
+            .ok v  => v
+            .err _ => return fail(code: "invalid", msg: f"line {line}: no label or .equ defines \"{e.symbol}\"")
+    v = base + e.addend
+
+    return match e.part
+        .whole   => ok(v)
+        .high    => ok(high(v))
+        .low     => ok(low(v))
+        .pc_high => ok(high(v - pc))
+        .pc_low  => ok(low(v - (pc - 4)))
+
+# The upper 20 bits of `v` for `lui` or `auipc`, rounded up by one where
+# `low(v)` is negative, so that the two added give `v` back.
+#
+# - `v`: any value; its lowest 32 bits are read.
+function high(v: i64) -> i64
+    return word.wrap(v) + 0x800 >> 12 & 0xfffff
+
+# The low 12 bits of `v`, sign-extended, as `addi` and a load add them.
+#
+# - `v`: any value; its lowest 12 bits are read.
+function low(v: i64) -> i64
+    return word.signed(word.sign_extend(x: v, bits: 12))
+
+## Tests
+
+test "high and low: the pair gives the value back, the rounding included"
+    for v in [0, 1, 0x7ff, 0x800, 0xfff, 0x1234_5678, 0x8000_0000, 0xffff_ffff, -1]
+        assert word.wrap((high(v) << 12) + low(v)) == word.wrap(v)
+
+    assert high(0xfff) == 1
+    assert low(0xfff) == -1
+
+test "value: a symbol plus a number, its parts, and an unknown symbol"
+    symbols = {"msg": 0x8000_0100}
+    at = syntax.Expr(symbol: "msg", addend: 4, part: .whole)
+    assert value(e: at, pc: 0, symbols: symbols, line: 1).must() == 0x8000_0104
+    hi = syntax.Expr(symbol: "msg", addend: 0, part: .pc_high)
+    lo = syntax.Expr(symbol: "msg", addend: 0, part: .pc_low)
+    pc = 0x8000_0000
+    distance = (value(e: hi, pc: pc, symbols: symbols, line: 1).must() << 12) + value(e: lo, pc: pc + 4, symbols: symbols, line: 1).must()
+    assert pc + distance == 0x8000_0100
+    missing = syntax.Expr(symbol: "nowhere", addend: 0, part: .whole)
+    assert value(e: missing, pc: 0, symbols: symbols, line: 3).is_err()

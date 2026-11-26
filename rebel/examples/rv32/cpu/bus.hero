@@ -1,0 +1,215 @@
+# The machine's bus: every load, store and fetch goes through it, to the RAM
+# or to a device, and every address is checked before it is used. An access
+# no region answers fails `access_fault`, one whose address is not a
+# multiple of its width fails `misaligned`; the hart turns each into the trap
+# the privileged specification names (causes 0, 1 and 4 to 7), so a program
+# that runs off its memory stops with a trap and never reaches past the
+# emulator's own list.
+#
+# The map, QEMU `virt`'s in miniature: the CLINT at 0x0200_0000, the UART at
+# 0x1000_0000, the RAM at 0x8000_0000. Words are little-endian, the order
+# RISC-V defines, put together here byte by byte so that the host's own order
+# never matters.
+
+use cpu/clint
+use cpu/uart
+use isa/word
+
+## The map
+
+# Where the RAM begins.
+constant RAM_BASE: i64
+    0x8000_0000
+
+# The RAM's size unless the runner asks another: 1 MiB.
+constant RAM_SIZE: i64
+    0x10_0000
+
+# The code an access fails with where no region answers its address.
+constant ACCESS_FAULT: str
+    "access_fault"
+
+# The code an access fails with where its address is not a multiple of its
+# width.
+constant MISALIGNED: str
+    "misaligned"
+
+# Everything the hart reaches by address.
+record Bus
+    # The RAM's bytes, the first at `RAM_BASE`.
+    ram: [u8]
+    # The serial port.
+    uart: uart.Uart
+    # The timer.
+    clint: clint.Clint
+
+# A bus with `size` bytes of zeroed RAM, a UART that will receive `input`,
+# and a timer that never fires.
+#
+# - `size`: the RAM's bytes, from 4, a multiple of 4.
+# - `input`: the bytes the UART receives.
+function new_bus(size: i64, input: [u8]) -> Bus
+    ram: [u8] @= []
+
+    for _ in range(from: 0, to: size)
+        ram @ ram.push(0)
+
+    return Bus(ram: ram, uart: uart.new_uart(input), clint: clint.new_clint())
+
+# Whether `width` bytes from `at` lie inside the RAM.
+#
+# - `bus`: the bus.
+# - `at`: the first address.
+# - `width`: how many bytes.
+function in_ram(bus: Bus lent, at: i64, width: i64) -> bool
+    return at >= RAM_BASE && at - RAM_BASE + width <= bus.ram.len()
+
+## Access
+
+# The `width` bytes at `at`, little-endian, as a word zero-extended.
+#
+# - `bus`: the bus; reading the UART's data register takes its byte.
+# - `at`: the address, a word.
+# - `width`: 1, 2 or 4.
+# - `now`: the hart's cycles, which the timer reads as `mtime`.
+#
+# Fails `misaligned` where `at` is not a multiple of `width`, and
+# `access_fault` where no region answers, or a device is read at a width it
+# does not take: the UART by bytes, the timer by words.
+function load(@bus: Bus, at: i64, width: i64, now: i64) -> i64?
+    aligned(at: at, width: width)?
+
+    if in_ram(bus, at: at, width: width)
+        return ok(ram_word(ram: bus.ram, from: at - RAM_BASE, width: width))
+
+    if at >= uart.BASE && at < uart.BASE + uart.SIZE && width == 1
+        return ok(uart.read_register(@bus.uart, offset: at - uart.BASE))
+
+    if at >= clint.BASE && at < clint.BASE + clint.SIZE && width == 4
+        return ok(clint.read_register(bus.clint, offset: at - clint.BASE, now: now))
+    return fail(code: ACCESS_FAULT, msg: f"no memory answers a load of {width} bytes at {word.hex_literal(at)}")
+
+# Writes `value`'s low `width` bytes at `at`, little-endian.
+#
+# - `bus`: the bus.
+# - `at`: the address, a word.
+# - `width`: 1, 2 or 4.
+# - `value`: the word stored.
+#
+# Fails as `load` does.
+function store(@bus: Bus, at: i64, width: i64, value: i64) -> ()?
+    aligned(at: at, width: width)?
+
+    if in_ram(bus, at: at, width: width)
+        base = at - RAM_BASE
+
+        for k in range(from: 0, to: width)
+            bus.ram[base + k] @ to_u8(value >> 8 * k & 0xff).must()
+
+        return ok()
+
+    if at >= uart.BASE && at < uart.BASE + uart.SIZE && width == 1
+        uart.write_register(@bus.uart, offset: at - uart.BASE, value: value)
+        return ok()
+
+    if at >= clint.BASE && at < clint.BASE + clint.SIZE && width == 4
+        clint.write_register(@bus.clint, offset: at - clint.BASE, value: value)
+        return ok()
+    return fail(code: ACCESS_FAULT, msg: f"no memory answers a store of {width} bytes at {word.hex_literal(at)}")
+
+# The instruction word at `at`, from the RAM alone: a device is not
+# executable.
+#
+# - `bus`: the bus.
+# - `at`: the pc.
+#
+# Fails `misaligned` where `at` is not a multiple of 4, there being no
+# compressed instructions here, and `access_fault` outside the RAM.
+function fetch(bus: Bus lent, at: i64) -> i64?
+    aligned(at: at, width: 4)?
+
+    if !in_ram(bus, at: at, width: 4)
+        return fail(code: ACCESS_FAULT, msg: f"no memory to fetch an instruction from at {word.hex_literal(at)}")
+    return ok(ram_word(ram: bus.ram, from: at - RAM_BASE, width: 4))
+
+# The bytes `data` copied into the RAM from `at`, as a loader places an
+# image.
+#
+# - `bus`: the bus.
+# - `at`: the first address.
+# - `data`: the bytes.
+#
+# Fails `access_fault` where they do not all fit in the RAM.
+function place(@bus: Bus, at: i64, data: [u8]) -> ()?
+    if !in_ram(bus, at: at, width: data.len())
+        return fail(code: ACCESS_FAULT, msg: f"{data.len()} bytes at {word.hex_literal(at)} do not fit in the RAM")
+    base = at - RAM_BASE
+
+    for k in range(from: 0, to: data.len())
+        bus.ram[base + k] @ data[k]
+
+    return ok()
+
+# The `count` bytes of RAM from `at`, as a debugger dumps them.
+#
+# - `bus`: the bus.
+# - `at`: the first address.
+# - `count`: how many bytes, from 0.
+#
+# Fails `access_fault` where they are not all in the RAM; a device's
+# registers are never read this way, since a read takes a UART's byte.
+function peek(bus: Bus lent, at: i64, count: i64) -> [u8]?
+    if count < 0 || !in_ram(bus, at: at, width: count)
+        return fail(code: ACCESS_FAULT, msg: f"{count} bytes at {word.hex_literal(at)} are not all in the RAM")
+    return ok(bus.ram.slice(from: at - RAM_BASE, to: at - RAM_BASE + count))
+
+function aligned(at: i64, width: i64) -> ()?
+    if at % width != 0
+        return fail(code: MISALIGNED, msg: f"an access of {width} bytes at {word.hex_literal(at)} is not aligned")
+    return ok()
+
+# The word `width` bytes of `ram` spell from `from`, the first the lowest.
+function ram_word(ram: [u8] lent, from: i64, width: i64) -> i64
+    value @= 0
+
+    for k in range(from: 0, to: width)
+        value @ value | to_i64(ram[from + k]).must() << 8 * k
+
+    return value
+
+## Tests
+
+test "load and store: every width, little-endian, at both ends of the RAM"
+    b @= new_bus(size: 64, input: [])
+    store(@b, at: RAM_BASE, width: 4, value: 0x1234_5678).must()
+    assert load(@b, at: RAM_BASE, width: 4, now: 0).must() == 0x1234_5678
+    assert load(@b, at: RAM_BASE, width: 1, now: 0).must() == 0x78
+    assert load(@b, at: RAM_BASE + 2, width: 2, now: 0).must() == 0x1234
+    store(@b, at: RAM_BASE + 60, width: 4, value: word.MASK).must()
+    assert load(@b, at: RAM_BASE + 63, width: 1, now: 0).must() == 0xff
+    assert peek(b, at: RAM_BASE, count: 2).must() == [0x78, 0x56]
+
+test "load, store and fetch: past the RAM, below it and misaligned"
+    b @= new_bus(size: 64, input: [])
+    assert load(@b, at: RAM_BASE + 64, width: 1, now: 0).is_err()
+    assert load(@b, at: RAM_BASE + 62, width: 4, now: 0).is_err()
+    assert store(@b, at: RAM_BASE - 4, width: 4, value: 0).is_err()
+    assert load(@b, at: RAM_BASE + 1, width: 2, now: 0).is_err()
+    assert fetch(b, at: RAM_BASE + 2).is_err()
+    assert fetch(b, at: uart.BASE).is_err()
+    assert fetch(b, at: 0).is_err()
+    assert peek(b, at: RAM_BASE + 60, count: 8).is_err()
+    assert peek(b, at: RAM_BASE, count: -1).is_err()
+    assert place(@b, at: RAM_BASE + 62, data: [1, 2, 3]).is_err()
+
+test "load and store: the devices, at the widths they take"
+    b @= new_bus(size: 16, input: [0x21])
+    assert load(@b, at: uart.BASE + uart.LINE_STATUS, width: 1, now: 0).must() == 0x61
+    assert load(@b, at: uart.BASE, width: 1, now: 0).must() == 0x21
+    assert load(@b, at: uart.BASE, width: 4, now: 0).is_err()
+    store(@b, at: uart.BASE, width: 1, value: 0x41).must()
+    assert uart.drain(@b.uart) == [0x41]
+    store(@b, at: clint.BASE + clint.COMPARE, width: 4, value: 50).must()
+    assert load(@b, at: clint.BASE + clint.TIME, width: 4, now: 42).must() == 42
+    assert load(@b, at: clint.BASE + clint.COMPARE, width: 4, now: 0).must() == 50
+    assert store(@b, at: clint.BASE, width: 1, value: 0).is_err()

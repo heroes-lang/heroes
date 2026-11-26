@@ -1,0 +1,191 @@
+# Instruction words written back as assembly, as `llvm-objdump -d` writes
+# them: the mnemonic, then the operands with the calling convention's
+# register names, a branch's or a jump's target as an address with the
+# symbol it falls in (`<loop+0x8>`), a CSR by its name, and the common
+# pseudo-instructions where the word is one (`nop`, `li`, `mv`, `ret`, `j`,
+# `beqz`, `csrr`). A word that encodes nothing is written `.word` and its
+# value, so a dump of data never stops.
+#
+# The symbols are kept in Rebel's `containers/ordered` map by address, whose
+# `floor_slot` finds the one at or before an address; the map is a shape
+# beside two lists the program keeps, since a record takes no type
+# parameter.
+
+use <rebel>/containers/ordered
+use <rebel>/numbers
+use <rebel>/strings
+
+use cpu/csr
+use image/format
+use isa/decode
+use isa/ops
+use isa/registers
+use isa/word
+
+## Symbols
+
+# A program's symbols, ordered by address.
+record Names
+    # The ordered map's shape.
+    shape: ordered.Ordered
+    # Its keys, the addresses.
+    addresses: [i64]
+    # Its values, the names.
+    names: [str]
+
+# The symbols of `p`, the first name listed at an address kept for it.
+#
+# - `p`: the program.
+function names_of(p: format.Program) -> Names
+    n @= Names(shape: ordered.new_map(), addresses: [], names: [])
+
+    for s in p.symbols
+        if !ordered.contains(n.shape, key_list: n.addresses, key: s.address, less: lower)
+            ordered.put(
+                @n.shape,
+                key_list: @n.addresses,
+                value_list: @n.names,
+                key: s.address,
+                value: s.name,
+                less: lower
+            )
+
+    return n
+
+function lower(a: i64, b: i64) -> bool
+    return a < b
+
+# `<name>` or `<name+0x10>` for the symbol at or before `address`; "" where
+# none is.
+#
+# - `names`: the symbols.
+# - `address`: a word.
+function describe(names: Names lent, address: i64) -> str
+    slot = ordered.floor_slot(names.shape, key_list: names.addresses, key: address, less: lower)
+
+    if slot.is_err()
+        return ""
+    at = names.addresses[slot.must()]
+    name = names.names[slot.must()]
+
+    if at == address
+        return f"<{name}>"
+    return f"<{name}+0x{numbers.format_int(n: address - at, base: 16)}>"
+
+# The name of the symbol at exactly `address`.
+#
+# - `names`: the symbols.
+# - `address`: a word.
+#
+# Fails `not_found` where no symbol stands there.
+function name_at(names: Names lent, address: i64) -> str?
+    slot = ordered.slot_of(names.shape, key_list: names.addresses, key: address, less: lower)?
+    return ok(names.names[slot])
+
+## Writing
+
+# The instruction `raw` at `pc`, as assembly.
+#
+# - `raw`: the word.
+# - `pc`: its address, which a branch's target is counted from.
+# - `names`: the symbols, which name a target.
+function text_of(raw: i64, pc: i64, names: Names lent) -> str
+    return match decode.decode(raw)
+        .ok d  => instruction(d: d, pc: pc, names: names)
+        .err _ => line(mnemonic: ".word", operands: [word.hex_literal(raw)])
+
+function instruction(d: decode.Decoded, pc: i64, names: Names lent) -> str
+    rd = registers.abi_name(d.rd)
+    rs1 = registers.abi_name(d.rs1)
+    rs2 = registers.abi_name(d.rs2)
+    imm = word.signed(d.imm)
+    name = ops.name_of(d.op)
+    alias = pseudo_of(d: d, pc: pc, names: names)
+
+    if alias != ""
+        return alias
+
+    return match ops.format_of(d.op)
+        .r => line(mnemonic: name, operands: [rd, rs1, rs2])
+        .i => line(mnemonic: name, operands: [rd, rs1, imm.to_str()])
+        .shift => line(mnemonic: name, operands: [rd, rs1, d.imm.to_str()])
+        .load | .jalr => line(mnemonic: name, operands: [rd, f"{imm}({rs1})"])
+        .s => line(mnemonic: name, operands: [rs2, f"{imm}({rs1})"])
+        .b => line(mnemonic: name, operands: [rs1, rs2, target(at: word.add(a: pc, b: d.imm), names: names)])
+        .u => line(mnemonic: name, operands: [rd, "0x" + numbers.format_int(n: d.imm >> 12, base: 16)])
+        .j => line(mnemonic: name, operands: [rd, target(at: word.add(a: pc, b: d.imm), names: names)])
+        .system | .fence => name
+        .csr => line(mnemonic: name, operands: [rd, csr.name_of(d.imm), rs1])
+        .csri => line(mnemonic: name, operands: [rd, csr.name_of(d.imm), d.rs1.to_str()])
+
+# The pseudo-instruction `d` is, written; "" where it is none.
+function pseudo_of(d: decode.Decoded, pc: i64, names: Names lent) -> str
+    rd = registers.abi_name(d.rd)
+    rs1 = registers.abi_name(d.rs1)
+    imm = word.signed(d.imm)
+
+    if d.op == .addi && d.rd == 0 && d.rs1 == 0 && d.imm == 0
+        return "nop"
+
+    if d.op == .addi && d.rs1 == 0
+        return line(mnemonic: "li", operands: [rd, imm.to_str()])
+
+    if d.op == .addi && imm == 0
+        return line(mnemonic: "mv", operands: [rd, rs1])
+
+    if d.op == .jalr && d.rd == 0 && d.rs1 == 1 && d.imm == 0
+        return "ret"
+
+    if d.op == .jal && d.rd == 0
+        return line(mnemonic: "j", operands: [target(at: word.add(a: pc, b: d.imm), names: names)])
+
+    if (d.op == .beq || d.op == .bne) && d.rs2 == 0
+        branch = if d.op == .beq
+            "beqz"
+        else
+            "bnez"
+        return line(mnemonic: branch, operands: [rs1, target(at: word.add(a: pc, b: d.imm), names: names)])
+
+    if d.op == .csrrs && d.rs1 == 0
+        return line(mnemonic: "csrr", operands: [rd, csr.name_of(d.imm)])
+    return ""
+
+function target(at: i64, names: Names lent) -> str
+    described = describe(names, address: at)
+
+    if described == ""
+        return word.hex_literal(at)
+    return word.hex_literal(at) + " " + described
+
+function line(mnemonic: str, operands: [str]) -> str
+    return strings.pad_end(s: mnemonic, width: 8, pad: " ") + operands.join(", ")
+
+## Tests
+
+function sample_names() -> Names
+    return names_of(
+        format.Program(base: 0x8000_0000, entry: 0x8000_0000, image: [], symbols: [format.Symbol(name: "_start", address: 0x8000_0000), format.Symbol(name: "loop", address: 0x8000_0008)])
+    )
+
+# Each word and its text observed from `llvm-objdump -d` 22.1.8 in the Linux
+# arm64 image on 2026-11-26; its own spelling of an immediate (`-0x10`) and of
+# a target (`0x0 <loop>`) aside, which this program writes as above.
+test "text_of: the formats, the pseudo-instructions and a target's symbol"
+    n = sample_names()
+    assert text_of(raw: 0xff01_0113, pc: 0x8000_0000, names: n) == "addi    sp, sp, -16"
+    assert text_of(raw: 0x0011_2623, pc: 0x8000_0000, names: n) == "sw      ra, 12(sp)"
+    assert text_of(raw: 0x0000_0013, pc: 0x8000_0000, names: n) == "nop"
+    assert text_of(raw: 0x0000_8067, pc: 0x8000_0000, names: n) == "ret"
+    assert text_of(raw: 0xfe05_1ce3, pc: 0x8000_0010, names: n) == "bnez    a0, 0x80000008 <loop>"
+    assert text_of(raw: 0x1234_5537, pc: 0x8000_0000, names: n) == "lui     a0, 0x12345"
+    assert text_of(raw: 0x3420_2573, pc: 0x8000_0000, names: n) == "csrr    a0, mcause"
+    assert text_of(raw: 0x02c5_b533, pc: 0x8000_0000, names: n) == "mulhu   a0, a1, a2"
+    assert text_of(raw: 0x0000_0000, pc: 0x8000_0000, names: n) == ".word   0x00000000"
+
+test "describe: at a symbol, past it, and before every symbol"
+    n = sample_names()
+    assert describe(n, address: 0x8000_0008) == "<loop>"
+    assert describe(n, address: 0x8000_0014) == "<loop+0xc>"
+    assert describe(n, address: 0x7fff_fffc) == ""
+    assert name_at(n, address: 0x8000_0000).must() == "_start"
+    assert name_at(n, address: 0x8000_0004).is_err()

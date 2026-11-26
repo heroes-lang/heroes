@@ -1,0 +1,274 @@
+# A line of assembly read into a statement: the labels it defines, then an
+# instruction or a directive by its name, then its operands, as GNU as
+# writes them for RISC-V. An operand is a register, a value (a number, a
+# symbol, a symbol plus or minus a number, `%hi(...)` or `%lo(...)` of one),
+# a memory operand `offset(register)`, or a string. What a statement means
+# is the assembler's; here only its shape is read, and a line that has none
+# fails `invalid` with its line number and what was found.
+
+use <rebel>/errors
+use <rebel>/scanner
+
+use asm/lexer
+use isa/registers
+
+## Statements
+
+# Which part of a value an operand takes.
+variant Part
+    # The whole value.
+    whole
+    # `%hi(v)`: the upper 20 bits, rounded so that `%lo` added back gives `v`.
+    high
+    # `%lo(v)`: the low 12 bits, sign-extended.
+    low
+    # The upper part of the distance from this instruction to `v`; the
+    # assembler's `la`, `call` and `tail` write it into an `auipc`.
+    pc_high
+    # The low part of the distance from the instruction 4 bytes before to `v`:
+    # the `addi` or `jalr` after that `auipc`.
+    pc_low
+
+# A value an operand names: a symbol plus a number, either of which may be
+# absent, and the part of it taken.
+record Expr
+    # The symbol, a label or an `.equ` name; "" for none.
+    symbol: str
+    # The number added to the symbol's value, or the whole value.
+    addend: i64
+    # Which part is taken.
+    part: Part
+
+# One operand of a statement.
+variant Operand
+    # A register, by its number.
+    register
+        # 0 to 31.
+        n: i64
+    # A value.
+    value
+        # The value.
+        e: Expr
+    # `offset(base)`, a load's or a store's address.
+    memory
+        # The offset.
+        offset: Expr
+        # The base register.
+        base: i64
+    # A string, a directive's text.
+    text
+        # Its characters, escapes read.
+        s: str
+
+# One line's statement.
+record Statement
+    # The line's number.
+    line: i64
+    # The labels it defines, in order.
+    labels: [str]
+    # The instruction or directive, in lower case; "" for labels alone.
+    name: str
+    # Its operands.
+    operands: [Operand]
+
+# A number alone, as a value.
+#
+# - `n`: the number.
+function number(n: i64) -> Expr
+    return Expr(symbol: "", addend: n, part: .whole)
+
+## Reading
+
+# The statement `line` holds.
+#
+# - `line`: one line's tokens.
+#
+# Fails `invalid` where the line is not labels, a name and operands
+# separated by commas; the message opens with the line's number.
+function statement(line: lexer.SourceLine) -> Statement?
+    t = line.tokens
+    at: i64 @= 0
+    labels: [str] @= []
+
+    while at + 1 < t.len() && t[at].kind == .identifier && t[at + 1].text == ":"
+        labels @ labels.push(t[at].text)
+        at @ at + 2
+
+    if at >= t.len()
+        return ok(Statement(line: line.number, labels: labels, name: "", operands: []))
+
+    if t[at].kind != .identifier
+        return refuse(line: line.number, token: t[at], what: "an instruction or a directive")
+    name = t[at].text
+    at @ at + 1
+    operands: [Operand] @= []
+
+    while at < t.len()
+        if operands.len() > 0
+            if t[at].text != ","
+                return refuse(line: line.number, token: t[at], what: "a comma between operands")
+            at @ at + 1
+        o = operand(line: line.number, t: t, at: @at)?
+        operands @ operands.push(o)
+
+    return ok(Statement(line: line.number, labels: labels, name: name, operands: operands))
+
+# The operand that begins at `at`, `at` moved past it.
+function operand(line: i64, t: [scanner.Token] lent, @at: i64) -> Operand?
+    if at >= t.len()
+        return fail(code: "invalid", msg: f"line {line}: an operand is missing at the end of the line")
+    first = t[at]
+
+    if first.kind == .string
+        at @ at + 1
+
+        return match scanner.text_of(first)
+            .ok s  => ok(.text(s: s))
+            .err e => fail(code: "invalid", msg: f"line {line}: {e.msg}")
+
+    if first.kind == .identifier && at + 1 >= t.len() || first.kind == .identifier && t[at + 1].text == ","
+        n = registers.number_of(first.text)
+
+        if !n.is_err()
+            at @ at + 1
+            return ok(.register(n: n.must()))
+
+    if first.text == "("
+        return ok(.memory(offset: number(0), base: base_register(line: line, t: t, at: @at)?))
+    e = expr(line: line, t: t, at: @at)?
+
+    if at < t.len() && t[at].text == "("
+        return ok(.memory(offset: e, base: base_register(line: line, t: t, at: @at)?))
+    return ok(.value(e: e))
+
+# `(register)`, `at` moved past it.
+function base_register(line: i64, t: [scanner.Token] lent, @at: i64) -> i64?
+    if at + 2 >= t.len() || t[at].text != "(" || t[at + 2].text != ")"
+        return fail(code: "invalid", msg: f"line {line}: a memory operand is written offset(register)")
+
+    n = match registers.number_of(t[at + 1].text)
+        .ok r  => r
+        .err e => return fail(code: "invalid", msg: f"line {line}: {e.msg}")
+
+    at @ at + 3
+    return ok(n)
+
+# A value: `%hi(...)` or `%lo(...)` of one, or terms joined by `+` and `-`,
+# at most one of them a symbol, and that one added.
+function expr(line: i64, t: [scanner.Token] lent, @at: i64) -> Expr?
+    if at + 1 < t.len() && t[at].text == "%"
+        part: Part = match t[at + 1].text
+            "hi" => .high
+            "lo" => .low
+            _    => return refuse(line: line, token: t[at + 1], what: "hi or lo after %")
+
+        if at + 2 >= t.len() || t[at + 2].text != "("
+            return fail(code: "invalid", msg: f"line {line}: %{t[at + 1].text} takes its value in parentheses")
+        at @ at + 3
+        inner = expr(line: line, t: t, at: @at)?
+
+        if at >= t.len() || t[at].text != ")"
+            return fail(code: "invalid", msg: f"line {line}: a ) is missing after %{t[at - 1].text}(")
+        at @ at + 1
+        return ok(Expr(symbol: inner.symbol, addend: inner.addend, part: part))
+    symbol: str @= ""
+    sum: i64 @= 0
+    sign: i64 @= 1
+
+    if at < t.len() && t[at].text == "-"
+        sign @ -1
+        at @ at + 1
+
+    while true
+        if at >= t.len()
+            return fail(code: "invalid", msg: f"line {line}: a value is missing at the end of the line")
+        term = t[at]
+
+        if term.kind == .identifier
+            if symbol != "" || sign < 0
+                return refuse(line: line, token: term, what: "a value with at most one symbol, added")
+            symbol @ term.text
+        else
+            n = term_number(line: line, token: term)?
+            sum @ sum + sign * n
+        at @ at + 1
+
+        if at >= t.len() || t[at].text != "+" && t[at].text != "-"
+            return ok(Expr(symbol: symbol, addend: sum, part: .whole))
+
+        sign @ if t[at].text == "+"
+            1
+        else
+            -1
+        at @ at + 1
+
+# The number an integer or character token spells.
+function term_number(line: i64, token: scanner.Token) -> i64?
+    if token.kind == .character
+        c = scanner.text_of(token).default("")
+
+        if c.len() != 1
+            return refuse(line: line, token: token, what: "a character of one byte")
+        return ok(to_i64(c[0]).must())
+
+    if token.kind != .integer
+        return refuse(line: line, token: token, what: "a number, a character or a symbol")
+    n = scanner.int_of(token)
+
+    if n.is_err() || n.must() < -0x8000_0000 || n.must() > 0xffff_ffff
+        return fail(code: "invalid", msg: f"line {line}: {token.text} does not fit in 32 bits")
+    return n
+
+function refuse<T>(line: i64, token: scanner.Token, what: str) -> T?
+    found = match token.kind
+        .invalid i => f"{token.text} ({i.reason})"
+        .identifier | .keyword | .integer | .float | .string | .raw_string | .character | .comment | .whitespace | .newline | .operator | .custom _ | .other | .end =>
+            f"\"{token.text}\""
+
+    return fail(code: "invalid", msg: f"line {line}: expected {what}, found {found}")
+
+## Tests
+
+function parsed(source: str) -> Statement
+    return statement(lexer.lines(source)[0]).must()
+
+test "statement: labels, an instruction, and its three kinds of operand"
+    s = parsed("loop: next: lw a0, -8(sp)")
+    assert s.labels == ["loop", "next"]
+    assert s.name == "lw"
+    assert s.operands[0] == .register(n: 10)
+    assert s.operands[1] == .memory(offset: number(-8), base: 2)
+    b = parsed("bnez t0, loop+4")
+    assert b.operands[1] == .value(e: Expr(symbol: "loop", addend: 4, part: .whole))
+
+test "statement: %hi and %lo, a memory operand with no offset, a string"
+    s = parsed("lui a0, %hi(msg+2)")
+    assert s.operands[1] == .value(e: Expr(symbol: "msg", addend: 2, part: .high))
+    l = parsed("lw a1, %lo(msg)(a0)")
+    assert l.operands[1] == .memory(offset: Expr(symbol: "msg", addend: 0, part: .low), base: 10)
+    z = parsed("sw zero, (a0)")
+    assert z.operands[1] == .memory(offset: number(0), base: 10)
+    t = parsed(".asciz \"a\\tb\"")
+    assert t.operands[0] == .text(s: "a\tb")
+
+test "statement: a label alone, numbers and a character"
+    s = parsed("done:")
+    assert s.name == ""
+    w = parsed(".word -1, 0xffffffff, 'z' - 'a'")
+    assert w.operands == [.value(e: number(-1)), .value(e: number(0xffff_ffff)), .value(e: number(25))]
+
+test "statement: what is no statement, each told with its line"
+    bad = [
+        "addi a0 a0, 1"
+        "lw a0, 8(q9)"
+        "li a0, 0x1_0000_0000"
+        "addi a0, a0,"
+        "1: nop"
+        "li a0, -x"
+        ".ascii \"open"
+    ]
+
+    for source in bad
+        r = statement(lexer.lines(source)[0])
+        assert r.is_err()
+        assert errors.format_line(r).len() > 0
