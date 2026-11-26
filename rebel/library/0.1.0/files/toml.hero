@@ -13,7 +13,8 @@
 # and `instant_of` answers the instant where an `Instant` reaches it.
 #
 # It fills no record by its fields' names, since the language has no
-# reflection: a program reads each value with `value_at` and builds its own
+# reflection: a program reads each value with `value_at`, or a member by its
+# kind with `text_at`, `int_at`, `bool_at` and `items_at`, and builds its own
 # record. Settings read in layers, a TOML file among them, with getters that
 # name the layer a value came from, are `config`'s.
 #
@@ -34,6 +35,7 @@ use toml/internal/doc
 use toml/internal/edit
 use toml/internal/layout
 use toml/internal/scalar
+use toml/internal/typed
 use toml/internal/write
 
 ## The value
@@ -234,6 +236,54 @@ function value_at(v: Value, path: [str]) -> Value?
                 return fail(code: INVALID, msg: f"\"{so_far}\" asks a key of a value that is not a table")
 
     return ok(here)
+
+# The text of the member `key` of the table `v`.
+#
+# - `v`: the value read, expected to be a table: a document, or any table in
+#   it.
+# - `key`: the member's key, compared byte for byte; a key holding a `.` is
+#   one key, never a path.
+#
+# Fails `not_found` where the table holds no such key, and the message names
+# the keys it holds. Fails `invalid` where `v` is not a table, or the member
+# is not a text, and the message names the key and the kind found. See also
+# `int_at`, `bool_at`, `items_at`, `value_at`.
+function text_at(v: Value, key: str) -> str?
+    return typed.text_at(v, key: key)
+
+# The integer of the member `key` of the table `v`.
+#
+# - `v`: the value read, expected to be a table.
+# - `key`: the member's key, compared byte for byte.
+#
+# Fails `not_found` where the table holds no such key. Fails `invalid` where
+# `v` is not a table, or the member is not an integer, a float included, and
+# the message names the key and the kind found. See also `text_at`.
+function int_at(v: Value, key: str) -> i64?
+    return typed.int_at(v, key: key)
+
+# The boolean of the member `key` of the table `v`.
+#
+# - `v`: the value read, expected to be a table.
+# - `key`: the member's key, compared byte for byte.
+#
+# Fails `not_found` where the table holds no such key. Fails `invalid` where
+# `v` is not a table, or the member is not a boolean, and the message names
+# the key and the kind found. See also `text_at`.
+function bool_at(v: Value, key: str) -> bool?
+    return typed.bool_at(v, key: key)
+
+# The items of the array in the member `key` of the table `v`, in order.
+#
+# - `v`: the value read, expected to be a table.
+# - `key`: the member's key, compared byte for byte.
+#
+# Fails `not_found` where the table holds no such key. Fails `invalid` where
+# `v` is not a table, or the member is not an array, and the message names
+# the key and the kind found. An array of tables is an array. See also
+# `text_at`.
+function items_at(v: Value, key: str) -> [Value]?
+    return typed.items_at(v, key: key)
 
 # The instant a `date_time` names.
 #
@@ -768,6 +818,24 @@ function from_json(v: json.Value) -> Value?
     return ok(done[0])
 
 ## Examples
+
+# A server's settings read from a document, each by its key and kind.
+test "text_at: a host and a port read from a table"
+    server = value_at(parse("[server]\nhost = \"localhost\"\nport = 8080").must(), path: ["server"]).must()
+    assert text_at(server, key: "host").must() == "localhost"
+    assert int_at(server, key: "port").must() == 8080
+
+# A port read as an integer.
+test "int_at: a port"
+    assert int_at(parse("port = 443").must(), key: "port").must() == 443
+
+# A flag read from a document.
+test "bool_at: a switch turned on"
+    assert bool_at(parse("debug = true").must(), key: "debug").must()
+
+# The items of an array held in a member.
+test "items_at: the packages a program lists"
+    assert items_at(parse("packages = [\"json\", \"yaml\"]").must(), key: "packages").must().len() == 2
 
 # A dependency added to a catalogue, its comment and its other entry kept.
 test "set_value: a dependency added under its own header"
