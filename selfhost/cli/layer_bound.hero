@@ -2,7 +2,10 @@
 # the program's own reaching the layer's, a group saying `layer` whose header
 # reaches none of it and whose library calls none of it, and a binding of the
 # layer's function through a declaration of the program's own (design.md
-# §1.11, §4.19; panel 260, provisional, author ratification pending).
+# §1.11, §4.19; panel 260, provisional, author ratification pending): bound
+# by its own name here, and through a macro or a body by
+# `cli/layer_declared.hero`, which also asks a word said of none of the layer
+# whether such a binding stands behind it (defect 2856).
 #
 # **A group binds the layer where its header is the layer's or reaches it, or
 # its library calls it** (R2, R3). The first two are read here from the walk

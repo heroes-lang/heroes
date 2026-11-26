@@ -1,0 +1,13 @@
+# Fixed 2026-11-26, defect 2856 (d-p260-mixedown), lane room-mixedown: the
+# shape beside the macro, a body of the header's taking a pointer to the
+# layer's function through the header's own declaration of it and calling
+# through the pointer, while another group says `layer`.
+extern "hero_time.h" layer
+    function hero_time_wall_ns() -> i64
+
+extern "fixedbugs-2856-a-layer-function-a-header-declares-otherwise-taken-as-a-pointer-is-told-at-the-binding.h"
+    function stop_via() -> i32  #~ ffi_layer_redeclared
+
+function main()
+    print(hero_time_wall_ns() > 0)
+    print(stop_via())
