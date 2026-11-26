@@ -75,7 +75,7 @@ function default_settings(host: str, port: i64, database: str, secret: [u8]) -> 
 #
 # Fails `does_not_fit` past what a duration holds.
 function token_lifetime(s: Settings) -> time.Duration?
-    return time.hours(s.token_hours)
+    return time.hours_checked(s.token_hours)
 
 # `m` written as a setting, as `places.parse_mirror` reads one.
 #

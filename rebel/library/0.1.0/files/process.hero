@@ -1438,13 +1438,13 @@ test "run: a time limit of zero, one below, and one a quick child never meets"
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
-    assert run(with_time_limit(quick, limit: time.seconds(60).must())).must().status == .exited(code: 0)
+    assert run(with_time_limit(quick, limit: time.seconds(60))).must().status == .exited(code: 0)
     assert run(with_time_limit(quick, limit: time.max_duration())).must().status == .exited(code: 0)
 
 test "run: a child past its time limit of 200 ms is ended, and its status says so"
     sleepy = with_time_limit(
         command(fixture.sleeper(), fixture.sleeper_arguments(30)),
-        limit: time.milliseconds(200).must()
+        limit: time.milliseconds(200)
     )
     ended = run(with_output(sleepy, to: .nothing)).must()
     assert ended.status == .timed_out
@@ -1495,7 +1495,7 @@ test "capture: the output as text, a failure holding the error's text, a time li
             assert e.code == FAILED
             assert e.msg == f"capturing the output of \"{fixture.shell_program()}\": it exited with code 2; its error ends: broken"
 
-    match capture(with_time_limit(command(fixture.sleeper(), fixture.sleeper_arguments(30)), limit: time.milliseconds(100).must()))
+    match capture(with_time_limit(command(fixture.sleeper(), fixture.sleeper_arguments(30)), limit: time.milliseconds(100)))
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT
 
@@ -1566,7 +1566,7 @@ test "start: has_ended answers false while the child runs, true once it ended, a
 test "start: has_ended and wait past a time limit end the child, and its status says so"
     sleepy = with_time_limit(
         command(fixture.sleeper(), fixture.sleeper_arguments(30)),
-        limit: time.milliseconds(100).must()
+        limit: time.milliseconds(100)
     )
     polled @= start(sleepy).must()
 
@@ -1878,7 +1878,7 @@ test "wait_or_signal: a child stopped, sent on and waited past that stop until C
 test "wait_or_signal: a child past its time limit is ended at once, an ended child answered at once, and a released one refused"
     limited = with_time_limit(
         command(fixture.sleeper(), fixture.sleeper_arguments(30)),
-        limit: time.milliseconds(300).must()
+        limit: time.milliseconds(300)
     )
     child @= start(limited).must()
 
@@ -1899,7 +1899,7 @@ test "wait_or_stop: a stopped child past its time limit is ended at once, and it
     if !fixture.on_windows()
         limited = with_time_limit(
             with_own_group(command(fixture.sleeper(), fixture.sleeper_arguments(30))),
-            limit: time.milliseconds(300).must()
+            limit: time.milliseconds(300)
         )
         child @= start(limited).must()
         send_signal(child, signal: .stop).must()
@@ -2031,7 +2031,7 @@ test "with_error_to_output: both streams in one"
 
 # A child ended at once when it runs too long.
 test "with_time_limit: a sleep of five seconds cut at a tenth of one"
-    c = with_time_limit(command(fixture.sleeper(), fixture.sleeper_arguments(5)), limit: time.milliseconds(100).must())
+    c = with_time_limit(command(fixture.sleeper(), fixture.sleeper_arguments(5)), limit: time.milliseconds(100))
     assert run(c).must().status == .timed_out
 
 # What a child prints, as text, where it must succeed.

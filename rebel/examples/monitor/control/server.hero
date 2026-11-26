@@ -88,7 +88,7 @@ function next(@srv: Server, within: time.Duration) -> Incoming?
 
     while true
         s = ipc.accept(l, within: within)?
-        _ = ipc.set_deadline(s, deadline: time.milliseconds(DEADLINE_MS)?).is_err()
+        _ = ipc.set_deadline(s, deadline: time.milliseconds(DEADLINE_MS)).is_err()
 
         match peer_allowed(s)
             .err e =>

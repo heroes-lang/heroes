@@ -38,9 +38,9 @@ function exchange(s: io.Stream, request: protocol.Request, within: time.Duration
 test "ask: a request served by a server of this process, then nobody at the path"
     path = "build/monitor-test-control.sock"
     srv @= server.open(path).must()
-    s @= ipc.connect(path, within: time.seconds(1).must()).must()
+    s @= ipc.connect(path, within: time.seconds(1)).must()
     ipc.write_message(s, data: protocol.encode_request(protocol.Request(command: "status", args: []))).must()
-    incoming = server.next(@srv, within: time.seconds(1).must()).must()
+    incoming = server.next(@srv, within: time.seconds(1)).must()
     assert incoming.request.command == "status"
     server.answer(@srv, incoming: incoming, a: protocol.answer_lines(["fine"]))
     assert protocol.decode_answer(ipc.read_message(s, most: 1_024).must()).must().lines == ["fine"]
@@ -54,5 +54,5 @@ test "ask: a request served by a server of this process, then nobody at the path
     assert ask(
         path,
         request: protocol.Request(command: "status", args: []),
-        within: time.milliseconds(200).must()
+        within: time.milliseconds(200)
     ).is_err()

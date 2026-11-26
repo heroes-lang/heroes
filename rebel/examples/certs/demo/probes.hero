@@ -213,7 +213,7 @@ function wrong_answer_tried(@client: acme.Client, s: settings.Settings, name: st
     c = acme.challenge_of(a, kind: settings.HTTP_01)?
     webroot.put(webroot: s.http01.webroot, token: c.token, body: c.token + "." + bytes.format_base64_url_unpadded(bytes.from_text("another account's key")))?
     _ = acme.accept_challenge(@client, challenge: c)?
-    waited = acme.wait_authorization(@client, url: a.url, timeout: time.seconds(30)?)
+    waited = acme.wait_authorization(@client, url: a.url, timeout: time.seconds(30))
     webroot.take_back(webroot: s.http01.webroot, token: c.token)?
     _ = waited?
     return ok()

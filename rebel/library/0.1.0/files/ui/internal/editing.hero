@@ -215,7 +215,7 @@ test "undo: on the native side a text area's typed edits undone and redone throu
     ui.inject(@app, input: .type_text(widget: area, text: "one two three")).must()
 
     for _ in range(from: 0, to: 3)
-        _ = ui.wait(@app, within: time.milliseconds(100).must()).must()
+        _ = ui.wait(@app, within: time.milliseconds(100)).must()
 
     assert ui.can_undo(app, widget: area).must() && !ui.can_redo(app, widget: area).must()
     assert ui.undo(@app, widget: area).must()
@@ -223,7 +223,7 @@ test "undo: on the native side a text area's typed edits undone and redone throu
     assert ui.undo(@app, widget: area).must()
     after_two = ui.text_of(app, widget: area).must()
     still = ui.text_of(app, widget: other).must()
-    nothing = ui.wait(@app, within: time.milliseconds(50).must())
+    nothing = ui.wait(@app, within: time.milliseconds(50))
     assert ui.redo(@app, widget: area).must()
     redone = ui.text_of(app, widget: area).must()
     ui.set_text(@app, widget: area, text: "set").must()

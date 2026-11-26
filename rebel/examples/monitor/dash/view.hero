@@ -217,7 +217,7 @@ function fill_sensor(@v: View, c: settings.Config lent, s: store.Store lent, sta
     v.history_top @ to_i64(span * 10.0).default(1)
 
 test "memory_of: exact, against a limit, with none, and before a sample"
-    s @= store.new_store(time.hours(1).must())
+    s @= store.new_store(time.hours(1))
     store.add(@s, key: "service.db.memory", at: time.epoch(), value: 268_435_456.0)
     assert memory_of(s, name: "db", limit: 100_663_296, exact: false) == "over 96 MiB"
     assert memory_of(s, name: "db", limit: 536_870_912, exact: false) == "under 512 MiB"

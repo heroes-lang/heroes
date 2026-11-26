@@ -370,7 +370,7 @@ test "insert, by_slug and page: tags kept sorted, newest first, a tag's page"
     db @= database.open(":memory:").must()
     _ = database.migrate_up(@db).must()
     t0 = time.from_unix(whole_seconds: 1_763_715_600, extra_nanoseconds: 0).must()
-    t1 = time.add(t0, d: time.seconds(60).must()).must()
+    t1 = time.add(t0, d: time.seconds(60)).must()
     _ = sqlite.exec(
         @db,
         statement: "INSERT INTO users (name, email, password, role, created_at) VALUES ('a', 'a@b.c', 'p', 'author', ?1)",

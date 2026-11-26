@@ -245,7 +245,7 @@ test "check: a request the s3 client signs is taken; another secret, another bod
     changed @= signed
     changed.body @ [1, 2, 4]
     assert check(changed, key_id: "AKIDBACKUPDEMO", secret: "demo/secret", region: "us-east-1", now: now).is_err()
-    later = time.add(now, d: time.minutes(16).must()).must()
+    later = time.add(now, d: time.minutes(16)).must()
     assert check(signed, key_id: "AKIDBACKUPDEMO", secret: "demo/secret", region: "us-east-1", now: later).is_err()
 
 test "parse_claim: another algorithm and a credential cut short are refused"

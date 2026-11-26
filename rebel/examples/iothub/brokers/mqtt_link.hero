@@ -35,7 +35,7 @@ function connect(s: settings.MqttSettings) -> mqtt.Client?
     opts @= mqtt.parse_url(s.url)?
     opts.client_id @ s.client_id
     opts.reconnect.attempts @ 0
-    opts.wait @ time.seconds(5)?
+    opts.wait @ time.seconds(5)
     c @= mqtt.connect(opts)?
 
     if s.filters.len() == 0

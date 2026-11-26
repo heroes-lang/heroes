@@ -280,7 +280,7 @@ test "split_enhanced: a code, none, one of another class, a code with no text"
 
 test "read_reply: one line, several with an enhanced code, kept as the last"
     two = net.pair(deadline_ms: 5000).must()
-    s @= over_plain(two.first, deadline: time.seconds(5).must(), local_name: "x")
+    s @= over_plain(two.first, deadline: time.seconds(5), local_name: "x")
     server @= two.second.stream
     io.write_text(server, text: "250-mx.test\r\n250-SIZE 10\r\n250 HELP\r\n550 5.1.1 no such user\r\n").must()
     a = read_reply(@s).must()
@@ -292,7 +292,7 @@ test "read_reply: one line, several with an enhanced code, kept as the last"
 
 test "read_reply: two codes in one reply, a line that is no reply, the end in a line, a line too long"
     two = net.pair(deadline_ms: 5000).must()
-    s @= over_plain(two.first, deadline: time.seconds(5).must(), local_name: "x")
+    s @= over_plain(two.first, deadline: time.seconds(5), local_name: "x")
     server @= two.second.stream
     io.write_text(server, text: "250-a\r\n251 b\r\nhello\r\n").must()
 
@@ -321,14 +321,14 @@ test "read_reply: two codes in one reply, a line that is no reply, the end in a 
 
 test "set_deadline: a reply that never comes ends by its deadline, then a closed session refuses"
     two = net.pair(deadline_ms: net.FOREVER).must()
-    s @= over_plain(two.first, deadline: time.milliseconds(200).must(), local_name: "x")
+    s @= over_plain(two.first, deadline: time.milliseconds(200), local_name: "x")
     server @= two.second.stream
-    set_deadline(s, deadline: time.milliseconds(200).must()).must()
+    set_deadline(s, deadline: time.milliseconds(200)).must()
 
     match read_reply(@s)
         .ok _  => assert false
         .err e => assert e.code == "timeout"
 
     close(@s).must()
-    assert set_deadline(s, deadline: time.milliseconds(10).must()).is_err() && write_line(s, line: "NOOP").is_err() && read_reply(@s).is_err()
+    assert set_deadline(s, deadline: time.milliseconds(10)).is_err() && write_line(s, line: "NOOP").is_err() && read_reply(@s).is_err()
     io.close(@server).must()

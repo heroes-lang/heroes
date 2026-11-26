@@ -215,8 +215,8 @@ test "delay_ms: zero, a part of a millisecond rounded up, the largest, past it, 
     assert delay_ms(time.nanoseconds(0)).must() == 0
     assert delay_ms(time.nanoseconds(1)).must() == 1
     assert delay_ms(time.nanoseconds(1500000)).must() == 2
-    assert delay_ms(time.milliseconds(4294967295).must()).must() == 4294967295
-    assert delay_ms(time.milliseconds(4294967296).must()).is_err()
+    assert delay_ms(time.milliseconds(4294967295)).must() == 4294967295
+    assert delay_ms(time.milliseconds(4294967296)).is_err()
     assert delay_ms(time.nanoseconds(-1)).is_err()
 
 test "text_checked: a zero byte refused where it stands, every other byte taken"

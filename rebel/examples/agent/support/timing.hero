@@ -61,8 +61,8 @@ function is_virtual(c: Clock) -> bool
 test "wait: a virtual clock moves by the wait and sleeps nothing"
     c @= demo_clock()
     start = now(c).must()
-    wait(@c, d: time.seconds(90).must()).must()
-    assert time.between(from: start, to: now(c).must()).must() == time.seconds(90).must()
+    wait(@c, d: time.seconds(90)).must()
+    assert time.between(from: start, to: now(c).must()).must() == time.seconds(90)
     assert is_virtual(c) && !is_virtual(.system)
 
 test "wait: a wait of zero or less leaves a virtual clock where it stands"

@@ -57,9 +57,9 @@ function demo_settings(redis_url: str, otlp: str, dir: str) -> settings.Settings
     s.redis_url @ redis_url
     s.queues @ ["webhooks", "default", "maintenance"]
     s.workers @ 3
-    s.poll @ time.milliseconds(10).must()
-    s.first_wait @ time.seconds(10).must()
-    s.longest_wait @ time.minutes(2).must()
+    s.poll @ time.milliseconds(10)
+    s.first_wait @ time.seconds(10)
+    s.longest_wait @ time.minutes(2)
     s.seed @ 42
     s.otlp @ otlp
     s.log_dir @ path.join_all([dir, "logs"])
@@ -121,7 +121,7 @@ function run_script(arg: str) -> str?
     sup @= supervisor.start(s, schedules: script.schedules()?)?
     say(["== the store's clock starts at " + START, "", "== enqueued"])
 
-    for job in script.jobs_of(hooks: hooks, upload: path.join_all([dir, "upload.txt"]), report_at: time.add(start, d: time.minutes(20)?)?)
+    for job in script.jobs_of(hooks: hooks, upload: path.join_all([dir, "upload.txt"]), report_at: time.add(start, d: time.minutes(20))?)
         match supervisor.enqueue(@sup, job: job)
             .ok id => print(f"job {id} {job.kind} in {job.queue}")
             .err e => print(f"refused {job.kind} in {job.queue}: {e.code}, {e.msg}")
@@ -220,7 +220,7 @@ function settle(@c: redis.Client, queues: [str]) -> i64?
 
         if time.to_units(time.elapsed(began)?, unit: .millisecond) > SETTLE_MS
             return fail(code: "timeout", msg: f"the workers did not settle within {SETTLE_MS} ms")
-        time.sleep(time.milliseconds(2)?)
+        time.sleep(time.milliseconds(2))
 
 # Runs the demo in the folder `dir`, made and removed: the stand-ins on this
 # thread, the run on another, then what the stand-ins received.
@@ -241,7 +241,7 @@ function run(dir: str) -> ()?
         members: {"redis": .text(v: redis_url), "otlp": .text(v: collector.base_url(h.collector)), "hooks": .text(v: receiver.base_url(h.hooks)), "dir": .text(v: dir)}
     )
     t @= threads.start_text(drive, arg: json.format(arg)?)?
-    served = host.serve_until_shutdown(@h, most: time.minutes(5)?)
+    served = host.serve_until_shutdown(@h, most: time.minutes(5))
     problem = threads.wait_text(@t)
 
     if problem != ""

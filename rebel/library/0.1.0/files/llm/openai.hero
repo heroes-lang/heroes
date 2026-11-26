@@ -195,8 +195,8 @@ function default_client(api_key: str) -> Client
         project: "",
         headers: [],
         max_retries: 2,
-        max_wait: time.minutes(1).must(),
-        deadline: time.minutes(10).must(),
+        max_wait: time.minutes(1),
+        deadline: time.minutes(10),
         roots: "",
         limits: http.default_limits()
     )
@@ -359,7 +359,7 @@ record ApiError
 function failure_of(msg: str) -> ApiError?
     f = failures.read_back(msg)?
     return ok(
-        ApiError(status: f.status, kind: f.kind, code: f.code, message: f.message, request_id: f.request_id, retryable: f.retryable, wait: time.milliseconds(f.wait_ms).default(time.max_duration()))
+        ApiError(status: f.status, kind: f.kind, code: f.code, message: f.message, request_id: f.request_id, retryable: f.retryable, wait: time.milliseconds_checked(f.wait_ms).default(time.max_duration()))
     )
 
 ## Sending
@@ -1593,7 +1593,7 @@ test "chat: a 401 not sent again, its type, code and request id read back; vLLM'
         .ok _ => assert false
         .err e =>
             f = failure_of(e.msg).must()
-            assert e.code == LIMIT && f.retryable && f.wait == time.milliseconds(1500).must() && f.message == "Rate limit reached"
+            assert e.code == LIMIT && f.retryable && f.wait == time.milliseconds(1500) && f.message == "Rate limit reached"
 
     assert canned.requests_of(@t).len() == 4
 
@@ -1760,7 +1760,7 @@ test "arguments_of: an object"
 # The advice of a failure, read back from its message.
 test "failure_of: a rate limit's advice"
     f = failure_of("[429 requests rate_limit_exceeded req_1 1500] Rate limit reached").must()
-    assert f.status == 429 && f.code == "rate_limit_exceeded" && f.retryable && f.wait == time.milliseconds(1500).must()
+    assert f.status == 429 && f.code == "rate_limit_exceeded" && f.retryable && f.wait == time.milliseconds(1500)
 
 # An endpoint this package does not wrap.
 test "send_raw: GET /files"

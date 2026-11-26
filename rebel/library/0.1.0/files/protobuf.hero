@@ -2049,7 +2049,7 @@ function duration_of(m: Message) -> time.Duration?
             msg: f"a duration's seconds, {seconds}, and nanoseconds, {nanos}, differ in sign or pass a second"
         )
 
-    match time.seconds(seconds)
+    match time.seconds_checked(seconds)
         .err _ => return fail(
             code: DOES_NOT_FIT,
             msg: f"a duration of {seconds} seconds is past what a time.Duration holds"

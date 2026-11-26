@@ -152,7 +152,7 @@ function kind_and_words(body: str) -> [str]
 # each attempt up to 8 s, spread from 75 % to 100 % by `fraction`, a number
 # from 0 to 1.
 function wait_before(retry_after: str, received: time.Instant, attempt: i64, fraction: f64) -> i64
-    longest = time.milliseconds(LONGEST_MS).must()
+    longest = time.milliseconds(LONGEST_MS)
 
     if retry_after != ""
         match retries.parse_retry_after(retry_after, received: received, longest: longest)

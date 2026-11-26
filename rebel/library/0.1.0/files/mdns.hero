@@ -617,10 +617,10 @@ test "service, encode_attributes and decode_attributes: the defaults, attributes
     assert encode_attributes([Attribute(key: "k", value: ok([])), Attribute(key: "K", value: ok([]))]).is_err()
 
 test "browse, browse_types, resolve, lookup_addresses and lookup_reverse: what is refused before a socket is opened"
-    wait = time.milliseconds(1).must()
+    wait = time.milliseconds(1)
     absent = ["no-such-interface"]
     assert browse("ipp._tcp", wait: wait, interfaces: []).is_err()
-    assert browse("_ipp._tcp", wait: time.milliseconds(-1).must(), interfaces: []).is_err()
+    assert browse("_ipp._tcp", wait: time.milliseconds(-1), interfaces: []).is_err()
     assert failure.code_of(browse("_ipp._tcp", wait: wait, interfaces: absent)) == NOT_FOUND
     assert failure.code_of(browse_types(wait, interfaces: absent)) == NOT_FOUND
     assert failure.code_of(resolve(instance: "", type: "_ipp._tcp", wait: wait, interfaces: [])) == INVALID
@@ -639,11 +639,11 @@ test "close_watch and close_responder: a second close is refused, and nothing is
     w @= watch("_ipp._tcp", interfaces: [lo]).must()
     close_watch(@w).must()
     assert failure.code_of(close_watch(@w)) == CLOSED
-    assert failure.code_of(next_change(@w, wait: time.milliseconds(10).must())) == CLOSED
+    assert failure.code_of(next_change(@w, wait: time.milliseconds(10))) == CLOSED
     r @= responder([lo]).must()
     close_responder(@r).must()
     assert failure.code_of(close_responder(@r)) == CLOSED
-    assert failure.code_of(serve(@r, wait: time.milliseconds(10).must())) == CLOSED
+    assert failure.code_of(serve(@r, wait: time.milliseconds(10))) == CLOSED
     assert failure.code_of(publish(@r, s: service(instance: "Desk", type: "_http._tcp", port: 80))) == CLOSED
 
 ## Examples
@@ -691,7 +691,7 @@ test "browse: the instances of a type heard in a second"
         print("skipped: no loopback interface carries multicast on this system")
         return
     host @= fixture.announcing(lo).must()
-    found = browse(host.type, wait: time.seconds(1).must(), interfaces: [lo]).must()
+    found = browse(host.type, wait: time.seconds(1), interfaces: [lo]).must()
     assert found.len() == 1
     assert found[0].instance == host.instance && found[0].port == fixture.PORT
     assert attribute_of(found[0].attributes, key: "k").must() == bytes.from_text("v")
@@ -706,7 +706,7 @@ test "browse_types: the type a host announces"
         print("skipped: no loopback interface carries multicast on this system")
         return
     host @= fixture.announcing(lo).must()
-    types = browse_types(time.seconds(1).must(), interfaces: [lo]).must()
+    types = browse_types(time.seconds(1), interfaces: [lo]).must()
     listed: bool @= false
 
     for t in types
@@ -725,7 +725,7 @@ test "resolve: an instance's host, port and address"
         print("skipped: no loopback interface carries multicast on this system")
         return
     host @= fixture.announcing(lo).must()
-    s = resolve(instance: host.instance, type: host.type, wait: time.seconds(2).must(), interfaces: [lo]).must()
+    s = resolve(instance: host.instance, type: host.type, wait: time.seconds(2), interfaces: [lo]).must()
     assert s.host == host.host && s.port == fixture.PORT
     assert s.addresses == [net.loopback_v4()]
     assert fixture.finish(@host) == ""
@@ -738,7 +738,7 @@ test "lookup_addresses: a host's address"
         print("skipped: no loopback interface carries multicast on this system")
         return
     host @= fixture.announcing(lo).must()
-    found = lookup_addresses(host.host, wait: time.seconds(2).must(), interfaces: [lo]).must()
+    found = lookup_addresses(host.host, wait: time.seconds(2), interfaces: [lo]).must()
     assert found == [net.loopback_v4()]
     assert fixture.finish(@host) == ""
 
@@ -751,7 +751,7 @@ test "lookup_reverse: the names of 127.0.0.1"
         print("skipped: no loopback interface carries multicast on this system")
         return
     host @= fixture.announcing(lo).must()
-    names_heard = lookup_reverse(net.loopback_v4(), wait: time.seconds(1).must(), interfaces: [lo]).must()
+    names_heard = lookup_reverse(net.loopback_v4(), wait: time.seconds(1), interfaces: [lo]).must()
     listed: bool @= false
 
     for n in names_heard
@@ -769,7 +769,7 @@ test "watch: a browser told nothing of a type no one offers"
         print("skipped: no loopback interface carries multicast on this system")
         return
     w @= watch("_hero-nobody._tcp", interfaces: [lo]).must()
-    assert failure.code_of(next_change(@w, wait: time.milliseconds(300).must())) == TIMEOUT
+    assert failure.code_of(next_change(@w, wait: time.milliseconds(300))) == TIMEOUT
     close_watch(@w).must()
 
 # The changes of a type as they come: an instance appears while its host
@@ -783,12 +783,12 @@ test "next_change: an instance that appears, then goes"
     host @= fixture.announcing(lo).must()
     w @= watch(host.type, interfaces: [lo]).must()
 
-    match next_change(@w, wait: time.seconds(2).must()).must()
+    match next_change(@w, wait: time.seconds(2)).must()
         .appeared c    => assert c.service.instance == host.instance && c.service.port == fixture.PORT
         .changed _     => assert false
         .disappeared _ => assert false
 
-    match next_change(@w, wait: time.seconds(5).must()).must()
+    match next_change(@w, wait: time.seconds(5)).must()
         .disappeared c => assert c.service.instance == host.instance
         .appeared _    => assert false
         .changed _     => assert false
@@ -844,7 +844,7 @@ test "serve: a browser answered"
     r @= responder([lo]).must()
     _ = publish(@r, s: s).must()
     b @= fixture.browsing(interface: lo, type: s.type).must()
-    assert serve(@r, wait: time.seconds(2).must()).must().len() == 0
+    assert serve(@r, wait: time.seconds(2)).must().len() == 0
     assert fixture.heard(@b) == "Hero Example:" + to_str(s.port)
     close_responder(@r).must()
 

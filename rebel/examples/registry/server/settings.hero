@@ -91,7 +91,7 @@ function parse(text: str) -> Settings?
         host: text_at(doc, table: "server", key: "host", fallback: "127.0.0.1")?,
         port: integer_at(doc, table: "server", key: "port", fallback: 8470)?,
         public_url: text_at(doc, table: "server", key: "public_url", fallback: "")?,
-        connection: time.seconds(integer_at(doc, table: "server", key: "connection_seconds", fallback: 30)?)?,
+        connection: time.seconds_checked(integer_at(doc, table: "server", key: "connection_seconds", fallback: 30)?)?,
         data_dir: text_at(doc, table: "storage", key: "data_dir", fallback: "")?,
         log_file: text_at(doc, table: "storage", key: "log_file", fallback: "")?,
         upload_bytes: integer_at(doc, table: "limits", key: "upload_bytes", fallback: 10_485_760)?,
@@ -229,7 +229,7 @@ function blobs_of(s: Settings) -> str
 test "parse: the data folder alone, every other key at its default"
     s = parse("[storage]\ndata_dir = \"/srv/registry\"\n").must()
     assert s.host == "127.0.0.1" && s.port == 8470 && s.public_url == "" && s.publish_burst == 10
-    assert s.connection == time.seconds(30).must() && database_of(s) == "/srv/registry/registry.db"
+    assert s.connection == time.seconds(30) && database_of(s) == "/srv/registry/registry.db"
 
 test "parse: an unknown key, an unknown table, a value of another kind and no data folder refused"
     for text in ["[storage]\ndata_dir = \"d\"\ncolour = 1\n", "[cache]\nsize = 1\n[storage]\ndata_dir = \"d\"\n", "[server]\nport = \"80\"\n[storage]\ndata_dir = \"d\"\n", "[server]\nport = 80\n"]

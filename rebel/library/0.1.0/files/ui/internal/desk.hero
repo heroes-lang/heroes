@@ -824,7 +824,7 @@ test "native: the screens read, a window placed, centred, maximized, minimized, 
     dialog = ui.window(@app, title: "Ask", width: 120, height: 60).must()
     ui.set_modal(@app, widget: dialog, on: true).must()
     assert fixture.code_of(ui.set_modal(@app, widget: w, on: true)) == ui.FAILED
-    _ = ui.wait(@app, within: time.milliseconds(50).must()).is_err()
+    _ = ui.wait(@app, within: time.milliseconds(50)).is_err()
     ui.set_modal(@app, widget: dialog, on: false).must()
     ui.destroy(@app, widget: dialog).must()
 
@@ -855,7 +855,7 @@ function names_of_waiting(@app: ui.App) -> [str]
     out: [str] @= []
 
     while true
-        match ui.wait(@app, within: time.milliseconds(300).must())
+        match ui.wait(@app, within: time.milliseconds(300))
             .ok event =>
                 name = match event
                     .moved m          => f"moved {m.window.id} {m.screen}:{m.x},{m.y}"
@@ -964,7 +964,7 @@ function events_of(@app: ui.App) -> [ui.Event]?
     out: [ui.Event] @= []
 
     for _ in range(from: 0, to: 5)
-        match ui.wait(@app, within: time.milliseconds(100).must())
+        match ui.wait(@app, within: time.milliseconds(100))
             .ok event =>
                 match event
                     .appearance_changed _ => out @ out.push(event)

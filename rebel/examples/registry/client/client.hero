@@ -66,10 +66,10 @@ function new_client(base: str, token: str) -> Client?
         http.Header(name: "User-Agent", value: USER_AGENT)
         http.Header(name: "Accept", value: "application/json")
     ]
-    s.client.deadline @ time.seconds(60)?
-    waits = retries.with_jitter(retries.backoff(first: time.milliseconds(200)?, multiplier: 2.0, longest: time.seconds(5)?)?, jitter: .full)?
+    s.client.deadline @ time.seconds(60)
+    waits = retries.with_jitter(retries.backoff(first: time.milliseconds(200), multiplier: 2.0, longest: time.seconds(5))?, jitter: .full)?
     s.client.retries @ http.Retries(count: 3, statuses: [502, 503, 504], backoff: waits)
-    return ok(Client(session: s, token: token, patience: time.seconds(30)?))
+    return ok(Client(session: s, token: token, patience: time.seconds(30)))
 
 # Whether `text` ends in `/`.
 #
@@ -108,7 +108,7 @@ function send(@c: Client, r: http.Request) -> http.Response?
 # Fails `invalid` where the field is missing or does not read.
 function wait_asked(response: http.Response) -> time.Duration?
     value = http.value_of(response.headers, name: "Retry-After")?
-    return retries.parse_retry_after(value, received: time.now()?, longest: time.days(1)?)
+    return retries.parse_retry_after(value, received: time.now()?, longest: time.days(1))
 
 # `response` where its status is one of `wanted`; else a failure whose code
 # its status chooses and whose message is the server's.

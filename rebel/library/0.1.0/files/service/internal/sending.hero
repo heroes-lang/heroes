@@ -19,7 +19,7 @@ use time
 # - `notices`: at least one.
 function send(notices: [service.Notice]) -> bool?
     reading = hero_activation.monotonic_usec()
-    clock = time.microseconds(if_negative_zero(reading))?
+    clock = time.microseconds_checked(if_negative_zero(reading))?
     text = notice.format(notices, monotonic: clock)?
 
     if hero_activation.has(hero_activation.HERO_ACTIVATION_HAS_NOTIFY) == 0
@@ -79,7 +79,7 @@ function watchdog_timeout() -> time.Duration?
                     asked: "reading the watchdog",
                     why: "WATCHDOG_USEC is 0: a watchdog allows some time"
                 )
-            return time.microseconds(usec)
+            return time.microseconds_checked(usec)
 
 test "if_negative_zero: a reading that failed is zero and any other stands"
     assert if_negative_zero(-1) == 0

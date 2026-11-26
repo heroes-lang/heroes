@@ -319,7 +319,7 @@ function other_program_appends(path: str, line: str) -> ()?
 #
 # Fails `timeout` where no change is told in that time.
 function await_change(@e: state.Editor) -> ()?
-    step = time.milliseconds(250)?
+    step = time.milliseconds(250)
 
     for _ in range(from: 0, to: 40)
         watching.poll(@e, limit: step)?

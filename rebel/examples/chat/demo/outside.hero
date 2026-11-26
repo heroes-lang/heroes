@@ -70,7 +70,7 @@ function sensor_says(@c: mqtt.Client, topic: str, author: str, text: str) -> ()?
 #
 # Fails `timeout` where nothing comes in `WAIT_SECONDS`.
 function sensor_hears(@c: mqtt.Client) -> str?
-    m = mqtt.next_message(@c, wait: time.seconds(WAIT_SECONDS)?)?
+    m = mqtt.next_message(@c, wait: time.seconds(WAIT_SECONDS))?
     return heard_of(m.payload)
 
 # A bot connected to the NATS server at `port` as `name`, echo off, its
@@ -100,7 +100,7 @@ function bot(port: i64, name: str, subject: str) -> nats.Client?
 # - `subject`: the subject.
 function subscribe_flushed(@c: nats.Client, subject: str) -> ()?
     _ = nats.subscribe(@c, subject: subject)?
-    return nats.flush(@c, wait: time.seconds(WAIT_SECONDS)?)
+    return nats.flush(@c, wait: time.seconds(WAIT_SECONDS))
 
 # Publishes `text` from the bot on `subject`, and waits for the server to
 # have read it.
@@ -111,7 +111,7 @@ function subscribe_flushed(@c: nats.Client, subject: str) -> ()?
 # - `text`: what it says.
 function bot_says(@c: nats.Client, subject: str, author: str, text: str) -> ()?
     nats.publish(@c, subject: subject, data: payload(author: author, text: text))?
-    return nats.flush(@c, wait: time.seconds(WAIT_SECONDS)?)
+    return nats.flush(@c, wait: time.seconds(WAIT_SECONDS))
 
 # What the bot hears next, as `author: text`.
 #
@@ -119,7 +119,7 @@ function bot_says(@c: nats.Client, subject: str, author: str, text: str) -> ()?
 #
 # Fails `timeout` where nothing comes in `WAIT_SECONDS`.
 function bot_hears(@c: nats.Client) -> str?
-    m = nats.next_message(@c, wait: time.seconds(WAIT_SECONDS)?)?
+    m = nats.next_message(@c, wait: time.seconds(WAIT_SECONDS))?
     return heard_of(m.data)
 
 test "heard_of: the bridge's payload, and bytes that are none"

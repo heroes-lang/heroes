@@ -102,7 +102,7 @@ function zone_at(content: [u8], at: i64, hours_alone: bool) -> i64?
 # `Instant`.
 function moved(dt: time.DateTime, nanoseconds: i64, offset: i64) -> time.DateTime?
     t = time.from_date_time(dt)?
-    shift = time.minutes(-offset)?
+    shift = time.minutes_checked(-offset)?
     later = time.add(t: time.add(t: t, d: time.nanoseconds(nanoseconds))?, d: shift)?
     return ok(time.to_date_time(later))
 

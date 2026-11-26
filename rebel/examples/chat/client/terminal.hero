@@ -104,7 +104,7 @@ function start_screen(set: poll.Set, stream: io.Stream) -> tui.Terminal?
 # - `screen_held`: the terminal in full-screen mode.
 # - `set`: the poll set holding the connection's stream.
 function loop(@a: app.App, @screen_held: tui.Terminal, set: poll.Set) -> ()?
-    tick = time.milliseconds(TICK_MS)?
+    tick = time.milliseconds(TICK_MS)
 
     while !a.done
         now = time.now()?
@@ -121,7 +121,7 @@ function loop(@a: app.App, @screen_held: tui.Terminal, set: poll.Set) -> ()?
                 if e.code != tui.TIMEOUT
                     return fail(code: e.code, msg: e.msg)
 
-        if session.held_of(a.s) > 0 || poll.wait(set, limit: time.seconds(0)?)?.len() > 0
+        if session.held_of(a.s) > 0 || poll.wait(set, limit: time.seconds(0))?.len() > 0
             session.receive_ready(@a.s, now: now)?
 
     return ok()

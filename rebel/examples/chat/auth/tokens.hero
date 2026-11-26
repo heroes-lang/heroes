@@ -89,7 +89,7 @@ function verify(signer: Issuer, token: str, now: time.Instant) -> str?
         subject: "",
         token_type: "",
         required: ["exp", "sub"],
-        leeway: time.seconds(5)?,
+        leeway: time.seconds(5),
         now: now
     )
 
@@ -102,18 +102,18 @@ function verify(signer: Issuer, token: str, now: time.Instant) -> str?
         .err e   => fail(code: INVALID, msg: f"the token names no user: {e.msg}")
 
 test "verify: a token read back, by another secret, and after it expired"
-    signer = issuer(bytes.from_text(repeat("k", 32)), lifetime: time.hours(1).must()).must()
-    other = issuer(bytes.from_text(repeat("j", 32)), lifetime: time.hours(1).must()).must()
+    signer = issuer(bytes.from_text(repeat("k", 32)), lifetime: time.hours(1)).must()
+    other = issuer(bytes.from_text(repeat("j", 32)), lifetime: time.hours(1)).must()
     now = time.date(year: 2026, month: 11, day: 21).must()
     token = issue(signer, user: "alice", now: now, id: "t1").must()
     assert verify(signer, token: token, now: now).must() == "alice"
     assert verify(other, token: token, now: now).is_err()
-    assert verify(signer, token: token, now: time.add(now, d: time.hours(2).must()).must()).is_err()
+    assert verify(signer, token: token, now: time.add(now, d: time.hours(2)).must()).is_err()
 
 test "issuer: a secret too short, and a lifetime of nothing"
-    assert issuer([1, 2, 3], lifetime: time.hours(1).must()).is_err()
-    assert issuer(bytes.from_text(repeat("k", 32)), lifetime: time.seconds(0).must()).is_err()
+    assert issuer([1, 2, 3], lifetime: time.hours(1)).is_err()
+    assert issuer(bytes.from_text(repeat("k", 32)), lifetime: time.seconds(0)).is_err()
 
 test "verify: a token that is no token"
-    signer = issuer(bytes.from_text(repeat("k", 40)), lifetime: time.hours(1).must()).must()
+    signer = issuer(bytes.from_text(repeat("k", 40)), lifetime: time.hours(1)).must()
     assert verify(signer, token: "a.b.c", now: time.date(year: 2026, month: 1, day: 1).must()).is_err()

@@ -437,7 +437,7 @@ function options(host: str) -> Options
         host: host,
         port: DEFAULT_PORT,
         security: .start_tls(roots: ""),
-        deadline: time.minutes(1).must(),
+        deadline: time.minutes(1),
         max_message: DEFAULT_MAX_MESSAGE
     )
 
@@ -2254,7 +2254,7 @@ test "search: a size limit, a time limit and types only the query asks, answered
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     q @= query(base: "dc=example,dc=org", f: .present(attribute: "cn"))
     q.size_limit @ 1
-    q.time_limit @ time.seconds(5).must()
+    q.time_limit @ time.seconds(5)
     q.types_only @ true
     q.attributes @ ["1.1"]
     found = search(@c, q).must()
@@ -2340,7 +2340,7 @@ test "a notice of disconnection, bytes that are no LDAP, a message past its boun
         opts @= options("127.0.0.1")
         opts.port @ port
         opts.security @ .plain
-        opts.deadline @ time.milliseconds(300).must()
+        opts.deadline @ time.milliseconds(300)
         opts.max_message @ 1000
         c @= connect(opts).must()
         bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
@@ -2909,7 +2909,7 @@ test "set_deadline: five seconds"
     opts.port @ port
     opts.security @ .plain
     c @= connect(opts).must()
-    set_deadline(@c, deadline: time.seconds(5).must()).must()
+    set_deadline(@c, deadline: time.seconds(5)).must()
     bind(@c, dn: "cn=admin,dc=example,dc=org", password: "secret").must()
     close(@c).must()
     assert threads.wait_text(@server) == "ok"

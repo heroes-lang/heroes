@@ -53,7 +53,7 @@ function serve_until_shutdown(@h: Host, most: time.Duration) -> ()?
         if time.is_longer(a: time.elapsed(began)?, b: most)
             return fail(code: "timeout", msg: f"the stand-ins were not shut down within {time.format_duration(most)}")
 
-        for e in poll.wait(h.set, limit: time.seconds(1)?)?
+        for e in poll.wait(h.set, limit: time.seconds(1))?
             if redis_standin.owns(h.redis, key: e.key)
                 redis_standin.serve(@h.redis, set: h.set, key: e.key)?
             else if collector.owns(h.collector, key: e.key)
@@ -80,7 +80,7 @@ function serve_redis_alone(port: i64, password: str) -> ()?
     served: ()? @= ok()
 
     while !alone.stopped && !served.is_err()
-        match poll.wait(s, limit: time.seconds(1)?)
+        match poll.wait(s, limit: time.seconds(1))
             .err e => served @ fail(code: e.code, msg: e.msg)
             .ok found =>
                 for e in found

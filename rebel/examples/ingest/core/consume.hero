@@ -100,7 +100,7 @@ function run(@p: pipeline.Pipeline, catch_up: bool, @scrapes: [exporter.Exporter
 # - `scrapes`: where to answer scrapes.
 function looped(@p: pipeline.Pipeline, @consumer: kafka.Consumer, @producer: kafka.Client, catch_up: bool, @scrapes: [exporter.Exporter]) -> ()?
     ends = ends_of(@producer, assigned: kafka.assignment_of(consumer))?
-    wait = time.milliseconds(POLL_MS)?
+    wait = time.milliseconds(POLL_MS)
 
     while true
         if catch_up && caught_up(consumer, ends: ends)

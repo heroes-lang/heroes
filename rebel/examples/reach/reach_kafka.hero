@@ -22,7 +22,7 @@ function main()
                         topic: "reach-kafka",
                         partition: sent[0].partition,
                         offset: sent[0].offset,
-                        wait: time.seconds(1).must()
+                        wait: time.seconds(1)
                     )
                     print(got.is_err())
 

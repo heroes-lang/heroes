@@ -58,7 +58,7 @@ function run(@e: state.Editor) -> ()?
 #
 # Fails where the terminal fails.
 function loop(@e: state.Editor, @t: tui.Terminal) -> ()?
-    tick = time.milliseconds(TICK_MS)?
+    tick = time.milliseconds(TICK_MS)
     now = time.nanoseconds(0)
 
     while !e.done

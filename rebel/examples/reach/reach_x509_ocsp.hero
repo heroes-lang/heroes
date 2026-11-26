@@ -97,7 +97,7 @@ function status(path: str, cert_path: str, issuer_path: str, nonce: str) -> str?
 function respond(request_path: str, signer_path: str, key_path: str, path: str, naming: str, chain_path: str) -> ()?
     asked = ocsp.decode_request(fs.read_bytes(request_path)?)?
     now = time.to_date_time(time.now()?)
-    next = time.to_date_time(time.add(t: time.now()?, d: time.days(1)?)?)
+    next = time.to_date_time(time.add(t: time.now()?, d: time.days(1))?)
     answers: [ocsp.Answer] @= []
 
     for id in asked.ids

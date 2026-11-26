@@ -408,8 +408,8 @@ function default_options(at: time.Instant, nonce: [u8]) -> Options
         at: at,
         nonce: nonce,
         nonce_required: false,
-        skew: time.minutes(5).must(),
-        max_age: time.hours(1).must()
+        skew: time.minutes(5),
+        max_age: time.hours(1)
     )
 
 # The certificate that signed `basic`, for the certificates `issuer` issued:
@@ -882,8 +882,8 @@ test "status_of: the nonce sent, another one refused, none taken on freshness un
         at: at,
         nonce: sent,
         nonce_required: true,
-        skew: time.minutes(5).must(),
-        max_age: time.hours(1).must()
+        skew: time.minutes(5),
+        max_age: time.hours(1)
     )
     assert ids.code_of(status_of(response: none, certificate: leaf, issuer: ca, options: required)) == INVALID
 
@@ -908,8 +908,8 @@ test "status_of: freshness at its edges, the skew of five minutes either way, an
         at: samples.at(month: 11, day: 24, hour: 2, minute: 0, second: 0),
         nonce: [],
         nonce_required: false,
-        skew: time.negate(time.minutes(5).must()).must(),
-        max_age: time.hours(1).must()
+        skew: time.negate(time.minutes(5)).must(),
+        max_age: time.hours(1)
     )
     assert ids.code_of(status_of(response: two, certificate: leaf, issuer: ca, options: negative)) == INVALID
 
@@ -1066,7 +1066,7 @@ test "decode_response: the CA's answer"
 # The options of a check at a moment, for the nonce sent.
 test "default_options: five minutes of skew"
     options = default_options(at: samples.at(month: 11, day: 24, hour: 2, minute: 0, second: 0), nonce: [])
-    assert options.skew == time.minutes(5).must() && !options.nonce_required
+    assert options.skew == time.minutes(5) && !options.nonce_required
 
 # The certificate that signed a response: here a delegated responder.
 test "signer_of: the delegated responder"

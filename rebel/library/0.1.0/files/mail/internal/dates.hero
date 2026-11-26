@@ -86,7 +86,7 @@ function parse(s: str) -> When?
             msg: f"the date {lex.shown(s)} names the time {hour}:{minute}:{second}, outside 00:00:00 to 23:59:59"
         )
     local = time.from_date_time(time.DateTime(year: year, month: month, day: day, hour: hour, minute: minute, second: second, nanosecond: 0))?
-    shift = time.minutes(-zone.offset_minutes)?
+    shift = time.minutes_checked(-zone.offset_minutes)?
     instant = time.add(t: local, d: shift)?
     return ok(When(instant: instant, offset_minutes: zone.offset_minutes, offset_known: zone.offset_known))
 
@@ -268,5 +268,5 @@ test "format: as Go and Python write it, a positive offset, an unknown one, a da
 
 test "at: UTC and a fixed zone"
     assert at(t: time.epoch(), zone: time.utc_zone()) == When(instant: time.epoch(), offset_minutes: 0, offset_known: true)
-    rome = time.fixed_zone(name: "CET", offset: time.hours(1).must()).must()
+    rome = time.fixed_zone(name: "CET", offset: time.hours(1)).must()
     assert format(at(t: time.epoch(), zone: rome)) == "Thu, 01 Jan 1970 01:00:00 +0100"

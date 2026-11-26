@@ -31,12 +31,11 @@ function serve(asks: (mailbox owner.Ask), conn: net.Conn) -> i64
     remote = net.format_address(conn.remote)
     answered @= 0
 
+    idle = time.seconds(IDLE_SECONDS)
+
     while true
-        match time.seconds(IDLE_SECONDS)
-            .err _ => break
-            .ok idle =>
-                if tls.set_deadline(conn.stream, deadline: idle).is_err()
-                    break
+        if tls.set_deadline(conn.stream, deadline: idle).is_err()
+            break
 
         match http.next_request(@reader, limits: http.default_limits())
             .err _ => break

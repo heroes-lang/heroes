@@ -135,7 +135,7 @@ test "write: lines in the file, the last few kept, every one a record to export"
     for i in range(from: 0, to: 3)
         write(
             @j,
-            at: time.add(t0, d: time.seconds(i).must()).must(),
+            at: time.add(t0, d: time.seconds(i)).must(),
             level: .info,
             source: "test",
             text: f"line {i}",

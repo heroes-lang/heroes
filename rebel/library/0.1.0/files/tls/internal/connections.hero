@@ -510,7 +510,7 @@ test "connect: a port nothing listens on fails closed"
         gone = connect(
             host: "127.0.0.1",
             port: port,
-            deadline: time.seconds(15).must(),
+            deadline: time.seconds(15),
             roots: "",
             protocols: [],
             checks: hero_tls.HERO_TLS_CHECK_ALL

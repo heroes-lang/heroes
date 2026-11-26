@@ -287,7 +287,7 @@ function round_trip(path: str, data: [u8], room_bytes: i64) -> Got
     waited @= 0
 
     while !stands(path) && waited < 500
-        time.sleep(time.milliseconds(10).must())
+        time.sleep(time.milliseconds(10))
         waited @ waited + 1
 
     sending @= data

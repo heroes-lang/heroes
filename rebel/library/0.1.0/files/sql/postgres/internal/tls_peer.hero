@@ -128,13 +128,13 @@ function serve(arg: str) -> str
             listener @= l
             tell(control: control, text: to_str(listener.port))
             did @= "no client went through TLS"
-            bounded = tls.set_accept_deadline(listener, deadline: time.seconds(15).must())
+            bounded = tls.set_accept_deadline(listener, deadline: time.seconds(15))
 
             match bounded
                 .ok _  => _ = 0
                 .err e => did @ e.code + ": " + e.msg
 
-            taken = tls.accept(listener, deadline: time.seconds(10).must())
+            taken = tls.accept(listener, deadline: time.seconds(10))
 
             match taken
                 .err _ => _ = 0

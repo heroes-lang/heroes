@@ -298,7 +298,7 @@ function deadline(stream: io.Stream, ms: i64) -> ()?
     span = if ms == 0
         time.max_duration()
     else
-        time.milliseconds(ms)?
+        time.milliseconds_checked(ms)?
     return deadline_in(stream, span: span)
 
 # The whole milliseconds of `d` as a `Bounds` counts them:

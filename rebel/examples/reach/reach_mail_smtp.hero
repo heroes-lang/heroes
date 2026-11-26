@@ -14,7 +14,7 @@ function main()
         security: o.security,
         roots: o.roots,
         local_name: o.local_name,
-        deadline: time.seconds(2).must()
+        deadline: time.seconds(2)
     )
 
     match smtp.connect(quick)

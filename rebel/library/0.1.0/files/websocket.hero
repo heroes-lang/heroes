@@ -306,7 +306,7 @@ function default_settings() -> Settings
         frame_bytes: 1_048_576,
         message_bytes: 1_048_576,
         fragment_bytes: 0,
-        close_wait: time.seconds(10).must()
+        close_wait: time.seconds(10)
     )
 
 # Whether and how messages are compressed, by permessage-deflate (RFC 7692):
@@ -403,7 +403,7 @@ function default_client() -> Client
         origin: "",
         headers: [],
         tls: tls.Client(roots: "", protocols: []),
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         redirects: 10,
         head: http.default_limits(),
         proxy: http.no_proxy()
@@ -1273,7 +1273,7 @@ test "set_deadline: a read ended by its deadline goes on after it, and a closed 
     two @= net.pair(deadline_ms: net.FOREVER).must()
     client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
     server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
-    set_deadline(server, deadline: time.milliseconds(20).must()).must()
+    set_deadline(server, deadline: time.milliseconds(20)).must()
 
     match read_message(@server)
         .ok _  => assert false
@@ -1285,7 +1285,7 @@ test "set_deadline: a read ended by its deadline goes on after it, and a closed 
     assert data_of(read_message(@server).must()) == bytes.from_text("late")
     drop(@server).must()
 
-    match set_deadline(server, deadline: time.milliseconds(10).must())
+    match set_deadline(server, deadline: time.milliseconds(10))
         .ok _  => assert false
         .err e => assert e.code == CLOSED
 
@@ -1314,7 +1314,7 @@ test "kind_of: a text and a message of bytes"
 # The usual settings, and a server that takes larger messages.
 test "default_settings: 1 MiB at most, and a larger message allowed"
     s @= default_settings()
-    assert s.message_bytes == 1_048_576 && s.frame_bytes == 1_048_576 && s.close_wait == time.seconds(10).must()
+    assert s.message_bytes == 1_048_576 && s.frame_bytes == 1_048_576 && s.close_wait == time.seconds(10)
     s.message_bytes @ 16_777_216
     assert s.message_bytes > s.frame_bytes
 
@@ -1329,7 +1329,7 @@ test "default_compression: off, and turned on with a narrower window"
 # A client that offers a subprotocol and an origin.
 test "default_client: ten seconds, ten redirects, and a subprotocol offered"
     c @= default_client()
-    assert c.deadline == time.seconds(10).must() && c.redirects == 10 && !c.compression.enabled
+    assert c.deadline == time.seconds(10) && c.redirects == 10 && !c.compression.enabled
     c.protocols @ ["chat"]
     c.origin @ "https://example.com"
     assert c.protocols.len() == 1
@@ -1516,7 +1516,7 @@ test "held_of: a message held behind the one read_message answers, taken by read
     assert data_of(read_message(@client).must()) == bytes.from_text("first") && held_of(client) == 1
     set @= poll.make(2).must()
     _ = poll.add_stream(set, s: client.stream, interest: .read).must()
-    assert poll.wait(set, limit: time.milliseconds(200).must()).must().len() == 0
+    assert poll.wait(set, limit: time.milliseconds(200)).must().len() == 0
     got = read_ready(@client).must()
     assert got.len() == 1 && data_of(got[0]) == bytes.from_text("second") && held_of(client) == 0
     poll.close(@set).must()
@@ -1758,7 +1758,7 @@ test "drop: the stream closed with no handshake"
 test "set_deadline: a read that times out"
     two @= net.pair(deadline_ms: net.FOREVER).must()
     client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
-    set_deadline(client, deadline: time.milliseconds(50).must()).must()
+    set_deadline(client, deadline: time.milliseconds(50)).must()
 
     match read_message(@client)
         .ok _  => assert false

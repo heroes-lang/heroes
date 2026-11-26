@@ -80,7 +80,7 @@ function steps(folder: str) -> i64?
 
     print(f"the index written and read back: {e.docs.len()} pages, {e.title_order.len()} indexed")
     svc = service.service(e)?
-    grace = time.seconds(2)?
+    grace = time.seconds(2)
     api @= net.listen(host: "127.0.0.1", port: 0)?
     asking = spawn(session.run, f"http://127.0.0.1:{api.address.port}")?
     answered = http.serve_until_stopped(

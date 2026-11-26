@@ -2229,7 +2229,7 @@ test "connect: a GET over TLS, ALPN choosing h2"
     c @= connect(
         host: "localhost",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         roots: tls.TEST_ROOT,
         options: default_options()
     ).must()
@@ -2249,7 +2249,7 @@ test "connect_plain: a GET over h2c"
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         options: default_options()
     ).must()
     r = round_trip(
@@ -2320,7 +2320,7 @@ test "read_event: a response read event by event"
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         options: default_options()
     ).must()
     id = start_stream(
@@ -2342,7 +2342,7 @@ test "read_event_of: the second request's answer read before the first's"
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         options: default_options()
     ).must()
     get = [
@@ -2368,7 +2368,7 @@ test "start_stream: a POST whose body follows"
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         options: default_options()
     ).must()
     id = start_stream(
@@ -2390,7 +2390,7 @@ test "write_headers: trailers end a request"
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         options: default_options()
     ).must()
     id = start_stream(
@@ -2418,7 +2418,7 @@ test "write_data: a body past the server's bound, answered 413"
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,
-        deadline: time.seconds(30).must(),
+        deadline: time.seconds(30),
         options: default_options()
     ).must()
     id = start_stream(
@@ -2448,7 +2448,7 @@ test "write_reset: a request cancelled"
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         options: default_options()
     ).must()
     id = start_stream(
@@ -2469,7 +2469,7 @@ test "ping: answered before any request"
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         options: default_options()
     ).must()
     ping(@c, data: [7, 7, 7, 7, 7, 7, 7, 7]).must()
@@ -2489,7 +2489,7 @@ test "start: two requests on one connection at once"
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         options: default_options()
     ).must()
     a = start(
@@ -2513,7 +2513,7 @@ test "finish: a response's body and trailers"
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         options: default_options()
     ).must()
     id = start(
@@ -2533,7 +2533,7 @@ test "round_trip: a POST and its answer"
     c @= connect_plain(
         host: "127.0.0.1",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         options: default_options()
     ).must()
     r = round_trip(

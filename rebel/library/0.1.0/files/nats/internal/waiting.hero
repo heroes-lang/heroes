@@ -314,7 +314,7 @@ function polled(@s: state.Session, turns: i64) -> [[u8]]
     got: [[u8]] @= []
 
     for _ in range(from: 0, to: turns)
-        if s.held_count > 0 || poll.wait(set, limit: time.milliseconds(100).must()).must().len() > 0
+        if s.held_count > 0 || poll.wait(set, limit: time.milliseconds(100)).must().len() > 0
             for m in read_ready(@s).must()
                 got @ got.push(m.data)
 

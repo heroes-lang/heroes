@@ -108,7 +108,7 @@ function validity(not_before: time.Instant, not_after: time.Instant) -> asn1.Val
 #
 # Fails as `time.truncate` fails.
 function moment(at: time.Instant) -> asn1.Value?
-    whole = time.to_date_time(time.truncate(at, unit: time.seconds(1)?)?)
+    whole = time.to_date_time(time.truncate(at, unit: time.seconds(1))?)
 
     if whole.year < 2050
         return ok(.utc_time(v: whole))

@@ -293,4 +293,4 @@ function samples_of(answer: http.Response?) -> [str]
 
 # How long a connection and each exchange may take.
 function seconds() -> time.Duration
-    return time.seconds(CALL_SECONDS).default(time.max_duration())
+    return time.seconds(CALL_SECONDS)

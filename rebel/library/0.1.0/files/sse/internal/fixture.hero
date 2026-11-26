@@ -70,7 +70,7 @@ function serve(arg: str) -> str
 
                         if strings.has_prefix(s: piece, prefix: "hold:")
                             put(r.stream, text: piece.slice(from: 5, to: piece.len()))
-                            time.sleep(time.milliseconds(700).must())
+                            time.sleep(time.milliseconds(700))
                         else
                             put(r.stream, text: piece)
                     .err _ => _ = 0
@@ -100,8 +100,8 @@ function stream_head() -> str
 # The settings a test reads with: a short wait, one second to connect.
 function quick() -> sse.Reading
     r @= sse.default_reading()
-    r.retry @ time.milliseconds(10).must()
-    r.longest @ time.milliseconds(40).must()
+    r.retry @ time.milliseconds(10)
+    r.longest @ time.milliseconds(40)
     return r
 
 # What the stand-in `t` saw, a line for each request.

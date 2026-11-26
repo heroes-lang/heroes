@@ -406,7 +406,7 @@ test "read: every table and field, the paths cleaned, the order kept"
     assert f.vars["cflags"].must() == .words(items: ["-O2", "-Wall"])
     compile = f.rules["compile"].must()
     assert compile.depfile.must() == "$out.d"
-    assert compile.time_limit.must() == time.minutes(5).must()
+    assert compile.time_limit.must() == time.minutes(5)
     assert compile.env["LANG"].must() == "C"
     assert f.rules["link"].must().description.is_err()
     assert f.defaults == ["all"]

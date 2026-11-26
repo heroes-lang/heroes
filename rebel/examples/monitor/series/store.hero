@@ -181,30 +181,30 @@ function values_of(points: [Point]) -> [f64]
     return values
 
 test "add: points older than the store keeps are dropped as a new one comes"
-    s @= new_store(time.minutes(2).must())
+    s @= new_store(time.minutes(2))
     t0 = time.from_unix(whole_seconds: 1_000, extra_nanoseconds: 0).must()
     add(@s, key: "a", at: t0, value: 1.0)
-    add(@s, key: "a", at: time.add(t0, d: time.minutes(1).must()).must(), value: 2.0)
-    add(@s, key: "a", at: time.add(t0, d: time.minutes(3).must()).must(), value: 3.0)
+    add(@s, key: "a", at: time.add(t0, d: time.minutes(1)).must(), value: 2.0)
+    add(@s, key: "a", at: time.add(t0, d: time.minutes(3)).must(), value: 3.0)
     assert values_of(s.series["a"].must()) == [2.0, 3.0]
 
 test "window_of: within the span, the last alone for zero, and nothing for a key never seen"
-    s @= new_store(time.hours(1).must())
+    s @= new_store(time.hours(1))
     t0 = time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must()
 
     for i in range(from: 0, to: 5)
-        add(@s, key: "t", at: time.add(t0, d: time.seconds(i * 30).must()).must(), value: to_f64(i))
+        add(@s, key: "t", at: time.add(t0, d: time.seconds(i * 30)).must(), value: to_f64(i))
 
-    now = time.add(t0, d: time.minutes(2).must()).must()
-    assert values_of(window_of(s, key: "t", now: now, span: time.minutes(1).must())) == [3.0, 4.0]
+    now = time.add(t0, d: time.minutes(2)).must()
+    assert values_of(window_of(s, key: "t", now: now, span: time.minutes(1))) == [3.0, 4.0]
     assert values_of(window_of(s, key: "t", now: now, span: time.nanoseconds(0))) == [4.0]
-    assert window_of(s, key: "none", now: now, span: time.minutes(1).must()).len() == 0
+    assert window_of(s, key: "none", now: now, span: time.minutes(1)).len() == 0
     assert last_of(s, key: "none").is_err()
     assert recent_values(s, key: "t", count: 2) == [3.0, 4.0]
     assert recent_values(s, key: "t", count: 9).len() == 5
 
 test "keys_matching: a plain key, a pattern over services, and its label"
-    s @= new_store(time.hours(1).must())
+    s @= new_store(time.hours(1))
     t0 = time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must()
     add(@s, key: "service.web.up", at: t0, value: 1.0)
     add(@s, key: "service.db.up", at: t0, value: 0.0)

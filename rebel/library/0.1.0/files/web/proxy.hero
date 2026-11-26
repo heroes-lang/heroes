@@ -153,7 +153,7 @@ record ReverseProxy
 #
 # See also `serve`, `upstream`.
 function reverse_proxy(upstreams: [Upstream]) -> ReverseProxy
-    minute = time.seconds(60).must()
+    minute = time.seconds(60)
     named = os.host_name().default("proxy")
 
     name = if gateway.is_token(named)
@@ -172,7 +172,7 @@ function reverse_proxy(upstreams: [Upstream]) -> ReverseProxy
         idle_timeout: minute,
         tries: 3,
         max_fails: 1,
-        fail_timeout: time.seconds(10).must(),
+        fail_timeout: time.seconds(10),
         keep_host: false,
         trusted: [],
         via: name,
@@ -441,7 +441,7 @@ test "serve_stream: a client over TLS told to the upstream as https, the fields 
     ).must()
     asked = "GET / HTTP/1.1\r\nHost: shop.example\r\nX-Forwarded-Proto: http\r\nX-Forwarded-For: 6.6.6.6\r\nForwarded: for=6.6.6.6;proto=http\r\nConnection: close\r\n\r\n"
     client = spawn(fixture.tls_client, fixture.Asking(port: l.port, asked: asked, until: "", hold_ms: 5_000)).must()
-    conn @= tls.accept(l, deadline: time.seconds(5).must()).must()
+    conn @= tls.accept(l, deadline: time.seconds(5)).must()
     state @= new_state(reverse_proxy([upstream(f"http://127.0.0.1:{port}", weight: 1).must()])).must()
     served = serve_stream(@state, stream: conn.stream, remote: "192.0.2.1:5000")
     io.close(@conn.stream).must()
@@ -477,9 +477,9 @@ test "serve_stream: a client over TLS silent past the idle span let go within it
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: [])
     ).must()
     client = spawn(fixture.tls_client, fixture.Asking(port: l.port, asked: "", until: "", hold_ms: 10_000)).must()
-    conn @= tls.accept(l, deadline: time.seconds(5).must()).must()
+    conn @= tls.accept(l, deadline: time.seconds(5)).must()
     p @= reverse_proxy([upstream("http://127.0.0.1:8080", weight: 1).must()])
-    p.idle_timeout @ time.milliseconds(200).must()
+    p.idle_timeout @ time.milliseconds(200)
     state @= new_state(p).must()
     start = time.mark().must()
     served = serve_stream(@state, stream: conn.stream, remote: "192.0.2.1:5000")
@@ -505,7 +505,7 @@ test "serve_stream: a WebSocket switched over a client over TLS, bytes relayed b
         fixture.tls_client,
         fixture.Asking(port: l.port, asked: asked, until: "\r\n\r\nping", hold_ms: 5_000)
     ).must()
-    conn @= tls.accept(l, deadline: time.seconds(5).must()).must()
+    conn @= tls.accept(l, deadline: time.seconds(5)).must()
     state @= new_state(reverse_proxy([upstream(f"http://127.0.0.1:{port}", weight: 1).must()])).must()
     served = serve_stream(@state, stream: conn.stream, remote: "192.0.2.1:5000")
     io.close(@conn.stream).must()
@@ -530,7 +530,7 @@ test "serve_stream: a WebSocket switched with both ends over TLS, bytes relayed 
         fixture.tls_client,
         fixture.Asking(port: l.port, asked: asked, until: "\r\n\r\nping", hold_ms: 5_000)
     ).must()
-    conn @= tls.accept(l, deadline: time.seconds(5).must()).must()
+    conn @= tls.accept(l, deadline: time.seconds(5)).must()
     p @= reverse_proxy([upstream(f"https://localhost:{port}", weight: 1).must()])
     p.roots @ tls.TEST_ROOT
     state @= new_state(p).must()

@@ -26,7 +26,7 @@ function snooze(arguments: [str]) -> i64
                 _ = io.write_text(io.stderr(), text: f"snooze: {n} tenths is outside 0 to an hour\n").is_err()
                 return 2
 
-            match time.milliseconds(n * 100)
+            match time.milliseconds_checked(n * 100)
                 .ok d  => time.sleep(d)
                 .err _ => return 2
 

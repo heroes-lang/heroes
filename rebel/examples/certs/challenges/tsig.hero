@@ -398,7 +398,7 @@ test "verify: another secret, an unknown key and a stale time are each refused"
         .ok _  => assert false
         .err e => assert e.code == BADKEY
 
-    late = time.add(at, d: time.minutes(6).must()).must()
+    late = time.add(at, d: time.minutes(6)).must()
 
     match verify(sign(m, key: key, at: at, request_mac: []).must().message, known: [key], at: late, request_mac: [])
         .ok _  => assert false

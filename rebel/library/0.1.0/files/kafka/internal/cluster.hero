@@ -25,7 +25,7 @@ function now_ms() -> i64
 #
 # - `ms`: milliseconds.
 function pause_ms(ms: i64)
-    match time.milliseconds(ms)
+    match time.milliseconds_checked(ms)
         .ok d  => time.sleep(d)
         .err _ => _ = 0
 

@@ -107,8 +107,8 @@ function make_identity(server: Subject, host: str, now: time.Instant, days: i64)
 #
 # Fails as `make_identity` fails.
 function with_authority_key(ca_key: keypairs.PrivateKey, server: Subject, host: str, now: time.Instant, days: i64) -> Made?
-    not_before = time.add(now, d: time.hours(-1)?)?
-    not_after = time.add(now, d: time.days(days)?)?
+    not_before = time.add(now, d: time.hours(-1))?
+    not_after = time.add(now, d: time.days_checked(days)?)?
     validity = der.validity(not_before: not_before, not_after: not_after)?
     ca_name = der.name(common_name: "Gateway Demo Root", organization: server.organization)
     ca_spki = public_der(ca_key)?

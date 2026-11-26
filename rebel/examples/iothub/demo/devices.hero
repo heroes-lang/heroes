@@ -179,7 +179,7 @@ function press_says(@f: Fleet, payload: [u8]) -> ()?
     m.delivery_mode @ amqp.PERSISTENT
     channel = amqp.Channel(id: 1)
     _ = amqp.publish(@f.press[0], channel: channel, exchange_name: "plant", routing_key: "line1.press-2.vibration", m: m, mandatory: false)?
-    return amqp.wait_confirms(@f.press[0], channel: channel, wait: time.seconds(WAIT_SECONDS)?)
+    return amqp.wait_confirms(@f.press[0], channel: channel, wait: time.seconds(WAIT_SECONDS))
 
 # The tracker publishes `payload` on its subject, flushed.
 #
@@ -187,7 +187,7 @@ function press_says(@f: Fleet, payload: [u8]) -> ()?
 # - `payload`: the bytes.
 function tracker_says(@f: Fleet, payload: [u8]) -> ()?
     nats.publish(@f.tracker[0], subject: "fleet.tracker-3.position", data: payload)?
-    return nats.flush(@f.tracker[0], wait: time.seconds(WAIT_SECONDS)?)
+    return nats.flush(@f.tracker[0], wait: time.seconds(WAIT_SECONDS))
 
 # The press connects again, as every client of a restarted broker must:
 # its old connection, closed by the broker, let go.

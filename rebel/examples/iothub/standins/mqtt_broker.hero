@@ -294,7 +294,7 @@ function accept(@b: mqtt_state.Broker, set: poll.Set, l: net.Listener lent)
 # - `listening`: the listener's key in the set.
 function serve(@b: mqtt_state.Broker, set: poll.Set, l: net.Listener lent, listening: i64)
     while true
-        events = match poll.wait(set, limit: time.hours(1).must())
+        events = match poll.wait(set, limit: time.hours(1))
             .ok got => got
             .err _  => break
 

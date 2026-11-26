@@ -129,7 +129,7 @@ function endpoints_of(@directory: Directory, service: str, now: time.Instant) ->
     if found.len() == 0
         return fail(code: NOT_FOUND, msg: f"{service} names no instance")
     sorted = sorted_endpoints(found)
-    kept_for = time.seconds(math.clamp_i64(x: ttl, low: LEAST_TTL_SECONDS, high: MOST_TTL_SECONDS))?
+    kept_for = time.seconds_checked(math.clamp_i64(x: ttl, low: LEAST_TTL_SECONDS, high: MOST_TTL_SECONDS))?
     directory.known[service] @ Known(endpoints: sorted, until: time.add(now, d: kept_for)?)
     return ok(sorted)
 
@@ -328,13 +328,13 @@ test "plan: one client keeps to one instance, and weight 0 goes last"
     assert plan(list, client: "client-1")[2].target == "z"
 
 test "allows: a breaker opens on a failure and lets a trial through once its time is spent"
-    d @= new(servers: ["127.0.0.1:53"], open_for: time.seconds(30).must()).must()
+    d @= new(servers: ["127.0.0.1:53"], open_for: time.seconds(30)).must()
     e = sample(target: "a", priority: 1, weight: 1)
     start = time.epoch()
     assert allows(@d, e: e, now: start)
     failed(@d, e: e, now: start)
-    assert !allows(@d, e: e, now: time.add(start, d: time.seconds(10).must()).must())
-    assert allows(@d, e: e, now: time.add(start, d: time.seconds(31).must()).must())
+    assert !allows(@d, e: e, now: time.add(start, d: time.seconds(10)).must())
+    assert allows(@d, e: e, now: time.add(start, d: time.seconds(31)).must())
 
 test "trim_dot: an absolute name loses its last dot, a relative one nothing"
     assert trim_dot("a.test.") == "a.test"

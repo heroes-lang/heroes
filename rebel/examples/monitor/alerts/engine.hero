@@ -290,7 +290,7 @@ function silence(@a: Alerts, name: str, until: time.Instant) -> ()?
 # service down at once.
 function sample_specs() -> [settings.RuleSpec]
     return [
-        settings.RuleSpec(name: "hot", when: "avg(t, 1m) > 70", hold: time.minutes(1).must(), severity: "critical", summary: "hot")
+        settings.RuleSpec(name: "hot", when: "avg(t, 1m) > 70", hold: time.minutes(1), severity: "critical", summary: "hot")
         settings.RuleSpec(name: "down", when: "service.*.up < 1", hold: time.nanoseconds(0), severity: "warning", summary: "down")
     ]
 
@@ -302,7 +302,7 @@ function minute(minutes: i64) -> time.Instant
 
 test "evaluate: pending, then firing once the condition has held for its for, then resolved"
     a @= new_alerts(sample_specs()).must()
-    s @= store.new_store(time.hours(1).must())
+    s @= store.new_store(time.hours(1))
     store.add(@s, key: "t", at: minute(0), value: 75.0)
     first = evaluate(@a, s: s, now: minute(0))
     assert first.len() == 1 && first[0].after == .pending && first[0].name == "hot"
@@ -317,7 +317,7 @@ test "evaluate: pending, then firing once the condition has held for its for, th
 
 test "evaluate: one alert for each series a star matches, firing at once with no for"
     a @= new_alerts(sample_specs()).must()
-    s @= store.new_store(time.hours(1).must())
+    s @= store.new_store(time.hours(1))
     store.add(@s, key: "service.db.up", at: minute(0), value: 0.0)
     store.add(@s, key: "service.web.up", at: minute(0), value: 1.0)
     changes = evaluate(@a, s: s, now: minute(0))
@@ -327,7 +327,7 @@ test "evaluate: one alert for each series a star matches, firing at once with no
 
 test "acknowledge and silence: a firing alert seen, a rule silenced, a name that is none"
     a @= new_alerts(sample_specs()).must()
-    s @= store.new_store(time.hours(1).must())
+    s @= store.new_store(time.hours(1))
     store.add(@s, key: "service.db.up", at: minute(0), value: 0.0)
     _ = evaluate(@a, s: s, now: minute(0))
     assert acknowledge(@a, name: "down").must() == 1

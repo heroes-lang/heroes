@@ -206,18 +206,18 @@ test "table: on the native side its columns and rows given, rows chosen and one 
     ui.set_rows(@app, widget: files, rows: rows).must()
     _ = ui.rect_of(@app, widget: files).must()
     ui.inject(@app, input: .choose(widget: files, indices: [0, 2])).must()
-    _ = give.events_of(@app, within: time.milliseconds(200).must())
+    _ = give.events_of(@app, within: time.milliseconds(200))
     assert ui.selection_of(app, widget: files).must() == [0, 2]
     ui.inject(@app, input: .activate(widget: files, index: 1)).must()
-    opened = give.events_of(@app, within: time.milliseconds(200).must())
+    opened = give.events_of(@app, within: time.milliseconds(200))
     assert opened.len() > 0 && opened[opened.len() - 1] == .activated(widget: files, index: 1)
     ui.inject(@app, input: .sort(widget: files, column: 1, ascending: true)).must()
     ui.inject(@app, input: .sort(widget: files, column: 1, ascending: false)).must()
-    asked = give.events_of(@app, within: time.milliseconds(200).must())
+    asked = give.events_of(@app, within: time.milliseconds(200))
     assert asked == [.sort_asked(widget: files, column: 1, ascending: true), .sort_asked(widget: files, column: 1, ascending: false)]
     assert ui.sort_of(app, widget: files).must() == .by(column: 1, ascending: false)
     ui.set_sort(@app, widget: files, order: .by(column: 0, ascending: true)).must()
-    assert give.events_of(@app, within: time.milliseconds(200).must()) == []
+    assert give.events_of(@app, within: time.milliseconds(200)) == []
     ui.set_rows(@app, widget: files, rows: [rows[1], rows[0], rows[2]]).must()
     assert ui.selection_of(app, widget: files).must() == []
     ui.set_selection(@app, widget: files, indices: [1, 2]).must()

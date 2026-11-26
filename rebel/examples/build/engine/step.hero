@@ -254,5 +254,5 @@ test "program_of: a name stays, an absolute path stays, a relative path is read 
     assert program_of(word: "tools/mill", dir: ".") == path.from_slash("tools/mill")
 
 test "ended_words: a time limit says how long it was, an exit says its code"
-    assert ended_words(.timed_out, limit: ok(time.milliseconds(300).must())) == "ran past its time limit of 300ms and was ended"
+    assert ended_words(.timed_out, limit: ok(time.milliseconds(300))) == "ran past its time limit of 300ms and was ended"
     assert ended_words(.exited(code: 2), limit: fail(code: "not_found", msg: "none")) == "exited with code 2"

@@ -329,19 +329,19 @@ test "tree: on the native side items added under items, one unfolded by the pers
     work = ui.add_item(@app, widget: folders, under: 0, text: "Work", foldable: false).must()
     _ = ui.rect_of(@app, widget: folders).must()
     ui.inject(@app, input: .unfold(widget: folders, item: home, open: true)).must()
-    assert ui.wait(@app, within: time.seconds(2).must()).must() == .unfolded(widget: folders, item: home, open: true)
+    assert ui.wait(@app, within: time.seconds(2)).must() == .unfolded(widget: folders, item: home, open: true)
     desktop = ui.add_item(@app, widget: folders, under: home, text: "Desktop", foldable: true).must()
     deep = ui.add_item(@app, widget: folders, under: desktop, text: "Photos", foldable: false).must()
     ui.inject(@app, input: .choose(widget: folders, indices: [desktop])).must()
     ui.inject(@app, input: .activate(widget: folders, index: desktop)).must()
     ui.inject(@app, input: .unfold(widget: folders, item: home, open: false)).must()
-    came = give.events_of(@app, within: time.milliseconds(300).must())
+    came = give.events_of(@app, within: time.milliseconds(300))
     assert came.len() >= 3 && seen_in(came, event: .activated(widget: folders, index: desktop))
     assert came[came.len() - 2] == .unfolded(widget: folders, item: home, open: false)
     assert came[came.len() - 1] == .selection_changed(widget: folders, indices: [])
     assert ui.selection_of(app, widget: folders).must() == []
     ui.set_selection(@app, widget: folders, indices: [deep]).must()
-    assert give.events_of(@app, within: time.milliseconds(300).must()) == []
+    assert give.events_of(@app, within: time.milliseconds(300)) == []
     assert ui.selection_of(app, widget: folders).must() == [deep]
     ui.remove_item(@app, widget: folders, item: home).must()
     assert ui.selection_of(app, widget: folders).must() == []

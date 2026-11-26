@@ -8,7 +8,7 @@ use <rebel>/time
 
 function main()
     f = audio.Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
-    ten = time.milliseconds(10).must()
+    ten = time.milliseconds(10)
 
     match audio.silence(f, length: ten)
         .ok s =>

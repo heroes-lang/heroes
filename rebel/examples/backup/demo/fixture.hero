@@ -116,7 +116,7 @@ function records(first: i64, count: i64, seed: i64) -> [u8]
 #
 # - `minutes`: minutes past that instant.
 function at_minute(minutes: i64) -> time.Instant
-    return time.add(time.parse("2026-02-20T10:00:00Z", layout: .rfc3339).must(), d: time.minutes(minutes).must()).must()
+    return time.add(time.parse("2026-02-20T10:00:00Z", layout: .rfc3339).must(), d: time.minutes(minutes)).must()
 
 # Writes `data` at `rel` below `root`, with `mode` and the time `minutes`
 # past the demo's first instant.

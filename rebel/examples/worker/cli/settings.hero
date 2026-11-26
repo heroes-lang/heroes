@@ -53,10 +53,10 @@ function default_settings() -> Settings
         redis_url: "redis://127.0.0.1:6379/0",
         queues: ["default"],
         workers: 4,
-        lease: time.minutes(5).must(),
-        poll: time.seconds(1).must(),
-        first_wait: time.seconds(15).must(),
-        longest_wait: time.hours(1).must(),
+        lease: time.minutes(5),
+        poll: time.seconds(1),
+        first_wait: time.seconds(15),
+        longest_wait: time.hours(1),
         spread: 0.2,
         seed: 1,
         otlp: "",
@@ -116,7 +116,7 @@ function int_at(v: json.Value, name: str) -> i64?
 # - `v`: the object.
 # - `name`: the member's name.
 function duration_at(v: json.Value, name: str) -> time.Duration?
-    return time.milliseconds(int_at(v, name: name)?)
+    return time.milliseconds_checked(int_at(v, name: name)?)
 
 # The settings `settings_json` wrote. Fails `invalid` where a member is
 # missing or of another kind.

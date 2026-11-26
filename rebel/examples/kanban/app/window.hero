@@ -63,7 +63,7 @@ function menu_bar(@d: desk.Desk) -> Menus?
 # to close.
 function loop(@d: desk.Desk, menus: Menus) -> ()?
     while true
-        match ui.wait(@d.app, within: time.seconds(1)?)
+        match ui.wait(@d.app, within: time.seconds(1))
             .err e =>
                 if e.code != ui.TIMEOUT
                     return fail(code: e.code, msg: e.msg)

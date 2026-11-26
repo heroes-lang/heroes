@@ -316,7 +316,7 @@ function texts_json(words: [str]) -> json.Value
 
 # Waits `ms` milliseconds.
 function pause(ms: i64)
-    time.sleep(time.milliseconds(ms).must())
+    time.sleep(time.milliseconds(ms))
 
 # The thumbprint of `session`'s key, SHA-256, in base 64 for URLs.
 function thumbprint(session: Session) -> str?

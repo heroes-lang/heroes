@@ -28,7 +28,7 @@ function run(dir: str) -> ()?
     _ = fs.remove_all(dir).is_err()
     fs.make_dir_all(dir)?
     exe = os.executable_path()?
-    most = time.minutes(MOST_MINUTES)?
+    most = time.minutes(MOST_MINUTES)
     o @= outside.start(script.temperatures())?
     handed = driver.Handed(dir: dir, exe: exe, port: o.device.path, otlp: collector.base_url(o.collector))
 

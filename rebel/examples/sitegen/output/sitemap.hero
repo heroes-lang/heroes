@@ -99,7 +99,7 @@ function day_of(at: time.Instant, zone: time.Zone) -> str
 ## Tests
 
 test "day_of: midnight in Stockholm is the day before in UTC, and the day itself here"
-    stockholm = time.fixed_zone("CET", time.hours(1).must()).must()
+    stockholm = time.fixed_zone("CET", time.hours(1)).must()
     at = time.parse("2026-03-13T23:00:00Z", .rfc3339).must()
     assert day_of(at, zone: stockholm) == "2026-03-14"
     assert day_of(at, zone: time.utc_zone()) == "2026-03-13"

@@ -95,7 +95,7 @@ function scenes(@c: controller.Controller) -> ()?
 # Fails as the settings, the bookmarks, the folder or `ui` fail.
 function open_explorer() -> controller.Controller?
     s = settings.read(demo_tree.at_state("explorer.toml"), base: settings.defaults())?
-    zone = time.fixed_zone(name: "CET", offset: time.hours(1)?)?
+    zone = time.fixed_zone(name: "CET", offset: time.hours(1))?
     f = formats.formats_of(s.locale, zone: zone)?
     marks = bookmarks.load(s.bookmarks)?
     ex = explorer.open_at(demo_tree.ROOT, s: s, f: f, c: clock.fixed_clock(demo_tree.opening_time()), b: marks)?
@@ -106,7 +106,7 @@ function open_explorer() -> controller.Controller?
 #
 # - `c`: the controller.
 function minute(@c: controller.Controller)
-    clock.advance(@c.ex.clock, by: time.minutes(1).must())
+    clock.advance(@c.ex.clock, by: time.minutes(1))
 
 # Prints a step's heading, then what it changed.
 #

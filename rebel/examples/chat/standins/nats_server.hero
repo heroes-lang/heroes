@@ -344,7 +344,7 @@ function serve_on(told_port: i64) -> str?
     s @= nats_routes.Server(peers: [], port: l.address.port, published: 0, delivered: 0, turns: 0)
 
     while true
-        events = match poll.wait(set, limit: time.hours(1)?)
+        events = match poll.wait(set, limit: time.hours(1))
             .ok got => got
             .err _  => break
 

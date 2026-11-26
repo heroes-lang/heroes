@@ -92,7 +92,7 @@ function ended_within(@child: process.Child, grace: time.Duration) -> bool
 
         if spent.nanoseconds >= grace.nanoseconds
             return false
-        time.sleep(time.milliseconds(LOOK_MS).default(time.nanoseconds(0)))
+        time.sleep(time.milliseconds(LOOK_MS))
 
 # Stops the service `name` and starts it again at once, a restart.
 #
@@ -145,25 +145,25 @@ test "step: a child that fails is reaped, waits its backoff, and starts again"
     logs = settings.Logs(dir: dir, max_bytes: 0, keep: 0, daily: false, compress: false)
     spec @= deps.sample("quick", needs: [])
     spec.command @ ["/bin/sh", "-c", "echo hello; exit 3"]
-    spec.backoff @ time.seconds(30).must()
-    spec.backoff_most @ time.minutes(5).must()
+    spec.backoff @ time.seconds(30)
+    spec.backoff_most @ time.minutes(5)
     sup @= supervisor.new_supervisor([spec], logs: logs, set: set).must()
     t0 = time.from_unix(whole_seconds: 1_764_000_000, extra_nanoseconds: 0).must()
     first = supervisor.step(@sup, at: t0)
     assert first.len() == 1 && first[0].text == "started"
     child @= sup.children["quick"].must()
-    assert ended_within(@child, grace: time.seconds(10).must())
+    assert ended_within(@child, grace: time.seconds(10))
     sup.children["quick"] @ child
-    second = supervisor.step(@sup, at: time.add(t0, d: time.seconds(10).must()).must())
+    second = supervisor.step(@sup, at: time.add(t0, d: time.seconds(10)).must())
     assert second.len() == 1 && second[0].text == "exited with code 3; started again in 30s"
     assert sup.services[0].state == .backoff
-    assert supervisor.step(@sup, at: time.add(t0, d: time.seconds(20).must()).must()).len() == 0
-    third = supervisor.step(@sup, at: time.add(t0, d: time.seconds(40).must()).must())
+    assert supervisor.step(@sup, at: time.add(t0, d: time.seconds(20)).must()).len() == 0
+    third = supervisor.step(@sup, at: time.add(t0, d: time.seconds(40)).must())
     assert third.len() == 1 && third[0].restart
     again @= sup.children["quick"].must()
-    assert ended_within(@again, grace: time.seconds(10).must())
+    assert ended_within(@again, grace: time.seconds(10))
     sup.children["quick"] @ again
-    assert stop_all(@sup, at: time.add(t0, d: time.seconds(50).must()).must()).len() == 1
+    assert stop_all(@sup, at: time.add(t0, d: time.seconds(50)).must()).len() == 1
     supervisor.close(@sup, at: t0)
     assert supervisor.lines_written(sup)["quick"].must() == 2
     poll.close(@set).must()

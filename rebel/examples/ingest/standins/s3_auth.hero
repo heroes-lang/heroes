@@ -282,7 +282,7 @@ test "check: a request the s3 package signs is taken; one of another secret, ano
         region: "us-east-1",
         now: now
     ).is_err()
-    later = time.add(now, d: time.minutes(16).must()).must()
+    later = time.add(now, d: time.minutes(16)).must()
     assert check(
         signed,
         access_key_id: "AKIDEXAMPLE",

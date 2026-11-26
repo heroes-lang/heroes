@@ -42,7 +42,7 @@ function unix_now(clock: Clock) -> i64
 function after(clock: Clock, seconds: i64) -> time.Instant
     start = now(clock)
 
-    match time.seconds(seconds)
+    match time.seconds_checked(seconds)
         .ok d =>
             match time.add(start, d)
                 .ok t  => return t

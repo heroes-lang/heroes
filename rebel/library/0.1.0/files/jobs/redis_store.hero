@@ -678,13 +678,13 @@ test "enqueue live: each start, a past instant ready at once, a payload of more 
             c @= first
             worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
             later @= jobs.new_job("later", .null_value)
-            later.start @ .after(wait: time.milliseconds(400).must())
+            later.start @ .after(wait: time.milliseconds(400))
             later_id = enqueue(@c, later).must()
             past @= jobs.new_job("past", .text(v: "città 🎸"))
             past.start @ .at(instant: time.epoch())
             past_id = enqueue(@c, past).must()
             future @= jobs.new_job("future", .null_value)
-            future.start @ .at(instant: time.add(time.now().must(), time.hours(1).must()).must())
+            future.start @ .at(instant: time.add(time.now().must(), time.hours(1)).must())
             _ = enqueue(@c, future).must()
             got = claim(@c, worker).must()
             assert got.id == past_id && got.payload == .text(v: "città 🎸") && got.run_at == time.epoch() && got.attempt == 1
@@ -693,7 +693,7 @@ test "enqueue live: each start, a past instant ready at once, a payload of more 
                 .ok _  => assert false
                 .err e => assert e.code == jobs.NOT_FOUND && e.msg == "no job is ready in the queues default"
 
-            time.sleep(time.milliseconds(500).must())
+            time.sleep(time.milliseconds(500))
             assert claim(@c, worker).must().id == later_id
             u @= jobs.new_job("sync", .null_value)
             u.unique_key @ "sync:1"
@@ -802,7 +802,7 @@ test "complete and fail_attempt live: a second completion refused, attempts spen
             assert waiting.state == .available && waiting.finished_at.is_err() && waiting.lease_until.is_err()
             assert time.is_after(
                 a: waiting.run_at,
-                b: time.add(first_try.attempted_at.must(), time.seconds(11).must()).must()
+                b: time.add(first_try.attempted_at.must(), time.seconds(11)).must()
             )
             assert claim(@c, worker).is_err()
             assert retry(@c, id).must().state == .available
@@ -830,11 +830,11 @@ test "fail_attempt_with live: the job waits the wait given, zero runs it again a
                 .ok _  => assert false
                 .err e => assert e.code == jobs.INVALID && e.msg == "the wait, -1ns, is below zero"
 
-            waiting = fail_attempt_with(@c, claimed: first_try, error: "first", wait: time.seconds(90).must()).must()
+            waiting = fail_attempt_with(@c, claimed: first_try, error: "first", wait: time.seconds(90)).must()
             assert waiting.state == .available && waiting.errors.len() == 1
             began = first_try.attempted_at.must()
-            assert time.is_after(a: waiting.run_at, b: time.add(began, time.seconds(89).must()).must())
-            assert time.is_after(a: time.add(began, time.seconds(150).must()).must(), b: waiting.run_at)
+            assert time.is_after(a: waiting.run_at, b: time.add(began, time.seconds(89)).must())
+            assert time.is_after(a: time.add(began, time.seconds(150)).must(), b: waiting.run_at)
             assert claim(@c, worker).is_err()
             assert retry(@c, id).must().state == .available
             second_try = claim(@c, worker).must()
@@ -847,7 +847,7 @@ test "fail_attempt_with live: the job waits the wait given, zero runs it again a
             assert again.state == .available
             third_try = claim(@c, worker).must()
             assert third_try.attempt == 3
-            ended = fail_attempt_with(@c, claimed: third_try, error: "third", wait: time.seconds(5).must()).must()
+            ended = fail_attempt_with(@c, claimed: third_try, error: "third", wait: time.seconds(5)).must()
             assert ended.state == .failed && ended.errors.len() == 3 && ended.errors[2].error == "third"
             assert fail_attempt_with(
                 @c,
@@ -892,7 +892,7 @@ test "rescue live: a lease run out given back counted, a late completion refused
         .ok first =>
             c @= first
             worker @= jobs.new_worker([jobs.DEFAULT_QUEUE])
-            worker.lease @ time.seconds(1).must()
+            worker.lease @ time.seconds(1)
             id = enqueue(@c, jobs.new_job("slow", .null_value)).must()
             one @= jobs.new_job("single", .null_value)
             one.max_attempts @ 1
@@ -900,7 +900,7 @@ test "rescue live: a lease run out given back counted, a late completion refused
             slow = claim(@c, worker).must()
             _ = claim(@c, worker).must()
             assert rescue(@c).must() == 0
-            time.sleep(time.milliseconds(1_100).must())
+            time.sleep(time.milliseconds(1_100))
             assert rescue(@c).must() == 2
             back = get(@c, id).must()
             assert back.state == .available && back.attempt == 1 && back.errors.len() == 1
@@ -927,7 +927,7 @@ test "purge, get, list and counts live: the finished removed by age, a job not t
             ids = enqueue_many(@c, batch).must()
             later @= jobs.new_job("later", .null_value)
             later.queue @ "q"
-            later.start @ .after(wait: time.hours(1).must())
+            later.start @ .after(wait: time.hours(1))
             later_id = enqueue(@c, later).must()
             page = list(@c, queue: "q", state: .available, offset: 1, limit: 2).must()
             assert page.len() == 2 && page[0].id == ids[3] && page[1].id == ids[2]
@@ -937,15 +937,15 @@ test "purge, get, list and counts live: the finished removed by age, a job not t
             assert list(@c, queue: "q", state: .available, offset: -1, limit: 1).is_err()
             assert list(@c, queue: "q", state: .available, offset: 0, limit: 1_001).is_err()
             complete(@c, claim(@c, worker).must(), .null_value).must()
-            time.sleep(time.milliseconds(5).must())
+            time.sleep(time.milliseconds(5))
             complete(@c, claim(@c, worker).must(), .null_value).must()
             finished = list(@c, queue: "q", state: .completed, offset: 0, limit: 10).must()
             assert finished.len() == 2 && finished[0].id == ids[3] && finished[1].id == ids[4]
             assert counts(@c).must() == [jobs.Count(queue: "q", state: .available, jobs: 4), jobs.Count(queue: "q", state: .completed, jobs: 2)]
             assert purge(@c, .available, older_than: time.Duration(nanoseconds: 0)).is_err()
             assert purge(@c, .completed, older_than: time.Duration(nanoseconds: -1)).is_err()
-            assert purge(@c, .completed, older_than: time.hours(1).must()).must() == 0
-            time.sleep(time.milliseconds(5).must())
+            assert purge(@c, .completed, older_than: time.hours(1)).must() == 0
+            time.sleep(time.milliseconds(5))
             assert purge(@c, .completed, older_than: time.Duration(nanoseconds: 0)).must() == 2
             assert get(@c, ids[4]).is_err()
 
@@ -1054,7 +1054,7 @@ test "allow live: forty tokens shared by takers on eight threads here and on fou
         .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
-            _ = set_limit(@c, name: "crawl", every: time.hours(1).must(), burst: 40).must()
+            _ = set_limit(@c, name: "crawl", every: time.hours(1), burst: 40).must()
             answers = takers.run(limit: "crawl", mode: "allow", times: 10, here: 8, children: 3, each: 4).must()
             granted: i64 @= 0
 
@@ -1078,7 +1078,7 @@ test "reserve live: twenty-four reservations of a token every ten seconds by tak
         .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
-            _ = set_limit(@c, name: "feed", every: time.seconds(10).must(), burst: 1).must()
+            _ = set_limit(@c, name: "feed", every: time.seconds(10), burst: 1).must()
             answers = takers.run(limit: "feed", mode: "reserve", times: 2, here: 4, children: 2, each: 4).must()
             ready: [i64] @= []
 
@@ -1106,7 +1106,7 @@ test "set_limit live: limits whose names differ by a byte, a colon, a case or a 
             names = ["host", "host:", "Host", "hóst", "hos", "job:000000000000001"]
 
             for name in names
-                _ = set_limit(@c, name: name, every: time.hours(1).must(), burst: 2).must()
+                _ = set_limit(@c, name: name, every: time.hours(1), burst: 2).must()
 
             stored = sort(redis.texts_of(redis.call(@c, ["KEYS", PREFIX + "*"]).must()).must())
             wanted: [str] @= []
@@ -1137,7 +1137,7 @@ test "allow live: a connection the server ended fails closed on every limit call
         .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
-            _ = set_limit(@c, name: "api", every: time.hours(1).must(), burst: 3).must()
+            _ = set_limit(@c, name: "api", every: time.hours(1), burst: 3).must()
             assert allow(@c, name: "api", n: 1).must().granted
             id = redis.int_of(redis.call(@c, ["CLIENT", "ID"]).must()).must()
             other @= live.connect_kept().must()
@@ -1149,7 +1149,7 @@ test "allow live: a connection the server ended fails closed on every limit call
 
             assert redis.is_closed(c)
 
-            match set_limit(@c, name: "api", every: time.hours(1).must(), burst: 3)
+            match set_limit(@c, name: "api", every: time.hours(1), burst: 3)
                 .ok _  => assert false
                 .err e => assert e.code == redis.CLOSED
 
@@ -1177,13 +1177,13 @@ test "allow live: a limit refused now is granted once the wait it told has passe
         .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
-            _ = set_limit(@c, name: "tick", every: time.milliseconds(50).must(), burst: 1).must()
+            _ = set_limit(@c, name: "tick", every: time.milliseconds(50), burst: 1).must()
             assert allow(@c, name: "tick", n: 1).must().granted
             refused = allow(@c, name: "tick", n: 1).must()
             assert !refused.granted
             wait = jobs.reserve(limit: refused.bucket, at: refused.bucket.seen, n: 1).must().delay
-            assert wait.nanoseconds > 0 && !time.is_longer(a: wait, b: time.milliseconds(50).must())
-            time.sleep(time.sum(a: wait, b: time.milliseconds(5).must()).must())
+            assert wait.nanoseconds > 0 && !time.is_longer(a: wait, b: time.milliseconds(50))
+            time.sleep(time.sum(a: wait, b: time.milliseconds(5)).must())
             assert allow(@c, name: "tick", n: 1).must().granted
             redis.close(@c).must()
 
@@ -1269,7 +1269,7 @@ test "fail_attempt_with: a wait of the program's own"
                 @c,
                 claimed: claimed,
                 error: "the bank did not answer",
-                wait: time.minutes(3).must()
+                wait: time.minutes(3)
             ).must()
             assert after.state == .available && get(@c, id).must().errors.len() == 1
             redis.close(@c).must()
@@ -1296,7 +1296,7 @@ test "snooze: a resource busy"
         .ok first =>
             c @= first
             id = enqueue(@c, jobs.new_job("export", .null_value)).must()
-            snooze(@c, claim(@c, jobs.new_worker([jobs.DEFAULT_QUEUE])).must(), wait: time.minutes(1).must()).must()
+            snooze(@c, claim(@c, jobs.new_worker([jobs.DEFAULT_QUEUE])).must(), wait: time.minutes(1)).must()
             assert get(@c, id).must().attempt == 0
             redis.close(@c).must()
 
@@ -1327,7 +1327,7 @@ test "purge: completed jobs older than a day"
         .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
-            assert purge(@c, .completed, older_than: time.hours(24).must()).must() == 0
+            assert purge(@c, .completed, older_than: time.hours(24)).must() == 0
             redis.close(@c).must()
 
 # A queue paused, its jobs waiting.
@@ -1442,7 +1442,7 @@ test "set_limit: two a second, five at once"
         .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
-            made = set_limit(@c, name: "mail", every: time.milliseconds(500).must(), burst: 5).must()
+            made = set_limit(@c, name: "mail", every: time.milliseconds(500), burst: 5).must()
             assert jobs.available(limit: made, at: made.seen) == 5
             redis.close(@c).must()
 
@@ -1452,7 +1452,7 @@ test "remove_limit: a limit removed, then not found"
         .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
-            _ = set_limit(@c, name: "import", every: time.seconds(1).must(), burst: 1).must()
+            _ = set_limit(@c, name: "import", every: time.seconds(1), burst: 1).must()
             remove_limit(@c, name: "import").must()
             assert limit_named(@c, name: "import").is_err()
             redis.close(@c).must()
@@ -1463,7 +1463,7 @@ test "limit_named: one of three tokens taken"
         .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
-            _ = set_limit(@c, name: "api", every: time.hours(1).must(), burst: 3).must()
+            _ = set_limit(@c, name: "api", every: time.hours(1), burst: 3).must()
             assert allow(@c, name: "api", n: 1).must().granted
             now = limit_named(@c, name: "api").must()
             assert jobs.available(limit: now, at: now.seen) == 2
@@ -1475,12 +1475,12 @@ test "allow: a second request to a host refused, and its wait"
         .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
-            _ = set_limit(@c, name: "example.org", every: time.seconds(1).must(), burst: 1).must()
+            _ = set_limit(@c, name: "example.org", every: time.seconds(1), burst: 1).must()
             assert allow(@c, name: "example.org", n: 1).must().granted
             refused = allow(@c, name: "example.org", n: 1).must()
             assert !refused.granted
             wait = jobs.reserve(limit: refused.bucket, at: refused.bucket.seen, n: 1).must().delay
-            assert wait.nanoseconds > 0 && !time.is_longer(a: wait, b: time.seconds(1).must())
+            assert wait.nanoseconds > 0 && !time.is_longer(a: wait, b: time.seconds(1))
             redis.close(@c).must()
 
 # Reservations of every worker queue behind one another.
@@ -1489,10 +1489,10 @@ test "reserve: a third token waits its turn"
         .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
-            _ = set_limit(@c, name: "report", every: time.hours(1).must(), burst: 2).must()
+            _ = set_limit(@c, name: "report", every: time.hours(1), burst: 2).must()
             _ = reserve(@c, name: "report", n: 2).must()
             third = reserve(@c, name: "report", n: 1).must()
-            assert time.is_longer(a: third.delay, b: time.minutes(59).must()) && !time.is_longer(a: third.delay, b: time.hours(1).must())
+            assert time.is_longer(a: third.delay, b: time.minutes(59)) && !time.is_longer(a: third.delay, b: time.hours(1))
             redis.close(@c).must()
 
 # A wait longer than the caller accepts takes nothing.
@@ -1501,10 +1501,10 @@ test "reserve_within: a wait of an hour where a minute is allowed"
         .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
-            _ = set_limit(@c, name: "sync", every: time.hours(1).must(), burst: 1).must()
+            _ = set_limit(@c, name: "sync", every: time.hours(1), burst: 1).must()
             assert allow(@c, name: "sync", n: 1).must().granted
 
-            match reserve_within(@c, name: "sync", n: 1, within: time.minutes(1).must())
+            match reserve_within(@c, name: "sync", n: 1, within: time.minutes(1))
                 .ok _  => assert false
                 .err e => assert e.code == jobs.TIMEOUT
 
@@ -1516,7 +1516,7 @@ test "cancel_reservation: the token comes back"
         .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
-            _ = set_limit(@c, name: "upload", every: time.hours(1).must(), burst: 1).must()
+            _ = set_limit(@c, name: "upload", every: time.hours(1), burst: 1).must()
             assert allow(@c, name: "upload", n: 1).must().granted
             waiting = reserve(@c, name: "upload", n: 1).must()
             back = cancel_reservation(@c, name: "upload", taken: waiting).must()

@@ -287,7 +287,7 @@ function metadata_of(r: http2.Request) -> [grpc.Entry]
 #
 # - `r`: the client's call.
 function timeout_of(r: http2.Request) -> time.Duration
-    fallback = time.seconds(CALL_SECONDS).default(time.max_duration())
+    fallback = time.seconds(CALL_SECONDS)
 
     for f in r.headers
         if strings.to_lower_ascii(f.name) == "grpc-timeout"

@@ -491,7 +491,7 @@ test "amz_date and parse_amz_date: the suite's instant, the epoch, the last seco
     assert amz_date(time.epoch()) == "19700101T000000Z"
     assert amz_date(time.max_instant()) == "22620411T234716Z"
     assert amz_date(time.min_instant()) == "16770921T001243Z"
-    assert parse_amz_date("22620411T234716Z").must() == time.truncate(time.max_instant(), unit: time.seconds(1).must()).must()
+    assert parse_amz_date("22620411T234716Z").must() == time.truncate(time.max_instant(), unit: time.seconds(1)).must()
     assert parse_amz_date("99991231T235959Z").is_err()
     assert parse_amz_date("20150830T123600").is_err()
     assert parse_amz_date("2015083OT123600Z").is_err()

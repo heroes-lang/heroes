@@ -120,7 +120,7 @@ function init(f: flags.Found) -> ()?
     setup = making.Setup(
         material: drawn.slice(from: 0, to: 64),
         salt: drawn.slice(from: 64, to: 80),
-        params: kdf.calibrated(time.milliseconds(DERIVE_MS)?),
+        params: kdf.calibrated(time.milliseconds(DERIVE_MS)),
         config: config
     )
     r @= making.init(store, password: pw, setup: setup)?

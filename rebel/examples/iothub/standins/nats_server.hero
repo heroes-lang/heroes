@@ -457,7 +457,7 @@ function serve_on(to: (mailbox told.Told)) -> str?
     s @= Server(peers: [], published: 0, delivered: 0, port: l.address.port, turns: {})
 
     while true
-        events = match poll.wait(set, limit: time.hours(1).must())
+        events = match poll.wait(set, limit: time.hours(1))
             .ok got => got
             .err _  => break
 

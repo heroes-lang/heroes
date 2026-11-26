@@ -72,15 +72,15 @@ function stamp(@clock: Clock) -> time.Instant?
 
 test "now: a fixed clock reads its start until its first stamp, then each stamp"
     start = time.date(year: 2026, month: 11, day: 21).must()
-    c @= fixed(start: start, step: time.minutes(1).must())
+    c @= fixed(start: start, step: time.minutes(1))
     assert now(c).must() == start
     assert stamp(@c).must() == start
-    assert stamp(@c).must() == time.add(start, d: time.minutes(1).must()).must()
-    assert now(c).must() == time.add(start, d: time.minutes(1).must()).must()
+    assert stamp(@c).must() == time.add(start, d: time.minutes(1)).must()
+    assert now(c).must() == time.add(start, d: time.minutes(1)).must()
     assert is_fixed(c) && !is_fixed(wall())
 
 test "stamp: a fixed clock of no step gives one instant every time"
     start = time.date(year: 2000, month: 1, day: 1).must()
-    c @= fixed(start: start, step: time.seconds(0).must())
+    c @= fixed(start: start, step: time.seconds(0))
     _ = stamp(@c).must()
     assert stamp(@c).must() == start && c.stamps == 2

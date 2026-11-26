@@ -417,7 +417,7 @@ function move(when: ical.When, span: ical.Span, sign: i64) -> ical.When?
             )
         .floating f => like_at(like: when, local: civil.local_seconds(f.local) + days * civil.DAY_SECONDS + exact)
         .utc u =>
-            moved = time.add(t: u.at, d: time.seconds(days * civil.DAY_SECONDS + exact)?)?
+            moved = time.add(t: u.at, d: time.seconds_checked(days * civil.DAY_SECONDS + exact)?)?
             ok(.utc(at: moved))
         .zoned z =>
             shifted = time.DateTime(
@@ -431,7 +431,7 @@ function move(when: ical.When, span: ical.Span, sign: i64) -> ical.When?
             )
             base = civil.local_seconds(shifted) + days * civil.DAY_SECONDS
             at = time.from_date_time_in(dt: civil.date_time_of(base), zone: z.zone, choice: .compatible)?
-            moved = time.add(t: at, d: time.seconds(exact)?)?
+            moved = time.add(t: at, d: time.seconds_checked(exact)?)?
             ok(.zoned(local: time.to_date_time_in(t: moved, zone: z.zone), zone: z.zone))
 
 test "parse_date and parse_clock: the edges of the calendar, a leap day, the wrong lengths and characters, a leap second"
@@ -477,7 +477,7 @@ test "whens_of: the kinds of a value, a zone no one names, a type that is no mom
             .ok _  => assert false
             .err e => assert e.code == ical.NOT_FOUND || e.code == ical.INVALID || e.code == ical.UNSUPPORTED
 
-    custom = time.fixed_zone(name: "No/Such", offset: time.hours(5).must()).must()
+    custom = time.fixed_zone(name: "No/Such", offset: time.hours(5)).must()
     assert whens_of(line: ical.Line(group: nothing, name: "DTSTART", params: [ical.Param(name: "TZID", values: ["No/Such"])], value: "20261201T090000"), zones: [custom]).must().len() == 1
 
 test "parse_span and span_text: the forms, the signs, and what is not a duration, as python-icalendar reads the durations"
@@ -533,7 +533,7 @@ test "instant_of: a reading in a gap and in a fold are placed as RFC 5545 sectio
     assert time.unix_seconds(instant_of(when: day, floating: rome).must()) == 1796112000 - 9 * 3600
 
 test "when_text and when_params: each kind written, and a year that has no four digits refused"
-    zone = time.fixed_zone(name: "X/Y", offset: time.hours(1).must()).must()
+    zone = time.fixed_zone(name: "X/Y", offset: time.hours(1)).must()
     local = time.DateTime(year: 2026, month: 11, day: 2, hour: 9, minute: 5, second: 7, nanosecond: 0)
     assert when_text(.date(year: 2026, month: 11, day: 2)).must() == "20261102" && when_params(.date(year: 2026, month: 11, day: 2))[0].values == ["DATE"]
     assert when_text(.floating(local: local)).must() == "20261102T090507" && when_params(.floating(local: local)).len() == 0

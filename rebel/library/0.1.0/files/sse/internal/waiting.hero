@@ -87,7 +87,7 @@ function pause(ms: i64) -> ()?
             left
         else
             100
-        time.sleep(time.milliseconds(part).default(time.max_duration()))
+        time.sleep(time.milliseconds_checked(part).default(time.max_duration()))
         left @ left - part
 
     if os.is_stop_asked()

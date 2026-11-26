@@ -81,7 +81,7 @@ function serve(s: settings.Settings, store: vault.Store, name: str, host: str, p
         .ok _ => _ = 0
 
     server @= http.default_server()
-    server.deadline @ time.seconds(10)?
+    server.deadline @ time.seconds(10)
     served = http.serve_tls_with(server, l: listener, state: identity.page, handler: answer)
     _ = tls.close_listener(@listener).is_err()
     return served
@@ -162,7 +162,7 @@ record Visit
 function visit(host: str, port: i64, roots: str) -> Visit?
     client @= http.default_client()
     client.roots @ roots
-    client.deadline @ time.seconds(15)?
+    client.deadline @ time.seconds(15)
     response = http.get(client, target: f"https://{host}:{port}/")?
     return ok(Visit(status: response.status, body: http.text_of(response).default("")))
 

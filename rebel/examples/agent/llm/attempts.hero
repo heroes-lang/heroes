@@ -33,8 +33,8 @@ record Advice
 # eight seconds, at most four attempts in all, spread by full jitter on the
 # system's clock (`retries.with_jitter`).
 function default_policy() -> retries.Backoff
-    first = time.milliseconds(500).must()
-    longest = time.seconds(8).must()
+    first = time.milliseconds(500)
+    longest = time.seconds(8)
     policy = retries.with_attempts(
         retries.backoff(first: first, multiplier: 2.0, longest: longest).must(),
         attempts: 4
@@ -103,7 +103,7 @@ function longer(a: time.Duration, b: time.Duration) -> time.Duration
 
 test "default_policy: four attempts from half a second"
     p = default_policy()
-    assert p.attempts == 4 && p.first == time.milliseconds(500).must()
+    assert p.attempts == 4 && p.first == time.milliseconds(500)
 
 test "longer: the advised wait wins when it is longer"
-    assert longer(a: time.seconds(1).must(), b: time.seconds(2).must()) == time.seconds(2).must()
+    assert longer(a: time.seconds(1), b: time.seconds(2)) == time.seconds(2)

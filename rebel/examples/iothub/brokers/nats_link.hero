@@ -45,7 +45,7 @@ function connect(s: settings.NatsSettings, name: str) -> nats.Client?
                 _ = nats.close(@c).is_err()
                 return fail(code: e.code, msg: e.msg)
 
-    match nats.flush(@c, wait: time.seconds(5)?)
+    match nats.flush(@c, wait: time.seconds(5))
         .ok _ => return ok(c)
         .err e =>
             _ = nats.close(@c).is_err()
@@ -94,7 +94,7 @@ function flush(@l: Link) -> ()?
         return ok()
 
     l.unflushed @ false
-    return nats.flush(@l.clients[0], wait: time.seconds(5)?)
+    return nats.flush(@l.clients[0], wait: time.seconds(5))
 
 # Ends the client and leaves the link down.
 #

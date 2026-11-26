@@ -154,10 +154,10 @@ test "take: time gone refills a token, never past the burst"
     rate = settings.Rate(burst: 1, every_ms: 1000)
     l @= new()
     assert take(@l, key: "a", rate: rate, now: time.epoch()).allowed
-    half = time.add(time.epoch(), d: time.milliseconds(500).must()).must()
+    half = time.add(time.epoch(), d: time.milliseconds(500)).must()
     refused = take(@l, key: "a", rate: rate, now: half)
     assert !refused.allowed && refused.retry_ms == 500
-    later = time.add(time.epoch(), d: time.hours(10).must()).must()
+    later = time.add(time.epoch(), d: time.hours(10)).must()
     allowed = take(@l, key: "a", rate: rate, now: later)
     assert allowed.allowed && allowed.remaining == 0
 

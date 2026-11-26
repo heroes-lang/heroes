@@ -294,7 +294,7 @@ test "read: a title that is a number, tags holding a number, and a list as the w
     assert read(split("---\nweight: 1.5\n---\n").must()).is_err()
 
 test "instant_of: a date alone at the zone's midnight, an offset kept, a local time, and nonsense"
-    berlin = time.fixed_zone("CET", time.hours(1).must()).must()
+    berlin = time.fixed_zone("CET", time.hours(1)).must()
     assert time.format(instant_of("2026-03-14", berlin).must(), .rfc3339) == "2026-03-13T23:00:00Z"
     assert time.format(instant_of("2026-03-14T09:30:00+02:00", berlin).must(), .rfc3339) == "2026-03-14T07:30:00Z"
     assert time.format(instant_of("2026-03-14T09:30:00", berlin).must(), .rfc3339) == "2026-03-14T08:30:00Z"

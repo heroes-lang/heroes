@@ -42,7 +42,7 @@ record Replayed
 function worker_of() -> jobs.Worker
     w @= jobs.new_worker([deadletter.QUEUE])
     w.name @ "pipeline-replay"
-    w.lease @ time.minutes(5).default(w.lease)
+    w.lease @ time.minutes(5)
     return w
 
 # Replays every job ready, and answers each one's outcome, in the order
@@ -123,4 +123,4 @@ function finished(@p: pipeline.Pipeline, key: str, claimed: jobs.Info, etag: str
 
 test "worker_of: claims from the replay queue under its own name"
     w = worker_of()
-    assert w.queues == [deadletter.QUEUE] && w.name == "pipeline-replay" && w.lease == time.minutes(5).must()
+    assert w.queues == [deadletter.QUEUE] && w.name == "pipeline-replay" && w.lease == time.minutes(5)

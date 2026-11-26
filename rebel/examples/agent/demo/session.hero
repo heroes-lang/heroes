@@ -130,7 +130,7 @@ function indexed(docs: str, store_dir: str) -> toolbox.Toolbox?
     )
     exe = os.executable_path()?
     return ok(
-        toolbox.Toolbox(root: docs, store: loaded, embedder: .local(dimensions: DIMENSIONS), allowed: {"agent": exe}, model: "gpt-4o", command_limit: time.seconds(60).must())
+        toolbox.Toolbox(root: docs, store: loaded, embedder: .local(dimensions: DIMENSIONS), allowed: {"agent": exe}, model: "gpt-4o", command_limit: time.seconds(60))
     )
 
 # Two searches of the store, written as `agent search` writes them.

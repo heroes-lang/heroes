@@ -120,7 +120,7 @@ function start(c: settings.Config, at: time.Instant, handed: bool) -> Monitor?
         handed: [],
         procs: procs.new_procs(),
         host: host.new_host(),
-        series: store.new_store(time.minutes(KEEP_MINUTES)?),
+        series: store.new_store(time.minutes(KEEP_MINUTES)),
         alerts: engine.new_alerts(c.rules)?,
         registry: registry.new_registry(c.host)?,
         tracer: export.new_tracer(c)?,

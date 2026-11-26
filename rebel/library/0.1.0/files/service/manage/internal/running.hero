@@ -30,7 +30,7 @@ record Ran
 
 # The bound of a question that waits on no service.
 function ask_limit() -> time.Duration
-    return time.seconds(ASK_SECONDS).must()
+    return time.seconds(ASK_SECONDS)
 
 # `program` and `arguments` as a line a reader can run again.
 function line_of(program: str, arguments: [str]) -> str
@@ -90,7 +90,7 @@ function looked(started: time.Mark, limit: time.Duration) -> bool
     if rest.nanoseconds == 0
         return false
 
-    step = time.milliseconds(LOOK_MS).must()
+    step = time.milliseconds(LOOK_MS)
 
     if rest.nanoseconds < step.nanoseconds
         time.sleep(rest)
@@ -137,7 +137,7 @@ test "ran: an exit code and both streams read, a program not there, a time limit
         .ok _  => assert false
         .err e => assert e.code == failure.UNSUPPORTED
 
-    slow = ran("/bin/sleep", arguments: ["5"], limit: time.milliseconds(200).must())
+    slow = ran("/bin/sleep", arguments: ["5"], limit: time.milliseconds(200))
 
     match slow
         .ok _  => assert false

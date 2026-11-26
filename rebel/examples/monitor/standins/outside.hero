@@ -59,7 +59,7 @@ function serve(@o: Outside, most: time.Duration) -> ()?
     began = time.mark()?
 
     while !o.collector.stopped
-        for e in poll.wait(o.set, limit: time.milliseconds(TURN_MS)?)?
+        for e in poll.wait(o.set, limit: time.milliseconds(TURN_MS))?
             _ = collector.serve(@o.collector, set: o.set, key: e.key)
 
         device.serve(@o.device)

@@ -274,7 +274,7 @@ function format_condition(c: Condition) -> str
 
 test "parse_condition: a mean over a window, a bare key, an age and a size"
     hot = parse_condition("avg(sensor.temperature, 2m) > 70").must()
-    assert hot.figure == .avg && hot.key == "sensor.temperature" && hot.span == time.minutes(2).must()
+    assert hot.figure == .avg && hot.key == "sensor.temperature" && hot.span == time.minutes(2)
     assert hot.comparison == .above && hot.threshold == 70.0
     down = parse_condition("service.*.up < 1").must()
     assert down.figure == .last && down.key == "service.*.up" && down.comparison == .below

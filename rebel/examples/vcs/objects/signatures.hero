@@ -100,7 +100,7 @@ function parse_offset(text: str) -> i64?
 #
 # - `signature`: the signature.
 function format_date(signature: Signature) -> str
-    local = match time.add(signature.when, d: time.minutes(signature.offset_minutes).default(time.nanoseconds(0)))
+    local = match time.add(signature.when, d: time.minutes_checked(signature.offset_minutes).default(time.nanoseconds(0)))
         .ok t  => t
         .err _ => signature.when
 

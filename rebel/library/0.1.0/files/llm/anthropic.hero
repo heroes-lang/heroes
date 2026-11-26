@@ -200,8 +200,8 @@ function default_client(api_key: str) -> Client
         betas: [],
         headers: [],
         max_retries: 2,
-        max_wait: time.minutes(1).must(),
-        deadline: time.minutes(10).must(),
+        max_wait: time.minutes(1),
+        deadline: time.minutes(10),
         roots: "",
         limits: http.default_limits()
     )
@@ -783,7 +783,7 @@ record ApiError
 function failure_of(msg: str) -> ApiError?
     f = failures.read_back(msg)?
     return ok(
-        ApiError(status: f.status, kind: f.kind, message: f.message, request_id: f.request_id, retryable: f.retryable, wait: time.milliseconds(f.wait_ms).default(time.max_duration()))
+        ApiError(status: f.status, kind: f.kind, message: f.message, request_id: f.request_id, retryable: f.retryable, wait: time.milliseconds_checked(f.wait_ms).default(time.max_duration()))
     )
 
 ## Sending
@@ -1559,7 +1559,7 @@ test "create: a 429 with no retry left fails limit, its status, type, request id
         .err e =>
             f = failure_of(e.msg).must()
             assert e.code == LIMIT && f.status == 429 && f.kind == "rate_limit_error" && f.request_id == "req_018E"
-            assert f.retryable && f.wait == time.seconds(7).must() && f.message == "Number of requests has exceeded your rate limit"
+            assert f.retryable && f.wait == time.seconds(7) && f.message == "Number of requests has exceeded your rate limit"
             assert !strings.contains(s: e.msg, substr: "sk-secret-1")
 
     assert canned.requests_of(@t).len() == 1
@@ -1574,7 +1574,7 @@ test "create: a wait past max_wait told rather than slept, a 400 never sent agai
 
     match create(c, r: r)
         .ok _  => assert false
-        .err e => assert e.code == LIMIT && failure_of(e.msg).must().wait == time.minutes(2).must()
+        .err e => assert e.code == LIMIT && failure_of(e.msg).must().wait == time.minutes(2)
 
     match create(c, r: r)
         .ok _  => assert false
@@ -1787,7 +1787,7 @@ test "live: the smallest request, where REBEL_ANTHROPIC_LIVE_KEY gives a key of 
 # A client of the API with a key the program holds.
 test "default_client: the version, the address and two retries"
     c = default_client("sk-example")
-    assert c.version == API_VERSION && c.base_url == BASE_URL && c.max_retries == 2 && c.deadline == time.minutes(10).must()
+    assert c.version == API_VERSION && c.base_url == BASE_URL && c.max_retries == 2 && c.deadline == time.minutes(10)
 
 # A client whose key the environment holds, or the program told it is unset.
 test "client_from_env: a key from ANTHROPIC_API_KEY"
@@ -1979,7 +1979,7 @@ test "with_tool_results: a tool loop the program drives"
 # The advice of a failure the API answered, read back from its message.
 test "failure_of: a rate limit's advice"
     f = failure_of("[429 rate_limit_error req_01 1500] slow down").must()
-    assert f.status == 429 && f.retryable && f.wait == time.milliseconds(1500).must() && f.message == "slow down"
+    assert f.status == 429 && f.retryable && f.wait == time.milliseconds(1500) && f.message == "slow down"
 
 # An endpoint this package does not wrap, reached with the client's key.
 test "send_raw: GET /v1/files"

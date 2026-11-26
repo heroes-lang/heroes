@@ -179,7 +179,7 @@ function served(s: settings.Settings, identity: certs.Identity, started: [Starte
         graphql: s.graphql
     )
     start = time.from_unix(whole_seconds: START_SECONDS, extra_nanoseconds: 0).default(time.epoch())
-    ticks = clock.fixed_from(start: start, step: time.milliseconds(1).default(time.nanoseconds(1_000_000))).default(
+    ticks = clock.fixed_from(start: start, step: time.milliseconds(1)).default(
         .wall
     )
     spread = clock.fixed_chance(0.5).default(.drawn)

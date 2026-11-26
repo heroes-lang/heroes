@@ -115,7 +115,7 @@ function served(setup: Setup) -> kafka_state.Broker?
     held: [Held] @= []
 
     while true
-        limit = time.milliseconds(wait_limit(held)).default(time.nanoseconds(0))
+        limit = time.milliseconds_checked(wait_limit(held)).default(time.nanoseconds(0))
 
         match serve.wait(@loop, limit: limit)
             .err _ => break

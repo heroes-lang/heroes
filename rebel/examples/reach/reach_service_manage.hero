@@ -36,7 +36,7 @@ function main()
         .system
     else
         .user
-    limit @= time.seconds(10).must()
+    limit @= time.seconds(10)
 
     if given.len() >= 4 && strings.has_prefix(s: given[3], prefix: "--span=")
         match numbers.parse_int(given[3].slice(from: 7, to: given[3].len()))

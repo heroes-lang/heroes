@@ -107,7 +107,7 @@ function open(path: str) -> Db?
     flags = hero_sqlite3.SQLITE_OPEN_READWRITE | hero_sqlite3.SQLITE_OPEN_CREATE | hero_sqlite3.SQLITE_OPEN_EXRESCODE
     made = connections.open_connection(path, flags: flags, wait_ms: 5000)?
     return ok(
-        Db(connection: made.connection, path: path, transaction_open: false, busy_timeout: time.seconds(5).must(), cached: [], prepared: 0)
+        Db(connection: made.connection, path: path, transaction_open: false, busy_timeout: time.seconds(5), cached: [], prepared: 0)
     )
 
 # A connection to the database in the file at `path` that reads and never
@@ -123,7 +123,7 @@ function open_read_only(path: str) -> Db?
     flags = hero_sqlite3.SQLITE_OPEN_READONLY | hero_sqlite3.SQLITE_OPEN_EXRESCODE
     made = connections.open_connection(path, flags: flags, wait_ms: 5000)?
     return ok(
-        Db(connection: made.connection, path: path, transaction_open: false, busy_timeout: time.seconds(5).must(), cached: [], prepared: 0)
+        Db(connection: made.connection, path: path, transaction_open: false, busy_timeout: time.seconds(5), cached: [], prepared: 0)
     )
 
 # A connection to a new database in memory, empty, which no other connection
@@ -618,7 +618,7 @@ test "close: refused while a prepared statement is open, twice fails closed, and
         .err e => assert e.code == sql.CLOSED && e.msg == "the connection to \":memory:\" is closed"
 
     assert exec(@db, "SELECT 1", []).is_err() && query(@db, "SELECT 1", []).is_err() && query_one(@db, "SELECT 1", []).is_err()
-    assert exec_script(@db, "SELECT 1").is_err() && prepare(@db, "SELECT 1").is_err() && set_busy_timeout(@db, time.milliseconds(1).must()).is_err()
+    assert exec_script(@db, "SELECT 1").is_err() && prepare(@db, "SELECT 1").is_err() && set_busy_timeout(@db, time.milliseconds(1)).is_err()
     assert begin(@db).is_err() && commit(@db).is_err() && rollback(@db).is_err() && total_changes(db).is_err()
     assert !in_transaction(db)
 
@@ -852,11 +852,11 @@ test "set_busy_timeout: a write lock another connection holds, waited for 0 ms, 
 
     rollback(@a).must()
 
-    match set_busy_timeout(@b, time.milliseconds(-1).must())
+    match set_busy_timeout(@b, time.milliseconds(-1))
         .ok _  => assert false
         .err e => assert e.code == sql.INVALID && e.msg == "a busy timeout of -1ms is outside zero to 2147483647 ms"
 
-    assert set_busy_timeout(@b, time.milliseconds(2147483648).must()).is_err()
+    assert set_busy_timeout(@b, time.milliseconds(2147483648)).is_err()
     close(@a).must()
     close(@b).must()
     assert hero_disk.remove(path) == 0
@@ -941,7 +941,7 @@ test "ping: open, then closed"
 # A connection that gives up on a lock after a second.
 test "set_busy_timeout: one second"
     db @= open_memory().must()
-    set_busy_timeout(@db, time.seconds(1).must()).must()
+    set_busy_timeout(@db, time.seconds(1)).must()
     close(@db).must()
 
 # Whether a transaction is open.

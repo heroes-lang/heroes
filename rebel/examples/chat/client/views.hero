@@ -447,7 +447,7 @@ test "apply: typing shown, then cleared by the typist's post, and a direct messa
     apply(@v, n: .welcome(user: "alice", rooms: ["general"], online: ["alice"]), now: t)
     apply(@v, n: .typing(room: "general", user: "bob"), now: t)
     assert typing_in(v, i: 0, now: t) == ["bob"]
-    assert typing_in(v, i: 0, now: time.add(t, d: time.seconds(7).must()).must()).len() == 0
+    assert typing_in(v, i: 0, now: time.add(t, d: time.seconds(7)).must()).len() == 0
     apply(@v, n: .posted(message: sample(id: "9", room: "general", author: "bob")), now: t)
     assert typing_in(v, i: 0, now: t).len() == 0
     d = model.Direct(id: "d", sender: "bob", recipient: "alice", text: "psst", at: t)

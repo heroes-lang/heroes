@@ -77,7 +77,7 @@ record Job
 
 # Sends 7 to the mailbox after the pause.
 function sender(job: Job) -> i64
-    time.sleep(time.milliseconds(job.pause_ms).must())
+    time.sleep(time.milliseconds(job.pause_ms))
     job.m.send(7).must()
     return 1
 
@@ -105,11 +105,11 @@ test "add_mailbox and add_set: on the native side a value another thread sends e
     key = added.must()
     sent = spawn(sender, Job(m: m, pause_ms: 300)).must()
     started = time.mark().must()
-    assert ui.wait(@app, within: time.seconds(5).must()).must() == .ready(key: key)
+    assert ui.wait(@app, within: time.seconds(5)).must() == .ready(key: key)
     assert time.elapsed(started).must().nanoseconds < 4000000000
     assert ui.wait(@app, within: time.nanoseconds(0)).must() == .ready(key: key)
     assert m.receive(within_ms: 0).must() == 7
-    assert fixture.code_of(ui.wait(@app, within: time.milliseconds(50).must())) == ui.TIMEOUT
+    assert fixture.code_of(ui.wait(@app, within: time.milliseconds(50))) == ui.TIMEOUT
     _ = sent.wait()
     second = ui.add_mailbox(@app, m: m).must()
     assert second != key
@@ -118,11 +118,11 @@ test "add_mailbox and add_set: on the native side a value another thread sends e
     third = ui.add_mailbox(@app, m: spare).must()
     ui.remove_source(@app, key: second).must()
     assert fixture.code_of(ui.remove_source(@app, key: second)) == ui.INVALID
-    assert ui.wait(@app, within: time.seconds(5).must()).must() == .ready(key: third)
+    assert ui.wait(@app, within: time.seconds(5)).must() == .ready(key: third)
     assert spare.receive(within_ms: 0).must() == 9
     ui.remove_source(@app, key: third).must()
     ui.remove_source(@app, key: key).must()
-    assert fixture.code_of(ui.wait(@app, within: time.milliseconds(50).must())) == ui.TIMEOUT
+    assert fixture.code_of(ui.wait(@app, within: time.milliseconds(50))) == ui.TIMEOUT
     ui.close(@app).must()
 
 test "add_set: on the native side a poll set's timer ends the wait as ready naming the set, the program takes the timer itself, a set watched twice is refused, and a set the program closes is dropped at the next wait (panel 256's R9)"
@@ -133,7 +133,7 @@ test "add_set: on the native side a poll set's timer ends the wait as ready nami
     app @= ui.open(.native).must()
     _ = ui.window(@app, title: "Sources", width: 300, height: 200).must()
     set @= poll.make(4).must()
-    tick = poll.add_timer(set, first: time.milliseconds(200).must(), every: time.nanoseconds(0)).must()
+    tick = poll.add_timer(set, first: time.milliseconds(200), every: time.nanoseconds(0)).must()
     added = ui.add_set(@app, set: set)
     refusal = fixture.unsupported_words(added)
 
@@ -148,15 +148,15 @@ test "add_set: on the native side a poll set's timer ends the wait as ready nami
     turns @= 0
 
     while told.len() == 0 && turns < 20
-        assert ui.wait(@app, within: time.seconds(5).must()).must() == .ready(key: key)
+        assert ui.wait(@app, within: time.seconds(5)).must() == .ready(key: key)
         told @ poll.wait(set, limit: time.nanoseconds(0)).must()
         turns @ turns + 1
 
     assert time.elapsed(started).must().nanoseconds < 4000000000
     assert told.len() == 1
     assert told[0].key == tick
-    assert fixture.code_of(ui.wait(@app, within: time.milliseconds(50).must())) == ui.TIMEOUT
+    assert fixture.code_of(ui.wait(@app, within: time.milliseconds(50))) == ui.TIMEOUT
     poll.close(@set).must()
-    assert fixture.code_of(ui.wait(@app, within: time.milliseconds(50).must())) == ui.TIMEOUT
+    assert fixture.code_of(ui.wait(@app, within: time.milliseconds(50))) == ui.TIMEOUT
     assert fixture.code_of(ui.remove_source(@app, key: key)) == ui.INVALID
     ui.close(@app).must()

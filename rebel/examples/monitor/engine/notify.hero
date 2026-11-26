@@ -69,7 +69,7 @@ function message_of(t: engine.Transition, exact: bool) -> str
 function run(command: [str], t: engine.Transition, exact: bool) -> str
     c = process.with_time_limit(
         process.with_error_to_output(process.with_input(process.command(command[0], command.slice(from: 1, to: command.len())), from: .text(text: message_of(t, exact: exact)))),
-        limit: time.seconds(LIMIT_SECONDS).default(time.nanoseconds(1))
+        limit: time.seconds(LIMIT_SECONDS)
     )
 
     match process.run(c)
