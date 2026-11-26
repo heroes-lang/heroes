@@ -11,6 +11,7 @@ packages = [
     "hash",
     "ini",
     "io",
+    "java_properties",
     "json",
     "json/path",
     "lists",
