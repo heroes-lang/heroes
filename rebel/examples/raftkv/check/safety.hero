@@ -1,0 +1,235 @@
+# The checker: Raft's five safety properties (the Raft paper's figure 3),
+# asked of every running node after every step of the simulation, from
+# outside the algorithm and with nothing but what the nodes hold. Election
+# Safety: at most one leader a term. Leader Append-Only: a leader never cuts
+# or rewrites its own log in its term. Log Matching: two logs that hold an
+# entry of the same index and term hold the same entries up to it. Leader
+# Completeness: a leader holds every entry committed before it. State
+# Machine Safety: no two nodes commit, and so apply, different entries at
+# one index. What it saw committed it remembers, so a property is held
+# across crashes and restarts too.
+
+use <rebel>/math
+
+use raft/entry
+use raft/log
+use raft/node
+
+## The checker
+
+# What the checker has seen.
+record Checker
+    # The leader seen in each term.
+    leaders: {i64: i64}
+    # Each leader's last index and its term when last seen, by term.
+    tips: {i64: Tip}
+    # The entry committed at each index, as first seen committed.
+    committed: {i64: entry.Entry}
+    # The term of the node first seen committing each index: a leader of a
+    # later term must hold that entry.
+    committed_in: {i64: i64}
+    # The highest index seen committed.
+    highest: i64
+    # Up to which index each node's committed entries were checked.
+    checked: {i64: i64}
+    # How many times the properties were asked.
+    steps: i64
+    # The properties found broken, in words, first first.
+    violations: [str]
+
+# A leader's log as last seen: its last index and that entry's term.
+record Tip
+    # The last index.
+    index: i64
+    # Its term.
+    term: i64
+
+# A checker that has seen nothing.
+function new_checker() -> Checker
+    return Checker(
+        leaders: {},
+        tips: {},
+        committed: {},
+        committed_in: {},
+        highest: 0,
+        checked: {},
+        steps: 0,
+        violations: []
+    )
+
+# Whether no property has been found broken.
+#
+# - `c`: the checker.
+function is_safe(c: Checker lent) -> bool
+    return c.violations.len() == 0
+
+# Asks every property of `nodes`, the nodes running now, and keeps what
+# it learns; a broken property is added to `violations`.
+#
+# - `c`: the checker.
+# - `nodes`: the running nodes.
+function check(@c: Checker, nodes: [node.Node] lent)
+    c.steps @ c.steps + 1
+
+    for n in nodes
+        commits(@c, n)
+
+    for n in nodes
+        if n.role == .leader
+            one_leader(@c, n)
+            append_only(@c, n)
+            complete(@c, n)
+
+    for k in range(from: 0, to: nodes.len())
+        for other in range(from: k + 1, to: nodes.len())
+            matching(@c, a: nodes[k], b: nodes[other])
+
+function broken(@c: Checker, what: str)
+    c.violations @ c.violations.push(f"step {c.steps}: {what}")
+
+## The properties
+
+# Election Safety: `n` is the only leader of its term.
+function one_leader(@c: Checker, n: node.Node lent)
+    match c.leaders[n.term]
+        .ok other =>
+            if other != n.id
+                broken(@c, f"Election Safety: nodes {other} and {n.id} both lead term {n.term}")
+        .err _ => c.leaders[n.term] @ n.id
+
+# Leader Append-Only: `n`'s log, since last seen in its term, has only grown.
+function append_only(@c: Checker, n: node.Node lent)
+    last = log.last_index(n.log)
+
+    match c.tips[n.term]
+        .ok tip =>
+            if last < tip.index
+                broken(@c, f"Leader Append-Only: node {n.id}'s log in term {n.term} shrank from {tip.index} to {last}")
+            else if tip.index > n.log.base_index && log.term_at(n.log, index: tip.index).default(-1) != tip.term
+                broken(@c, f"Leader Append-Only: node {n.id} rewrote its entry {tip.index} in term {n.term}")
+        .err _ => _ = 0
+
+    c.tips[n.term] @ Tip(index: last, term: log.last_term(n.log))
+
+# Leader Completeness: `n` holds every entry above its snapshot that was
+# committed in an earlier term than the one it leads; a leader cut off in an
+# older term owes nothing a later one committed.
+function complete(@c: Checker, n: node.Node lent)
+    index: i64 @= n.log.base_index + 1
+
+    while index <= c.highest
+        match c.committed[index]
+            .ok e =>
+                owed = c.committed_in[index].default(n.term) < n.term
+
+                if owed && index > log.last_index(n.log)
+                    broken(
+                        @c,
+                        f"Leader Completeness: node {n.id} leads term {n.term} without entry {index}, committed in term {e.term}"
+                    )
+                    return
+
+                if owed && log.entry_at(n.log, index: index) != e
+                    broken(
+                        @c,
+                        f"Leader Completeness: node {n.id} leads term {n.term} holding {entry.format_entry(log.entry_at(n.log, index: index))} where {entry.format_entry(e)} was committed"
+                    )
+                    return
+            .err _ => _ = 0
+
+        index @ index + 1
+
+# State Machine Safety: the entries `n` holds committed are the ones every
+# other node committed at their indices.
+function commits(@c: Checker, n: node.Node lent)
+    from = math.max_i64(a: c.checked[n.id].default(0), b: n.log.base_index) + 1
+    index: i64 @= from
+
+    while index <= n.commit
+        e = log.entry_at(n.log, index: index)
+
+        match c.committed[index]
+            .ok seen =>
+                if seen != e
+                    broken(
+                        @c,
+                        f"State Machine Safety: node {n.id} commits {entry.format_entry(e)} where {entry.format_entry(seen)} was committed"
+                    )
+            .err _ =>
+                c.committed[index] @ e
+                c.committed_in[index] @ n.term
+
+                if index > c.highest
+                    c.highest @ index
+
+        index @ index + 1
+
+    c.checked[n.id] @ n.commit
+
+# Log Matching: where `a` and `b` hold an entry of one index and term, they
+# hold the same entries from where both logs begin up to it.
+function matching(@c: Checker, a: node.Node lent, b: node.Node lent)
+    low = math.max_i64(a: a.log.base_index, b: b.log.base_index) + 1
+    index: i64 @= math.min_i64(a: log.last_index(a.log), b: log.last_index(b.log))
+
+    while index >= low && log.term_at(a.log, index: index).must() != log.term_at(b.log, index: index).must()
+        index @ index - 1
+
+    while index >= low
+        if log.entry_at(a.log, index: index) != log.entry_at(b.log, index: index)
+            broken(@c, f"Log Matching: nodes {a.id} and {b.id} hold another entry at {index} below a matching one")
+            return
+        index @ index - 1
+
+## Tests
+
+# Three members of term 1 holding the same `count` entries, committed.
+function agreed(count: i64) -> [node.Node]
+    out: [node.Node] @= []
+
+    for id in [1, 2, 3]
+        n @= node.new_node(id: id, members: [1, 2, 3], settings: node.default_settings(), seed: 1, now: 0)
+        n.term @ 1
+        n.log @ log.sample(count: count, term: 1)
+        n.commit @ count
+        out @ out.push(n)
+
+    out[0].role @ .leader
+    return out
+
+test "check: agreeing nodes break nothing, step after step"
+    c @= new_checker()
+    nodes = agreed(4)
+    check(@c, nodes)
+    check(@c, nodes)
+    assert is_safe(c)
+    assert c.highest == 4 && c.steps == 2
+
+test "check: two leaders of one term, and a leader that lost a committed entry"
+    c @= new_checker()
+    nodes @= agreed(4)
+    check(@c, nodes)
+    nodes[1].role @ .leader
+    check(@c, nodes)
+    assert c.violations == ["step 2: Election Safety: nodes 1 and 2 both lead term 1"]
+    d @= new_checker()
+    later @= agreed(4)
+    check(@d, later)
+    later[0].role @ .follower
+    later[2].term @ 2
+    later[2].role @ .leader
+    log.cut_from(@later[2].log, index: 3)
+    check(@d, later)
+    assert d.violations[0] == "step 2: Leader Completeness: node 3 leads term 2 without entry 3, committed in term 1"
+
+test "check: logs that match at an index and differ below it"
+    c @= new_checker()
+    nodes @= agreed(3)
+    nodes[1].commit @ 0
+    nodes[2].commit @ 0
+    nodes[0].commit @ 0
+    log.cut_from(@nodes[1].log, index: 2)
+    log.append(@nodes[1].log, entry.Entry(index: 2, term: 1, payload: .config(members: [1, 2])))
+    log.append(@nodes[1].log, entry.Entry(index: 3, term: 1, payload: .noop))
+    check(@c, nodes)
+    assert c.violations[0] == "step 1: Log Matching: nodes 1 and 2 hold another entry at 2 below a matching one"

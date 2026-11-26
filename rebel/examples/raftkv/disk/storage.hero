@@ -1,0 +1,295 @@
+# A node's stable storage: three files in a folder of its own. `state`
+# holds the current term and the vote, rewritten whole and atomically when
+# either changes; `wal` holds the log after the snapshot, one framed record
+# an entry, appended as entries arrive and rewritten whole when entries are
+# cut or compacted; `snapshot` holds the latest snapshot, rewritten whole
+# and atomically. On a restart the three are read back; a record the crash
+# cut short at the end of `wal` is found by its frame, counted, and cut off
+# the file, so the next append starts on a whole record (etcd's WAL repairs
+# its tail the same way).
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/path
+
+use kv/image
+use raft/entry
+use raft/log
+use raft/membership
+use raft/node
+use wire/codec
+use wire/fields
+use wire/frame
+
+## The folder
+
+# A node's folder.
+record Disk
+    # The folder's path.
+    folder: str
+
+# The disk in `folder`, made where it is not there, empty where `fresh`.
+#
+# - `folder`: the folder's path.
+# - `fresh`: whether whatever it holds is removed first.
+#
+# Fails with the codes of `fs.remove_all` and `fs.make_dir_all`.
+function open_disk(folder: str, fresh: bool) -> Disk?
+    if fresh && fs.exists(folder).default(false)
+        fs.remove_all(folder)?
+    fs.make_dir_all(folder)?
+    return ok(Disk(folder: folder))
+
+# The path of the file `name` in `d`.
+#
+# - `d`: the disk.
+# - `name`: `state`, `wal` or `snapshot`.
+function file_of(d: Disk, name: str) -> str
+    return path.join_all([d.folder, name])
+
+## Saving
+
+# Writes what `n` has not yet saved, and marks it saved: the snapshot
+# first, then the log, then the term and the vote.
+#
+# - `d`: the node's disk.
+# - `n`: the node; its `unsaved` is cleared.
+#
+# Fails with the codes of `fs`; the node then counts nothing saved.
+function save(d: Disk, @n: node.Node) -> ()?
+    if n.unsaved.snapshot
+        fs.write_atomic_bytes(file_of(d, name: "snapshot"), frame.encode_frame(encode_snapshot(n.snapshot)))?
+    last = log.last_index(n.log)
+
+    if n.unsaved.rewrite || n.unsaved.snapshot
+        fs.write_atomic_bytes(file_of(d, name: "wal"), records(n.log, from: n.log.base_index + 1))?
+    else if last > n.unsaved.saved_index
+        fs.append_bytes(file_of(d, name: "wal"), records(n.log, from: n.unsaved.saved_index + 1))?
+
+    if n.unsaved.state
+        fs.write_atomic_bytes(file_of(d, name: "state"), frame.encode_frame(encode_state(term: n.term, vote: n.voted_for)))?
+    n.unsaved @ node.Unsaved(state: false, saved_index: last, rewrite: false, snapshot: false)
+    return ok()
+
+# The framed records of `l`'s entries from `from` on.
+#
+# - `l`: the log.
+# - `from`: the first index, above the base.
+function records(l: log.Log lent, from: i64) -> [u8]
+    out: [u8] @= []
+
+    for e in log.entries_from(l, index: from, most: log.last_index(l))
+        one: [u8] @= []
+        codec.put_entry(@one, e)
+        bytes.push_all(to: @out, from: frame.encode_frame(one))
+
+    return out
+
+function encode_state(term: i64, vote: i64?) -> [u8]
+    out: [u8] @= []
+    fields.put_int(@out, term)
+    fields.put_int(@out, vote.default(0))
+    return out
+
+# The bytes of `s`: its last index and term, its members and its data.
+#
+# - `s`: the snapshot.
+function encode_snapshot(s: node.Snapshot) -> [u8]
+    out: [u8] @= []
+    fields.put_int(@out, s.last_index)
+    fields.put_int(@out, s.last_term)
+    codec.put_members(@out, s.members)
+    fields.put_blob(out: @out, data: s.data)
+    return out
+
+# The snapshot `data` holds.
+#
+# - `data`: the payload of the snapshot file's frame.
+#
+# Fails `invalid` where it is none.
+function decode_snapshot(data: [u8]) -> node.Snapshot?
+    r @= fields.reader(data)
+    last_index = fields.take_int(@r)?
+    last_term = fields.take_int(@r)?
+    members = codec.take_members(@r)?
+    held = fields.take_blob(@r)?
+
+    if !fields.is_done(r)
+        return fail(code: "invalid", msg: "bytes after the snapshot")
+    return ok(node.Snapshot(last_index: last_index, last_term: last_term, members: members, data: held))
+
+## Recovering
+
+# What a node's folder held when it was read back.
+record Recovered
+    # The current term.
+    term: i64
+    # The vote of that term; fails where none was given.
+    vote: i64?
+    # The latest snapshot, at index 0 where none was taken.
+    snapshot: node.Snapshot
+    # The entries after it, in order.
+    entries: [entry.Entry]
+    # The bytes of a record cut short at the end of the log's file.
+    torn: i64
+
+# What `d` holds; where `repair`, its log's file is cut back to its last
+# whole record.
+#
+# - `d`: the disk.
+# - `repair`: whether a record cut short is cut off the file.
+#
+# Fails `invalid` where the state or the snapshot file is damaged (a node
+# must never start having forgotten a vote), and with the codes of `fs`.
+function load(d: Disk, repair: bool) -> Recovered?
+    term: i64 @= 0
+    vote: i64? @= fail(code: "not_found", msg: "no vote")
+    state_file = file_of(d, name: "state")
+
+    if fs.exists(state_file)?
+        r @= fields.reader(frame.decode_frame(fs.read_bytes(state_file)?)?)
+        term @ fields.take_int(@r)?
+        voted = fields.take_int(@r)?
+
+        if voted != 0
+            vote @ ok(voted)
+    snapshot = load_snapshot(file_of(d, name: "snapshot"))?
+    entries: [entry.Entry] @= []
+    torn: i64 @= 0
+    wal = file_of(d, name: "wal")
+
+    if fs.exists(wal)?
+        data = fs.read_bytes(wal)?
+        run = frame.split_frames(data)
+        expected: i64 @= snapshot.last_index + 1
+
+        for payload in run.payloads
+            r @= fields.reader(payload)
+            e = codec.take_entry(@r)?
+
+            if e.index == expected
+                entries @ entries.push(e)
+                expected @ expected + 1
+
+        torn @ run.torn
+
+        if torn > 0 && repair
+            fs.truncate(wal, length: data.len() - torn)?
+    return ok(Recovered(term: term, vote: vote, snapshot: snapshot, entries: entries, torn: torn))
+
+function load_snapshot(file: str) -> node.Snapshot?
+    if !fs.exists(file)?
+        return ok(node.Snapshot(last_index: 0, last_term: 0, members: [], data: []))
+    return decode_snapshot(frame.decode_frame(fs.read_bytes(file)?)?)
+
+# The node `rec` describes, starting again at `now`: its term and vote, its
+# snapshot's store and members, its log; nothing is known committed past
+# the snapshot until a leader says so.
+#
+# - `id`: its number.
+# - `rec`: what its folder held.
+# - `settings`: its settings.
+# - `seed`: the seed of its election timeouts.
+# - `now`: the time it starts.
+#
+# Fails `invalid` where the snapshot's image cannot be read.
+function restore(id: i64, rec: Recovered, settings: node.Settings, seed: i64, now: i64) -> node.Node?
+    n @= node.new_node(id: id, members: rec.snapshot.members, settings: settings, seed: seed, now: now)
+    n.term @ rec.term
+    n.voted_for @ rec.vote
+    n.snapshot @ rec.snapshot
+    l @= log.empty()
+    log.reset_to(@l, index: rec.snapshot.last_index, term: rec.snapshot.last_term)
+
+    for e in rec.entries
+        log.append(@l, e)
+
+    n.log @ l
+
+    if rec.snapshot.data.len() > 0
+        n.machine @ image.decode_image(rec.snapshot.data)?.machine
+    n.members @ membership.members_of(n.log, base: n.snapshot)
+    n.commit @ rec.snapshot.last_index
+    n.applied @ rec.snapshot.last_index
+    n.unsaved @ node.Unsaved(state: false, saved_index: log.last_index(n.log), rewrite: false, snapshot: false)
+    return ok(n)
+
+# Appends half of a record to the log's file: the write a crash cut short.
+#
+# - `d`: the disk.
+#
+# Fails with the codes of `fs.append_bytes`.
+function tear(d: Disk) -> ()?
+    one: [u8] @= []
+    codec.put_entry(@one, entry.Entry(index: 1_000_000, term: 1, payload: .noop))
+    whole = frame.encode_frame(one)
+    return fs.append_bytes(file_of(d, name: "wal"), whole.slice(from: 0, to: whole.len() / 2))
+
+## Tests
+
+# A fresh folder under `build/` for one test, and its disk.
+#
+# - `name`: the test's word in the folder's name.
+function scratch(name: str) -> Disk
+    fs.make_dir_all("build").must()
+    folder = fs.make_temp_dir(dir: "build", pattern: f"raftkv-{name}-*").must()
+    return open_disk(folder, fresh: true).must()
+
+# A node of three members with `count` noops of term 2 and a vote for 3.
+function busy(count: i64) -> node.Node
+    n @= node.new_node(id: 1, members: [1, 2, 3], settings: node.default_settings(), seed: 1, now: 0)
+    n.term @ 2
+    n.voted_for @ ok(3)
+
+    for k in range(from: 1, to: count + 1)
+        log.append(@n.log, entry.Entry(index: k, term: 2, payload: .noop))
+
+    n.unsaved.state @ true
+    return n
+
+test "save and load: the term, the vote, the snapshot and the log read back"
+    d = scratch("save")
+    n @= busy(5)
+    save(d, @n).must()
+    assert !n.unsaved.state && n.unsaved.saved_index == 5
+    log.append(@n.log, entry.Entry(index: 6, term: 2, payload: .config(members: [1, 2])))
+    save(d, @n).must()
+    rec = load(d, repair: true).must()
+    assert rec.term == 2
+    assert rec.vote.must() == 3
+    assert rec.snapshot.members == [1, 2, 3]
+    assert rec.entries.len() == 6
+    assert rec.torn == 0
+    back = restore(id: 1, rec: rec, settings: node.default_settings(), seed: 1, now: 0).must()
+    assert back.members == [1, 2]
+    assert log.last_index(back.log) == 6
+    fs.remove_all(d.folder).must()
+
+test "load: a torn record dropped and cut off the file, the appends after it kept"
+    d = scratch("torn")
+    n @= busy(3)
+    save(d, @n).must()
+    tear(d).must()
+    first = load(d, repair: true).must()
+    assert first.entries.len() == 3
+    assert first.torn > 0
+    log.append(@n.log, entry.Entry(index: 4, term: 2, payload: .noop))
+    save(d, @n).must()
+    second = load(d, repair: true).must()
+    assert second.entries.len() == 4
+    assert second.torn == 0
+    fs.remove_all(d.folder).must()
+
+test "load: a damaged state file is refused, never read as no vote"
+    d = scratch("damaged")
+    n @= busy(1)
+    save(d, @n).must()
+    fs.write_bytes(file_of(d, name: "state"), [1, 2, 3]).must()
+    assert load(d, repair: true).is_err()
+    fs.remove_all(d.folder).must()
+
+test "load: an empty folder is a node that never ran"
+    d = scratch("empty")
+    rec = load(d, repair: true).must()
+    assert rec.term == 0 && rec.vote.is_err() && rec.entries.len() == 0
+    fs.remove_all(d.folder).must()

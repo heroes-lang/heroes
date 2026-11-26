@@ -1,0 +1,433 @@
+# The simulated cluster: the nodes, each with its folder on the disk, the
+# clients, the network between them, and the checker watching. Time is the
+# simulation's own, in milliseconds, and moves in steps: each step hands
+# over every frame due before the next tick, in order, then ticks every
+# running node and client; after each node acts, what it must persist is
+# written to its folder before what it sends is put on the network, and
+# after each act the checker asks Raft's safety properties of every running
+# node. A crash throws a node's memory away, and a restart reads it back
+# from its folder alone, as a real process would.
+
+use <rebel>/lists
+use <rebel>/path
+use <rebel>/strings
+use <rebel>/time
+
+use check/safety
+use disk/storage
+use raft/message
+use raft/node
+use raft/server
+use sim/client
+use sim/network
+use support/grow
+use wire/codec
+use wire/frame
+
+# The milliseconds of one tick.
+constant TICK: i64
+    10
+
+# The first client's number; every node's is below it.
+constant FIRST_CLIENT: i64
+    101
+
+## The cluster
+
+# One machine of the cluster: a node, its folder, and whether it runs.
+record Host
+    # The node's number.
+    id: i64
+    # Whether it runs; a crashed node's memory is thrown away.
+    up: bool
+    # The node, while it runs.
+    raft: node.Node
+    # Its folder.
+    disk: storage.Disk
+    # How many times it started, which seeds its election timeouts anew.
+    starts: i64
+
+# The whole simulation.
+record Cluster
+    # The simulation's clock, in milliseconds.
+    now: i64
+    # The machines, by number.
+    hosts: [Host]
+    # The network.
+    net: network.Network
+    # The clients.
+    clients: [client.Client]
+    # The checker.
+    checker: safety.Checker
+    # The nodes' settings.
+    settings: node.Settings
+    # The seed everything is drawn from.
+    seed: i64
+    # The folder holding the nodes' folders.
+    work: str
+    # What happened since the runner last read it, each line with its time.
+    lines: [str]
+
+# A cluster of `size` nodes that all start now, each in a fresh folder of
+# `work`.
+#
+# - `size`: how many nodes, 1 to 9.
+# - `settings`: the nodes' settings.
+# - `weather`: how the network behaves.
+# - `seed`: the seed of the network and of the nodes' timeouts.
+# - `work`: the folder for the nodes' folders.
+#
+# Fails with the codes of `fs` where a folder cannot be made or written.
+function new_cluster(size: i64, settings: node.Settings, weather: network.Weather, seed: i64, work: str) -> Cluster?
+    c @= Cluster(
+        now: 0,
+        hosts: [],
+        net: network.new_network(seed: seed, weather: weather),
+        clients: [],
+        checker: safety.new_checker(),
+        settings: settings,
+        seed: seed,
+        work: work,
+        lines: []
+    )
+    members = range(from: 1, to: size + 1)
+
+    for id in members
+        add_host(@c, id: id, members: members)?
+
+    return ok(c)
+
+# Starts a node of number `id` in a fresh folder, in `members`.
+#
+# - `c`: the cluster.
+# - `id`: its number, not yet taken.
+# - `members`: the members it starts with; none for a node that joins.
+function add_host(@c: Cluster, id: i64, members: [i64]) -> ()?
+    d = storage.open_disk(folder_of(c, id: id), fresh: true)?
+    n = node.new_node(id: id, members: members, settings: c.settings, seed: seed_of(c, id: id, starts: 1), now: c.now)
+    c.hosts @ c.hosts.push(Host(id: id, up: true, raft: n, disk: d, starts: 1))
+    return settle(@c, at: c.hosts.len() - 1)
+
+function folder_of(c: Cluster lent, id: i64) -> str
+    return path.join_all([c.work, f"node-{id}"])
+
+function seed_of(c: Cluster lent, id: i64, starts: i64) -> i64
+    return c.seed * 1000 + id * 10 + starts
+
+# The place of node `id` in `hosts`.
+#
+# - `c`: the cluster.
+# - `id`: the node's number.
+#
+# Fails `not_found` where no node has it.
+function place_of(c: Cluster lent, id: i64) -> i64?
+    return match lists.index_where_with(c.hosts, state: id, accepts: is_numbered)
+        .ok k  => ok(k)
+        .err _ => fail(code: "not_found", msg: f"no node {id}")
+
+# Whether `item` is the node numbered `state`.
+#
+# - `state`: the number.
+# - `item`: a machine of the cluster.
+function is_numbered(state: i64, item: Host) -> bool
+    return item.id == state
+
+# Every node's number, running or not, in order.
+#
+# - `c`: the cluster.
+function ids(c: Cluster lent) -> [i64]
+    out: [i64] @= []
+
+    for h in c.hosts
+        out @ out.push(h.id)
+
+    return out
+
+# The running nodes.
+#
+# - `c`: the cluster.
+function running(c: Cluster lent) -> [node.Node]
+    out: [node.Node] @= []
+
+    for h in c.hosts
+        if h.up
+            out @ out.push(h.raft)
+
+    return out
+
+# The leader of the highest term among the running nodes.
+#
+# - `c`: the cluster.
+#
+# Fails `not_found` where no running node leads.
+function leader_of(c: Cluster lent) -> i64?
+    best: i64 @= 0
+    term: i64 @= -1
+
+    for h in c.hosts
+        if h.up && h.raft.role == .leader && h.raft.term > term
+            best @ h.id
+            term @ h.raft.term
+
+    if term < 0
+        return fail(code: "not_found", msg: "no running node leads")
+    return ok(best)
+
+# Adds a client, and answers its number.
+#
+# - `c`: the cluster.
+function add_client(@c: Cluster) -> i64
+    id = FIRST_CLIENT + c.clients.len()
+    c.clients @ c.clients.push(client.new_client(id))
+    return id
+
+## Time
+
+# Runs one tick: the frames due before it, then a tick of every running
+# node and client.
+#
+# - `c`: the cluster.
+#
+# Fails with the codes of `fs` where a node's folder cannot be written.
+function step(@c: Cluster) -> ()?
+    next = c.now + TICK
+
+    while network.next_due(c.net).default(next + 1) <= next && safety.is_safe(c.checker)
+        flight = network.take_next(@c.net).must()
+        c.now @ flight.at
+
+        if network.arrives(@c.net, flight)
+            deliver(@c, flight)?
+
+    c.now @ next
+
+    for k in range(from: 0, to: c.hosts.len())
+        if c.hosts[k].up
+            server.tick(@c.hosts[k].raft, now: c.now)
+            settle(@c, at: k)?
+
+    nodes = ids(c)
+
+    for k in range(from: 0, to: c.clients.len())
+        client.tick(@c.clients[k], nodes: nodes, now: c.now)
+        send_from_client(@c, at: k)
+
+    return ok()
+
+# Runs until `until`, or until a property breaks.
+#
+# - `c`: the cluster.
+# - `until`: the time to stop at.
+#
+# Fails as `step` does.
+function run_until(@c: Cluster, until: i64) -> ()?
+    while c.now < until && safety.is_safe(c.checker)
+        step(@c)?
+
+    return ok()
+
+# Runs until no client has an operation in flight, at most until `until`.
+#
+# - `c`: the cluster.
+# - `until`: the latest time.
+#
+# Fails as `step` does.
+function run_while_busy(@c: Cluster, until: i64) -> ()?
+    while c.now < until && is_busy(c) && safety.is_safe(c.checker)
+        step(@c)?
+
+    return ok()
+
+function is_busy(c: Cluster lent) -> bool
+    for k in c.clients
+        if client.is_busy(k)
+            return true
+
+    return false
+
+## Messages
+
+# Hands `flight` to its receiver: a frame that fails its checksum or does
+# not decode is dropped, as a damaged packet is.
+function deliver(@c: Cluster, flight: network.Flight) -> ()?
+    m = decoded(flight.frame)
+
+    if m.is_err()
+        c.net.counts.refused @ c.net.counts.refused + 1
+        return ok()
+    envelope = m.must()
+
+    if envelope.to >= FIRST_CLIENT
+        at = envelope.to - FIRST_CLIENT
+
+        if at < c.clients.len()
+            match envelope.body
+                .client_reply r => client.on_reply(
+                    @c.clients[at],
+                    envelope,
+                    seq: r.seq,
+                    outcome: r.outcome,
+                    nodes: ids(c),
+                    now: c.now
+                )
+                .vote_request _ | .vote_reply _ | .append_request _ | .append_reply _ | .snapshot_request _ | .snapshot_reply _ | .client_request _ =>
+                    _ = 0
+
+            send_from_client(@c, at: at)
+        return ok()
+
+    match place_of(c, id: envelope.to)
+        .ok k =>
+            if c.hosts[k].up
+                server.receive(@c.hosts[k].raft, envelope, now: c.now)
+                settle(@c, at: k)?
+        .err _ => _ = 0
+
+    return ok()
+
+function decoded(data: [u8]) -> message.Envelope?
+    return codec.decode_envelope(frame.decode_frame(data)?)
+
+# After node `at` acted: its writes to its folder, then its messages to the
+# network, then its lines to the transcript, then the checker.
+#
+# - `c`: the cluster.
+# - `at`: the node's place in `hosts`.
+#
+# Fails as `storage.save` does.
+function settle(@c: Cluster, at: i64) -> ()?
+    storage.save(c.hosts[at].disk, @c.hosts[at].raft)?
+    box = c.hosts[at].raft.outbox
+    said = c.hosts[at].raft.events
+    c.hosts[at].raft.outbox @ []
+    c.hosts[at].raft.events @ []
+
+    for m in box
+        network.send(@c.net, now: c.now, from: m.from, to: m.to, frame: frame.encode_frame(codec.encode_envelope(m)))
+
+    for line in said
+        say(@c, line)
+
+    safety.check(@c.checker, running(c))
+    return ok()
+
+function send_from_client(@c: Cluster, at: i64)
+    box = c.clients[at].outbox
+    c.clients[at].outbox @ []
+
+    for m in box
+        network.send(@c.net, now: c.now, from: m.from, to: m.to, frame: frame.encode_frame(codec.encode_envelope(m)))
+
+# Adds `line` to the transcript, the time before it.
+#
+# - `c`: the cluster.
+# - `line`: what happened.
+function say(@c: Cluster, line: str)
+    grow.grow(@c.lines, value: clock(c.now) + "  " + line)
+
+# `ms` as the transcript's first column writes it: `1.25s`, right-aligned.
+#
+# - `ms`: milliseconds of the simulation's clock.
+function clock(ms: i64) -> str
+    return strings.pad_start(s: time.format_duration(time.milliseconds(ms)), width: 8, pad: " ")
+
+## Faults
+
+# Crashes node `id`: its memory is gone, its folder stays; where `torn`, a
+# write it had begun is left cut short in its log's file.
+#
+# - `c`: the cluster.
+# - `id`: a running node.
+# - `torn`: whether a write is cut short.
+#
+# Fails `not_found` where no node has `id`, and as `storage.tear` does.
+function crash(@c: Cluster, id: i64, torn: bool) -> ()?
+    k = place_of(c, id: id)?
+    c.hosts[k].up @ false
+
+    if torn
+        storage.tear(c.hosts[k].disk)?
+        say(@c, f"node {id} crashes in the middle of a write")
+    else
+        say(@c, f"node {id} crashes")
+    return ok()
+
+# Starts node `id` again from its folder alone.
+#
+# - `c`: the cluster.
+# - `id`: a crashed node.
+#
+# Fails `not_found` where no node has `id`, and as `storage.load` and
+# `storage.restore` do.
+function restart(@c: Cluster, id: i64) -> ()?
+    k = place_of(c, id: id)?
+    rec = storage.load(c.hosts[k].disk, repair: true)?
+    starts = c.hosts[k].starts + 1
+    n = storage.restore(id: id, rec: rec, settings: c.settings, seed: seed_of(c, id: id, starts: starts), now: c.now)?
+    c.hosts[k].raft @ n
+    c.hosts[k].up @ true
+    c.hosts[k].starts @ starts
+
+    torn = if rec.torn > 0
+        f", a torn record of {rec.torn} bytes cut off"
+    else
+        ""
+    say(
+        @c,
+        f"node {id} restarts from its disk: term {rec.term}, snapshot at {rec.snapshot.last_index}, {rec.entries.len()} entries after it{torn}"
+    )
+    return ok()
+
+## Tests
+
+test "a cluster elects a leader, every node agreeing and the checker satisfied"
+    c @= new_cluster(
+        size: 3,
+        settings: node.default_settings(),
+        weather: network.calm(),
+        seed: 1,
+        work: "build/raftkv-test-cluster"
+    ).must()
+    run_until(@c, until: 1000).must()
+    leader = leader_of(c).must()
+    assert safety.is_safe(c.checker)
+
+    for h in c.hosts
+        assert h.raft.term == c.hosts[leader - 1].raft.term
+        assert h.raft.commit == 1
+
+test "a client's write is answered once, and a crashed node restarts from its disk"
+    c @= new_cluster(
+        size: 3,
+        settings: node.default_settings(),
+        weather: network.calm(),
+        seed: 2,
+        work: "build/raftkv-test-cluster2"
+    ).must()
+    run_until(@c, until: 1000).must()
+    id = add_client(@c)
+    client.submit(
+        @c.clients[0],
+        operation: .put(key: "a", value: "1"),
+        target: fail(code: "not_found", msg: ""),
+        nodes: ids(c),
+        patience: 2000,
+        now: c.now
+    )
+    send_from_client(@c, at: 0)
+    run_while_busy(@c, until: 3000).must()
+    assert id == FIRST_CLIENT
+    assert c.clients[0].finished.len() == 1
+
+    follower = if leader_of(c).must() == 1
+        2
+    else
+        1
+    crash(@c, id: follower, torn: true).must()
+    run_until(@c, until: c.now + 200).must()
+    restart(@c, id: follower).must()
+    run_until(@c, until: c.now + 500).must()
+    k = place_of(c, id: follower).must()
+    assert c.hosts[k].raft.applied == 2
+    assert safety.is_safe(c.checker)
+    assert clock(1250) == "   1.25s"
