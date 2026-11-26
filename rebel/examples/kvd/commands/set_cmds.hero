@@ -1,0 +1,146 @@
+# The commands of sets: `SADD`, `SREM`, `SMEMBERS`, `SISMEMBER`, `SCARD`,
+# `SINTER`, `SUNION`, `SDIFF`, as Redis answers each. A set is kept in
+# `containers/indexed`'s map, so a member is added, asked and taken out at a
+# constant cost; the three set operations are `sets`'s, over the language's
+# map of members to `true` each set is read into.
+
+use <rebel>/containers/indexed
+use <rebel>/redis
+use <rebel>/sets
+
+use commands/common
+use protocol/reply
+use store/keyspace
+
+# `SADD key member [member ...]`: how many are new.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function sadd(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    at = match common.made(@db, key: argv[1], kind: .set, now: now)
+        .ok p  => p
+        .err _ => return reply.wrong_type()
+
+    added @= 0
+
+    for member in argv.slice(from: 2, to: argv.len())
+        if !indexed.contains(db.values[at].set_shape, lookup: db.values[at].set_lookup, key: member)
+            _ = indexed.put(
+                @db.values[at].set_shape,
+                @db.values[at].set_members,
+                @db.values[at].set_marks,
+                @db.values[at].set_lookup,
+                key: member,
+                value: true
+            )
+            added @ added + 1
+
+    if added > 0
+        common.changed(@db, key: argv[1], logged: argv)
+    return reply.integer(added)
+
+# `SREM key member [member ...]`: how many went.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function srem(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    at = match common.of_kind(@db, key: argv[1], kind: .set, now: now)
+        .at a   => a.p
+        .absent => return reply.integer(0)
+        .wrong  => return reply.wrong_type()
+
+    gone @= 0
+
+    for member in argv.slice(from: 2, to: argv.len())
+        match indexed.swap_remove(@db.values[at].set_shape, @db.values[at].set_members, @db.values[at].set_marks, @db.values[at].set_lookup, key: member)
+            .ok _  => gone @ gone + 1
+            .err _ => _ = 0
+
+    if gone > 0
+        _ = keyspace.drop_if_empty(@db, at: at)
+        common.changed(@db, key: argv[1], logged: argv)
+    return reply.integer(gone)
+
+# The members of the set at `at`, in the order they were first added.
+#
+# - `db`: the keyspace.
+# - `at`: the key's position.
+function members_at(db: keyspace.Db lent, at: i64) -> [[u8]]
+    return indexed.keys_in_order(db.values[at].set_shape, key_list: db.values[at].set_members)
+
+# `SMEMBERS key`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function smembers(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    return match common.of_kind(@db, key: argv[1], kind: .set, now: now)
+        .at a   => reply.bulks(members_at(db, at: a.p))
+        .absent => .array(items: [])
+        .wrong  => reply.wrong_type()
+
+# `SISMEMBER key member` and `SCARD key`, by `name`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `name`: the command's name in capitals.
+# - `now`: the time.
+function count(@db: keyspace.Db, argv: [[u8]], name: str, now: i64) -> redis.Reply
+    return match common.of_kind(@db, key: argv[1], kind: .set, now: now)
+        .at a =>
+            if name == "SCARD"
+                reply.integer(indexed.size(db.values[a.p].set_shape))
+            else if indexed.contains(db.values[a.p].set_shape, lookup: db.values[a.p].set_lookup, key: argv[2])
+                reply.integer(1)
+            else
+                reply.integer(0)
+        .absent => reply.integer(0)
+        .wrong  => reply.wrong_type()
+
+# `SINTER`, `SUNION` and `SDIFF`, by `name`: the members of the first set
+# kept, joined or taken away by those of the others, a key not there read
+# as an empty set.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `name`: the command's name in capitals.
+# - `now`: the time.
+function combine(@db: keyspace.Db, argv: [[u8]], name: str, now: i64) -> redis.Reply
+    read: [{[u8]: bool}] @= []
+
+    for key in argv.slice(from: 1, to: argv.len())
+        match common.of_kind(@db, key: key, kind: .set, now: now)
+            .at a   => read @ read.push(sets.from_list(members_at(db, at: a.p)))
+            .absent => read @ read.push({})
+            .wrong  => return reply.wrong_type()
+
+    first = read[0]
+    others = read.slice(from: 1, to: read.len())
+
+    answer = match name
+        "SINTER" => sets.intersection_all(first, others: others)
+        "SUNION" => sets.union_all(first, others: others)
+        _        => sets.difference_all(first, others: others)
+
+    return reply.bulks(sets.to_list(answer))
+
+test "sadd and srem: duplicates counted once, the key gone with its last member"
+    db @= keyspace.new()
+    assert sadd(@db, argv: common.argv_of("SADD s a b a"), now: 0) == reply.integer(2)
+    assert sadd(@db, argv: common.argv_of("SADD s a"), now: 0) == reply.integer(0)
+    assert count(@db, argv: common.argv_of("SCARD s"), name: "SCARD", now: 0) == reply.integer(2)
+    assert count(@db, argv: common.argv_of("SISMEMBER s z"), name: "SISMEMBER", now: 0) == reply.integer(0)
+    assert srem(@db, argv: common.argv_of("SREM s a b z"), now: 0) == reply.integer(2)
+    assert keyspace.size(db) == 0
+    assert smembers(@db, argv: common.argv_of("SMEMBERS s"), now: 0) == .array(items: [])
+
+test "combine: an intersection, a union and a difference, a missing key read as empty"
+    db @= keyspace.new()
+    _ = sadd(@db, argv: common.argv_of("SADD x a b c"), now: 0)
+    _ = sadd(@db, argv: common.argv_of("SADD y b c d"), now: 0)
+    assert combine(@db, argv: common.argv_of("SINTER x y"), name: "SINTER", now: 0) == reply.bulks([[98], [99]])
+    assert combine(@db, argv: common.argv_of("SUNION x y"), name: "SUNION", now: 0) == reply.bulks([[97], [98], [99], [100]])
+    assert combine(@db, argv: common.argv_of("SDIFF x y none"), name: "SDIFF", now: 0) == reply.bulks([[97]])
+    assert combine(@db, argv: common.argv_of("SINTER x none"), name: "SINTER", now: 0) == .array(items: [])

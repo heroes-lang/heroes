@@ -1,0 +1,373 @@
+# The commands of strings: `SET` with its options, `GET`, `GETDEL`,
+# `SETNX`, `MSET`, `MGET`, `INCR`, `INCRBY`, `DECR`, `DECRBY`, `APPEND`,
+# `STRLEN`, `GETRANGE`, as Redis answers each. Every handler takes the
+# command's words, its name first, the dispatcher having checked their
+# count.
+
+use <rebel>/bytes
+use <rebel>/redis
+
+use commands/common
+use protocol/reply
+use protocol/words
+use store/keyspace
+
+# The longest string a key may hold, 512 MiB, as Redis's
+# `proto-max-bulk-len` bounds `APPEND`.
+constant MOST_STRING: i64
+    536_870_912
+
+# Puts the string `v` under `key`, replacing whatever was there, and
+# answers its position; its time to live is kept where `keep_ttl`, else
+# set to `expire_at` (0 for none).
+#
+# - `db`: the keyspace.
+# - `key`: the key.
+# - `v`: the bytes.
+# - `expire_at`: when it expires, 0 for never.
+# - `keep_ttl`: whether a time it had already stays.
+# - `now`: the time.
+function put(@db: keyspace.Db, key: [u8], v: [u8], expire_at: i64, keep_ttl: bool, now: i64) -> i64
+    fresh @= keyspace.empty(.text)
+    fresh.text @ v
+    at = keyspace.locate(@db, key: key, now: now)
+
+    if at == -1
+        fresh.expire_at @ expire_at
+        return keyspace.create(@db, key: key, value: fresh)
+    kept = db.values[at].expire_at
+    db.values[at] @ fresh
+
+    if keep_ttl
+        keyspace.set_expiry(@db, at: at, when: kept)
+    else
+        keyspace.set_expiry(@db, at: at, when: expire_at)
+    return at
+
+# `SET key value [NX | XX] [GET] [EX s | PX ms | EXAT s | PXAT ms | KEEPTTL]`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function set(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    key = argv[1]
+    nx @= false
+    xx @= false
+    with_get @= false
+    keep_ttl @= false
+    expire_at @= 0
+    timed @= false
+    i @= 3
+
+    while i < argv.len()
+        option = words.upper(argv[i])
+
+        if option == "NX" && !xx
+            nx @ true
+        else if option == "XX" && !nx
+            xx @ true
+        else if option == "GET"
+            with_get @ true
+        else if option == "KEEPTTL" && !timed
+            keep_ttl @ true
+        else if (option == "EX" || option == "PX" || option == "EXAT" || option == "PXAT") && !timed && !keep_ttl && i + 1 < argv.len()
+            match common.expiry_of(unit: option, word: argv[i + 1], now: now, command_name: "set")
+                .ok when => expire_at @ when
+                .err e   => return reply.error(code: "ERR", message: e.msg)
+
+            timed @ true
+            i @ i + 1
+        else
+            return reply.syntax()
+        i @ i + 1
+
+    old: redis.Reply @= reply.nothing()
+    at = keyspace.read(@db, key: key, now: now)
+
+    if at != -1 && with_get
+        if db.values[at].kind != .text
+            return reply.wrong_type()
+        old @ reply.bulk(db.values[at].text)
+
+    if nx && at != -1 || xx && at == -1
+        if with_get
+            return old
+        return reply.nothing()
+    _ = put(@db, key: key, v: argv[2], expire_at: expire_at, keep_ttl: keep_ttl, now: now)
+    logged @= common.command("SET", rest: [key, argv[2]])
+
+    if expire_at != 0
+        logged @ logged.push(bytes.from_text("PXAT"))
+        logged @ logged.push(common.decimal(expire_at))
+    else if keep_ttl
+        logged @ logged.push(bytes.from_text("KEEPTTL"))
+    common.changed(@db, key: key, logged: logged)
+
+    if with_get
+        return old
+    return reply.okay()
+
+# `SETNX key value`: `SET key value NX`, answering 1 or 0.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function setnx(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    if keyspace.read(@db, key: argv[1], now: now) != -1
+        return reply.integer(0)
+    _ = put(@db, key: argv[1], v: argv[2], expire_at: 0, keep_ttl: false, now: now)
+    common.changed(@db, key: argv[1], logged: common.command("SET", rest: [argv[1], argv[2]]))
+    return reply.integer(1)
+
+# `GET key`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function get(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    return match common.of_kind(@db, key: argv[1], kind: .text, now: now)
+        .at a   => reply.bulk(db.values[a.p].text)
+        .absent => reply.nothing()
+        .wrong  => reply.wrong_type()
+
+# `GETDEL key`: its value, and the key taken out.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function getdel(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    return match common.of_kind(@db, key: argv[1], kind: .text, now: now)
+        .at a =>
+            v = db.values[a.p].text
+            _ = keyspace.remove(@db, key: argv[1])
+            common.changed(@db, key: argv[1], logged: common.command("DEL", rest: [argv[1]]))
+            reply.bulk(v)
+        .absent => reply.nothing()
+        .wrong  => reply.wrong_type()
+
+# `MGET key [key ...]`: each value, a null for a key that holds none or
+# holds another kind.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function mget(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    out: [redis.Reply] @= []
+
+    for key in argv.slice(from: 1, to: argv.len())
+        match common.of_kind(@db, key: key, kind: .text, now: now)
+            .at a            => out @ out.push(reply.bulk(db.values[a.p].text))
+            .absent | .wrong => out @ out.push(reply.nothing())
+
+    return .array(items: out)
+
+# `MSET key value [key value ...]`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function mset(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    if argv.len() % 2 != 1
+        return reply.error(code: "ERR", message: "wrong number of arguments for 'mset' command")
+    i @= 1
+
+    while i < argv.len()
+        _ = put(@db, key: argv[i], v: argv[i + 1], expire_at: 0, keep_ttl: false, now: now)
+        keyspace.touch(@db, key: argv[i])
+        i @ i + 2
+
+    keyspace.log(@db, words: argv)
+    return reply.okay()
+
+# `INCRBY key n` and its kin: the number the key holds moved by `by`,
+# made 0 first where the key is not there; its time to live kept.
+#
+# - `db`: the keyspace.
+# - `key`: the key.
+# - `by`: the step.
+# - `now`: the time.
+function moved(@db: keyspace.Db, key: [u8], by: i64, now: i64) -> redis.Reply
+    found = common.of_kind(@db, key: key, kind: .text, now: now)
+    current @= 0
+
+    match found
+        .at a =>
+            match words.integer(db.values[a.p].text)
+                .ok n  => current @ n
+                .err _ => return reply.not_integer()
+        .absent => _ = 0
+        .wrong  => return reply.wrong_type()
+
+    if by > 0 && current > 9223372036854775807 - by || by < 0 && current < -9223372036854775807 - 1 - by
+        return reply.error(code: "ERR", message: "increment or decrement would overflow")
+    next = current + by
+    _ = put(@db, key: key, v: common.decimal(next), expire_at: 0, keep_ttl: true, now: now)
+    common.changed(@db, key: key, logged: common.command("INCRBY", rest: [key, common.decimal(by)]))
+    return reply.integer(next)
+
+# `INCR`, `DECR`, `INCRBY` and `DECRBY`, by `name`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `name`: the command's name in capitals.
+# - `now`: the time.
+function step(@db: keyspace.Db, argv: [[u8]], name: str, now: i64) -> redis.Reply
+    if name == "INCR"
+        return moved(@db, key: argv[1], by: 1, now: now)
+
+    if name == "DECR"
+        return moved(@db, key: argv[1], by: -1, now: now)
+
+    by = match words.integer(argv[2])
+        .ok n  => n
+        .err _ => return reply.not_integer()
+
+    if name == "INCRBY"
+        return moved(@db, key: argv[1], by: by, now: now)
+
+    if by == -9223372036854775807 - 1
+        return reply.error(code: "ERR", message: "decrement would overflow")
+    return moved(@db, key: argv[1], by: -by, now: now)
+
+# `APPEND key value`: the string's new length.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function append(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    at = match common.made(@db, key: argv[1], kind: .text, now: now)
+        .ok p  => p
+        .err _ => return reply.wrong_type()
+
+    if db.values[at].text.len() + argv[2].len() > MOST_STRING
+        return reply.error(code: "ERR", message: "string exceeds maximum allowed size (proto-max-bulk-len)")
+    grow(text: @db.values[at].text, tail: argv[2])
+    common.changed(@db, key: argv[1], logged: argv)
+    return reply.integer(db.values[at].text.len())
+
+# Adds `tail` at the end of `text`, the caller's own, in place.
+#
+# - `text`: the bytes grown.
+# - `tail`: the bytes added.
+function grow(@text: [u8], tail: [u8])
+    for c in tail
+        text @ text.push(c)
+
+# `STRLEN key`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function strlen(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    return match common.of_kind(@db, key: argv[1], kind: .text, now: now)
+        .at a   => reply.integer(db.values[a.p].text.len())
+        .absent => reply.integer(0)
+        .wrong  => reply.wrong_type()
+
+# `GETRANGE key start end`: the bytes from `start` to `end`, both
+# included, negative ones counting from the end.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function getrange(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    start = match words.integer(argv[2])
+        .ok n  => n
+        .err _ => return reply.not_integer()
+
+    stop = match words.integer(argv[3])
+        .ok n  => n
+        .err _ => return reply.not_integer()
+
+    v = match common.of_kind(@db, key: argv[1], kind: .text, now: now)
+        .at a   => db.values[a.p].text
+        .absent => return reply.bulk([])
+        .wrong  => return reply.wrong_type()
+
+    n = v.len()
+    from @= start
+    to @= stop
+
+    if from < 0
+        from @ n + from
+
+    if to < 0
+        to @ n + to
+
+    if from < 0
+        from @ 0
+
+    if to < 0
+        to @ 0
+
+    if to >= n
+        to @ n - 1
+
+    if n == 0 || from > to
+        return reply.bulk([])
+    return reply.bulk(v.slice(from: from, to: to + 1))
+
+test "set: NX, XX, GET and their mixes, as Redis answers them"
+    db @= keyspace.new()
+    assert set(@db, argv: common.argv_of("SET k v"), now: 0) == reply.okay()
+    assert set(@db, argv: common.argv_of("SET k x NX"), now: 0) == reply.nothing()
+    assert set(@db, argv: common.argv_of("SET k x XX GET"), now: 0) == reply.bulk(bytes.from_text("v"))
+    assert set(@db, argv: common.argv_of("SET none x XX"), now: 0) == reply.nothing()
+    assert set(@db, argv: common.argv_of("SET k x NX XX"), now: 0) == reply.syntax()
+    assert set(@db, argv: common.argv_of("SET k x BOGUS"), now: 0) == reply.syntax()
+    _ = lpush_for_test(@db)
+    assert set(@db, argv: common.argv_of("SET l x GET"), now: 0) == reply.wrong_type()
+
+test "set: EX, PX, EXAT, KEEPTTL; a time of 0, one past i64, and two times refused"
+    db @= keyspace.new()
+    _ = set(@db, argv: common.argv_of("SET k v EX 10"), now: 1000)
+    assert db.values[keyspace.locate(@db, key: bytes.from_text("k"), now: 1000)].expire_at == 11000
+    _ = set(@db, argv: common.argv_of("SET k w KEEPTTL"), now: 1000)
+    assert db.values[keyspace.locate(@db, key: bytes.from_text("k"), now: 1000)].expire_at == 11000
+    _ = set(@db, argv: common.argv_of("SET k z"), now: 1000)
+    assert db.values[keyspace.locate(@db, key: bytes.from_text("k"), now: 1000)].expire_at == 0
+    _ = set(@db, argv: common.argv_of("SET k z EXAT 7"), now: 1000)
+    assert keyspace.locate(@db, key: bytes.from_text("k"), now: 7000) == -1
+    assert set(@db, argv: common.argv_of("SET k v EX 0"), now: 0) == reply.error(code: "ERR", message: "invalid expire time in 'set' command")
+    assert set(@db, argv: common.argv_of("SET k v EX 9223372036854775807"), now: 5) == reply.error(code: "ERR", message: "invalid expire time in 'set' command")
+    assert set(@db, argv: common.argv_of("SET k v EX 1 PX 5"), now: 0) == reply.syntax()
+    assert set(@db, argv: common.argv_of("SET k v KEEPTTL EX 1"), now: 0) == reply.syntax()
+
+test "step: INCR from nothing, past the largest, the smallest negated, and a value that is no integer"
+    db @= keyspace.new()
+    assert step(@db, argv: common.argv_of("INCR n"), name: "INCR", now: 0) == reply.integer(1)
+    assert step(@db, argv: common.argv_of("DECRBY n 3"), name: "DECRBY", now: 0) == reply.integer(-2)
+    _ = set(@db, argv: common.argv_of("SET big 9223372036854775807"), now: 0)
+    assert step(@db, argv: common.argv_of("INCR big"), name: "INCR", now: 0) == reply.error(code: "ERR", message: "increment or decrement would overflow")
+    assert step(@db, argv: common.argv_of("DECRBY n -9223372036854775808"), name: "DECRBY", now: 0) == reply.error(code: "ERR", message: "decrement would overflow")
+    _ = set(@db, argv: common.argv_of("SET word abc"), now: 0)
+    assert step(@db, argv: common.argv_of("INCR word"), name: "INCR", now: 0) == reply.not_integer()
+    assert step(@db, argv: common.argv_of("INCRBY n x"), name: "INCRBY", now: 0) == reply.not_integer()
+
+test "append, strlen and getrange: from nothing, negative ends, ends past the string, an empty string"
+    db @= keyspace.new()
+    assert append(@db, argv: common.argv_of("APPEND s città"), now: 0) == reply.integer(6)
+    assert strlen(@db, argv: common.argv_of("STRLEN s"), now: 0) == reply.integer(6)
+    assert strlen(@db, argv: common.argv_of("STRLEN none"), now: 0) == reply.integer(0)
+    assert getrange(@db, argv: common.argv_of("GETRANGE s 0 3"), now: 0) == reply.bulk(bytes.from_text("citt"))
+    assert getrange(@db, argv: common.argv_of("GETRANGE s -2 -1"), now: 0) == reply.bulk([195, 160])
+    assert getrange(@db, argv: common.argv_of("GETRANGE s 4 100"), now: 0) == reply.bulk([195, 160])
+    assert getrange(@db, argv: common.argv_of("GETRANGE s 5 2"), now: 0) == reply.bulk([])
+    assert getrange(@db, argv: common.argv_of("GETRANGE none 0 -1"), now: 0) == reply.bulk([])
+
+test "mget, getdel and setnx: another kind reads as nil, a key taken out, a key kept"
+    db @= keyspace.new()
+    _ = lpush_for_test(@db)
+    _ = set(@db, argv: common.argv_of("SET a 1"), now: 0)
+    assert mget(@db, argv: common.argv_of("MGET a l none"), now: 0) == .array(items: [reply.bulk([49]), reply.nothing(), reply.nothing()])
+    assert getdel(@db, argv: common.argv_of("GETDEL a"), now: 0) == reply.bulk([49])
+    assert getdel(@db, argv: common.argv_of("GETDEL a"), now: 0) == reply.nothing()
+    assert setnx(@db, argv: common.argv_of("SETNX a 2"), now: 0) == reply.integer(1)
+    assert setnx(@db, argv: common.argv_of("SETNX a 3"), now: 0) == reply.integer(0)
+    assert mset(@db, argv: common.argv_of("MSET a"), now: 0) == reply.error(code: "ERR", message: "wrong number of arguments for 'mset' command")
+
+# Makes `l` a list, for the tests.
+#
+# - `db`: the keyspace.
+function lpush_for_test(@db: keyspace.Db) -> i64
+    return common.made(@db, key: bytes.from_text("l"), kind: .list, now: 0).must()

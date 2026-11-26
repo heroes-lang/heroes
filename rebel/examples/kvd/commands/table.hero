@@ -1,0 +1,258 @@
+# The command table: every command the server knows, with the number of
+# words it takes and what it does, as Redis's own table holds them, and the
+# dispatcher that runs a command of the keyspace by its name.
+#
+# A function with an `@` parameter is no value (spec § 9), so the table
+# cannot hold each command's handler beside its name, as Redis's table and a
+# Go `map[string]func` do: the names stand twice, in the table and in
+# `run`'s `match`, and the test below holds the two to each other.
+
+use <rebel>/redis
+
+use commands/hash_cmds
+use commands/key_cmds
+use commands/list_cmds
+use commands/set_cmds
+use commands/text_cmds
+use commands/zset_cmds
+use protocol/reply
+use store/keyspace
+
+# Who runs a command.
+variant Scope
+    # `run`, over the keyspace alone.
+    data
+    # The server: the connection, transactions, publishing, persistence.
+    server
+
+# One command's entry.
+record Spec
+    # Its name in capitals.
+    name: str
+    # The words it takes, its name included: exactly that many where
+    # positive, at least its opposite where negative, as Redis writes it.
+    arity: i64
+    # Whether it may change the keyspace, so the append-only file and a
+    # read-only replay care about it.
+    write: bool
+    # Whether a connection subscribed to channels may run it.
+    subscribed: bool
+    # Who runs it.
+    scope: Scope
+
+# An entry of the keyspace's.
+#
+# - `name`: the name in capitals.
+# - `arity`: Redis's arity.
+# - `write`: whether it may change the keyspace.
+function data(name: str, arity: i64, write: bool) -> Spec
+    return Spec(name: name, arity: arity, write: write, subscribed: false, scope: .data)
+
+# An entry of the server's.
+#
+# - `name`: the name in capitals.
+# - `arity`: Redis's arity.
+# - `subscribed`: whether a subscribed connection may run it.
+function server(name: str, arity: i64, subscribed: bool) -> Spec
+    return Spec(name: name, arity: arity, write: false, subscribed: subscribed, scope: .server)
+
+# Every command, in the order Redis's documentation groups them.
+function every() -> [Spec]
+    return [
+        data("GET", 2, false)
+        data("SET", -3, true)
+        data("SETNX", 3, true)
+        data("GETDEL", 2, true)
+        data("MGET", -2, false)
+        data("MSET", -3, true)
+        data("INCR", 2, true)
+        data("DECR", 2, true)
+        data("INCRBY", 3, true)
+        data("DECRBY", 3, true)
+        data("APPEND", 3, true)
+        data("STRLEN", 2, false)
+        data("GETRANGE", 4, false)
+        data("LPUSH", -3, true)
+        data("RPUSH", -3, true)
+        data("LPOP", -2, true)
+        data("RPOP", -2, true)
+        data("LLEN", 2, false)
+        data("LRANGE", 4, false)
+        data("LINDEX", 3, false)
+        data("LSET", 4, true)
+        data("LREM", 4, true)
+        data("LTRIM", 4, true)
+        data("HSET", -4, true)
+        data("HGET", 3, false)
+        data("HMGET", -3, false)
+        data("HDEL", -3, true)
+        data("HGETALL", 2, false)
+        data("HKEYS", 2, false)
+        data("HVALS", 2, false)
+        data("HLEN", 2, false)
+        data("HEXISTS", 3, false)
+        data("HINCRBY", 4, true)
+        data("SADD", -3, true)
+        data("SREM", -3, true)
+        data("SMEMBERS", 2, false)
+        data("SISMEMBER", 3, false)
+        data("SCARD", 2, false)
+        data("SINTER", -2, false)
+        data("SUNION", -2, false)
+        data("SDIFF", -2, false)
+        data("ZADD", -4, true)
+        data("ZINCRBY", 4, true)
+        data("ZREM", -3, true)
+        data("ZSCORE", 3, false)
+        data("ZCARD", 2, false)
+        data("ZRANK", 3, false)
+        data("ZREVRANK", 3, false)
+        data("ZRANGE", -4, false)
+        data("ZRANGEBYSCORE", -4, false)
+        data("ZCOUNT", 4, false)
+        data("DEL", -2, true)
+        data("EXISTS", -2, false)
+        data("TYPE", 2, false)
+        data("EXPIRE", 3, true)
+        data("PEXPIRE", 3, true)
+        data("EXPIREAT", 3, true)
+        data("PEXPIREAT", 3, true)
+        data("TTL", 2, false)
+        data("PTTL", 2, false)
+        data("PERSIST", 2, true)
+        data("KEYS", 2, false)
+        data("SCAN", -2, false)
+        data("RENAME", 3, true)
+        data("DBSIZE", 1, false)
+        data("FLUSHDB", 1, true)
+        data("FLUSHALL", 1, true)
+        server("PING", -1, true)
+        server("ECHO", 2, false)
+        server("QUIT", 1, true)
+        server("RESET", 1, true)
+        server("HELLO", -1, false)
+        server("AUTH", -2, false)
+        server("SELECT", 2, false)
+        server("CLIENT", -2, false)
+        server("MULTI", 1, false)
+        server("EXEC", 1, false)
+        server("DISCARD", 1, false)
+        server("WATCH", -2, false)
+        server("UNWATCH", 1, false)
+        server("SUBSCRIBE", -2, true)
+        server("UNSUBSCRIBE", -1, true)
+        server("PSUBSCRIBE", -2, true)
+        server("PUNSUBSCRIBE", -1, true)
+        server("PUBLISH", 3, false)
+        server("PUBSUB", -2, false)
+        server("INFO", -1, false)
+        server("SAVE", 1, false)
+        server("BGSAVE", 1, false)
+        server("BGREWRITEAOF", 1, false)
+        server("LASTSAVE", 1, false)
+        server("SHUTDOWN", -1, false)
+        server("DEBUG", -2, false)
+        server("COMMAND", -1, false)
+    ]
+
+# The table by name.
+function by_name() -> {str: Spec}
+    out: {str: Spec} @= {}
+
+    for s in every()
+        out[s.name] @ s
+
+    return out
+
+# Whether `count` words suit `spec`'s arity.
+#
+# - `spec`: the command's entry.
+# - `count`: the words sent, the name included.
+function fits(spec: Spec, count: i64) -> bool
+    if spec.arity >= 0
+        return count == spec.arity
+    return count >= -spec.arity
+
+# Runs the keyspace's command `name` over `db`, `argv` holding as many
+# words as its arity asks.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `name`: the name in capitals, one of `every`'s of scope `data`.
+# - `now`: the time, in milliseconds since the Unix epoch.
+function run(@db: keyspace.Db, argv: [[u8]], name: str, now: i64) -> redis.Reply
+    return match name
+        "GET"                                           => text_cmds.get(@db, argv: argv, now: now)
+        "SET"                                           => text_cmds.set(@db, argv: argv, now: now)
+        "SETNX"                                         => text_cmds.setnx(@db, argv: argv, now: now)
+        "GETDEL"                                        => text_cmds.getdel(@db, argv: argv, now: now)
+        "MGET"                                          => text_cmds.mget(@db, argv: argv, now: now)
+        "MSET"                                          => text_cmds.mset(@db, argv: argv, now: now)
+        "INCR" | "DECR" | "INCRBY" | "DECRBY"           => text_cmds.step(@db, argv: argv, name: name, now: now)
+        "APPEND"                                        => text_cmds.append(@db, argv: argv, now: now)
+        "STRLEN"                                        => text_cmds.strlen(@db, argv: argv, now: now)
+        "GETRANGE"                                      => text_cmds.getrange(@db, argv: argv, now: now)
+        "LPUSH"                                         => list_cmds.lpush(@db, argv: argv, back: false, now: now)
+        "RPUSH"                                         => list_cmds.lpush(@db, argv: argv, back: true, now: now)
+        "LPOP"                                          => list_cmds.lpop(@db, argv: argv, back: false, now: now)
+        "RPOP"                                          => list_cmds.lpop(@db, argv: argv, back: true, now: now)
+        "LLEN"                                          => list_cmds.llen(@db, argv: argv, now: now)
+        "LRANGE"                                        => list_cmds.lrange(@db, argv: argv, now: now)
+        "LINDEX"                                        => list_cmds.lindex(@db, argv: argv, now: now)
+        "LSET"                                          => list_cmds.lset(@db, argv: argv, now: now)
+        "LREM"                                          => list_cmds.lrem(@db, argv: argv, now: now)
+        "LTRIM"                                         => list_cmds.ltrim(@db, argv: argv, now: now)
+        "HSET"                                          => hash_cmds.hset(@db, argv: argv, now: now)
+        "HGET"                                          => hash_cmds.hget(@db, argv: argv, now: now)
+        "HMGET"                                         => hash_cmds.hmget(@db, argv: argv, now: now)
+        "HDEL"                                          => hash_cmds.hdel(@db, argv: argv, now: now)
+        "HGETALL" | "HKEYS" | "HVALS"                   => hash_cmds.listing(@db, argv: argv, name: name, now: now)
+        "HLEN" | "HEXISTS"                              => hash_cmds.count(@db, argv: argv, name: name, now: now)
+        "HINCRBY"                                       => hash_cmds.hincrby(@db, argv: argv, now: now)
+        "SADD"                                          => set_cmds.sadd(@db, argv: argv, now: now)
+        "SREM"                                          => set_cmds.srem(@db, argv: argv, now: now)
+        "SMEMBERS"                                      => set_cmds.smembers(@db, argv: argv, now: now)
+        "SISMEMBER" | "SCARD"                           => set_cmds.count(@db, argv: argv, name: name, now: now)
+        "SINTER" | "SUNION" | "SDIFF"                   => set_cmds.combine(@db, argv: argv, name: name, now: now)
+        "ZADD"                                          => zset_cmds.zadd(@db, argv: argv, now: now)
+        "ZINCRBY"                                       => zset_cmds.zincrby(@db, argv: argv, now: now)
+        "ZREM"                                          => zset_cmds.zrem(@db, argv: argv, now: now)
+        "ZSCORE"                                        => zset_cmds.zscore(@db, argv: argv, now: now)
+        "ZCARD" | "ZRANK" | "ZREVRANK"                  => zset_cmds.rank(@db, argv: argv, name: name, now: now)
+        "ZRANGE" | "ZRANGEBYSCORE"                      => zset_cmds.zrange(@db, argv: argv, name: name, now: now)
+        "ZCOUNT"                                        => zset_cmds.zcount(@db, argv: argv, now: now)
+        "DEL"                                           => key_cmds.del(@db, argv: argv, now: now)
+        "EXISTS"                                        => key_cmds.exists(@db, argv: argv, now: now)
+        "TYPE"                                          => key_cmds.kind(@db, argv: argv, now: now)
+        "EXPIRE" | "PEXPIRE" | "EXPIREAT" | "PEXPIREAT" => key_cmds.expire(@db, argv: argv, name: name, now: now)
+        "TTL" | "PTTL"                                  => key_cmds.ttl(@db, argv: argv, name: name, now: now)
+        "PERSIST"                                       => key_cmds.persist(@db, argv: argv, now: now)
+        "KEYS"                                          => key_cmds.keys_matching(db, argv: argv, now: now)
+        "SCAN"                                          => key_cmds.scan(db, argv: argv, now: now)
+        "RENAME"                                        => key_cmds.rename(@db, argv: argv, now: now)
+        "DBSIZE"                                        => key_cmds.dbsize(db)
+        "FLUSHDB" | "FLUSHALL"                          => key_cmds.flush(@db, argv: argv)
+        _                                               => reply.error(code: "ERR", message: f"no handler for '{name}'")
+
+test "run: every command of the keyspace's scope reaches a handler"
+    for s in every()
+        if s.scope == .data
+            db @= keyspace.new()
+            argv: [[u8]] @= []
+
+            words = if s.arity < 0
+                -s.arity
+            else
+                s.arity
+
+            for _ in range(from: 0, to: words)
+                argv @ argv.push([49])
+
+            got = run(@db, argv: argv, name: s.name, now: 0)
+            assert got != reply.error(code: "ERR", message: f"no handler for '{s.name}'")
+
+test "fits: an exact arity and a least one"
+    assert fits(data("GET", 2, false), count: 2)
+    assert !fits(data("GET", 2, false), count: 3)
+    assert fits(data("DEL", -2, true), count: 5)
+    assert !fits(data("DEL", -2, true), count: 1)
