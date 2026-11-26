@@ -459,6 +459,38 @@ test "read_reference: the module doc, a constant, a record, a variant and a func
     assert fails_sentence(["Reads it. Fails as `parse` does for a", "block it refuses. See also `x`."]) == "Fails as `parse` does for a block it refuses."
     assert fails_sentence(["Reads it."]) == ""
 
+test "read_reference: a face whose signature carries a function type's marks keeps them (panel 261)"
+    rows = [
+        "# <rebel>/kit"
+        ""
+        "What the kit is for."
+        ""
+        "## function each"
+        ""
+        "    function each(@state: App, hs: [(function(@App, i64) -> ())])"
+        ""
+        "Each handler of `hs` called on the state, in order."
+        ""
+        "- `state`: the program's state, lent to each handler."
+        "- `hs`: the handlers, writers and readers alike."
+        ""
+        "    kit.each(@state, hs)"
+        ""
+        "## function read"
+        ""
+        "    function read(f: (function(App lent) -> i64)) -> i64"
+        ""
+        "A reader's value."
+        ""
+        "- `f`: the reader."
+        ""
+        "    kit.read(f)"
+    ]
+    r = read_reference(printed: rows.join("\n") + "\n", title: "<rebel>/kit").must()
+    assert r.declarations.len() == 2
+    assert signature(r.declarations[0]) == "function each(@state: App, hs: [(function(@App, i64) -> ())])" && r.declarations[0].call == "kit.each(@state, hs)"
+    assert signature(r.declarations[1]) == "function read(f: (function(App lent) -> i64)) -> i64" && r.declarations[1].call == "kit.read(f)"
+
 test "read_reference: a wrong title, an unknown kind and a function with no call refused"
     assert read_reference(printed: "# <rebel>/a\n", title: "<rebel>/b").is_err()
     assert read_reference(printed: "# <rebel>/a\n\n## extern x\n\n    x\n", title: "<rebel>/a").is_err()

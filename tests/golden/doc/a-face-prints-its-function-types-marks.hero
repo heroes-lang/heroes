@@ -1,0 +1,20 @@
+# A face whose signature carries a function type's marks prints them as
+# written, `@` before a position and `lent` after one, in the signature and
+# in the call under it (panel 261's R10), which Rebel's index reads verbatim.
+
+record App
+    n: i64
+
+# Each handler of `hs` called on the state, in order.
+#
+# - `state`: the program's state, lent to each handler
+# - `hs`: the handlers, writers and readers alike
+function each(@state: App, hs: [(function(@App, i64) -> ())])
+    for h in hs
+        h(@state, 1)
+
+# A reader's value.
+#
+# - `f`: the reader, which takes the state in place
+function read(f: (function(App lent) -> i64)) -> i64
+    return f(App(n: 2))

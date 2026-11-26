@@ -336,6 +336,25 @@ test "the tree guard sees a mailbox's word taken off its type"
     assert formatted == original
     assert guard.refuse_output_the_formatter_broke(path: "t.hero", original: original, formatted: formatted).is_err()
 
+test "the tree guard sees a mark taken off a function type"
+    # Panel 261's form, the two pairs a printer that forgot it would make: an
+    # `@` or a `lent` dropped from a position of a function type, a program
+    # that still parses and means another type.
+    original = "function f(h: (function(@i64) -> ()), g: (function(i64 lent) -> ()))\n    _ = h\n    _ = g\n"
+    no_at = "function f(h: (function(i64) -> ()), g: (function(i64 lent) -> ()))\n    _ = h\n    _ = g\n"
+    no_lent = "function f(h: (function(@i64) -> ()), g: (function(i64) -> ()))\n    _ = h\n    _ = g\n"
+
+    for stripped in [no_at, no_lent]
+        caught = guard.refuse_output_the_formatter_broke(path: "t.hero", original: original, formatted: stripped)
+        assert !caught.is_err()
+        assert strings.holds(text: caught.must(), needle: "changed the TREE")
+
+    parsed = parse.parse(original)
+    s = source.new_source(name: "t.hero", text: original)
+    formatted = fmt.format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls)
+    assert formatted == original
+    assert guard.refuse_output_the_formatter_broke(path: "t.hero", original: original, formatted: formatted).is_err()
+
 # Defect 101's last silent move, and the guard that makes the class loud
 # whatever printer moves one: the trunk's `fmt` joined a signature with a
 # comment on its `(` line and moved the comment to the joined line's end, at
