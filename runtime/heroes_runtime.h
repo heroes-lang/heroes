@@ -469,8 +469,9 @@ double hero_int_to_f64(int64_t v);
  * calls no maths library (`parts/f64.c`; defect d-lane-macro-members4-2).
  * Added beside the declarations above and changing none of them, so
  * `HERO_RUNTIME_ABI` stands: a runtime without it is a compile error at the
- * first unit that takes a float's `%`. */
-double hero_f64_rem(double x, double y);
+ * first unit that takes a float's `%`. Its parameters are unnamed: every word
+ * this header writes is one of the guard's list (`emit/macro_guard.hero`). */
+double hero_f64_rem(double, double);
 
 /* -- the failure side of `T?` (design.md §4.6) -------------------------------
  *
