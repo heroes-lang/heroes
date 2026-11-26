@@ -572,40 +572,75 @@ test "every bound name is saved around the library's headers, undefined unless C
 # `INT64_MAX`, a macro of `<stdint.h>` the list leaves to the library, and
 # `y1`, a function `<math.h>` declares on Darwin and in glibc, and holds a
 # record whose field is `NAN`, a macro of `<math.h>`; each bound, and
-# `__STDC__`, which no header defines, bound too. Where the unit's C stands
-# each means what the header made it and the library compiles beside them,
+# `__STDC__` and `__STDC_HOSTED__`, which no header defines and C reserves,
+# bound too. Where the unit's C stands each means what the header made it, a
+# reserved one what clang predefined, and the library compiles beside them,
 # warnings refused; with the list's names alone saved, as until this repair,
-# the same unit is refused, and with `__STDC__` undefined too, so the test is
-# not blind.
+# the same unit is refused, and with a reserved name undefined after it is
+# saved, so the test is not blind.
+#
+# Defect d-windows-ci-5-1: clang does not predefine `__STDC__` for the MSVC
+# target, as MSVC does not (`clang -target x86_64-pc-windows-msvc -dM -E`
+# prints `__STDC_HOSTED__` and no `__STDC__`, measured on this Mac
+# 2026-11-26), so the unit that read it was refused on the CI's Windows
+# x86-64 leg, its first run of this test (run 45809762298). The value the
+# body reads is `__STDC_HOSTED__`, which clang predefined for each of the
+# four targets asked that day (that one, x86_64-w64-windows-gnu,
+# arm64-apple-darwin and x86_64-linux-gnu), and `__STDC__` with it wherever
+# clang predefines it, asked of clang here and held so on every system but
+# Windows.
 test "a bound name keeps its header's meaning whatever the library read after the groups defines (defect d-lane-macro-members3-1)"
     dir = "build/selftest-bound-after"
     assert !process.remove_tree(dir).is_err()
     assert !process.mkdir_all(dir).is_err()
+    assert !write_file(path: dir + "/stdc.c", text: "#ifndef __STDC__\n#error clang predefines no __STDC__ here\n#endif\n").is_err()
+    asked = process.run(
+        program: "clang",
+        words: ["clang", "-std=gnu11", "-Werror", "-fsyntax-only", dir + "/stdc.c"],
+        out: process.discard(),
+        err: process.discard()
+    )
+    assert asked.started
+    stdc = asked.code == 0
+    assert stdc || process.exe_suffix() == ".exe"
     planted = "#define INT64_MAX 5\n#define y1 6\nstruct hero_after_word { long long NAN; };\n"
     assert !write_file(path: dir + "/planted.h", text: planted).is_err()
-    body = "_Static_assert(INT64_MAX == 5, \"the header's value\");\n_Static_assert(y1 == 6, \"the header's value\");\nstatic long long hero_after_field(struct hero_after_word w) { return w.NAN; }\nlong long hero_after_probe(void) { struct hero_after_word w = {__STDC__}; return hero_after_field(w); }\n"
+
+    value = if stdc
+        "__STDC__ + __STDC_HOSTED__"
+    else
+        "__STDC_HOSTED__"
+    body = "_Static_assert(INT64_MAX == 5, \"the header's value\");\n_Static_assert(y1 == 6, \"the header's value\");\nstatic long long hero_after_field(struct hero_after_word w) { return w.NAN; }\nlong long hero_after_probe(void) { struct hero_after_word w = {" + value + "}; return hero_after_field(w); }\n"
     bound: {str: bool} @= {}
 
-    for name in ["INT64_MAX", "y1", "NAN", "__STDC__", "hero_after_word"]
+    for name in ["INT64_MAX", "y1", "NAN", "__STDC__", "__STDC_HOSTED__", "hero_after_word"]
         bound[name] @ true
 
-    # The same lines with `__STDC__` undefined after it is saved.
-    stdc: [str] @= []
+    # The same lines with one reserved name undefined after it is saved.
+    hosted: [str] @= []
+    unstdc: [str] @= []
 
     no_names: {str: bool} = {}
 
     for line in read_after(bound: bound, where: no_names)
-        stdc @ stdc.push(line)
+        hosted @ hosted.push(line)
+        unstdc @ unstdc.push(line)
+
+        if line == "#pragma push_macro(\"__STDC_HOSTED__\")"
+            hosted @ hosted.push("#undef __STDC_HOSTED__")
 
         if line == "#pragma push_macro(\"__STDC__\")"
-            stdc @ stdc.push("#undef __STDC__")
+            unstdc @ unstdc.push("#undef __STDC__")
 
     opened = strings.with_all(list: [FIRST_LINE], more: around(["#include <planted.h>"], bound: bound))
-    units = [
+    units: [[str]] @= [
         [strings.with_all(list: opened, more: read_after(bound: bound, where: no_names)).join("\n"), "true"]
         [strings.with_all(list: opened, more: [STANDARD_LINE]).join("\n"), "false"]
-        [strings.with_all(list: opened, more: stdc).join("\n"), "false"]
+        [strings.with_all(list: opened, more: hosted).join("\n"), "false"]
     ]
+
+    if stdc
+        units @ units.push([strings.with_all(list: opened, more: unstdc).join("\n"), "false"])
     at: i64 @= 0
 
     for pair in units
