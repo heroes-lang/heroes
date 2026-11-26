@@ -53,6 +53,7 @@ variant Linkage
     from_c
         header: token.Span
         library: ast.Library?
+        layer: token.Span?
 
 function is_from_c(l: Linkage) -> bool
     return match l
@@ -68,6 +69,12 @@ function linkage_library(l: Linkage) -> ast.Library?
     return match l
         .heroes   => fail(code: "absent", msg: "an ordinary declaration names no library")
         .from_c x => x.library
+
+# The head line's `layer`, where it says it (panel 260).
+function linkage_layer(l: Linkage) -> token.Span?
+    return match l
+        .heroes   => fail(code: "absent", msg: "an ordinary declaration says no layer")
+        .from_c x => x.layer
 
 # Rust's `here_or` falls back to the declaration's own keyword when the
 # current token sits in the appended library text (§1.11), so a file ENDING
@@ -124,7 +131,7 @@ function constant_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
     if !body.is_err()
         finish @ body.must().span
     decls @ decls.push(
-        ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .constant_decl(ty: ty, body: body, header: linkage_header(linkage), library: linkage_library(linkage)))
+        ast.Decl(name: name, doc: doc, span: token.Span(start: keyword.start, end: finish.end), kind: .constant_decl(ty: ty, body: body, header: linkage_header(linkage), library: linkage_library(linkage), layer: linkage_layer(linkage)))
     )
 
 # Everything after a function's name: generics, the signature, and — for a
@@ -166,6 +173,7 @@ function function_tail(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text:
         is_extern: is_extern,
         header: linkage_header(linkage),
         library: linkage_library(linkage),
+        layer: linkage_layer(linkage),
         owned_result: sig.marks.owned,
         acquires_result: sig.marks.acquires,
         retains_result: sig.marks.retains,

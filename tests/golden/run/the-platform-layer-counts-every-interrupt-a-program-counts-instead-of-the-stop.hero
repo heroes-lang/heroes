@@ -8,7 +8,7 @@
 # the process's life, and the program ends at exit 0 with its leak check run.
 # On Windows the interrupt is the console's Ctrl-C, counted on the thread the
 # system makes for it (unrun there).
-extern "hero_net.h"
+extern "hero_net.h" layer
     constant HERO_NET_INVALID: i64
     function hero_net_count_signal(sig: i32) -> i64
     function hero_net_catch_stop() -> i64
@@ -20,7 +20,7 @@ extern "hero_os.h"
     function hero_signal_watch(sig: i32) -> i64
     function hero_signal_take(sig: i32) -> i64
 
-extern "the-platform-layer-stop.h"
+extern "the-platform-layer-stop.h" layer
     constant STOP_INTERRUPT: i64
     function stop_begin(interrupt_ignored: i64) -> i64
     function stop_send_now(what: i64) -> i64

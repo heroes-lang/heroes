@@ -19,7 +19,7 @@
 # name it, which are text wherever the system holds text: the face asks
 # `validated_bytes` of them.
 
-extern "hero_disk.h"
+extern "hero_disk.h" layer
     # The kinds of failure `last_error` answers. They are the same numbers on
     # every platform; `HERO_DISK_NOT_TEXT` is Windows' alone, and
     # `HERO_DISK_UNSUPPORTED` what it answers for an owner.

@@ -1,0 +1,11 @@
+# Panel 260's R2 (provisional, author ratification pending): what lies under
+# the runtime's `vendor/` is the C a member compiles inside itself, never a
+# file of the platform layer. A header of the program's own including the
+# vendored Monocypher header for a type's size binds nothing of the layer: its
+# group says nothing and the program builds and links none of the layer (the
+# critic's `vendorinc`, refused at `build` by the route built first).
+extern "sizes.h"
+    function sizes_answer() -> i64
+
+function main()
+    print(sizes_answer() > 0)

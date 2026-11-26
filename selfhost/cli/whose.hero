@@ -14,6 +14,7 @@ use cli/header_ask
 use cli/header_told
 use cli/inline_only
 use cli/io
+use cli/layer_link
 use cli/library_file
 use cli/link
 use cli/link_needs
@@ -108,6 +109,17 @@ function reading(failed: ()?, art: compile.Artifact, s: source.Source, t: toolch
 
     if header.len() > 0
         return authors(header, msg: "a header this program binds does not compile")
+
+    # A name the platform layer's headers declare that the link misses (panel
+    # 260, `cli/layer_link.hero`): in a program none of whose groups says
+    # `layer`, whose link carries none of the layer, the group that owes the
+    # word. Asked before every other reader of a refused link, which would
+    # tell it as a library nobody names.
+    if code == link.REFUSED
+        unlayered = layer_link.told(message, s, art.decls, t)
+
+        if unlayered.len() > 0
+            return authors(unlayered, msg: "a name this program's link needs is the platform layer's")
 
     # A C name another library than its group's supplies (`cli/supplied.hero`,
     # defect 2363), then a function the linker found no definition of whose

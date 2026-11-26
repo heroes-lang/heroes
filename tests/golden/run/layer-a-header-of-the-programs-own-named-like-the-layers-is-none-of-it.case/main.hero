@@ -1,0 +1,12 @@
+# Panel 260's R2 (provisional, author ratification pending): the platform
+# layer's files are the runtime's own list, by their paths in its folder, never
+# a name. A header of the program's own named `hero_util.h`, beside it, reaches
+# nothing of the runtime: it is none of the layer's, so its group says nothing
+# and the program builds and links none of the layer. Under the name rule the
+# panel's route built first it was refused with a false sentence and a
+# `certain` fix (the critic's `ownnamed`).
+extern "hero_util.h"
+    function util_answer() -> i64
+
+function main()
+    print(util_answer())

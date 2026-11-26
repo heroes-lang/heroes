@@ -13,7 +13,7 @@
 # waiting threads are C's, in the header beside this file: a program's
 # Heroes threads carry one `i64`, and a socket is a handle. Each line prints
 # 1 where every step held, else the step that did not.
-extern "the-platform-layer-ends-a-call-its-socket-closes.h"
+extern "the-platform-layer-ends-a-call-its-socket-closes.h" layer
     function close_ends_accept() -> i64
     function close_ends_recv() -> i64
     function close_ends_send() -> i64

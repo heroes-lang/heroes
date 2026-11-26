@@ -13,7 +13,7 @@
 
 use os/hero_os
 
-extern "hero_sys.h"
+extern "hero_sys.h" layer
     # The kinds of failure `last_error` answers. They are the same numbers on
     # every platform, `HERO_SYS_UNSUPPORTED` where a platform has no such
     # thing, a user id on Windows.

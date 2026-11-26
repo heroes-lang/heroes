@@ -60,6 +60,7 @@
 # is the comment's claim implemented.
 
 use ast
+use check/layer_header
 use lexer
 use parse
 use print/around
@@ -390,9 +391,14 @@ function use_line(s: source.Source, used: ast.Use) -> str
 # any one member, since every member carries both spans (§4.19). The
 # word is chosen by the kind, so a package group cannot be printed
 # back as a link one — which would be fmt changing what the program
-# asks the machine.
-function extern_head(s: source.Source, header: token.Span, library: ast.Library?) -> str
+# asks the machine. `layer` stands right after the header, where the
+# parser reads it (panel 260): a head that dropped it would be a program
+# whose link no longer carries the layer.
+function extern_head(s: source.Source, header: token.Span, library: ast.Library?, layer: token.Span?) -> str
     out: str @= "extern " + source.span_text(s, header)
+
+    if !layer.is_err()
+        out @ out + " " + source.span_text(s, layer.must())
 
     if !library.is_err()
         match library.must()
@@ -400,45 +406,27 @@ function extern_head(s: source.Source, header: token.Span, library: ast.Library?
             .pkgconfig pk => out @ out + " pkgconfig " + source.span_text(s, pk.name)
     return out
 
-# The two spans a group's members all carry, whatever kind of member
-# they are. ENUMERATED, NEVER a catch-all (panel 060, measured before
-# reasoned): a `_ => none` arm answered "not in a group" the moment
-# record became a member, and fmt HOISTED IT TO THE TOP LEVEL — a
-# different program that still parses, the worst shape a formatter's
-# bug can take.
-record ExternSpans
-    header: token.Span?
-    library: ast.Library?
-
-function extern_spans(decl: ast.Decl) -> ExternSpans
-    none_h: token.Span? = fail(code: "none", msg: "no header")
-    none_l: ast.Library? = fail(code: "none", msg: "no library")
-
-    match decl.kind
-        .function_decl fd => return ExternSpans(header: fd.value.header, library: fd.value.library)
-        .constant_decl k  => return ExternSpans(header: k.header, library: k.library)
-        .record_decl rec  => return ExternSpans(header: rec.header, library: rec.library)
-        # A variant is not a C type and a test is not a declaration a
-        # header can make — refused in the parser, stated here.
-
-        .variant_decl | .test_decl => return ExternSpans(header: none_h, library: none_l)
-
-    return ExternSpans(header: none_h, library: none_l)
+# The spans a group's members all carry, whatever kind of member they are,
+# are `layer_header.head_of`'s: its header, its `layer` and its library.
+# ENUMERATED, NEVER a catch-all (panel 060, measured before reasoned): a
+# `_ => none` arm answered "not in a group" the moment record became a
+# member, and fmt HOISTED IT TO THE TOP LEVEL — a different program that
+# still parses, the worst shape a formatter's bug can take.
 
 # The group key: the whole head line's text, so two groups that differ
 # only in link versus package are two groups — which they are. "" for
 # a declaration outside any group.
 function group_key(s: source.Source, decl: ast.Decl) -> str
-    spans = extern_spans(decl)
+    spans = layer_header.head_of(decl)
 
     if spans.header.is_err()
         return ""
-    return extern_head(s, header: spans.header.must(), library: spans.library)
+    return extern_head(s, header: spans.header.must(), library: spans.library, layer: spans.layer)
 
 # The source line of a group member's head, 0 for a declaration outside
 # any group.
 function head_line(s: source.Source, decl: ast.Decl) -> i64
-    header = extern_spans(decl).header
+    header = layer_header.head_of(decl).header
 
     if header.is_err()
         return 0
@@ -454,12 +442,12 @@ function head_line(s: source.Source, decl: ast.Decl) -> i64
 # directly above it; a remark there keeps the blank line under it where the
 # source has one (defect 096), and gains one where the member's doc is the
 # one above the head, which the re-parse would otherwise take it in place of.
-function extern_head_once(@f: page.Fmt, s: source.Source, comments: [token.Span], decl: ast.Decl, header: token.Span?, library: ast.Library?, continues: bool) -> i64
+function extern_head_once(@f: page.Fmt, s: source.Source, comments: [token.Span], decl: ast.Decl, header: token.Span?, library: ast.Library?, layer: token.Span?, continues: bool) -> i64
     if header.is_err()
         return 0
 
     if !continues
-        page.put_line(@f, indent: 0, text: extern_head(s, header: header.must(), library: library))
+        page.put_line(@f, indent: 0, text: extern_head(s, header: header.must(), library: library, layer: layer))
         page.opened(@f, s, comments, line: source.line_of(s, header.must().start))
         own: [token.Span] @= []
 
@@ -496,6 +484,7 @@ function declaration(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [t
                 decl: decl,
                 header: k.header,
                 library: k.library,
+                layer: k.layer,
                 continues: continues
             )
             head = "constant " + name + ": " + types.render_type(tree, k.ty, s)
@@ -519,6 +508,7 @@ function declaration(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [t
                 decl: decl,
                 header: fd.value.header,
                 library: fd.value.library,
+                layer: fd.value.layer,
                 continues: continues
             )
             headline.signature_lines(@f, tree, s, comments, name: decl.name, fd: fd.value, indent: indent)
@@ -540,6 +530,7 @@ function declaration(@f: page.Fmt, tree: ast.Ast, s: source.Source, comments: [t
                 decl: decl,
                 header: rec.header,
                 library: rec.library,
+                layer: rec.layer,
                 continues: continues
             )
             tag_text: str @= ""

@@ -1,0 +1,11 @@
+# Panel 260 (provisional, author ratification pending): a group whose header
+# is the program's own and reaches the platform layer's, here two includes
+# down, says `layer`, told at `build`, which follows every include of a
+# group's header before its first clang (`cli/include_stands.hero`): `check`
+# reads the group's string alone and cannot see it. The fix inserts the word.
+
+extern "layer-a-header-of-the-programs-own-reaching-the-layer-says-layer.h"  #~ ffi_layer_undeclared
+    function ticks_twice() -> i64
+
+function main()
+    print(ticks_twice() > 0)

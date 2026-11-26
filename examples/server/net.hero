@@ -15,7 +15,7 @@
 # the ones `hero_net.h` names for the two calls, so a connection never ended
 # and a number never taken back are told when `main` returns.
 
-extern "hero_net.h"
+extern "hero_net.h" layer
     record Socket tag hero_net_socket
     constant HERO_NET_OK: i64
     function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close

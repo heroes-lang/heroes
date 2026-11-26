@@ -139,6 +139,64 @@ function swift_members(runtime: str) -> [str]?
 function is_swift_member(name: str) -> bool
     return name.len() > LAYER.len() + 6 && bytes.bytes_at(text: name, at: 0, needle: LAYER) && bytes.bytes_at(text: name, at: name.len() - 6, needle: ".swift")
 
+# **AND THE LAYER'S FILES, BY THE RUNTIME'S OWN LIST** (panel 260's R2,
+# provisional, author ratification pending): what a group binds of the layer
+# is read by a file's path in the runtime's folder, never by its name. The
+# layer's files are the names `runtime.c`'s never-read block writes, each
+# member and the headers it is named after, but those under `vendor/`, the C
+# a member compiles inside itself, which no program's group is a group of
+# the layer for; and every name it writes under `platform/`, the headers its
+# own unit reads there among them. Each as `runtime.c` writes it, relative to
+# the runtime's folder, once, in the order written.
+function layer_files(runtime: str) -> [str]?
+    root = reading.keyed(runtime + "/runtime.c")?
+    block = never_read(text: root.text)
+    out: [str] @= []
+
+    for name in included_names(text: root.text)
+        listed = bytes.bytes_at(text: name, at: 0, needle: LAYER) || has(block, one: name)
+
+        if listed && !bytes.bytes_at(text: name, at: 0, needle: VENDOR) && !has(out, one: name)
+            out @ out.push(name)
+
+    return ok(out)
+
+# The folder of the runtime a member's vendored C stands in.
+constant VENDOR: str
+    "vendor/"
+
+# The names `text` includes between a line `#if 0` and the next `#endif`,
+# the block a preprocessor never reads, in the order written; a line's
+# carriage return before its end passed over.
+function never_read(text: str) -> [str]
+    out: [str] @= []
+    inside: bool @= false
+    at: i64 @= 0
+
+    while at < text.len()
+        stop: i64 @= at
+
+        while stop < text.len() && text[stop] != '\n'
+            stop @ stop + 1
+
+        end: i64 @= stop
+
+        if end > at && text[end - 1] == '\r'
+            end @ end - 1
+        line = text.slice(from: at, to: end)
+
+        if line == "#if 0"
+            inside @ true
+        else if line == "#endif"
+            inside @ false
+        else if inside
+            for name in included_names(text: line)
+                out @ out.push(name)
+
+        at @ stop + 1
+
+    return out
+
 # Every `#include "…"` target in the text, in the order written. The
 # quoted form only: `<stdio.h>` is the platform's and is not ours to
 # hash.
@@ -218,6 +276,20 @@ test "every file of the runtime is keyed alone, so a text cut apart elsewhere, o
     three = each_file(dir + "/three").must()
     assert three[16] == 'n'
     assert three != each_file(dir + "/four").must()
+
+# Panel 260's R2: the layer's files are the runtime's own list, by path, a
+# member's vendored C none of them and the runtime's own headers none either.
+test "the layer's files are the never-read block's names but vendor's, and every name under platform (panel 260)"
+    listed = layer_files("runtime").must()
+
+    for one in ["hero_time.h", "platform/hero_time.c", "hero_net.h", "platform/hero_layer_alloc.h", "platform/hero_ui_appkit.h", "platform/hero_ui_appkit.swift", "hero_audio_coreaudio.h"]
+        assert has(listed, one: one)
+
+    for other in ["vendor/monocypher/monocypher.h", "vendor/monocypher/monocypher.c", "hero_os.h", "hero_compiler.h", "heroes_runtime.h", "parts/alloc.c", "runtime.c"]
+        assert !has(listed, one: other)
+
+    text = "#include \"a.h\"\r\n#if 0\r\n#include \"b.h\"\n#include \"vendor/c.h\"\n#endif\n#include \"d.h\"\n#if 0\n#include \"e.c\"\n"
+    assert never_read(text: text) == ["b.h", "vendor/c.h", "e.c"]
 
 test "the repository's own runtime names every part it includes"
     names = included_names(text: read_file("runtime/runtime.c").must())

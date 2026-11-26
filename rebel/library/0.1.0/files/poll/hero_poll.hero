@@ -17,7 +17,7 @@ use os/hero_sys
 use threads/hero_os as threads_floor
 use time/hero_time
 
-extern "hero_poll.h"
+extern "hero_poll.h" layer
     # A set the layer holds open. It is a handle the layer issues and checks:
     # one closed already, `nullptr`, or one it never issued is
     # `HERO_POLL_NOT_OPEN`, never a read of freed memory.

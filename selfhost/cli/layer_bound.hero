@@ -1,0 +1,326 @@
+# What a build knows of the platform layer that `check` cannot: a header of
+# the program's own reaching the layer's, a group saying `layer` whose header
+# reaches none of it, and a binding of the
+# layer's function through a declaration of the program's own (design.md
+# §1.11, §4.19; panel 260, provisional, author ratification pending).
+#
+# **A group binds the layer where its header is the layer's or reaches it**
+# (R2), read here from the walk every build already makes before its first
+# clang (`cli/include_stands.hero`), which follows each group's header and
+# every file it includes, to any depth, as clang's search finds them, every
+# `#if` but `#if 0` read as true. One reading decides both refusals, so no
+# program is refused both with the word and without it: a group that binds
+# says `layer`, and a group that says `layer` binds.
+#
+# **A file is the layer's by its path in the runtime's folder, never by its
+# name**: the runtime's own list (`runtime_key.layer_files`), the members, the
+# headers each is named after and the files under `platform/`; never what
+# lies under `vendor/`, nor a header of the program's own named like the
+# layer's. A header clang found in the runtime's folder under a name that is
+# a layer file's but for its case is judged by nothing here: clang refuses
+# that spelling itself (`ffi_header_refused`, a path that is not portable).
+#
+# **What the walk cannot see is the link's to say** (`cli/layer_link.hero`).
+
+use ast
+use bytes
+use check/layer_header
+use cli/include_told
+use cli/own_names
+use cli/package_reads
+use cli/runtime_bound
+use cli/runtime_key
+use cli/toolchain
+use diag
+use emit/c_words
+use emit/externs as emit_externs
+use module/reading
+use source
+use token
+
+# What one group's header reaches of the layer, as the walk found it: the
+# layer's file met first (its path in the runtime's folder, "" where none
+# is), whether that file is the header itself, and whether the header is a
+# runtime file named like one of the layer's but for its case.
+record Reach
+    file: str
+    is: bool
+    folded: bool
+
+# Each group of `decls` whose header is one of `headers`, its reach read from
+# the walk's `edges` and `roots` into `reaches`, by its string's first byte.
+function reach_each(s: source.Source, decls: [ast.Decl], headers: [str], edges: {str: [str]}, roots: {i64: str}, runtime: str, files: [str], @reaches: {i64: Reach})
+    for decl in decls
+        head = layer_header.head_of(decl)
+
+        if head.header.is_err() || !reaches[head.header.must().start].is_err()
+            continue
+        at = index_of(headers, name: emit_externs.unquoted(s, span: head.header.must()))
+
+        if at >= 0
+            reaches[head.header.must().start] @ reach_of(
+                edges: edges,
+                root: roots[at].default(""),
+                runtime: runtime,
+                files: files
+            )
+
+# Each group judged once, in the order the declarations stand, against the
+# word its head line says: a group that binds and does not say it is refused
+# at its string, `certain` to take the word, since the file the refusal names
+# is the runtime's; one saying it that binds nothing, at its word. A group
+# with no reach read is not judged here.
+function told(s: source.Source, decls: [ast.Decl], reaches: {i64: Reach}, t: toolchain.Toolchain) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+    files = runtime_key.layer_files(t.runtime).default([])
+
+    if files.len() == 0
+        return out
+    declared = layer_header.declared(decls)
+    seen: {i64: bool} @= {}
+    names: {str: str} @= {}
+    read: bool @= false
+
+    for decl in decls
+        head = layer_header.head_of(decl)
+
+        if head.header.is_err()
+            continue
+        span = head.header.must()
+        r = reaches[span.start]
+
+        if r.is_err() || !seen[span.start].is_err() || r.must().folded
+            continue
+        seen[span.start] @ true
+        spelled = source.span_text(s, span)
+
+        if head.layer.is_err() && r.must().file.len() > 0
+            through: str @= "`" + r.must().file + "`"
+
+            if r.must().is
+                through @ ""
+            out @ out.push(
+                layer_header.undeclared(header: spelled, span: span, through: through, library: layer_header.written_library(s, head.library))
+            )
+            continue
+
+        if r.must().file.len() > 0
+            continue
+
+        # Not reached: what it binds is asked of
+        # the layer's own headers, for the word's group and, where another
+        # group says it and the layer is on the link, for one without it.
+        if head.layer.is_err() && !declared
+            continue
+
+        if !read
+            names @ declared_names(t.runtime)
+            read @ true
+        bound = bound_in_group(s, decls, header: span, names: names)
+
+        if !bound.is_err()
+            out @ out.push(
+                redeclared(name: bound.must().name, header: names[bound.must().name].default(""), own: spelled, span: bound.must().span)
+            )
+        else if !head.layer.is_err()
+            out @ out.push(
+                layer_header.unreached(header: spelled, word: head.layer.must(), from: span.end)
+            )
+
+    return out
+
+# The reach of the header the walk found at `root`: the first file of the
+# layer's, breadth first, that `edges` reach from it, itself included; none
+# where `root` is "".
+function reach_of(edges: {str: [str]}, root: str, runtime: str, files: [str]) -> Reach
+    none = Reach(file: "", is: false, folded: false)
+
+    if root.len() == 0
+        return none
+
+    if folded_path(runtime: runtime, path: root, files: files)
+        return Reach(file: "", is: false, folded: true)
+    queue: [str] @= [root]
+    seen: {str: bool} @= {}
+    seen[root] @ true
+    at: i64 @= 0
+
+    while at < queue.len()
+        path = queue[at]
+        at @ at + 1
+        inside = layer_path(runtime: runtime, path: path, files: files)
+
+        if inside.len() > 0
+            return Reach(file: inside, is: path == root, folded: false)
+
+        for next in edges[path].default([])
+            if seen[next].is_err()
+                seen[next] @ true
+                queue @ queue.push(next)
+
+    return none
+
+# The path of `path` in the runtime's folder `runtime` where it is one of the
+# layer's files `files`, read lexically as `include_told.file_said` reads a
+# file of the runtime's; "" where it is not.
+function layer_path(runtime: str, path: str, files: [str]) -> str
+    inside = runtime_inside(runtime: runtime, path: path)
+
+    if inside.len() > 0 && has(files, name: inside)
+        return inside
+    return ""
+
+# Whether `path` is a file of the runtime's folder whose path there is one of
+# the layer's files but for the case of its letters.
+function folded_path(runtime: str, path: str, files: [str]) -> bool
+    inside = runtime_inside(runtime: runtime, path: path)
+
+    if inside.len() == 0 || has(files, name: inside)
+        return false
+
+    for one in files
+        if same_folded(a: one, b: inside)
+            return true
+
+    return false
+
+function runtime_inside(runtime: str, path: str) -> str
+    at = package_reads.lexical(path)
+    home = package_reads.lexical(runtime)
+
+    if !include_told.within(place: at, folders: [home])
+        return ""
+    return at.slice(from: home.len() + 1, to: at.len())
+
+function same_folded(a: str, b: str) -> bool
+    if a.len() != b.len()
+        return false
+
+    for at in range(from: 0, to: a.len())
+        if bytes.lower(a[at]) != bytes.lower(b[at])
+            return false
+
+    return true
+
+# A name of the group whose header string is `header` that a header of the
+# layer declares (`names`), with where it is bound: the first, in the order
+# the declarations stand.
+record Bound
+    name: str
+    span: token.Span
+
+function bound_in_group(s: source.Source, decls: [ast.Decl], header: token.Span, names: {str: str}) -> Bound?
+    for decl in decls
+        head = layer_header.head_of(decl)
+        bound = runtime_bound.bound(decl)
+
+        if head.header.is_err() || bound.is_err() || head.header.must().start != header.start
+            continue
+        name = source.span_text(s, bound.must())
+
+        if !names[name].is_err()
+            return ok(Bound(name: name, span: bound.must()))
+
+    return fail(code: "none", msg: "binds no name of the layer's")
+
+# A group that binds a function of the layer through a header of its own,
+# which declares it and includes none of the layer's: told at the binding.
+function redeclared(name: str, header: str, own: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: layer_header.REDECLARED,
+        message: "`" + name + "` is the platform layer's, declared by its `" + header + "`, and this group binds it through `" + layer_header.bare(own) + "`, which includes none of the layer's headers: name `" + header + "` in the group, or include it in `" + layer_header.bare(own) + "`",
+        span: span
+    )
+    d.notes @ d.notes.push(REDECLARED)
+    return d
+
+# Why a binding of the layer's own function through a declaration of the
+# program's is refused, which every refusal of that shape says.
+constant REDECLARED: str
+    "clang checks a binding against the header its group names, so a function of the layer's declared by the program itself is checked against nothing the layer wrote: a parameter or a result of another width there is a call the layer reads otherwise"
+
+function index_of(list: [str], name: str) -> i64
+    for at in range(from: 0, to: list.len())
+        if list[at] == name
+            return at
+
+    return -1
+
+function has(list: [str], name: str) -> bool
+    for one in list
+        if one == name
+            return true
+
+    return false
+
+# Each name in the runtime's own forms a header of the layer declares, with
+# the first such header's path in the runtime's folder, in the order the
+# runtime's list names the headers.
+function declared_names(runtime: str) -> {str: str}
+    out: {str: str} @= {}
+    files = runtime_key.layer_files(runtime)
+
+    if files.is_err()
+        return out
+
+    for inside in files.must()
+        if inside.len() < 3 || inside.slice(from: inside.len() - 2, to: inside.len()) != ".h"
+            continue
+        text = reading.text_of(runtime + "/" + inside)
+
+        if text.is_err()
+            continue
+        words = c_words.used(text.must())
+
+        # ORDER: none — each name keeps the first header in the list's order,
+        # the order `runtime.c` writes, whatever order `keys` gives.
+        for word in keys(words)
+            if own_names.reserved(word) && out[word].is_err()
+                out[word] @ inside
+
+    return out
+
+## Tests
+
+# **The layer's files are the runtime's list, by path** (panel 260's R2):
+# every file of it is the layer's in the runtime's folder and nowhere else; a
+# vendored file, the runtime's own headers and a file elsewhere named like a
+# header of the layer's are none of it; and a spelling that differs from one
+# of its files by case alone is told apart.
+test "a file is the layer's by its path in the runtime's folder, the runtime's own list (panel 260)"
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    files = runtime_key.layer_files(t.runtime).must()
+    assert files.len() > 0
+
+    for name in files
+        assert layer_path(runtime: t.runtime, path: t.runtime + "/" + name, files: files) == name
+        assert layer_path(runtime: t.runtime, path: "elsewhere/" + name, files: files) == ""
+
+    for own in ["hero_os.h", "hero_compiler.h", "heroes_runtime.h", "vendor/monocypher/monocypher.h", "vendor/monocypher/monocypher.c"]
+        assert layer_path(runtime: t.runtime, path: t.runtime + "/" + own, files: files) == ""
+        assert !folded_path(runtime: t.runtime, path: t.runtime + "/" + own, files: files)
+
+    assert folded_path(runtime: t.runtime, path: t.runtime + "/Hero_Time.h", files: files)
+    assert !folded_path(runtime: t.runtime, path: t.runtime + "/hero_time.h", files: files)
+
+test "a reach is the first layer file met, the header itself or one it includes (panel 260)"
+    files = ["hero_time.h", "platform/hero_time.c"]
+    edges: {str: [str]} @= {}
+    edges["own.h"] @ ["rt/hero_time.h"]
+    edges["mid.h"] @ ["own.h"]
+    edges["vend.h"] @ ["rt/vendor/m.h"]
+    through = reach_of(edges: edges, root: "mid.h", runtime: "rt", files: files)
+    assert through.file == "hero_time.h" && !through.is && !through.folded
+    itself = reach_of(edges: edges, root: "rt/hero_time.h", runtime: "rt", files: files)
+    assert itself.file == "hero_time.h" && itself.is
+    assert reach_of(edges: edges, root: "vend.h", runtime: "rt", files: files).file == ""
+    assert reach_of(edges: edges, root: "rt/HERO_TIME.h", runtime: "rt", files: files).folded
+    assert reach_of(edges: edges, root: "", runtime: "rt", files: files).file == ""
+
+test "a name the layer's headers declare is found with its header, and one of the runtime's own is not (panel 260)"
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    names = declared_names(t.runtime)
+    assert names["hero_time_monotonic_ns"].must() == "hero_time.h"
+    assert names["hero_net_stop_asked"].must() == "hero_net.h"
+    assert names["hero_args_set"].is_err()
+    assert names["printf"].is_err()

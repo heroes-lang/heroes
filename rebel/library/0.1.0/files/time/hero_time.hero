@@ -8,7 +8,7 @@
 # its header and no `link`, and the same lines bind it on every platform. UTC
 # only: no function here knows a time zone.
 
-extern "hero_time.h"
+extern "hero_time.h" layer
     # The kinds of failure `last_error` answers for the wall clock and the
     # sleep. They are the same numbers on every platform.
     constant HERO_TIME_OK: i64

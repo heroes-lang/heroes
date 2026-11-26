@@ -5,7 +5,7 @@
 # wait found nothing. The C is in the header beside this file; each line
 # prints 1 where the step held. On Windows the descriptor is the handle of an
 # event the set owns, and `readable` is that event being set.
-extern "poll-a-sets-descriptor-shown.h"
+extern "poll-a-sets-descriptor-shown.h" layer
     function shown_made(number: i64) -> i64
     function shown_readable(want: i64) -> i64
     function shown_told(want: i64) -> i64

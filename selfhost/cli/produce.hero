@@ -225,13 +225,14 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     # is planned once (panel 202's C0, `cli/probing.hero`), every group record a
     # unit spells of another module read there as its own module reads it, or
     # refused before any of them (panel 239, `cli/agreed.hero`).
-    planned = agreed.planned(t, under: under, art.must(), s, site, target: options.target)?
+    lt = layer_reach.linked_toolchain(t, decls: art.must().decls)
+    planned = agreed.planned(lt, under: under, art.must(), s, site, target: options.target)?
 
     # Each name a group binds asked of the header its group names, where the
     # module's unit reads it, one question per header list (spec § 13;
     # defects 2413 and 2429, `cli/declared_by.hero`).
-    declared_by.stopped(t, planned.probings, s, art.must().decls, permissive: options.permissive)?
-    went = rounds.run(t, options, art.must(), s, site, under: under, planned: planned, answered: @answered)
+    declared_by.stopped(lt, planned.probings, s, art.must().decls, permissive: options.permissive)?
+    went = rounds.run(lt, options, art.must(), s, site, under: under, planned: planned, answered: @answered)
 
     if went.verdict.is_err()
         return fail(code: whose.failure_code(went.verdict), msg: whose.failure_message(went.verdict))
@@ -243,7 +244,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
     # `ffi_missing_header` at exit 1. Now one refusal above answers both verbs.
     if art.must().emit_c
         wrote = artifact.write_c(
-            t,
+            lt,
             options,
             art.must(),
             s,
@@ -264,7 +265,7 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
                 wrote,
                 art.must(),
                 s,
-                t,
+                lt,
                 under: under,
                 answered: answered,
                 struct_tags: went.struct_tags,

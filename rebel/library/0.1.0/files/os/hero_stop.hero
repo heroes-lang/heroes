@@ -17,7 +17,7 @@
 
 use os/hero_os
 
-extern "hero_net.h"
+extern "hero_net.h" layer
     constant HERO_NET_INVALID: i64
     constant HERO_NET_UNSUPPORTED: i64
     function hero_net_catch_stop() -> i64

@@ -1,0 +1,6 @@
+error[ffi_layer_redeclared]: `hero_time_monotonic_ns` is the platform layer's, declared by its `hero_time.h`, and this group binds it through `layer-a-layer-function-declared-by-the-programs-own-header-beside-a-group-saying-layer.h`, which includes none of the layer's headers: name `hero_time.h` in the group, or include it in `layer-a-layer-function-declared-by-the-programs-own-header-beside-a-group-saying-layer.h`
+  at tests/golden/unsupported/layer-a-layer-function-declared-by-the-programs-own-header-beside-a-group-saying-layer.hero:7:14
+    |
+  7 |     function hero_time_monotonic_ns() -> i64  #~ ffi_layer_redeclared
+    |              ^^^^^^^^^^^^^^^^^^^^^^
+  note: clang checks a binding against the header its group names, so a function of the layer's declared by the program itself is checked against nothing the layer wrote: a parameter or a result of another width there is a call the layer reads otherwise

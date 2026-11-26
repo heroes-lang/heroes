@@ -10,7 +10,7 @@
 # is above `n` the buffer was too short and holds nothing to read, and the
 # caller asks again with that many.
 
-extern "hero_xattr.h"
+extern "hero_xattr.h" layer
     # The kinds of failure `last_error` answers, the same numbers on every
     # platform; the header says what each means.
     constant HERO_XATTR_OK: i64

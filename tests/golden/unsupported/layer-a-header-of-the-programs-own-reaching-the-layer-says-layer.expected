@@ -1,0 +1,7 @@
+error[ffi_layer_undeclared]: `layer-a-header-of-the-programs-own-reaching-the-layer-says-layer.h` reaches the platform layer's `hero_time.h`, and this group does not say `layer`: write `extern "layer-a-header-of-the-programs-own-reaching-the-layer-says-layer.h" layer`
+  at tests/golden/unsupported/layer-a-header-of-the-programs-own-reaching-the-layer-says-layer.hero:7:8
+    |
+  7 | extern "layer-a-header-of-the-programs-own-reaching-the-layer-says-layer.h"  #~ ffi_layer_undeclared
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: the platform layer's members are compiled and linked only for a program whose groups say `layer`; a program none of whose groups says it links nothing of the layer, so its build asks nothing of it
+  fix (certain): say `layer` after the header

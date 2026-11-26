@@ -15,7 +15,7 @@
 
 use threads/hero_os as threads_floor
 
-extern "hero_net.h"
+extern "hero_net.h" layer
     # A socket the layer holds open. It is a handle the layer issues and
     # checks: one closed already, `nullptr`, or one it never issued is
     # `HERO_NET_NOT_OPEN`, never a read of freed memory.

@@ -7,12 +7,12 @@
 # it is `HERO_NET_INVALID`; and a call that succeeds leaves `HERO_NET_OK`.
 # Under the sanitisers and Guard Malloc, which the `run` form adds, a read
 # through a freed or forged pointer would be a report here.
-extern "hero_net.h"
+extern "hero_net.h" layer
     constant HERO_NET_OK: i64
     constant HERO_NET_INVALID: i64
     constant HERO_NET_NOT_OPEN: i64
 
-extern "the-platform-layer-tells-a-socket-it-does-not-hold.h"
+extern "the-platform-layer-tells-a-socket-it-does-not-hold.h" layer
     function closed_twice() -> i64
     function null_handle() -> i64
     function forged_handle() -> i64

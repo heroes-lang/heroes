@@ -9,7 +9,7 @@
 # readiness sets take sockets alone), else the step that did not. On Windows
 # the interrupt is the console's Ctrl-C, counted on the thread the system
 # makes for it, which sets the door's event (unrun there).
-extern "the-signal-door.h"
+extern "the-signal-door.h" layer
     function door_begin() -> i64
     function door_set() -> i64
     function door_child() -> i64

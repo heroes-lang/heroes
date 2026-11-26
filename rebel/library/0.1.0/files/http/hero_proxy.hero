@@ -10,7 +10,7 @@
 # call, and everywhere else it answers `HERO_PROXY_UNSUPPORTED`, so the same
 # line binds it on every platform.
 
-extern "hero_proxy.h"
+extern "hero_proxy.h" layer
     # The kinds of result, the high 32 bits of what `settings` answers, the
     # same numbers on every platform.
     constant HERO_PROXY_OK: i64

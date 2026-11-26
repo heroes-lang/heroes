@@ -5,7 +5,7 @@
 # receive waiting with no limit on another thread wakes and answers
 # `stopped`; `closed` comes before `stopped`.
 
-extern "hero_net.h"
+extern "hero_net.h" layer
     function hero_net_ask_stop()
 
 function listen(inbox: (mailbox i64)) -> str

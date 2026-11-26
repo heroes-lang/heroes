@@ -68,11 +68,12 @@ function extern_group(@c: cursor.Cursor, @a: ast.Ast, @decls: [ast.Decl], text: 
     if h.is_err()
         return
     header = h.must()
+    layer = group_head.layer_word(@c, text)
     library = group_head.library_clause(@c, text)
     head = token.Span(start: keyword.start, end: cursor.previous_significant_span(@c).end)
     cursor.skip_terminators(@c)
 
-    linkage: tails.Linkage = .from_c(header: header, library: library)
+    linkage: tails.Linkage = .from_c(header: header, library: library, layer: layer)
 
     # Past the line end, the next head is read as its swap (defect 133). Junk
     # on the head's own line over the signatures below is the one report, and

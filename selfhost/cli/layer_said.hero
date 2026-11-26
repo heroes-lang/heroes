@@ -1,0 +1,39 @@
+# The checker's diagnostics with what `check` tells of the platform layer
+# after them (design.md §1.11; panel 260's R2, provisional, author
+# ratification pending): each group naming one of the layer's headers that
+# does not say `layer` (`check/layer_header.hero`), the headers being the
+# runtime's own list, read from the runtime a build would locate. Asked by
+# `heroes check` and by `heroes mutate`'s judge of a mutant
+# (`mutate/score.hero`), so the two see what the compiler sees.
+#
+# A `check` with no runtime to find tells none of them, and a build's walk
+# tells each before its first clang (`cli/layer_bound.hero`).
+
+use ast
+use check/layer_header
+use cli/runtime_key
+use cli/runtime_places
+use diag
+use source
+
+# `checked`, and after it each group of `decls` naming one of the layer's
+# headers that does not say `layer`.
+function with_layer(checked: [diag.Diagnostic], s: source.Source, decls: [ast.Decl]) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= checked
+    hint = runtime_places.runtime_hint()
+
+    if hint.is_err()
+        return out
+    runtime = runtime_places.located(hint.must())
+
+    if runtime.is_err()
+        return out
+    files = runtime_key.layer_files(runtime.must())
+
+    if files.is_err()
+        return out
+
+    for d in layer_header.refused(s, decls, files: files.must())
+        out @ out.push(d)
+
+    return out

@@ -23,6 +23,7 @@
 # program is ever built with a member left out.
 
 use ast
+use check/layer_header
 use cli/flags
 use cli/io
 use cli/layer
@@ -37,6 +38,7 @@ use cli/supplied
 use cli/toolchain
 use emit/externs as emit_externs
 use module/reading
+use parse
 use source
 use token
 
@@ -46,7 +48,12 @@ use token
 # refused is the compiler's, *internal error* with clang's words; any other
 # failure is the machine's, said as itself by the caller.
 #
-# **None where the build `links` nothing** (`--emit-c`): the archive is a
+# **None where no group of the program says `layer`** (panel 260; design.md
+# §1.11): the layer is linked into a program that says it needs it, by a group
+# whose header is or reaches the layer's (`check/layer_header.hero`,
+# `cli/layer_bound.hero`), and into no other, so a program that says it
+# nowhere asks no member what it reaches, compiles none and links none. **And
+# none where the build `links` nothing** (`--emit-c`): the archive is a
 # word of the link line alone (`assemble.linked_round`), so a build that
 # writes C and links nothing asks the layer nothing. Measured on this Mac on
 # 2026-11-25 (load 8 to 9): asking the 43 members what they reach, one clang
@@ -55,7 +62,7 @@ use token
 function for_build(t: toolchain.Toolchain, level: str, sanitize: bool, s: source.Source, decls: [ast.Decl], links: bool) -> [str]?
     unlinked: [str] = []
 
-    if !links
+    if !links || !layer_header.declared(decls)
         return ok(unlinked)
     swift = reached(t, named: headers_of(s, decls))?
     made = layer.archive(t, level: level, sanitize: sanitize, swift: swift)
@@ -233,6 +240,14 @@ function has_part(text: str, part: str) -> bool
         at @ at + 1
 
     return false
+
+# `t` with the platform layer on every link a build of `decls` makes, its
+# own and the value probe's (`cli/value_run.hero`), exactly where a group of
+# the program says `layer` (panel 260; `for_build` asks the same of it).
+function linked_toolchain(t: toolchain.Toolchain, decls: [ast.Decl]) -> toolchain.Toolchain
+    out: toolchain.Toolchain @= t
+    out.layered @ layer_header.declared(decls)
+    return out
 
 ## Tests
 
@@ -435,6 +450,24 @@ test "a build that links nothing asks the platform layer nothing"
     )
     assert for_build(t, level: "-O0", sanitize: false, s: s, decls: none, links: false).must().len() == 0
     assert !process.path_exists(t.build)
+
+# **A program none of whose groups says `layer` asks the layer nothing**
+# (panel 260): a build that links, with no group saying the word, gets no word
+# for the link line, asks no member what it reaches and makes no `build/`; one
+# group saying it, and the archive is the link's. What replaces the first half
+# of `cli/layer.hero`'s *every link carries the layer*: a declared link does.
+test "a program none of whose groups says layer asks the platform layer nothing, and one that says it links the archive (panel 260)"
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-layer-undeclared"
+    assert !process.remove_tree(t.build).is_err()
+    plain = "extern \"hero_os.h\"\n    function hero_os_pid() -> i64\n"
+    s = source.new_source(name: "main.hero", text: plain)
+    assert for_build(t, level: "-O0", sanitize: false, s: s, decls: parse.parse(plain).decls, links: true).must().len() == 0
+    assert !process.path_exists(t.build)
+    said = "extern \"hero_time.h\" layer\n    function hero_time_monotonic_ns() -> i64\n"
+    d = source.new_source(name: "main.hero", text: said)
+    assert for_build(t, level: "-O0", sanitize: false, s: d, decls: parse.parse(said).decls, links: true).must().len() == 1
+    assert !process.remove_tree(t.build).is_err()
 
 test "a program reaches a member written in Swift only through the C member that includes its header (defect 2625)"
     t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()

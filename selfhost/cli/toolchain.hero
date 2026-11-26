@@ -103,6 +103,12 @@ record Toolchain
     target: str
     # The answer whole, "" where none came, which `cli/clang_added.hero` reads (defect 2344).
     asked_answer: str
+    # Whether the program built links the platform layer: a group of it says
+    # `layer` (panel 260). Set by `cli/produce.hero` once the program is
+    # read, so every link a build makes, its own and the value probe's
+    # (`cli/value_run.hero`), carries the layer exactly then; false for a
+    # toolchain no program has been read for.
+    layered: bool
 
 # Locate the runtime, or say the places it looked (`runtime_places.located`,
 # where the search and its reasons stand since defect 2485, so `heroes
@@ -124,7 +130,7 @@ function toolchain_at(runtime: str, fingerprint: str) -> Toolchain?
     said = clang_floor.identity(build_dir: "build", runtime: runtime, words: asked)
 
     return ok(
-        Toolchain(runtime: runtime, build: "build", fingerprint: fingerprint_of(release: fingerprint, sources: hero_program_sources()), runtime_key: digest.digest(gathered), compiler_key: digest.digest(asked.join(" ") + "|" + answer_text(said)), compiler_banner: clang_floor.banner(said.default("")), target: clang_floor.target(said.default("")), asked_answer: said.default(""))
+        Toolchain(runtime: runtime, build: "build", fingerprint: fingerprint_of(release: fingerprint, sources: hero_program_sources()), runtime_key: digest.digest(gathered), compiler_key: digest.digest(asked.join(" ") + "|" + answer_text(said)), compiler_banner: clang_floor.banner(said.default("")), target: clang_floor.target(said.default("")), asked_answer: said.default(""), layered: false)
     )
 
 # The fingerprint every key opens with: the release the driver names, the

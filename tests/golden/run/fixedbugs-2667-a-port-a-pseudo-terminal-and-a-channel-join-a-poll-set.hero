@@ -8,7 +8,7 @@
 # The C is in the header beside this file. Each line prints 1 where every
 # step held, or where the platform has no such stream or waits on none
 # (Windows), else the step that did not.
-extern "fixedbugs-2667-ready.h"
+extern "fixedbugs-2667-ready.h" layer
     function pseudo_sides_join_a_set() -> i64
     function channel_ends_join_a_set() -> i64
 

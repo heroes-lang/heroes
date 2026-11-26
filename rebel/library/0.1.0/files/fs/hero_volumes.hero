@@ -12,7 +12,7 @@
 # An entry is `FIELDS` fields, each followed by one zero byte, and the header
 # says what each holds.
 
-extern "hero_volumes.h"
+extern "hero_volumes.h" layer
     # The kinds of failure `last_error` answers. They are the same numbers on
     # every platform, and `HERO_VOLUMES_UNSUPPORTED` a POSIX system neither
     # Darwin nor Linux, or a Linux with no `/proc`.

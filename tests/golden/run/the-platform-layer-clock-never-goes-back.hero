@@ -3,7 +3,7 @@
 # the linker takes the clock's member from the archive on the link line and
 # no other member. A reading is never -1 where the clock works, and a
 # thousand readings in a row never go back.
-extern "hero_time.h"
+extern "hero_time.h" layer
     function hero_time_monotonic_ns() -> i64
 
 function main()

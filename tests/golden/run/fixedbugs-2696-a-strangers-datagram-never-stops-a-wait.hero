@@ -9,7 +9,7 @@
 # set's next wait answers its timer, then nothing. It prints 1 where every
 # step held, or on Darwin and Linux, whose bell is a pipe the process alone
 # holds; else the step that did not.
-extern "fixedbugs-2696-strangers.h"
+extern "fixedbugs-2696-strangers.h" layer
     function strangers_leave_the_wait() -> i64
 
 function main()

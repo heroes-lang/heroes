@@ -321,13 +321,15 @@ function fresh_toolchain(build: str) -> toolchain.Toolchain
     return t
 
 # **The linker takes only the members a program calls** (panel 234's R6, the
-# critic's G2, built): every program's link carries the archive, and `print(1)`'s
-# shape takes no member, a program calling the clock takes the clock alone, one
+# critic's G2, built): a link that carries the archive, a program's one of
+# whose groups says `layer` since panel 260 (a program that says it nowhere
+# carries none, `cli/layer_reach.hero`'s test), and `print(1)`'s shape takes no
+# member, a program calling the clock takes the clock alone, one
 # that names both headers and calls nothing of them takes none, and one calling
 # a socket function takes the sockets and not the clock. On an MSVC target a
 # binary holds no symbol table, so the links are run and their symbols unread
 # here; what they import is the Windows box's to read.
-test "every link carries the layer, and a program takes only the members it calls (feature 2295)"
+test "a link carrying the layer takes only the members a program calls (feature 2295, panel 260)"
     t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
     dir = "build/selftest-layer-links"
     assert !process.remove_tree(dir).is_err()

@@ -1,0 +1,13 @@
+# Panel 260 (provisional, author ratification pending): a group binding a
+# function of the platform layer through a header of the program's own that
+# declares it and includes none of the layer's headers. No group says
+# `layer`, so the link carries none of the layer and misses the name; told at
+# the group, before every other reader of a refused link, never as `internal
+# error: linking failed` and never as a library no group names. The fix names
+# the layer's header, which declares the function, and says the word.
+
+extern "layer-a-name-of-the-layers-declared-by-a-header-of-the-programs-own.h"  #~ ffi_layer_undeclared
+    function hero_time_monotonic_ns() -> i64
+
+function main()
+    print(hero_time_monotonic_ns() > 0)

@@ -17,7 +17,7 @@ use io/hero_stream
 use net/hero_net
 use threads/hero_os as threads_floor
 
-extern "hero_stream_net.h"
+extern "hero_stream_net.h" layer
     # The two calls the marks below name, the one that ends a socket's life
     # and the one that ends a stream's: a mark names a releaser this group
     # declares, and the header, which includes `hero_net.h` and
@@ -99,14 +99,14 @@ function option_of(s: hero_stream.Stream, option: i64) -> i64
 # For the tests of the handle tag alone (2026-11-16): doors of the three
 # tables bound with `ptr`, so a test can hand one table's handle to
 # another's, which no typed binding lets a program do.
-extern "hero_stream.h"
+extern "hero_stream.h" layer
     constant HERO_STREAM_STD_OUT: i64
     function hero_stream_std(which: i64) -> ptr
 
-extern "hero_net.h"
+extern "hero_net.h" layer
     function hero_net_port(s: ptr) -> i64
 
-extern "hero_proc.h"
+extern "hero_proc.h" layer
     constant HERO_PROC_NOT_OPEN: i64
     function hero_proc_id(p: ptr) -> i64
     function hero_proc_last_error() -> i64

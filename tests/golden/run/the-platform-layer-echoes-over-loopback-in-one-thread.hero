@@ -10,7 +10,7 @@
 # empty address are `HERO_NET_INVALID`, a connection to a port nobody holds
 # is `HERO_NET_REFUSED`, and each path closes what it opened, since a handle
 # never given back aborts at the end of `main`.
-extern "hero_net.h"
+extern "hero_net.h" layer
     record Socket tag hero_net_socket
     constant HERO_NET_INVALID: i64
     constant HERO_NET_REFUSED: i64

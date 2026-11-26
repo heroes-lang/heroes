@@ -19,6 +19,7 @@ use cli/certain
 use cli/check_json
 use cli/holes_json
 use cli/io
+use cli/layer_said
 use cli/table as cli_table
 use diag
 use diag_render
@@ -63,7 +64,7 @@ function run(s: source.Source, inv: argv.Invocation) -> cli_table.Exit
     if !stop_r.is_err()
         return stop_r.must()
     c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
-    stop_c = report(c.diagnostics, s, inv, stage: 4)
+    stop_c = report(layer_said.with_layer(c.diagnostics, s, parsed.decls), s, inv, stage: 4)
 
     if !stop_c.is_err()
         return stop_c.must()
@@ -270,7 +271,10 @@ function said_at(s: source.Source, inv: argv.Invocation, stage: i64) -> [diag.Di
 
     if names.len() > 0 || stage == 3
         return at_stage(said: names, found: 3, stage: stage)
-    types = kept_of(checker.check(parsed.tree, out, s, parsed.decls).diagnostics, inv)
+    types = kept_of(
+        layer_said.with_layer(checker.check(parsed.tree, out, s, parsed.decls).diagnostics, s, parsed.decls),
+        inv
+    )
     return at_stage(said: types, found: 4, stage: stage)
 
 # What `run` reports for `s`: the diagnostics of the first stage that speaks,

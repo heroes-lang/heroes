@@ -7,7 +7,7 @@
 # a program's own header made). The layer's door now begins a life of the
 # number's own in the program's handle set, owed to `hero_net_of`, so the
 # check names it, and names the door that began it.
-extern "hero_net.h"
+extern "hero_net.h" layer
     record Socket tag hero_net_socket
     function hero_net_listen(address: cstr lent, port: i64) -> Socket acquires hero_net_close
     function hero_net_connect(address: cstr lent, port: i64) -> Socket acquires hero_net_close

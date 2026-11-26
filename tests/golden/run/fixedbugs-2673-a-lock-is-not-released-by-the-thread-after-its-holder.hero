@@ -7,7 +7,7 @@
 # a number given to each thread once in the process's life. The C, with its
 # threads, is in the header beside this file. Each line prints 1 where every
 # step held, else the step that did not.
-extern "fixedbugs-2673-holders.h"
+extern "fixedbugs-2673-holders.h" layer
     function release_after_the_holder_ended() -> i64
     function acquire_after_the_holder_ended() -> i64
 

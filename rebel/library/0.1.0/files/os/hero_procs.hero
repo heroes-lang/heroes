@@ -14,7 +14,7 @@
 
 use os/hero_os
 
-extern "hero_procs.h"
+extern "hero_procs.h" layer
     # The kinds of failure `last_error` answers. They are the same numbers on
     # every platform, and `HERO_PROCS_UNSUPPORTED` a POSIX system neither
     # Darwin nor Linux.

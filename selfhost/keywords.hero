@@ -83,6 +83,13 @@ constant WORD_LINK: str
 constant WORD_PKGCONFIG: str
     "pkgconfig"
 
+# A group's head saying its header is, or reaches, the platform layer's, the
+# C of the language's own beside the runtime: `extern "hero_time.h" layer`
+# (panel 260). Read right after the header's string and nowhere else, so a
+# program may still name anything `layer`.
+constant WORD_LAYER: str
+    "layer"
+
 constant WORD_TAG: str
     "tag"
 
@@ -149,6 +156,7 @@ function contextual() -> [str]
         WORD_AS
         WORD_LINK
         WORD_PKGCONFIG
+        WORD_LAYER
         WORD_TAG
         WORD_PARTIAL
         WORD_OWNED
@@ -213,7 +221,9 @@ test "every keyword resolves and an identifier does not"
 
 test "a contextual word is never a keyword, and each is listed once"
     words = contextual()
-    assert words.len() == 18
+
+    # Nineteen since panel 260's `layer`.
+    assert words.len() == 19
 
     for word in words
         assert keyword(word).is_err()

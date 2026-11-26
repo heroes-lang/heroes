@@ -19,7 +19,7 @@ use io/hero_stream
 use os/hero_os
 use process/internal/fixture
 
-extern "hero_proc.h"
+extern "hero_proc.h" layer
     # A process the layer started and the program holds. It is a handle the
     # layer issues and checks: one released already, `nullptr`, or one it
     # never issued is `HERO_PROC_NOT_OPEN`, never a read of freed memory and
@@ -319,11 +319,11 @@ function last_os_error() -> i64
 #
 # - `address`: a number to bind to, or "" for every address of the machine.
 # - `port`: 0 to 65535, 0 asking the system for a free one.
-extern "hero_net.h"
+extern "hero_net.h" layer
     function hero_net_udp(address: cstr lent, port: i64) -> ptr
     function hero_net_close(s: ptr) -> i64
 
-extern "hero_stream.h"
+extern "hero_stream.h" layer
     constant HERO_STREAM_NOT_OPEN: i64
     function hero_stream_kind(s: ptr) -> i64
     function hero_stream_last_error() -> i64

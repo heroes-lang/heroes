@@ -16,7 +16,7 @@
 # table of operations and a stream's descriptor, is bound by no group: a
 # Heroes program cannot be trusted with either.
 
-extern "hero_stream.h"
+extern "hero_stream.h" layer
     # A stream the layer holds open. It is a handle the layer issues and
     # checks: one closed already, `nullptr`, or one it never issued is
     # `HERO_STREAM_NOT_OPEN`, never a read of freed memory.
