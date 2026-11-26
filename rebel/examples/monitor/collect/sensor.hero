@@ -11,6 +11,7 @@
 # without pseudo-terminals), the values are handed in by `hand`, and every
 # other part of the monitor sees them as it sees a port's.
 
+use <rebel>/bytes
 use <rebel>/errors
 use <rebel>/io
 use <rebel>/numbers
@@ -91,9 +92,9 @@ function parse_reading(line: str) -> f64?
 
     while at < line.len()
         c = line[at]
-        digit_next = at + 1 < line.len() && is_digit(line[at + 1])
+        digit_next = at + 1 < line.len() && bytes.is_digit_ascii(line[at + 1])
 
-        if is_digit(c) || (c == '+' || c == '-' || c == '.') && digit_next
+        if bytes.is_digit_ascii(c) || (c == '+' || c == '-' || c == '.') && digit_next
             break
         at @ at + 1
 
@@ -101,16 +102,10 @@ function parse_reading(line: str) -> f64?
         return fail(code: "invalid", msg: f"no number in \"{strings.trim(line)}\"")
     end: i64 @= at + 1
 
-    while end < line.len() && (is_digit(line[end]) || line[end] == '.')
+    while end < line.len() && (bytes.is_digit_ascii(line[end]) || line[end] == '.')
         end @ end + 1
 
     return numbers.parse_float(line.slice(from: at, to: end))
-
-# Whether `b` is an ASCII digit.
-#
-# - `b`: the byte.
-function is_digit(b: u8) -> bool
-    return b >= '0' && b <= '9'
 
 # The timeout's milliseconds, at least 1.
 #

@@ -1,0 +1,476 @@
+# The steps a request runs on its way to a `web` router's answer, in the
+# manner of Echo's middleware: a step every route runs (Echo's `e.Use`), a
+# group's (`g.Use`) and one route's own, each a function of the program's
+# that answers before the handler (a check refusing 401) or wraps it (a log
+# line reading the response and the time). The program keeps two tables of
+# its own functions, its steps and its answers, each by its name, and
+# `dispatch` calls the ones a request's route names, the program's state lent
+# to each by `@` all the way down. The router keeps the names, never a
+# function, so nothing of the program's is held by the library.
+#
+# **The `next` is data.** Echo writes a step as a function that returns a new
+# function holding the next one; the language has no closure, so a step here
+# is handed `Next`, the route found, the names of the steps it runs in order
+# and the place of the one after it, and goes on by calling `proceed` with
+# it, or answers without going on. A step that goes on through a function of
+# the program's own hands that function its state and `Next` as they came.
+#
+# **The order.** The router's own steps first, then each group's, the
+# outermost first, then the route's own, then the route's answer; each
+# step's work after its call of `proceed` runs in the reverse order. A
+# request no route takes runs the router's own steps alone, then the answer
+# `web.not_routed` gives, so a log line counts it too.
+#
+# **What it does not do.** Routes, groups and their mounting are `web`'s
+# (`web.add`, `web.new_group`, `web.mount`), and so are the pieces a step is
+# made of; the usual steps, ready to bind, are `web/steps`'. The connection
+# and the messages are `http`'s.
+#
+# The codes it fails with: `invalid` (an empty name), `exists` (a name bound
+# to another function, or run twice by one router or one route), `not_found`
+# (a route no router holds, or a request no route takes), those of `web.add`,
+# and those the program's own steps and answers fail with.
+
+use bytes
+use http
+use web
+use web/chain/internal/binding
+use web/chain/internal/fixture
+
+## Codes
+
+# The code of a step's name that is empty: `add_step` and `add_route_step`
+# fail with it.
+constant INVALID: str
+    "invalid"
+
+# The code of a name bound already to another function, or of a step a router
+# or a route runs already: `add_step`, `add_route_step` and `on` fail with it.
+constant EXISTS: str
+    "exists"
+
+# The code of a route's name no route of the router has, and of a request no
+# route takes: `add_route_step` and `found_of` fail with it.
+constant NOT_FOUND: str
+    "not_found"
+
+## The chain
+
+# Where a request's chain ends: in the answer the program bound to the route
+# that takes it, or in the answer `web.not_routed` gives.
+variant Target
+    # A route takes the request.
+    route
+        # The route and its parameters.
+        found: web.Found
+    # No route takes it.
+    unrouted
+        # What answers it: `web.not_routed`'s 404, 405, 204, 308 or 400.
+        response: http.Response
+
+# Where a request stands in its chain: the `next` of Echo's middleware,
+# passed as data. Made by `start` at the chain's beginning; a step hands the
+# one it was given to `proceed`, which runs the step at `at` and hands that
+# step the same value with `at` one further.
+record Next
+    # Where the chain ends.
+    target: Target
+    # The names of the steps it runs, in order: `web.Found.steps` where a
+    # route takes the request, the router's own steps where none does.
+    names: [str]
+    # The place in `names` of the step that runs next, from 0; `names`'
+    # length once every step has run, the answer coming next.
+    at: i64
+
+## Binding
+
+# Adds the step `name` to `router` and binds it to `step` in the program's
+# table `steps`: a step every route runs where `router` is one `web.new_router`
+# made, and the group's where it is one `web.new_group` made, which travels
+# with the group's routes when `web.mount` takes them.
+#
+# - `router`: the router, whose own steps gain `name` after those added
+#   before it.
+# - `steps`: the program's table of its steps by their names, which gains
+#   `name`; the same name may be bound again to the same function, as two
+#   groups may run one step.
+# - `name`: the step's name, any text but the empty one.
+# - `step`: called by `proceed` once for each request whose chain reaches
+#   it, with the program's state, the `Next` that goes on after it and the
+#   request; it goes on by calling `proceed` with that `Next`, or answers
+#   without going on, and its answer is the request's from there on.
+#
+# Fails `invalid` where `name` is empty, `exists` where `router` runs it
+# already or `steps` binds it to another function, changing nothing then.
+# See also `add_route_step`, `on`.
+function add_step<S>(@router: web.Router, @steps: {str: (function(@S, Next, http.Request) -> http.Response?)}, name: str, step: (function(@S, Next, http.Request) -> http.Response?)) -> ()?
+    binding.check(steps, name: name, step: step)?
+
+    for each in router.steps
+        if each == name
+            return fail(code: EXISTS, msg: f"the router runs the step \"{name}\" already")
+
+    router.steps @ router.steps.push(name)
+    steps[name] @ step
+    return ok()
+
+# Adds the step `name` to the routes of `router` named `route`, after their
+# groups' and their own steps added before it, and binds it to `step` in the
+# program's table `steps`: Echo's middleware of one route.
+#
+# - `router`: the router, whose routes named `route` gain the step; where it
+#   is a group, the step travels with them when `web.mount` takes them.
+# - `steps`: the program's table of its steps, as `add_step` reads it.
+# - `route`: the routes' name, as `web.add` named them: every method of that
+#   name gains the step.
+# - `name`: the step's name, any text but the empty one.
+# - `step`: called as `add_step`'s step is.
+#
+# Fails `not_found` where no route of `router` is named `route`, `invalid`
+# where `name` is empty, `exists` where such a route runs it already or
+# `steps` binds it to another function, changing nothing then. See also
+# `add_step`.
+function add_route_step<S>(@router: web.Router, @steps: {str: (function(@S, Next, http.Request) -> http.Response?)}, route: str, name: str, step: (function(@S, Next, http.Request) -> http.Response?)) -> ()?
+    binding.check(steps, name: name, step: step)?
+    routes @= router.routes
+    named: i64 @= 0
+
+    for i in range(from: 0, to: routes.len())
+        if routes[i].name == route
+            for each in routes[i].steps
+                if each == name
+                    return fail(code: EXISTS, msg: f"the route \"{route}\" runs the step \"{name}\" already")
+
+            routes[i].steps @ routes[i].steps.push(name)
+            named @ named + 1
+
+    if named == 0
+        return fail(code: NOT_FOUND, msg: f"no route of the router is named \"{route}\"")
+    router.routes @ routes
+    steps[name] @ step
+    return ok()
+
+# Adds to `router` the route `name` for `method` and `pattern`, and binds it
+# to `answer` in the program's table `answers`: `web.add` and the binding in
+# one call, so no route stands without its answer.
+#
+# - `router`: the router, which gains the route.
+# - `answers`: the program's table of its answers by their routes' names,
+#   which gains `name`; several methods of one pattern may share a name and
+#   one function.
+# - `method`: the method, as `web.add` reads it.
+# - `pattern`: the pattern, as `web.add` reads it.
+# - `name`: the route's name, as `web.add` reads it.
+# - `answer`: called by `proceed` once for each request the route takes whose
+#   steps all went on, with the program's state, the route found and the
+#   request; its answer is the request's.
+#
+# Fails `exists` where `answers` binds `name` to another function, and as
+# `web.add` fails, changing nothing then. See also `dispatch`.
+function on<S>(@router: web.Router, @answers: {str: (function(@S, web.Found, http.Request) -> http.Response?)}, method: str, pattern: str, name: str, answer: (function(@S, web.Found, http.Request) -> http.Response?)) -> ()?
+    match answers[name]
+        .ok bound =>
+            if bound != answer
+                return fail(code: EXISTS, msg: f"the route \"{name}\" is bound to another function already")
+        .err _ => _ = 0
+
+    web.add(@router, method: method, pattern: pattern, name: name)?
+    answers[name] @ answer
+    return ok()
+
+## Running
+
+# The chain `r` runs on `router`, at its first step: the route that takes it
+# and its steps, or, where no route takes it, the router's own steps and
+# `web.not_routed`'s answer.
+#
+# - `router`: the router.
+# - `r`: the request.
+#
+# A request `web.route` refuses for any reason (no route, a dirty path, an
+# escape that does not read) is unrouted. See also `proceed`, `dispatch`.
+function start(router: web.Router, r: http.Request) -> Next
+    match web.route(router, r)
+        .ok found => return Next(target: .route(found: found), names: found.steps, at: 0)
+        .err _    => return Next(target: .unrouted(response: web.not_routed(router, r)), names: router.steps, at: 0)
+
+# Runs the step `n` stands at, handing it `n` one step further, or, past the
+# last, the answer its chain ends in: what a step calls to go on.
+#
+# - `state`: the program's state, lent to the step or the answer.
+# - `steps`: the program's table of its steps by their names.
+# - `answers`: the program's table of its answers by their routes' names.
+# - `n`: where the request stands, as `start` made it or a step was handed it.
+# - `r`: the request the step or the answer reads: the one given, or a copy a
+#   step changed.
+#
+# Fails where the step or the answer fails, with its code. Aborts where `n`
+# stands past its names, or names a step or a route the program bound to no
+# function: the router and the tables are the program's own, so a name left
+# unbound is a mistake in the program, as an index past a list's end is,
+# never something a request can cause (README § A4); `add_step` and `on`
+# bind a name as they add it. See also `start`, `dispatch`.
+function proceed<S>(@state: S, steps: {str: (function(@S, Next, http.Request) -> http.Response?)}, answers: {str: (function(@S, web.Found, http.Request) -> http.Response?)}, n: Next, r: http.Request) -> http.Response?
+    assert n.at >= 0 && n.at <= n.names.len()
+
+    if n.at < n.names.len()
+        name = n.names[n.at]
+
+        step = match steps[name]
+            .ok bound => bound
+            .err _ =>
+                unbound: (function(@S, Next, http.Request) -> http.Response?)? = fail(
+                    code: NOT_FOUND,
+                    msg: f"the step \"{name}\" is bound to no function of the program"
+                )
+                unbound.must()
+
+        return step(@state, Next(target: n.target, names: n.names, at: n.at + 1), r)
+
+    match n.target
+        .unrouted u => return ok(u.response)
+        .route t =>
+            answer = match answers[t.found.name]
+                .ok bound => bound
+                .err _ =>
+                    unbound: (function(@S, web.Found, http.Request) -> http.Response?)? = fail(
+                        code: NOT_FOUND,
+                        msg: f"the route \"{t.found.name}\" is bound to no function of the program"
+                    )
+                    unbound.must()
+
+            return answer(@state, t.found, r)
+
+# The answer to `r`: its chain started on `router` and run to its end, each
+# step and the answer called with `state` lent by `@`.
+#
+# - `state`: the program's state.
+# - `router`: the router.
+# - `steps`: the program's table of its steps.
+# - `answers`: the program's table of its answers.
+# - `r`: the request.
+#
+# A request no route takes runs the router's own steps, then answers as
+# `web.not_routed` does. Fails and aborts as `proceed` does. See also
+# `start`, `on`, `add_step`.
+function dispatch<S>(@state: S, router: web.Router, steps: {str: (function(@S, Next, http.Request) -> http.Response?)}, answers: {str: (function(@S, web.Found, http.Request) -> http.Response?)}, r: http.Request) -> http.Response?
+    return proceed(@state, steps: steps, answers: answers, n: start(router, r), r: r)
+
+# The route `n`'s chain ends in, and its parameters: what a step of a group
+# or of a route reads of the route.
+#
+# - `n`: where the request stands.
+#
+# Fails `not_found` where no route takes the request. See also `Target`.
+function found_of(n: Next) -> web.Found?
+    return match n.target
+        .route t    => ok(t.found)
+        .unrouted _ => fail(code: NOT_FOUND, msg: "no route takes the request")
+
+## Tests
+
+test "add_step: an empty name, a name run twice, one bound to another function, and one function in two groups"
+    app @= fixture.new_app()
+    router @= app.router
+
+    match add_step(@router, @app.steps, name: "", step: fixture.logger)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    add_step(@router, @app.steps, name: "log", step: fixture.logger).must()
+
+    match add_step(@router, @app.steps, name: "log", step: fixture.logger)
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS && router.steps == ["log"]
+
+    a @= web.new_group(router, name: "a", prefix: "/a").must()
+
+    match add_step(@a, @app.steps, name: "log", step: fixture.auth)
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS && a.steps.len() == 0
+
+    add_step(@a, @app.steps, name: "log", step: fixture.logger).must()
+    assert a.steps == ["log"] && app.steps.len() == 1
+
+test "add_route_step: a route no router holds, every method of a name, a step run twice, a one-character name"
+    app @= fixture.new_app()
+    router @= app.router
+    on(@router, @app.answers, method: "GET", pattern: "/n/:slug", name: "n", answer: fixture.home).must()
+    on(@router, @app.answers, method: "POST", pattern: "/n/:slug", name: "n", answer: fixture.home).must()
+
+    match add_route_step(@router, @app.steps, route: "nope", name: "c", step: fixture.count)
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && app.steps.len() == 0
+
+    add_route_step(@router, @app.steps, route: "n", name: "c", step: fixture.count).must()
+    assert router.routes[0].steps == ["c"] && router.routes[1].steps == ["c"]
+
+    match add_route_step(@router, @app.steps, route: "n", name: "c", step: fixture.count)
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS && router.routes[0].steps == ["c"]
+
+    match add_route_step(@router, @app.steps, route: "n", name: "", step: fixture.count)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "on: a route bound, a name bound to another function, a pattern web refuses, two methods sharing a function"
+    app @= fixture.new_app()
+    router @= app.router
+    on(@router, @app.answers, method: "GET", pattern: "/", name: "home", answer: fixture.home).must()
+    on(@router, @app.answers, method: "POST", pattern: "/", name: "home", answer: fixture.home).must()
+
+    match on(@router, @app.answers, method: "GET", pattern: "/y", name: "home", answer: fixture.health)
+        .ok _  => assert false
+        .err e => assert e.code == EXISTS && router.routes.len() == 2
+
+    match on(@router, @app.answers, method: "GET", pattern: "no-slash", name: "bad", answer: fixture.health)
+        .ok _  => assert false
+        .err e => assert e.code == web.INVALID && app.answers.len() == 1
+
+test "start: a route and its steps, a request no route takes, a method no route of the path takes, a dirty path"
+    app = fixture.routed()
+    n = start(app.router, fixture.asked(method: "POST", target: "/notes/a", body: "", authorised: false))
+    assert n.names == ["log", "count"] && n.at == 0 && found_of(n).must().name == "save"
+    missed = start(app.router, fixture.asked(method: "GET", target: "/nowhere", body: "", authorised: false))
+    assert missed.names == ["log"] && found_of(missed).is_err()
+
+    match missed.target
+        .route _    => assert false
+        .unrouted u => assert u.response.status == 404
+
+    match start(app.router, fixture.asked(method: "PUT", target: "/", body: "", authorised: false)).target
+        .route _    => assert false
+        .unrouted u => assert u.response.status == 405
+
+    match start(app.router, fixture.asked(method: "GET", target: "/a/../", body: "", authorised: false)).target
+        .route _    => assert false
+        .unrouted u => assert u.response.status == 308
+
+test "proceed: the order, a step answering before the handler, a wrapping step reading the status, the state through @"
+    app @= fixture.routed()
+    saved = dispatch(
+        @app,
+        router: app.router,
+        steps: app.steps,
+        answers: app.answers,
+        r: fixture.asked(method: "POST", target: "/notes/a", body: "alpha", authorised: false)
+    ).must()
+    assert saved.status == 201 && app.trace == ["log>", "count>", "save", "<count", "<log"] && app.notes["a"].must() == "alpha"
+    app.trace @ []
+    refused = dispatch(
+        @app,
+        router: app.router,
+        steps: app.steps,
+        answers: app.answers,
+        r: fixture.asked(method: "GET", target: "/admin/stats", body: "", authorised: false)
+    ).must()
+    assert refused.status == 401 && app.trace == ["log>", "auth>", "<auth", "<log"] && app.refused == 1
+    app.trace @ []
+    let_in = dispatch(
+        @app,
+        router: app.router,
+        steps: app.steps,
+        answers: app.answers,
+        r: fixture.asked(method: "GET", target: "/admin/stats", body: "", authorised: true)
+    ).must()
+    assert bytes.to_text_lossy(let_in.body) == "notes 1" && app.trace == ["log>", "auth>", "<auth", "<log"]
+    assert app.log == ["/notes/a 201", "/admin/stats 401", "/admin/stats 200"]
+
+test "proceed: past the last step the answer, an unrouted request's answer, a failure handed on with its code"
+    app @= fixture.routed()
+    found = web.route(app.router, fixture.asked(method: "GET", target: "/healthz", body: "", authorised: false)).must()
+    last = Next(target: .route(found: found), names: found.steps, at: found.steps.len())
+    got = proceed(
+        @app,
+        steps: app.steps,
+        answers: app.answers,
+        n: last,
+        r: fixture.asked(method: "GET", target: "/healthz", body: "", authorised: false)
+    ).must()
+    assert bytes.to_text_lossy(got.body) == "ok" && app.trace.len() == 0
+    missed = dispatch(
+        @app,
+        router: app.router,
+        steps: app.steps,
+        answers: app.answers,
+        r: fixture.asked(method: "GET", target: "/nowhere", body: "", authorised: false)
+    ).must()
+    assert missed.status == 404 && app.log == ["/nowhere 404"]
+
+    match dispatch(@app, router: app.router, steps: app.steps, answers: app.answers, r: fixture.asked(method: "GET", target: "/broken", body: "", authorised: false))
+        .ok _  => assert false
+        .err e => assert e.code == "failed" && app.trace == ["log>", "<log", "log>"]
+
+test "dispatch: a router with no step and no route answers 404 and touches no state"
+    empty @= fixture.new_app()
+    got = dispatch(
+        @empty,
+        router: empty.router,
+        steps: empty.steps,
+        answers: empty.answers,
+        r: fixture.asked(method: "GET", target: "/", body: "", authorised: false)
+    ).must()
+    assert got.status == 404 && empty.trace.len() == 0
+
+test "found_of: a route found and a request no route takes"
+    app = fixture.routed()
+    assert found_of(start(app.router, fixture.asked(method: "GET", target: "/", body: "", authorised: false))).must().name == "home"
+
+    match found_of(start(app.router, fixture.asked(method: "GET", target: "/x", body: "", authorised: false)))
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+## Examples
+
+# A log step every route runs, bound to its name as it is added.
+test "add_step: a step every route runs"
+    app @= fixture.new_app()
+    router @= app.router
+    add_step(@router, @app.steps, name: "log", step: fixture.logger).must()
+    assert router.steps == ["log"]
+
+# A step one route runs after the router's own.
+test "add_route_step: a step of one route"
+    app @= fixture.new_app()
+    router @= app.router
+    on(@router, @app.answers, method: "POST", pattern: "/notes/:slug", name: "save", answer: fixture.save).must()
+    add_route_step(@router, @app.steps, route: "save", name: "count", step: fixture.count).must()
+    assert router.routes[0].steps == ["count"]
+
+# A route added and bound to the program's answer in one call.
+test "on: a route and its answer"
+    app @= fixture.new_app()
+    router @= app.router
+    on(@router, @app.answers, method: "GET", pattern: "/", name: "home", answer: fixture.home).must()
+    assert router.routes.len() == 1 && app.answers.len() == 1
+
+# Where a request's chain begins: the route found and the steps it runs.
+test "start: the chain of a route"
+    app = fixture.routed()
+    n = start(app.router, fixture.asked(method: "GET", target: "/admin/stats", body: "", authorised: true))
+    assert n.names == ["log", "auth"] && n.at == 0
+
+# A step's own call that goes on: the program's tables, its state lent on.
+test "proceed: going on from a step"
+    app @= fixture.routed()
+    r = fixture.asked(method: "GET", target: "/", body: "", authorised: false)
+    got = proceed(@app, steps: app.steps, answers: app.answers, n: start(app.router, r), r: r).must()
+    assert got.status == 200 && app.trace == ["log>", "<log"]
+
+# A request answered through its route's chain, the state lent by `@`.
+test "dispatch: a request answered"
+    app @= fixture.routed()
+    got = dispatch(
+        @app,
+        router: app.router,
+        steps: app.steps,
+        answers: app.answers,
+        r: fixture.asked(method: "POST", target: "/notes/b", body: "beta", authorised: false)
+    ).must()
+    assert got.status == 201 && app.notes["b"].must() == "beta"
+
+# The route a step of a group reads.
+test "found_of: the route of a group's step"
+    app = fixture.routed()
+    n = start(app.router, fixture.asked(method: "GET", target: "/admin/stats", body: "", authorised: true))
+    assert found_of(n).must().groups == ["admin"]

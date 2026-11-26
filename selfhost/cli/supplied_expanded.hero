@@ -1,0 +1,324 @@
+# Where clang read each declaration `cli/supplied_paired.hero` judges, a
+# declaration a macro wrote into a buffer of its own included (design.md
+# §4.19; panel 245's R3; lane p261-beside, 2026-11-26, the draft
+# d-p261-math-linux). `declaring` reads the text dump's files, moved here
+# from that module with this question.
+#
+# **What it closes, measured in the Linux arm64 image** (Debian clang 22.1.8).
+# glibc's `math.h` declares each `float` function by pasting a suffix onto the
+# `double` one's name (`bits/mathcalls.h`, read a second time with `f`), so
+# clang's text dump places `nextafterf` at `<scratch space>:23:1`, the buffer
+# that holds the tokens a `##` makes, never at a file. Read as a path, it was
+# `scratch space>`, a file of `.`, and `.` is a folder the build names where a
+# program is built from its own folder and a package's unit searches that
+# folder by `-I` (`cli/package_units.hero`): Rebel's `math` was refused
+# `ffi_unpaired_release` beside the platform's own libm, *"declared by a header
+# of `.`"*, `cd rebel/examples/reach && heroes build reach_math.hero` at exit 1
+# where the same program built from the repository's root linked. And the
+# other way: a header of a folder the build names that pastes the name it
+# declares, beside the platform's library, was read as no folder's and built,
+# the pair panel 245 refuses.
+#
+# **The rule**: a declaration clang's own buffer holds was read in the file
+# whose text expanded the macro that wrote it, clang's `expansionLoc`, which
+# its text dump does not print and its JSON dump does. So for a name whose
+# declarations the text dump places in such a buffer, and only for one, the
+# probe's headers are dumped again as JSON, filtered to the name, and each
+# such declaration is read as the file of its expansion. A buffer is never a
+# file: where clang cannot be asked, the declaration is no header's, and the
+# name is judged by its next declaration, or not at all.
+
+use cli/clang_tree
+use cli/compiling
+use cli/digest
+use cli/dump_tops
+use cli/header_bodies
+use cli/label_dump
+use cli/process
+use cli/publish
+use cli/read_back
+use cli/response_file
+use cli/strings
+use cli/supplied_names
+use cli/toolchain
+
+# Every file of the dump that declares each top-level function or object,
+# in the dump's order, each once, a buffer of clang's own by its bracketed
+# name (`label_dump.located`).
+function declaring(dumped: str) -> {str: [str]}
+    out: {str: [str]} @= {}
+    place: label_dump.Located @= label_dump.Located(file: "", line: 0)
+    start: i64 @= 0
+    at: i64 @= 0
+
+    while at <= dumped.len()
+        if at == dumped.len() || dumped[at] == 10
+            row = dumped.slice(from: start, to: at)
+            place @ label_dump.located(row, at: place)
+
+            if header_bodies.is_top(row)
+                top = dump_tops.top_of(row)
+
+                if (top.kind == "FunctionDecl" || top.kind == "VarDecl") && !top.implicit && top.name.len() > 0
+                    held = out[top.name].default([])
+
+                    if !supplied_names.named_in(held, name: place.file)
+                        out[top.name] @ held.push(place.file)
+            start @ at + 1
+        at @ at + 1
+
+    return out
+
+# Whether the dump names a buffer of clang's own rather than a file: it
+# prints one in angle brackets, `<scratch space>` for the tokens a `##` makes
+# and a `_Pragma`, `<built-in>`, `<command line>` for a `-D`'s text.
+function buffer(file: str) -> bool
+    return file.len() > 1 && file[0] == '<' && file[file.len() - 1] == '>'
+
+# `files`, a name's declaring files in the dump's order, each buffer replaced
+# by the files of the expansions that wrote a declaration there, each file
+# once; asked of clang only where a buffer is among them.
+function resolved(t: toolchain.Toolchain, probe: compiling.Probe, name: str, files: [str]) -> [str]
+    held: bool @= false
+
+    for file in files
+        if buffer(file)
+            held @ true
+
+    if !held
+        return files
+    places = asked(t, probe: probe, name: name).default([])
+    return replaced(files: files, places: places)
+
+# The replacement itself, apart from clang (its test needs none).
+function replaced(files: [str], places: [Place]) -> [str]
+    out: [str] @= []
+
+    for file in files
+        if !buffer(file)
+            out @ once(out, file: file)
+            continue
+
+        for place in places
+            if place.spelled == file && place.expanded.len() > 0 && !buffer(place.expanded)
+                out @ once(out, file: place.expanded)
+
+    return out
+
+function once(list: [str], file: str) -> [str]
+    for held in list
+        if held == file
+            return list
+
+    return list.push(file)
+
+# One declaration of the name: the file clang spelled it in, a buffer of its
+# own among them, and the file of the expansion that wrote it, the same file
+# where no macro did.
+record Place
+    spelled: str
+    expanded: str
+
+# clang's JSON dump of the probe's headers, filtered to `name`, read into its
+# declarations' places; under `build/expanded/`, as `cli/defined_twice.hero`
+# writes its text dump's unit.
+function asked(t: toolchain.Toolchain, probe: compiling.Probe, name: str) -> [Place]?
+    text = compiling.include_lines(probe.headers)
+    dir = t.build + "/expanded"
+    process.mkdir_all(dir)?
+    unit = dir + "/expanded-" + digest.digest(text) + ".c"
+    publish.write_whole(path: unit, text: text, keyed: true)?
+    said = publish.private_name(dir + "/expanded-stdout.txt")
+    line = response_file.carried(
+        line: strings.with_all(list: ["clang", "-fsyntax-only", "-fno-color-diagnostics", "-Xclang", "-ast-dump=json", "-Xclang", "-ast-dump-filter=" + name], more: probe.words),
+        dir: dir
+    )
+    ran = process.run(program: "clang", words: line.push(unit), out: said, err: process.discard())
+    dumped = read_back.words(said)
+    publish.discard(said)
+
+    if !ran.started || ran.code != 0 || dumped.is_err()
+        return fail(code: "unread", msg: "clang did not dump the headers as JSON")
+    return ok(places_of(json: dumped.must(), name: name))
+
+# What a JSON reading holds open: whether each open container is an object,
+# the key it was opened under ("" for an element or a root), and the key read
+# that waits for its value.
+record Reading
+    objects: [bool]
+    keys: [str]
+    pending: str
+
+# Every top-level `FunctionDecl` or `VarDecl` of the dump named `name` that
+# clang did not declare itself, with its places. **A file is carried as
+# clang carries it**: a location writes `file` only where it differs from the
+# location written before it, so the file in force is the last one written by
+# any location, an `includedFrom`'s never one. A declaration's `loc` writes
+# its `spellingLoc` and then its `expansionLoc` where a macro wrote it, or
+# itself alone where none did, so the spelling is the file in force when the
+# first closes and the expansion the file in force when `loc` closes.
+function places_of(json: str, name: str) -> [Place]
+    out: [Place] @= []
+    r: Reading @= Reading(objects: [], keys: [], pending: "")
+    last: str @= ""
+    spelled: str @= ""
+    expanded: str @= ""
+    kind: str @= ""
+    named: str @= ""
+    implicit: bool @= false
+    at: i64 @= 0
+
+    while at < json.len()
+        c = json[at]
+
+        if c == '"'
+            end = clang_tree.string_end(json, from: at + 1)
+
+            if end.is_err()
+                return out
+            text = clang_tree.unescaped(json.slice(from: at + 1, to: end.must()))
+            after = clang_tree.past_space(json, from: end.must() + 1)
+
+            if inside_object(r) && r.pending == "" && after < json.len() && json[after] == ':'
+                r.pending @ text
+                at @ after + 1
+                continue
+            key = r.pending
+            r.pending @ ""
+
+            if key == "file" && r.keys.len() > 0 && r.keys[r.keys.len() - 1] != "includedFrom"
+                last @ text
+
+            if r.objects.len() == 1 && key == "kind"
+                kind @ text
+
+            if r.objects.len() == 1 && key == "name"
+                named @ text
+            at @ end.must() + 1
+            continue
+
+        if c == '{' || c == '['
+            if r.objects.len() == 0
+                kind @ ""
+                named @ ""
+                implicit @ false
+                spelled @ ""
+                expanded @ ""
+            r.objects @ r.objects.push(c == '{')
+            r.keys @ r.keys.push(r.pending)
+            r.pending @ ""
+            at @ at + 1
+            continue
+
+        if c == '}' || c == ']'
+            if r.objects.len() == 0
+                at @ at + 1
+                continue
+            closing = r.keys[r.keys.len() - 1]
+
+            if r.objects.len() == 3 && closing == "spellingLoc" && r.keys[1] == "loc"
+                spelled @ last
+
+            if r.objects.len() == 2 && closing == "loc"
+                expanded @ last
+
+                if spelled.len() == 0
+                    spelled @ last
+
+            if r.objects.len() == 1 && (kind == "FunctionDecl" || kind == "VarDecl") && !implicit && named == name
+                out @ out.push(Place(spelled: spelled, expanded: expanded))
+            r.objects @ r.objects.slice(from: 0, to: r.objects.len() - 1)
+            r.keys @ r.keys.slice(from: 0, to: r.keys.len() - 1)
+            at @ at + 1
+            continue
+
+        if r.pending.len() > 0 && c != ' ' && c != '\n' && c != '\r' && c != '\t' && c != ','
+            word_end = bare_end(json, from: at)
+
+            if r.objects.len() == 1 && r.pending == "isImplicit" && json.slice(from: at, to: word_end) == "true"
+                implicit @ true
+            r.pending @ ""
+            at @ word_end
+            continue
+        at @ at + 1
+
+    return out
+
+function inside_object(r: Reading) -> bool
+    return r.objects.len() > 0 && r.objects[r.objects.len() - 1]
+
+# Where a bare value, a number, `true`, `false` or `null`, ends.
+function bare_end(json: str, from: i64) -> i64
+    at: i64 @= from
+
+    while at < json.len() && json[at] != ',' && json[at] != '}' && json[at] != ']' && json[at] != ' ' && json[at] != '\n' && json[at] != '\r'
+        at @ at + 1
+
+    return at
+
+## Tests
+
+# The shape clang 22.1.8 dumped in the Linux arm64 image for glibc's
+# `nextafterf` (cut to the keys read): the implicit builtin, then the
+# header's declaration, its name spelled in `<scratch space>` and expanded in
+# `bits/mathcalls.h`, whose file the expansion writes because it differs.
+test "a declaration a macro wrote is read where the macro was expanded"
+    rows: [str] = [
+        "{"
+        "  \"id\": \"0x1\", \"kind\": \"FunctionDecl\","
+        "  \"loc\": {\"spellingLoc\": {\"offset\": 5, \"file\": \"<scratch space>\", \"line\": 23},"
+        "           \"expansionLoc\": {\"offset\": 9, \"file\": \"/usr/include/aarch64-linux-gnu/bits/mathcalls.h\", \"line\": 295,"
+        "                              \"includedFrom\": {\"file\": \"/usr/include/math.h\"}}},"
+        "  \"isImplicit\": true, \"name\": \"nextafterf\""
+        "}"
+        "{"
+        "  \"id\": \"0x2\", \"kind\": \"FunctionDecl\","
+        "  \"loc\": {\"spellingLoc\": {\"offset\": 5, \"file\": \"<scratch space>\", \"line\": 23},"
+        "           \"expansionLoc\": {\"offset\": 9, \"file\": \"/usr/include/aarch64-linux-gnu/bits/mathcalls.h\", \"line\": 295,"
+        "                              \"includedFrom\": {\"file\": \"/usr/include/math.h\"}}},"
+        "  \"range\": {\"begin\": {\"offset\": 1, \"file\": \"/usr/include/aarch64-linux-gnu/bits/mathcalls-macros.h\"}, \"end\": {\"offset\": 2}},"
+        "  \"name\": \"nextafterf\", \"inner\": [{\"kind\": \"ParmVarDecl\", \"loc\": {\"offset\": 3}}]"
+        "}"
+        "{\"kind\": \"FunctionDecl\", \"loc\": {\"offset\": 7, \"file\": \"<scratch space>\"}, \"name\": \"__nextafterf\"}"
+    ]
+    places = places_of(json: rows.join("\n"), name: "nextafterf")
+    assert places.len() == 1
+    assert places[0].spelled == "<scratch space>" && places[0].expanded == "/usr/include/aarch64-linux-gnu/bits/mathcalls.h"
+    assert replaced(files: ["<scratch space>"], places: places) == ["/usr/include/aarch64-linux-gnu/bits/mathcalls.h"]
+
+# A file is carried from the location before: an expansion in the file the
+# spelling named writes none, and a declaration no macro wrote is its own
+# spelling and expansion.
+test "a file clang does not write again is the one before it, and a declaration no macro wrote is its own"
+    rows: [str] = [
+        "{\"kind\": \"FunctionDecl\", \"loc\": {\"spellingLoc\": {\"offset\": 1, \"file\": \"inc/zpaste.h\"}, \"expansionLoc\": {\"offset\": 4}}, \"name\": \"zlibVersion\"}"
+        "{\"kind\": \"FunctionDecl\", \"loc\": {\"offset\": 9, \"file\": \"/sdk/zlib.h\"}, \"name\": \"zlibVersion\"}"
+        "{\"kind\": \"VarDecl\", \"loc\": {\"spellingLoc\": {\"offset\": 2, \"file\": \"<scratch space>\"}, \"expansionLoc\": {\"offset\": 3, \"file\": \"/sdk/zlib.h\"}}, \"name\": \"zlibVersion\"}"
+    ]
+    places = places_of(json: rows.join("\n"), name: "zlibVersion")
+    assert places.len() == 3
+    assert places[0].spelled == "inc/zpaste.h" && places[0].expanded == "inc/zpaste.h"
+    assert places[1].spelled == "/sdk/zlib.h" && places[1].expanded == "/sdk/zlib.h"
+    assert places[2].spelled == "<scratch space>" && places[2].expanded == "/sdk/zlib.h"
+
+# The text dump's rows for glibc's `nextafterf`, as clang 22.1.8 dumped them
+# in the Linux arm64 image: the implicit builtin passed over, the header's
+# declaration read as the buffer, whole, never as `scratch space>`.
+test "a declaration the text dump places in a buffer is read as the buffer"
+    rows: [str] = [
+        "|-FunctionDecl 0x1 <<scratch space>:23:1> col:1 implicit nextafterf 'float (float, float)' extern"
+        "|-FunctionDecl 0x2 prev 0x1 </usr/include/aarch64-linux-gnu/bits/mathcalls-macros.h:39:3, /usr/include/aarch64-linux-gnu/sys/cdefs.h:79:54> <scratch space>:23:1 nextafterf 'float (float, float)' extern"
+        "|-FunctionDecl 0x3 </usr/include/aarch64-linux-gnu/bits/mathcalls-macros.h:39:3, /usr/include/aarch64-linux-gnu/sys/cdefs.h:79:54> /usr/include/aarch64-linux-gnu/bits/mathcalls.h:295:13 nextafter 'double (double, double)' extern"
+    ]
+    files = declaring(rows.join("\n"))
+    assert files["nextafterf"].must() == ["<scratch space>"]
+    assert files["nextafter"].must() == ["/usr/include/aarch64-linux-gnu/bits/mathcalls.h"]
+
+# A buffer is never a file: where nothing says where its declaration was
+# expanded, it is dropped, and the name is judged by its next declaration.
+test "a buffer of clang's own is no file, and one nothing places is dropped"
+    assert buffer("<scratch space>") && buffer("<built-in>") && buffer("<command line>")
+    assert !buffer("scratch space>") && !buffer("./x.h") && !buffer("<") && !buffer("")
+    none: [Place] = []
+    assert replaced(files: ["<scratch space>", "/usr/include/math.h"], places: none) == ["/usr/include/math.h"]
+    assert replaced(files: ["./own.h", "<scratch space>"], places: [Place(spelled: "<scratch space>", expanded: "./own.h")]) == ["./own.h"]

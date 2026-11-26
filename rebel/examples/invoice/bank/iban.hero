@@ -12,6 +12,7 @@
 # however long, rather than piece by piece in an `i64`.
 
 use <rebel>/big
+use <rebel>/bytes
 use <rebel>/strings
 
 ## Codes
@@ -83,10 +84,10 @@ function parse_iban(text: str) -> str?
     if s.len() < 5 || s.len() > MAX_IBAN
         return fail(code: INVALID, msg: f"an IBAN holds 5 to {MAX_IBAN} characters, and \"{text}\" holds {s.len()}")
 
-    if !is_letter(s[0]) || !is_letter(s[1])
+    if !bytes.is_upper_ascii(s[0]) || !bytes.is_upper_ascii(s[1])
         return fail(code: INVALID, msg: f"an IBAN opens with its country's two letters, and \"{text}\" does not")
 
-    if !is_digit(s[2]) || !is_digit(s[3])
+    if !bytes.is_digit_ascii(s[2]) || !bytes.is_digit_ascii(s[3])
         return fail(
             code: INVALID,
             msg: f"an IBAN's third and fourth characters are its check digits, and \"{text}\"'s are not digits"
@@ -146,13 +147,13 @@ function parse_bic(text: str) -> str?
         c = s[i]
         country = i == 4 || i == 5
 
-        if country && !is_letter(c)
+        if country && !bytes.is_upper_ascii(c)
             return fail(
                 code: INVALID,
                 msg: f"a BIC's fifth and sixth characters are its country's letters, and \"{text}\"'s are not"
             )
 
-        if !is_letter(c) && !is_digit(c)
+        if !bytes.is_upper_ascii(c) && !bytes.is_digit_ascii(c)
             return fail(
                 code: INVALID,
                 msg: f"a BIC holds letters and digits alone, and \"{text}\" holds another character"
@@ -161,18 +162,6 @@ function parse_bic(text: str) -> str?
     return ok(s)
 
 ## Characters
-
-# Whether the byte `c` is an ASCII capital.
-#
-# - `c`: any byte.
-function is_letter(c: u8) -> bool
-    return c >= 'A' && c <= 'Z'
-
-# Whether the byte `c` is an ASCII digit.
-#
-# - `c`: any byte.
-function is_digit(c: u8) -> bool
-    return c >= '0' && c <= '9'
 
 # The forty-digit number's remainder is Python 3's `int(...) % 97`, run
 # 2026-11-22.

@@ -151,14 +151,14 @@ function read(data: str) -> Crawl?
         redirects[from] @ json.text_of(moved[from]?)?
 
     made = Crawl(
-        start: text_at(v, key: "start")?,
-        agent: text_at(v, key: "agent")?,
-        robots_group: text_at(v, key: "robots_group")?,
-        robots_rules: int_at(v, key: "robots_rules")?,
+        start: json.text_at(v, key: "start")?,
+        agent: json.text_at(v, key: "agent")?,
+        robots_group: json.text_at(v, key: "robots_group")?,
+        robots_rules: json.int_at(v, key: "robots_rules")?,
         pages: pages,
         visits: visits,
         redirects: redirects,
-        external: int_at(v, key: "external")?
+        external: json.int_at(v, key: "external")?
     )
     return ok(made)
 
@@ -218,16 +218,16 @@ function page_json(p: Page) -> json.Value
 # - `v`: the value.
 function page_of(v: json.Value) -> Page?
     made = Page(
-        url: text_at(v, key: "url")?,
-        depth: int_at(v, key: "depth")?,
-        title: text_at(v, key: "title")?,
-        description: text_at(v, key: "description")?,
-        language: text_at(v, key: "language")?,
-        canonical: text_at(v, key: "canonical")?,
+        url: json.text_at(v, key: "url")?,
+        depth: json.int_at(v, key: "depth")?,
+        title: json.text_at(v, key: "title")?,
+        description: json.text_at(v, key: "description")?,
+        language: json.text_at(v, key: "language")?,
+        canonical: json.text_at(v, key: "canonical")?,
         index: json.bool_of(json.member(v, key: "index")?)?,
         links: texts_at(v, key: "links")?,
         headings: texts_at(v, key: "headings")?,
-        text: text_at(v, key: "text")?
+        text: json.text_at(v, key: "text")?
     )
     return ok(made)
 
@@ -249,10 +249,10 @@ function visit_json(v: Visit) -> json.Value
 # - `v`: the value.
 function visit_of(v: json.Value) -> Visit?
     made = Visit(
-        url: text_at(v, key: "url")?,
-        depth: int_at(v, key: "depth")?,
-        outcome: text_at(v, key: "outcome")?,
-        detail: text_at(v, key: "detail")?
+        url: json.text_at(v, key: "url")?,
+        depth: json.int_at(v, key: "depth")?,
+        outcome: json.text_at(v, key: "outcome")?,
+        detail: json.text_at(v, key: "detail")?
     )
     return ok(made)
 
@@ -273,20 +273,6 @@ function texts(items: [str]) -> json.Value
         values @ values.push(.text(v: s))
 
     return .list(items: values)
-
-# The text member `key` of the object `v`.
-#
-# - `v`: the object.
-# - `key`: the member's name.
-function text_at(v: json.Value, key: str) -> str?
-    return json.text_of(json.member(v, key: key)?)
-
-# The whole-number member `key` of the object `v`.
-#
-# - `v`: the object.
-# - `key`: the member's name.
-function int_at(v: json.Value, key: str) -> i64?
-    return json.int_of(json.member(v, key: key)?)
 
 # The member `key` of the object `v`, an array of texts.
 #
@@ -328,7 +314,7 @@ test "crawl_json: a crawl written and read back through JSON text"
     )
     v = json.parse(json.format(crawl_json(c)).must()).must()
     assert visit_of(json.element(json.member(v, key: "visits").must(), index: 0).must()).must() == c.visits[0]
-    assert int_at(v, key: "external").must() == 1 && text_at(v, key: "robots_group").must() == "searchd"
+    assert json.int_at(v, key: "external").must() == 1 && json.text_at(v, key: "robots_group").must() == "searchd"
 
 test "page_of: a member of the wrong kind is refused"
     assert page_of(json.parse("{\"url\": 3}").must()).is_err()

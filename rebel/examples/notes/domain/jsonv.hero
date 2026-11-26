@@ -67,16 +67,6 @@ function with_members(v: json.Value, extra: {str: json.Value}) -> json.Value
 function instant(t: time.Instant) -> json.Value
     return .text(v: time.format(t, layout: .rfc3339))
 
-# The text the member `key` of `v` holds.
-#
-# - `v`: an object.
-# - `key`: the member's key.
-#
-# Fails `not_found` where `v` has no such member, `invalid` where it is not
-# a text, as `json.member` and `json.text_of` fail.
-function text_at(v: json.Value, key: str) -> str?
-    return json.text_of(json.member(v, key: key)?)
-
 # The texts of the list the member `key` of `v` holds; none where `v` has no
 # such member.
 #
@@ -98,8 +88,8 @@ function texts_at(v: json.Value, key: str) -> [str]?
 
 test "text_at and texts_at: a member, a missing member, and a list of texts"
     v = object({"title": text("Hi"), "tags": texts(["a", "b"])})
-    assert text_at(v, key: "title").must() == "Hi"
-    assert text_at(v, key: "body").is_err()
+    assert json.text_at(v, key: "title").must() == "Hi"
+    assert json.text_at(v, key: "body").is_err()
     assert texts_at(v, key: "tags").must() == ["a", "b"]
     assert texts_at(v, key: "none").must() == []
     assert texts_at(v, key: "title").is_err()

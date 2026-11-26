@@ -6,6 +6,7 @@ packages = [
     "bytes",
     "cbor",
     "csv",
+    "errors",
     "flags",
     "fs",
     "hash",

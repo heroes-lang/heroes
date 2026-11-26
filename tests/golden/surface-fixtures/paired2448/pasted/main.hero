@@ -1,0 +1,15 @@
+# Panel 245's R3, lane p261-beside, 2026-11-26: `zpaste2448.h` stands for
+# another release's header and writes its declaration of `zlibVersion` by a
+# macro that pastes the name, so clang's text dump places the declaration in
+# `<scratch space>`, a buffer of its own, and never in a file. Found through
+# `--include` beside the platform's library, the build is refused
+# `ffi_unpaired_release`, the header named as the file that expanded the
+# macro; until the repair the buffer was read as a file no folder the build
+# names holds, and this pair built at exit 0. With `--library` naming a
+# folder that holds a library `z` too, both halves are named and it builds.
+
+extern "zpaste2448.h" link "z"
+    function zlibVersion() -> cstr
+
+function main()
+    print(validated(c: zlibVersion()).default("").len() > 0)

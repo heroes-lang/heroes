@@ -9,6 +9,7 @@
 # moment, its day checked against the calendar. Everything else is a text.
 # `--raw` turns all of it off and every field stays a text.
 
+use <rebel>/bytes
 use <rebel>/time
 
 use model/decimal
@@ -142,7 +143,7 @@ function digits_at(s: str, at: i64, count: i64) -> bool
     i: i64 @= at
 
     while i < at + count
-        if i >= s.len() || !decimal.is_digit(s[i])
+        if i >= s.len() || !bytes.is_digit_ascii(s[i])
             return false
         i @ i + 1
 

@@ -3,6 +3,7 @@
 # theme's own words (`Read more`, `3 minutes read`) from the theme's gettext
 # catalog for the language, plural forms and all.
 
+use <rebel>/errors
 use <rebel>/i18n
 use <rebel>/i18n/dates
 use <rebel>/i18n/numbers as i18n_numbers
@@ -88,9 +89,7 @@ function words_of(language: model.Language, po: str, name: str) -> Words?
     if po.len() == 0
         return ok(Words(catalog: i18n.new_catalog([]).must(), language: language))
 
-    catalog = match i18n.parse_po(po)
-        .ok c  => c
-        .err e => return fail(code: e.code, msg: f"{name}: {e.msg}")
+    catalog = errors.context(i18n.parse_po(po), what: f"{name}")?
 
     return ok(Words(catalog: catalog, language: language))
 

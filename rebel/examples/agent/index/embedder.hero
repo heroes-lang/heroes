@@ -13,6 +13,7 @@
 # finds the passages that share words with a question, which is what the demo
 # needs; it knows no synonym, which a model's embeddings do.
 
+use <rebel>/bytes
 use <rebel>/hash
 use <rebel>/llm/openai
 use <rebel>/strings
@@ -179,17 +180,13 @@ function words_of(text: str) -> [str]
 function is_separator(text: str, at: i64) -> bool
     b = text[at]
 
-    if b >= 128 || is_digit(b) || b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
+    if b >= 128 || bytes.is_digit_ascii(b) || b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z'
         return false
 
     if b == '.' && at > 0 && at + 1 < text.len()
-        return !(is_digit(text[at - 1]) && is_digit(text[at + 1]))
+        return !(bytes.is_digit_ascii(text[at - 1]) && bytes.is_digit_ascii(text[at + 1]))
 
     return true
-
-# Whether the byte `b` is an ASCII digit.
-function is_digit(b: u8) -> bool
-    return b >= '0' && b <= '9'
 
 # The three-byte parts of `word` with a `#` at either end, so `ab` gives
 # `#ab` and `ab#`; a word holding a byte past ASCII gives none, since a part

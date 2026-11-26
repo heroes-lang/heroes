@@ -5,6 +5,7 @@
 # and set inside the layout with the values `values` builds.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/json
 use <rebel>/markdown
 
@@ -101,9 +102,7 @@ function translations(languages: [model.Language], pages: [model.Page], key: str
 
 # `body` set in the layout `layout` with `value`, the failure naming `name`.
 function written(context: Context, layout: str, body: str, value: json.Value, name: str) -> str?
-    return match theme.render(context.theme, layout: layout, body: body, value: value)
-        .ok text => ok(text)
-        .err e   => fail(code: e.code, msg: f"{name}: {e.msg}")
+    return errors.context(theme.render(context.theme, layout: layout, body: body, value: value), what: f"{name}")
 
 ## Lists
 
