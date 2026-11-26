@@ -1556,8 +1556,9 @@ panel 215's R2 refuses for a lock, and `@`, which claims a change. Its refusals 
 built by a seat: `@p: T lent`, which the specification's `Param` does not derive; the place
 written or handed on to an `@` parameter, and returned or copied where the lock rule refuses a
 copy (a copyable value copied out of it stays legal, the coordinator's decision of 2026-10-18 on
-how R2 was built); a function with one used as a value (§4.13); and an `@` argument of the same
-call reaching the place, **nested in another argument included**, Hylo's rule: the unmarked
+how R2 was built); a function of an `extern` group with one used as a value (§4.13; a function
+of the program is a value of `(function(T lent) -> R)` since panel 261's R1); and an `@` argument
+of the same call reaching the place, **nested in another argument included**, Hylo's rule: the unmarked
 argument reads as a value taken where it stands, and the place would show a write the nested
 call made before the callee ran. **An `@` beside a nested `@` of its own place stays accepted**,
 measured 2026-10-18: `both(@p, bump(@p))` prints 4, both arguments marked and the nested call
@@ -1618,7 +1619,10 @@ overlapping otherwise. That keeps the deliberate over-rejection of `f(a: @xs[i],
 variable indices, which is the form this paragraph always named; it is not on the closure list and
 the rule can be relaxed later without invalidating any program. The invariant it
 buys the backend is worth stating: **`@` parameters never alias**, so a direct-pointer lowering and
-`restrict` stay legal.
+`restrict` stay legal. It holds through a function value too, whose type carries each `@` and whose
+calls the checker holds to both rules of each one (panel 261's R2: two `@` through a value reaching
+one place were accepted until then, measured), and from C, where a callback's type carries no mark
+(R4) until the thunk C calls compares the places C hands two marked slots.
 
 **Rejected: sigils on names** (`@total` everywhere, Ruby-style). Every language that uses name
 sigils encodes something *permanent* — Ruby's `@x` is scope, Perl's `$x`/`@x`/`%x` is type.
@@ -2069,13 +2073,23 @@ underneath it remains this section's, unchanged:
 **Functions that capture nothing are values.** A top-level function passed as an argument is just a
 pointer — no environment to allocate, no refcounting interaction.
 
-**But not one with an `@` or a `lent` parameter** (the `lent` half panel 217's R1, landed
-2026-10-18 at M-readonly-lend; the `@` half `error[mutable_parameter_as_value]`, which the
-specification left to its function type's production, `TypeArg`, until that landing): no
-function type carries either mode, so a call through a value, `f(x)`, would hide the `@` the call
-owes, or take a copy of what `lent` reads in place. Measured the day it landed: `fs = [inc]` with
-`function inc(@x: i64)` and `fs = [get]` with `function get(p: Pt lent) -> i64` are refused at
-exit 1, and the same `get` without `lent` builds.
+**And one with an `@` or a `lent` parameter is a value of a type that carries the mark**
+(panel 261, ratified 2026-11-26; until then such a function was no value, panel 217's R1 and
+`error[mutable_parameter_as_value]`, since no function type carried either mode). `(function(@App)
+-> ())`, `(function(App lent) -> ())` and `(function(App) -> ())` are three types, a run of marks on
+the function type's case, stored empty where every position is by value, so a mark-free type keeps
+its key, its id and its C typedef; a call through a value writes `@` where its type does and is
+held to both rules of each `@` it takes, as a call by name is to its declaration's. **`lent` fits
+where `@` is asked**, read as the `@`, the one widening: a read-only handler stands in a table of
+writers with its signature true, which Rust, Swift and Nim refuse (measured by the sitting's
+critic) and need not, since there a writer that only reads is legal and here `never_rebound`
+refuses it. A literal's elements, an `if`'s branches and a `match`'s arms take the type each of
+them fits, in any order. A function of an `extern` group whose parameter is `@`, or a record
+`lent`, stays no value (R5): those marks are C's, beside words no function type carries. A thread
+body takes neither mark (R6), and a callback C calls carries none (R4) until its thunk carries
+the duties the sitting named. Measured the day it landed: `fs = [bump, peek]` with `function
+bump(@a: App, x: i64) -> i64` and `function peek(a: App lent, x: i64) -> i64` checks in either
+order and its calls write `@`.
 
 ```
 function plus(a: i64, b: i64) -> i64
@@ -4607,6 +4621,16 @@ visible rather than patched with a second form.
    panel 112's table reached it: `(function(i32, @out: i32) -> i32)` is
    `expected_function_type_params_close`. An out-parameter inside a callback is **26**
    occurrences in `sqlite3.h` and it is raylib's `LoadFileDataCallback`.
+   **Corrected 2026-11-26** (panel 261's ffi-pragmatist and critic): the code was `expected_type`
+   at the `@`; since panel 261's R1 a function type carries `@` and `lent`, and its R4 refuses a
+   mark in an `extern` callback's type, `ffi_type`, until the thunk C calls clears and checks each
+   slot's handles, refuses a null slot and an overlap naming the callback, writes `const` for a
+   `lent` slot, and hands C a twin where a function's slot and the type's differ by it. The
+   counts above were not reproduced by that sitting: over `sqlite3.h` 3.54.0, clang's own AST of
+   it, **112** distinct callback types, **92** of them only a struct's field (the vtables no
+   binding fills) and **20** an API function's parameter, **15** of which bind today by the
+   classification and **17** with the marks, the two an `@` adds reading one element of an array;
+   the method that read 106 and 153 is not in the record.
 
    **The order matters and this row exists to fix it.** The sitting was convened on `const`,
    because `qsort` is the callback a reader meets first, and `const` is the **fourth** cause by
@@ -4638,6 +4662,9 @@ visible rather than patched with a second form.
    One such binding and this stops being a wart and becomes §1.0 compiler-need — and the route
    it must take is then the one panel 112 R6 records, a qualifier field on the function type
    that already exists (**2 edits in 1 file**, measured) rather than a new `Ty` case.
+   **Made a fact by panel 261's R1, 2026-11-26**, as a run of marks on the existing case: the
+   field was two edits, and every pass that builds, compares, lowers or prints a function type
+   learned it, 25 modules of `selfhost/`.
 
 20. **One copy of a value holding a `ptr` can free what every other copy holds, at exit 0**
     (panel 145, 2026-09-13; defect 031, filed at panel 139 and **still open** while this entry
