@@ -87,6 +87,8 @@
  * Measured on the box (clang 23.1.1, lld-link): without it every program's
  * link failed, `GetFileSecurityW` undefined. */
 #pragma comment(lib, "advapi32.lib")
+/* FSCTL_GET_REPARSE_POINT, which reads a link's own text (`hero_fs_win_hop`). */
+#include <winioctl.h>
 #else
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -122,12 +124,201 @@ static HeroStr hero_fs_found_path(const char *path) {
  * parts/fs.c since 2026-10-05, where `hero_dir_remove_tree` asks it too
  * (defect 345). */
 
+#if defined(_WIN32)
+/* A WINDOWS LINK WHOSE CHAIN ENDS AT NOTHING IS FOLLOWED BY ITS TEXT, AS
+ * POSIX FOLLOWS ONE (defect d-windows-ci-4-1). The Windows arms below open a
+ * link with FILE_FLAG_BACKUP_SEMANTICS, which follows every link and junction
+ * to the end of the chain, and ask the system for the file found there; where
+ * nothing is at that end the open fails, ERROR_FILE_NOT_FOUND (2), or
+ * ERROR_PATH_NOT_FOUND (3) where a folder on the way is missing, and until
+ * this repair both arms gave no answer for it. So a link to nothing was told
+ * *a link to a chain of links the system cannot follow*, the words of a loop,
+ * where POSIX, reading each link with `readlink`, says *a link to nothing*:
+ * three of the compiler's own tests red on the CI's Windows x86-64 leg (run
+ * 45654270318), a source, a `heroes new` folder and what stands at a name.
+ * A loop is no such failure: Windows stops it itself, ERROR_CANT_RESOLVE_FILENAME
+ * (1921), and that stays the arms' answer, no chain being followed by text
+ * past one the system refused.
+ *
+ * Each link of the chain is read as `readlink` reads one: opened as itself,
+ * FILE_FLAG_OPEN_REPARSE_POINT, and its reparse point asked with
+ * FSCTL_GET_REPARSE_POINT. A symbolic link holds its target as written, a
+ * relative one flagged SYMLINK_FLAG_RELATIVE and read from the folder holding
+ * the link; a junction holds an absolute one. Both hold it as Windows' own
+ * kernel names a file, `\??\C:\dir`, which a Win32 call takes as `C:\dir`,
+ * `\??\UNC\server\share` as `\\server\share`, and any other `\??\` name, a
+ * volume's GUID, behind `\\?\`. UNRUN on Windows: the box was off on
+ * 2026-11-25, and the CI's Windows leg judges it after the push; cross-compiled
+ * against mingw-w64's headers by `zig cc -target x86_64-windows-gnu`, never
+ * against MSVC's, which the CI builds with. */
+#if !defined(SYMLINK_FLAG_RELATIVE)
+#define SYMLINK_FLAG_RELATIVE 0x1
+#endif
+#if !defined(MAXIMUM_REPARSE_DATA_BUFFER_SIZE)
+#define MAXIMUM_REPARSE_DATA_BUFFER_SIZE (16 * 1024)
+#endif
+
+/* The head of REPARSE_DATA_BUFFER for a symbolic link and a junction, as
+ * Microsoft documents it in `ntifs.h`, a driver kit's header that neither
+ * MSVC's nor mingw-w64's `windows.h` carries: the tag, the data's length,
+ * then the substitute and the print name's offsets and lengths in bytes,
+ * counted from the names' buffer. A symbolic link's four bytes of flags come
+ * before that buffer; a junction's buffer follows the head at once. */
+typedef struct {
+    DWORD tag;
+    WORD data_length;
+    WORD reserved;
+    WORD substitute_offset;
+    WORD substitute_length;
+    WORD print_offset;
+    WORD print_length;
+} HeroReparseHead;
+
+/* One link of a chain read by its text: where `current` names a symbolic
+ * link or a junction (a reparse point that names another file, the question
+ * `hero_fs_is_surrogate` asks), `current` becomes the name it holds and the
+ * answer is 1. 0, `current` untouched, where it names no link, or nothing
+ * the system will open as itself: the chain ends there, as it ends where
+ * POSIX's `lstat` fails. -1 with `hero_fs_why` set where the link cannot be
+ * read: its reparse point refused, of a kind neither link is, holding no
+ * name, or one longer than HERO_FS_PATH_MAX. */
+static int hero_fs_win_hop(char current[HERO_FS_PATH_MAX]) {
+    wchar_t *wide = hero_win_wide(current, NULL);
+    if (wide == NULL) return 0;
+    HANDLE h = CreateFileW(wide, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL, OPEN_EXISTING,
+                           FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    hero_release(wide);
+    if (h == INVALID_HANDLE_VALUE) return 0;
+    FILE_ATTRIBUTE_TAG_INFO kind;
+    if (!GetFileInformationByHandleEx(h, FileAttributeTagInfo, &kind, sizeof kind) ||
+        (kind.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) == 0 || !IsReparseTagNameSurrogate(kind.ReparseTag)) {
+        CloseHandle(h);
+        return 0;
+    }
+    /* In scratch memory, not on the stack: every write through a link may
+     * come here, on whatever thread it runs. */
+    BYTE *data = hero_alloc(MAXIMUM_REPARSE_DATA_BUFFER_SIZE);
+    DWORD got = 0;
+    BOOL read = DeviceIoControl(h, FSCTL_GET_REPARSE_POINT, NULL, 0, data, (DWORD)MAXIMUM_REPARSE_DATA_BUFFER_SIZE,
+                                &got, NULL);
+    /* Read before `CloseHandle`, which may set the last error itself. */
+    DWORD why = read ? 0 : GetLastError();
+    CloseHandle(h);
+    HeroReparseHead head = {0};
+    size_t names = sizeof head;
+    int relative = 0;
+    int64_t refused = 0;
+    if (!read) {
+        refused = (int64_t)why;
+    } else if (got < names) {
+        refused = -(int64_t)ERROR_INVALID_REPARSE_DATA;
+    } else {
+        memcpy(&head, data, sizeof head);
+        if (head.tag == IO_REPARSE_TAG_SYMLINK) {
+            DWORD flags = 0;
+            if (got < names + sizeof flags) {
+                refused = -(int64_t)ERROR_INVALID_REPARSE_DATA;
+            } else {
+                memcpy(&flags, data + names, sizeof flags);
+                relative = (flags & SYMLINK_FLAG_RELATIVE) != 0;
+                names += sizeof flags;
+            }
+        } else if (head.tag != IO_REPARSE_TAG_MOUNT_POINT) {
+            refused = -(int64_t)ERROR_CANT_ACCESS_FILE;
+        }
+    }
+    size_t from = refused == 0 ? names + head.substitute_offset : 0;
+    size_t size = refused == 0 ? head.substitute_length : 0;
+    if (refused == 0 && (size == 0 || size % sizeof(wchar_t) != 0 || from + size > got)) {
+        refused = -(int64_t)ERROR_INVALID_REPARSE_DATA;
+    }
+    if (refused != 0) {
+        hero_release(data);
+        hero_fs_why_code = refused;
+        return -1;
+    }
+    size_t units = size / sizeof(wchar_t);
+    wchar_t *text = hero_alloc((units + 1) * sizeof *text);
+    memcpy(text, data + from, size);
+    text[units] = 0;
+    hero_release(data);
+    /* The kernel's name as a Win32 call takes it. */
+    const wchar_t *body = text;
+    const char *lead = "";
+    if (units >= 4 && wcsncmp(text, L"\\??\\", 4) == 0) {
+        body = text + 4;
+        if (units >= 8 && wcsncmp(body, L"UNC\\", 4) == 0) {
+            body += 4;
+            lead = "\\\\";
+        } else if (!(units >= 6 && body[1] == L':')) {
+            lead = "\\\\?\\";
+        }
+    }
+    char target[HERO_FS_PATH_MAX];
+    size_t lead_length = strlen(lead);
+    memcpy(target, lead, lead_length);
+    int64_t written = hero_win_name_bytes(body, target + lead_length, sizeof target - lead_length);
+    hero_release(text);
+    if (written < 0) {
+        hero_fs_why_code = -(int64_t)ERROR_FILENAME_EXCED_RANGE;
+        return -1;
+    }
+    size_t length = lead_length + (size_t)written;
+    /* A relative target is read from the folder holding the link: the part
+     * of `current` up to its last `/` or `\`, or its drive's `C:` where it
+     * names a drive and no folder; one opening with a separator, from the
+     * root of the link's drive. */
+    size_t keep = 0;
+    if (relative) {
+        int drive = current[0] != '\0' && current[1] == ':';
+        if (target[0] == '\\' || target[0] == '/') {
+            keep = drive ? 2 : 0;
+        } else {
+            for (size_t i = 0; current[i] != '\0'; i += 1) {
+                if (current[i] == '/' || current[i] == '\\') keep = i + 1;
+            }
+            if (keep == 0 && drive) keep = 2;
+        }
+    }
+    if (keep + length >= HERO_FS_PATH_MAX) {
+        hero_fs_why_code = -(int64_t)ERROR_FILENAME_EXCED_RANGE;
+        return -1;
+    }
+    memcpy(current + keep, target, length + 1);
+    return 1;
+}
+
+/* The landing of a link whose chain Windows' own open followed to nothing:
+ * the chain read link by link, as POSIX's arm reads it, forty deep at most,
+ * the runtime then refusing with the system's number for a chain it cannot
+ * resolve, ERROR_CANT_RESOLVE_FILENAME, as it refuses with ELOOP there. */
+static HeroStr hero_fs_win_text_landing(const char *path) {
+    char current[HERO_FS_PATH_MAX];
+    size_t length = strlen(path);
+    if (length >= sizeof current) {
+        hero_fs_why_code = -(int64_t)ERROR_FILENAME_EXCED_RANGE;
+        return hero_str_from_bytes("", 0);
+    }
+    memcpy(current, path, length + 1);
+    for (int hops = 0; hops < 40; hops += 1) {
+        int hop = hero_fs_win_hop(current);
+        if (hop < 0) return hero_str_from_bytes("", 0);
+        if (hop == 0) return hero_fs_found_path(current);
+    }
+    hero_fs_why_code = -(int64_t)ERROR_CANT_RESOLVE_FILENAME;
+    return hero_str_from_bytes("", 0);
+}
+#endif
+
 /* The file a write to `path` lands in: `path` itself, or, where `path` is a
  * symbolic link, the file its chain of links finally names, which need not
  * exist yet, so a dangling link is written through and creates what it names, as
  * `fopen` did. A relative target is read from the directory holding the link.
  * "" with `hero_fs_why` set where the chain cannot be followed: forty links deep
  * (ELOOP, the limit Linux itself stops at), or longer than HERO_FS_PATH_MAX.
+ * Windows asks its own open of the chain first, which answers a loop by
+ * itself, and reads a chain that ends at nothing by its text, the same forty
+ * deep (`hero_fs_win_text_landing`, defect d-windows-ci-4-1).
  *
  * Only the LAST part of the path is followed. A link among the directories on
  * the way is the kernel's to follow, and it follows it the same way for the
@@ -140,7 +331,10 @@ HeroStr hero_fs_landing(const char *path) {
     HANDLE h = CreateFileA(path, 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
                            OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
     if (h == INVALID_HANDLE_VALUE) {
-        hero_fs_why_code = (int64_t)GetLastError();
+        DWORD e = GetLastError();
+        /* Nothing at the chain's end: read by its text (defect d-windows-ci-4-1). */
+        if (e == ERROR_FILE_NOT_FOUND || e == ERROR_PATH_NOT_FOUND) return hero_fs_win_text_landing(path);
+        hero_fs_why_code = (int64_t)e;
         return hero_str_from_bytes("", 0);
     }
     /* WIDE, and carried back as the listing carries a name (parts/codepage.c):
@@ -239,9 +433,12 @@ HeroStr hero_fs_landing(const char *path) {
  * path that is there. Windows opens that part as `hero_fs_landing` opens a
  * link, FILE_FLAG_BACKUP_SEMANTICS following every link and junction, and asks
  * `GetFinalPathNameByHandleW`; a device, `NUL`, has no folders and answers as
- * it is written; a dangling link there is no answer, as `hero_fs_landing`'s
- * Windows arm gives none. UNRUN on Windows, and not compiled there either:
- * every measurement of this door is this Mac's. */
+ * it is written; a dangling link there is followed by its text, as
+ * `hero_fs_landing`'s Windows arm follows one, forty deep at most
+ * (ERROR_CANT_RESOLVE_FILENAME, the runtime's refusal), and a loop is the
+ * open's own refusal. Until defect d-windows-ci-4-1 a dangling link there was
+ * no answer, as that arm gave none. UNRUN on Windows: every measurement of
+ * this door is this Mac's, and the CI's Windows leg judges the repair. */
 
 /* `path` with its separators at the end taken away, the root's own kept:
  * `/`, and on Windows `\` and `C:\`. */
@@ -299,8 +496,8 @@ HeroStr hero_fs_resolved_shown(const char *path, int64_t *status, int64_t *marks
     const char separator = '\\';
 #else
     const char separator = '/';
-    int hops = 0;
 #endif
+    int hops = 0;
     for (;;) {
         hero_fs_unslashed(pending);
 #if defined(_WIN32)
@@ -331,11 +528,22 @@ HeroStr hero_fs_resolved_shown(const char *path, int64_t *status, int64_t *marks
             return shown;
         }
         DWORD e = GetLastError();
-        int absent = e == ERROR_FILE_NOT_FOUND || e == ERROR_PATH_NOT_FOUND;
-        /* A dangling link: no answer, as `hero_fs_landing` gives none here. */
-        if (!absent || hero_fs_is_surrogate(pending)) {
+        if (e != ERROR_FILE_NOT_FOUND && e != ERROR_PATH_NOT_FOUND) {
             hero_fs_why_code = (int64_t)e;
             return hero_str_from_bytes("", 0);
+        }
+        /* A dangling link: its target takes its place, read by its text from
+         * the folder holding the link, as the POSIX arm reads one (defect
+         * d-windows-ci-4-1; until then no answer). */
+        int hop = hero_fs_win_hop(pending);
+        if (hop < 0) return hero_str_from_bytes("", 0);
+        if (hop > 0) {
+            hops += 1;
+            if (hops > 40) {
+                hero_fs_why_code = -(int64_t)ERROR_CANT_RESOLVE_FILENAME;
+                return hero_str_from_bytes("", 0);
+            }
+            continue;
         }
 #else
         char found[HERO_FS_PATH_MAX];

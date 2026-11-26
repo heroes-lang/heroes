@@ -144,6 +144,21 @@ test "a root that is not there is told so, and one that is there and does not re
     if !files.symbolic_link(target: "nowhere.hero", name: dir + "/dangling.hero").is_err()
         assert message_of(read_root_only(path: dir + "/dangling.hero")) == "cannot read `" + dir + "/dangling.hero`: a link to nothing stands there, where a source is a file: rename it to keep it, or remove it and put the file there"
 
+        # Defect d-windows-ci-4-1: a chain that ends at nothing, through a
+        # second link or at a folder gone, is a link to nothing; one that
+        # loops is told as a loop. Windows told all of them as loops.
+        loop = "a link to a chain of links the system cannot follow"
+        assert !process.mkdir_all(dir + "/gone").is_err()
+        assert !files.symbolic_link(target: "gone", name: dir + "/to-gone.hero").is_err()
+        assert !process.remove_tree(dir + "/gone").is_err()
+        assert !files.symbolic_link(target: "dangling.hero", name: dir + "/via.hero").is_err()
+        assert !files.symbolic_link(target: "itself.hero", name: dir + "/itself.hero").is_err()
+        assert !files.symbolic_link(target: "pong.hero", name: dir + "/ping.hero").is_err()
+        assert !files.symbolic_link(target: "ping.hero", name: dir + "/pong.hero").is_err()
+
+        for row in [["to-gone.hero", "a link to nothing"], ["via.hero", "a link to nothing"], ["itself.hero", loop], ["ping.hero", loop]]
+            assert message_of(read_root_only(path: dir + "/" + row[0])) == "cannot read `" + dir + "/" + row[0] + "`: " + row[1] + " stands there, where a source is a file: rename it to keep it, or remove it and put the file there"
+
 function message_of(read: source.Source?) -> str
     match read
         .ok    => return ""
