@@ -356,6 +356,10 @@ void hero_signal_learn(void) {
 /* How many save points' buffers J remembers per thread (`parts/sigjump.c`);
  * a full record overwrites its oldest pair. */
 #define HERO_SIG_JUMPS 32
+
+/* How many spans of frames of handlers left by a jump one thread keeps
+ * (defect 2855); a full record widens its first span rather than forget one. */
+#define HERO_SIG_LEFT 8
 #endif
 
 /* One handler of C's this thread is inside, on both routes (Darwin's trampoline,
@@ -401,6 +405,15 @@ typedef struct {
     int lost;
     uint64_t serial;
     int alt_seen;
+    /* The frames of the handlers this thread left by a jump (defect 2855):
+     * each a span [left_lo, left_hi) of the stack [left_slo, left_shi) it lay
+     * on, shrunk as the thread is seen running there again; a landing inside
+     * one is that handler re-entered (rule 6). */
+    uintptr_t left_lo[HERO_SIG_LEFT];
+    uintptr_t left_hi[HERO_SIG_LEFT];
+    uintptr_t left_slo[HERO_SIG_LEFT];
+    uintptr_t left_shi[HERO_SIG_LEFT];
+    int left_n;
     /* J, route A only: which buffer each save point filled, the serial of the
      * innermost entry standing at the save (0 for none), the buffer's bytes
      * as the C library left them (0 until read at this thread's next save
@@ -425,6 +438,15 @@ typedef struct {
     int lost;
     uint64_t serial;
     int alt_seen;
+    /* The frames of the handlers this thread left by a jump (defect 2855):
+     * each a span [left_lo, left_hi) of the stack [left_slo, left_shi) it lay
+     * on, shrunk as the thread is seen running there again; a landing inside
+     * one is that handler re-entered (rule 6). */
+    uintptr_t left_lo[HERO_SIG_LEFT];
+    uintptr_t left_hi[HERO_SIG_LEFT];
+    uintptr_t left_slo[HERO_SIG_LEFT];
+    uintptr_t left_shi[HERO_SIG_LEFT];
+    int left_n;
 #endif
 } HeroSignalStack;
 

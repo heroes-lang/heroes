@@ -107,6 +107,7 @@ static bool hero_rebind_switch_target(HeroSignalStack *own, const void *uc, int 
 static void hero_rebind_jump(const void *env) {
     HeroSignalStack *own = hero_rebind_own();
     if (own == NULL || env == NULL) return;
+    hero_rebind_relived(own, (uintptr_t)__builtin_frame_address(0));
     bool standing = hero_rebind_standing(own);
     if (hero_rebind_decoding(HERO_REBIND_JMP)) {
         uintptr_t t = hero_rebind_jmp_sp(env);
@@ -133,6 +134,7 @@ static void hero_rebind_jump(const void *env) {
 static void hero_rebind_set(const void *uc) {
     HeroSignalStack *own = hero_rebind_own();
     if (own == NULL || !hero_rebind_ctx_valid(uc)) return;
+    hero_rebind_relived(own, (uintptr_t)__builtin_frame_address(0));
     bool standing = hero_rebind_standing(own);
     uintptr_t t = 0;
     bool back = false;
@@ -186,6 +188,7 @@ __attribute__((noinline)) static int hero_rebind_swapcontext(void *from, const v
     int watched = -1;
     unsigned seq = 0;
     hero_rebind_range_left((uintptr_t)__builtin_frame_address(0));
+    hero_rebind_relived(own, (uintptr_t)__builtin_frame_address(0));
     if (own != NULL && from != NULL && hero_rebind_ctx_valid(to)) {
         bool field = hero_rebind_decoding(HERO_REBIND_CTX);
         uintptr_t t = 0;
@@ -275,27 +278,37 @@ static int hero_rebind_setcontext(const void *context) {
     return atomic_load_explicit(&hero_rebind_real_setcontext, memory_order_relaxed)(context);
 }
 
-/* Route A's save points, rewritten only for a family whose decode did not
- * verify: each records, with a frame below its caller's stack pointer
- * (`hero_rebind_below`, called here), then reaches the C library's own by a
- * tail call, so it saves this function's caller and returns twice into it. */
+/* The save points: on route A each records, with a frame below its caller's
+ * stack pointer (`hero_rebind_below`, called here); on route C each only tells
+ * where the thread runs (defect 2855, `hero_rebind_saving`); then it reaches
+ * the C library's own by a tail call, so it saves this function's caller and
+ * returns twice into it. */
+static void hero_rebind_saving(const void *buf, int family) {
+    if (!hero_rebind_decoding(family)) {
+        hero_rebind_note(buf, hero_rebind_below());
+        return;
+    }
+    HeroSignalStack *own = hero_rebind_own();
+    if (own != NULL && own->left_n > 0) hero_rebind_relived(own, hero_rebind_below());
+}
+
 static int hero_rebind_setjmp(int *env) {
-    hero_rebind_note(env, hero_rebind_below());
+    hero_rebind_saving(env, HERO_REBIND_JMP);
     __attribute__((musttail)) return atomic_load_explicit(&hero_rebind_real_setjmp, memory_order_relaxed)(env);
 }
 
 static int hero_rebind__setjmp(int *env) {
-    hero_rebind_note(env, hero_rebind_below());
+    hero_rebind_saving(env, HERO_REBIND_JMP);
     __attribute__((musttail)) return atomic_load_explicit(&hero_rebind_real__setjmp, memory_order_relaxed)(env);
 }
 
 static int hero_rebind_sigsetjmp(int *env, int save) {
-    hero_rebind_note(env, hero_rebind_below());
+    hero_rebind_saving(env, HERO_REBIND_JMP);
     __attribute__((musttail)) return atomic_load_explicit(&hero_rebind_real_sigsetjmp, memory_order_relaxed)(env, save);
 }
 
 static int hero_rebind_getcontext(void *context) {
-    hero_rebind_note(context, hero_rebind_below());
+    hero_rebind_saving(context, HERO_REBIND_CTX);
     __attribute__((musttail)) return atomic_load_explicit(&hero_rebind_real_getcontext, memory_order_relaxed)(context);
 }
 
