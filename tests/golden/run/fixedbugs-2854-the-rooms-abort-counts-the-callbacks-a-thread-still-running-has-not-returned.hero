@@ -1,0 +1,112 @@
+# Fixed 2026-11-26, defect 2854, lane room-mixedown (panel 259's R2,
+# provisional, author ratification pending): another thread of the program
+# jumps 1,000 times over a callback holding a 256 KB record, tells `main` so
+# through a mailbox and waits there, still running; `main` then jumps over
+# the same callback until the room's 1 GiB is full. The room's abort says how
+# many callbacks C called have not returned.
+# Symptom: the abort said 1047, `main`'s own, 3 runs of 3 on this Mac: each
+# thread's count joined the program's only when its thread ended, and the
+# other thread had not.
+# Cause and fix: every thread's count is the program's now, one atomic per
+# thread the program started and one for `main`'s, read without a lock
+# (`runtime/parts/callback.c`), so the abort says 2047, the 1,000 of the
+# thread still waiting and `main`'s 1,047; exact on every platform, since the
+# mailbox orders the other thread's last callback before `main`'s first, and
+# the room's sizes are the program's records, the same everywhere.
+extern "fixedbugs-2752-levels.h"
+    function lv_try(cb: (function(i64) -> i64), n: i64) -> i64
+    function lv_throw(up: i64)
+
+record E0
+    x: i64
+
+record E1
+    a: E0
+    b: E0
+    c: E0
+    d: E0
+    e: E0
+    f: E0
+    g: E0
+    h: E0
+
+record E2
+    a: E1
+    b: E1
+    c: E1
+    d: E1
+    e: E1
+    f: E1
+    g: E1
+    h: E1
+
+record E3
+    a: E2
+    b: E2
+    c: E2
+    d: E2
+    e: E2
+    f: E2
+    g: E2
+    h: E2
+
+record E4
+    a: E3
+    b: E3
+    c: E3
+    d: E3
+    e: E3
+    f: E3
+    g: E3
+    h: E3
+
+record E5
+    a: E4
+    b: E4
+    c: E4
+    d: E4
+    e: E4
+    f: E4
+    g: E4
+    h: E4
+
+record Boxes
+    done: (mailbox i64)
+    never: (mailbox i64)
+
+function e4(n: i64) -> E4
+    v0 = E0(x: n)
+    v1 = E1(a: v0, b: v0, c: v0, d: v0, e: v0, f: v0, g: v0, h: v0)
+    v2 = E2(a: v1, b: v1, c: v1, d: v1, e: v1, f: v1, g: v1, h: v1)
+    v3 = E3(a: v2, b: v2, c: v2, d: v2, e: v2, f: v2, g: v2, h: v2)
+    return E4(a: v3, b: v3, c: v3, d: v3, e: v3, f: v3, g: v3, h: v3)
+
+function e5(n: i64) -> E5
+    v4 = e4(n)
+    return E5(a: v4, b: v4, c: v4, d: v4, e: v4, f: v4, g: v4, h: v4)
+
+function body(n: i64) -> i64
+    v = e5(n)
+    lv_throw(up: 0)
+    return v.a.a.a.a.a.x
+
+function holder(boxes: Boxes) -> i64
+    total: i64 @= 0
+
+    for i in range(from: 0, to: 1000)
+        total @ total + lv_try(cb: body, n: i)
+
+    boxes.done.send(total).must()
+    _ = boxes.never.receive(within_ms: -1).must()
+    return total
+
+function main()
+    boxes = Boxes(done: mailbox(), never: mailbox())
+    other = spawn(holder, boxes).must()
+    print("the other thread jumped ", boxes.done.receive(within_ms: -1).must(), " times")
+    total: i64 @= 0
+
+    for i in range(from: 0, to: 3000)
+        total @ total + lv_try(cb: body, n: i)
+
+    print("main ", total, " ", other.wait())

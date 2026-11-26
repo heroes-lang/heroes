@@ -101,3 +101,14 @@ function main()
 # promises such a program. So this loop now ends at that bound's abort,
 # which says how many callbacks C called have not returned, and the case's
 # `.expected` was changed by hand that day to pin it (the words up to the number: with the other thread still running the number leaves its callbacks out, defect d-lane-land259-2).
+#
+# Corrected 2026-11-26, lane room-mixedown (defect 2854): the number counts
+# both threads now, every thread's count being the program's and read while
+# it runs (`runtime/parts/callback.c`), where it left the other thread's
+# out: 1021, 916, 1016, 797, 1036 and 1141 in six runs on this Mac before,
+# 2047 three times and 2046 five times in eight after. Which of the two
+# depends on whether the other thread was inside a callback when the abort
+# read its count, which the two threads' order decides and nothing in this
+# program fixes, so the case still pins the words up to `while`; the exact
+# count is pinned where a mailbox orders the threads
+# (`fixedbugs-2854-the-rooms-abort-counts-the-callbacks-a-thread-still-running-has-not-returned`).
