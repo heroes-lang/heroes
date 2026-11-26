@@ -366,6 +366,9 @@ function unbuildable_on_windows() -> [Skip]
         Skip(name: "tests/golden/run/fixedbugs-2850-a-handler-jumps-into-a-coroutine-made-after-the-uc-link-naming-it-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2850-a-handler-jumps-into-the-third-coroutine-of-a-chain-of-uc-links-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2850-a-siglongjmp-out-of-a-handler-onto-frames-that-reuse-a-uc-link-started-coroutines-ended-stack-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2851-a-handler-jumps-into-a-coroutine-that-yielded-unseen-saving-into-its-heap-context-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2851-a-handler-jumps-into-a-coroutine-that-yielded-unseen-saving-into-its-static-context-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2851-a-siglongjmp-out-of-a-handler-onto-frames-that-reuse-a-heap-context-coroutines-ended-stack-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
     ]
 
 # Why the program at `source` is not built on this machine: one of
@@ -645,7 +648,10 @@ test "every program Windows cannot build is a file that exists, skipped there al
     # Then the 5 of defect 2850 (lane sig-family), whose one header, compiled
     # alone by `zig cc` 0.15.2 for both Windows targets on 2026-11-26, was
     # refused at `ucontext.h` not found (`POSIX_CONTEXT_SHAPES_ON_WINDOWS`).
-    assert unbuildable_on_windows().len() == 177
+    # Then the 3 of defect 2851 (lane sig-family), whose one header, compiled
+    # alone by `zig cc` 0.15.2 for both Windows targets on 2026-11-26, was
+    # refused at `link.h` not found (`POSIX_CONTEXT_SHAPES_ON_WINDOWS`).
+    assert unbuildable_on_windows().len() == 180
 
     for one in unbuildable_on_windows()
         assert strings.has_prefix(s: one.name, prefix: "tests/golden/run/")

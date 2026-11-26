@@ -207,8 +207,9 @@ int(setcontext)(const ucontext_t *ucp) {
  * when the swap returns here (or fails). The target is judged only for a
  * landing in frames already left (rule 6). The C library saves into `oucp` at
  * the call below and the other context returns here through it. Once the
- * switch has returned the context switched to is read only where it provably
- * lives, and by the kernel (defect d-lane-d2745-1): the end of a range's
+ * switch has returned the context switched to is copied by the kernel
+ * wherever it is mapped, never loaded (defects d-lane-d2745-1 and 2851), a
+ * context that cannot be read proving no end: the end of a range's
  * coroutine is what the switches made from it while this one waited say,
  * with that word (`hero_sig_range_returned`). It carries what the C
  * library's declaration writes after its parameters (`HERO_CTX_SWAP_RETURN`,

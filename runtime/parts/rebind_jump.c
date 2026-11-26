@@ -39,25 +39,19 @@ static bool hero_rebind_ctx_word(const void *uc, uintptr_t *word) {
     return true;
 }
 
-/* Whether the context a swap switched to names, once the switch has
- * returned, another stack pointer than `entered`: one witness of its
- * coroutine's life beside the switches made from its range (a yield through a
- * switch this route never sees still moves it), read only where the context
- * provably lives and by the kernel, so a page made unreadable since is an
- * answer and never a fault; elsewhere nothing is read and the answer is false
- * (defect d-lane-d2745-1: the word was read wherever the context lay, and a
- * coroutine that gave it back crashed the program inside the runtime). */
+/* Whether the coroutine a swap switched to may still be alive once the switch
+ * has returned: its context naming another stack pointer than `entered`, one
+ * witness of its life beside the switches made from its range (a yield
+ * through a switch this route never sees still moves it), copied by the
+ * kernel wherever the context is mapped, never loaded (defect d-lane-d2745-1:
+ * the word was loaded wherever the context lay, and a coroutine that gave it
+ * back crashed the program inside the runtime); a context that cannot be read
+ * proves no end (defect 2851: until then one that did not provably live was
+ * not read, and its coroutine was judged ended). */
 static bool hero_rebind_ctx_moved(const void *uc, uintptr_t entered) {
-    const unsigned char *at = (const unsigned char *)uc + HERO_REBIND_CTX_SP;
     uintptr_t word = 0;
-    mach_vm_size_t got = 0;
-    if (!hero_rebind_lives(at, sizeof word)) return false;
-    if (mach_vm_read_overwrite(mach_task_self(), (mach_vm_address_t)(uintptr_t)at, sizeof word,
-                               (mach_vm_address_t)(uintptr_t)&word, &got) != KERN_SUCCESS ||
-        got != sizeof word) {
-        return false;
-    }
-    return hero_rebind_strip_d(word) != entered;
+    if (!hero_rebind_ctx_word(uc, &word)) return true;
+    return word != entered;
 }
 
 /* Whether `setcontext` would jump to `uc`: it refuses a context whose size
@@ -179,8 +173,8 @@ static void hero_rebind_set(const void *uc) {
  * in its own frame, and only the entries it marked are released, by serial,
  * when the swap returns here (or fails). The target is judged only for a
  * landing in frames already left (rule 6). Once the switch has returned the
- * context switched to is read only where it provably lives, and by the kernel
- * (defect d-lane-d2745-1): the end of a range's coroutine is what the switches
+ * context switched to is copied by the kernel wherever it is mapped, never
+ * loaded (defects d-lane-d2745-1 and 2851): the end of a range's coroutine is what the switches
  * made from it while this one waited say, with that word
  * (`hero_rebind_range_returned`). */
 __attribute__((noinline)) static int hero_rebind_swapcontext(void *from, const void *to) {
