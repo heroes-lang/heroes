@@ -1,0 +1,8 @@
+note: the package `pk` is read from the folder `tests/golden/unsupported/layer-a-packages-group-over-the-runtimes-own-header-says-no-layer.case/pk/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+error[ffi_layer_unreached]: this group says `layer`, and `hero_os.h` is the runtime's own header, none of the platform layer's, and includes none of them, so nothing it binds is the layer's: take the word out
+  at tests/golden/unsupported/layer-a-packages-group-over-the-runtimes-own-header-says-no-layer.case/pk/me.hero:3:20
+    |
+  3 | extern "hero_os.h" layer  #~ ffi_layer_unreached
+    |                    ^^^^^
+  note: the platform layer's members are compiled and linked only for a program whose groups say `layer`; a program none of whose groups says it links nothing of the layer, so its build asks nothing of it; a word that binds nothing makes every program reaching this group pay for the layer
+  fix (certain): take `layer` out
