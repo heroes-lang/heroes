@@ -1,0 +1,49 @@
+# Fixed 2026-11-25, panel 259's R1 (route E, provisional, author
+# ratification pending), lane land259 (panel 259's compiler-engineer,
+# `lend_carved`): a local lent in place and a buffer lent to a call that
+# starts or yields a coroutine of its own switch, on stacks carved from the
+# thread's own, each lend open across the switch. A correct program.
+# Symptom: `body holds 1001 lent 30 20 31 21` where 8 and the
+# lends' 10 20 11 21 are right, then `panic: a buffer lent to C was given
+# back at an address its region does not hold ...`, 3 runs of 3 on this Mac;
+# under `--sanitize` a bus error AddressSanitizer reports.
+# Cause: panel 258's R1 gave back the room of every take of a frame
+# below the taking one on the thread's own stack, an order of addresses a
+# switch C makes can falsify, so a live value's room was handed to another
+# frame.
+# Fix: no take and no lend is judged given back by its frame's address: each
+# is a block or a region of its own, given back by its own give
+# (`runtime/parts/frame.c`, `runtime/parts/lend_aside.c`; panel 259's R1,
+# route E).
+extern "fixedbugs-buffers-lent-across-a-librarys-own-switch-on-carved-stacks.h"
+    function ow_resume(k: i64) -> i64
+    function ow_host(body: (function(i64) -> i64), n: i64) -> i64
+    function ow_bump(@n: i64)
+    function ow_start_lent(k: i64, f: (function(i64) -> i64), @buf: [u8] counted_by 8 lent)
+    function ow_yield_lent(k: i64, @buf: [u8] counted_by 8 lent)
+
+function run(k: i64) -> i64
+    n: i64 @= k * 1000
+    ow_bump(@n)
+    buf: [u8] @= []
+    ow_yield_lent(k: k, @buf)
+    ow_bump(@n)
+    print("coroutine ", k, " lent ", buf[0], " ", buf[1])
+    return n
+
+function body(n0: i64) -> i64
+    mine: i64 @= n0
+    ow_bump(@mine)
+    b0: [u8] @= []
+    ow_start_lent(k: 0, f: run, @b0)
+    b1: [u8] @= []
+    ow_start_lent(k: 1, f: run, @b1)
+    print("body holds ", mine, " lent ", b0[0], " ", b0[1], " ", b1[0], " ", b1[1])
+    b = ow_resume(k: 1)
+    print("body holds ", mine)
+    a = ow_resume(k: 0)
+    print("body holds ", mine, " coroutines ", a, " ", b)
+    return mine
+
+function main()
+    print("lent carved: ", ow_host(body: body, n: 7))

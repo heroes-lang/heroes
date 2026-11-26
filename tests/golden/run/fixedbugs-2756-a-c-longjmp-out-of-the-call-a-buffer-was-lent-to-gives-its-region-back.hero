@@ -32,3 +32,12 @@ function main()
         total @ total + lv_try(cb: body, n: 1)
 
     print("jumped, sum ", total)
+
+# Corrected 2026-11-25, lane land259 (panel 259's R1, route E,
+# provisional, author ratification pending): the fix above is gone. No take
+# and no lend is judged given back by its frame's address any more, since an
+# order of addresses a switch of stacks C makes can falsify handed live
+# values to other frames (panel 259's cells); what the frames C left held
+# stays held until the program ends, counted against the room's 1 GiB with
+# every lent region's mapped bytes (spec section 13), and this program's
+# jumps stay under it, so its output and end are as they were.

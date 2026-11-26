@@ -1,1 +1,1 @@
-jumped, sum 21000 main holds 2 after 3
+!panic: the room large values take off the stack is full, 1 GiB for the whole program, while 963 callbacks C called have not returned

@@ -1,1 +1,1 @@
-jumped inside a coroutine: 10 35021
+!panic: the room large values take off the stack is full, 1 GiB for the whole program, while 2047 callbacks C called have not returned

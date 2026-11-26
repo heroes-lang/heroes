@@ -96,3 +96,13 @@ function main()
     d = ow_resume(k: 1)
     c = ow_resume(k: 0)
     print("order 1 0: ", c, " ", d)
+
+# Corrected 2026-11-25, lane land259 (panel 259's R1, route E,
+# provisional, author ratification pending): the fix above is gone, and on
+# that date `runtime/parts/stack_lane.c` and `runtime/parts/frame_aside.c`
+# with it. No take and no lend is judged given back by its frame's address
+# on any stack, since an order of addresses a switch of stacks C makes can
+# falsify handed live values to other frames (panel 259's cells): each is a
+# block or a region of its own, given back by its own give
+# (`runtime/parts/frame.c`, `runtime/parts/lend_aside.c`), which is what
+# keeps this program right now.
