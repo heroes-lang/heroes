@@ -11,6 +11,7 @@
 use bytes
 use cursor
 use diag
+use keywords
 use shown_char
 use token
 
@@ -114,11 +115,22 @@ function lower_is(word: str, want: str) -> bool
 # (panel 240, the spec-warden's condition 3; design.md §4.17), and the head
 # junk's report says it (`parse/members_below.junk_after_head`). Anywhere
 # else, nothing.
-function unmarked(c: cursor.Cursor) -> str
-    if c.pos < 2 || c.tokens[c.pos - 1].kind != .str_lit || c.tokens[c.pos - 2].kind != .kw_extern
-        return ""
-
+#
+# **And where `layer` stands** (panel 260): right after the header's string,
+# before the library, so `layer` written after a library's name is told
+# where it goes, and junk after `layer` what may follow it.
+function unmarked(c: cursor.Cursor, text: str) -> str
     if !cursor.at(c, .ident) && !cursor.at(c, .str_lit)
+        return ""
+    at = c.pos
+
+    if cursor.at(c, .ident) && cursor.slice_of(text, cursor.current_span(c)) == keywords.WORD_LAYER && at >= 4 && c.tokens[at - 1].kind == .str_lit && c.tokens[at - 2].kind == .ident && c.tokens[at - 3].kind == .str_lit && c.tokens[at - 4].kind == .kw_extern
+        return "`" + keywords.WORD_LAYER + "` stands right after the header's string and before the library, as `extern \"libnow.h\" layer link \"now\"`; "
+
+    if at >= 3 && c.tokens[at - 1].kind == .ident && cursor.slice_of(text, c.tokens[at - 1].span) == keywords.WORD_LAYER && c.tokens[at - 2].kind == .str_lit && c.tokens[at - 3].kind == .kw_extern
+        return "after `" + keywords.WORD_LAYER + "` a group writes `link` or `pkgconfig` and its library's name in quotes, as `layer link \"now\"`, or ends the line there; "
+
+    if at < 2 || c.tokens[at - 1].kind != .str_lit || c.tokens[at - 2].kind != .kw_extern
         return ""
     return "after the header's name a group writes `link` or `pkgconfig` and its library's name in quotes, as `link \"sqlite3\"` or `pkgconfig \"raylib\"`, or ends the line there; "
 

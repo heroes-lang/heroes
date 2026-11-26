@@ -294,7 +294,7 @@ test "a face with no row or no ledger, a floor misnamed and a row with no face a
     modules = [
         rebel_tree.Module(path: "bytes", text: "# B.\n")
         rebel_tree.Module(path: "bytes/internal/x", text: "# X.\n")
-        rebel_tree.Module(path: "io/hero_stream", text: "# S.\n\nextern \"hero_stream.h\"\n")
+        rebel_tree.Module(path: "io/hero_stream", text: "# S.\n\nextern \"hero_stream.h\" layer\n")
         rebel_tree.Module(path: "math/libm", text: "# L.\n\nextern \"math.h\" link \"m\"\n")
         rebel_tree.Module(path: "compress/zstd/tables", text: "# T.\n")
         rebel_tree.Module(path: "compress", text: "# C.\n")

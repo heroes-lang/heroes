@@ -447,9 +447,10 @@ export function tokenize(source: string): Token[] {
   /**
    * Where the parser reads a contextual word as a mark, and nowhere else
    * (spec § 1's `Use`, § 13's `Extern`, `Member` and `CParam`): `as` on a
-   * `use` line after its path; `link` or `pkgconfig` on an `extern` line after
-   * its header's string; `rest` and `zero` together, as the words `rest:
-   * zero` that end a call's list (spec § 13, `selfhost/parse/rest_words.hero`):
+   * `use` line after its path; `layer` on an `extern` line after its header's
+   * string, and `link` or `pkgconfig` after that string or that `layer`;
+   * `rest` and `zero` together, as the words `rest: zero` that end a call's
+   * list (spec § 13, `selfhost/parse/rest_words.hero`):
    * after a `(` or a `,` or opening a line, and before a `,`, a `)`, a comment
    * or the line's end; the other eleven on the indented lines of an extern
    * group, which runs from a column-0 `extern` line to the next line whose
@@ -483,7 +484,12 @@ export function tokenize(source: string): Token[] {
     // `(thread T)` and `(mailbox T)`'s words, contextual since panel 254.
     if (word === 'thread' || word === 'mailbox') return handleType(word, start, end);
     if (word === 'as') return lineHead === 'use' && source[start - 1] === ' ' && previous !== null && previous.kind === 'ident';
-    if (word === 'link' || word === 'pkgconfig') return lineHead === 'extern' && previous !== null && previous.kind === 's';
+    // `layer` right after an extern line's string, and `link` or `pkgconfig`
+    // after that string or that `layer` (panel 260).
+    if (word === 'layer') return lineHead === 'extern' && previous !== null && previous.kind === 's';
+    if (word === 'link' || word === 'pkgconfig') {
+      return lineHead === 'extern' && previous !== null && (previous.kind === 's' || (previous.kind === 'k' && previous.text === 'layer'));
+    }
     if (word === 'rest') return '(,\n'.includes(charBefore(start)) && /^ *: *zero\b *(?:[,)#]|$)/.test(restOfLine(end));
     if (word === 'zero') {
       return (

@@ -11,7 +11,7 @@
 # Fix: the members call `runtime/platform/hero_layer_maths.h`, which needs
 # nothing but the C library, and a test of the compiler links every member
 # whole at every level (`selfhost/cli/layer_reach.hero`).
-extern "hero_ui.h"
+extern "hero_ui.h" layer
     function hero_ui_native_here() -> i64
 
 function main()

@@ -509,7 +509,7 @@ constant FIELDS: str
 
 # The tree's `net/hero_net.hero`, byte for byte.
 constant FLOOR: str
-    "# The platform layer's sockets, bound for the grading test's package tree.\n\nextern \"hero_net.h\"\n    constant HERO_NET_OK: i64\n"
+    "# The platform layer's sockets, bound for the grading test's package tree.\n\nextern \"hero_net.h\" layer\n    constant HERO_NET_OK: i64\n"
 
 test "a package tree beside the answer: a package compiles, the package's own extern builds, an answer's is refused, and a program naming none is graded as without it"
     if thesis_sandbox.unrunnable() != ""

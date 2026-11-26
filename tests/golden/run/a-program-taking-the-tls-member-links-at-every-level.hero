@@ -5,7 +5,7 @@
 # in the UI and audio families) is refused only on the leg that lacks it, at
 # -O0 and -O2 and never under --sanitize. This family linked in the Linux
 # arm64 image before the repair; the case holds it.
-extern "hero_tls.h"
+extern "hero_tls.h" layer
     function hero_tls_available() -> i64
 
 function main()

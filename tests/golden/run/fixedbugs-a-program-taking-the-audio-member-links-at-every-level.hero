@@ -8,7 +8,7 @@
 # `link "m"`, and a member cannot write it.
 # Fix: both take the sine of a turn from `runtime/platform/hero_layer_maths.h`,
 # which needs nothing but the C library.
-extern "hero_audio.h"
+extern "hero_audio.h" layer
     function hero_audio_last_error() -> i64
 
 function main()
