@@ -1,0 +1,405 @@
+# The debugger: a machine run under commands, one line each, as gdb's are
+# typed. It keeps breakpoints, an ordered set of addresses in Rebel's
+# `containers/ordered`, and a trail of the last instructions run, a bounded
+# deque in `containers/deque`, so `trace` shows how the program got where it
+# stopped. `continue` stops before an instruction at a breakpoint, never
+# after; a breakpoint at the pc it starts from is stepped over first, as
+# gdb does. Every answer is a list of lines, the program's own output among
+# them where it wrote any, so a session reads the same from a terminal and
+# from a script.
+
+use <rebel>/bytes
+use <rebel>/containers/deque
+use <rebel>/containers/ordered
+use <rebel>/lists
+use <rebel>/numbers
+use <rebel>/strings
+
+use asm/assembler
+use cpu/bus
+use cpu/execute
+use cpu/machine
+use debug/views
+use disasm/disasm
+use image/format
+use isa/decode
+use isa/ops
+use isa/registers
+use isa/word
+use run/runner
+
+## The session
+
+# How many instructions the trail keeps.
+constant TRAIL: i64
+    16
+
+# The most instructions one `continue` runs before it gives the prompt back.
+constant BUDGET: i64
+    10_000_000
+
+# One instruction the trail keeps.
+record Traced
+    # Its address.
+    pc: i64
+    # Its word.
+    raw: i64
+    # The register it wrote, -1 for none.
+    wrote: i64
+    # What that register holds after it.
+    value: i64
+
+# A debugging session.
+record Debugger
+    # The machine.
+    m: machine.Machine
+    # The program's symbols by address.
+    names: disasm.Names
+    # The program's symbols by name.
+    symbols: {str: i64}
+    # The breakpoints' shape, an ordered set.
+    breaks: ordered.Ordered
+    # The breakpoints' addresses.
+    break_list: [i64]
+    # The trail's shape, a bounded deque.
+    trail: deque.Deque
+    # The trail's instructions.
+    trail_items: [Traced]
+    # Why the program stopped for good, "" while it can run.
+    ended: str
+
+# One command's answer.
+record Reply
+    # The lines to show.
+    lines: [str]
+    # Whether the session is over.
+    quit: bool
+
+# A session over `m`, which holds `p`.
+#
+# - `m`: the machine, loaded.
+# - `p`: the program, for its symbols.
+function new_debugger(m: machine.Machine, p: format.Program) -> Debugger
+    symbols: {str: i64} @= {}
+
+    for s in p.symbols
+        symbols[s.name] @ s.address
+
+    return Debugger(
+        m: m,
+        names: disasm.names_of(p),
+        symbols: symbols,
+        breaks: ordered.new_set(),
+        break_list: [],
+        trail: deque.new_bounded(TRAIL),
+        trail_items: [],
+        ended: ""
+    )
+
+## Commands
+
+# The answer to one command line.
+#
+# - `d`: the session; a command may run the machine, set a breakpoint or
+#   end the session.
+# - `line`: what was typed.
+function command(@d: Debugger, line: str) -> Reply
+    words = strings.words(line)
+
+    if words.len() == 0
+        return said([])
+    rest = words.slice(from: 1, to: words.len())
+
+    return match words[0]
+        "break" | "b"    => said(set_break(@d, rest: rest))
+        "delete" | "d"   => said(delete_break(@d, rest: rest))
+        "breaks"         => said(list_breaks(d))
+        "step" | "s"     => said(step(@d, rest: rest))
+        "continue" | "c" => said(resume(@d))
+        "regs" | "r"     => said(views.registers_of(d.m))
+        "csrs"           => said(views.csrs_of(d.m))
+        "x"              => said(examine(d, rest: rest))
+        "list" | "l"     => said(list(d, rest: rest))
+        "trace" | "t"    => said(trail_of(d))
+        "help" | "h"     => said(help())
+        "quit" | "q"     => Reply(lines: [], quit: true)
+        _                => said([f"no command \"{words[0]}\"; help lists them"])
+
+function said(lines: [str]) -> Reply
+    return Reply(lines: lines, quit: false)
+
+function help() -> [str]
+    return [
+        "break LOC       stop before the instruction at LOC: a label, a register, either plus N, or an address"
+        "delete LOC      remove the breakpoint at LOC"
+        "breaks          list the breakpoints"
+        "step [N]        run N instructions, 1 by default, each shown with what it wrote"
+        "continue        run to a breakpoint or the program's end"
+        "regs            the pc and the registers"
+        "csrs            the machine's CSRs and counters"
+        "x LOC [N]       N bytes of memory from LOC, 64 by default"
+        "list [LOC] [N]  N instructions from LOC, the pc and 8 by default"
+        "trace           the last instructions run"
+        "quit            end the session"
+    ]
+
+# The address `text` names: a label, a register's value, either plus a
+# number (`loop+8`, `sp+16`), or a number.
+function location(d: Debugger lent, text: str) -> i64?
+    parts = strings.split_n(s: text, sep: "+", n: 2)
+    base: i64 @= 0
+    named = d.symbols[parts[0]]
+    held = registers.number_of(parts[0])
+
+    if !named.is_err()
+        base @ named.must()
+    else if !held.is_err()
+        base @ machine.reg(d.m, n: held.must())
+    else
+        base @ number_of(parts[0])?
+
+    if parts.len() == 1
+        return ok(base)
+    return ok(word.wrap(base + number_of(parts[1])?))
+
+function number_of(text: str) -> i64?
+    n = numbers.parse_int_literal(text)
+
+    if n.is_err() || n.must() < 0 || n.must() > word.MASK
+        return fail(code: "invalid", msg: f"\"{text}\" is no label, register or address")
+    return n
+
+## Breakpoints
+
+function set_break(@d: Debugger, rest: [str]) -> [str]
+    if rest.len() != 1
+        return ["break takes one location"]
+
+    return match location(d, text: rest[0])
+        .err e => [e.msg]
+        .ok at =>
+            _ = ordered.add(@d.breaks, key_list: @d.break_list, key: at, less: lower)
+            [f"breakpoint at {where(d, at: at)}"]
+
+function delete_break(@d: Debugger, rest: [str]) -> [str]
+    if rest.len() != 1
+        return ["delete takes one location"]
+
+    return match location(d, text: rest[0])
+        .err e => [e.msg]
+        .ok at =>
+            if ordered.discard(@d.breaks, key_list: @d.break_list, key: at, less: lower)
+                [f"deleted the breakpoint at {where(d, at: at)}"]
+            else
+                [f"no breakpoint at {where(d, at: at)}"]
+
+function list_breaks(d: Debugger lent) -> [str]
+    out: [str] @= []
+
+    for at in ordered.keys_in_order(d.breaks, key_list: d.break_list)
+        out @ out.push(where(d, at: at))
+
+    if out.len() == 0
+        return ["no breakpoints"]
+    return out
+
+function lower(a: i64, b: i64) -> bool
+    return a < b
+
+function where(d: Debugger lent, at: i64) -> str
+    described = disasm.describe(d.names, address: at)
+
+    if described == ""
+        return word.hex(at)
+    return word.hex(at) + " " + described
+
+## Running
+
+# Runs `N` instructions, each shown as the trail keeps it.
+function step(@d: Debugger, rest: [str]) -> [str]
+    count: i64 @= 1
+
+    if rest.len() > 0
+        count @ numbers.parse_int(rest[0]).default(0)
+
+    if count < 1 || count > 1000
+        return ["step takes a count from 1 to 1000"]
+    out: [str] @= []
+
+    for _ in range(from: 0, to: count)
+        if d.ended != ""
+            out @ out.push(f"the program has ended: {d.ended}")
+            return out
+        shown = advance(@d)
+        out @ out.push(traced_line(d, t: shown))
+        out @ lists.concat(xs: out, then: program_output(@d))
+
+    return out
+
+# Runs to the next breakpoint, or until the program ends.
+function resume(@d: Debugger) -> [str]
+    out: [str] @= []
+    k: i64 @= 0
+
+    while k < BUDGET
+        if d.ended != ""
+            out @ lists.concat(xs: out, then: program_output(@d))
+            out @ out.push(f"the program has ended: {d.ended}")
+            return out
+
+        if k > 0 && ordered.contains(d.breaks, key_list: d.break_list, key: d.m.pc, less: lower)
+            out @ lists.concat(xs: out, then: program_output(@d))
+            out @ out.push(f"breakpoint at {where(d, at: d.m.pc)}")
+            out @ out.push(
+                views.instruction_line(pc: d.m.pc, raw: bus.fetch(d.m.bus, at: d.m.pc).default(0), names: d.names)
+            )
+            return out
+        _ = advance(@d)
+        k @ k + 1
+
+    out @ lists.concat(xs: out, then: program_output(@d))
+    out @ out.push(f"still running after {BUDGET} instructions; continue goes on")
+    return out
+
+# Runs one step, keeps it in the trail, and notes where the program ended.
+function advance(@d: Debugger) -> Traced
+    pc = d.m.pc
+    raw = bus.fetch(d.m.bus, at: pc).default(0)
+    event = execute.step(@d.m)
+    wrote: i64 @= -1
+
+    if event == .retired && d.m.pc != d.m.csrs.vector
+        wrote @ written(raw)
+    value: i64 @= 0
+
+    if wrote > 0
+        value @ machine.reg(d.m, n: wrote)
+    t = Traced(pc: pc, raw: raw, wrote: wrote, value: value)
+    deque.push_back(@d.trail, items: @d.trail_items, value: t)
+
+    if event == .retired || event == .interrupted
+        return t
+    stop = runner.after(event)
+
+    if !stop.is_err() && stop.must() != .breakpoint
+        d.ended @ runner.told(stop.must(), d.m)
+    return t
+
+# The register the instruction `raw` writes, -1 where it writes none.
+function written(raw: i64) -> i64
+    found = decode.decode(raw)
+
+    if found.is_err() || found.must().rd == 0
+        return -1
+
+    return match ops.format_of(found.must().op)
+        .r | .i | .shift | .load | .u | .j | .jalr | .csr | .csri => found.must().rd
+        .s | .b | .system | .fence                                => -1
+
+function traced_line(d: Debugger lent, t: Traced) -> str
+    shown = views.instruction_line(pc: t.pc, raw: t.raw, names: d.names)
+
+    if t.wrote < 0
+        return shown
+    return strings.pad_end(s: shown, width: 56, pad: " ") + f"{registers.abi_name(t.wrote)}={word.hex(t.value)}"
+
+function trail_of(d: Debugger lent) -> [str]
+    out: [str] @= []
+
+    for t in deque.to_list(d.trail, items: d.trail_items)
+        out @ out.push(traced_line(d, t: t))
+
+    if out.len() == 0
+        return ["nothing has run yet"]
+    return out
+
+# The program's console since it was last shown, as lines `| text`.
+function program_output(@d: Debugger) -> [str]
+    sent = runner.console(@d.m)
+
+    if sent.len() == 0
+        return []
+    out: [str] @= []
+
+    for line in strings.lines(bytes.to_text_lossy(sent))
+        out @ out.push("| " + line)
+
+    return out
+
+## Looking
+
+function examine(d: Debugger lent, rest: [str]) -> [str]
+    if rest.len() < 1 || rest.len() > 2
+        return ["x takes a location and a count of bytes"]
+    count: i64 @= 64
+
+    if rest.len() == 2
+        count @ numbers.parse_int(rest[1]).default(0)
+
+    if count < 1 || count > 4096
+        return ["x shows 1 to 4096 bytes"]
+
+    return match location(d, text: rest[0])
+        .err e => [e.msg]
+        .ok at => match views.memory_of(d.m, at: at, count: count)
+            .ok lines => lines
+            .err e    => [e.msg]
+
+function list(d: Debugger lent, rest: [str]) -> [str]
+    at: i64 @= d.m.pc
+    count: i64 @= 8
+
+    if rest.len() > 0
+        at @ match location(d, text: rest[0])
+            .ok found => found
+            .err e    => return [e.msg]
+
+    if rest.len() > 1
+        count @ numbers.parse_int(rest[1]).default(0)
+
+    if count < 1 || count > 256 || at % 4 != 0
+        return ["list takes an address that is a multiple of 4, and 1 to 256 instructions"]
+
+    return match views.listing_of(d.m, at: at, count: count, names: d.names)
+        .ok lines => lines
+        .err e    => [e.msg]
+
+## Tests
+
+# A session over a loop that counts a0 down from 3, then exits with it.
+function session() -> Debugger
+    source = "_start: li a0, 3\nloop: addi a0, a0, -1\n bnez a0, loop\n li a7, 93\n ecall\n"
+    p = assembler.assemble(source, base: bus.RAM_BASE).must()
+    return new_debugger(m: runner.load(p, ram_size: 4096, input: []).must(), p: p)
+
+test "command: a breakpoint stops continue before its instruction, each time"
+    d @= session()
+    assert command(@d, line: "break loop").lines == ["breakpoint at 80000004 <loop>"]
+    first = command(@d, line: "continue").lines
+    assert first[0] == "breakpoint at 80000004 <loop>"
+    assert machine.reg(d.m, n: 10) == 3
+    _ = command(@d, line: "continue")
+    assert machine.reg(d.m, n: 10) == 2
+    assert command(@d, line: "delete loop").lines == ["deleted the breakpoint at 80000004 <loop>"]
+    last = command(@d, line: "continue").lines
+    assert last[last.len() - 1] == "the program has ended: exited with status 0 after 9 instructions"
+
+test "command: step shows what each instruction wrote, and the trail keeps it"
+    d @= session()
+    shown = command(@d, line: "step 2").lines
+    assert shown.len() == 2
+    assert strings.has_suffix(s: shown[1], suffix: "a0=00000002")
+    assert command(@d, line: "trace").lines == shown
+
+test "command: locations by label, register and number, and the ones refused"
+    d @= session()
+    assert command(@d, line: "x sp 4").lines == ["4 bytes at 0x80001000 are not all in the RAM"]
+    assert command(@d, line: "list loop+4 1").lines == ["80000008:  fe051ee3  bnez    a0, 0x80000004 <loop>"]
+    assert command(@d, line: "x 0x80000000 2").lines.len() == 1
+
+    for line in ["break nowhere", "break 0x1_0000_0000", "x 0x7ffffff0 4", "step 0", "step lots", "list loop+1", "fly", "x"]
+        answer = command(@d, line: line)
+        assert answer.lines.len() == 1
+        assert !answer.quit
+
+    assert command(@d, line: "quit").quit

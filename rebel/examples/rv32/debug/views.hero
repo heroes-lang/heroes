@@ -1,0 +1,136 @@
+# What the debugger shows: the registers, four to a line with their
+# calling-convention names; the machine CSRs and counters; a span of memory
+# as `hexdump -C` writes one, each line opening with its address; a span of
+# instructions as a listing, each symbol on a line of its own above the
+# instruction it names; and one traced instruction with the register it
+# wrote.
+
+use <rebel>/bytes
+use <rebel>/strings
+
+use cpu/bus
+use cpu/machine
+use disasm/disasm
+use image/format
+use isa/registers
+use isa/word
+
+## Registers
+
+# The pc and the 32 registers, four to a line: `a0=0000002a`.
+#
+# - `m`: the machine.
+function registers_of(m: machine.Machine lent) -> [str]
+    out: [str] @= [f"pc={word.hex(m.pc)}"]
+    row: [str] @= []
+
+    for n in range(from: 0, to: 32)
+        name = strings.pad_start(s: registers.abi_name(n), width: 4, pad: " ")
+        row @ row.push(f"{name}={word.hex(machine.reg(m, n: n))}")
+
+        if row.len() == 4
+            out @ out.push(row.join("  "))
+            row @ []
+
+    return out
+
+# The machine-mode CSRs and the counters, one line each.
+#
+# - `m`: the machine.
+function csrs_of(m: machine.Machine lent) -> [str]
+    c = m.csrs
+    return [
+        f"mstatus={word.hex(c.status)}  mie={word.hex(c.enabled)}  mtvec={word.hex(c.vector)}  mscratch={word.hex(c.scratch)}"
+        f"mepc={word.hex(c.epc)}  mcause={word.hex(c.cause)}  mtval={word.hex(c.value)}"
+        f"cycle={m.counters.cycles}  instret={m.counters.retired}"
+    ]
+
+## Memory
+
+# The `count` bytes from `at` as a dump, each line its address.
+#
+# - `m`: the machine.
+# - `at`: the first address.
+# - `count`: how many bytes, from 1.
+#
+# Fails `access_fault` where they are not all in the RAM.
+function memory_of(m: machine.Machine lent, at: i64, count: i64) -> [str]?
+    data = bus.peek(m.bus, at: at, count: count)?
+    out: [str] @= []
+    row: i64 @= 0
+
+    for line in strings.lines(bytes.format_hex_dump(data))
+        # `format_hex_dump` counts from 0; the address replaces that count,
+        # the dump taking no first offset (`xxd -o` and `hexdump -s` do).
+        if line.len() > 8
+            out @ out.push(word.hex(at + 16 * row) + line.slice(from: 8, to: line.len()))
+            row @ row + 1
+
+    return ok(out)
+
+## Instructions
+
+# `count` instructions from `at`, as a listing: `80000010:  00a00513  li a0, 10`,
+# each symbol at an address on a line of its own before it, `<loop>:`.
+#
+# - `m`: the machine.
+# - `at`: the first address, a multiple of 4.
+# - `count`: how many, from 1.
+# - `names`: the program's symbols.
+#
+# Fails `access_fault` where they are not all in the RAM.
+function listing_of(m: machine.Machine lent, at: i64, count: i64, names: disasm.Names lent) -> [str]?
+    data = bus.peek(m.bus, at: at, count: 4 * count)?
+    out: [str] @= []
+
+    for k in range(from: 0, to: count)
+        pc = at + 4 * k
+        label = disasm.name_at(names, address: pc)
+
+        if !label.is_err()
+            out @ out.push(f"{word.hex(pc)} <{label.must()}>:")
+        raw: i64 @= 0
+
+        for b in range(from: 0, to: 4)
+            raw @ raw | to_i64(data[4 * k + b]).must() << 8 * b
+
+        out @ out.push(instruction_line(pc: pc, raw: raw, names: names))
+
+    return ok(out)
+
+# One instruction as a listing writes it.
+#
+# - `pc`: its address.
+# - `raw`: its word.
+# - `names`: the program's symbols.
+function instruction_line(pc: i64, raw: i64, names: disasm.Names lent) -> str
+    return f"{word.hex(pc)}:  {word.hex(raw)}  {disasm.text_of(raw: raw, pc: pc, names: names)}"
+
+## Tests
+
+test "registers_of: the pc first, then eight lines of four"
+    m @= machine.new_machine(ram_size: 16, input: [])
+    machine.set_reg(@m, n: 10, value: 42)
+    lines = registers_of(m)
+    assert lines.len() == 9
+    assert lines[0] == "pc=80000000"
+    assert lines[1] == "zero=00000000    ra=00000000    sp=00000000    gp=00000000"
+    assert strings.contains(s: lines[3], substr: "  a0=0000002a")
+
+test "memory_of: the address in place of the offset, and a span past the RAM"
+    m @= machine.new_machine(ram_size: 32, input: [])
+    bus.place(@m.bus, at: bus.RAM_BASE + 16, data: [0x68, 0x69]).must()
+    lines = memory_of(m, at: bus.RAM_BASE + 16, count: 2).must()
+    assert lines.len() == 1
+    assert strings.has_prefix(s: lines[0], prefix: "80000010  68 69")
+    assert strings.has_suffix(s: lines[0], suffix: "|hi|")
+    assert memory_of(m, at: bus.RAM_BASE + 16, count: 32).is_err()
+
+test "listing_of: a symbol's line above its instruction"
+    m @= machine.new_machine(ram_size: 16, input: [])
+    bus.place(@m.bus, at: bus.RAM_BASE, data: [0x13, 0, 0, 0, 0x67, 0x80, 0, 0]).must()
+    names = disasm.names_of(
+        format.Program(base: bus.RAM_BASE, entry: bus.RAM_BASE, image: [], symbols: [format.Symbol(name: "f", address: bus.RAM_BASE + 4)])
+    )
+    lines = listing_of(m, at: bus.RAM_BASE, count: 2, names: names).must()
+    assert lines == ["80000000:  00000013  nop", "80000004 <f>:", "80000004:  00008067  ret"]

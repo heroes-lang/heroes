@@ -1,0 +1,137 @@
+# A program loaded into a fresh machine and run: its image placed at its
+# load address, the pc at its entry, the stack pointer at the RAM's end,
+# then steps until it exits, stops at a trap or a breakpoint, stalls, or
+# reaches the number of instructions it is allowed, so a program that loops
+# for ever ends all the same. What the program sent to its console is handed
+# out as bytes, never decoded, so a program that writes bytes that are not
+# UTF-8 is written out as it wrote them.
+
+use <rebel>/errors
+
+use cpu/bus
+use cpu/execute
+use cpu/machine
+use cpu/trap
+use cpu/uart
+use image/format
+use isa/word
+
+## Loading
+
+# A machine holding `p`, ready to run.
+#
+# - `p`: the program.
+# - `ram_size`: the RAM's bytes, a multiple of 4.
+# - `input`: the bytes its UART receives, which `read` takes from `fd` 0.
+#
+# Fails `access_fault` where the image does not fit in the RAM.
+function load(p: format.Program, ram_size: i64, input: [u8]) -> machine.Machine?
+    m @= machine.new_machine(ram_size: ram_size, input: input)
+    errors.context(bus.place(@m.bus, at: p.base, data: p.image), what: "loading the program")?
+    m.pc @ p.entry
+    machine.set_reg(@m, n: 2, value: machine.ram_end(m))
+    return ok(m)
+
+## Running
+
+# Why a run ended.
+variant Stop
+    # The program called `exit`.
+    exited
+        # Its status.
+        code: i64
+    # `ebreak`, with no handler.
+    breakpoint
+    # A trap with no handler.
+    trapped
+        # The cause.
+        cause: i64
+        # What `mtval` would hold.
+        value: i64
+    # `wfi` that nothing could wake.
+    stalled
+    # The instructions allowed were run.
+    limit
+
+# Runs `m` until it stops, or `budget` steps have run.
+#
+# - `m`: the machine.
+# - `budget`: the most steps, from 1.
+function run(@m: machine.Machine, budget: i64) -> Stop
+    ran: i64 @= 0
+
+    # A `while`, never `for _ in range(...)`, which would make a list of
+    # `budget` numbers first (spec § 11).
+    while ran < budget
+        event = execute.step(@m)
+
+        # Asked first, since `after` fails on a step that goes on, and a
+        # failure is a message made at every step (see `rv32`'s fights).
+        if event == .retired || event == .interrupted
+            ran @ ran + 1
+            continue
+        stop = after(event)
+
+        if !stop.is_err()
+            return stop.must()
+        ran @ ran + 1
+
+    return .limit
+
+# The stop `event` means, or `not_found` where the run goes on.
+#
+# - `event`: what a step did.
+function after(event: execute.Event) -> Stop?
+    return match event
+        .retired | .interrupted => fail(code: "not_found", msg: "the run goes on")
+        .exited e               => ok(.exited(code: e.code))
+        .breakpoint             => ok(.breakpoint)
+        .trapped t              => ok(.trapped(cause: t.cause, value: t.value))
+        .stalled                => ok(.stalled)
+
+# `stop` told in a line, the pc it left the machine at named.
+#
+# - `stop`: why the run ended.
+# - `m`: the machine it ended in.
+function told(stop: Stop, m: machine.Machine lent) -> str
+    return match stop
+        .exited e   => f"exited with status {e.code} after {m.counters.retired} instructions"
+        .breakpoint => f"ebreak at {word.hex_literal(m.pc - 4)} after {m.counters.retired} instructions"
+        .trapped t => f"stopped by a trap at {word.hex_literal(m.pc)}: {trap.cause_name(t.cause)} ({word.hex_literal(t.value)}) after {m.counters.retired} instructions"
+        .stalled => f"stalled at {word.hex_literal(m.pc)}: wfi with no interrupt that could wake it"
+        .limit   => f"stopped after {m.counters.retired} instructions, the most allowed"
+
+# The bytes the program sent since they were last taken.
+#
+# - `m`: the machine.
+function console(@m: machine.Machine) -> [u8]
+    return uart.drain(@m.bus.uart)
+
+## Tests
+
+function program(words: [i64]) -> format.Program
+    image: [u8] @= []
+
+    for w in words
+        for k in range(from: 0, to: 4)
+            image @ image.push(to_u8(w >> 8 * k & 0xff).must())
+
+    return format.Program(base: bus.RAM_BASE, entry: bus.RAM_BASE, image: image, symbols: [])
+
+test "run: exit's status, a loop that never ends, and a trap with its cause"
+    exits = program([0x05d0_0893, 0x0070_0513, 0x0000_0073])
+    m @= load(exits, ram_size: 64, input: []).must()
+    assert run(@m, budget: 100) == .exited(code: 7)
+    assert machine.reg(m, n: 2) == bus.RAM_BASE + 64
+    spins = program([0x0000_006f])
+    s @= load(spins, ram_size: 64, input: []).must()
+    assert run(@s, budget: 1000) == .limit
+    assert s.counters.retired == 1000
+    illegal = program([0x0000_0000])
+    i @= load(illegal, ram_size: 64, input: []).must()
+    assert run(@i, budget: 10) == .trapped(cause: trap.ILLEGAL_INSTRUCTION, value: 0)
+    assert told(.trapped(cause: 2, value: 0), i) == "stopped by a trap at 0x80000000: illegal instruction (0x00000000) after 0 instructions"
+
+test "load: an image larger than the RAM is refused"
+    big = program([0x13, 0x13, 0x13])
+    assert load(big, ram_size: 8, input: []).is_err()

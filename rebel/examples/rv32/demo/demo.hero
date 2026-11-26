@@ -1,0 +1,106 @@
+# The demo, which is this program's test: every sample of the folder it is
+# given assembled and written as an image under the work folder, a source
+# with errors told line by line, a damaged image refused, each image read
+# back from its file and run, one listed, and one debugged under the
+# commands of the standard input. Everything it prints is the same on every
+# machine and every run: no path, no clock and no address of the host's.
+
+use <rebel>/bytes
+use <rebel>/errors
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/path
+use <rebel>/strings
+
+use app/jobs
+use cpu/bus
+use image/format
+use run/runner
+
+## The samples
+
+# The sample programs, in the order the demo shows them, each with what its
+# UART receives.
+record Sample
+    # Its name, the source being `<name>.s`.
+    name: str
+    # What it reads.
+    input: str
+
+function samples() -> [Sample]
+    return [
+        Sample(name: "primes", input: "")
+        Sample(name: "sort", input: "")
+        Sample(name: "fib", input: "")
+        Sample(name: "strings", input: "Hello, RISC-V world!\n")
+        Sample(name: "muldiv", input: "")
+        Sample(name: "ticks", input: "")
+        Sample(name: "crash", input: "")
+    ]
+
+## The session
+
+# Runs the demo over the samples in `folder`, writing its images in `work`
+# and reading the debugger's commands from `commands`.
+#
+# - `folder`: the folder holding the samples' sources and `bad.s`.
+# - `work`: the folder the images are written to; made where it is not.
+# - `commands`: the debugger's commands, one a line.
+#
+# Fails where a sample cannot be read or assembled, or an image written or
+# read back.
+function run(folder: str, work: str, commands: io.Stream) -> ()?
+    fs.make_dir_all(work)?
+    print("== assembling")
+
+    for s in samples()
+        source = read_file(path.join_all([folder, s.name + ".s"]))?
+        p = jobs.assembled(source: source, name: s.name + ".s", base: bus.RAM_BASE)?
+        fs.write_bytes(image_path(work: work, name: s.name), data: format.encode(p))?
+        print(f"{s.name}.s: {jobs.summary(p)}")
+
+    print("")
+    print("== a source with mistakes")
+    bad = read_file(path.join_all([folder, "bad.s"]))?
+
+    match jobs.assembled(source: bad, name: "bad.s", base: bus.RAM_BASE)
+        .ok _  => print("bad.s assembled, which it must not")
+        .err e => print(e.msg)
+
+    print("")
+    print("== a damaged image")
+    damaged @= fs.read_bytes(image_path(work: work, name: "primes"))?
+
+    # One bit of the payload flipped: `^` takes `i64` alone (spec § 7), so
+    # the byte crosses to `i64` and back.
+    flipped = to_i64(damaged[format.HEADER + 5]).must() ^ 0x10
+    damaged[format.HEADER + 5] @ to_u8(flipped).must()
+    print(errors.format_line(format.decode(damaged, raw_base: bus.RAM_BASE)))
+
+    for s in samples()
+        print("")
+        print(f"== run {s.name}")
+        p = jobs.program_at(image_path(work: work, name: s.name))?
+        m @= runner.load(p, ram_size: 64 * 1024, input: bytes.from_text(s.input))?
+        stop = runner.run(@m, budget: 10_000_000)
+        console = bytes.to_text_lossy(runner.console(@m))
+
+        for line in strings.lines(console)
+            print("| " + line)
+
+        print(runner.told(stop, m))
+
+    print("")
+    print("== listing of fib, its first instructions")
+    fib = jobs.program_at(image_path(work: work, name: "fib"))?
+    listed = jobs.listing(fib)?
+
+    for line in listed.slice(from: 0, to: 24)
+        print(line)
+
+    print("")
+    print("== debugging fib")
+    return jobs.debug(fib, input: "", memory: 64 * 1024, commands: commands)
+
+function image_path(work: str, name: str) -> str
+    return path.join_all([work, name + ".img"])

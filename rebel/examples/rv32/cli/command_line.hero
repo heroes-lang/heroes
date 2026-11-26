@@ -1,0 +1,189 @@
+# The command line, declared with Rebel's `flags`: one subcommand for each
+# job, `asm`, `run`, `debug`, `disasm` and `demo`, and the options each
+# takes. What the person typed is read into a `Request`, so the rest of the
+# program never sees a word of it again.
+
+use <rebel>/flags
+use <rebel>/numbers
+
+use cpu/bus
+
+## The declaration
+
+# The program's command line.
+function declaration() -> flags.Command
+    root @= flags.command(
+        name: "rv32",
+        about: "A RISC-V RV32IM emulator, with its assembler, disassembler and debugger."
+    )
+    asm @= flags.command(name: "asm", about: "Assembles a source into an image.")
+    flags.add(@asm, flags.positional(name: "SOURCE", help: "the assembly source, .s"))
+    flags.add(
+        @asm,
+        flags.option(long: "output", short: "o", value_name: "FILE", help: "the image written, SOURCE with .img by default")
+    )
+    flags.add(
+        @asm,
+        flags.option(long: "base", short: "", value_name: "ADDRESS", help: "the load address, 0x80000000 by default")
+    )
+    flags.add(@asm, flags.flag(long: "raw", short: "", help: "write a raw flat binary, with no header and no symbols"))
+    flags.add_command(c: @root, sub: asm)
+    flags.add_command(
+        c: @root,
+        sub: with_program(flags.command(name: "run", about: "Runs a program until it exits, stops or reaches its limit."))
+    )
+    flags.add_command(
+        c: @root,
+        sub: with_program(flags.command(name: "debug", about: "Runs a program under the debugger, its commands read from the standard input."))
+    )
+    flags.add_command(
+        c: @root,
+        sub: with_program(flags.command(name: "disasm", about: "Writes a program's image as assembly."))
+    )
+    demo @= flags.command(
+        name: "demo",
+        about: "Assembles, runs and debugs the sample programs, as the check of Rebel's programs runs it."
+    )
+    flags.add(@demo, flags.positional(name: "SAMPLES", help: "the folder holding the samples"))
+    flags.add(
+        @demo,
+        flags.with_default(flags.option(long: "work", short: "", value_name: "DIR", help: "the folder its images are written to"), "build/rv32-demo")
+    )
+    flags.add_command(c: @root, sub: demo)
+    return root
+
+# `c` taking a program and the options of a machine.
+function with_program(c: flags.Command) -> flags.Command
+    taken @= c
+    flags.add(@taken, flags.positional(name: "PROGRAM", help: "an image, or an assembly source (.s) assembled first"))
+    flags.add(
+        @taken,
+        flags.option(long: "input", short: "i", value_name: "TEXT", help: "what the UART receives; \\n is a line end")
+    )
+    flags.add(
+        @taken,
+        flags.with_default(flags.option(long: "limit", short: "", value_name: "N", help: "the most instructions run"), "100000000")
+    )
+    flags.add(
+        @taken,
+        flags.with_default(flags.option(long: "memory", short: "m", value_name: "KIB", help: "the RAM's size in KiB, 4 to 65536"), "1024")
+    )
+    return taken
+
+## The request
+
+# What the command line asks.
+variant Job
+    # Assemble `source` into `output`.
+    assemble
+        # The source's path.
+        source: str
+        # The image's path, "" for the default.
+        output: str
+        # The load address.
+        base: i64
+        # Whether to write a raw flat binary.
+        raw: bool
+    # Run, debug or disassemble a program.
+    machine
+        # `run`, `debug` or `disasm`.
+        verb: str
+        # The program's path.
+        program: str
+        # What the UART receives.
+        input: str
+        # The most instructions run.
+        limit: i64
+        # The RAM's bytes.
+        memory: i64
+    # The demo over the samples in `samples`.
+    demo
+        # The samples' folder.
+        samples: str
+        # The work folder.
+        work: str
+    # Help was asked; `text` is it.
+    help
+        # The help.
+        text: str
+
+# The job `arguments` ask for.
+#
+# - `arguments`: the words after the program's name.
+#
+# Fails `invalid` where they are not a command line of this program, the
+# message saying why and showing the usage.
+function read(arguments: [str]) -> Job?
+    found = flags.parse(declaration(), arguments)?
+
+    if flags.is_help(found)
+        return ok(.help(text: flags.help_text(found)))
+    sub = flags.subcommand(found)?
+    verb = flags.name_of(sub)
+
+    if verb == "asm"
+        base = address(flags.value_of(sub, "base").default("0x80000000"))?
+        return ok(
+            .assemble(source: flags.value_of(sub, "SOURCE")?, output: flags.value_of(sub, "output").default(""), base: base, raw: flags.is_on(sub, "raw"))
+        )
+
+    if verb == "demo"
+        return ok(.demo(samples: flags.value_of(sub, "SAMPLES")?, work: flags.value_of(sub, "work")?))
+    limit = flags.int_of(sub, "limit")?
+    kib = flags.int_of(sub, "memory")?
+
+    if limit < 1
+        return fail(code: "invalid", msg: f"--limit {limit} runs nothing; give 1 or more")
+
+    if kib < 4 || kib > 65536
+        return fail(code: "invalid", msg: f"--memory {kib} is outside 4 to 65536 KiB")
+    input = with_line_ends(flags.value_of(sub, "input").default(""))
+    return ok(
+        .machine(verb: verb, program: flags.value_of(sub, "PROGRAM")?, input: input, limit: limit, memory: kib * 1024)
+    )
+
+# The address `text` writes, `0x80000000` or a decimal number, a word.
+function address(text: str) -> i64?
+    n = numbers.parse_int_literal(text)
+
+    if n.is_err() || n.must() < 0 || n.must() > 0xffff_ffff || n.must() % 4 != 0
+        return fail(code: "invalid", msg: f"--base {text} is no word-aligned address")
+    return n
+
+# `text` with each `\n` it writes as two characters made a line end, so a
+# line of input can be given on a command line.
+function with_line_ends(text: str) -> str
+    pieces: [str] @= []
+    at: i64 @= 0
+    start: i64 @= 0
+
+    while at + 1 < text.len()
+        if text[at] == '\\' && text[at + 1] == 'n'
+            pieces @ pieces.push(text.slice(from: start, to: at))
+            pieces @ pieces.push("\n")
+            at @ at + 2
+            start @ at
+        else
+            at @ at + 1
+
+    pieces @ pieces.push(text.slice(from: start, to: text.len()))
+    return pieces.join("")
+
+## Tests
+
+test "read: each subcommand, its defaults and its options"
+    asm = read(["asm", "p.s", "-o", "p.img"]).must()
+    assert asm == .assemble(source: "p.s", output: "p.img", base: bus.RAM_BASE, raw: false)
+    run = read(["run", "p.img", "--input", "hi\\n", "--limit", "50"]).must()
+    assert run == .machine(verb: "run", program: "p.img", input: "hi\n", limit: 50, memory: 1024 * 1024)
+    demo = read(["demo", "samples"]).must()
+    assert demo == .demo(samples: "samples", work: "build/rv32-demo")
+
+test "read: what is no command line of this program"
+    for words in [[], ["fly"], ["run"], ["run", "p", "--limit", "0"], ["run", "p", "-m", "2"], ["asm", "p.s", "--base", "0x3"]]
+        assert read(words).is_err()
+
+test "with_line_ends: a line end written as two characters, and a lone backslash"
+    assert with_line_ends("a\\nb\\n") == "a\nb\n"
+    assert with_line_ends("a\\") == "a\\"
+    assert with_line_ends("") == ""
