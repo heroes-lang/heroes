@@ -16,6 +16,7 @@
 # the log again with the next sequence.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/hash
 use <rebel>/io
@@ -90,13 +91,25 @@ record Opened
 # - `path`: the log's path, `<db>-wal`.
 # - `page_size`: the database's page size; a log of another size is
 #   ignored and started again, as SQLite ignores one.
+# - `cut`: whether the frames after the last commit are cut off the file;
+#   false where another connection is writing them now.
 #
 # Fails where the file cannot be made, read or written, with `fs`'s and
 # `io`'s codes.
-function open(path: str, page_size: i64) -> Opened?
+function open(path: str, page_size: i64, cut: bool) -> Opened?
     if !fs.exists(path)?
         fs.write_bytes(path, data: [])?
     stream = fs.open_with(path, access: .read_write, permission: 0o644)?
+    read = recovered(stream, page_size: page_size, cut: cut)
+
+    # The stream is the log's once the log is made; a failure before closes
+    # it, or the runtime would tell a handle never given back.
+    if read.is_err()
+        s @= stream
+        errors.ignore(io.close(@s))
+    return read
+
+function recovered(stream: io.Stream, page_size: i64, cut: bool) -> Opened?
     _ = io.seek(stream, offset: 0, from: .start)?
     data = io.read_all(stream)?
     log @= fresh(stream, page_size: page_size, sequence: 1)
@@ -113,12 +126,13 @@ function open(path: str, page_size: i64) -> Opened?
 
     # The frames of an unfinished transaction, and a torn tail, are cut off
     # so the next frame follows the last commit; a log with no good header
-    # is written again.
-    if sequence.is_err()
+    # is written again. Where another connection writes, its frames are its
+    # own and stay.
+    if cut && sequence.is_err()
         io.truncate(log.stream, length: 0)?
         _ = io.seek(log.stream, offset: 0, from: .start)?
         io.write(log.stream, data: header_bytes(sequence: log.sequence, page_size: page_size))?
-    else
+    else if cut
         io.truncate(log.stream, length: offset_of(log, frame: log.committed))?
     log.frames @ log.committed
     log.crc @ log.commit_crc
@@ -356,3 +370,57 @@ function header_sequence(data: [u8], page_size: i64) -> i64?
     if bytes.decode_i64_be(data, at: magic.len())? != page_size
         return fail(code: sql.INVALID, msg: "a log of another page size")
     return bytes.decode_i64_be(data, at: magic.len() + 8)
+
+## Tests
+
+function test_log(name: str) -> str
+    folder = "build/minidb-tests"
+    fs.make_dir_all(folder).must()
+    file = folder + "/" + name
+
+    if fs.exists(file).must()
+        fs.remove(file).must()
+    return file
+
+function page_of(byte: u8) -> [u8]
+    out: [u8] @= []
+
+    for _ in range(from: 0, to: 512)
+        out @ out.push(byte)
+
+    return out
+
+test "open: committed frames indexed, the newest of a page kept, the frames after the last commit cut off"
+    file = test_log("wal-recover.wal")
+    log @= open(file, page_size: 512, cut: true).must().log
+    append(@log, page: 3, data: page_of(1), commit_pages: 0).must()
+    append(@log, page: 3, data: page_of(2), commit_pages: 3).must()
+    append(@log, page: 4, data: page_of(3), commit_pages: 0).must()
+    errors.ignore(io.close(@log.stream))
+    again = open(file, page_size: 512, cut: true).must()
+    assert again.recovery == Recovery(frames: 3, committed: 2, transactions: 1, discarded: 1, torn: false)
+    assert again.log.index == {3: 1}
+    assert read_frame(again.log, frame: 1, page: 3).must() == page_of(2)
+    assert read_frame(again.log, frame: 0, page: 4).is_err()
+    l @= again.log
+    errors.ignore(io.close(@l.stream))
+
+test "open: a flipped byte ends the log there; a log of another page size is started again"
+    file = test_log("wal-flip.wal")
+    log @= open(file, page_size: 512, cut: true).must().log
+    append(@log, page: 2, data: page_of(1), commit_pages: 2).must()
+    append(@log, page: 2, data: page_of(2), commit_pages: 2).must()
+    errors.ignore(io.close(@log.stream))
+    data @= fs.read_bytes(file).must()
+    data[HEADER + FRAME_HEADER + 512 + FRAME_HEADER + 9] @ 0
+    fs.write_bytes(file, data: data).must()
+    flipped = open(file, page_size: 512, cut: true).must()
+    assert flipped.recovery.committed == 1
+    assert flipped.recovery.torn
+    l @= flipped.log
+    errors.ignore(io.close(@l.stream))
+    other = open(file, page_size: 1024, cut: true).must()
+    assert other.recovery.frames == 0
+    assert other.log.sequence == 1
+    m @= other.log
+    errors.ignore(io.close(@m.stream))

@@ -7,6 +7,7 @@
 # is evaluated once per group elsewhere; here it is read from the group's
 # totals.
 
+use <rebel>/math
 use <rebel>/sql
 use <rebel>/strings
 
@@ -353,17 +354,13 @@ function substring(s: str, bounds: [sql.Value]) -> sql.Value?
 
     if bounds.len() == 2
         count @ integer_arg("SUBSTR", v: bounds[1])?
-    first = clamp(n: start, low: 0, high: characters.len())
-    last = clamp(n: start + clamp(n: count, low: 0, high: characters.len()), low: first, high: characters.len())
+    first = math.clamp_i64(x: start, low: 0, high: characters.len())
+    last = math.clamp_i64(
+        x: start + math.clamp_i64(x: count, low: 0, high: characters.len()),
+        low: first,
+        high: characters.len()
+    )
     return ok(.text(v: characters.slice(from: first, to: last).join("")))
-
-function clamp(n: i64, low: i64, high: i64) -> i64
-    if n < low
-        return low
-
-    if n > high
-        return high
-    return n
 
 ## Tests
 
