@@ -60,16 +60,14 @@ function answer(s: Service, r: http.Request) -> http.Response
         .ok got => got
         .err _  => return web.not_routed(s.router, r)
 
-    id = web.param_of(found, name: "id").default("")
-
     response = match found.name
         "home"           => ui.home(s.engine)
         "results"        => ui.results(s.engine, r: r)
-        "page_view"      => ui.page_view(s.engine, id: id)
+        "page_view"      => ui.page_view(s.engine, id: web.param_of(found, name: "id"))
         "api_search"     => api.search(s.engine, r: r)
         "api_suggest"    => api.suggestions(s.engine, r: r)
         "api_pages"      => api.pages(s.engine)
-        "api_page"       => api.page(s.engine, id: id)
+        "api_page"       => api.page(s.engine, id: web.param_of(found, name: "id"))
         "api_duplicates" => api.duplicate_groups(s.engine)
         "api_stats"      => api.stats(s.engine)
         "health"         => web.health_response(r, checks: health_checks(s.engine), detail: true)
@@ -97,4 +95,4 @@ test "routes: every route made, and a route found by its path"
     rt = routes().must()
     assert rt.routes.len() == 10
     found = web.route(rt, http.request(method: "GET", target: "/api/pages/3").must()).must()
-    assert found.name == "api_page" && web.param_of(found, name: "id").must() == "3"
+    assert found.name == "api_page" && web.param_of(found, name: "id") == "3"
