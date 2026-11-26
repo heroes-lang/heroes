@@ -8,6 +8,12 @@
 # the reason (`check/markers.hero`). The shapes: a local holding the value, a
 # parameter holding it, a record's field holding it; and the plain call beside
 # each, quiet.
+#
+# Corrected 2026-11-26, panel 261's R1 and R2 (provisional, author
+# ratification pending): a function type now marks a parameter `@` where its
+# function does, so the call through a value is held to its type's marks as
+# a call by name is to the declaration's. These values' types mark none, and
+# each `@` is still `marker_mismatch`, now naming the callee as written.
 
 record Holder
     f: (function(i64) -> ())

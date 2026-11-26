@@ -1,0 +1,18 @@
+# Panel 261's R2 (2026-11-26, provisional, author ratification pending): two
+# `@` arguments of a call through a value that reach one place are
+# `aliased_mutable_arguments`, panel 010's rule asked of the marks the
+# value's type takes (`check/read_lends.aliased_through_a_value`), as of a
+# call by name. Built without it, the panel's route handed the callee one
+# place under two names and printed `2`.
+record App
+    n: i64
+
+function both(@a: App, @b: App)
+    a.n @ a.n + 1
+    b.n @ b.n + 1
+
+function main()
+    app @= App(n: 0)
+    h: (function(@a: App, @b: App) -> ()) = both
+    h(a: @app, b: @app)  #~ aliased_mutable_arguments
+    print(app.n)

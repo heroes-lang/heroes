@@ -1,0 +1,29 @@
+# Panel 261's R2 (2026-11-26, provisional, author ratification pending): a
+# function type carries its parameters' marks, so a call through a value
+# hands its `@` arguments to the callee's place, and the rule of the left of
+# `@` (`resolve/writes.inout_root`, M-robustness-guards step 1) is asked of
+# each `@` the type takes, as of a call by name: an `@` before a `=`
+# binding, a by-value parameter or a loop variable is `not_mutable`. The
+# resolver cannot read a value's type, so the checker asks it
+# (`check/markers.through_a_value`); built without it, the panel's route ran
+# each line and wrote the binding in place.
+record App
+    n: i64
+
+function bump(@a: App)
+    a.n @ a.n + 1
+
+function through(h: (function(@App) -> ()), p: App) -> i64
+    h(@p)  #~ not_mutable
+    return p.n
+
+function main()
+    h: (function(@App) -> ()) = bump
+    k = App(n: 0)
+    h(@k)  #~ not_mutable
+    print(k.n)
+    print(through(h, k))
+
+    for x in [App(n: 5)]
+        h(@x)  #~ not_mutable
+        print(x.n)

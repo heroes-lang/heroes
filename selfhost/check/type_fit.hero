@@ -38,17 +38,21 @@ function fits(@t: table.Types, wanted: i64, got: i64) -> bool
     if wanted == got
         return true
     wl: [str] @= []
+    wm: table.Params @= table.Params(start: 0, len: 0)
 
     match table.get(t, wanted)
-        .function_ty w                                            => wl @ table.labels_of(t, w.labels)
+        .function_ty w =>
+            wl @ table.labels_of(t, w.labels)
+            wm @ w.modes
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
         .array | .fixed | .map | .fallible | .named | .case_ty    => return false
         .failure | .generic | .error | .thread_ty | .mailbox_ty   => return false
 
-    if wl.len() == 0
+    if wl.len() == 0 && wm.len == 0
         return false
     filled: [str] @= []
     spelled: [i64] @= []
+    modes: [str] @= []
     result: i64 @= 0
 
     match table.get(t, got)
@@ -62,11 +66,18 @@ function fits(@t: table.Types, wanted: i64, got: i64) -> bool
             # written type carrying a name at a position nothing can confuse
             # UNINHABITED — panel 130's spec-warden, which built its own compiler
             # and ran `(function(item: i64) -> i64)` rather than reading for it.
-            if gl.len() != wl.len() && gl.len() != 0
+            if wl.len() > 0 && gl.len() != wl.len() && gl.len() != 0
                 return false
             spelled @ table.params_of(t, g.params)
+            modes @ lent_where_at(
+                wanted: table.modes_of(t, wm, count: spelled.len()),
+                got: table.modes_of(t, g.modes, count: spelled.len())
+            )
             result @ g.result
             i: i64 @= 0
+
+            if wl.len() == 0
+                filled @ gl
 
             while i < wl.len()
                 if i >= gl.len() || gl[i].len() == 0
@@ -78,7 +89,25 @@ function fits(@t: table.Types, wanted: i64, got: i64) -> bool
         .array | .fixed | .map | .fallible | .named | .case_ty    => return false
         .failure | .generic | .error | .thread_ty | .mailbox_ty   => return false
 
-    return table.intern_function(@t, spelled, filled, result: result) == wanted
+    return table.intern_function(@t, spelled, labels: filled, modes: modes, result: result) == wanted
+
+# The value's own modes, but `lent` where `@` is asked, read as the `@`
+# (panel 261): both hand the caller's place as one C pointer, the call site
+# writes the `@` and holds the place to `@`'s exclusivity, and the callee only
+# reads it. The one widening of a mode; `@` where `lent` or a copy is asked,
+# and `lent` where a copy is asked, stay the types they are.
+function lent_where_at(wanted: [str], got: [str]) -> [str]
+    out: [str] @= []
+    i: i64 @= 0
+
+    while i < got.len()
+        if i < wanted.len() && wanted[i] == "@" && got[i] == "lent"
+            out @ out.push("@")
+        else
+            out @ out.push(got[i])
+        i @ i + 1
+
+    return out
 
 # Whether `a` and `b` are one function type but for the names of its
 # parameters, where the nameless one is a type the program WROTE with two

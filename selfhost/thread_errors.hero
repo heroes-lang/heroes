@@ -90,6 +90,20 @@ function not_a_thread_body(got: str, span: token.Span) -> diag.Diagnostic
     d.notes @ d.notes.push("a thread that needs more than one value is handed a record of them")
     return d
 
+# `spawn(f, x)` with `f` taking `@` or `lent` (panel 261): the thread would
+# work on the spawning thread's place, and threads share nothing but a
+# mailbox (spec § 11).
+function moded_thread_body(got: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "thread_body",
+        message: "a thread runs `f(x)` on a copy of `x`, and the `f` given has type `" + got + "`, whose parameter is the caller's place — threads share nothing but a mailbox",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "take the value by copy, `function body(x: T) -> R`, and send back what changed through the thread's result or a mailbox"
+    )
+    return d
+
 # `spawn(f, conn)`: a value holding a C handle or a thread handed to a new
 # thread (panel 254's W-j): only a mailbox carries one, and the thread that
 # receives it holds it from then on.

@@ -1,0 +1,18 @@
+# Panel 261's R1 (2026-11-26, provisional, author ratification pending): a
+# function with an `@` parameter is a value of the type its signature
+# writes, `(function(@App, i64) -> i64)`, and a call through the value writes
+# the `@` as a call by name does: the callee works on the caller's place,
+# written twice here, so the program prints 2, then 5, then 5.
+record App
+    count: i64
+
+function bump(@a: App, n: i64) -> i64
+    a.count @ a.count + n
+    return a.count
+
+function main()
+    app @= App(count: 0)
+    h: (function(@App, i64) -> i64) = bump
+    print(h(@app, 2))
+    print(h(@app, 3))
+    print(app.count)

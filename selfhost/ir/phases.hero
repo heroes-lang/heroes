@@ -443,9 +443,9 @@ test "every type's flags say what the two walks say, on a table with parameters 
     _ = table.intern(@tbl, .map(key: number, value: number))
     _ = table.intern(@tbl, .fallible(payload: poison))
     _ = table.intern(@tbl, .fixed(element: loose, length: 4))
-    _ = table.intern_function(@tbl, params: [number, poison], labels: ["a", "b"], result: number)
-    _ = table.intern_function(@tbl, params: [number], labels: ["a"], result: loose)
-    _ = table.intern_function(@tbl, params: [number], labels: ["a"], result: number)
+    _ = table.intern_function(@tbl, params: [number, poison], labels: ["a", "b"], modes: [], result: number)
+    _ = table.intern_function(@tbl, params: [number], labels: ["a"], modes: [], result: loose)
+    _ = table.intern_function(@tbl, params: [number], labels: ["a"], modes: [], result: number)
     c.types @ tbl
     flags = type_kinds(c)
     ty: i64 @= 0

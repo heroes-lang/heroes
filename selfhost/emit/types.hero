@@ -152,7 +152,7 @@ function declared(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: so
 # pointer (`emit/large_value.hero`): such a type never reaches C, since the
 # checker refuses a program record inside an `extern`'s callback type, which
 # `large_value`'s test holds.
-function function_type(@w: writer.Writer, c: state.Checked, names: ctype.Names, name: str, params: table.Params, result: i64)
+function function_type(@w: writer.Writer, c: state.Checked, names: ctype.Names, name: str, params: table.Params, modes: table.Params, result: i64)
     spelled: [str] @= []
     returned: str @= ctype.c_result(names, c: c, ty: result)
 
@@ -160,16 +160,25 @@ function function_type(@w: writer.Writer, c: state.Checked, names: ctype.Names, 
         spelled @ spelled.push(returned + " *")
         returned @ "void"
 
-    for p in table.params_of(c.types, params)
+    held = table.params_of(c.types, params)
+    marked = table.modes_of(c.types, modes, count: held.len())
+    at: i64 @= 0
+
+    for p in held
         one: str @= "void"
         found = ctype.c_type(names, c: c, ty: p)
 
         if !found.is_err()
             one @ found.must()
 
-            if names.large[p].default(false)
+            # An `@` or a `lent` position is the caller's place, the pointer a
+            # function's own `@` slot takes (`signature.one_param`; panel 261).
+            if marked[at].len() > 0
+                one @ found.must() + " *"
+            else if names.large[p].default(false)
                 one @ "const " + found.must() + " *"
         spelled @ spelled.push(one)
+        at @ at + 1
 
     list: str @= "void"
 

@@ -1,0 +1,22 @@
+# Panel 261's R2 (2026-11-26, provisional, author ratification pending): the
+# shapes beside two `@` arguments through a local, a value held in a
+# record's field and one in an array's element, each handed one place twice:
+# `aliased_mutable_arguments` at each, as by name (panel 010).
+record App
+    n: i64
+
+function both(@a: App, @b: App)
+    a.n @ a.n + 1
+    b.n @ b.n + 1
+
+record Holder
+    h: (function(@a: App, @b: App) -> ())
+
+function main()
+    holder = Holder(h: both)
+    app @= App(n: 0)
+    holder.h(a: @app, b: @app)  #~ aliased_mutable_arguments
+    xs @= [App(n: 0)]
+    hs = [both]
+    hs[0](a: @xs[0], b: @xs[0])  #~ aliased_mutable_arguments
+    print(app.n + xs[0].n)

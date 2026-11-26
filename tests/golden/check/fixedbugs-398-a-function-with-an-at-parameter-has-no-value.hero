@@ -13,6 +13,17 @@
 # type, to a generic, kept in a record's field, an extern's, a `str`, a
 # record's, the second parameter marked, compared, a generic function, a C
 # callback.
+#
+# Corrected 2026-11-26, panel 261's R1 (provisional, author ratification
+# pending): a function type now carries its parameters' marks, so a function
+# of the program with an `@` parameter IS a value, of `(function(@i64) -> ())`
+# for `bump`, and the premise above holds no longer. Discarded, bound and
+# called with `@`, a `str`'s and a record's, the second parameter marked: each
+# checks now. Handed where a type without the mark is asked (a parameter, a
+# generic's `fold`, a field, a comparison, a C callback) it is `type_mismatch`,
+# both types printed with their marks; an extern's `@` stays no value (R5); a
+# generic function named with nothing to infer from is `cannot_infer`, as any
+# generic is.
 
 extern "stdlib.h"
     function atexit(f: (function() -> ())) -> i32
@@ -52,46 +63,46 @@ function apply(f: (function(i64) -> ()), v: i64)
     f(v)
 
 function discarded()
-    _ = bump  #~ mutable_parameter_as_value
+    _ = bump
     x: i64 @= 1
     bump(@x)
     print(x)
 
 function bound_and_called()
-    f = bump  #~ mutable_parameter_as_value
+    f = bump
     x: i64 @= 1
     f(@x)
     print(x)
 
 function handed_to_a_parameter()
-    apply(f: bump, v: 1)  #~ mutable_parameter_as_value
+    apply(f: bump, v: 1)  #~ type_mismatch
 
 function handed_to_a_generic()
     xs: [i64] = [1, 2, 3]
-    print(xs.fold(0, add))  #~ mutable_parameter_as_value
+    print(xs.fold(0, add))  #~ type_mismatch
 
 function kept_in_a_field()
-    h = Holder(f: bump)  #~ mutable_parameter_as_value
+    h = Holder(f: bump)  #~ type_mismatch
     h.f(1)
 
 function an_extern()
     _ = frexp  #~ mutable_parameter_as_value
 
 function a_str_and_a_record()
-    _ = grow  #~ mutable_parameter_as_value
-    _ = move_p  #~ mutable_parameter_as_value
+    _ = grow
+    _ = move_p
 
 function the_second_parameter()
-    _ = put  #~ mutable_parameter_as_value
+    _ = put
 
 function compared()
-    print(bump == quiet)  #~ mutable_parameter_as_value
+    print(bump == quiet)  #~ type_mismatch
 
 function a_generic_function()
-    _ = swap_in  #~ mutable_parameter_as_value
+    _ = swap_in  #~ cannot_infer
 
 function a_c_callback()
-    _ = atexit(f: bump)  #~ mutable_parameter_as_value
+    _ = atexit(f: bump)  #~ type_mismatch
 
 function main()
     discarded()

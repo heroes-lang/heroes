@@ -16,7 +16,9 @@
 # that lends nothing in place pays one pass over its expressions.
 
 use ast
+use check/name_types
 use check/state
+use check/table
 use data_errors
 use diag
 use read_lend
@@ -31,13 +33,14 @@ function judged(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
 
     # A program that declares no read-only parameter lends nothing in place,
     # and pays one pass over its declarations rather than its expressions.
-    if !read_lend.any_declared(a, s, decls)
+    # A function TYPE carrying `lent` lends too, through a value (panel 261).
+    if !read_lend.any_declared(a, s, decls) && !table.lends_through_a_type(c.out.types)
         return
     lending: [i64] @= []
     at: i64 @= 0
 
     while at < a.exprs.len()
-        if lends_in_place(a, r, s, decls, call: at)
+        if lends_in_place(@c, a, r, s, decls, call: at)
             lending @ lending.push(at)
         at @ at + 1
 
@@ -46,7 +49,82 @@ function judged(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
     marked = marked_arguments(a)
 
     for call in lending
-        one_call(@c, a, r, s, decls, call: call, callee: read_lend.callee_of(a, r, call: call).must(), marked: marked)
+        one_call(@c, a, r, s, call: call, lent: lent_of(@c, a, r, s, decls, call: call).must(), marked: marked)
+
+# Which handed argument of a call is lent read-only, the receiver first where
+# the call is dotted: asked of the declaration a call names, or of the TYPE
+# of the value it calls, a field's included (panel 261); absent where it is
+# neither.
+record Lent
+    first: i64
+    at: [bool]
+
+function lent_of(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], call: i64) -> Lent?
+    callee = read_lend.callee_of(a, r, call: call)
+    out: [bool] @= []
+
+    if !callee.is_err()
+        position: i64 @= 0
+
+        for _ in handed(a, call: call, first: callee.must().first)
+            out @ out.push(read_lend.at_position(a, s, decls, decl: callee.must().decl, at: position))
+            position @ position + 1
+
+        return ok(Lent(first: callee.must().first, at: out))
+    ty: i64 @= 0 - 1
+    count: i64 @= 0
+
+    match a.exprs[call].kind
+        .call cl =>
+            ty @ c.out.expr_types[cl.callee]
+            count @ cl.args.len()
+        .method m =>
+            if r.uses[m.receiver] == .module
+                return fail(code: "none", msg: "a module's function, named")
+            field = name_types.field_of_function_type(
+                @c,
+                a,
+                r,
+                s,
+                decls,
+                receiver: c.out.expr_types[m.receiver],
+                name: source.span_text(s, m.name)
+            )
+
+            if field.is_err()
+                return fail(code: "none", msg: "no field holding a function")
+            ty @ field.must()
+            count @ m.args.len()
+        .name | .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit => return fail(
+            code: "none",
+            msg: "not a call"
+        )
+        .field_name | .null_ptr | .hole | .unary | .binary | .field | .index => return fail(
+            code: "none",
+            msg: "not a call"
+        )
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error => return fail(
+            code: "none",
+            msg: "not a call"
+        )
+
+    if ty < 0 || ty >= table.len_of(c.out.types)
+        return fail(code: "none", msg: "untyped")
+
+    match table.get(c.out.types, ty)
+        .function_ty f =>
+            for m in table.modes_of(c.out.types, f.modes, count: count)
+                out @ out.push(m == "lent")
+
+            return ok(Lent(first: 0, at: out))
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "none", msg: "not a function")
+        .array | .fixed | .map | .fallible | .named               => return fail(code: "none", msg: "not a function")
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return fail(
+            code: "none",
+            msg: "not a function"
+        )
+
+    return fail(code: "none", msg: "unreached")
 
 # `@c: T lent` on a function of this program: `@` hands the caller's place to
 # change it and `lent` hands it to read, so the word on an `@` is read by
@@ -65,17 +143,17 @@ function declared(@c: state.Checker, s: source.Source, decls: [ast.Decl])
             .constant_decl | .record_decl | .variant_decl | .test_decl => continue
 
 # Whether a call hands some argument read-only in place.
-function lends_in_place(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], call: i64) -> bool
-    callee = read_lend.callee_of(a, r, call: call)
+function lends_in_place(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], call: i64) -> bool
+    lent = lent_of(@c, a, r, s, decls, call: call)
 
-    if callee.is_err()
+    if lent.is_err()
         return false
     position: i64 @= 0 - 1
 
-    for arg in handed(a, call: call, first: callee.must().first)
+    for arg in handed(a, call: call, first: lent.must().first)
         position @ position + 1
 
-        if !arg.mutable && read_lend.in_place(a, r, arg.value) && read_lend.at_position(a, s, decls, decl: callee.must().decl, at: position)
+        if !arg.mutable && read_lend.in_place(a, r, arg.value) && position < lent.must().at.len() && lent.must().at[position]
             return true
 
     return false
@@ -118,8 +196,8 @@ function handed(a: ast.Ast, call: i64, first: i64) -> [ast.Arg]
 
     return out
 
-function one_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], call: i64, callee: read_lend.Callee, marked: [ast.Arg])
-    given = handed(a, call: call, first: callee.first)
+function one_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, call: i64, lent: Lent, marked: [ast.Arg])
+    given = handed(a, call: call, first: lent.first)
     inside = a.exprs[call].span
     written: aliased_places.Places @= aliased_places.new_places()
     labels: [str] @= []
@@ -146,7 +224,7 @@ function one_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source
         if arg.mutable || !read_lend.in_place(a, r, arg.value)
             continue
 
-        if !read_lend.at_position(a, s, decls, decl: callee.decl, at: position)
+        if position >= lent.at.len() || !lent.at[position]
             continue
         path = path_of(a, r, s, arg.value)
 
@@ -221,3 +299,30 @@ function beside(name: str, other: str, span: token.Span) -> diag.Diagnostic
         diag.Fix(title: "read what the call needs before it, `n = " + name + "`, and pass that; or make the two places different, distinct fields or distinct literal indices", replacement: "", span: span, certainty: .guess)
     )
     return d
+
+# Panel 010 through a VALUE (panel 261): the resolver sets aside the marks of
+# a call through a value, whose type it cannot read, so two `@` arguments the
+# type takes that reach one place are refused here, by the resolver's own
+# steps and message (`resolve/writes.refuse_aliased_places`). `from` is the
+# position of the first written argument.
+function aliased_through_a_value(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, given: [ast.Arg], modes: [str], from: i64)
+    kept: aliased_places.Places @= aliased_places.new_places()
+    labels: [str?] @= []
+    position: i64 @= from
+
+    for arg in given
+        if arg.mutable && position < modes.len() && modes[position] == "@"
+            path = path_of(a, r, s, arg.value)
+
+            if !path.is_err()
+                clash = aliased_places.first_reached(kept, path.must())
+
+                if clash < 0
+                    aliased_places.keep(@kept, path.must(), index: labels.len())
+                    labels @ labels.push(writes.label_of(s, arg))
+                else
+                    state.push_diagnostic(
+                        @c,
+                        writes.aliased_mutable_arguments(name: source.span_text(s, a.exprs[arg.value].span), first: labels[clash], span: a.exprs[arg.value].span)
+                    )
+        position @ position + 1

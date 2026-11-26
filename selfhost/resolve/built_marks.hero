@@ -98,10 +98,12 @@ function of_a_call(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
             if inventory.name_of(b.at) == "end_lease"
                 return beside(END_LEASE_WRITES, first: first_position(receiver), given: given)
             return set_aside(given)
-        # A function value: no function type carries an `@` (defect 398).
-        # A name that resolved to nothing is told already, and any other
-        # callee unresolved is a value called, `pick()(x)` or a field; a
-        # module called is told as no value. None is known to write back.
+        # A function value: its type may carry an `@` (panel 261), which only
+        # the checker reads, so the checker asks the rule of the left of `@`
+        # and panel 010's of each mark its type takes (`check/markers.hero`,
+        # `through_a_value`), and tells one it takes none for. A name that
+        # resolved to nothing is told already, and a module called is told as
+        # no value.
         .local | .unresolved | .module => return set_aside(given)
 
 # Which parameter of the callee takes an `@`, in order: a function's own

@@ -1,0 +1,71 @@
+# What a function type's two runs ask when a generic binds it, position by
+# position: its parameters' NAMES and their MARKS (design.md §4.9, §4.11;
+# panel 127's names, panel 261's marks). `check/generics.hero`'s `bind` walks a
+# function type structurally and never compares two whole interned ids, so
+# the runs are compared here, by hand: the marks before any position binds,
+# the names only where every type agreed.
+
+use check/state
+use check/table
+use check/type_fit
+use token
+use value_errors
+
+# A mark is part of the type (panel 261's R1), so a function type bound
+# through a generic agrees on each position's mark as on its type: `T`
+# bound by an `@App` position would hide the `@` at the call `f(x)`. The one
+# widening `type_fit.fits` makes holds here too, a `lent` position where the
+# parameter's type asks `@`, read as the `@`.
+function marks_agree(c: state.Checker, wanted: table.Params, got: table.Params, count: i64) -> bool
+    asked = table.modes_of(c.out.types, wanted, count: count)
+    return type_fit.lent_where_at(wanted: asked, got: table.modes_of(c.out.types, got, count: count)) == asked
+
+# The NAMES, position by position, and this is the only place a function type's
+# names are compared in the generic path — `bind` above walks a function type
+# structurally and never compares two whole interned ids, which is what made
+# generics free when the names first entered the type and what left this hole to
+# close by hand.
+#
+# **Why it matters and where it does not.** A callback's roles can be read the
+# other way round, and the compiler sees it only when the two parameters end up
+# the same type: with different types the swap changes the type and `bind` above
+# already refuses it — measured, `fold` at `B := str, A := i64` with the two
+# transposed is two `type_mismatch` today. When they collapse to one type the
+# swap is invisible, `fold` prints `cba` for `abc` at exit 0, and the names are
+# the only thing that can tell them apart.
+#
+# **THE NAMES MUST AGREE, and the author chose that over the narrow reading with
+# the measurement in front of them.** A first version fired only where the callee
+# reused the type's OWN word for another position — panel 127's `elsewhere` test,
+# applied to a value — and it was measured against the seven callbacks this
+# repository hands to `fold`, each transposed: it caught **2 of 7**. The five it
+# missed call their parameters `a` and `b`, `so_far` and `one`, `total` and `i`,
+# their authors' own vocabulary, and a rule that catches an inversion only when
+# the author happened to borrow the library's words gives the impression of
+# closing a class it does not close.
+#
+# So agreement it is, and the price is stated rather than hidden: a function
+# handed to `fold` names its two parameters what `fold` names them. That is
+# §4.9's existing bargain at a call site — *when two parameters share a type the
+# call names them* — moved to the one place a call site cannot reach, and it is a
+# naming mandate, not a detector. Six programs in this repository were renamed
+# once the day it landed (author instruction 2026-09-11, taken over this seat's
+# own recommendation of the cheaper reading).
+#
+# An EMPTY name matches anything, on either side. A function whose parameters
+# cannot be confused carries none (`check/labels.hero`'s `declared_labels`), and a
+# type that names nothing is asking for nothing.
+function named(@c: state.Checker, wanted: table.Params, got: table.Params, span: token.Span)
+    ws = table.labels_of(c.out.types, wanted)
+    gs = table.labels_of(c.out.types, got)
+
+    if ws.len() != gs.len()
+        return
+    i: i64 @= 0
+
+    while i < ws.len()
+        if gs[i].len() > 0 && ws[i].len() > 0 && gs[i] != ws[i]
+            state.push_diagnostic(@c, value_errors.callback_name(wanted: ws[i], written: gs[i], span: span))
+            return
+
+        i @ i + 1

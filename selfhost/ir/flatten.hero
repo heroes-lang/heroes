@@ -604,10 +604,70 @@ function builtin_call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: s
     )
 
 # A call through a function value already in hand: no declaration is
-# known, so no parameter's mark is read, and the call is indirect.
+# known, so each position's mode is read from the value's TYPE (panel 261),
+# and the call is indirect.
 function value_call(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], target: i64, given: [ast.Arg], ty: i64, span: token.Span) -> i64
-    handed = lower_args(@b, a, r, c, s, decls, given: given, callee: fail(code: "none", msg: "a function value"))
+    modes: [str] @= []
+
+    match table.get(c.types, build.value_ty(b, target))
+        .function_ty f                                                     => modes @ table.modes_of(
+            c.types,
+            f.modes,
+            count: given.len()
+        )
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => modes @ modes
+        .array | .fixed | .map | .fallible | .named                        => modes @ modes
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => modes @ modes
+
+    lowered_args: [ir.Arg] @= []
+    after: [inout.WriteBack] @= []
+    at: i64 @= 0
+
+    for arg in given
+        mode: str @= ""
+
+        if at < modes.len()
+            mode @ modes[at]
+        lowered_args @ lowered_args.push(
+            value_argument(@b, a, r, c, s, decls, id: arg.value, marked: arg.mutable, mode: mode, after: @after)
+        )
+        at @ at + 1
+
+    handed = inout.Args(run: build.args_run(@b, lowered_args), after: after)
     return emissions.emit_call(@b, target: .indirect(value: target), given: handed, variadic: false, ty: ty, span: span)
+
+# One argument of a call through a value, by its position's mode: an `@`
+# position the caller's place, or under Part 11's control arm a held slot
+# where the site wrote no `@` and the argument is no place (the type decides,
+# as a declaration does by name, panel 226's R1); a `lent` position read in
+# place; else its value, an extra `@` included, which says nothing.
+function value_argument(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Checked, s: source.Source, decls: [ast.Decl], id: i64, marked: bool, mode: str, @after: [inout.WriteBack]) -> ir.Arg
+    span = a.exprs[id].span
+    none: i64? = fail(code: "none", msg: "a function value")
+
+    if mode == "@"
+        if marked || !leasing.place_root(a, at: id).is_err()
+            return inout.argument(
+                @b,
+                c,
+                decls,
+                span: span,
+                spot: place(@b, a, r, c, s, decls, id: id),
+                callee: none,
+                at: 0,
+                after: @after
+            )
+        return inout.held(
+            @b,
+            value: expr(@b, a, r, c, s, decls, id: id),
+            ty: c.expr_types[id],
+            span: span,
+            read_only: false
+        )
+
+    if mode == "lent"
+        return lent_argument(@b, a, r, c, s, decls, id: id)
+    return .value_arg(value: expr(@b, a, r, c, s, decls, id: id))
 
 # `.num(v: 12)` — a case construction: the type is the VARIANT, the
 # name picks the case, and both were the checker's decisions.

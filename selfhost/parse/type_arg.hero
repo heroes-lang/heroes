@@ -1,0 +1,44 @@
+# The words around one position of a function type, `(function(@app: App,
+# k: i64 lent) -> ())`: its name, read after the loop of
+# `parse/type.hero`'s `function_params` took it for a type, and its mark,
+# `@` before it and `lent` after it (spec § 3's `TypeArg`; panel 261's R1).
+# Each reads the cursor at one place and owns nothing of the loop's.
+
+use ast
+use cursor
+use data_errors
+use keywords
+use token
+
+# The `lent` after a position's type, read as its mode; beside an `@` it is
+# refused as a signature's `@p: T lent` is, the `@` already lending the place.
+function mode_after(@c: cursor.Cursor, text: str, marked: bool) -> str
+    if !cursor.at(c, .ident) || cursor.slice_of(text, cursor.current_span(c)) != keywords.WORD_LENT
+        if marked
+            return "@"
+        return ""
+    word = cursor.bump(@c).span
+
+    if marked
+        cursor.error(
+            @c,
+            code: "lent_shape",
+            message: "`lent` after a position marked `@` — an `@` position already hands the caller's place, to be written; write `@T` to change it or `T lent` to only read it",
+            span: word
+        )
+        return "@"
+    return "lent"
+
+# The name in `(function(x: i64) -> i64)`, which `parse/type.hero`'s `function_params` read as a type
+# because a bare name is one. Anything else there is not a name at all, and the
+# span is returned either way so the run keeps its positions.
+function named_parameter(@c: cursor.Cursor, a: ast.Ast, name: i64) -> token.Span
+    span = a.types[name].span
+
+    match a.types[name].kind
+        .named => return span
+        .unit | .array_of | .fixed | .map_of | .fallible | .function_type | .error | .thread_of | .mailbox_of =>
+            cursor.say(@c, data_errors.parameter_name_not_a_name(span))
+            return span
+
+    return span

@@ -82,6 +82,17 @@ function named(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
     body_span = a.exprs[given[0].value].span
     one = one_parameter(c, body_ty)
 
+    # A body whose parameter is `@` or `lent` would take a place of the
+    # spawning thread, and threads share nothing but a mailbox (§ 11; panel
+    # 261): the value crosses by copy or not at all.
+    if !one.is_err() && one.must().moded
+        state.push_diagnostic(
+            @c,
+            thread_errors.moded_thread_body(got: state.show(c, s, decls, body_ty), span: body_span)
+        )
+        walk_all(@c, a, r, s, decls, [given[1]])
+        return state.error_ty_of(c)
+
     if one.is_err()
         if !table.poisoned(c.out.types, body_ty)
             state.push_diagnostic(
@@ -159,6 +170,7 @@ function operation(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
 record OneParameter
     param: i64
     result: i64
+    moded: bool
 
 function one_parameter(c: state.Checker, ty: i64) -> OneParameter?
     match table.get(c.out.types, ty)
@@ -166,7 +178,7 @@ function one_parameter(c: state.Checker, ty: i64) -> OneParameter?
             params = table.params_of(c.out.types, f.params)
 
             if params.len() == 1
-                return ok(OneParameter(param: params[0], result: f.result))
+                return ok(OneParameter(param: params[0], result: f.result, moded: f.modes.len > 0))
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "none", msg: "not a function")
         .thread_ty | .mailbox_ty | .array | .fixed | .map         => return fail(code: "none", msg: "not a function")
         .fallible | .named | .case_ty | .failure | .generic       => return fail(code: "none", msg: "not a function")

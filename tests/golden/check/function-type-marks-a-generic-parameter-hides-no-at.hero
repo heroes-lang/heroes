@@ -1,0 +1,19 @@
+# Panel 261's R1 (2026-11-26, provisional, author ratification pending): a
+# function type's marks are part of it, so a generic parameter typed
+# `(function(T) -> ())` is never bound by a value of `(function(@App) ->
+# ())`, which would hide the `@` at the call `f(x)` (`generics.bind` refuses
+# a marked mismatch before any position binds): `type_mismatch`, both types
+# printed with the mark.
+record App
+    n: i64
+
+function bump(@a: App)
+    a.n @ a.n + 1
+
+function apply<T>(f: (function(T) -> ()), x: T)
+    f(x)
+
+function main()
+    app = App(n: 0)
+    apply(bump, app)  #~ type_mismatch
+    print(app.n)

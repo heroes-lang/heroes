@@ -350,6 +350,9 @@ variant TypeKind
         # lowering knows that two written spellings are one type. The parser
         # records what was written and judges none of it.
         labels: [token.Span]
+        # Each position's mode, `@`, `lent` or `""`, one entry per parameter
+        # (panel 261).
+        modes: [str]
         result: i64
     # `(thread T)` and `(mailbox T)` (spec § 3; feature 2647).
     thread_of
