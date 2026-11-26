@@ -575,7 +575,17 @@ filed and repaired in a later batch. So, from batch 16:
    beside the site's build (author, 2026-11-26, the answer *5a*; it reads no
    outside data and takes about twelve minutes on this Mac): the fifth push's
    Rebel pipeline read its `rebel_index` step red, a page of `backup` stale
-   since step 195a, and its three generator tests never ran. Nothing else. Measured the first day:
+   since step 195a, and its three generator tests never ran. **And the
+   seed's compiler reads the harness at every push**, in gate A (2026-11-26,
+   beside the answer *5a*): `./heroes-from-seed check tests/harness/main.hero`
+   and `./heroes-from-seed check tests/harness/rebel_apps.hero`, the two
+   roots of the harness the workflows hand the compiler clang makes of the
+   seed, 4.5 and 0.4 s of CPU on this Mac, so asked of every push rather
+   than of one judged to move a form the harness or Rebel uses, the
+   judgement that let Rebel's pipeline for `1e56b5da5` go red on both Linux
+   legs' *part programs* jobs, the seed of `7c02309aa` refusing panel 260's
+   `layer` in `tests/harness/rebel_apps_run.hero` while the first command
+   alone exits 0 over that tree. Nothing else. Measured the first day:
    `run` split into one harness process per case, a pool of 7, read gate B
    18:39 against 19:56 whole, the load at 10 on this Mac's 8 cores and each
    process's four seconds eating the gain; so `run` stays whole until it can
