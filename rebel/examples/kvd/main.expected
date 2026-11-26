@@ -1,0 +1,274 @@
+== strings
+A> PING
+PONG
+A> SET greeting "hello, world"
+OK
+A> GET greeting
+"hello, world"
+B> APPEND greeting "!"
+(integer) 13
+A> GET greeting
+"hello, world!"
+A> SET greeting "bonjour" XX GET
+"hello, world!"
+A> SET greeting "hi" NX
+(nil)
+A> INCR visits
+(integer) 1
+A> INCRBY visits 41
+(integer) 42
+A> INCR greeting
+(error) ERR value is not an integer or out of range
+A> MSET colour red size L
+OK
+A> MGET colour size nothing
+1) "red"
+2) "L"
+3) (nil)
+A> GETRANGE greeting 0 2
+"bon"
+B> (5 commands in one write)
+B> SET page:1 "the first page"
+OK
+B> INCR hits
+(integer) 1
+B> INCR hits
+(integer) 2
+B> GET page:1
+"the first page"
+B> DEL page:1 nothing
+(integer) 1
+
+== lists, hashes, sets and sorted sets
+A> RPUSH queue job1 job2 job3
+(integer) 3
+A> LPUSH queue job0
+(integer) 4
+A> LPOP queue
+"job0"
+A> LRANGE queue 0 -1
+1) "job1"
+2) "job2"
+3) "job3"
+A> HSET user:1 name Ada born 1815 field "analytical engine"
+(integer) 3
+A> HGET user:1 name
+"Ada"
+A> HINCRBY user:1 born 1
+(integer) 1816
+A> HGETALL user:1
+1) "name"
+2) "Ada"
+3) "born"
+4) "1816"
+5) "field"
+6) "analytical engine"
+A> SADD tags redis heroes kv heroes
+(integer) 3
+A> SADD other kv rust
+(integer) 2
+A> SINTER tags other
+1) "kv"
+A> SISMEMBER tags heroes
+(integer) 1
+A> ZADD board 120 ada 95 bob 133 cyd 120 abe
+(integer) 4
+A> ZRANGE board 0 -1 WITHSCORES
+1) "bob"
+2) "95"
+3) "abe"
+4) "120"
+5) "ada"
+6) "120"
+7) "cyd"
+8) "133"
+A> ZREVRANK board ada
+(integer) 1
+A> ZINCRBY board 40 bob
+"135"
+A> ZRANGEBYSCORE board (120 +inf WITHSCORES
+1) "cyd"
+2) "133"
+3) "bob"
+4) "135"
+A> ZCOUNT board -inf 120
+(integer) 2
+A> TYPE board
+zset
+A> LPUSH board oops
+(error) WRONGTYPE Operation against a key holding the wrong kind of value
+
+== keys that expire
+A> SET session abc PX 1500
+OK
+A> SET token xyz EX 2
+OK
+A> SET flag on EX 1
+OK
+A> PTTL session
+(integer) 1500
+A> TTL token
+(integer) 2
+-- the server's clock moves on by 1600 ms
+A> GET session
+(nil)
+A> TTL token
+(integer) 0
+-- the server's clock moves on by 1000 ms
+A> DBSIZE
+(integer) 10
+A> INFO keyspace
+# Keyspace
+db0:keys=10,expires=0,avg_ttl=0
+
+== publish and subscribe
+A> SUBSCRIBE news
+(subscribed to news)
+B> PUBLISH news "kvd 0.1 is out"
+(integer) 1
+A< (waits for a message)
+1) "message"
+2) "news"
+3) "kvd 0.1 is out"
+B> PUBLISH sport "nobody listens"
+(integer) 0
+A> PSUBSCRIBE n*
+(subscribed to the pattern n*)
+B> PUBLISH news again
+(integer) 2
+A< (waits for a message)
+1) "message"
+2) "news"
+3) "again"
+A< (waits for a message)
+1) "pmessage"
+2) "n*"
+3) "news"
+4) "again"
+A> UNSUBSCRIBE
+(unsubscribed)
+A> PUNSUBSCRIBE
+(unsubscribed from the patterns)
+
+== a transaction WATCH aborts, and the same transaction again
+A> SET balance 100
+OK
+A> WATCH balance
+OK
+A> GET balance
+"100"
+B> INCRBY balance 50
+(integer) 150
+A> MULTI
+OK
+A> DECRBY balance 30
+QUEUED
+A> RPUSH ledger "-30"
+QUEUED
+A> EXEC
+(nil)
+A> WATCH balance
+OK
+A> GET balance
+"150"
+A> MULTI
+OK
+A> DECRBY balance 30
+QUEUED
+A> RPUSH ledger "-30"
+QUEUED
+A> EXEC
+1) (integer) 120
+2) (integer) 1
+A> MULTI
+OK
+A> SET x 1
+QUEUED
+A> NOSUCHCOMMAND
+(error) ERR unknown command 'NOSUCHCOMMAND', with args beginning with: 
+A> EXEC
+(error) EXECABORT Transaction discarded because of previous errors.
+
+== scanning the keys
+A> SCAN 0 MATCH user:* COUNT 100
+1) "0"
+2) 1) "user:1"
+A> SCAN 0 TYPE zset COUNT 100
+1) "0"
+2) 1) "board"
+A> KEYS b*
+1) "balance"
+2) "board"
+
+== a snapshot, a background one, and a restart that replays the log
+A> SAVE
+OK
+A> SET after-save 1
+OK
+A> RPUSH queue job4
+(integer) 4
+-- the data folder holds: kvd.1.aof (73 bytes), kvd.snapshot (678 bytes)
+A> BGSAVE
+Background saving started
+A> SET after-bgsave 2
+OK
+-- the server shuts down and starts again on the same folder
+kvd: loaded 13 keys from the snapshot
+kvd: replayed 1 command from 1 part of the append-only file
+A> GET after-save
+"1"
+A> GET after-bgsave
+"2"
+A> LRANGE queue 0 -1
+1) "job1"
+2) "job2"
+3) "job3"
+4) "job4"
+A> ZRANGE board 0 -1 WITHSCORES
+1) "abe"
+2) "120"
+3) "ada"
+4) "120"
+5) "cyd"
+6) "133"
+7) "bob"
+8) "135"
+A> GET balance
+"120"
+A> INFO persistence
+# Persistence
+loading:0
+rdb_changes_since_last_save:0
+rdb_bgsave_in_progress:0
+rdb_last_save_time:1767225600
+rdb_last_bgsave_status:ok
+aof_enabled:1
+aof_current_generation:2
+aof_current_size:39
+aof_last_write_status:ok
+
+== a crash in the middle of a write
+A> SET last-words "written whole"
+OK
+-- the server dies as it writes a command: 30 bytes of it reach the log
+-- the server starts again on the same folder
+kvd: loaded 13 keys from the snapshot
+kvd: replayed 2 commands from 1 part of the append-only file
+kvd: the log's last part ended inside a command: 30 bytes cut off
+A> GET last-words
+"written whole"
+A> GET lost
+(nil)
+A> DBSIZE
+(integer) 15
+A> INFO stats
+# Stats
+total_connections_received:3
+total_commands_processed:4
+rejected_connections:0
+expired_keys:0
+keyspace_hits:1
+keyspace_misses:3
+pubsub_channels:0
+pubsub_patterns:0
+pubsub_messages_delivered:0
