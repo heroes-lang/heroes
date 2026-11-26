@@ -1,0 +1,7 @@
+== check main.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at item.hero:15:55
+     |
+  15 | function walk(@b: Builder, it: Item, block: (function(@Builder, [Item]) -> ()))
+     |                                                       ^
+check exit 1

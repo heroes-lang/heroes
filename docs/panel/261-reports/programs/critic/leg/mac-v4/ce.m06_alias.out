@@ -1,0 +1,10 @@
+== check m06_alias.hero
+error[aliased_mutable_arguments]: `app` overlaps this call's `a` argument — two `@` arguments may not reach one value: the function would work on one place under two names, and a write through either would change what the other reads
+  at m06_alias.hero:13:20
+     |
+  13 |     h(a: @app, b: @app)  #~ aliased_mutable_arguments
+     |                    ^^^
+  note: one place under two names inside the function is the aliasing `no aliasing exists among the values this language owns` rules out (panel 010), and with it the call's answer would depend on the order its writes land in
+  fix (guess): make the two places different: distinct fields (`@p.x` and `@p.y`) and distinct literal indices (`@xs[0]` and `@xs[1]`) are accepted
+  fix (guess): or, where the value may be copied, pass a copy for one of them: declare a second cell holding the same value, pass `@` that cell, and write it back after the call; a record whose C struct holds a lock may not be
+check exit 1

@@ -1,0 +1,8 @@
+error[never_rebound]: `coord` is an `@` parameter and nothing writes it — every caller's place comes back exactly as it was lent: write `coord` where the body meant to change it, or remove the `@` here and at every call
+  at geom_reads.hero:14:45
+     |
+  14 | function left_of_five(g: Geometry, n: i32, @coord: f64, @res: i32) -> i32
+     |                                             ^^^^^
+  fix (guess): take it read-only in place, the caller's own cell and no copy: `coord: f64 lent`, with no `@` at the calls
+  fix (guess): remove the `@`: `coord` is read, never written
+exit 1

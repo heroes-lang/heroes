@@ -1,0 +1,8 @@
+== check m04b_missing_at_by_name.hero
+error[marker_mismatch]: `bump` changes this argument, so the call site writes `@` too
+  at m04b_missing_at_by_name.hero:11:10
+     |
+  11 |     bump(app)  #~ marker_mismatch
+     |          ^^^
+  fix (certain): mark the argument: `@x`
+check exit 1

@@ -1,0 +1,12 @@
+4 4 30
+0 5
+0
+40040
+42
+panic: a dead C handle was used inside C, at offset 0x0, called from shapes_body.main
+  A call marked `consumes` or `transfers` ended its life and emptied the place it was read
+  from, and C read that place: an `@` cell marked `acquires`, `borrows` or `retains` is one
+  C only writes, so a C function that reads it is bound wrongly, and wants its parameter
+  without `@`.
+Aborted
+run exit 134

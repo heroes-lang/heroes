@@ -1,0 +1,7 @@
+== check w3_field_over_function.hero
+error[not_mutable]: `b` was bound with `=`, which binds once, so `@b` would be refused: declare it a cell, `b @= <value>`, and pass `@b`
+  at w3_field_over_function.hero:23:16
+     |
+  23 |     print(h.g(@b, 10))  #~ not_mutable
+     |                ^
+check exit 1

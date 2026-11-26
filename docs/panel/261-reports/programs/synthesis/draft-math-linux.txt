@@ -1,0 +1,23 @@
+title: Defect <number>: On Linux a program reaching Rebel's `math` is refused `ffi_unpaired_release` on libm's `nextafterf`, the declaration clang read being placed in `<scratch space>` and read as a header of the folder `.`
+labels: kind:defect, class:blocking, area:cli
+milestone: M-rebel-library
+state: open
+---
+Filed 2026-11-26
+
+### What happens
+
+rebel/examples/reach's own `reach_web.hero`, which writes no mode, built by the base's stage 2 in `heroes-linux-arm64:latest`: `build` exit 1, *"error[ffi_unpaired_release]: `nextafterf`, bound here, is declared by a header of `.`, a folder this build names, and defined by a library no folder this build names holds: they may be two releases of library `m`"*, *"note: the declaration clang read is in `scratch space>`"* (its `<` lost), *"note: the definition the link took is in `/lib/aarch64-linux-gnu/libm.so.6`"*; panel 261's `router_k` the same on Linux x86-64 and arm64; both build on this Mac
+
+### Where to look
+
+`rebel/library/0.1.0/files/math/hero_math.hero:57`; the modules that raise the code, `selfhost/cli/supplied_halves.hero`, `supplied_paired_words.hero`, `package_stand_in.hero`
+
+### Origin
+
+2026-11-26, panel 261's critic, second reading (`docs/panel/261-reports/critic-reports.md` § 8.2 and § 8.3; its script `programs/critic/leg/baseleg.sh` and output `programs/critic/leg/arm64base/reach_web.out`, `aarch64`, Debian clang 22.1.8, the base df92f9281, stage 2 `sources 4dcf3a9f20257573`). `reach_web.hero` takes `http`, `io`, `net`, `web` and `web/proxy`, which reach `math`; every Rebel example that serves HTTP may meet it on Linux, an inference beyond `reach` and `router_k`. **On a60dfb77f: unrun** (a Linux container, not a run of seconds); `git diff --stat df92f9281 a60dfb77f` over the three modules above and over `rebel/library/0.1.0/files/math` prints nothing (the panel's synthesis), so the code that refused is unchanged, an inference. The Rebel pipeline's failed run at 4a5e585a9 (45654270380) names no `nextafterf` in its failed jobs' logs (`gh run view --log-failed`, `grep -c nextafterf`: 0), so whether the CI's Linux legs meet it is a question. `<scratch space>` is where clang places tokens a macro pastes; that glibc's `math.h` declares `nextafterf` through such a macro is unread, an inference. The critic searched `gh issue list --state all` for *ffi_unpaired_release nextafterf*, *nextafterf*, *unpaired release libm*: nothing.
+
+### Class
+
+**blocking**, 2026-11-26: a correct program refused on a platform the language claims, and a message that names a folder `.` for a header the program does not hold.
+

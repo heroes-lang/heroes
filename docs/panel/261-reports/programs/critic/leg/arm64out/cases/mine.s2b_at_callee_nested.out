@@ -1,0 +1,7 @@
+== check s2b_at_callee_nested.hero
+check exit 0
+build  exit 0
+2
+3
+n 3
+run exit 0

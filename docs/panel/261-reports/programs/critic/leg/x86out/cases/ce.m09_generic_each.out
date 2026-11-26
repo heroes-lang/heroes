@@ -1,0 +1,6 @@
+== check m09_generic_each.hero
+check exit 0
+build  exit 0
+3
+10
+run exit 0

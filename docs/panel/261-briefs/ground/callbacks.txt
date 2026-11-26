@@ -1,0 +1,18 @@
+rebel/library/0.1.0/files/threads/hero_os.hero:22:     function hero_thread_spawn_sized(body: (function(i64) -> i64), arg: i64, bytes: i64, @why: i64) -> i64
+rebel/library/0.1.0/files/threads/hero_os.hero:37:     function hero_thread_spawn_str_sized(body: (function(str) -> str), arg: str, bytes: i64, @why: i64) -> i64
+selfhost/main.hero:88:     function hero_thread_spawn_sized(body: (function(i64) -> i64), arg: i64, bytes: i64, @why: i64) -> i64
+selfhost/cli/link.hero:240:     function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+selfhost/mutate/recovery.hero:35:     function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+selfhost/mutate/cut.hero:45:     function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+examples/wordbands/main.hero:26:     function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+examples/dotproduct/main.hero:17:     function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+examples/mandelbrot/main.hero:17:     function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+examples/server/main.hero:41:     function hero_thread_spawn(body: (function(x: i64) -> i64), arg: i64) -> i64
+examples/server/http.hero:393:     function hero_thread_spawn(body: (function(x: i64) -> i64), arg: i64) -> i64
+examples/montecarlo/main.hero:23:     function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+examples/threads/main.hero:37:     function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+examples/collatz/main.hero:18:     function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+examples/matmul/main.hero:17:     function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+examples/firsthit/main.hero:21:     function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+examples/nqueens/main.hero:18:     function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+examples/histogram/main.hero:19:     function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64

@@ -1,0 +1,7 @@
+== check s2b_at_callee_nested.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at s2b_at_callee_nested.hero:8:25
+    |
+  8 |     writers: [(function(@App, i64) -> i64)]
+    |                         ^
+check exit 1

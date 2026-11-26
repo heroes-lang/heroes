@@ -1,0 +1,19 @@
+== check v4_shapes.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at v4_shapes.hero:10:34
+     |
+  10 |     function twice(cb: (function(@a: i64, @b: i64) -> i64)) -> i64
+     |                                  ^
+
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at v4_shapes.hero:11:38
+     |
+  11 |     function hand_over(cb: (function(@h: Node, k: i32) -> i32), k: i32) -> i64
+     |                                      ^
+
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at v4_shapes.hero:12:37
+     |
+  12 |     function fill_big(cb: (function(@b: Big) -> i32)) -> i64
+     |                                     ^
+check exit 1

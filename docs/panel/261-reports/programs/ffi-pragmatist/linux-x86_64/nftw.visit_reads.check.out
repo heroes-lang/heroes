@@ -1,0 +1,8 @@
+error[never_rebound]: `at` is an `@` parameter and nothing writes it — every caller's place comes back exactly as it was lent: write `at` where the body meant to change it, or remove the `@` here and at every call
+  at visit_reads.hero:11:55
+     |
+  11 | function visit(path: cstr, sb: Stat lent, flag: i32, @at: Ftw) -> i32
+     |                                                       ^^
+  fix (guess): take it read-only in place, the caller's own cell and no copy: `at: Ftw lent`, with no `@` at the calls
+  fix (guess): remove the `@`: `at` is read, never written
+exit 1

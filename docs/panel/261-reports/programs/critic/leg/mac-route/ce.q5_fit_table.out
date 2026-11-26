@@ -1,0 +1,8 @@
+== check q5_fit_table.hero
+check exit 0
+build  exit 0
+2
+3
+1
+2
+run exit 0

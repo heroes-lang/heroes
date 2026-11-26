@@ -1,0 +1,8 @@
+== check m05_extra_at.hero
+error[marker_mismatch]: a function value does not change this argument — the `@` says it does
+  at m05_extra_at.hero:10:18
+     |
+  10 |     print(fs[0](@x))  #~ marker_mismatch
+     |                  ^
+  note: no function type carries an `@` (§ 9), so a value is always called with plain arguments; a function that changes its argument is called by name, `f(@x)`
+check exit 1

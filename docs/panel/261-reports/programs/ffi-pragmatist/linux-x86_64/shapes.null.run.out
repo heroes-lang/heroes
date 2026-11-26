@@ -1,0 +1,10 @@
+4 4 30
+0 5
+0
+panic: a null pointer was read through, at offset 0x0, called from shapes_body.set_five
+  Two things put a null where C read it: a handle or `ptr` holding `nullptr` handed to a
+  C function that reads through it; or a C object already given back, read again through
+  a copy of its handle the program kept, since a freed object's fields read as zero. This
+  runtime raised neither.
+Aborted
+run exit 134

@@ -1,0 +1,13 @@
+== check w3_field_over_function.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at w3_field_over_function.hero:7:19
+    |
+  7 |     f: [(function(@Box, i64) -> i64)]
+    |                   ^
+
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at w3_field_over_function.hero:14:18
+     |
+  14 |     g: (function(@Box, i64) -> i64)
+     |                  ^
+check exit 1

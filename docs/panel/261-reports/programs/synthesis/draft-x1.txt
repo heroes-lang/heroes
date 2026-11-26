@@ -1,0 +1,23 @@
+title: Defect <number>: A call through a function value that marks a by-value argument `@`, built with `--permissive`, hands clang a pointer where the value's C type takes the value, and the build stops at exit 2
+labels: kind:defect, class:blocking, area:ir
+milestone: M-rebel-library
+state: open
+---
+Filed 2026-11-26
+
+### What happens
+
+`fs = [double]`, `x @= 3`, `print(fs[0](@x))`, `double` taking `x: i64`: `heroes check` refuses it, `marker_mismatch`, exit 1; `check --permissive` accepts it, exit 0; and `build --permissive` exits 2, *"internal error: compiling the generated C failed ... incompatible pointer to integer conversion passing 'int64_t *' (aka 'long long *') to parameter of type 'int64_t' (aka 'long long'); remove &"*, where Part 11's control arm pins an extra `@` at a call by name as *"says nothing: the value is passed"* (`tests/golden/control/marker_mismatch-extra-at.hero:4`); the same exit and line on df92f9281 and on a60dfb77f
+
+### Where to look
+
+`selfhost/ir/flatten.hero` (`value_call`, line 608 at df92f9281: *"no declaration is known, so no parameter's mark is read"*), `tests/golden/control/`
+
+### Origin
+
+2026-11-26, the repair of panel 261's briefs (probe `x1`, `docs/panel/261-briefs/ground/probe/x1.hero` and `x1.permissive.out`, the base df92f9281), re-run by the sitting's critic (`docs/panel/261-reports/critic-reports.md` § 2 item 5, *"read as unfiled"* by the words it searched) and by the sitting's synthesis on a60dfb77f with the trunk's stage 3 (`sources 6e60cb9f65cc1298`): `check` exit 1, `check --permissive` exit 0, `build --permissive` exit 2, the clang line above. The control arm's meanings live in `ir/flatten.hero` (`.claude/rules/verification.md`'s map), and a call through a value has no declaration whose marks the lowering could read, so it lowers the `@` argument as the caller's place against a typedef whose slot is the value. Panel 261's compiler-engineer's route (`heroes-261-v4`) reads the callee value's own type in `value_call` and lowers an extra `@` as the value: case `m05_extra_at` (`docs/panel/261-reports/programs/compiler-engineer/`) prints `6`, `3`, exit 0 under `build --permissive` there. The sitting's landing therefore carries a repair; this is filed apart because it stands on `main` without the form, and a value of a by-value function type can be called with an extra `@` today.
+
+### Class
+
+**blocking**, 2026-11-26: an exit 2 where the author can be told, under a build the language offers (`--permissive`, panel 226).
+

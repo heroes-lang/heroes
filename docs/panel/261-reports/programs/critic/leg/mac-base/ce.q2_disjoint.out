@@ -1,0 +1,7 @@
+== check q2_disjoint.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at q2_disjoint.hero:8:26
+    |
+  8 |     handlers: [(function(@State, i64) -> i64)]
+    |                          ^
+check exit 1

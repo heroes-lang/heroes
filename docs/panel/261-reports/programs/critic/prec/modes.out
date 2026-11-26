@@ -1,0 +1,15 @@
+modes.swift:8:24: error: cannot convert value of type '@Sendable (inout App) -> ()' to specified type '(App) -> Void'
+ 6 | func plain(_ a: App) -> Void { print(a.n) }
+ 7 | let f: (inout App) -> Void = bump
+ 8 | let g: (App) -> Void = bump
+   |                        `- error: cannot convert value of type '@Sendable (inout App) -> ()' to specified type '(App) -> Void'
+ 9 | let h: (inout App) -> Void = peek
+10 | let k: (borrowing App) -> Void = plain
+
+modes.swift:9:30: error: cannot convert value of type '@Sendable (borrowing App) -> Void' to specified type '(inout App) -> Void'
+ 7 | let f: (inout App) -> Void = bump
+ 8 | let g: (App) -> Void = bump
+ 9 | let h: (inout App) -> Void = peek
+   |                              `- error: cannot convert value of type '@Sendable (borrowing App) -> Void' to specified type '(inout App) -> Void'
+10 | let k: (borrowing App) -> Void = plain
+11 | print("built")

@@ -1,0 +1,7 @@
+== check q2_field_callee.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at q2_field_callee.hero:10:24
+     |
+  10 |     handler: (function(@App, i64) -> i64)
+     |                        ^
+check exit 1

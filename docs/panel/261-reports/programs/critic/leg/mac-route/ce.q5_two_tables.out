@@ -1,0 +1,7 @@
+== check q5_two_tables.hero
+check exit 0
+build  exit 0
+2
+3
+1
+run exit 0

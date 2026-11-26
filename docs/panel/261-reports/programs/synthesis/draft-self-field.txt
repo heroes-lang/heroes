@@ -1,0 +1,23 @@
+title: Defect <number>: A record holding, as a field, a function value whose type names that record is accepted by the checker and emitted with the function's typedef before the struct it names, so clang refuses the program at exit 2
+labels: kind:defect, class:blocking, area:emit
+milestone: M-rebel-library
+state: open
+---
+Filed 2026-11-26
+
+### What happens
+
+`record Box` holding `n: i64` and `f: (function(Box, i64) -> i64)`, then `b = Box(n: 3, f: add_n)` and `print(b.f(b, 10))`: `heroes check` exit 0, `heroes build` exit 2, *"internal error: compiling the generated C failed: baseselffield.c:18:56: error: unexpected type name 'int64_t': expected identifier"*; the same exit and line on df92f9281 and on a60dfb77f; held through a list (`routes: [Route]`, a `Route` holding the handler), the shape builds and runs
+
+### Where to look
+
+`selfhost/emit/type_needs.hero` (a function type's parameters counted as containment by value), `selfhost/emit/typeorder.hero`
+
+### Origin
+
+2026-11-26, panel 261's compiler-engineer (`docs/panel/261-reports/compiler-engineer.md` § 3.1, `programs/compiler-engineer/base_self_field.hero`), reproduced by the sitting's critic on this Mac and in Linux x86-64 (`docs/panel/261-reports/critic-reports.md` § 8.1, § 8.2, `programs/critic/mine/base_self_field.hero`) and by the sitting's synthesis on a60dfb77f with the trunk's stage 3 (`sources 6e60cb9f65cc1298`). Spec § 3 says a record *"may contain itself only through `[T]` or `{K: V}`"*, and a function value naming the record as a parameter is no containment: the checker accepts it (panel 023 refuses by-value cycles only), and the emitter orders the typedef `typedef int64_t (*h_0fn_...)(h_X, int64_t);` before any declaration of `h_X`. The seat searched `gh issue list --search` for *record holding function value itself typedef* and *unknown type name*, nothing on point. The same cycle meets panel 261's form at its most natural shape, a state record holding a handler that takes it by `@` (`q2_field_callee.hero`, `f4_field_first.hero`, exit 2 under the sitting's route). The seat's repair, unbuilt: a forward `typedef struct h_X h_X;` before a function typedef that names `h_X`, which C accepts for a parameter in a declarator.
+
+### Class
+
+**blocking**, 2026-11-26: a correct program refused, at exit 2.
+

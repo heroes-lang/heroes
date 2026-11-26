@@ -1,0 +1,7 @@
+== check w2_unwritten_cell.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at w2_unwritten_cell.hero:10:18
+     |
+  10 |     h: (function(@App) -> ()) = bump
+     |                  ^
+check exit 1

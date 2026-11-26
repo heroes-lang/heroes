@@ -1,0 +1,7 @@
+== check s1_map_callee.hero
+check exit 0
+build  exit 0
+10
+gone
+12
+run exit 0

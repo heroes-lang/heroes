@@ -1,0 +1,23 @@
+title: Defect <number>: On Linux a C callback whose parameter is `long long` has no spelling: `i64`, the header's width and sign, is refused `ffi_callback_type` inside the function-pointer type, while the same binding builds and runs on Darwin
+labels: kind:defect, class:blocking, area:emit
+milestone: M-rebel-library
+state: open
+---
+Filed 2026-11-26
+
+### What happens
+
+panel 261's `census/update_hook.hero`, `sqlite3_update_hook`'s callback with its `sqlite3_int64` written `i64`: on this Mac it binds and prints `0`, `true`, `0`; on Linux arm64 and Linux x86-64 it is refused, *"clang read the header, and it says `void (*)(void *, int, const char *, const char *, long long)`"*, `i64` being `int64_t`, which is `long` there; three of `sqlite3.h`'s twenty API callback types carry `sqlite3_int64` or `sqlite3_uint64`
+
+### Where to look
+
+spec § 13 (a parameter *"declared at the header's own width and sign"*), `selfhost/emit/ffi_narrowed.hero` (the callback type's check), design.md lines 4060 to 4082 at df92f9281 (a C `long` field and an argument past `...`, not a callback's parameter)
+
+### Origin
+
+2026-11-26, panel 261's ffi-pragmatist (`docs/panel/261-reports/ffi-pragmatist.md` § 3.1; `programs/ffi-pragmatist/census/update_hook.hero`, its outputs `update_hook.run.out` on this Mac and `linux-arm64/census.update_hook.build.out`, `linux-x86_64/census.update_hook.build.out`), stage 2 `sources 4dcf3a9f20257573` on all three. Inside a function-pointer type C wants the types identical, so `int64_t` against `long long` is refused where both are 64 bits signed; no Heroes word names `long long`. The seat searched `gh issue list --search` for *"long long" callback*, *sqlite3_int64*, *long long int64_t function pointer* and *update_hook*: no issue naming it. **On a60dfb77f: unrun** (Linux legs, not a run of seconds); `git diff --stat df92f9281 a60dfb77f -- selfhost/emit` prints nothing (the panel's synthesis), so the check is unchanged, an inference. The other two `sqlite3_int64` and `sqlite3_uint64` callback types are unrun on Linux.
+
+### Class
+
+**blocking**, 2026-11-26: a binding written at the header's width and sign, as spec § 13 asks, refused on one platform and accepted on another, with no spelling that binds it on both.
+

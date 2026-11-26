@@ -1,0 +1,7 @@
+== check q5_lent_to_at.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at q5_lent_to_at.hero:12:18
+     |
+  12 |     w: (function(@App, i64) -> i64) = health  #~ type_mismatch
+     |                  ^
+check exit 1

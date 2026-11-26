@@ -1,0 +1,16 @@
+== check q5_uniform_table.hero
+error[never_rebound]: `app` is an `@` parameter and nothing writes it — every caller's place comes back exactly as it was lent: write `app` where the body meant to change it, or remove the `@` here and at every call
+  at q5_uniform_table.hero:11:18
+     |
+  11 | function health(@app: App, k: i64) -> i64  #~ never_rebound
+     |                  ^^^
+  fix (guess): take it read-only in place, the caller's own cell and no copy: `app: App lent`, with no `@` at the calls
+  fix (guess): remove the `@`: `app` is read, never written
+
+error[never_rebound]: `_` binds nothing, so an `@` on it marks a parameter nothing can write — every caller's place would come back exactly as it was lent: remove the `@` here and at every call
+  at q5_uniform_table.hero:14:18
+     |
+  14 | function logout(@_: App, k: i64) -> i64  #~ never_rebound
+     |                  ^
+  fix (guess): remove the `@`: `_` is never written
+check exit 1

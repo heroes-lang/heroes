@@ -1,0 +1,19 @@
+== check c1_control_missing.hero
+error[marker_mismatch]: `h` changes this argument, so the call site writes `@` too
+  at c1_control_missing.hero:15:7
+     |
+  15 |     h(app)  #~ marker_mismatch
+     |       ^^^
+  fix (certain): mark the argument: `@x`
+
+error[marker_mismatch]: `h` changes this argument, so the call site writes `@` too
+  at c1_control_missing.hero:17:7
+     |
+  17 |     h(App(n: 7))  #~ marker_mismatch
+     |       ^^^^^^^^^
+  note: `@` stands before a place the call writes back into, a name, a field or an element, and this is a value: bind it to a cell first, `x: <type> @= …`, and pass `@x`
+check exit 1
+build --permissive exit 0
+1
+2
+run exit 0

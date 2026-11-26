@@ -1,0 +1,13 @@
+== check q5_two_tables.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at q5_two_tables.hero:19:25
+     |
+  19 |     writers: [(function(@App, i64) -> i64)] = [count]
+     |                         ^
+
+error[expected_function_type_params_close]: expected `)`, or `,` and another parameter type, found a name (`lent`)
+  at q5_two_tables.hero:20:29
+     |
+  20 |     readers: [(function(App lent, i64) -> i64)] = [health, logout]
+     |                             ^^^^
+check exit 1

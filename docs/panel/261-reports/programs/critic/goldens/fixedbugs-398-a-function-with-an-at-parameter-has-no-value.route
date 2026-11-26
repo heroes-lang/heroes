@@ -1,0 +1,7 @@
+fixedbugs-398-a-function-with-an-at-parameter-has-no-value.hero:67:14: error[type_mismatch]: expected `(function(i64) -> ())`, found `(function(@i64) -> ())`
+fixedbugs-398-a-function-with-an-at-parameter-has-no-value.hero:71:22: error[type_mismatch]: expected `(function(acc: a type parameter, item: a type parameter) -> a type parameter)`, found `(function(@acc: i64, item: i64) -> i64)`
+fixedbugs-398-a-function-with-an-at-parameter-has-no-value.hero:74:19: error[type_mismatch]: expected `(function(i64) -> ())`, found `(function(@i64) -> ())`
+fixedbugs-398-a-function-with-an-at-parameter-has-no-value.hero:78:9: error[mutable_parameter_as_value]: `frexp` changes its argument `e` through `@`, and a function value cannot: no function type carries an `@` (§ 9), so `frexp` is only called by name, its `e` marked `@` at the call
+fixedbugs-398-a-function-with-an-at-parameter-has-no-value.hero:88:11: error[type_mismatch]: expected `(function(@i64) -> ())`, found `(function() -> ())`
+fixedbugs-398-a-function-with-an-at-parameter-has-no-value.hero:91:9: error[cannot_infer]: nothing here says what `A` of `swap_in` is: a generic function used as a value takes its types from the type the context asks for, and this position asks for none
+fixedbugs-398-a-function-with-an-at-parameter-has-no-value.hero:94:19: error[type_mismatch]: expected `(function() -> ())`, found `(function(@i64) -> ())`

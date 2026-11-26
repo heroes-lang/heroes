@@ -1,0 +1,26 @@
+== check main.hero
+note: the package `rebel` is read from the folder `../../../../../../rebel/library/0.1.0/files/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at main.hero:16:28
+     |
+  16 |     table: {str: (function(@Notes, web.Found, http.Request) -> http.Response?)}
+     |                            ^
+
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at faces.hero:11:61
+     |
+  11 | …er: web.Router, @table: {str: (function(@S, web.Found, http.Request) -> http.Response?)}, method: str, pattern: str, n…
+     |                                          ^
+
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at faces.hero:11:167
+     |
+  11 | …se?)}, method: str, pattern: str, name: str, answer: (function(@S, web.Found, http.Request) -> http.Response?)) -> ()?
+     |                                                                 ^
+
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at faces.hero:18:65
+     |
+  18 | …ter: web.Router, table: {str: (function(@S, web.Found, http.Request) -> http.Response?)}, @state: S, req: http.Request…
+     |                                          ^
+check exit 1

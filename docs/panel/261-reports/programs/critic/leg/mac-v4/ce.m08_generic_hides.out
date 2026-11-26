@@ -1,0 +1,7 @@
+== check m08_generic_hides.hero
+error[type_mismatch]: expected `(function(a type parameter) -> ())`, found `(function(@App) -> ())`
+  at m08_generic_hides.hero:15:11
+     |
+  15 |     apply(bump, app)  #~ type_mismatch
+     |           ^^^^
+check exit 1

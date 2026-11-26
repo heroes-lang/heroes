@@ -1,0 +1,6 @@
+== check q7_nested_type.hero
+check exit 0
+build  exit 0
+3
+0
+run exit 0

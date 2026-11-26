@@ -1,0 +1,18 @@
+--- ../../261-critic-scratch/r2/route/selfhost/check/function_value.hero	2026-11-26 11:37:16
++++ h417/selfhost/check/function_value.hero	2026-11-26 13:11:49
+@@ -93,7 +93,15 @@
+ # value), else by value.
+ function declared_modes(a: ast.Ast, s: source.Source, f: ast.FunctionDecl) -> [str]
+     out: [str] @= []
++
++    # The synthesis's test of the compiler-engineer's hypothesis on fixedbugs-417: an
++    # `extern`'s signature interns no moded type.
++    if f.is_extern
++        for _ in f.params
++            out @ out.push("")
+ 
++        return out
++
+     for p in f.params
+         if p.mutable
+             out @ out.push("@")

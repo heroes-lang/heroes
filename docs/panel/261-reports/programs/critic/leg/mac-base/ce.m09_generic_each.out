@@ -1,0 +1,7 @@
+== check m09_generic_each.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at m09_generic_each.hero:18:40
+     |
+  18 | function each<S>(@s: S, hs: [(function(@S, i64) -> ())], k: i64)
+     |                                        ^
+check exit 1

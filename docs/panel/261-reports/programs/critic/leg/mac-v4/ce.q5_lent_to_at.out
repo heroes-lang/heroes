@@ -1,0 +1,7 @@
+== check q5_lent_to_at.hero
+error[type_mismatch]: expected `(function(App, i64) -> i64)`, found `(function(App lent, i64) -> i64)`
+  at q5_lent_to_at.hero:13:38
+     |
+  13 |     v: (function(App, i64) -> i64) = health  #~ type_mismatch
+     |                                      ^^^^^^
+check exit 1

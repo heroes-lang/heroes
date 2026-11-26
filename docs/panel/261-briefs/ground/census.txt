@@ -1,0 +1,16 @@
+program   files  lines useweb usehttp addcall add_any routecall ifname== found.nm    path==
+agent        42   5876      0     3      4     0        0       16        0         7
+auth         40   7322      2    13     32     0        1        0        0         1
+backup       46   8379      0     3     17     0        0        1        0         8
+certs        37   7273      0    14      0     0        0        2        0         5
+chat         37   8275      3     6      7     0        4        0        4         0
+gateway      36   7291      0    14      1     0        0        0        0         6
+ingest       65  14424      0     5     17     0        0        9        0         8
+iothub       41  10001      0     2      3     0        0        2        0         3
+monitor      41   8349      0     2     23     0        0        3        0         6
+notes        49   8704     10    20     40     0        5       35        4         1
+reach       213   6015      2     7      7     0        3        1        0         1
+registry     39   6660      5     8     20     0        4        2        4         1
+searchd      34   6795      3    10     24     0        2        6        1         8
+server        1    313      0     1      0     0        0        0        0         2
+worker       49   9665      0     5     22     0        0        7        0         5

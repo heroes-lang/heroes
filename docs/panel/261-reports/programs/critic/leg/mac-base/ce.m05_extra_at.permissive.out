@@ -1,0 +1,17 @@
+== check m05_extra_at.hero
+error[marker_mismatch]: a function value does not change this argument — the `@` says it does
+  at m05_extra_at.hero:10:18
+     |
+  10 |     print(fs[0](@x))  #~ marker_mismatch
+     |                  ^
+  note: no function type carries an `@` (§ 9), so a value is always called with plain arguments; a function that changes its argument is called by name, `f(@x)`
+check exit 1
+build --permissive exit 2
+internal error: compiling the generated C failed:
+m05_extra_at.hero:10:349: error: incompatible pointer to integer conversion passing 'int64_t *' (aka 'long long *') to parameter of type 'int64_t' (aka 'long long'); remove & [-Wint-conversion]
+   10 |     t4 = h0_fs; t5 = ((__INT64_TYPE__)0); t6 = ((void)((t4 == ((void *)0) || t5 < 0 || t5 >= t4->len) ? hero_panic_index_at(t4, t5, "m05_extra_at.hero", "m05_extra_at.main", 10, 11) : (void)0), (void)(HERO_ARRAY_ELEM_SIZE(t4) != sizeof(h_0fn_48ac9712) ? hero_unreachable() : (void)0), ((h_0fn_48ac9712 const *)(const void *)(t4 + 1))[t5]); t7 = t6(&h1_x); hero_print_int(t7); hero_print_end();
+      |                                                                                                                                                                                                                                                                                                                                                             ^~~~~
+1 error generated.
+
+the generated C is at build/tu-48331aac136ca326/m05extraat.c
+error: clang refused the generated C

@@ -1,0 +1,7 @@
+== check m01_at_value.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at m01_at_value.hero:12:18
+     |
+  12 |     h: (function(@App, i64) -> i64) = bump
+     |                  ^
+check exit 1

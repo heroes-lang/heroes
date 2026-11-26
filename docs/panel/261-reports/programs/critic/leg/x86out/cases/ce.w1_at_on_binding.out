@@ -1,0 +1,19 @@
+== check w1_at_on_binding.hero
+error[not_mutable]: `p` is a parameter without `@`, so `@p` would be refused: mark it `@p` in the signature too, and at every call
+  at w1_at_on_binding.hero:12:8
+     |
+  12 |     h(@p)  #~ not_mutable
+     |        ^
+
+error[not_mutable]: `k` was bound with `=`, which binds once, so `@k` would be refused: declare it a cell, `k @= <value>`, and pass `@k`
+  at w1_at_on_binding.hero:18:8
+     |
+  18 |     h(@k)  #~ not_mutable
+     |        ^
+
+error[not_mutable]: `x` is the loop variable, bound afresh for each element, so `@x` would be refused: pass a cell declared outside the loop
+  at w1_at_on_binding.hero:23:12
+     |
+  23 |         h(@x)  #~ not_mutable
+     |            ^
+check exit 1

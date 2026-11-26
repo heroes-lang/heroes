@@ -1,0 +1,7 @@
+== check w5_heap_through_value.hero
+error[not_mutable]: `p` is a parameter without `@`, so `@p` would be refused: mark it `@p` in the signature too, and at every call
+  at w5_heap_through_value.hero:12:8
+     |
+  12 |     h(@p, "x")  #~ not_mutable
+     |        ^
+check exit 1

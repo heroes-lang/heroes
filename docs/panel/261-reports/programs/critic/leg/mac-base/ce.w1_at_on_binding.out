@@ -1,0 +1,13 @@
+== check w1_at_on_binding.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at w1_at_on_binding.hero:11:31
+     |
+  11 | function through(h: (function(@App) -> ()), p: App) -> i64
+     |                               ^
+
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at w1_at_on_binding.hero:16:18
+     |
+  16 |     h: (function(@App) -> ()) = bump
+     |                  ^
+check exit 1

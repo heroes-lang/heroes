@@ -1,0 +1,72 @@
+== t1
+fmt exit 0,     3475 bytes, cmp: same
+run exit 0
+201 stored a
+201 stored b
+200 alpha
+204 deleted b
+404 no note b
+200 notes 1 requests 5
+404 no route
+== t2
+fmt exit 0,     3240 bytes, cmp: same
+run exit 0
+OK
+OK
+1
+2
+ERR not a number
+(nil)
+1
+a
+4
+ERR unknown FLY
+== t3
+fmt exit 0,     1082 bytes, cmp: same
+run exit 0
+push -> locked coins 0 passed 0
+coin -> open coins 1 passed 0
+coin -> open coins 2 passed 0
+push -> locked coins 2 passed 1
+push -> locked coins 2 passed 1
+coin -> open coins 3 passed 1
+
+== re-run by the repair, 2026-11-26 09:58, base df92f9281, stage 2 sources 4dcf3a9f20257573, from panel261-repair-scratch/tree over copies in ../refs/
+== t1
+check exit 0
+fmt exit 0, 3475 bytes, cmp: same
+run 1 exit 0, stderr 0 bytes, cmp expected: same
+run 2 exit 0, stderr 0 bytes, cmp expected: same
+run 3 exit 0, stderr 0 bytes, cmp expected: same
+== t2
+check exit 0
+fmt exit 0, 3240 bytes, cmp: same
+run 1 exit 0, stderr 0 bytes, cmp expected: same
+run 2 exit 0, stderr 0 bytes, cmp expected: same
+run 3 exit 0, stderr 0 bytes, cmp expected: same
+== t3
+check exit 0
+fmt exit 0, 1082 bytes, cmp: same
+run 1 exit 0, stderr 0 bytes, cmp expected: same
+run 2 exit 0, stderr 0 bytes, cmp expected: same
+run 3 exit 0, stderr 0 bytes, cmp expected: same
+
+== Linux arm64, the repair, 2026-11-26 about 10:05 to 10:15, base df92f9281, one container (heroes-linux-arm64:latest, --rm --pull never), linux/run.log
+aarch64
+Debian clang version 22.1.8 (1~deb13u4)
+wrote heroes-next
+heroes 0.6.0
+sources 4dcf3a9f20257573
+t1 check exit 0
+t1 run1 exit 0 stderr 0 cmp same
+t1 run2 exit 0 stderr 0 cmp same
+t1 run3 exit 0 stderr 0 cmp same
+t2 check exit 0
+t2 run1 exit 0 stderr 0 cmp same
+t2 run2 exit 0 stderr 0 cmp same
+t2 run3 exit 0 stderr 0 cmp same
+t3 check exit 0
+t3 run1 exit 0 stderr 0 cmp same
+t3 run2 exit 0 stderr 0 cmp same
+t3 run3 exit 0 stderr 0 cmp same
+docker exit 0

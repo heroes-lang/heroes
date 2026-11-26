@@ -1,0 +1,13 @@
+== check main.hero
+note: the package `rebel` is read from the folder `../../../../../../rebel/library/0.1.0/files/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+check exit 0
+build  exit 1
+note: the package `rebel` is read from the folder `../../../../../../rebel/library/0.1.0/files/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+error[ffi_unpaired_release]: `nextafterf`, bound here, is declared by a header of `.`, a folder this build names, and defined by a library no folder this build names holds: they may be two releases of library `m`, and nothing holds one to the other
+  at ../../../../../../rebel/library/0.1.0/files/math/hero_math.hero:57:5
+     |
+  57 |     function nextafterf(x: f32, y: f32) -> f32
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: the declaration clang read is in `scratch space>`
+  note: the definition the link took is in `/lib/x86_64-linux-gnu/libm.so.6`
+  note: a library's header and its definitions come both from folders the build names, or neither: pass `--library <dir>` with the folder holding the library of `.`'s release, or name the library with `pkgconfig` and let `pkg-config` answer both

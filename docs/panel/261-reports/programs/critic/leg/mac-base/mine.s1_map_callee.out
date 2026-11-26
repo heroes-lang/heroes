@@ -1,0 +1,7 @@
+== check s1_map_callee.hero
+error[expected_type]: expected a type, found `@` — a type is `i64`, `f64`, `bool`, `str`, `[T]`, `{K: V}`, `T?`, `()`, or the name of a `record` or `variant`
+  at s1_map_callee.hero:7:25
+    |
+  7 |     hs: {str: (function(@App, i64) -> i64)}
+    |                         ^
+check exit 1

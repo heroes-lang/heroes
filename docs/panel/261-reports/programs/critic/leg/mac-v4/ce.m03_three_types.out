@@ -1,0 +1,13 @@
+== check m03_three_types.hero
+error[type_mismatch]: expected `(function(App) -> ())`, found `(function(@App) -> ())`
+  at m03_three_types.hero:16:32
+     |
+  16 |     f: (function(App) -> ()) = bump  #~ type_mismatch
+     |                                ^^^^
+
+error[type_mismatch]: expected `(function(App lent) -> ())`, found `(function(App) -> ())`
+  at m03_three_types.hero:18:37
+     |
+  18 |     h: (function(App lent) -> ()) = copy  #~ type_mismatch
+     |                                     ^^^^
+check exit 1

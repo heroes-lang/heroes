@@ -1,0 +1,5 @@
+== check q8_mailbox.hero
+check exit 0
+build  exit 0
+11
+run exit 0
