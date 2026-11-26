@@ -1,0 +1,384 @@
+# The commands of sorted sets: `ZADD` with `NX`, `XX`, `GT`, `LT`, `CH` and
+# `INCR`, `ZREM`, `ZSCORE`, `ZINCRBY`, `ZCARD`, `ZRANK`, `ZREVRANK`,
+# `ZRANGE` by rank or by score, reversed, limited and with scores,
+# `ZRANGEBYSCORE` and `ZCOUNT`, as Redis answers each.
+
+use <rebel>/bytes
+use <rebel>/redis
+
+use commands/common
+use protocol/reply
+use protocol/words
+use store/keyspace
+use store/skiplist
+use store/zset
+
+# A score's bound as `ZRANGEBYSCORE` reads one: `1.5`, `(1.5` for the score
+# left out, `-inf`, `+inf`.
+#
+# - `word`: the bound as sent.
+#
+# Fails `invalid` where it spells no float.
+function bound_of(word: [u8]) -> skiplist.Bound?
+    if word.len() > 0 && word[0] == '('
+        v = words.float(word.slice(from: 1, to: word.len()))?
+        return ok(skiplist.Bound(value: v, exclusive: true))
+    return ok(skiplist.Bound(value: words.float(word)?, exclusive: false))
+
+# The reply of `pairs`, each member followed by its score where `scores`.
+#
+# - `pairs`: the members and scores.
+# - `scores`: whether each score follows its member.
+function pairs_reply(pairs: [skiplist.Pair], scores: bool) -> redis.Reply
+    out: [redis.Reply] @= []
+
+    for p in pairs
+        out @ out.push(reply.bulk(p.member))
+
+        if scores
+            out @ out.push(reply.bulk_text(reply.format_double(p.score)))
+
+    return .array(items: out)
+
+# `ZADD key [NX | XX] [GT | LT] [CH] [INCR] score member [score member ...]`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function zadd(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    nx @= false
+    xx @= false
+    gt @= false
+    lt @= false
+    ch @= false
+    incr @= false
+    i @= 2
+    reading @= true
+
+    while reading && i < argv.len()
+        option = words.upper(argv[i])
+
+        if option == "NX"
+            nx @ true
+        else if option == "XX"
+            xx @ true
+        else if option == "GT"
+            gt @ true
+        else if option == "LT"
+            lt @ true
+        else if option == "CH"
+            ch @ true
+        else if option == "INCR"
+            incr @ true
+        else
+            reading @ false
+
+        if reading
+            i @ i + 1
+
+    pairs = argv.len() - i
+
+    if pairs == 0 || pairs % 2 != 0
+        return reply.syntax()
+
+    if nx && xx
+        return reply.error(code: "ERR", message: "XX and NX options at the same time are not compatible")
+
+    if gt && lt || nx && (gt || lt)
+        return reply.error(code: "ERR", message: "GT, LT, and/or NX options at the same time are not compatible")
+
+    if incr && pairs != 2
+        return reply.error(code: "ERR", message: "INCR option supports a single increment-element pair")
+    scores: [f64] @= []
+    j @= i
+
+    while j < argv.len()
+        match words.float(argv[j])
+            .ok v  => scores @ scores.push(v)
+            .err _ => return reply.not_float()
+
+        j @ j + 2
+
+    at = match common.of_kind(@db, key: argv[1], kind: .zset, now: now)
+        .at a => a.p
+        .absent =>
+            if xx
+                if incr
+                    return reply.nothing()
+                return reply.integer(0)
+            keyspace.create(@db, key: argv[1], value: keyspace.empty(.zset))
+        .wrong => return reply.wrong_type()
+
+    added @= 0
+    changed_count @= 0
+    last: redis.Reply @= reply.nothing()
+    k @= 0
+
+    while k < scores.len()
+        member = argv[i + 2 * k + 1]
+        old = zset.score_of(db.values[at].zset, member: member)
+        exists = !old.is_err()
+        score @= scores[k]
+
+        if incr && exists
+            score @ score + old.must()
+
+        if score != score
+            _ = keyspace.drop_if_empty(@db, at: at)
+            return reply.error(code: "ERR", message: "resulting score is not a number (NaN)")
+        allowed @= !(nx && exists) && !(xx && !exists)
+
+        if exists && gt && score <= old.must()
+            allowed @ false
+
+        if exists && lt && score >= old.must()
+            allowed @ false
+
+        if allowed
+            if !exists
+                added @ added + 1
+                changed_count @ changed_count + 1
+            else if old.must() != score
+                changed_count @ changed_count + 1
+            _ = zset.put(@db.values[at].zset, member: member, score: score)
+            last @ reply.bulk_text(reply.format_double(score))
+        else if incr
+            last @ reply.nothing()
+        k @ k + 1
+
+    if keyspace.drop_if_empty(@db, at: at)
+        return if incr
+            last
+        else
+            reply.integer(0)
+
+    if changed_count > 0
+        common.changed(@db, key: argv[1], logged: argv)
+
+    if incr
+        return last
+
+    if ch
+        return reply.integer(changed_count)
+    return reply.integer(added)
+
+# `ZINCRBY key increment member`: `ZADD key INCR increment member`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function zincrby(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    return zadd(@db, argv: common.command("ZADD", rest: [argv[1], bytes.from_text("INCR"), argv[2], argv[3]]), now: now)
+
+# `ZREM key member [member ...]`: how many went.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function zrem(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    at = match common.of_kind(@db, key: argv[1], kind: .zset, now: now)
+        .at a   => a.p
+        .absent => return reply.integer(0)
+        .wrong  => return reply.wrong_type()
+
+    gone @= 0
+
+    for member in argv.slice(from: 2, to: argv.len())
+        if zset.remove(@db.values[at].zset, member: member)
+            gone @ gone + 1
+
+    if gone > 0
+        _ = keyspace.drop_if_empty(@db, at: at)
+        common.changed(@db, key: argv[1], logged: argv)
+    return reply.integer(gone)
+
+# `ZSCORE key member`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function zscore(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    return match common.of_kind(@db, key: argv[1], kind: .zset, now: now)
+        .at a =>
+            match zset.score_of(db.values[a.p].zset, member: argv[2])
+                .ok v  => reply.bulk_text(reply.format_double(v))
+                .err _ => reply.nothing()
+        .absent => reply.nothing()
+        .wrong  => reply.wrong_type()
+
+# `ZCARD key`, `ZRANK key member` and `ZREVRANK key member`, by `name`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `name`: the command's name in capitals.
+# - `now`: the time.
+function rank(@db: keyspace.Db, argv: [[u8]], name: str, now: i64) -> redis.Reply
+    return match common.of_kind(@db, key: argv[1], kind: .zset, now: now)
+        .at a =>
+            if name == "ZCARD"
+                reply.integer(zset.size(db.values[a.p].zset))
+            else
+                match zset.rank_of(db.values[a.p].zset, member: argv[2], reverse: name == "ZREVRANK")
+                    .ok r  => reply.integer(r)
+                    .err _ => reply.nothing()
+        .absent =>
+            if name == "ZCARD"
+                reply.integer(0)
+            else
+                reply.nothing()
+        .wrong => reply.wrong_type()
+
+# `ZRANGE key start stop [BYSCORE] [REV] [LIMIT offset count] [WITHSCORES]`
+# and `ZRANGEBYSCORE key min max [WITHSCORES] [LIMIT offset count]`, by
+# `name`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `name`: the command's name in capitals.
+# - `now`: the time.
+function zrange(@db: keyspace.Db, argv: [[u8]], name: str, now: i64) -> redis.Reply
+    by_score @= name == "ZRANGEBYSCORE"
+    reverse @= false
+    scores @= false
+    offset @= 0
+    count @= -1
+    limited @= false
+    i @= 4
+
+    while i < argv.len()
+        option = words.upper(argv[i])
+
+        if option == "WITHSCORES"
+            scores @ true
+        else if option == "BYSCORE" && name == "ZRANGE"
+            by_score @ true
+        else if option == "REV" && name == "ZRANGE"
+            reverse @ true
+        else if option == "LIMIT" && i + 2 < argv.len()
+            match words.integer(argv[i + 1])
+                .ok n  => offset @ n
+                .err _ => return reply.not_integer()
+
+            match words.integer(argv[i + 2])
+                .ok n  => count @ n
+                .err _ => return reply.not_integer()
+
+            limited @ true
+            i @ i + 2
+        else
+            return reply.syntax()
+        i @ i + 1
+
+    if limited && !by_score
+        return reply.error(
+            code: "ERR",
+            message: "syntax error, LIMIT is only supported in combination with either BYSCORE or BYLEX"
+        )
+
+    at = match common.of_kind(@db, key: argv[1], kind: .zset, now: now)
+        .at a   => a.p
+        .absent => return .array(items: [])
+        .wrong  => return reply.wrong_type()
+
+    if !by_score
+        start = match words.integer(argv[2])
+            .ok n  => n
+            .err _ => return reply.not_integer()
+
+        stop = match words.integer(argv[3])
+            .ok n  => n
+            .err _ => return reply.not_integer()
+
+        return pairs_reply(zset.by_rank(db.values[at].zset, start: start, stop: stop, reverse: reverse), scores: scores)
+
+    low_word = if reverse
+        argv[3]
+    else
+        argv[2]
+
+    high_word = if reverse
+        argv[2]
+    else
+        argv[3]
+
+    min = match bound_of(low_word)
+        .ok b  => b
+        .err _ => return reply.error(code: "ERR", message: "min or max is not a float")
+
+    max = match bound_of(high_word)
+        .ok b  => b
+        .err _ => return reply.error(code: "ERR", message: "min or max is not a float")
+
+    if offset < 0
+        return .array(items: [])
+    found = zset.by_score(db.values[at].zset, min: min, max: max, reverse: reverse, offset: offset, count: count)
+    return pairs_reply(found, scores: scores)
+
+# `ZCOUNT key min max`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function zcount(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    min = match bound_of(argv[2])
+        .ok b  => b
+        .err _ => return reply.error(code: "ERR", message: "min or max is not a float")
+
+    max = match bound_of(argv[3])
+        .ok b  => b
+        .err _ => return reply.error(code: "ERR", message: "min or max is not a float")
+
+    return match common.of_kind(@db, key: argv[1], kind: .zset, now: now)
+        .at a   => reply.integer(zset.count_in(db.values[a.p].zset, min: min, max: max))
+        .absent => reply.integer(0)
+        .wrong  => reply.wrong_type()
+
+test "bound_of: inclusive, exclusive, infinite, and refused"
+    assert bound_of(bytes.from_text("1.5")).must() == skiplist.Bound(value: 1.5, exclusive: false)
+    assert bound_of(bytes.from_text("(1")).must() == skiplist.Bound(value: 1.0, exclusive: true)
+    assert bound_of(bytes.from_text("-inf")).must().value == -1.0 / 0.0
+    assert bound_of(bytes.from_text("(")).is_err()
+    assert bound_of(bytes.from_text("x")).is_err()
+
+test "zadd: NX, XX, GT, LT, CH and INCR, and the mixes Redis refuses"
+    db @= keyspace.new()
+    assert zadd(@db, argv: common.argv_of("ZADD z 1 a 2 b"), now: 0) == reply.integer(2)
+    assert zadd(@db, argv: common.argv_of("ZADD z NX 5 a 3 c"), now: 0) == reply.integer(1)
+    assert zadd(@db, argv: common.argv_of("ZADD z XX CH 5 a 9 none"), now: 0) == reply.integer(1)
+    assert zadd(@db, argv: common.argv_of("ZADD z GT CH 4 a"), now: 0) == reply.integer(0)
+    assert zadd(@db, argv: common.argv_of("ZADD z LT CH 4 a"), now: 0) == reply.integer(1)
+    assert zadd(@db, argv: common.argv_of("ZADD z INCR 2.5 a"), now: 0) == reply.bulk_text("6.5")
+    assert zadd(@db, argv: common.argv_of("ZADD z NX INCR 1 a"), now: 0) == reply.nothing()
+    assert zadd(@db, argv: common.argv_of("ZADD z NX XX 1 a"), now: 0) == reply.error(code: "ERR", message: "XX and NX options at the same time are not compatible")
+    assert zadd(@db, argv: common.argv_of("ZADD z GT LT 1 a"), now: 0) == reply.error(code: "ERR", message: "GT, LT, and/or NX options at the same time are not compatible")
+    assert zadd(@db, argv: common.argv_of("ZADD z 1"), now: 0) == reply.syntax()
+    assert zadd(@db, argv: common.argv_of("ZADD z nan a"), now: 0) == reply.not_float()
+    assert zadd(@db, argv: common.argv_of("ZADD none XX 1 a"), now: 0) == reply.integer(0)
+    assert keyspace.size(db) == 1
+
+test "zadd: INCR to infinity and back is no number, and the score is kept"
+    db @= keyspace.new()
+    _ = zadd(@db, argv: common.argv_of("ZADD z +inf a"), now: 0)
+    assert zadd(@db, argv: common.argv_of("ZADD z INCR -inf a"), now: 0) == reply.error(code: "ERR", message: "resulting score is not a number (NaN)")
+    assert zscore(@db, argv: common.argv_of("ZSCORE z a"), now: 0) == reply.bulk_text("inf")
+
+test "zrange: by rank, reversed, by score with a limit, and LIMIT without BYSCORE refused"
+    db @= keyspace.new()
+    _ = zadd(@db, argv: common.argv_of("ZADD z 1 a 2 b 3 c 4 d"), now: 0)
+    assert zrange(@db, argv: common.argv_of("ZRANGE z 0 1 REV"), name: "ZRANGE", now: 0) == reply.bulks([[100], [99]])
+    assert zrange(@db, argv: common.argv_of("ZRANGE z (1 4 BYSCORE LIMIT 1 2"), name: "ZRANGE", now: 0) == reply.bulks([[99], [100]])
+    assert zrange(@db, argv: common.argv_of("ZRANGE z 4 2 BYSCORE REV WITHSCORES"), name: "ZRANGE", now: 0) == .array(items: [reply.bulk([100]), reply.bulk_text("4"), reply.bulk([99]), reply.bulk_text("3"), reply.bulk([98]), reply.bulk_text("2")])
+    assert zrange(@db, argv: common.argv_of("ZRANGE z 0 1 LIMIT 0 1"), name: "ZRANGE", now: 0) == reply.error(code: "ERR", message: "syntax error, LIMIT is only supported in combination with either BYSCORE or BYLEX")
+    assert zrange(@db, argv: common.argv_of("ZRANGEBYSCORE z x 4"), name: "ZRANGEBYSCORE", now: 0) == reply.error(code: "ERR", message: "min or max is not a float")
+    assert zcount(@db, argv: common.argv_of("ZCOUNT z -inf (3"), now: 0) == reply.integer(2)
+
+test "rank and zrem: ranks both ways, a missing member, the key gone with its last member"
+    db @= keyspace.new()
+    _ = zadd(@db, argv: common.argv_of("ZADD z 1 a 2 b"), now: 0)
+    assert rank(@db, argv: common.argv_of("ZRANK z b"), name: "ZRANK", now: 0) == reply.integer(1)
+    assert rank(@db, argv: common.argv_of("ZREVRANK z b"), name: "ZREVRANK", now: 0) == reply.integer(0)
+    assert rank(@db, argv: common.argv_of("ZRANK z none"), name: "ZRANK", now: 0) == reply.nothing()
+    assert zincrby(@db, argv: common.argv_of("ZINCRBY z 10 a"), now: 0) == reply.bulk_text("11")
+    assert zrem(@db, argv: common.argv_of("ZREM z a b none"), now: 0) == reply.integer(2)
+    assert keyspace.size(db) == 0
+    assert rank(@db, argv: common.argv_of("ZCARD z"), name: "ZCARD", now: 0) == reply.integer(0)

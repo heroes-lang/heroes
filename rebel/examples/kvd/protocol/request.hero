@@ -1,0 +1,148 @@
+# The next command cut from the bytes a client has sent so far, as Redis
+# reads one: an array of bulk strings (`*2\r\n$3\r\nGET\r\n$1\r\nk\r\n`),
+# which every client library writes, or an inline line (`GET k\r\n`), which a
+# person types into a raw connection. The array is read by Rebel's own RESP
+# reader, `redis.decode_next`, and held to what a request may be: an array
+# whose every element is a bulk string.
+#
+# Nothing a client sends aborts the server: bytes that are no request are
+# `broken`, and the server answers them and closes that connection alone.
+
+use <rebel>/bytes
+use <rebel>/redis
+
+use protocol/split
+
+# The longest inline line, 64 KiB, as Redis bounds one.
+constant MOST_INLINE: i64
+    65_536
+
+# What cutting the next request out of the bytes read found.
+variant Framed
+    # A whole request, and where the bytes after it begin.
+    whole
+        # The command's name and arguments as sent; none for an empty
+        # array or an empty line, which Redis passes over.
+        words: [[u8]]
+        # The index of the first byte after the request.
+        next: i64
+    # The bytes end inside a request: read more and ask again from the same
+    # place.
+    partial
+    # The bytes are no request; the server answers and closes the
+    # connection.
+    broken
+        # What is wrong, as Redis's "Protocol error" says it.
+        reason: str
+
+# The request an array reply holds: each of its elements a bulk string.
+#
+# - `items`: the elements of the array decoded.
+#
+# Fails `invalid` naming the first element that is no bulk string.
+function words_of(items: [redis.Reply]) -> [[u8]]?
+    words: [[u8]] @= []
+
+    for item in items
+        match item
+            .bulk b => words @ words.push(b.v)
+            .simple _ | .error _ | .integer _ | .null_value | .array _ | .mapping _ | .set _ | .double _ | .boolean _ | .big_number _ | .verbatim _ | .pushed _ => return fail(
+                code: "invalid",
+                msg: f"expected '$', got {redis.kind_of(item)}"
+            )
+
+    return ok(words)
+
+# The request an inline line beginning at `from` holds.
+#
+# - `data`: the bytes read so far.
+# - `from`: where the line begins.
+function inline_at(data: [u8], from: i64) -> Framed
+    at @= from
+
+    while at < data.len() && data[at] != '\n'
+        at @ at + 1
+
+    if at >= data.len()
+        if data.len() - from > MOST_INLINE
+            return .broken(reason: "Protocol error: too big inline request")
+        return .partial
+    line = data.slice(from: from, to: at)
+
+    return match split.words_of(line)
+        .ok words => .whole(words: words, next: at + 1)
+        .err _    => .broken(reason: "Protocol error: unbalanced quotes in request")
+
+# The request that begins at byte `from` of `data`.
+#
+# - `data`: the bytes a client has sent and the server not yet run.
+# - `from`: where the next request begins, 0 to `data`'s length; at the
+#   length the answer is `partial`.
+function next_request(data: [u8], from: i64) -> Framed
+    if from >= data.len()
+        return .partial
+
+    if data[from] != '*'
+        return inline_at(data, from: from)
+
+    found = match redis.decode_next(data, from: from)
+        .ok d  => d
+        .err e => return .broken(reason: f"Protocol error: {e.msg}")
+
+    return match found
+        .partial => .partial
+        .whole w =>
+            match w.reply
+                .array a =>
+                    match words_of(a.items)
+                        .ok words => .whole(words: words, next: w.next)
+                        .err e    => .broken(reason: f"Protocol error: {e.msg}")
+                .null_value => .whole(words: [], next: w.next)
+                .simple _ | .error _ | .integer _ | .bulk _ | .mapping _ | .set _ | .double _ | .boolean _ | .big_number _ | .verbatim _ | .pushed _ => .broken(
+                    reason: "Protocol error: a request is an array of bulk strings"
+                )
+
+test "next_request: nothing yet, and a request cut anywhere, ask for more"
+    whole = "*2\r\n$3\r\nGET\r\n$1\r\nk\r\n"
+    assert next_request([], from: 0) == .partial
+
+    for n in range(from: 1, to: whole.len())
+        cut = bytes.from_text(whole).slice(from: 0, to: n)
+        assert next_request(cut, from: 0) == .partial
+
+test "next_request: an array of bulk strings, and two in a row"
+    data = bytes.from_text("*1\r\n$4\r\nPING\r\n*2\r\n$4\r\nECHO\r\n$0\r\n\r\n")
+    first = next_request(data, from: 0)
+    assert first == .whole(words: [bytes.from_text("PING")], next: 14)
+    assert next_request(data, from: 14) == .whole(words: [bytes.from_text("ECHO"), []], next: data.len())
+
+test "next_request: an inline line, its carriage return and quotes"
+    assert next_request(bytes.from_text("SET k \"a b\"\r\n"), from: 0) == .whole(words: [bytes.from_text("SET"), bytes.from_text("k"), bytes.from_text("a b")], next: 13)
+    assert next_request(bytes.from_text("PING"), from: 0) == .partial
+
+test "next_request: an empty array and an empty line are passed over"
+    assert next_request(bytes.from_text("*0\r\n"), from: 0) == .whole(words: [], next: 4)
+    assert next_request(bytes.from_text("\r\n"), from: 0) == .whole(words: [], next: 2)
+
+test "next_request: an element that is no bulk string, and bytes that are no RESP, are broken"
+    match next_request(bytes.from_text("*1\r\n:5\r\n"), from: 0)
+        .broken b           => assert b.reason == "Protocol error: expected '$', got an integer"
+        .whole _ | .partial => assert false
+
+    match next_request(bytes.from_text("*1\r\n$x\r\n"), from: 0)
+        .broken _           => _ = 0
+        .whole _ | .partial => assert false
+
+    match next_request(bytes.from_text("GET \"k\r\n"), from: 0)
+        .broken b           => assert b.reason == "Protocol error: unbalanced quotes in request"
+        .whole _ | .partial => assert false
+
+test "next_request: an inline line past its bound with no end is broken"
+    long: [u8] @= []
+
+    for _ in range(from: 0, to: MOST_INLINE + 1)
+        long @ long.push('a')
+
+    match next_request(long, from: 0)
+        .broken _           => _ = 0
+        .whole _ | .partial => assert false

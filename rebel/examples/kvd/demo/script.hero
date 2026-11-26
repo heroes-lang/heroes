@@ -1,0 +1,561 @@
+# `kvd demo`: a scripted session played on this machine, read from the
+# standard input, line by line:
+#
+# - `A> <command>` and `B> <command>`: what client A or B sends, written,
+#   then the reply as `kvd cli` writes it; `SUBSCRIBE`, `PSUBSCRIBE` and
+#   `UNSUBSCRIBE` go through Rebel's own subscription calls;
+# - `A<` and `B<`: the next message the client's subscription received;
+# - `@clock <ms>`: the server's manual clock moved on, the active sweep run
+#   as its timer would have meanwhile (`DEBUG ADVANCE`);
+# - `@restart`: the server shut down (`SHUTDOWN`) and started again on the
+#   same data folder, what it loaded written, the clients connected again;
+# - `@crash`: the server stopped where it stands (`DEBUG CRASH`), and half a
+#   command written at the end of its log, as a power cut leaves one;
+# - `@files`: the data folder's files and their sizes;
+# - `@pipeline B` then command lines then `@end`: the lines sent by client
+#   B in one write and the replies read after (`redis.pipeline`);
+# - `== <title>`: written as it is; a line opening with `#` and an empty
+#   line are passed over and kept as a blank line.
+#
+# The server runs on a thread of the program, on the loopback at a port the
+# system chooses and never written, its clock manual from the first moment
+# of 2026; its data folder is made under `build/` and removed at the end.
+# Every command is answered before the next is sent, and a message is
+# written to its subscriber before its publisher hears back, so the session
+# prints the same bytes on every run and every machine.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/net
+use <rebel>/path
+use <rebel>/redis
+use <rebel>/strings
+use <rebel>/time
+
+use cli/render
+use cli/session
+use persist/aof
+use protocol/split
+use protocol/words
+use server/loop
+use server/state
+
+# The manual clock's first moment: 2026-01-01T00:00:00Z, in milliseconds
+# since the Unix epoch.
+constant CLOCK_START: i64
+    1_767_225_600_000
+
+# What a client may wait for a reply or a message, in seconds, so a fault
+# ends the demo rather than hangs it.
+constant WAIT_SECONDS: i64
+    10
+
+# The session's world: the data folder, the server's thread and port, and
+# the three connections, A, B and the demo's own for the clock.
+record Stage
+    # The data folder.
+    dir: str
+    # The server's thread, while one runs.
+    servers: [(thread i64)]
+    # Its port.
+    port: i64
+    # Client A.
+    a: redis.Client
+    # Client B.
+    b: redis.Client
+    # The demo's own connection, which moves the clock.
+    admin: redis.Client
+
+# The server's settings for the session.
+#
+# - `dir`: the data folder.
+# - `ready`: where it says it listens.
+function config_of(dir: str, ready: (mailbox state.Ready)) -> state.Config
+    return state.Config(
+        host: "127.0.0.1",
+        port: 0,
+        dir: dir,
+        appendonly: true,
+        fsync: "always",
+        password: "",
+        hz: 10,
+        manual_clock: true,
+        start_ms: CLOCK_START,
+        most_clients: 64,
+        quiet: true,
+        ready: ready
+    )
+
+# A server started on `dir` on a thread: its thread and what it said.
+record Started
+    # The thread.
+    thread: (thread i64)
+    # Its port.
+    port: i64
+    # What it said as it started.
+    lines: [str]
+
+# Starts a server on `dir` and waits until it listens.
+#
+# - `dir`: the data folder.
+#
+# Fails `failed` where it could not start, its words in the message, and
+# `limit` where no thread can be had.
+function start(dir: str) -> Started?
+    ready: (mailbox state.Ready) = mailbox()
+    t = spawn(loop.serve, config_of(dir, ready: ready))?
+
+    match ready.receive(within_ms: WAIT_SECONDS * 1000)
+        .ok told =>
+            if told.started
+                return ok(Started(thread: t, port: told.port, lines: told.lines))
+            _ = t.wait()
+            return fail(code: "failed", msg: told.lines.join("; "))
+        .err e =>
+            _ = t.wait()
+            return fail(code: "failed", msg: f"the server said nothing: {e.msg}")
+
+# A client of the server at `port`, its waits bounded.
+#
+# - `port`: the server's port on the loopback.
+#
+# Fails as `session.connect` fails.
+function client_at(port: i64) -> redis.Client?
+    c = session.connect(session.Target(host: "127.0.0.1", port: port, password: ""))?
+    redis.set_deadline(c, deadline: time.seconds(WAIT_SECONDS).must())?
+    return ok(c)
+
+# The text of a message, as `redis-cli` writes one.
+#
+# - `m`: the message.
+function message_text(m: redis.Message) -> str
+    if m.kind == "pmessage"
+        return render.render(
+            .array(items: [.bulk(v: bytes.from_text(m.kind)), .bulk(v: bytes.from_text(m.pattern)), .bulk(v: bytes.from_text(m.channel)), .bulk(v: m.payload)])
+        )
+    return render.render(
+        .array(items: [.bulk(v: bytes.from_text(m.kind)), .bulk(v: bytes.from_text(m.channel)), .bulk(v: m.payload)])
+    )
+
+# The words of `argv` after its name, as text.
+#
+# - `argv`: the command's words.
+function names_of(argv: [[u8]]) -> [str]
+    out: [str] @= []
+
+    for a in argv.slice(from: 1, to: argv.len())
+        out @ out.push(bytes.to_text_lossy(a))
+
+    return out
+
+# Runs `argv` over `c` and answers what to write.
+#
+# - `c`: the client.
+# - `argv`: the command's words.
+#
+# Fails as Rebel's client fails.
+function step(@c: redis.Client, argv: [[u8]]) -> str?
+    name = words.upper(argv[0])
+
+    if name == "SUBSCRIBE"
+        redis.subscribe(@c, channels: names_of(argv))?
+        return ok(f"(subscribed to {names_of(argv).join(", ")})")
+
+    if name == "PSUBSCRIBE"
+        redis.psubscribe(@c, patterns: names_of(argv))?
+        return ok(f"(subscribed to the pattern {names_of(argv).join(", ")})")
+
+    if name == "UNSUBSCRIBE"
+        redis.unsubscribe(@c, channels: names_of(argv))?
+        return ok("(unsubscribed)")
+
+    if name == "PUNSUBSCRIBE"
+        redis.punsubscribe(@c, patterns: names_of(argv))?
+        return ok("(unsubscribed from the patterns)")
+    redis.send(@c, words: argv)?
+    return ok(session.shown(argv, r: redis.read_reply(@c)?))
+
+# Runs `line` for the client `who`.
+#
+# - `stage`: the session.
+# - `who`: `A` or `B`.
+# - `line`: the command line.
+#
+# Fails as `step` fails.
+function command(@stage: Stage, who: str, line: str) -> ()?
+    print(f"{who}> {line}")
+
+    argv = match split.words_of_text(line)
+        .ok w => w
+        .err e =>
+            print(f"(error) {e.msg}")
+            return ok()
+
+    if who == "A"
+        print(step(@stage.a, argv: argv)?)
+    else
+        print(step(@stage.b, argv: argv)?)
+    return ok()
+
+# Writes the next message client `who` received.
+#
+# - `stage`: the session.
+# - `who`: `A` or `B`.
+#
+# Fails as `redis.receive` fails, `timeout` where none comes.
+function receive(@stage: Stage, who: str) -> ()?
+    print(f"{who}< (waits for a message)")
+
+    m = if who == "A"
+        redis.receive(@stage.a)?
+    else
+        redis.receive(@stage.b)?
+    print(message_text(m))
+    return ok()
+
+# Sends `words` on the demo's own connection and answers the reply.
+#
+# - `stage`: the session.
+# - `words_sent`: the command.
+#
+# Fails as Rebel's client fails, and with the error the server replies.
+function admin(@stage: Stage, words_sent: [str]) -> redis.Reply?
+    return redis.call(@stage.admin, words_sent)
+
+# Closes the three connections.
+#
+# - `stage`: the session.
+function disconnect(@stage: Stage)
+    _ = redis.close(@stage.a).is_err()
+    _ = redis.close(@stage.b).is_err()
+    _ = redis.close(@stage.admin).is_err()
+
+# Waits for the server's thread.
+#
+# - `stage`: the session.
+function wait_server(@stage: Stage)
+    for t in stage.servers
+        _ = t.wait()
+
+    stage.servers @ []
+
+# Starts the server again on the folder and connects the three again,
+# writing what it loaded.
+#
+# - `stage`: the session, every connection closed and no server running.
+#
+# Fails as `start` and `client_at` fail.
+function come_back(@stage: Stage) -> ()?
+    started = start(stage.dir)?
+    stage.servers @ [started.thread]
+    stage.port @ started.port
+
+    for line in started.lines
+        print(f"kvd: {line}")
+
+    stage.a @ client_at(started.port)?
+    stage.b @ client_at(started.port)?
+    stage.admin @ client_at(started.port)?
+    return ok()
+
+# `@restart`: `SHUTDOWN`, then the server started again.
+#
+# - `stage`: the session.
+#
+# Fails as `come_back` fails.
+function restart(@stage: Stage) -> ()?
+    print("-- the server shuts down and starts again on the same folder")
+    redis.send(@stage.admin, words: [bytes.from_text("SHUTDOWN")])?
+    _ = redis.read_reply(@stage.admin).is_err()
+    disconnect(@stage)
+    wait_server(@stage)
+    return come_back(@stage)
+
+# The last part of the log in the folder `dir`, the highest generation.
+#
+# - `dir`: the data folder.
+#
+# Fails `not_found` where it holds none, and as `fs.read_dir` fails.
+function last_part(dir: str) -> str?
+    highest @= -1
+
+    for entry in fs.read_dir(dir)?
+        name = entry.name
+
+        if strings.has_prefix(s: name, prefix: "kvd.") && strings.has_suffix(s: name, suffix: ".aof")
+            middle = name.slice(from: 4, to: name.len() - 4)
+
+            match words.integer(bytes.from_text(middle))
+                .ok n =>
+                    if n > highest
+                        highest @ n
+                .err _ => _ = 0
+
+    if highest < 0
+        return fail(code: "not_found", msg: "the folder holds no part of the log")
+    return ok(aof.path_of(dir, generation: highest))
+
+# `@crash`: the server stopped where it stands, half a command written at
+# the end of its log, then the server started again.
+#
+# - `stage`: the session.
+#
+# Fails as `come_back` and `fs` fail.
+function crash(@stage: Stage) -> ()?
+    torn = bytes.from_text("*3\r\n$3\r\nSET\r\n$4\r\nlost\r\n$5\r\nhal")
+    print(f"-- the server dies as it writes a command: {torn.len()} bytes of it reach the log")
+    _ = admin(@stage, words_sent: ["DEBUG", "CRASH"])?
+    disconnect(@stage)
+    wait_server(@stage)
+    fs.append_bytes(last_part(stage.dir)?, data: torn)?
+    print("-- the server starts again on the same folder")
+    return come_back(@stage)
+
+# `@files`: the data folder's files, by name, with their sizes.
+#
+# - `stage`: the session.
+#
+# Fails as `fs` fails.
+function files(stage: Stage lent) -> ()?
+    shown: [str] @= []
+
+    for entry in fs.read_dir(stage.dir)?
+        size = fs.info(path.join_all([stage.dir, entry.name]))?.size
+        shown @ shown.push(f"{entry.name} ({size} bytes)")
+
+    print(f"-- the data folder holds: {sort(shown).join(", ")}")
+    return ok()
+
+# Sends `lines` as client B's pipeline, all written before any reply is
+# read, and writes each command and its reply.
+#
+# - `stage`: the session.
+# - `lines`: the command lines.
+#
+# Fails as `redis.pipeline` fails.
+function pipeline(@stage: Stage, lines: [str]) -> ()?
+    commands: [[str]] @= []
+
+    for line in lines
+        texts: [str] @= []
+
+        for word in split.words_of_text(line)?
+            texts @ texts.push(bytes.to_text_lossy(word))
+
+        commands @ commands.push(texts)
+
+    print(f"B> ({commands.len()} commands in one write)")
+    replies = redis.pipeline(@stage.b, commands: commands)?
+
+    for i in range(from: 0, to: replies.len())
+        print(f"B> {lines[i]}")
+        print(render.render(replies[i]))
+
+    return ok()
+
+# Plays the session `lines` on `stage`.
+#
+# - `stage`: the session.
+# - `lines`: the script.
+#
+# Fails at the first line the server or a client fails on.
+function play(@stage: Stage, lines: [str]) -> ()?
+    piped: [str] @= []
+    piping @= false
+
+    for raw in lines
+        line = strings.trim_end_any(s: raw, set: "\r")
+
+        if piping
+            if line == "@end"
+                pipeline(@stage, lines: piped)?
+                piped @ []
+                piping @ false
+            else
+                piped @ piped.push(line)
+        else if line == "@pipeline B"
+            piping @ true
+        else if line == "" || strings.has_prefix(s: line, prefix: "#")
+            if line == ""
+                print("")
+        else if strings.has_prefix(s: line, prefix: "== ")
+            print(line)
+        else if strings.has_prefix(s: line, prefix: "A> ")
+            command(@stage, who: "A", line: line.slice(from: 3, to: line.len()))?
+        else if strings.has_prefix(s: line, prefix: "B> ")
+            command(@stage, who: "B", line: line.slice(from: 3, to: line.len()))?
+        else if line == "A<" || line == "B<"
+            receive(@stage, who: line.slice(from: 0, to: 1))?
+        else if strings.has_prefix(s: line, prefix: "@clock ")
+            ms = line.slice(from: 7, to: line.len())
+            print(f"-- the server's clock moves on by {ms} ms")
+            _ = admin(@stage, words_sent: ["DEBUG", "ADVANCE", ms])?
+        else if line == "@restart"
+            restart(@stage)?
+        else if line == "@crash"
+            crash(@stage)?
+        else if line == "@files"
+            files(stage)?
+        else
+            return fail(code: "invalid", msg: f"the script's line \"{line}\" is none the demo reads")
+
+    return ok()
+
+# Runs the demo over the script on the standard input, and answers the
+# program's exit code: 0, or 1 where a step failed, its words written.
+function run() -> i64
+    lines = match session.stdin_lines()
+        .ok got => got
+        .err e =>
+            print(f"demo: the script cannot be read: {e.msg}")
+            return 1
+
+    _ = fs.make_dir_all("build").is_err()
+
+    dir = match fs.make_temp_dir(dir: "build", pattern: "kvd-demo-*")
+        .ok d => d
+        .err e =>
+            print(f"demo: no data folder: {e.msg}")
+            return 1
+
+    first = match start(dir)
+        .ok s => s
+        .err e =>
+            print(f"demo: {e.msg}")
+            _ = fs.remove_all(dir).is_err()
+            return 1
+
+    code @= 0
+
+    match open_stage(dir, first: first)
+        .ok made =>
+            stage @= made
+
+            match play(@stage, lines: lines)
+                .ok _ => _ = 0
+                .err e =>
+                    print(f"demo: {e.msg}")
+                    code @ 1
+
+            match admin(@stage, words_sent: ["SHUTDOWN", "NOSAVE"])
+                .ok _  => _ = 0
+                .err _ => _ = 0
+
+            disconnect(@stage)
+            wait_server(@stage)
+        .err e =>
+            print(f"demo: {e.msg}")
+            code @ 1
+
+    _ = fs.remove_all(dir).is_err()
+    return code
+
+# The session's stage over the server `first`, its three clients
+# connected; the server stopped where they cannot be.
+#
+# - `dir`: the data folder.
+# - `first`: the server started.
+#
+# Fails as `client_at` fails.
+function open_stage(dir: str, first: Started) -> Stage?
+    match connect_three(first.port)
+        .ok three => return ok(
+            Stage(dir: dir, servers: [first.thread], port: first.port, a: three.a, b: three.b, admin: three.admin)
+        )
+        .err e =>
+            _ = first.thread.wait()
+            return fail(code: e.code, msg: e.msg)
+
+# Three clients of one server.
+record Three
+    # Client A.
+    a: redis.Client
+    # Client B.
+    b: redis.Client
+    # The demo's own.
+    admin: redis.Client
+
+# Three clients of the server at `port`.
+#
+# - `port`: the server's port.
+#
+# Fails as `client_at` fails, every client made before closed.
+function connect_three(port: i64) -> Three?
+    a @= client_at(port)?
+
+    b @= match client_at(port)
+        .ok c => c
+        .err e =>
+            _ = redis.close(@a).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    match client_at(port)
+        .ok c => return ok(Three(a: a, b: b, admin: c))
+        .err e =>
+            _ = redis.close(@a).is_err()
+            _ = redis.close(@b).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# A stage over a fresh folder under `build/`, for the tests.
+function test_stage() -> Stage
+    _ = fs.make_dir_all("build").is_err()
+    dir = fs.make_temp_dir(dir: "build", pattern: "kvd-test-*").must()
+    started = start(dir).must()
+    return open_stage(dir, first: started).must()
+
+# Stops the stage's server and removes its folder, for the tests.
+#
+# - `stage`: the session.
+function end_stage(@stage: Stage)
+    _ = admin(@stage, words_sent: ["SHUTDOWN", "NOSAVE"]).is_err()
+    disconnect(@stage)
+    wait_server(@stage)
+    _ = fs.remove_all(stage.dir).is_err()
+
+# The words of `line`, for the tests.
+#
+# - `line`: a command line.
+function line_words(line: str) -> [[u8]]
+    return split.words_of_text(line).must()
+
+test "step: a server answers two clients, a transaction WATCH aborts, a message published reaches its subscriber"
+    stage @= test_stage()
+    assert step(@stage.a, argv: line_words("SET k 1")).must() == "OK"
+    assert step(@stage.a, argv: line_words("WATCH k")).must() == "OK"
+    assert step(@stage.b, argv: line_words("INCR k")).must() == "(integer) 2"
+    assert step(@stage.a, argv: line_words("MULTI")).must() == "OK"
+    assert step(@stage.a, argv: line_words("INCR k")).must() == "QUEUED"
+    assert step(@stage.a, argv: line_words("EXEC")).must() == "(nil)"
+    assert step(@stage.a, argv: line_words("SUBSCRIBE c")).must() == "(subscribed to c)"
+    assert step(@stage.b, argv: line_words("PUBLISH c hi")).must() == "(integer) 1"
+    m = redis.receive(@stage.a).must()
+    assert m.payload == bytes.from_text("hi")
+    assert step(@stage.b, argv: line_words("NOSUCH x")).must() == "(error) ERR unknown command 'NOSUCH', with args beginning with: 'x' "
+    assert step(@stage.b, argv: line_words("GET")).must() == "(error) ERR wrong number of arguments for 'GET' command"
+    end_stage(@stage)
+
+test "step: what a restart loads is what was written, and a crash's torn command is cut off"
+    stage @= test_stage()
+    _ = step(@stage.a, argv: line_words("RPUSH l a b")).must()
+    _ = step(@stage.a, argv: line_words("SAVE")).must()
+    _ = step(@stage.a, argv: line_words("ZADD z 1.5 m")).must()
+    restart(@stage).must()
+    assert step(@stage.a, argv: line_words("LRANGE l 0 -1")).must() == "1) \"a\"\n2) \"b\""
+    assert step(@stage.a, argv: line_words("ZSCORE z m")).must() == "\"1.5\""
+    crash(@stage).must()
+    assert step(@stage.a, argv: line_words("ZSCORE z m")).must() == "\"1.5\""
+    assert step(@stage.a, argv: line_words("GET lost")).must() == "(nil)"
+    end_stage(@stage)
+
+test "start: bytes that are no RESP are answered and their connection closed, the server going on"
+    stage @= test_stage()
+    conn @= net.connect("127.0.0.1", port: stage.port, deadline_ms: 10000).must()
+    io.write(conn.stream, data: bytes.from_text("*1\r\n:5\r\n")).must()
+    said @= io.read(conn.stream, n: 65536).must()
+    assert said == bytes.from_text("-ERR Protocol error: expected '$', got an integer\r\n")
+    said @ io.read(conn.stream, n: 65536).must()
+    assert said.len() == 0
+    _ = io.close(@conn.stream).is_err()
+    assert step(@stage.b, argv: line_words("PING")).must() == "PONG"
+    end_stage(@stage)

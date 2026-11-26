@@ -1,0 +1,240 @@
+# A sorted set as Redis keeps one: its members' scores in a map, for
+# `ZSCORE` in constant time, and the same members in a skip list ordered by
+# score, for ranks and ranges in logarithmic time. Every change goes through
+# this module, so the two halves always hold the same members.
+#
+# The map is `containers/indexed`'s, in its four parts: the language's own
+# map takes nothing out but by copying every other entry (`maps.remove`), and
+# `ZREM` must cost a constant.
+
+use <rebel>/containers/indexed
+
+use store/skiplist
+
+# A sorted set. Made by `new`.
+record ZSet
+    # The members ordered by score, then by their bytes.
+    order: skiplist.SkipList
+    # The shape of the map of scores.
+    shape: indexed.Indexed
+    # The members, the map's keys.
+    members: [[u8]]
+    # Each member's score, at its member's position.
+    scores: [f64]
+    # The map's lookup of positions.
+    lookup: {[u8]: i64}
+
+# An empty sorted set.
+function new() -> ZSet
+    return ZSet(order: skiplist.new(), shape: indexed.new(), members: [], scores: [], lookup: {})
+
+# How many members `z` holds.
+#
+# - `z`: the set.
+function size(z: ZSet lent) -> i64
+    return z.order.length
+
+# The score of `member`.
+#
+# - `z`: the set.
+# - `member`: the member's bytes.
+#
+# Fails `not_found` where `member` is not in `z`.
+function score_of(z: ZSet lent, member: [u8]) -> f64?
+    return indexed.get(z.shape, value_list: z.scores, lookup: z.lookup, key: member)
+
+# Puts `member` at `score`, moving it where it was there at another score,
+# and answers whether it is new.
+#
+# - `z`: the set.
+# - `member`: the member's bytes.
+# - `score`: its score, never `nan`.
+function put(@z: ZSet, member: [u8], score: f64) -> bool
+    match indexed.position_of(z.shape, lookup: z.lookup, key: member)
+        .ok at =>
+            old = z.scores[at]
+
+            if old == score
+                return false
+            _ = skiplist.delete(@z.order, score: old, member: member)
+            skiplist.insert(@z.order, score: score, member: member)
+            z.scores[at] @ score
+            return false
+        .err _ =>
+            skiplist.insert(@z.order, score: score, member: member)
+            _ = indexed.put(@z.shape, @z.members, @z.scores, @z.lookup, key: member, value: score)
+            return true
+
+# Takes `member` out, and answers whether it was there.
+#
+# - `z`: the set.
+# - `member`: the member's bytes.
+function remove(@z: ZSet, member: [u8]) -> bool
+    match indexed.swap_remove(@z.shape, @z.members, @z.scores, @z.lookup, key: member)
+        .ok old =>
+            _ = skiplist.delete(@z.order, score: old, member: member)
+            return true
+        .err _ => return false
+
+# The rank of `member` from 0, counted from the lowest score, or from the
+# highest where `reverse`.
+#
+# - `z`: the set.
+# - `member`: the member's bytes.
+# - `reverse`: whether ranks count from the highest score.
+#
+# Fails `missing_key` where `member` is not in `z`.
+function rank_of(z: ZSet lent, member: [u8], reverse: bool) -> i64?
+    score = score_of(z, member: member)?
+    r = skiplist.rank_of(z.order, score: score, member: member)
+
+    if reverse
+        return ok(z.order.length - 1 - r)
+    return ok(r)
+
+# The members from rank `start` to rank `stop`, both included, in order,
+# or highest first where `reverse`; ranks below 0 count from the end, as
+# `ZRANGE` reads them.
+#
+# - `z`: the set.
+# - `start`: the first rank.
+# - `stop`: the last rank.
+# - `reverse`: whether ranks count from the highest score.
+function by_rank(z: ZSet lent, start: i64, stop: i64, reverse: bool) -> [skiplist.Pair]
+    n = z.order.length
+    from @= start
+    to @= stop
+
+    if from < 0
+        from @ n + from
+
+    if to < 0
+        to @ n + to
+
+    if from < 0
+        from @ 0
+
+    if to >= n
+        to @ n - 1
+    out: [skiplist.Pair] @= []
+
+    if from > to || from >= n
+        return out
+    rank @= from
+
+    while rank <= to
+        at = if reverse
+            skiplist.at_rank(z.order, rank: n - 1 - rank)
+        else
+            skiplist.at_rank(z.order, rank: rank)
+        out @ out.push(skiplist.pair_at(z.order, at: at))
+        rank @ rank + 1
+
+    return out
+
+# The members whose scores lie between `min` and `max`, lowest first or
+# highest first where `reverse`, `offset` of them passed over and at most
+# `count` answered, -1 for no bound, as `ZRANGEBYSCORE ... LIMIT` reads them.
+#
+# - `z`: the set.
+# - `min`: the lower bound.
+# - `max`: the upper bound.
+# - `reverse`: whether the highest score comes first.
+# - `offset`: how many matching members to pass over, 0 or more.
+# - `count`: the most members answered, -1 for all.
+function by_score(z: ZSet lent, min: skiplist.Bound, max: skiplist.Bound, reverse: bool, offset: i64, count: i64) -> [skiplist.Pair]
+    out: [skiplist.Pair] @= []
+
+    at @= if reverse
+        skiplist.last_in(z.order, min: min, max: max)
+    else
+        skiplist.first_in(z.order, min: min, max: max)
+    passed @= 0
+
+    while at != -1 && (count < 0 || out.len() < count)
+        score = z.order.nodes[at].score
+
+        if !skiplist.above(score: score, min: min) || !skiplist.below(score: score, max: max)
+            return out
+
+        if passed < offset
+            passed @ passed + 1
+        else
+            out @ out.push(skiplist.pair_at(z.order, at: at))
+
+        at @ if reverse
+            z.order.nodes[at].back
+        else
+            z.order.nodes[at].next[0]
+
+    return out
+
+# How many members' scores lie between `min` and `max`.
+#
+# - `z`: the set.
+# - `min`: the lower bound.
+# - `max`: the upper bound.
+function count_in(z: ZSet lent, min: skiplist.Bound, max: skiplist.Bound) -> i64
+    first = skiplist.first_in(z.order, min: min, max: max)
+
+    if first == -1
+        return 0
+    last = skiplist.last_in(z.order, min: min, max: max)
+    low = skiplist.rank_of(z.order, score: z.order.nodes[first].score, member: z.order.nodes[first].member)
+    high = skiplist.rank_of(z.order, score: z.order.nodes[last].score, member: z.order.nodes[last].member)
+    return high - low + 1
+
+# The bound `v`, inclusive.
+#
+# - `v`: the score.
+function at_least(v: f64) -> skiplist.Bound
+    return skiplist.Bound(value: v, exclusive: false)
+
+test "put: a new member, the same score again, a moved score"
+    z @= new()
+    assert put(@z, member: [97], score: 1.0)
+    assert !put(@z, member: [97], score: 1.0)
+    assert !put(@z, member: [97], score: 5.0)
+    assert put(@z, member: [98], score: 2.0)
+    assert size(z) == 2
+    assert score_of(z, member: [97]).must() == 5.0
+    assert rank_of(z, member: [97], reverse: false).must() == 1
+    assert rank_of(z, member: [97], reverse: true).must() == 0
+    assert rank_of(z, member: [99], reverse: false).is_err()
+
+test "remove: present and absent members, the map and the list together"
+    z @= new()
+    _ = put(@z, member: [97], score: 1.0)
+    _ = put(@z, member: [98], score: 2.0)
+    assert remove(@z, member: [97])
+    assert !remove(@z, member: [97])
+    assert size(z) == 1
+    assert score_of(z, member: [97]).is_err()
+    assert by_rank(z, start: 0, stop: -1, reverse: false)[0].member == [98]
+
+test "by_rank: negative ranks, ranks past the end, an empty answer, reversed"
+    z @= new()
+
+    for i in range(from: 0, to: 5)
+        _ = put(@z, member: [to_u8(97 + i).must()], score: to_f64(i))
+
+    assert by_rank(z, start: 0, stop: -1, reverse: false).len() == 5
+    assert by_rank(z, start: -2, stop: -1, reverse: false)[0].member == [100]
+    assert by_rank(z, start: 3, stop: 100, reverse: false).len() == 2
+    assert by_rank(z, start: 4, stop: 2, reverse: false).len() == 0
+    assert by_rank(z, start: 9, stop: 12, reverse: false).len() == 0
+    assert by_rank(z, start: 0, stop: 0, reverse: true)[0].member == [101]
+
+test "by_score and count_in: bounds, an offset and a count, reversed"
+    z @= new()
+
+    for i in range(from: 0, to: 10)
+        _ = put(@z, member: [to_u8(97 + i).must()], score: to_f64(i))
+
+    min = at_least(2.0)
+    max = skiplist.Bound(value: 6.0, exclusive: true)
+    assert by_score(z, min: min, max: max, reverse: false, offset: 0, count: -1).len() == 4
+    assert by_score(z, min: min, max: max, reverse: false, offset: 1, count: 2)[0].score == 3.0
+    assert by_score(z, min: min, max: max, reverse: true, offset: 0, count: 1)[0].score == 5.0
+    assert count_in(z, min: min, max: max) == 4
+    assert count_in(z, min: at_least(20.0), max: at_least(30.0)) == 0

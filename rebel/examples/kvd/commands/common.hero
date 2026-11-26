@@ -1,0 +1,132 @@
+# What the commands of every kind share: a key looked up for a kind, the
+# words a command logs, and a time to live read from its arguments.
+
+use <rebel>/bytes
+
+use protocol/split
+use protocol/words
+use store/keyspace
+
+# What looking a key up for one kind found.
+variant Found
+    # No such key, or it expired.
+    absent
+    # The key holds another kind.
+    wrong
+    # The key holds that kind, at this position.
+    at
+        # The key's position in the keyspace.
+        p: i64
+
+# The key `key` looked up for `kind`, counted as a read.
+#
+# - `db`: the keyspace.
+# - `key`: the key.
+# - `kind`: the kind the command works on.
+# - `now`: the time, in milliseconds since the Unix epoch.
+function of_kind(@db: keyspace.Db, key: [u8], kind: keyspace.Kind, now: i64) -> Found
+    at = keyspace.read(@db, key: key, now: now)
+
+    if at == -1
+        return .absent
+
+    if db.values[at].kind != kind
+        return .wrong
+    return .at(p: at)
+
+# The position of `key` holding `kind`, made empty where it was not there.
+#
+# - `db`: the keyspace.
+# - `key`: the key.
+# - `kind`: the kind.
+# - `now`: the time.
+#
+# Fails `wrong_type` where the key holds another kind.
+function made(@db: keyspace.Db, key: [u8], kind: keyspace.Kind, now: i64) -> i64?
+    return match of_kind(@db, key: key, kind: kind, now: now)
+        .at a   => ok(a.p)
+        .absent => ok(keyspace.create(@db, key: key, value: keyspace.empty(kind)))
+        .wrong  => fail(code: "wrong_type", msg: "the key holds another kind")
+
+# Records a change of `key` made by the command `words`: touched for
+# `WATCH`, and logged as the file replays it.
+#
+# - `db`: the keyspace.
+# - `key`: the key changed.
+# - `logged`: the command as the file replays it.
+function changed(@db: keyspace.Db, key: [u8], logged: [[u8]])
+    keyspace.touch(@db, key: key)
+    keyspace.log(@db, words: logged)
+
+# The words of a command, its name given as text.
+#
+# - `name`: the name.
+# - `rest`: the arguments.
+function command(name: str, rest: [[u8]]) -> [[u8]]
+    out: [[u8]] @= [bytes.from_text(name)]
+
+    for a in rest
+        out @ out.push(a)
+
+    return out
+
+# The bytes of the integer `n` in decimal.
+#
+# - `n`: the number.
+function decimal(n: i64) -> [u8]
+    return bytes.from_text(to_str(n))
+
+# The moment a time to live read from a command ends, in milliseconds since
+# the Unix epoch, or the error reply the command answers.
+#
+# - `unit`: `EX`, `PX`, `EXAT` or `PXAT`, in capitals.
+# - `word`: the number as sent.
+# - `now`: the time.
+# - `command_name`: the command's name in lower case, for the error.
+#
+# Fails `invalid` with Redis's message where the number is no integer, is 0
+# or below, or the moment would pass `i64`.
+function expiry_of(unit: str, word: [u8], now: i64, command_name: str) -> i64?
+    n = match words.integer(word)
+        .ok v  => v
+        .err _ => return fail(code: "invalid", msg: "value is not an integer or out of range")
+
+    invalid = f"invalid expire time in '{command_name}' command"
+
+    if n <= 0
+        return fail(code: "invalid", msg: invalid)
+    most = 9223372036854775807
+
+    return match unit
+        "EX" =>
+            if n > (most - now) / 1000
+                fail(code: "invalid", msg: invalid)
+            else
+                ok(now + n * 1000)
+        "PX" =>
+            if n > most - now
+                fail(code: "invalid", msg: invalid)
+            else
+                ok(now + n)
+        "EXAT" =>
+            if n > most / 1000
+                fail(code: "invalid", msg: invalid)
+            else
+                ok(n * 1000)
+        _ => ok(n)
+
+test "expiry_of: each unit, and the numbers it refuses"
+    assert expiry_of(unit: "EX", word: bytes.from_text("10"), now: 1000, command_name: "set").must() == 11000
+    assert expiry_of(unit: "PX", word: bytes.from_text("10"), now: 1000, command_name: "set").must() == 1010
+    assert expiry_of(unit: "EXAT", word: bytes.from_text("5"), now: 1000, command_name: "set").must() == 5000
+    assert expiry_of(unit: "PXAT", word: bytes.from_text("5"), now: 1000, command_name: "set").must() == 5
+    assert expiry_of(unit: "EX", word: bytes.from_text("0"), now: 0, command_name: "set").is_err()
+    assert expiry_of(unit: "PX", word: bytes.from_text("-5"), now: 0, command_name: "set").is_err()
+    assert expiry_of(unit: "EX", word: bytes.from_text("9223372036854775807"), now: 0, command_name: "set").is_err()
+    assert expiry_of(unit: "EX", word: bytes.from_text("x"), now: 0, command_name: "set").is_err()
+
+# The words of `line` cut as `kvd cli` cuts one, for the tests.
+#
+# - `line`: a command line.
+function argv_of(line: str) -> [[u8]]
+    return split.words_of_text(line).must()

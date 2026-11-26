@@ -1,0 +1,319 @@
+# The snapshot: every key of the keyspace written into one file of kvd's
+# own binary form, in the manner of Redis's RDB, and read back. The file is
+# written whole in one step (`fs.write_atomic_bytes`), so a crash leaves the
+# old snapshot or the new one, never half of either; it ends with a CRC-32 of
+# everything before it, so a file damaged on the disk is refused, never
+# loaded in part.
+#
+# The form, every number big-endian:
+#
+# - the eight bytes `KVDSNAP1`;
+# - the generation of the append-only file that follows the snapshot and
+#   the count of keys;
+# - each key: its kind (one byte: 0 string, 1 list, 2 hash, 3 set, 4 sorted
+#   set), its name, when it expires (i64, 0 for never), then its value: a
+#   string's bytes; a list's, a set's count and items; a hash's count and
+#   its fields each followed by its value; a sorted set's count and each
+#   member followed by its score's 64 bits; every string as its length
+#   then its bytes;
+# - the CRC-32 of every byte before it (u32).
+#
+# Every count and length is an `i64` of 8 bytes, so no value the server
+# holds is too long for its file, and one read below 0 is refused.
+
+use <rebel>/bytes
+use <rebel>/containers/deque
+use <rebel>/containers/indexed
+use <rebel>/hash
+use <rebel>/math
+
+use store/keyspace
+use store/zset
+
+# The bytes a snapshot opens with.
+constant MAGIC: str
+    "KVDSNAP1"
+
+# The code of a snapshot that is no snapshot, or a damaged one.
+constant INVALID: str
+    "invalid"
+
+# A snapshot read back: the keyspace and the generation of the log after it.
+record Loaded
+    # The keys.
+    db: keyspace.Db
+    # The append-only file's generation to replay after it.
+    generation: i64
+    # How many keys it held.
+    count: i64
+
+# Appends the string `v`, its length first.
+#
+# - `out`: the bytes written so far, the caller's own.
+# - `v`: the string.
+function put_string(@out: [u8], v: [u8])
+    for c in bytes.encode_i64_be(v.len())
+        out @ out.push(c)
+
+    for c in v
+        out @ out.push(c)
+
+# Appends the bytes `v` as they are.
+#
+# - `out`: the bytes written so far, the caller's own.
+# - `v`: the bytes.
+function put_raw(@out: [u8], v: [u8])
+    for c in v
+        out @ out.push(c)
+
+# The bytes of the keyspace `db` as a snapshot, `generation` the log that
+# follows it; expired keys are left out.
+#
+# - `db`: the keyspace.
+# - `generation`: the append-only file's generation after the snapshot.
+# - `now`: the time; a key expired at it is not written.
+function encode(db: keyspace.Db lent, generation: i64, now: i64) -> [u8]
+    body: [u8] @= []
+    count @= 0
+
+    for at in range(from: 0, to: keyspace.size(db))
+        if !keyspace.is_expired(db, at: at, now: now)
+            count @ count + 1
+            v = db.values[at]
+
+            kind: u8 = match v.kind
+                .text => 0
+                .list => 1
+                .hash => 2
+                .set  => 3
+                .zset => 4
+
+            body @ body.push(kind)
+            put_string(out: @body, v: db.names[at])
+            put_raw(out: @body, v: bytes.encode_i64_be(v.expire_at))
+
+            match v.kind
+                .text => put_string(out: @body, v: v.text)
+                .list =>
+                    items = deque.to_list(v.list_shape, items: v.list)
+                    put_raw(out: @body, v: bytes.encode_i64_be(items.len()))
+
+                    for item in items
+                        put_string(out: @body, v: item)
+                .hash =>
+                    n = indexed.size(v.hash_shape)
+                    put_raw(out: @body, v: bytes.encode_i64_be(n))
+
+                    for i in range(from: 0, to: n)
+                        put_string(out: @body, v: v.hash_fields[i])
+                        put_string(out: @body, v: v.hash_values[i])
+                .set =>
+                    n = indexed.size(v.set_shape)
+                    put_raw(out: @body, v: bytes.encode_i64_be(n))
+
+                    for i in range(from: 0, to: n)
+                        put_string(out: @body, v: v.set_members[i])
+                .zset =>
+                    pairs = zset.by_rank(v.zset, start: 0, stop: -1, reverse: false)
+                    put_raw(out: @body, v: bytes.encode_i64_be(pairs.len()))
+
+                    for p in pairs
+                        put_string(out: @body, v: p.member)
+                        put_raw(out: @body, v: bytes.encode_u64_be(math.f64_to_bits(p.score)))
+
+    out: [u8] @= bytes.from_text(MAGIC)
+    put_raw(out: @out, v: bytes.encode_i64_be(generation))
+    put_raw(out: @out, v: bytes.encode_i64_be(count))
+    put_raw(out: @out, v: body)
+    put_raw(out: @out, v: bytes.encode_u32_be(hash.crc32(out)))
+    return out
+
+# Where a snapshot is read from: its bytes, and the place of the next.
+record Reader
+    # The snapshot's bytes, its checksum left out.
+    data: [u8]
+    # The index of the next byte to read.
+    at: i64
+
+# The next `n` bytes, or a failure where fewer are left.
+#
+# - `r`: the reader, which moves past them.
+# - `n`: how many.
+function take(@r: Reader, n: i64) -> [u8]?
+    if n < 0 || n > r.data.len() - r.at
+        return fail(code: INVALID, msg: f"the snapshot ends inside a value at byte {r.at}")
+    got = r.data.slice(from: r.at, to: r.at + n)
+    r.at @ r.at + n
+    return ok(got)
+
+# The next count or length, 0 or more.
+#
+# - `r`: the reader.
+#
+# Fails `invalid` where it is below 0 or the bytes end first.
+function take_count(@r: Reader) -> i64?
+    n = bytes.decode_i64_be(take(@r, n: 8)?, at: 0)?
+
+    if n < 0
+        return fail(code: INVALID, msg: f"the snapshot holds a count of {n} at byte {r.at - 8}")
+    return ok(n)
+
+# The next count of items, each taking at least `least` bytes: a count
+# the bytes left could not hold is refused before any is read, so a damaged
+# count never makes the reader build what it names.
+#
+# - `r`: the reader.
+# - `least`: the fewest bytes one item takes, 1 or more.
+function take_items(@r: Reader, least: i64) -> i64?
+    n = take_count(@r)?
+
+    if n > (r.data.len() - r.at) / least
+        return fail(code: INVALID, msg: f"the snapshot counts {n} items at byte {r.at}, more than its bytes hold")
+    return ok(n)
+
+# The next string, its length first.
+#
+# - `r`: the reader.
+function take_string(@r: Reader) -> [u8]?
+    n = take_count(@r)?
+    return take(@r, n: n)
+
+# The snapshot `data` read back.
+#
+# - `data`: the file's bytes.
+#
+# Fails `invalid` where it opens with no `KVDSNAP1`, its checksum does not
+# match its bytes, a value runs past its end, a kind is unknown, a score is
+# not a number, or bytes are left after the last key.
+function decode(data: [u8]) -> Loaded?
+    if data.len() < MAGIC.len() + 20 || data.slice(from: 0, to: MAGIC.len()) != bytes.from_text(MAGIC)
+        return fail(code: INVALID, msg: "the file is no kvd snapshot")
+    body = data.slice(from: 0, to: data.len() - 4)
+
+    if hash.crc32(body) != bytes.decode_u32_be(data, at: data.len() - 4)?
+        return fail(code: INVALID, msg: "the snapshot's checksum does not match its bytes")
+    r @= Reader(data: body, at: MAGIC.len())
+    generation = take_count(@r)?
+    count = take_count(@r)?
+
+    if count > (body.len() - r.at) / 17
+        return fail(code: INVALID, msg: f"the snapshot counts {count} keys, more than its bytes hold")
+    db @= keyspace.new()
+    read @= 0
+
+    while read < count
+        read @ read + 1
+        kind_byte = take(@r, n: 1)?[0]
+        name = take_string(@r)?
+        expire_at = bytes.decode_i64_be(take(@r, n: 8)?, at: 0)?
+
+        kind: keyspace.Kind = match kind_byte
+            0 => .text
+            1 => .list
+            2 => .hash
+            3 => .set
+            4 => .zset
+            _ => return fail(code: INVALID, msg: f"the snapshot holds a value of kind {kind_byte}")
+
+        v @= keyspace.empty(kind)
+        v.expire_at @ expire_at
+
+        match kind
+            .text => v.text @ take_string(@r)?
+            .list =>
+                for _ in range(from: 0, to: take_items(@r, least: 8)?)
+                    deque.push_back(@v.list_shape, @v.list, value: take_string(@r)?)
+            .hash =>
+                for _ in range(from: 0, to: take_items(@r, least: 16)?)
+                    field = take_string(@r)?
+                    _ = indexed.put(
+                        @v.hash_shape,
+                        @v.hash_fields,
+                        @v.hash_values,
+                        @v.hash_lookup,
+                        key: field,
+                        value: take_string(@r)?
+                    )
+            .set =>
+                for _ in range(from: 0, to: take_items(@r, least: 8)?)
+                    _ = indexed.put(
+                        @v.set_shape,
+                        @v.set_members,
+                        @v.set_marks,
+                        @v.set_lookup,
+                        key: take_string(@r)?,
+                        value: true
+                    )
+            .zset =>
+                for _ in range(from: 0, to: take_items(@r, least: 16)?)
+                    member = take_string(@r)?
+                    score = math.bits_to_f64(bytes.decode_u64_be(take(@r, n: 8)?, at: 0)?)
+
+                    if score != score
+                        return fail(code: INVALID, msg: "the snapshot holds a score that is no number")
+                    _ = zset.put(@v.zset, member: member, score: score)
+
+        _ = keyspace.create(@db, key: name, value: v)
+
+    if r.at != body.len()
+        return fail(code: INVALID, msg: f"the snapshot holds {body.len() - r.at} bytes after its last key")
+    return ok(Loaded(db: db, generation: generation, count: count))
+
+# A keyspace of one key of each kind, for the tests.
+function sample() -> keyspace.Db
+    db @= keyspace.new()
+    s @= keyspace.empty(.text)
+    s.text @ bytes.from_text("città")
+    s.expire_at @ 5000
+    _ = keyspace.create(@db, key: bytes.from_text("s"), value: s)
+    l @= keyspace.empty(.list)
+    deque.push_back(@l.list_shape, @l.list, value: bytes.from_text("a"))
+    deque.push_front(@l.list_shape, @l.list, value: [])
+    _ = keyspace.create(@db, key: bytes.from_text("l"), value: l)
+    h @= keyspace.empty(.hash)
+    _ = indexed.put(
+        @h.hash_shape,
+        @h.hash_fields,
+        @h.hash_values,
+        @h.hash_lookup,
+        key: bytes.from_text("f"),
+        value: [0, 255]
+    )
+    _ = keyspace.create(@db, key: bytes.from_text("h"), value: h)
+    t @= keyspace.empty(.set)
+    _ = indexed.put(@t.set_shape, @t.set_members, @t.set_marks, @t.set_lookup, key: bytes.from_text("m"), value: true)
+    _ = keyspace.create(@db, key: bytes.from_text("t"), value: t)
+    z @= keyspace.empty(.zset)
+    _ = zset.put(@z.zset, member: bytes.from_text("x"), score: -1.5)
+    _ = zset.put(@z.zset, member: bytes.from_text("y"), score: 1.0 / 0.0)
+    _ = keyspace.create(@db, key: bytes.from_text("z"), value: z)
+    return db
+
+test "decode: what encode wrote comes back, key by key, with times and scores"
+    data = encode(sample(), generation: 3, now: 0)
+    back = decode(data).must()
+    assert back.generation == 3
+    assert back.count == 5
+    assert encode(back.db, generation: 3, now: 0) == data
+    z = back.db.values[4].zset
+    assert zset.score_of(z, member: bytes.from_text("y")).must() == 1.0 / 0.0
+    assert back.db.values[0].expire_at == 5000
+
+test "encode: a key expired at the moment of writing is left out"
+    back = decode(encode(sample(), generation: 0, now: 5000)).must()
+    assert back.count == 4
+
+test "decode: an empty keyspace, a damaged byte, a cut file, another file"
+    empty = encode(keyspace.new(), generation: 0, now: 0)
+    assert decode(empty).must().count == 0
+    data @= encode(sample(), generation: 1, now: 0)
+
+    data[20] @ if data[20] == 0
+        1
+    else
+        0
+    assert decode(data).is_err()
+    whole = encode(sample(), generation: 1, now: 0)
+    assert decode(whole.slice(from: 0, to: whole.len() - 1)).is_err()
+    assert decode(bytes.from_text("REDIS0011")).is_err()
+    assert decode([]).is_err()

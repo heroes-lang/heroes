@@ -1,0 +1,347 @@
+# The commands of lists: `LPUSH`, `RPUSH`, `LPOP`, `RPOP` with a count,
+# `LLEN`, `LRANGE`, `LINDEX`, `LSET`, `LREM`, `LTRIM`, as Redis answers each.
+# A list is `containers/deque`'s, so both ends cost a constant; a list
+# emptied is taken out, as Redis does.
+
+use <rebel>/containers/deque
+use <rebel>/redis
+
+use commands/common
+use protocol/reply
+use protocol/words
+use store/keyspace
+
+# Where a range of places ends up once negative places count from the end
+# and the ends are held inside the list: `from` above `to` where it is
+# empty.
+record Span
+    # The first place.
+    from: i64
+    # The last place, included.
+    to: i64
+
+# The span `start` to `stop` reads in a list of `n` items, as `LRANGE` and
+# `LTRIM` read it.
+#
+# - `start`: the first place, negative from the end.
+# - `stop`: the last place, negative from the end.
+# - `n`: the list's length.
+function span_of(start: i64, stop: i64, n: i64) -> Span
+    from @= start
+    to @= stop
+
+    if from < 0
+        from @ n + from
+
+    if to < 0
+        to @ n + to
+
+    if from < 0
+        from @ 0
+
+    if to >= n
+        to @ n - 1
+    return Span(from: from, to: to)
+
+# `LPUSH` and `RPUSH`: each value pushed at the front, or the back where
+# `back`; answers the new length.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `back`: whether the values go at the back.
+# - `now`: the time.
+function lpush(@db: keyspace.Db, argv: [[u8]], back: bool, now: i64) -> redis.Reply
+    at = match common.made(@db, key: argv[1], kind: .list, now: now)
+        .ok p  => p
+        .err _ => return reply.wrong_type()
+
+    for v in argv.slice(from: 2, to: argv.len())
+        if back
+            deque.push_back(@db.values[at].list_shape, @db.values[at].list, value: v)
+        else
+            deque.push_front(@db.values[at].list_shape, @db.values[at].list, value: v)
+
+    common.changed(@db, key: argv[1], logged: argv)
+    return reply.integer(deque.size(db.values[at].list_shape))
+
+# `LPOP key [count]` and `RPOP`: one value, or up to `count` as an array.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `back`: whether they come from the back.
+# - `now`: the time.
+function lpop(@db: keyspace.Db, argv: [[u8]], back: bool, now: i64) -> redis.Reply
+    count @= 1
+
+    if argv.len() == 3
+        match words.integer(argv[2])
+            .ok n =>
+                if n < 0
+                    return reply.error(code: "ERR", message: "value is out of range, must be positive")
+                count @ n
+            .err _ => return reply.error(code: "ERR", message: "value is out of range, must be positive")
+
+    at = match common.of_kind(@db, key: argv[1], kind: .list, now: now)
+        .at a => a.p
+        .absent =>
+            if argv.len() == 3
+                return .array(items: [])
+            return reply.nothing()
+        .wrong => return reply.wrong_type()
+
+    taken: [[u8]] @= []
+
+    while taken.len() < count && deque.size(db.values[at].list_shape) > 0
+        got = if back
+            deque.pop_back(@db.values[at].list_shape, @db.values[at].list)
+        else
+            deque.pop_front(@db.values[at].list_shape, @db.values[at].list)
+        taken @ taken.push(got.must())
+
+    if taken.len() > 0
+        _ = keyspace.drop_if_empty(@db, at: at)
+
+        logged = if back
+            common.command("RPOP", rest: [argv[1], common.decimal(taken.len())])
+        else
+            common.command("LPOP", rest: [argv[1], common.decimal(taken.len())])
+        common.changed(@db, key: argv[1], logged: logged)
+
+    if argv.len() == 3
+        return reply.bulks(taken)
+    return reply.bulk(taken[0])
+
+# `LLEN key`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function llen(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    return match common.of_kind(@db, key: argv[1], kind: .list, now: now)
+        .at a   => reply.integer(deque.size(db.values[a.p].list_shape))
+        .absent => reply.integer(0)
+        .wrong  => reply.wrong_type()
+
+# `LRANGE key start stop`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function lrange(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    start = match words.integer(argv[2])
+        .ok n  => n
+        .err _ => return reply.not_integer()
+
+    stop = match words.integer(argv[3])
+        .ok n  => n
+        .err _ => return reply.not_integer()
+
+    at = match common.of_kind(@db, key: argv[1], kind: .list, now: now)
+        .at a   => a.p
+        .absent => return .array(items: [])
+        .wrong  => return reply.wrong_type()
+
+    s = span_of(start: start, stop: stop, n: deque.size(db.values[at].list_shape))
+    out: [[u8]] @= []
+    place @= s.from
+
+    while place <= s.to
+        out @ out.push(deque.get(db.values[at].list_shape, items: db.values[at].list, at: place).must())
+        place @ place + 1
+
+    return reply.bulks(out)
+
+# `LINDEX key index`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function lindex(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    index = match words.integer(argv[2])
+        .ok n  => n
+        .err _ => return reply.not_integer()
+
+    return match common.of_kind(@db, key: argv[1], kind: .list, now: now)
+        .at a =>
+            n = deque.size(db.values[a.p].list_shape)
+
+            place = if index < 0
+                n + index
+            else
+                index
+
+            match deque.get(db.values[a.p].list_shape, items: db.values[a.p].list, at: place)
+                .ok v  => reply.bulk(v)
+                .err _ => reply.nothing()
+        .absent => reply.nothing()
+        .wrong  => reply.wrong_type()
+
+# `LSET key index value`.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function lset(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    index = match words.integer(argv[2])
+        .ok n  => n
+        .err _ => return reply.not_integer()
+
+    at = match common.of_kind(@db, key: argv[1], kind: .list, now: now)
+        .at a   => a.p
+        .absent => return reply.error(code: "ERR", message: "no such key")
+        .wrong  => return reply.wrong_type()
+
+    n = deque.size(db.values[at].list_shape)
+
+    place = if index < 0
+        n + index
+    else
+        index
+
+    if place < 0 || place >= n
+        return reply.error(code: "ERR", message: "index out of range")
+    deque.put(db.values[at].list_shape, @db.values[at].list, at: place, value: argv[3])
+    common.changed(@db, key: argv[1], logged: argv)
+    return reply.okay()
+
+# Makes the list at `at` hold `kept`, front to back.
+#
+# - `db`: the keyspace.
+# - `at`: the key's position.
+# - `kept`: the items.
+function replace_items(@db: keyspace.Db, at: i64, kept: [[u8]])
+    db.values[at].list_shape @ deque.over(kept)
+    db.values[at].list @ kept
+
+# `LREM key count value`: the items equal to `value` taken out, the first
+# `count` from the front, from the back where `count` is negative, all
+# where it is 0; answers how many went.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function lrem(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    count = match words.integer(argv[2])
+        .ok n  => n
+        .err _ => return reply.not_integer()
+
+    at = match common.of_kind(@db, key: argv[1], kind: .list, now: now)
+        .at a   => a.p
+        .absent => return reply.integer(0)
+        .wrong  => return reply.wrong_type()
+
+    items = deque.to_list(db.values[at].list_shape, items: db.values[at].list)
+    n = items.len()
+    drop: [bool] @= []
+
+    for _ in items
+        drop @ drop.push(false)
+
+    limit = if count == 0 || count < -n || count > n
+        n
+    else if count < 0
+        -count
+    else
+        count
+    removed @= 0
+    i @= 0
+
+    while i < n && removed < limit
+        place = if count < 0
+            n - 1 - i
+        else
+            i
+
+        if items[place] == argv[3]
+            drop[place] @ true
+            removed @ removed + 1
+        i @ i + 1
+
+    if removed == 0
+        return reply.integer(0)
+    kept: [[u8]] @= []
+
+    for j in range(from: 0, to: n)
+        if !drop[j]
+            kept @ kept.push(items[j])
+
+    replace_items(@db, at: at, kept: kept)
+    _ = keyspace.drop_if_empty(@db, at: at)
+    common.changed(@db, key: argv[1], logged: argv)
+    return reply.integer(removed)
+
+# `LTRIM key start stop`: the list kept between the two places alone.
+#
+# - `db`: the keyspace.
+# - `argv`: the command's words, its name first.
+# - `now`: the time.
+function ltrim(@db: keyspace.Db, argv: [[u8]], now: i64) -> redis.Reply
+    start = match words.integer(argv[2])
+        .ok n  => n
+        .err _ => return reply.not_integer()
+
+    stop = match words.integer(argv[3])
+        .ok n  => n
+        .err _ => return reply.not_integer()
+
+    at = match common.of_kind(@db, key: argv[1], kind: .list, now: now)
+        .at a   => a.p
+        .absent => return reply.okay()
+        .wrong  => return reply.wrong_type()
+
+    items = deque.to_list(db.values[at].list_shape, items: db.values[at].list)
+    s = span_of(start: start, stop: stop, n: items.len())
+
+    kept: [[u8]] = if s.from > s.to || s.from >= items.len()
+        []
+    else
+        items.slice(from: s.from, to: s.to + 1)
+    replace_items(@db, at: at, kept: kept)
+    _ = keyspace.drop_if_empty(@db, at: at)
+    common.changed(@db, key: argv[1], logged: argv)
+    return reply.okay()
+
+test "span_of: negative places, places past either end, an empty span"
+    assert span_of(start: 0, stop: -1, n: 5) == Span(from: 0, to: 4)
+    assert span_of(start: -2, stop: 100, n: 5) == Span(from: 3, to: 4)
+    assert span_of(start: -100, stop: 1, n: 5) == Span(from: 0, to: 1)
+    s = span_of(start: 3, stop: 1, n: 5)
+    assert s.from > s.to
+    e = span_of(start: 0, stop: -1, n: 0)
+    assert e.from > e.to
+
+test "lpush and lpop: both ends, a count, a count past the length, and the key gone when emptied"
+    db @= keyspace.new()
+    assert lpush(@db, argv: common.argv_of("RPUSH q b c"), back: true, now: 0) == reply.integer(2)
+    assert lpush(@db, argv: common.argv_of("LPUSH q a"), back: false, now: 0) == reply.integer(3)
+    assert lpop(@db, argv: common.argv_of("RPOP q"), back: true, now: 0) == reply.bulk([99])
+    assert lpop(@db, argv: common.argv_of("LPOP q 5"), back: false, now: 0) == reply.bulks([[97], [98]])
+    assert keyspace.size(db) == 0
+    assert lpop(@db, argv: common.argv_of("LPOP q"), back: false, now: 0) == reply.nothing()
+    assert lpop(@db, argv: common.argv_of("LPOP q 2"), back: false, now: 0) == .array(items: [])
+    assert lpop(@db, argv: common.argv_of("LPOP q -1"), back: false, now: 0) == reply.error(code: "ERR", message: "value is out of range, must be positive")
+
+test "lrange, lindex and lset: negative places, places past the end, and an absent key"
+    db @= keyspace.new()
+    _ = lpush(@db, argv: common.argv_of("RPUSH q a b c d"), back: true, now: 0)
+    assert lrange(@db, argv: common.argv_of("LRANGE q -2 100"), now: 0) == reply.bulks([[99], [100]])
+    assert lrange(@db, argv: common.argv_of("LRANGE q 3 1"), now: 0) == .array(items: [])
+    assert lindex(@db, argv: common.argv_of("LINDEX q -1"), now: 0) == reply.bulk([100])
+    assert lindex(@db, argv: common.argv_of("LINDEX q 4"), now: 0) == reply.nothing()
+    assert lset(@db, argv: common.argv_of("LSET q -4 z"), now: 0) == reply.okay()
+    assert lindex(@db, argv: common.argv_of("LINDEX q 0"), now: 0) == reply.bulk([122])
+    assert lset(@db, argv: common.argv_of("LSET q 9 z"), now: 0) == reply.error(code: "ERR", message: "index out of range")
+    assert lset(@db, argv: common.argv_of("LSET none 0 z"), now: 0) == reply.error(code: "ERR", message: "no such key")
+
+test "lrem and ltrim: from the front, from the back, all, the smallest count, and trimmed to nothing"
+    db @= keyspace.new()
+    _ = lpush(@db, argv: common.argv_of("RPUSH q x a x b x"), back: true, now: 0)
+    assert lrem(@db, argv: common.argv_of("LREM q -1 x"), now: 0) == reply.integer(1)
+    assert lrange(@db, argv: common.argv_of("LRANGE q 0 -1"), now: 0) == reply.bulks([[120], [97], [120], [98]])
+    assert lrem(@db, argv: common.argv_of("LREM q 1 x"), now: 0) == reply.integer(1)
+    assert lrem(@db, argv: common.argv_of("LREM q -9223372036854775808 x"), now: 0) == reply.integer(1)
+    assert lrem(@db, argv: common.argv_of("LREM q 0 nothing"), now: 0) == reply.integer(0)
+    assert ltrim(@db, argv: common.argv_of("LTRIM q 1 -1"), now: 0) == reply.okay()
+    assert lrange(@db, argv: common.argv_of("LRANGE q 0 -1"), now: 0) == reply.bulks([[98]])
+    assert ltrim(@db, argv: common.argv_of("LTRIM q 5 9"), now: 0) == reply.okay()
+    assert keyspace.size(db) == 0

@@ -1,0 +1,250 @@
+# The server's own commands that are neither a transaction's nor
+# publishing's: `PING`, `ECHO`, `QUIT`, `RESET`, `HELLO`, `AUTH`, `SELECT`,
+# `CLIENT`, `INFO`, `SAVE`, `BGSAVE`, `BGREWRITEAOF`, `LASTSAVE`,
+# `SHUTDOWN`, `COMMAND` and `DEBUG`, as Redis answers each.
+#
+# `DEBUG ADVANCE <ms>` moves a manual clock and runs the active sweep as the
+# timer would have meanwhile, which is how a scripted session makes keys
+# expire at the same command on every run; `DEBUG CRASH` ends the server
+# where it stands, its log neither flushed nor closed, as a power cut would.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/redis
+
+use protocol/reply
+use protocol/words
+use server/clock
+use server/info
+use server/multi
+use server/pubsub
+use server/saving
+use server/state
+use store/keyspace
+
+# The version `HELLO` and `INFO` report.
+constant VERSION: str
+    "0.1.0"
+
+# `HELLO [protover [AUTH user password] [SETNAME name]]`: RESP2 alone, so a
+# client asking for 3 is told `NOPROTO` and speaks 2, as Rebel's does.
+#
+# - `s`: the server.
+# - `at`: the client's position.
+# - `argv`: the command's words, its name first.
+function hello(@s: state.State, at: i64, argv: [[u8]]) -> redis.Reply
+    if argv.len() > 1 && argv[1] != bytes.from_text("2")
+        return reply.error(code: "NOPROTO", message: "sorry, this protocol version is not supported")
+    i @= 2
+
+    while i < argv.len()
+        option = words.upper(argv[i])
+
+        if option == "AUTH" && i + 2 < argv.len()
+            if !password_is(s, given: argv[i + 2])
+                return reply.error(code: "WRONGPASS", message: "invalid username-password pair or user is disabled.")
+            s.clients[at].authed @ true
+            i @ i + 3
+        else if option == "SETNAME" && i + 1 < argv.len()
+            s.clients[at].name @ bytes.to_text_lossy(argv[i + 1])
+            i @ i + 2
+        else
+            return reply.syntax()
+
+    if s.config.password != "" && !s.clients[at].authed
+        return reply.error(
+            code: "NOAUTH",
+            message: "HELLO must be called with the client already authenticated, otherwise the HELLO <proto> AUTH <user> <pass> option can be used to authenticate the client and select the RESP protocol version at the same time"
+        )
+    entries = [
+        reply.bulk_text("server")
+        reply.bulk_text("kvd")
+        reply.bulk_text("version")
+        reply.bulk_text(VERSION)
+        reply.bulk_text("proto")
+        reply.integer(2)
+        reply.bulk_text("id")
+        reply.integer(s.clients[at].id)
+        reply.bulk_text("mode")
+        reply.bulk_text("standalone")
+    ]
+    return .array(items: entries)
+
+# Whether `given` is the server's password, compared in constant time.
+#
+# - `s`: the server.
+# - `given`: the password the client gave.
+function password_is(s: state.State lent, given: [u8]) -> bool
+    return s.config.password != "" && crypto.equals_constant_time(a: given, b: bytes.from_text(s.config.password))
+
+# `AUTH [user] password`.
+#
+# - `s`: the server.
+# - `at`: the client's position.
+# - `argv`: the command's words, its name first.
+function auth(@s: state.State, at: i64, argv: [[u8]]) -> redis.Reply
+    if s.config.password == ""
+        return reply.error(
+            code: "ERR",
+            message: "AUTH <password> called without any password configured for the default user. Are you sure your configuration is correct?"
+        )
+
+    if argv.len() > 3
+        return reply.syntax()
+    given = argv[argv.len() - 1]
+
+    if argv.len() == 3 && argv[1] != bytes.from_text("default")
+        return reply.error(code: "WRONGPASS", message: "invalid username-password pair or user is disabled.")
+
+    if !password_is(s, given: given)
+        return reply.error(code: "WRONGPASS", message: "invalid username-password pair or user is disabled.")
+    s.clients[at].authed @ true
+    return reply.okay()
+
+# `CLIENT ID`, `CLIENT GETNAME`, `CLIENT SETNAME name`.
+#
+# - `s`: the server.
+# - `at`: the client's position.
+# - `argv`: the command's words, its name first.
+function client(@s: state.State, at: i64, argv: [[u8]]) -> redis.Reply
+    what = words.upper(argv[1])
+
+    if what == "ID" && argv.len() == 2
+        return reply.integer(s.clients[at].id)
+
+    if what == "GETNAME" && argv.len() == 2
+        if s.clients[at].name == ""
+            return reply.nothing()
+        return reply.bulk_text(s.clients[at].name)
+
+    if what == "SETNAME" && argv.len() == 3
+        for c in argv[2]
+            if c <= ' ' || c > '~'
+                return reply.error(
+                    code: "ERR",
+                    message: "Client names cannot contain spaces, newlines or special characters."
+                )
+
+        s.clients[at].name @ bytes.to_text_lossy(argv[2])
+        return reply.okay()
+    return reply.error(code: "ERR", message: f"unknown subcommand '{what}'. Try CLIENT HELP.")
+
+# `DEBUG ADVANCE ms` and `DEBUG CRASH`.
+#
+# - `s`: the server.
+# - `argv`: the command's words, its name first.
+function debug(@s: state.State, argv: [[u8]]) -> redis.Reply
+    what = words.upper(argv[1])
+
+    if what == "ADVANCE" && argv.len() == 3
+        ms = match words.integer(argv[2])
+            .ok n  => n
+            .err _ => return reply.not_integer()
+
+        match clock.advance(@s.clock, ms: ms)
+            .ok _  => _ = 0
+            .err e => return reply.error(code: "ERR", message: e.msg)
+
+        ticks = ms * s.config.hz / 1000 + 1
+        _ = keyspace.sweep(@s.db, now: clock.now(@s.clock), rounds: ticks)
+        multi.touched(@s, keys_changed: keyspace.drain_touched(@s.db))
+        state.logged(@s, effects: keyspace.drain_effects(@s.db), transaction: false)
+        return reply.okay()
+
+    if what == "CRASH" && argv.len() == 2
+        if !s.clock.manual
+            return reply.error(code: "ERR", message: "DEBUG CRASH runs only with --manual-clock, in a scripted session")
+        s.stopping @ true
+        return reply.okay()
+    return reply.error(code: "ERR", message: f"unknown subcommand '{what}': kvd's DEBUG takes ADVANCE <ms> and CRASH")
+
+# `SHUTDOWN [NOSAVE | SAVE]`: the background save waited for, a snapshot
+# written unless `NOSAVE`, or by default where no log is kept, the log
+# closed, and the server stopped; nothing is answered but a failure.
+#
+# - `s`: the server.
+# - `argv`: the command's words, its name first.
+function shutdown(@s: state.State, argv: [[u8]]) -> redis.Reply
+    nosave @= false
+    save @= false
+
+    for word in argv.slice(from: 1, to: argv.len())
+        option = words.upper(word)
+
+        if option == "NOSAVE"
+            nosave @ true
+        else if option == "SAVE"
+            save @ true
+        else
+            return reply.syntax()
+
+    saving.finish_saving(@s)
+
+    if save || !nosave && !s.config.appendonly
+        match saving.save_now(@s)
+            .ok _  => _ = 0
+            .err e => return reply.error(code: "ERR", message: f"Errors trying to SHUTDOWN. Check logs. ({e.msg})")
+    s.stopping @ true
+    state.say(@s, line: "ready to exit, bye bye")
+    return reply.okay()
+
+# Runs the server's command `name` for the client at `at`.
+#
+# - `s`: the server.
+# - `at`: the client's position.
+# - `argv`: the command's words, its name first.
+# - `name`: the name in capitals.
+function run(@s: state.State, at: i64, argv: [[u8]], name: str) -> redis.Reply
+    return match name
+        "PING" =>
+            said: [u8] = if argv.len() > 1
+                argv[1]
+            else
+                []
+
+            if pubsub.is_subscribed(s, at: at)
+                .array(items: [reply.bulk_text("pong"), reply.bulk(said)])
+            else if argv.len() > 1
+                reply.bulk(argv[1])
+            else
+                .simple(v: "PONG")
+        "ECHO" => reply.bulk(argv[1])
+        "QUIT" =>
+            s.clients[at].closing @ true
+            reply.okay()
+        "RESET" =>
+            multi.close_transaction(@s, at: at)
+            _ = pubsub.unsubscribe(@s, at: at, argv: [argv[0]], patterns: false)
+            _ = pubsub.unsubscribe(@s, at: at, argv: [argv[0]], patterns: true)
+            s.clients[at].name @ ""
+            .simple(v: "RESET")
+        "HELLO" => hello(@s, at: at, argv: argv)
+        "AUTH"  => auth(@s, at: at, argv: argv)
+        "SELECT" =>
+            if argv[1] == bytes.from_text("0")
+                reply.okay()
+            else
+                reply.error(code: "ERR", message: "DB index is out of range")
+        "CLIENT" => client(@s, at: at, argv: argv)
+        "INFO"   => reply.bulk_text(info.text(@s, argv: argv))
+        "SAVE" =>
+            match saving.save_now(@s)
+                .ok _  => reply.okay()
+                .err e => reply.error(code: "ERR", message: e.msg)
+        "BGSAVE" | "BGREWRITEAOF" =>
+            match saving.save_later(@s)
+                .ok _ =>
+                    if name == "BGSAVE"
+                        .simple(v: "Background saving started")
+                    else
+                        .simple(v: "Background append only file rewriting started")
+                .err e => reply.error(code: "ERR", message: e.msg)
+        "LASTSAVE" => reply.integer(s.last_save_ms / 1000)
+        "SHUTDOWN" => shutdown(@s, argv: argv)
+        "COMMAND" =>
+            if argv.len() == 2 && words.upper(argv[1]) == "COUNT"
+                reply.integer(s.specs.len())
+            else
+                reply.error(code: "ERR", message: "kvd's COMMAND takes COUNT alone")
+        "DEBUG" => debug(@s, argv: argv)
+        _       => reply.error(code: "ERR", message: f"no handler for '{name}'")

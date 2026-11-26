@@ -1,0 +1,154 @@
+# A reply written for a person as `redis-cli` writes it on a terminal: a
+# simple string as it is, an error after `(error)`, an integer after
+# `(integer)`, a bulk string in double quotes with every byte that is not
+# printable ASCII escaped, `(nil)`, and an array as numbered lines, an array
+# inside one indented under its number. `INFO`'s text is written raw, line
+# by line, as `redis-cli` writes it.
+
+use <rebel>/bytes
+use <rebel>/redis
+
+# `v` quoted as `redis-cli` quotes a bulk string: `\n`, `\r`, `\t`, `\a`,
+# `\b`, `\"` and `\\` by name, every other byte below a space or above `~`
+# as `\xhh`.
+#
+# - `v`: the bytes.
+function quoted(v: [u8]) -> str
+    out: [u8] @= ['"']
+    hex = "0123456789abcdef"
+
+    for c in v
+        if c == '\n'
+            bytes.push_text(@out, "\\n")
+        else if c == '\r'
+            bytes.push_text(@out, "\\r")
+        else if c == '\t'
+            bytes.push_text(@out, "\\t")
+        else if c == 7
+            bytes.push_text(@out, "\\a")
+        else if c == 8
+            bytes.push_text(@out, "\\b")
+        else if c == '"'
+            bytes.push_text(@out, "\\\"")
+        else if c == '\\'
+            bytes.push_text(@out, "\\\\")
+        else if c < ' ' || c > '~'
+            n = to_i64(c).must()
+            bytes.push_text(@out, "\\x")
+            out @ out.push(hex[n / 16])
+            out @ out.push(hex[n % 16])
+        else
+            out @ out.push(c)
+
+    out @ out.push('"')
+    return bytes.to_text_lossy(out)
+
+# The lines of `r`, the first after whatever prefix the caller writes,
+# the others indented by `indent` spaces.
+#
+# - `r`: the reply.
+# - `indent`: the spaces before every line but the first.
+function lines_of(r: redis.Reply, indent: i64) -> [str]
+    return match r
+        .simple s => [s.v]
+        .error e =>
+            if e.code == ""
+                [f"(error) {e.message}"]
+            else
+                [f"(error) {e.code} {e.message}"]
+        .integer i    => [f"(integer) {i.v}"]
+        .bulk b       => [quoted(b.v)]
+        .null_value   => ["(nil)"]
+        .array a      => items_of(a.items, indent: indent)
+        .set s        => items_of(s.items, indent: indent)
+        .pushed p     => items_of(p.items, indent: indent)
+        .mapping _    => ["(a map, which RESP2 never sends)"]
+        .double d     => [f"(double) {d.v}"]
+        .boolean b    => [f"(boolean) {b.v}"]
+        .big_number n => [f"(big number) {n.v}"]
+        .verbatim v   => [v.v]
+
+# The lines of an array's `items`, numbered from 1, the numbers right
+# aligned to the widest.
+#
+# - `items`: the elements.
+# - `indent`: the spaces before every line but the first.
+function items_of(items: [redis.Reply], indent: i64) -> [str]
+    if items.len() == 0
+        return ["(empty array)"]
+    width = to_str(items.len()).len()
+    out: [str] @= []
+    pad = repeat(" ", to_u64(indent).must())
+
+    for i in range(from: 0, to: items.len())
+        number = to_str(i + 1)
+        label = repeat(" ", to_u64(width - number.len()).must()) + number + ") "
+        inner = lines_of(items[i], indent: indent + width + 2)
+
+        for j in range(from: 0, to: inner.len())
+            if j == 0 && i == 0
+                out @ out.push(label + inner[0])
+            else if j == 0
+                out @ out.push(pad + label + inner[0])
+            else
+                out @ out.push(inner[j])
+
+    return out
+
+# The text `redis-cli` writes for `r`, its lines joined by line feeds.
+#
+# - `r`: the reply.
+function render(r: redis.Reply) -> str
+    return lines_of(r, indent: 0).join("\n")
+
+# `INFO`'s text as `redis-cli` writes it: the bulk string's lines without
+# their carriage returns, the last line feed left out.
+#
+# - `r`: the reply to `INFO`.
+function render_raw(r: redis.Reply) -> str
+    match r
+        .bulk b =>
+            kept: [u8] @= []
+
+            for c in b.v
+                if c != '\r'
+                    kept @ kept.push(c)
+
+            text = bytes.to_text_lossy(kept)
+
+            if text.len() > 0 && text[text.len() - 1] == '\n'
+                return text.slice(from: 0, to: text.len() - 1)
+            return text
+        .simple _ | .error _ | .integer _ | .null_value | .array _ | .mapping _ | .set _ | .double _ | .boolean _ | .big_number _ | .verbatim _ | .pushed _ => return render(
+            r
+        )
+
+test "render: each scalar as redis-cli writes it"
+    assert render(.simple(v: "OK")) == "OK"
+    assert render(.error(code: "ERR", message: "syntax error")) == "(error) ERR syntax error"
+    assert render(.integer(v: -3)) == "(integer) -3"
+    assert render(.null_value) == "(nil)"
+    assert render(.bulk(v: bytes.from_text("a \"b\"\n"))) == "\"a \\\"b\\\"\\n\""
+    assert render(.bulk(v: [])) == "\"\""
+
+test "render: bytes past ASCII are escaped one by one"
+    assert render(.bulk(v: bytes.from_text("è"))) == "\"\\xc3\\xa8\""
+    assert render(.bulk(v: [0, 127])) == "\"\\x00\\x7f\""
+
+test "render: arrays numbered, nested ones indented, an empty one named"
+    assert render(.array(items: [])) == "(empty array)"
+    r: redis.Reply = .array(items: [.bulk(v: [97]), .array(items: [.bulk(v: [98]), .integer(v: 2)])])
+    assert render(r) == "1) \"a\"\n2) 1) \"b\"\n   2) (integer) 2"
+
+test "render: ten elements and more align their numbers"
+    items: [redis.Reply] @= []
+
+    for i in range(from: 0, to: 10)
+        items @ items.push(.integer(v: i))
+
+    lines = lines_of(.array(items: items), indent: 0)
+    assert lines[0] == " 1) (integer) 0"
+    assert lines[9] == "10) (integer) 9"
+
+test "render_raw: INFO's lines without their carriage returns"
+    assert render_raw(.bulk(v: bytes.from_text("# Stats\r\nx:1\r\n"))) == "# Stats\nx:1"
