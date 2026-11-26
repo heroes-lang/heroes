@@ -306,6 +306,14 @@ static int hero_sig_range_life(uintptr_t at, uintptr_t *lo, uintptr_t *hi) {
 /* The known range holding `at` that may hold a coroutine's frames now. */
 static bool hero_sig_live_range(uintptr_t at, uintptr_t *lo, uintptr_t *hi) { return hero_sig_range_life(at, lo, hi) != 0; }
 
+/* The top of the range that may hold a coroutine's frames now and holds the
+ * frame at `frame`: where the frame walk ends (`parts/sigguard.c`, defect
+ * 2852). */
+static bool hero_sig_coroutine_top(uintptr_t frame, uintptr_t *top) {
+    uintptr_t lo = 0;
+    return hero_sig_live_range(frame, &lo, top);
+}
+
 /* A switch whose target's stack pointer is `at` enters the range holding it
  * (a `swapcontext` or `setcontext`, called before anything judges the target). */
 static void hero_sig_range_entered(uintptr_t at) {

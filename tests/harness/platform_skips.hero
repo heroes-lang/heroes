@@ -374,6 +374,7 @@ function unbuildable_on_windows() -> [Skip]
         Skip(name: "tests/golden/run/fixedbugs-2855-a-handler-left-by-a-jump-and-jumped-back-into-from-a-coroutine-on-the-heap-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2853-fibres-carved-from-a-frame-entered-by-setcontext-then-longjmp-run-under-the-sanitizer.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2853-openssl-async-jobs-on-carved-fibres-run-under-the-sanitizer.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2852-fibres-carved-from-a-frame-call-the-function-under-the-sanitizer-and-run.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
     ]
 
 # Why the program at `source` is not built on this machine: one of
@@ -666,7 +667,9 @@ test "every program Windows cannot build is a file that exists, skipped there al
     # `#error` (Windows' fibres are the system's own), each compiled alone by
     # `zig cc` 0.15.2 for both Windows targets on 2026-11-26
     # (`POSIX_CONTEXT_SHAPES_ON_WINDOWS`).
-    assert unbuildable_on_windows().len() == 185
+    # Then the 1 of defect 2852 (lane sig-family), its header refused at
+    # `ucontext.h` not found by `zig cc` 0.15.2 for Windows x86-64 on 2026-11-26.
+    assert unbuildable_on_windows().len() == 186
 
     for one in unbuildable_on_windows()
         assert strings.has_prefix(s: one.name, prefix: "tests/golden/run/")
