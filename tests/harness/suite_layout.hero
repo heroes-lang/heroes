@@ -644,9 +644,16 @@ constant DECIDED: [str]
 # words are contextual, `keywords.WORD_THREAD` and `keywords.WORD_MAILBOX`, as
 # every word the parser reads in one position is (the `grammar` suite's rule),
 # and `handle_type.hero` names the module that holds them, one `use` line.
+# **Raised 2026-11-26, 8798 -> 8809, for panel 260's R1** (provisional,
+# lane land260): `layer` on a group's head is a word the parser reads after
+# the header's string, `parse/group_head.hero`'s `layer_word` (7 with its
+# doc, read there because the `grammar` suite holds `Extern`'s words to that
+# file), carried by the head's linkage to every member (`parse/tails.hero`,
+# its field and `linkage_layer`, +8 with the members' arguments) and read by
+# `parse/group.hero`'s head (+1). What judges it is outside this directory.
 constant BUDGETS: [str]
     [
-        "selfhost/parse/ 8798"
+        "selfhost/parse/ 8809"
     ]
 
 # The floor is the Rust's own idea —
