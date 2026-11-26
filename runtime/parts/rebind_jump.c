@@ -14,6 +14,28 @@
 
 #if defined(__APPLE__)
 
+/* UNDER ADDRESSSANITIZER A REWRITE THAT DOES NOT RETURN CLEARS THE STACK'S
+ * SHADOW FIRST (defect 2853), as ASan's own interceptors do before a jump: its
+ * frame is instrumented, with redzones around its locals that only its return
+ * would clear, and a jump or a `setcontext` leaves them in the shadow of the
+ * thread's stack, where the next frames read as overflowing a local of a frame
+ * that is gone (`stack-buffer-overflow ... in frame #0 hero_rebind_setcontext`,
+ * a correct fiber program under `--sanitize` on this Mac). A swap may never
+ * return either, its context abandoned, so its frame carries no redzones at
+ * all, as `parts/sigjump_save.c`'s does. */
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define HERO_REBIND_ASAN 1
+void __asan_handle_no_return(void);
+#endif
+#endif
+
+static void hero_rebind_no_return(void) {
+#if defined(HERO_REBIND_ASAN)
+    __asan_handle_no_return();
+#endif
+}
+
 static uintptr_t hero_rebind_jmp_sp(const void *env) {
     return hero_rebind_strip_d(hero_rebind_word((const unsigned char *)env, HERO_REBIND_SP_WORD * 8) ^
                                atomic_load_explicit(&hero_rebind_key_k, memory_order_relaxed));
@@ -179,7 +201,7 @@ static void hero_rebind_set(const void *uc) {
  * loaded (defects d-lane-d2745-1 and 2851): the end of a range's coroutine is what the switches
  * made from it while this one waited say, with that word
  * (`hero_rebind_range_returned`). */
-__attribute__((noinline)) static int hero_rebind_swapcontext(void *from, const void *to) {
+__attribute__((noinline, no_sanitize("address"))) static int hero_rebind_swapcontext(void *from, const void *to) {
     HeroSignalStack *own = hero_rebind_own();
     uint64_t marks[HERO_SIG_DEPTH];
     unsigned gens[HERO_SIG_DEPTH];
@@ -254,18 +276,21 @@ __attribute__((noinline)) static int hero_rebind_swapcontext(void *from, const v
 
 __attribute__((noreturn)) static void hero_rebind_siglongjmp(int *env, int value) {
     hero_rebind_jump(env);
+    hero_rebind_no_return();
     atomic_load_explicit(&hero_rebind_real_siglongjmp, memory_order_relaxed)(env, value);
     __builtin_unreachable();
 }
 
 __attribute__((noreturn)) static void hero_rebind_longjmp(int *env, int value) {
     hero_rebind_jump(env);
+    hero_rebind_no_return();
     atomic_load_explicit(&hero_rebind_real_longjmp, memory_order_relaxed)(env, value);
     __builtin_unreachable();
 }
 
 __attribute__((noreturn)) static void hero_rebind__longjmp(int *env, int value) {
     hero_rebind_jump(env);
+    hero_rebind_no_return();
     atomic_load_explicit(&hero_rebind_real__longjmp, memory_order_relaxed)(env, value);
     __builtin_unreachable();
 }
@@ -275,6 +300,7 @@ __attribute__((noreturn)) static void hero_rebind__longjmp(int *env, int value) 
 static int hero_rebind_setcontext(const void *context) {
     hero_rebind_range_left(hero_rebind_below());
     hero_rebind_set(context);
+    hero_rebind_no_return();
     return atomic_load_explicit(&hero_rebind_real_setcontext, memory_order_relaxed)(context);
 }
 

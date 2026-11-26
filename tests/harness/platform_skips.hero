@@ -372,6 +372,8 @@ function unbuildable_on_windows() -> [Skip]
         Skip(name: "tests/golden/run/fixedbugs-2855-a-coroutine-on-a-carved-stack-leaving-for-good-after-a-handler-was-left-by-a-jump-runs.hero", why: SYSV_SWITCH_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2855-a-coroutine-on-a-carved-stack-leaving-for-good-by-a-longjmp-to-its-host-runs.hero", why: SYSV_SWITCH_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2855-a-handler-left-by-a-jump-and-jumped-back-into-from-a-coroutine-on-the-heap-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2853-fibres-carved-from-a-frame-entered-by-setcontext-then-longjmp-run-under-the-sanitizer.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2853-openssl-async-jobs-on-carved-fibres-run-under-the-sanitizer.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
     ]
 
 # Why the program at `source` is not built on this machine: one of
@@ -659,7 +661,12 @@ test "every program Windows cannot build is a file that exists, skipped there al
     # (`SYSV_SWITCH_ON_WINDOWS`, compiled alone by `zig cc` 0.15.2 for both
     # Windows targets on 2026-11-26), and one binds defect 2702's context
     # header, refused at `ucontext.h` (`POSIX_CONTEXT_SHAPES_ON_WINDOWS`).
-    assert unbuildable_on_windows().len() == 183
+    # Then the 2 of defect 2853 (lane sig-family): one header refused at
+    # `ucontext.h` not found, the other, OpenSSL's ASYNC, stopping itself with
+    # `#error` (Windows' fibres are the system's own), each compiled alone by
+    # `zig cc` 0.15.2 for both Windows targets on 2026-11-26
+    # (`POSIX_CONTEXT_SHAPES_ON_WINDOWS`).
+    assert unbuildable_on_windows().len() == 185
 
     for one in unbuildable_on_windows()
         assert strings.has_prefix(s: one.name, prefix: "tests/golden/run/")
