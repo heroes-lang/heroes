@@ -93,8 +93,29 @@ typedef int (*hero_jmp_sigsave_fn)(struct __jmp_buf_tag *, int);
 typedef void (*hero_jmp_jump_fn)(struct __jmp_buf_tag *, int);
 typedef int (*hero_ctx_get_fn)(ucontext_t *);
 typedef int (*hero_ctx_set_fn)(const ucontext_t *);
-typedef int (*hero_ctx_swap_fn)(ucontext_t *, const ucontext_t *);
 typedef void (*hero_ctx_make_fn)(ucontext_t *, void (*)(void), int, ...);
+
+/* `swapcontext` IS DECLARED WITH MORE THAN ITS PARAMETERS (defect
+ * d-gcc-seed-1): glibc's `<ucontext.h>` writes `__INDIRECT_RETURN` after them,
+ * which says a call to it may come back by an indirect branch, so the caller
+ * needs a landing pad after the call where branch protection is on. Where the
+ * compiler knows the attribute it is `indirect_return`, else `returns_twice`
+ * where a shadow stack is the default, else nothing (`bits/indirect-return.h`,
+ * read in glibc 2.41 for aarch64 and x86-64). gcc counts `indirect_return` in
+ * the function's type: gcc 15.2 on aarch64 refused this runtime's definition
+ * without it as *conflicting types* (the CI's Linux arm64 leg, run
+ * 45654270318), both types printed alike. So the definition carries the
+ * library's own macro (`sigjump_save.c`), whatever it expands to; a C library
+ * older than the macro declares nothing there. clang 22 knows no
+ * `indirect_return`, so under clang the definition is what it was. And the
+ * pointer to the C library's own has that declaration's type, read from it,
+ * so a call through it is compiled as a call to `swapcontext` is. */
+#if defined(__INDIRECT_RETURN)
+#define HERO_CTX_SWAP_RETURN __INDIRECT_RETURN
+#else
+#define HERO_CTX_SWAP_RETURN
+#endif
+typedef __typeof__(&(swapcontext)) hero_ctx_swap_fn;
 
 #if defined(__has_feature)
 #if __has_feature(address_sanitizer)

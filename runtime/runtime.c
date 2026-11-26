@@ -93,6 +93,21 @@
 #  define _GNU_SOURCE 1
 #endif
 
+/* **And no fortification of glibc's declarations** (defect d-gcc-seed-1): the
+ * runtime defines `longjmp`, `_longjmp` and `siglongjmp` in place of the C
+ * library's (`parts/sigjump_save.c`), and under `_FORTIFY_SOURCE` glibc's
+ * `<bits/setjmp2.h>` gives all three the assembler name `__longjmp_chk`, which
+ * the runtime defines too, so one symbol is defined four times. Measured
+ * 2026-11-25: gcc 13.3 at `-O2`, Ubuntu's, which defines `_FORTIFY_SOURCE=3`
+ * there by default, failed in the assembler (*symbol `__longjmp_chk' is
+ * already defined*), and clang 22 with `-D_FORTIFY_SOURCE=2 -O2` in the Linux
+ * arm64 image refused *definition with same mangled name*. Every build of the
+ * runtime `heroes` makes defines no `_FORTIFY_SOURCE`, so for them this line
+ * changes nothing. It must precede every system header, as the macro above. */
+#if !defined(_WIN32) && !defined(__APPLE__)
+#  undef _FORTIFY_SOURCE
+#endif
+
 #include "heroes_runtime.h"
 
 /* The program's three edges, files, arguments and exit status, declared before
