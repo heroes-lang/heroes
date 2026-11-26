@@ -11,6 +11,7 @@ use <rebel>/redis
 use protocol/reply
 use server/registry
 use server/state
+use store/keyspace
 
 # `MULTI`.
 #
@@ -95,7 +96,7 @@ function touched(@s: state.State, keys_changed: [[u8]])
 # - `at`: the client's position.
 # - `argv`: the command's words.
 function queue(@s: state.State, at: i64, argv: [[u8]]) -> redis.Reply
-    s.clients[at].queued @ s.clients[at].queued.push(argv)
+    keyspace.add_command(list: @s.clients[at].queued, words: argv)
     return .simple(v: "QUEUED")
 
 # Marks the client's transaction to abort, a command having been refused
