@@ -733,7 +733,7 @@ test "two processes: a child connects to a listener, and a message goes there an
     path = f"build/ipc-two-{os.pid()}.sock"
     l @= listen(path, permission: 0o600).must()
     child @= across.start("echo", words: [path]).must()
-    s @= accept(l, within: time.seconds(20).must()).must()
+    s @= accept(l, within: time.seconds(20)).must()
     assert write_message(s, data: [104, 105]) == ok()
     assert read_message(s, most: 100).must() == [104, 105, 33]
     assert peer_of(s).must().pid != os.pid()
@@ -770,14 +770,14 @@ test "two processes: a lock a child holds is waited on with a bound and timed ou
     go @= create_semaphore(go_name, count: 0, permission: 0o600).must()
     l @= open_lock(lock_name, permission: 0o600).must()
     child @= across.start("hold", words: [lock_name, ready_name, go_name]).must()
-    assert acquire_semaphore(ready, within: time.seconds(20).must()) == ok()
+    assert acquire_semaphore(ready, within: time.seconds(20)) == ok()
 
-    match acquire_lock(l, within: time.milliseconds(100).must())
+    match acquire_lock(l, within: time.milliseconds(100))
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT
 
     assert release_semaphore(go) == ok()
-    assert acquire_lock(l, within: time.seconds(20).must()).must() == .clean
+    assert acquire_lock(l, within: time.seconds(20)).must() == .clean
     assert release_lock(l) == ok()
     assert process.is_success(process.wait(@child).must())
     assert remove_lock(lock_name) == ok()
@@ -798,10 +798,10 @@ test "two processes: a child killed while it holds a lock leaves it to the next 
     go @= create_semaphore(go_name, count: 0, permission: 0o600).must()
     l @= open_lock(lock_name, permission: 0o600).must()
     child @= across.start("hold", words: [lock_name, ready_name, go_name]).must()
-    assert acquire_semaphore(ready, within: time.seconds(20).must()) == ok()
+    assert acquire_semaphore(ready, within: time.seconds(20)) == ok()
     assert process.kill(child) == ok()
     assert !process.is_success(process.wait(@child).must())
-    assert acquire_lock(l, within: time.seconds(5).must()).must() == .abandoned
+    assert acquire_lock(l, within: time.seconds(5)).must() == .abandoned
     assert release_lock(l) == ok()
     assert acquire_lock(l, within: time.nanoseconds(0)).must() == .clean
     assert remove_lock(lock_name) == ok()
@@ -919,10 +919,10 @@ test "listen_pipe: a named pipe on Windows, unsupported elsewhere"
 test "accept: a connection, then a bound of 10 ms passed"
     path = f"build/example-accept-{os.pid()}.sock"
     l @= listen(path, permission: 0o600).must()
-    client @= connect(path, within: time.seconds(1).must()).must()
-    server @= accept(l, within: time.seconds(1).must()).must()
+    client @= connect(path, within: time.seconds(1)).must()
+    server @= accept(l, within: time.seconds(1)).must()
 
-    match accept(l, within: time.milliseconds(10).must())
+    match accept(l, within: time.milliseconds(10))
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT
 
@@ -934,8 +934,8 @@ test "accept: a connection, then a bound of 10 ms passed"
 test "connect: bytes through a channel, and nothing at the path"
     path = f"build/example-connect-{os.pid()}.sock"
     l @= listen(path, permission: 0o600).must()
-    client @= connect(path, within: time.seconds(1).must()).must()
-    server @= accept(l, within: time.seconds(1).must()).must()
+    client @= connect(path, within: time.seconds(1)).must()
+    server @= accept(l, within: time.seconds(1)).must()
     assert io.write_text(client, text: "ping") == ok()
     assert io.read_exact(server, n: 4).must() == [112, 105, 110, 103]
     assert io.close(@client) == ok()
@@ -973,9 +973,9 @@ test "close_listener: once, then closed already"
 test "set_deadline: a read past 20 ms"
     path = f"build/example-deadline-{os.pid()}.sock"
     l @= listen(path, permission: 0o600).must()
-    client @= connect(path, within: time.seconds(1).must()).must()
-    server @= accept(l, within: time.seconds(1).must()).must()
-    assert set_deadline(server, deadline: time.milliseconds(20).must()) == ok()
+    client @= connect(path, within: time.seconds(1)).must()
+    server @= accept(l, within: time.seconds(1)).must()
+    assert set_deadline(server, deadline: time.milliseconds(20)) == ok()
 
     match io.read(server, n: 1)
         .ok _  => assert false
@@ -989,8 +989,8 @@ test "set_deadline: a read past 20 ms"
 test "close_write: the peer reads its end"
     path = f"build/example-half-{os.pid()}.sock"
     l @= listen(path, permission: 0o600).must()
-    client @= connect(path, within: time.seconds(1).must()).must()
-    server @= accept(l, within: time.seconds(1).must()).must()
+    client @= connect(path, within: time.seconds(1)).must()
+    server @= accept(l, within: time.seconds(1)).must()
     assert io.write_text(client, text: "last") == ok()
     assert close_write(client) == ok()
     assert io.read_all_text(server).must() == "last"
@@ -1002,8 +1002,8 @@ test "close_write: the peer reads its end"
 test "peer_of: the process at the other end"
     path = f"build/example-peer-{os.pid()}.sock"
     l @= listen(path, permission: 0o600).must()
-    client @= connect(path, within: time.seconds(1).must()).must()
-    server @= accept(l, within: time.seconds(1).must()).must()
+    client @= connect(path, within: time.seconds(1)).must()
+    server @= accept(l, within: time.seconds(1)).must()
     assert peer_of(server).must().pid == os.pid()
     assert io.close(@client) == ok()
     assert io.close(@server) == ok()
@@ -1168,7 +1168,7 @@ test "acquire_semaphore: a bound passed"
     name = f"ix-sa-{os.pid()}"
     s @= create_semaphore(name, count: 0, permission: 0o600).must()
 
-    match acquire_semaphore(s, within: time.milliseconds(20).must())
+    match acquire_semaphore(s, within: time.milliseconds(20))
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT
 
@@ -1216,7 +1216,7 @@ test "acquire_lock: taken, then asked again by its holder"
     l @= open_lock(name, permission: 0o600).must()
     assert acquire_lock(l, within: time.max_duration()).must() == .clean
 
-    match acquire_lock(l, within: time.milliseconds(10).must())
+    match acquire_lock(l, within: time.milliseconds(10))
         .ok _  => assert false
         .err e => assert e.code == INVALID
 

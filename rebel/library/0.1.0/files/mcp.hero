@@ -2996,7 +2996,7 @@ test "sign_state, verify_state: read back, refused for another request, and afte
         ring,
         bound: "tools/call greet ada",
         state: "step 1",
-        expires: time.add(now, d: time.seconds(60).must()).must()
+        expires: time.add(now, d: time.seconds(60)).must()
     )
     assert verify_state(ring, bound: "tools/call greet ada", signed: signed, now: now).must() == "step 1"
     assert verify_state(ring, bound: "tools/call greet bob", signed: signed, now: now).is_err()
@@ -3004,7 +3004,7 @@ test "sign_state, verify_state: read back, refused for another request, and afte
         ring,
         bound: "tools/call greet ada",
         signed: signed,
-        now: time.add(now, d: time.seconds(120).must()).must()
+        now: time.add(now, d: time.seconds(120)).must()
     ).is_err()
 
 ## Examples
@@ -3102,7 +3102,7 @@ test "sign_state: a step of a call"
         ring,
         bound: "tools/call book",
         state: "seat 12",
-        expires: time.add(time.now().must(), d: time.seconds(300).must()).must()
+        expires: time.add(time.now().must(), d: time.seconds(300)).must()
     )
     assert signed != "seat 12"
 
@@ -3110,7 +3110,7 @@ test "sign_state: a step of a call"
 test "verify_state: a step of a call read back"
     ring = [bytes.from_text("0123456789abcdef0123456789abcdef")]
     now = time.now().must()
-    signed = sign_state(ring, bound: "b", state: "s", expires: time.add(now, d: time.seconds(300).must()).must())
+    signed = sign_state(ring, bound: "b", state: "s", expires: time.add(now, d: time.seconds(300)).must())
     assert verify_state(ring, bound: "b", signed: signed, now: now).must() == "s"
 
 # An icon written.

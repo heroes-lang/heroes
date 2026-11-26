@@ -1365,7 +1365,7 @@ function lock(@c: Client, key: str, ttl: time.Duration, wait: time.Duration) -> 
             pause + jitter
         else
             left
-        time.sleep(time.milliseconds(nap)?)
+        time.sleep(time.milliseconds_checked(nap)?)
 
         pause @ if pause * 2 < 250
             pause * 2
@@ -1600,10 +1600,10 @@ test "read_reply over RESP3: a push that comes before a reply is kept for receiv
 test "try_lock, unlock and renew: the scripts sent, a lock taken, held by another, lost, given back"
     t @= server.scripted(":1\r\n_\r\n:1\r\n:0\r\n:0\r\n", protocol: 3)
     c @= Client(session: t.session)
-    held = try_lock(@c, "job", ttl: time.seconds(30).must()).must()
-    assert held.key == "job" && held.token.len() == 40 && held.fence == 1 && held.ttl == time.seconds(30).must()
+    held = try_lock(@c, "job", ttl: time.seconds(30)).must()
+    assert held.key == "job" && held.token.len() == 40 && held.fence == 1 && held.ttl == time.seconds(30)
 
-    match try_lock(@c, "job", ttl: time.seconds(30).must())
+    match try_lock(@c, "job", ttl: time.seconds(30))
         .ok _  => assert false
         .err e => assert e.code == "exists"
 
@@ -1684,7 +1684,7 @@ test "connect live, against the server REBEL_REDIS_URL names: both protocols, va
             assert float_of(call(@c, ["ZSCORE", "live:z", "a"]).must()).must() == 1.5
             assert float_of(call(@old, ["ZSCORE", "live:z", "a"]).must()).must() == 1.5
             assert bool_of(call(@c, ["EXISTS", "live:z"]).must()).must()
-            set_for(@c, key: "live:t", value: "x", ttl: time.minutes(1).must()).must()
+            set_for(@c, key: "live:t", value: "x", ttl: time.minutes(1)).must()
             assert int_of(call(@c, ["PTTL", "live:t"]).must()).must() > 0
             big: [str] @= ["RPUSH", "live:l"]
 
@@ -1726,7 +1726,7 @@ test "connect live, against the server REBEL_REDIS_URL names: both protocols, va
             assert receive(@listener).must() == Message(kind: "message", pattern: "", channel: "live-chat", payload: bytes.from_text("hi"))
             assert receive(@old_listener).must() == Message(kind: "pmessage", pattern: "live-*", channel: "live-chat", payload: bytes.from_text("hi"))
             assert text_of(call(@listener, ["GET", "live:s"]).must()).must() == "città 🎸"
-            set_deadline(listener, deadline: time.milliseconds(200).must()).must()
+            set_deadline(listener, deadline: time.milliseconds(200)).must()
 
             match receive(@listener)
                 .ok _  => assert false
@@ -1736,15 +1736,15 @@ test "connect live, against the server REBEL_REDIS_URL names: both protocols, va
             punsubscribe(@old_listener, []).must()
             close(@old_listener).must()
             _ = delete(@c, ["live:lock"]).must()
-            first = try_lock(@c, "live:lock", ttl: time.milliseconds(300).must()).must()
+            first = try_lock(@c, "live:lock", ttl: time.milliseconds(300)).must()
             assert is_held(@c, first).must()
 
-            match try_lock(@old, "live:lock", ttl: time.milliseconds(300).must())
+            match try_lock(@old, "live:lock", ttl: time.milliseconds(300))
                 .ok _  => assert false
                 .err e => assert e.code == "exists"
 
             renew(@c, first).must()
-            second = lock(@old, "live:lock", ttl: time.seconds(5).must(), wait: time.seconds(3).must()).must()
+            second = lock(@old, "live:lock", ttl: time.seconds(5), wait: time.seconds(3)).must()
             assert second.fence == first.fence + 1 && !is_held(@c, first).must()
 
             match unlock(@c, first)
@@ -1874,7 +1874,7 @@ test "set_deadline: a receive that times out"
         .ok first =>
             c @= first
             subscribe(@c, ["rebel-quiet"]).must()
-            set_deadline(c, deadline: time.milliseconds(100).must()).must()
+            set_deadline(c, deadline: time.milliseconds(100)).must()
             assert receive(@c).is_err()
             close(@c).must()
 
@@ -2031,7 +2031,7 @@ test "set_for: a key that expires"
         .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
-            set_for(@c, key: "rebel:session", value: "z", ttl: time.minutes(1).must()).must()
+            set_for(@c, key: "rebel:session", value: "z", ttl: time.minutes(1)).must()
             close(@c).must()
 
 # Keys deleted.
@@ -2211,7 +2211,7 @@ test "try_lock: a job run by one worker"
         .ok first =>
             c @= first
 
-            match try_lock(@c, "rebel:job", ttl: time.seconds(30).must())
+            match try_lock(@c, "rebel:job", ttl: time.seconds(30))
                 .err _   => _ = 0
                 .ok held => unlock(@c, held).must()
 
@@ -2226,7 +2226,7 @@ test "lock: waiting a second at most"
         .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
-            held = lock(@c, "rebel:report", ttl: time.seconds(10).must(), wait: time.seconds(1).must()).must()
+            held = lock(@c, "rebel:report", ttl: time.seconds(10), wait: time.seconds(1)).must()
             unlock(@c, held).must()
             close(@c).must()
 
@@ -2239,7 +2239,7 @@ test "unlock: the end of the work"
         .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
-            held = lock(@c, "rebel:unlock", ttl: time.seconds(10).must(), wait: time.seconds(1).must()).must()
+            held = lock(@c, "rebel:unlock", ttl: time.seconds(10), wait: time.seconds(1)).must()
             unlock(@c, held).must()
             assert !is_held(@c, held).must()
             close(@c).must()
@@ -2253,7 +2253,7 @@ test "renew: a lock kept"
         .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
-            held = lock(@c, "rebel:renew", ttl: time.seconds(10).must(), wait: time.seconds(1).must()).must()
+            held = lock(@c, "rebel:renew", ttl: time.seconds(10), wait: time.seconds(1)).must()
             renew(@c, held).must()
             unlock(@c, held).must()
             close(@c).must()
@@ -2267,7 +2267,7 @@ test "is_held: a lock before and after it is given back"
         .err e => skip_test(reason: f"no Redis server reached on this machine: {e.msg}")
         .ok first =>
             c @= first
-            held = lock(@c, "rebel:held", ttl: time.seconds(10).must(), wait: time.seconds(1).must()).must()
+            held = lock(@c, "rebel:held", ttl: time.seconds(10), wait: time.seconds(1)).must()
             assert is_held(@c, held).must()
             unlock(@c, held).must()
             close(@c).must()

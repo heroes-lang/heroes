@@ -289,7 +289,7 @@ function take_settled(@f: Files, i: i64, within: time.Duration) -> [Change]
     began = time.mark().default(time.Mark(nanoseconds: 0))
 
     while true
-        changes = take(@f, i: i, limit: time.milliseconds(100).default(within))
+        changes = take(@f, i: i, limit: time.milliseconds(100))
 
         if changes.len() > 0
             return changes
@@ -345,7 +345,7 @@ test "take_settled: a file written in a watched folder is told, and a path not t
     f @= open_all(specs, set: set)
     assert f.watched[0].trouble == "" && f.watched[1].trouble != ""
     write_file(path: dir + "/a.txt", text: "hello").must()
-    changes = take_settled(@f, i: 0, within: time.seconds(10).must())
+    changes = take_settled(@f, i: 0, within: time.seconds(10))
     assert changes == [Change(path: "a.txt", kind: "created", size: 5)]
     assert f.watched[0].bytes == 5 && f.watched[0].changes == 1
     close_all(@f)

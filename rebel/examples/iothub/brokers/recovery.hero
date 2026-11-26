@@ -135,7 +135,7 @@ function shown_wait(d: time.Duration) -> str
     return f"{d.nanoseconds / 1_000_000} ms"
 
 test "lose, fail_attempt, recover: waits that grow under a seeded chance, and the count of attempts"
-    p = policy(first: time.milliseconds(100).must(), multiplier: 2.0, longest: time.seconds(2).must()).must()
+    p = policy(first: time.milliseconds(100), multiplier: 2.0, longest: time.seconds(2)).must()
     r @= up_under(p)
     g @= random.Generator(high: 7, low: 7)
     again @= g
@@ -151,8 +151,8 @@ test "lose, fail_attempt, recover: waits that grow under a seeded chance, and th
     assert lose(@replay, chance: @again, now: at).must() == first
 
 test "until_due: a link up waits the longest, one due waits nothing"
-    p = policy(first: time.milliseconds(100).must(), multiplier: 2.0, longest: time.seconds(2).must()).must()
+    p = policy(first: time.milliseconds(100), multiplier: 2.0, longest: time.seconds(2)).must()
     now = time.Mark(nanoseconds: 5)
-    assert until_due(up_under(p), now: now, longest: time.seconds(1).must()) == time.seconds(1).must()
-    assert until_due(down_under(p, now: now), now: now, longest: time.seconds(1).must()).nanoseconds == 0
-    assert shown_wait(time.milliseconds(87).must()) == "87 ms"
+    assert until_due(up_under(p), now: now, longest: time.seconds(1)) == time.seconds(1)
+    assert until_due(down_under(p, now: now), now: now, longest: time.seconds(1)).nanoseconds == 0
+    assert shown_wait(time.milliseconds(87)) == "87 ms"

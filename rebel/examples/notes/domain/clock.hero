@@ -65,7 +65,7 @@ function is_fixed(clock: Clock) -> bool
 
 test "now: a fixed clock answers its start, then a step later at each reading"
     start = time.from_unix(whole_seconds: 1_763_715_600, extra_nanoseconds: 0).must()
-    c @= fixed_from(start: start, step: time.seconds(1).must()).must()
+    c @= fixed_from(start: start, step: time.seconds(1)).must()
     assert now(@c).must() == start
     assert time.unix_seconds(now(@c).must()) == 1_763_715_601
     assert time.unix_seconds(now(@c).must()) == 1_763_715_602

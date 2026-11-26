@@ -142,8 +142,8 @@ test "check: the demo's shape passes, and each missing piece is named"
         kafka: Kafka(brokers: ["k:9092"], group: "g", topics: ["t"], client_id: "c", username: "", password: "", tls: false),
         storage: Storage(endpoint: "", region: "us-east-1", bucket: "b", access_key_id: "a", secret_access_key: "s"),
         database: Database(url: "postgres://u@h/d", password: ""),
-        windows: Windows(length: time.seconds(60).must(), grace: time.seconds(30).must()),
-        retrying: Retrying(attempts: 3, first: time.milliseconds(10).must(), longest: time.milliseconds(100).must(), fraction: 0.5),
+        windows: Windows(length: time.seconds(60), grace: time.seconds(30)),
+        retrying: Retrying(attempts: 3, first: time.milliseconds(10), longest: time.milliseconds(100), fraction: 0.5),
         metrics: Metrics(listen: "")
     )
     check(good).must()

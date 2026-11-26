@@ -139,7 +139,7 @@ function served(w: Start, set: poll.Set, stop_key: i64, conn: net.Conn) -> bool
 
     requests @= http.request_reader(io.reader(conn.stream))
     remote = net.format_address(conn.remote)
-    idle = time.milliseconds(w.idle_ms).default(time.seconds(30).default(time.nanoseconds(0)))
+    idle = time.milliseconds_checked(w.idle_ms).default(time.seconds(30))
 
     while true
         # No event is the idle bound passed, or the program's stop; the stop

@@ -377,7 +377,7 @@ test "open: a folder's file made is told created"
 
     for _ in range(from: 0, to: 4)
         if !seen
-            for e in wait(w, limit: time.seconds(2).must()).must()
+            for e in wait(w, limit: time.seconds(2)).must()
                 seen @ seen || e == made
 
     assert seen
@@ -394,7 +394,7 @@ test "open_tree: a file made two folders down"
 
     # The folders made just before the watch began may be told first.
     for _ in range(from: 0, to: 4)
-        for e in wait(w, limit: time.milliseconds(500).must()).must()
+        for e in wait(w, limit: time.milliseconds(500)).must()
             seen @ seen || e == Event(path: paths.join_all([root, "a", "b", "deep.txt"]), change: .created, directory: false)
 
     assert seen
@@ -415,7 +415,7 @@ test "open_with: room for two, and an overflow where the rest were lost"
     looked @= 0
 
     while count(w).must() < 3 && looked < 200
-        time.sleep(time.milliseconds(50).must())
+        time.sleep(time.milliseconds(50))
         looked @ looked + 1
 
     told = wait(w, limit: time.nanoseconds(0)).must()
@@ -449,7 +449,7 @@ test "wait: a rename told with the path before"
 
     for _ in range(from: 0, to: 3)
         if told.len() == 0 || told[told.len() - 1] != renamed
-            for e in wait(w, limit: time.seconds(2).must()).must()
+            for e in wait(w, limit: time.seconds(2)).must()
                 told @ told.push(e)
 
     assert told.len() >= 1
@@ -498,7 +498,7 @@ test "count: one file made, one event waiting"
     w @= open(root).must()
     assert count(w).must() == 0
     fs.make_dir(root + "/inbox").must()
-    time.sleep(time.milliseconds(1000).must())
+    time.sleep(time.milliseconds(1000))
     assert count(w).must() == 1
     close(@w).must()
     fs.remove_all(root).must()
@@ -511,7 +511,7 @@ test "add_to: a set wakes for the watch"
     set @= poll.make(4).must()
     key = add_to(set, w: w).must()
     fs.touch(root + "/ping").must()
-    ready = poll.wait(set, limit: time.seconds(2).must()).must()
+    ready = poll.wait(set, limit: time.seconds(2)).must()
     assert ready.len() == 1
     assert ready[0].key == key
     assert ready[0].readable
@@ -565,17 +565,17 @@ test "wait: a limit below zero invalid, a closed watch closed, a folder made tol
         .err e => assert e.code == INVALID
 
     fs.make_dir(root + "/sub").must()
-    made = wait(w, limit: time.seconds(2).must()).must()
+    made = wait(w, limit: time.seconds(2)).must()
     assert made[made.len() - 1] == Event(path: paths.join_all([root, "sub"]), change: .created, directory: true)
     fs.touch(root + "/plain").must()
-    _ = wait(w, limit: time.seconds(2).must()).must()
-    time.sleep(time.milliseconds(1200).must())
+    _ = wait(w, limit: time.seconds(2)).must()
+    time.sleep(time.milliseconds(1200))
 
     # Read-only, a change every platform can see: Windows maps a permission
     # onto its read-only flag alone, so 0o600 on a writable file changed
     # nothing there and nothing was told (the box, 2026-11-18).
     fs.set_permission(path: root + "/plain", permission: 0o400).must()
-    facts = wait(w, limit: time.seconds(2).must()).must()
+    facts = wait(w, limit: time.seconds(2)).must()
     assert facts.len() >= 1
     last = facts[facts.len() - 1]
     assert last.path == paths.join_all([root, "plain"])
@@ -617,14 +617,14 @@ test "a file watched: a sibling's changes not told, the file replaced by a renam
 
     # Nothing of the sibling's; the file made just before the watch began may
     # be told created.
-    for e in wait(w, limit: time.milliseconds(700).must()).must()
+    for e in wait(w, limit: time.milliseconds(700)).must()
         assert e == Event(path: kept, change: .created, directory: false)
 
     fs.rename(from: root + "/other.txt", to: kept).must()
-    replaced = wait(w, limit: time.seconds(2).must()).must()
+    replaced = wait(w, limit: time.seconds(2)).must()
     assert replaced[replaced.len() - 1] == Event(path: kept, change: .created, directory: false)
     fs.append_text(path: kept, text: "more").must()
-    written = wait(w, limit: time.seconds(2).must()).must()
+    written = wait(w, limit: time.seconds(2)).must()
     assert written[written.len() - 1] == Event(path: kept, change: .changed, directory: false)
     close(@w).must()
     fs.remove_all(root).must()

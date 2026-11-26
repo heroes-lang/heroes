@@ -165,7 +165,7 @@ function exporter_to(target: str) -> Exporter
         url: target,
         headers: [],
         gzip: false,
-        retries: http.Retries(count: 3, statuses: [429, 502, 503, 504], backoff: retries.backoff(first: time.seconds(1).must(), multiplier: 2.0, longest: time.seconds(30).must()).must())
+        retries: http.Retries(count: 3, statuses: [429, 502, 503, 504], backoff: retries.backoff(first: time.seconds(1), multiplier: 2.0, longest: time.seconds(30)).must())
     )
 
 # An exporter of `signal` as OpenTelemetry's environment variables describe
@@ -226,7 +226,7 @@ function exporter_from_env(signal: Signal) -> Exporter?
                 out.client.deadline @ if ms == 0
                     time.max_duration()
                 else
-                    time.milliseconds(ms).default(time.max_duration())
+                    time.milliseconds_checked(ms).default(time.max_duration())
             .err _ => return fail(
                 code: INVALID,
                 msg: f"the OTLP timeout \"{timeout}\" is no whole number of milliseconds"
@@ -390,7 +390,7 @@ function put_double_unless_zero(@to: [u8], number: i64, x: f64)
 test "export: a collector that is not there fails with the connection's code, for each signal's URL"
     for target in ["http://127.0.0.1:9/v1/metrics", "http://127.0.0.1:9/v1/traces", "http://127.0.0.1:9/v1/logs"]
         exporter @= exporter_to(target)
-        exporter.client.deadline @ time.seconds(2).must()
+        exporter.client.deadline @ time.seconds(2)
         assert export(exporter, body: []).is_err()
 
 test "exporter_from_env: each signal's path where the environment names none"
@@ -426,7 +426,7 @@ test "resource_from_env: a service's name"
 # An export to a collector that is not running here fails, telling why.
 test "export: no collector here"
     exporter @= exporter_to("http://127.0.0.1:9/v1/metrics")
-    exporter.client.deadline @ time.seconds(2).must()
+    exporter.client.deadline @ time.seconds(2)
     assert export(exporter, body: []).is_err()
 
 # A log record's body.

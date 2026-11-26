@@ -81,7 +81,7 @@ function invoice(@db: sqlite.Db, company: parties.Company, rates: pricing.RateTa
 
     taxes = pricing.taxes_of(lines, digits: digits)
     totals = pricing.totals_of(taxes, digits: digits)
-    due = time.add(order.day, d: time.days(customer.payment_days)?)?
+    due = time.add(order.day, d: time.days_checked(customer.payment_days)?)?
     doc = documents.Document(
         number: "",
         kind: .invoice,

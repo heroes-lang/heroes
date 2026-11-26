@@ -313,7 +313,7 @@ function parse(data: date_data.Data lent, text: str, pattern: str, zone: time.Zo
 
     if r.has_offset
         local = time.from_date_time(dt)?
-        return time.add(local, d: time.seconds(-r.offset)?)
+        return time.add(local, d: time.seconds_checked(-r.offset)?)
     return time.from_date_time_in(dt, zone: zone, choice: .compatible)
 
 ## Tests

@@ -1206,7 +1206,7 @@ test "wait_authorization: valid"
                 value: dns01_value(client: client, token: challenge.token).must()
             ).must()
             _ = accept_challenge(@client, challenge: challenge).must()
-            _ = wait_authorization(@client, url: authorization.url, timeout: time.seconds(30).must()).must()
+            _ = wait_authorization(@client, url: authorization.url, timeout: time.seconds(30)).must()
             assert fetch_authorization(@client, url: authorization.url).must().status == "valid"
 
 # An order finalized with a certificate request.
@@ -1228,8 +1228,8 @@ test "finalize: a request for the one name"
                 value: dns01_value(client: client, token: challenge.token).must()
             ).must()
             _ = accept_challenge(@client, challenge: challenge).must()
-            _ = wait_authorization(@client, url: authorization.url, timeout: time.seconds(30).must()).must()
-            ready = wait_order(@client, url: order.url, timeout: time.seconds(30).must()).must()
+            _ = wait_authorization(@client, url: authorization.url, timeout: time.seconds(30)).must()
+            ready = wait_order(@client, url: order.url, timeout: time.seconds(30)).must()
             finalized = finalize(@client, order: ready, csr: sample.CSR).must()
             assert finalized.status == "processing" || finalized.status == "valid"
 
@@ -1252,11 +1252,11 @@ test "wait_order: valid, with a certificate"
                 value: dns01_value(client: client, token: challenge.token).must()
             ).must()
             _ = accept_challenge(@client, challenge: challenge).must()
-            _ = wait_authorization(@client, url: authorization.url, timeout: time.seconds(30).must()).must()
-            ready = wait_order(@client, url: order.url, timeout: time.seconds(30).must()).must()
+            _ = wait_authorization(@client, url: authorization.url, timeout: time.seconds(30)).must()
+            ready = wait_order(@client, url: order.url, timeout: time.seconds(30)).must()
             assert ready.status == "ready"
             _ = finalize(@client, order: ready, csr: sample.CSR).must()
-            done = wait_order(@client, url: order.url, timeout: time.seconds(30).must()).must()
+            done = wait_order(@client, url: order.url, timeout: time.seconds(30)).must()
             assert done.status == "valid" && done.certificate.len() > 0
 
 # A certificate chain downloaded.
@@ -1278,10 +1278,10 @@ test "download: the PEM of a chain"
                 value: dns01_value(client: client, token: challenge.token).must()
             ).must()
             _ = accept_challenge(@client, challenge: challenge).must()
-            _ = wait_authorization(@client, url: authorization.url, timeout: time.seconds(30).must()).must()
-            ready = wait_order(@client, url: order.url, timeout: time.seconds(30).must()).must()
+            _ = wait_authorization(@client, url: authorization.url, timeout: time.seconds(30)).must()
+            ready = wait_order(@client, url: order.url, timeout: time.seconds(30)).must()
             _ = finalize(@client, order: ready, csr: sample.CSR).must()
-            done = wait_order(@client, url: order.url, timeout: time.seconds(30).must()).must()
+            done = wait_order(@client, url: order.url, timeout: time.seconds(30)).must()
             chain = download(@client, url: done.certificate).must()
             leaf = pem.parse(chain.pem).must().data
             assert pem.parse_all(chain.pem).must().len() >= 2 && leaf.len() > 0
@@ -1305,10 +1305,10 @@ test "revoke: reason 4"
                 value: dns01_value(client: client, token: challenge.token).must()
             ).must()
             _ = accept_challenge(@client, challenge: challenge).must()
-            _ = wait_authorization(@client, url: authorization.url, timeout: time.seconds(30).must()).must()
-            ready = wait_order(@client, url: order.url, timeout: time.seconds(30).must()).must()
+            _ = wait_authorization(@client, url: authorization.url, timeout: time.seconds(30)).must()
+            ready = wait_order(@client, url: order.url, timeout: time.seconds(30)).must()
             _ = finalize(@client, order: ready, csr: sample.CSR).must()
-            done = wait_order(@client, url: order.url, timeout: time.seconds(30).must()).must()
+            done = wait_order(@client, url: order.url, timeout: time.seconds(30)).must()
             chain = download(@client, url: done.certificate).must()
             leaf = pem.parse(chain.pem).must().data
             revoke(@client, certificate: leaf, reason: 4).must()
@@ -1337,10 +1337,10 @@ test "fetch_renewal_info: a window"
                 value: dns01_value(client: client, token: challenge.token).must()
             ).must()
             _ = accept_challenge(@client, challenge: challenge).must()
-            _ = wait_authorization(@client, url: authorization.url, timeout: time.seconds(30).must()).must()
-            ready = wait_order(@client, url: order.url, timeout: time.seconds(30).must()).must()
+            _ = wait_authorization(@client, url: authorization.url, timeout: time.seconds(30)).must()
+            ready = wait_order(@client, url: order.url, timeout: time.seconds(30)).must()
             _ = finalize(@client, order: ready, csr: sample.CSR).must()
-            done = wait_order(@client, url: order.url, timeout: time.seconds(30).must()).must()
+            done = wait_order(@client, url: order.url, timeout: time.seconds(30)).must()
             chain = download(@client, url: done.certificate).must()
             leaf = pem.parse(chain.pem).must().data
             window = fetch_renewal_info(client: client, certificate: leaf).must()

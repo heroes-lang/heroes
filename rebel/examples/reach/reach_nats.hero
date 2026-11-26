@@ -16,6 +16,6 @@ function main()
                     c @= first
                     sid = nats.subscribe(@c, "reach.nats").default(0)
                     _ = nats.publish(@c, subject: "reach.nats", data: [104, 105]).is_err()
-                    got = nats.next_message_of(@c, sid: sid, wait: time.seconds(2).must())
+                    got = nats.next_message_of(@c, sid: sid, wait: time.seconds(2))
                     print(got.is_err())
                     print(nats.close(@c).is_err())

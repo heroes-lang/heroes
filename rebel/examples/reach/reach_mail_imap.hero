@@ -13,7 +13,7 @@ function main()
         port: o.port,
         security: o.security,
         roots: o.roots,
-        deadline: time.seconds(2).must(),
+        deadline: time.seconds(2),
         max_bytes: o.max_bytes
     )
 

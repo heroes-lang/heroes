@@ -115,7 +115,7 @@ test "run_command: a command not allowed is refused before anything runs"
         root: ".",
         allowed: {"agent": "agent"},
         input: json.parse("{\"command\": \"rm\", \"arguments\": [\"-rf\", \"spool\"]}").must(),
-        limit: time.seconds(5).must()
+        limit: time.seconds(5)
     )
     assert outcome.is_error && outcome.text == "`rm` is not an allowed command; the allowed ones are agent"
 

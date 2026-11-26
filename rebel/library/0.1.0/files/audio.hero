@@ -660,7 +660,7 @@ variant State
 #
 # Fails as `open_with` does. See also `play`, `close`.
 function open(device: Device, format: Format) -> Stream?
-    return open_with(device, format: format, buffer: time.milliseconds(BUFFER_MS).must())
+    return open_with(device, format: format, buffer: time.milliseconds(BUFFER_MS))
 
 # A stream as `open` makes it, holding `buffer` of frames between the program
 # and the device: a longer one plays on through a program's pause and records
@@ -1014,7 +1014,7 @@ test "silence and tone: a length below zero, a frequency or an amplitude out of 
     assert silence(f, length: time.nanoseconds(0)).must().data.len() == 0
     widest = Format(encoding: .float32, rate: MAX_RATE, channels: 2, speakers: 0)
     assert silence(widest, length: time.max_duration()).is_err()
-    long = time.seconds(1).must()
+    long = time.seconds(1)
     assert tone(f, hz: -1.0, amplitude: 0.5, length: long).is_err()
     assert tone(f, hz: 1.0 / 0.0, amplitude: 0.5, length: long).is_err()
     assert tone(f, hz: 0.0 / 0.0, amplitude: 0.5, length: long).is_err()
@@ -1048,7 +1048,7 @@ test "open: an output of the null device in a format out of range, a buffer of n
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
-    match open_with(null_device(.output, format: f), format: f, buffer: time.seconds(40000).must())
+    match open_with(null_device(.output, format: f), format: f, buffer: time.seconds(40000))
         .ok _  => assert false
         .err e => assert e.code == LIMIT
 
@@ -1063,14 +1063,14 @@ test "write and read: a stream of the wrong direction, a sound of another format
     out @= open(null_device(.output, format: f), format: f).must()
     other = silence(
         Format(encoding: .pcm16, rate: 16000, channels: 1, speakers: 0),
-        length: time.milliseconds(1).must()
+        length: time.milliseconds(1)
     ).must()
 
     match write(@out, s: other, limit: time.nanoseconds(0))
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
-    one = silence(f, length: time.milliseconds(1).must()).must()
+    one = silence(f, length: time.milliseconds(1)).must()
     assert write(@out, s: one, limit: time.nanoseconds(-1)).is_err()
     assert read(@out, limit: time.nanoseconds(0)).is_err()
     close(@out).must()
@@ -1088,20 +1088,20 @@ test "write and finish: a sound at another rate than the device's, every frame c
     device = Format(encoding: .float32, rate: 48000, channels: 2, speakers: 0)
     f = Format(encoding: .pcm16, rate: 44100, channels: 1, speakers: 0)
     s @= open(null_device(.output, format: device), format: f).must()
-    tenth = tone(f, hz: 440.0, amplitude: 0.5, length: time.milliseconds(100).must()).must()
-    write(@s, s: tenth, limit: time.seconds(2).must()).must()
-    finish(@s, limit: time.seconds(2).must()).must()
-    wait(s, limit: time.seconds(3).must()).must()
+    tenth = tone(f, hz: 440.0, amplitude: 0.5, length: time.milliseconds(100)).must()
+    write(@s, s: tenth, limit: time.seconds(2)).must()
+    finish(@s, limit: time.seconds(2)).must()
+    wait(s, limit: time.seconds(3)).must()
     assert state_of(s).must() == .ended
     assert position_of(s).must().nanoseconds == 100000000
     close(@s).must()
 
 test "write: the room full and a limit of zero, the rest kept for the next write; stop drops it"
     f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
-    s @= open_with(null_device(.output, format: f), format: f, buffer: time.milliseconds(10).must()).must()
+    s @= open_with(null_device(.output, format: f), format: f, buffer: time.milliseconds(10)).must()
     pause(s).must()
 
-    match write(@s, s: silence(f, length: time.milliseconds(30).must()).must(), limit: time.nanoseconds(0))
+    match write(@s, s: silence(f, length: time.milliseconds(30)).must(), limit: time.nanoseconds(0))
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT
 
@@ -1109,7 +1109,7 @@ test "write: the room full and a limit of zero, the rest kept for the next write
     stop(s).must()
     assert state_of(s).must() == .ended
 
-    match write(@s, s: silence(f, length: time.milliseconds(1).must()).must(), limit: time.nanoseconds(0))
+    match write(@s, s: silence(f, length: time.milliseconds(1)).must(), limit: time.nanoseconds(0))
         .ok _  => assert false
         .err e => assert e.code == CLOSED
 
@@ -1122,7 +1122,7 @@ test "read: the null input's sine at another rate and channel count, converted a
     got: [f64] @= []
 
     while got.len() < 4000
-        for x in to_samples(read(@s, limit: time.seconds(1).must()).must()).must()
+        for x in to_samples(read(@s, limit: time.seconds(1)).must()).must()
             got @ got.push(x)
 
     stop(s).must()
@@ -1157,8 +1157,8 @@ test "play: a tenth of a second of 440 Hz on this machine's default output, play
             return
 
     f = Format(encoding: .pcm16, rate: 44100, channels: 1, speakers: 0)
-    s @= play(device, s: tone(f, hz: 440.0, amplitude: 0.2, length: time.milliseconds(100).must()).must()).must()
-    wait(s, limit: time.seconds(5).must()).must()
+    s @= play(device, s: tone(f, hz: 440.0, amplitude: 0.2, length: time.milliseconds(100)).must()).must()
+    wait(s, limit: time.seconds(5)).must()
     assert state_of(s).must() == .ended
     close(@s).must()
 
@@ -1180,7 +1180,7 @@ test "read: a few frames recorded from this machine's default input"
     frames @= 0
 
     while frames < 160
-        frames @ frames + frames_of(read(@s, limit: time.seconds(2).must()).must())
+        frames @ frames + frames_of(read(@s, limit: time.seconds(2)).must())
 
     stop(s).must()
     close(@s).must()
@@ -1193,7 +1193,7 @@ test "wav_writer, write_frames and finish_wav: pieces written read back whole, a
     dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
     path = dir + "/pieces.wav"
     f = Format(encoding: .pcm24, rate: 8000, channels: 3, speakers: 0)
-    whole = tone(f, hz: 300.0, amplitude: 0.5, length: time.milliseconds(5).must()).must()
+    whole = tone(f, hz: 300.0, amplitude: 0.5, length: time.milliseconds(5)).must()
     out @= fs.create(path).must()
     w @= wav_writer(out, format: f).must()
     write_frames(@w, s: Sound(format: f, data: whole.data.slice(from: 0, to: 9 * 11))).must()
@@ -1260,7 +1260,7 @@ test "frames_of: two frames of stereo 16-bit samples"
 # How long a sound plays.
 test "duration_of: 4000 frames at 8000 a second are half a second"
     f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
-    s = silence(f, length: time.milliseconds(500).must()).must()
+    s = silence(f, length: time.milliseconds(500)).must()
     assert frames_of(s) == 4000
     assert duration_of(s).nanoseconds == 500000000
 
@@ -1292,7 +1292,7 @@ test "to_channels: one channel copied into two, and two averaged into one"
 # A sound at another rate.
 test "to_rate: a tenth of a second at 8000 frames a second made 44100"
     f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
-    s = tone(f, hz: 440.0, amplitude: 0.5, length: time.milliseconds(100).must()).must()
+    s = tone(f, hz: 440.0, amplitude: 0.5, length: time.milliseconds(100)).must()
     faster = to_rate(s, rate: 44100).must()
     assert faster.format.rate == 44100
     assert frames_of(faster) == 4410
@@ -1300,7 +1300,7 @@ test "to_rate: a tenth of a second at 8000 frames a second made 44100"
 # A sound converted to what a device takes.
 test "to_format: mono 16-bit at 8000 made stereo floats at 48000"
     f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
-    s = silence(f, length: time.milliseconds(10).must()).must()
+    s = silence(f, length: time.milliseconds(10)).must()
     device = Format(encoding: .float32, rate: 48000, channels: 2, speakers: 3)
     out = to_format(s, format: device).must()
     assert out.format == device
@@ -1309,14 +1309,14 @@ test "to_format: mono 16-bit at 8000 made stereo floats at 48000"
 # Silence of a given length.
 test "silence: a hundredth of a second of 8-bit silence"
     f = Format(encoding: .pcm8, rate: 8000, channels: 1, speakers: 0)
-    s = silence(f, length: time.milliseconds(10).must()).must()
+    s = silence(f, length: time.milliseconds(10)).must()
     assert s.data.len() == 80
     assert s.data[0] == 128
 
 # A test tone.
 test "tone: a sine of 2 Hz sampled 8 times a second"
     f = Format(encoding: .float64, rate: 8, channels: 1, speakers: 0)
-    s = tone(f, hz: 2.0, amplitude: 0.5, length: time.milliseconds(500).must()).must()
+    s = tone(f, hz: 2.0, amplitude: 0.5, length: time.milliseconds(500)).must()
     values = to_samples(s).must()
     assert values.len() == 4
     assert values[0] == 0.0 && math.abs(values[1] - 0.5) < 0.000000000001
@@ -1339,7 +1339,7 @@ test "read_wav: a tone written to a file and read back"
     dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
     path = dir + "/tone.wav"
     f = Format(encoding: .pcm24, rate: 48000, channels: 2, speakers: 0)
-    s = tone(f, hz: 1000.0, amplitude: 0.25, length: time.milliseconds(5).must()).must()
+    s = tone(f, hz: 1000.0, amplitude: 0.25, length: time.milliseconds(5)).must()
     write_wav(path, s: s).must()
     assert read_wav(path).must() == s
     fs.remove_all(dir).must()
@@ -1349,7 +1349,7 @@ test "write_wav: a second of silence written, its size the header's 44 bytes and
     dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
     path = dir + "/quiet.wav"
     f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
-    write_wav(path, s: silence(f, length: time.seconds(1).must()).must()).must()
+    write_wav(path, s: silence(f, length: time.seconds(1)).must()).must()
     assert fs.read_bytes(path).must().len() == 16044
     fs.remove_all(dir).must()
 
@@ -1394,7 +1394,7 @@ test "open: an output on the null device, closed"
 # A stream holding less than `open` gives it, so a sound starts sooner.
 test "open_with: an output holding a twentieth of a second"
     f = Format(encoding: .float32, rate: 48000, channels: 1, speakers: 0)
-    s @= open_with(null_device(.output, format: f), format: f, buffer: time.milliseconds(50).must()).must()
+    s @= open_with(null_device(.output, format: f), format: f, buffer: time.milliseconds(50)).must()
     close(@s).must()
 
 # A whole sound played.
@@ -1402,28 +1402,28 @@ test "play: a twentieth of a second of a tone, played to its end"
     f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
     s @= play(
         null_device(.output, format: f),
-        s: tone(f, hz: 440.0, amplitude: 0.5, length: time.milliseconds(50).must()).must()
+        s: tone(f, hz: 440.0, amplitude: 0.5, length: time.milliseconds(50)).must()
     ).must()
-    wait(s, limit: time.seconds(2).must()).must()
+    wait(s, limit: time.seconds(2)).must()
     close(@s).must()
 
 # Frames written as the program makes them.
 test "write: two pieces of a tone, then finished"
     f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
     s @= open(null_device(.output, format: f), format: f).must()
-    piece = tone(f, hz: 440.0, amplitude: 0.5, length: time.milliseconds(20).must()).must()
-    write(@s, s: piece, limit: time.seconds(1).must()).must()
-    write(@s, s: piece, limit: time.seconds(1).must()).must()
-    finish(@s, limit: time.seconds(1).must()).must()
+    piece = tone(f, hz: 440.0, amplitude: 0.5, length: time.milliseconds(20)).must()
+    write(@s, s: piece, limit: time.seconds(1)).must()
+    write(@s, s: piece, limit: time.seconds(1)).must()
+    finish(@s, limit: time.seconds(1)).must()
     close(@s).must()
 
 # The end of a stream told once its last frame has played.
 test "finish: the end told after the last frame"
     f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
     s @= open(null_device(.output, format: f), format: f).must()
-    write(@s, s: silence(f, length: time.milliseconds(30).must()).must(), limit: time.seconds(1).must()).must()
-    finish(@s, limit: time.seconds(1).must()).must()
-    wait(s, limit: time.seconds(2).must()).must()
+    write(@s, s: silence(f, length: time.milliseconds(30)).must(), limit: time.seconds(1)).must()
+    finish(@s, limit: time.seconds(1)).must()
+    wait(s, limit: time.seconds(2)).must()
     assert state_of(s).must() == .ended
     close(@s).must()
 
@@ -1431,7 +1431,7 @@ test "finish: the end told after the last frame"
 test "read: the null input's frames as 16-bit samples"
     f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
     s @= open(null_device(.input, format: f), format: f).must()
-    got = read(@s, limit: time.seconds(1).must()).must()
+    got = read(@s, limit: time.seconds(1)).must()
     assert got.format == f && frames_of(got) > 0
     close(@s).must()
 
@@ -1467,7 +1467,7 @@ test "resume: running again after a pause"
 test "stop: ended at once, its frames dropped"
     f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
     s @= open(null_device(.output, format: f), format: f).must()
-    write(@s, s: silence(f, length: time.milliseconds(100).must()).must(), limit: time.seconds(1).must()).must()
+    write(@s, s: silence(f, length: time.milliseconds(100)).must(), limit: time.seconds(1)).must()
     stop(s).must()
     assert state_of(s).must() == .ended
     close(@s).must()
@@ -1518,7 +1518,7 @@ test "add_to: an input told ready once it has recorded a frame"
     s @= open(null_device(.input, format: f), format: f).must()
     set @= poll.make(most: 4).must()
     key = add_to(set, stream: s).must()
-    ready = poll.wait(set, limit: time.seconds(2).must()).must()
+    ready = poll.wait(set, limit: time.seconds(2)).must()
     assert ready.len() == 1 && ready[0].key == key && ready[0].readable
     poll.close(@set).must()
     close(@s).must()
@@ -1540,7 +1540,7 @@ test "wav_reader: the format and the frames of a file, before any is read"
     dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
     path = dir + "/a.wav"
     f = Format(encoding: .pcm16, rate: 8000, channels: 2, speakers: 0)
-    write_wav(path, s: silence(f, length: time.milliseconds(10).must()).must()).must()
+    write_wav(path, s: silence(f, length: time.milliseconds(10)).must()).must()
     s @= fs.open(path).must()
     r = wav_reader(s).must()
     assert r.format == f && r.frames_left == 80
@@ -1552,7 +1552,7 @@ test "read_frames: a file of 80 frames read 50 at a time"
     dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
     path = dir + "/b.wav"
     f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
-    write_wav(path, s: silence(f, length: time.milliseconds(10).must()).must()).must()
+    write_wav(path, s: silence(f, length: time.milliseconds(10)).must()).must()
     s @= fs.open(path).must()
     r @= wav_reader(s).must()
     assert frames_of(read_frames(@r, frames: 50).must()) == 50
@@ -1575,7 +1575,7 @@ test "write_frames: a hundredth of a second written twice"
     s @= fs.create(dir + "/d.wav").must()
     f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
     w @= wav_writer(s, format: f).must()
-    piece = silence(f, length: time.milliseconds(10).must()).must()
+    piece = silence(f, length: time.milliseconds(10)).must()
     write_frames(@w, s: piece).must()
     write_frames(@w, s: piece).must()
     assert w.frames == 160

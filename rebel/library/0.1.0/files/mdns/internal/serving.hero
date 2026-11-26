@@ -136,7 +136,7 @@ function respond(@st: hosting.State, heard: message.Heard, p: transport.Packet) 
         return ok()
 
     if delayed
-        time.sleep(time.milliseconds(random.int_in(@st.generator, from: 20, to: 121))?)
+        time.sleep(time.milliseconds_checked(random.int_in(@st.generator, from: 20, to: 121))?)
 
     for job in jobs
         for packet in job.packets

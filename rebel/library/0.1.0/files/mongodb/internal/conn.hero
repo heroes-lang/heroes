@@ -69,7 +69,7 @@ function ms_of(d: time.Duration) -> i64
 function time_of(ms: i64) -> time.Duration
     if ms == 0
         return time.max_duration()
-    return time.milliseconds(ms).default(time.max_duration())
+    return time.milliseconds_checked(ms).default(time.max_duration())
 
 # A connection to `host` at `port`, over TLS checked against `roots` (the
 # system's store where "") where `secure`, the TCP connection given up after
@@ -105,7 +105,7 @@ function scripted(out: io.Stream, input: io.Stream) -> Conn
 function tls_deadline(ms: i64) -> time.Duration?
     if ms == 0
         return ok(time.max_duration())
-    return ok(time.milliseconds(ms).default(time.max_duration()))
+    return ok(time.milliseconds_checked(ms).default(time.max_duration()))
 
 # Makes every read and write of `c` end by `ms` milliseconds from now; 0
 # takes the deadline away. Fails as `net.set_deadline` and `tls.set_deadline`

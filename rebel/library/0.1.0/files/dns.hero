@@ -208,7 +208,7 @@ function parse_resolv_conf(text: str) -> Resolver
         servers: servers,
         search: c.search,
         ndots: c.ndots,
-        timeout: time.seconds(c.timeout_s).must(),
+        timeout: time.seconds(c.timeout_s),
         attempts: c.attempts,
         rotate: c.rotate,
         tcp: c.tcp,
@@ -241,7 +241,7 @@ function resolver(servers: [str]) -> Resolver?
                     .err _ => return fail(code: INVALID, msg: f"\"{s}\" is no address, with or without a port")
 
     return ok(
-        Resolver(servers: out, search: [], ndots: 1, timeout: time.seconds(5).must(), attempts: 2, rotate: false, tcp: false, udp_size: DEFAULT_UDP_SIZE, dnssec_ok: false, recursion: true)
+        Resolver(servers: out, search: [], ndots: 1, timeout: time.seconds(5), attempts: 2, rotate: false, tcp: false, udp_size: DEFAULT_UDP_SIZE, dnssec_ok: false, recursion: true)
     )
 
 ## Asking
@@ -2038,7 +2038,7 @@ test "exchange: a datagram answered, a truncated answer asked again over TCP, a 
         [canned.udp(encode(full).must()), canned.udp(encode(cut).must()), canned.tcp(encode(full).must()), canned.dropped(), canned.udp(encode(full).must()), canned.spoofed(encode(full).must())]
     )
     r @= resolver([f"127.0.0.1:{server.port}"]).must()
-    r.timeout @ time.milliseconds(400).must()
+    r.timeout @ time.milliseconds(400)
     first = exchange(r, m: q).must()
     assert first.response && first.answers == full.answers && first.id != 0
     assert exchange(r, m: q).must().answers == full.answers
@@ -2059,7 +2059,7 @@ test "exchange: SERVFAIL passed for the next server, every try lost, and a resol
         [canned.udp(encode(failed).must()), canned.udp(encode(full).must()), canned.udp(encode(failed).must()), canned.udp(encode(failed).must()), canned.dropped(), canned.dropped()]
     )
     two @= resolver([f"127.0.0.1:{server.port}", f"127.0.0.1:{server.port}"]).must()
-    two.timeout @ time.milliseconds(300).must()
+    two.timeout @ time.milliseconds(300)
     two.attempts @ 1
     assert exchange(two, m: q).must().answers == full.answers
     assert exchange(two, m: q).must().rcode == RCODE_SERVER_FAILURE
@@ -2090,7 +2090,7 @@ test "lookup: the search list tried in order past a name that names nothing, a n
     )
     r @= resolver([f"127.0.0.1:{server.port}"]).must()
     r.search @ ["a.example.", "b.example"]
-    r.timeout @ time.seconds(2).must()
+    r.timeout @ time.seconds(2)
     r.attempts @ 1
     got = lookup(r, name: "host", type_code: TYPE_A).must()
     assert got.name == "host.b.example." && got.canonical == "host.b.example." && got.records == found.answers
@@ -2151,7 +2151,7 @@ test "key_tag_of: the tags dig 9.10.6 gave three keys, one of RSA/MD5, and data 
 
 test "query: a public resolver asked, or a line saying it was skipped where the network is down"
     r @= resolver(["1.1.1.1"]).must()
-    r.timeout @ time.milliseconds(1500).must()
+    r.timeout @ time.milliseconds(1500)
     r.attempts @ 1
 
     match query(r, name: "example.com.", type_code: TYPE_A)
@@ -2189,7 +2189,7 @@ test "transfer: a zone in two messages, a refusal, and a transfer that does not 
         [canned.tcp_all([encode(first).must(), encode(last).must()]), canned.tcp(encode(refused).must()), canned.tcp(encode(wrong).must())]
     )
     r @= resolver([f"127.0.0.1:{server.port}"]).must()
-    r.timeout @ time.seconds(2).must()
+    r.timeout @ time.seconds(2)
     zone = transfer(r, zone: "example.").must()
     assert zone.len() == 4 && zone[0] == soa && zone[3] == soa && zone[1] == host
 
@@ -2327,7 +2327,7 @@ test "parse_resolv_conf: two servers and a search list"
 # A resolver asking a server the program names, on a port of its own.
 test "resolver: a server on port 5353"
     r = resolver(["[::1]:5353", "192.0.2.53"]).must()
-    assert r.servers[0].port == 5353 && r.servers[1].port == PORT && r.timeout == time.seconds(5).must()
+    assert r.servers[0].port == 5353 && r.servers[1].port == PORT && r.timeout == time.seconds(5)
 
 # A query sent and its answer read.
 test "exchange: an address asked of a local server"

@@ -420,6 +420,6 @@ test "separator: on the native side the system's line made and placed across its
     line = made.must()
     _ = ui.button(@app, into: shown, text: "Below").must()
     at = ui.rect_of(@app, widget: line).must()
-    _ = ui.wait(@app, within: time.milliseconds(50).must()).is_err()
+    _ = ui.wait(@app, within: time.milliseconds(50)).is_err()
     ui.close(@app).must()
     assert at.height == 1 && at.width > 100

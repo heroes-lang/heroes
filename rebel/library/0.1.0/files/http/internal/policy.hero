@@ -180,7 +180,7 @@ function may_wait(deadline_ms: i64, start: time.Mark, wait_ms: i64) -> bool?
 # Waits `ms` milliseconds, 0 or more.
 function pause(ms: i64)
     if ms > 0
-        time.sleep(time.milliseconds(ms).default(time.max_duration()))
+        time.sleep(time.milliseconds_checked(ms).default(time.max_duration()))
 
 # The response to one request on a connection of its own to `host` at
 # `port`, closed after it: TCP for "http", TLS through `tls.connect` for
@@ -244,7 +244,7 @@ function exchange(scheme: str, host: str, port: str, deadline_ms: i64, roots: st
 function tls_deadline(ms: i64) -> time.Duration?
     if ms == 0
         return ok(time.max_duration())
-    return ok(time.milliseconds(ms).default(time.max_duration()))
+    return ok(time.milliseconds_checked(ms).default(time.max_duration()))
 
 # A connection to `host` at `port`: TLS where `secure`, the certificate
 # checked against `roots` ("" the system's store) and `protocols` offered,
@@ -452,8 +452,8 @@ test "is_idempotent, same_origin, host_field: the six methods, a port of 80 writ
 test "parse_retry_after: seconds, a date to come, a date passed, and neither, as this module's reader answered them"
     now = time.from_unix(whole_seconds: 1_445_412_480, extra_nanoseconds: 0).must()
     most = time.max_duration()
-    assert retries.parse_retry_after("120", received: now, longest: most).must() == time.seconds(120).must()
-    assert retries.parse_retry_after("Wed, 21 Oct 2015 07:28:10 GMT", received: now, longest: most).must() == time.seconds(10).must()
+    assert retries.parse_retry_after("120", received: now, longest: most).must() == time.seconds(120)
+    assert retries.parse_retry_after("Wed, 21 Oct 2015 07:28:10 GMT", received: now, longest: most).must() == time.seconds(10)
     assert retries.parse_retry_after("Wed, 21 Oct 2015 07:27:00 GMT", received: now, longest: most).must() == time.Duration(nanoseconds: 0)
     assert retries.parse_retry_after("soon", received: now, longest: most).is_err()
     assert retries.parse_retry_after("", received: now, longest: most).is_err()

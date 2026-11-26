@@ -123,8 +123,8 @@ test "bucket_of: an endpoint is reached by path, the client's own retries off"
     )
     retrying = settings.Retrying(
         attempts: 3,
-        first: time.milliseconds(10).must(),
-        longest: time.milliseconds(100).must(),
+        first: time.milliseconds(10),
+        longest: time.milliseconds(100),
         fraction: 0.5
     )
     b = bucket_of(storage, retrying: retrying).must()

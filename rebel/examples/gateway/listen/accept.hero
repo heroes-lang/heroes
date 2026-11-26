@@ -96,7 +96,7 @@ function serve(s: settings.Settings, ticks: clock.Clock, spread: clock.Chance, l
 # - `conns`: the workers' mailbox of connections.
 function accepted(listener: tls.Listener, conns: (mailbox net.Conn)) -> Served
     done @= Served(connections: 0, requests: 0, failed: 0)
-    handshake = time.seconds(HANDSHAKE_SECONDS).default(time.max_duration())
+    handshake = time.seconds(HANDSHAKE_SECONDS)
 
     while true
         match tls.accept(listener, deadline: handshake)

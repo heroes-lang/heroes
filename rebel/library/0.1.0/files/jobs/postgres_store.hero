@@ -675,13 +675,13 @@ test "enqueue live: each start, a past instant ready at once, a payload of more 
             db @= first
             worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
             later @= jobs.new_job("later", .null_value)
-            later.start @ .after(wait: time.milliseconds(400).must())
+            later.start @ .after(wait: time.milliseconds(400))
             later_id = enqueue(@db, later).must()
             past @= jobs.new_job("past", .text(v: "città 🎸"))
             past.start @ .at(instant: time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must())
             past_id = enqueue(@db, past).must()
             future @= jobs.new_job("future", .null_value)
-            future.start @ .at(instant: time.add(time.now().must(), time.hours(1).must()).must())
+            future.start @ .at(instant: time.add(time.now().must(), time.hours(1)).must())
             _ = enqueue(@db, future).must()
             got = claim(@db, worker).must()
             assert got.id == past_id && got.payload == .text(v: "città 🎸") && got.run_at == time.epoch()
@@ -690,7 +690,7 @@ test "enqueue live: each start, a past instant ready at once, a payload of more 
                 .ok _  => assert false
                 .err e => assert e.code == jobs.NOT_FOUND && e.msg == "no job is ready in the queues default"
 
-            time.sleep(time.milliseconds(500).must())
+            time.sleep(time.milliseconds(500))
             assert claim(@db, worker).must().id == later_id
             bad @= jobs.new_job("", .null_value)
             assert enqueue(@db, bad).is_err()
@@ -828,7 +828,7 @@ test "complete and fail_attempt live: a second completion refused, attempts spen
             assert waiting.state == .available && waiting.finished_at.is_err() && waiting.lease_until.is_err()
             assert time.is_after(
                 a: waiting.run_at,
-                b: time.add(first_try.attempted_at.must(), time.seconds(11).must()).must()
+                b: time.add(first_try.attempted_at.must(), time.seconds(11)).must()
             )
             _ = postgres.exec(@db, "UPDATE rebel_jobs SET run_at = now() WHERE id = $1", [.integer(v: id)]).must()
             second_try = claim(@db, worker).must()
@@ -855,11 +855,11 @@ test "fail_attempt_with live: the job waits the wait given, zero runs it again a
                 .ok _  => assert false
                 .err e => assert e.code == jobs.INVALID && e.msg == "the wait, -1ns, is below zero"
 
-            waiting = fail_attempt_with(@db, claimed: first_try, error: "first", wait: time.seconds(90).must()).must()
+            waiting = fail_attempt_with(@db, claimed: first_try, error: "first", wait: time.seconds(90)).must()
             assert waiting.state == .available && waiting.errors.len() == 1
             began = first_try.attempted_at.must()
-            assert time.is_after(a: waiting.run_at, b: time.add(began, time.seconds(89).must()).must())
-            assert time.is_after(a: time.add(began, time.seconds(150).must()).must(), b: waiting.run_at)
+            assert time.is_after(a: waiting.run_at, b: time.add(began, time.seconds(89)).must())
+            assert time.is_after(a: time.add(began, time.seconds(150)).must(), b: waiting.run_at)
             assert claim(@db, worker).is_err()
             assert retry(@db, id).must().state == .available
             second_try = claim(@db, worker).must()
@@ -872,7 +872,7 @@ test "fail_attempt_with live: the job waits the wait given, zero runs it again a
             assert again.state == .available
             third_try = claim(@db, worker).must()
             assert third_try.attempt == 3
-            ended = fail_attempt_with(@db, claimed: third_try, error: "third", wait: time.seconds(5).must()).must()
+            ended = fail_attempt_with(@db, claimed: third_try, error: "third", wait: time.seconds(5)).must()
             assert ended.state == .failed && ended.errors.len() == 3 && ended.errors[2].error == "third"
             assert fail_attempt_with(
                 @db,
@@ -917,7 +917,7 @@ test "rescue live: a lease run out given back counted, a late completion refused
         .ok first =>
             db @= first
             worker @= jobs.new_worker([jobs.DEFAULT_QUEUE])
-            worker.lease @ time.seconds(1).must()
+            worker.lease @ time.seconds(1)
             id = enqueue(@db, jobs.new_job("slow", .null_value)).must()
             one @= jobs.new_job("single", .null_value)
             one.max_attempts @ 1
@@ -925,7 +925,7 @@ test "rescue live: a lease run out given back counted, a late completion refused
             slow = claim(@db, worker).must()
             _ = claim(@db, worker).must()
             assert rescue(@db).must() == 0
-            time.sleep(time.milliseconds(1_100).must())
+            time.sleep(time.milliseconds(1_100))
             assert rescue(@db).must() == 2
             back = get(@db, id).must()
             assert back.state == .available && back.attempt == 1 && back.errors.len() == 1
@@ -962,7 +962,7 @@ test "purge, get, list and counts live: the finished removed by age, a job not t
             assert counts(@db).must() == [jobs.Count(queue: "q", state: .available, jobs: 3), jobs.Count(queue: "q", state: .completed, jobs: 2)]
             assert purge(@db, .available, older_than: time.Duration(nanoseconds: 0)).is_err()
             assert purge(@db, .completed, older_than: time.Duration(nanoseconds: -1)).is_err()
-            assert purge(@db, .completed, older_than: time.hours(1).must()).must() == 0
+            assert purge(@db, .completed, older_than: time.hours(1)).must() == 0
             assert purge(@db, .completed, older_than: time.Duration(nanoseconds: 0)).must() == 2
 
             match get(@db, 999_999)
@@ -1092,7 +1092,7 @@ test "allow live: forty tokens shared by takers on eight threads here and on fou
             postgres.close(@p).must()
             shared = "rebel_jobs_allow_" + to_str(os.pid())
             db @= live.connect_shared(shared).must()
-            _ = set_limit(@db, name: "crawl", every: time.hours(1).must(), burst: 40).must()
+            _ = set_limit(@db, name: "crawl", every: time.hours(1), burst: 40).must()
             answers = takers.run(
                 schema: shared,
                 limit: "crawl",
@@ -1127,7 +1127,7 @@ test "reserve live: twenty-four reservations of a token every ten seconds by tak
             postgres.close(@p).must()
             shared = "rebel_jobs_reserve_" + to_str(os.pid())
             db @= live.connect_shared(shared).must()
-            _ = set_limit(@db, name: "feed", every: time.seconds(10).must(), burst: 1).must()
+            _ = set_limit(@db, name: "feed", every: time.seconds(10), burst: 1).must()
             answers = takers.run(
                 schema: shared,
                 limit: "feed",
@@ -1257,7 +1257,7 @@ test "fail_attempt_with: a wait of the program's own"
                 @db,
                 claimed: claimed,
                 error: "the bank did not answer",
-                wait: time.minutes(3).must()
+                wait: time.minutes(3)
             ).must()
             assert after.state == .available && get(@db, id).must().errors.len() == 1
             postgres.close(@db).must()
@@ -1282,7 +1282,7 @@ test "snooze: a resource busy"
             db @= first
             id = enqueue(@db, jobs.new_job("export", .null_value)).must()
             claimed = claim(@db, jobs.new_worker([jobs.DEFAULT_QUEUE])).must()
-            snooze(@db, claimed, wait: time.minutes(1).must()).must()
+            snooze(@db, claimed, wait: time.minutes(1)).must()
             assert get(@db, id).must().attempt == 0
             postgres.close(@db).must()
 
@@ -1314,7 +1314,7 @@ test "purge: completed jobs older than a day"
         .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
-            assert purge(@db, .completed, older_than: time.hours(24).must()).must() == 0
+            assert purge(@db, .completed, older_than: time.hours(24)).must() == 0
             postgres.close(@db).must()
 
 # A queue paused, its jobs waiting.
@@ -1430,7 +1430,7 @@ test "set_limit: two a second, five at once"
         .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
-            made = set_limit(@db, name: "mail", every: time.milliseconds(500).must(), burst: 5).must()
+            made = set_limit(@db, name: "mail", every: time.milliseconds(500), burst: 5).must()
             assert jobs.available(limit: made, at: made.seen) == 5
             postgres.close(@db).must()
 
@@ -1440,7 +1440,7 @@ test "remove_limit: a limit removed, then not found"
         .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
-            _ = set_limit(@db, name: "import", every: time.seconds(1).must(), burst: 1).must()
+            _ = set_limit(@db, name: "import", every: time.seconds(1), burst: 1).must()
             remove_limit(@db, name: "import").must()
             assert limit_named(@db, name: "import").is_err()
             postgres.close(@db).must()
@@ -1451,7 +1451,7 @@ test "limit_named: one of three tokens taken"
         .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
-            _ = set_limit(@db, name: "api", every: time.hours(1).must(), burst: 3).must()
+            _ = set_limit(@db, name: "api", every: time.hours(1), burst: 3).must()
             assert allow(@db, name: "api", n: 1).must().granted
             now = limit_named(@db, name: "api").must()
             assert jobs.available(limit: now, at: now.seen) == 2
@@ -1463,12 +1463,12 @@ test "allow: a second request to a host refused, and its wait"
         .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
-            _ = set_limit(@db, name: "example.org", every: time.seconds(1).must(), burst: 1).must()
+            _ = set_limit(@db, name: "example.org", every: time.seconds(1), burst: 1).must()
             assert allow(@db, name: "example.org", n: 1).must().granted
             refused = allow(@db, name: "example.org", n: 1).must()
             assert !refused.granted
             wait = jobs.reserve(limit: refused.bucket, at: refused.bucket.seen, n: 1).must().delay
-            assert wait.nanoseconds > 0 && !time.is_longer(a: wait, b: time.seconds(1).must())
+            assert wait.nanoseconds > 0 && !time.is_longer(a: wait, b: time.seconds(1))
             postgres.close(@db).must()
 
 # Reservations of every worker queue behind one another.
@@ -1477,10 +1477,10 @@ test "reserve: a third token waits its turn"
         .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
-            _ = set_limit(@db, name: "report", every: time.hours(1).must(), burst: 2).must()
+            _ = set_limit(@db, name: "report", every: time.hours(1), burst: 2).must()
             _ = reserve(@db, name: "report", n: 2).must()
             third = reserve(@db, name: "report", n: 1).must()
-            assert time.is_longer(a: third.delay, b: time.minutes(59).must()) && !time.is_longer(a: third.delay, b: time.hours(1).must())
+            assert time.is_longer(a: third.delay, b: time.minutes(59)) && !time.is_longer(a: third.delay, b: time.hours(1))
             postgres.close(@db).must()
 
 # A wait longer than the caller accepts takes nothing.
@@ -1489,10 +1489,10 @@ test "reserve_within: a wait of an hour where a minute is allowed"
         .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
-            _ = set_limit(@db, name: "sync", every: time.hours(1).must(), burst: 1).must()
+            _ = set_limit(@db, name: "sync", every: time.hours(1), burst: 1).must()
             assert allow(@db, name: "sync", n: 1).must().granted
 
-            match reserve_within(@db, name: "sync", n: 1, within: time.minutes(1).must())
+            match reserve_within(@db, name: "sync", n: 1, within: time.minutes(1))
                 .ok _  => assert false
                 .err e => assert e.code == jobs.TIMEOUT
 
@@ -1504,7 +1504,7 @@ test "cancel_reservation: the token comes back"
         .err e => skip_test(reason: e.msg)
         .ok first =>
             db @= first
-            _ = set_limit(@db, name: "upload", every: time.hours(1).must(), burst: 1).must()
+            _ = set_limit(@db, name: "upload", every: time.hours(1), burst: 1).must()
             assert allow(@db, name: "upload", n: 1).must().granted
             waiting = reserve(@db, name: "upload", n: 1).must()
             back = cancel_reservation(@db, name: "upload", taken: waiting).must()

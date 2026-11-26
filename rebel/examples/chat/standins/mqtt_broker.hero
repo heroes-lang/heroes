@@ -244,7 +244,7 @@ function peer_of(b: mqtt_routes.Broker lent, key: i64) -> i64
 # - `listening`: the listener's key in the set.
 function serve(@b: mqtt_routes.Broker, set: poll.Set, l: net.Listener lent, listening: i64)
     while true
-        events = match poll.wait(set, limit: time.hours(1).must())
+        events = match poll.wait(set, limit: time.hours(1))
             .ok got => got
             .err _  => break
 

@@ -67,7 +67,7 @@ function withdraw(target: Target, name: str, value: str) -> ()?
 function updated(target: Target, change: dns.Record) -> ()?
     m = update_of(zone: target.zone, changes: [change])?
     r @= dns.resolver([net.format_address(target.server)])?
-    r.timeout @ time.seconds(3)?
+    r.timeout @ time.seconds(3)
     r.attempts @ 2
 
     match target.key

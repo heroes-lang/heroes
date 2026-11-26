@@ -78,7 +78,7 @@ function open(@gw: state.Gateway, upstream: settings.Upstream, client: str, atte
             continue
         tried @ tried + 1
 
-        match grpc.connect_plain(host: e.address, port: e.port, deadline: time.milliseconds(CHANNEL_MS)?, options: grpc.default_options())
+        match grpc.connect_plain(host: e.address, port: e.port, deadline: time.milliseconds(CHANNEL_MS), options: grpc.default_options())
             .ok channel =>
                 instances.succeeded(@gw.directory, e: e, now: state.now(@gw)?)
                 telemetry.attempted(@gw.registry, upstream: upstream.name, outcome: "ok")
@@ -122,7 +122,7 @@ function call_json(@gw: state.Gateway, upstream: settings.Upstream, path: str, r
     data = protobuf.encode(schema, m: message)?
     opened = open(@gw, upstream: upstream, client: client, attempts: 2)?
     channel @= opened.channel
-    reply = grpc.call(@channel, path: path, request: data, metadata: [], timeout: time.milliseconds(CHANNEL_MS)?)
+    reply = grpc.call(@channel, path: path, request: data, metadata: [], timeout: time.milliseconds(CHANNEL_MS))
     _ = grpc.close(@channel).is_err()
     answered = reply?
 

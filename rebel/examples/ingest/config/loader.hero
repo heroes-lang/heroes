@@ -65,8 +65,8 @@ function parse(source: str) -> settings.Settings?
         kafka: settings.Kafka(brokers: texts_at(doc, path: ["kafka", "brokers"])?, group: text_at(doc, path: ["kafka", "group"], fallback: "")?, topics: texts_at(doc, path: ["kafka", "topics"])?, client_id: text_at(doc, path: ["kafka", "client_id"], fallback: "pipeline")?, username: text_at(doc, path: ["kafka", "username"], fallback: "")?, password: kafka_password, tls: flag_at(doc, path: ["kafka", "tls"], fallback: false)?),
         storage: storage,
         database: settings.Database(url: text_at(doc, path: ["postgres", "url"], fallback: "")?, password: secret(doc, table: "postgres", key: "password")?),
-        windows: settings.Windows(length: time.seconds(integer_at(doc, path: ["windows", "seconds"], fallback: 60)?)?, grace: time.seconds(integer_at(doc, path: ["windows", "grace_seconds"], fallback: 0)?)?),
-        retrying: settings.Retrying(attempts: integer_at(doc, path: ["retries", "attempts"], fallback: 4)?, first: time.milliseconds(integer_at(doc, path: ["retries", "first_ms"], fallback: 200)?)?, longest: time.milliseconds(integer_at(doc, path: ["retries", "longest_ms"], fallback: 10_000)?)?, fraction: fraction_of(doc)?),
+        windows: settings.Windows(length: time.seconds_checked(integer_at(doc, path: ["windows", "seconds"], fallback: 60)?)?, grace: time.seconds_checked(integer_at(doc, path: ["windows", "grace_seconds"], fallback: 0)?)?),
+        retrying: settings.Retrying(attempts: integer_at(doc, path: ["retries", "attempts"], fallback: 4)?, first: time.milliseconds_checked(integer_at(doc, path: ["retries", "first_ms"], fallback: 200)?)?, longest: time.milliseconds_checked(integer_at(doc, path: ["retries", "longest_ms"], fallback: 10_000)?)?, fraction: fraction_of(doc)?),
         metrics: settings.Metrics(listen: text_at(doc, path: ["metrics", "listen"], fallback: "")?)
     )
     settings.check(s)?
@@ -222,7 +222,7 @@ test "parse: a whole file, its secrets written in it, the defaults where it is s
     s = parse(text_of_file).must()
     assert s.kafka.brokers == ["127.0.0.1:9092"] && s.kafka.password == "p" && s.kafka.client_id == "pipeline" && !s.kafka.tls
     assert s.storage.access_key_id == "AK" && s.storage.region == "us-east-1" && s.database.password == "pg"
-    assert s.windows.length == time.seconds(60).must() && s.retrying.attempts == 3 && s.retrying.fraction == 0.5 && s.metrics.listen == ""
+    assert s.windows.length == time.seconds(60) && s.retrying.attempts == 3 && s.retrying.fraction == 0.5 && s.metrics.listen == ""
 
 test "parse: a value of the wrong kind and a file with no topic are refused"
     assert parse("[kafka]\nbrokers = \"one\"\n").is_err()

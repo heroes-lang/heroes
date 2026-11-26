@@ -259,5 +259,5 @@ test "status_of: one typist, then what is unread elsewhere"
     views.apply(@v, n: .typing(room: "general", user: "bob"), now: t)
     assert status_of(v, sp: sp, now: t) == "bob is typing…"
     m = model.Message(id: "1", room: "iot", author: "bob", origin: .chat, text: "x", at: t, edited: false)
-    views.apply(@v, n: .posted(message: m), now: time.add(t, d: time.seconds(10).must()).must())
-    assert status_of(v, sp: sp, now: time.add(t, d: time.seconds(10).must()).must()) == "1 unread in #iot"
+    views.apply(@v, n: .posted(message: m), now: time.add(t, d: time.seconds(10)).must())
+    assert status_of(v, sp: sp, now: time.add(t, d: time.seconds(10)).must()) == "1 unread in #iot"

@@ -202,4 +202,4 @@ function upstream_of(headers: [grpc.Entry]) -> str
 
 # How long a call may take.
 function seconds() -> time.Duration
-    return time.seconds(10).default(time.max_duration())
+    return time.seconds(10)

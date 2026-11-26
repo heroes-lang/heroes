@@ -221,7 +221,7 @@ function registration_options(challenge: [u8]) -> RegistrationOptions
     hints: [Hint] = []
     return RegistrationOptions(
         challenge: challenge,
-        timeout: time.minutes(1).must(),
+        timeout: time.minutes(1),
         algorithms: algorithms,
         exclude: none,
         attestation: .none,
@@ -311,7 +311,7 @@ function authentication_options(challenge: [u8]) -> AuthenticationOptions
     hints: [Hint] = []
     return AuthenticationOptions(
         challenge: challenge,
-        timeout: time.minutes(1).must(),
+        timeout: time.minutes(1),
         allow: none,
         user_verification: .preferred,
         hints: hints
@@ -702,7 +702,7 @@ function verify_signature(cose: [u8], data: [u8], signature: [u8]) -> bool?
 # The options of a registration, as JSON for the page.
 test "registration_options: the ordinary options, written for the browser"
     options = registration_options([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
-    assert options.timeout == time.minutes(1).must()
+    assert options.timeout == time.minutes(1)
     assert options.algorithms[0] == ES256
 
 # Registration options written as JSON.

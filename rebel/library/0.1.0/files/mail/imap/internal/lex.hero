@@ -304,7 +304,7 @@ test "nil, nstring, flag_list: NIL as a word and not as a prefix, flags of every
 
 test "string: a literal at the end of its line read from the stream, a literal8, a brace inside a line refused"
     two = net.pair(deadline_ms: 5000).must()
-    s @= wire.over(two.first.stream, link: .plain, deadline: time.seconds(5).must(), max_bytes: 1000)
+    s @= wire.over(two.first.stream, link: .plain, deadline: time.seconds(5), max_bytes: 1000)
     server @= two.second.stream
     io.write_text(server, text: "{3}\r\na\r\n NIL ~{2}\r\n\u{1}x x {1} y\r\n").must()
     wire.begin(@s).must()
@@ -324,4 +324,4 @@ function net_pair() -> wire.Session
     two = net.pair(deadline_ms: 5000).must()
     other @= two.second.stream
     io.close(@other).must()
-    return wire.over(two.first.stream, link: .plain, deadline: time.seconds(5).must(), max_bytes: 1000)
+    return wire.over(two.first.stream, link: .plain, deadline: time.seconds(5), max_bytes: 1000)

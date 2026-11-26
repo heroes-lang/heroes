@@ -295,7 +295,7 @@ function instant_of(v: Value) -> time.Instant?
     match v
         .date_time d =>
             local = time.from_date_time(d.at)?
-            return time.add(local, time.minutes(-d.offset_minutes)?)
+            return time.add(local, time.minutes_checked(-d.offset_minutes)?)
         .text _ | .integer _ | .float _ | .boolean _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
             return fail(code: INVALID, msg: "only a date and a time with an offset names an instant")
 

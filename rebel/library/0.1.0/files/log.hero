@@ -518,7 +518,7 @@ test "format_line: every kind of value in the text form, the extremes of an i64 
         integer(key: "max", value: 9223372036854775807)
         number(key: "f", value: 1.0)
         boolean(key: "b", value: false)
-        duration(key: "d", value: time.milliseconds(1500).must())
+        duration(key: "d", value: time.milliseconds(1500))
         instant(key: "t", value: at)
     ]
     want = "2006-01-02T15:04:05.123Z INFO m s=\"x y\" min=-9223372036854775808 max=9223372036854775807 f=1 b=false d=1.5s t=2006-01-02T15:04:05.123Z"
@@ -642,7 +642,7 @@ test "boolean: a flag"
 
 # A duration field.
 test "duration: how long a request took"
-    took = time.milliseconds(250).must()
+    took = time.milliseconds(250)
     assert duration(key: "took", value: took).value == .duration(v: took)
 
 # An instant field.

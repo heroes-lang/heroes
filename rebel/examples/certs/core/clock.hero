@@ -40,7 +40,7 @@ function now(c: Clock) -> time.Instant?
 # `time.Instant` holds.
 function after_days(c: Clock, days: i64) -> Clock?
     at = now(c)?
-    return ok(.fixed(at: time.add(at, d: time.days(days)?)?))
+    return ok(.fixed(at: time.add(at, d: time.days_checked(days)?)?))
 
 ## Whole days
 
@@ -64,7 +64,7 @@ function format_days(n: i64) -> str
 
 test "days_between: whole days, a part of one left out, and backwards"
     start = time.date(year: 2026, month: 1, day: 1).must()
-    later = time.add(start, d: time.hours(24 * 29 + 23).must()).must()
+    later = time.add(start, d: time.hours(24 * 29 + 23)).must()
     assert days_between(from: start, to: later) == 29
     assert days_between(from: start, to: start) == 0
     assert days_between(from: later, to: start) == -29

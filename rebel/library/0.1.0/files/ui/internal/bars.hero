@@ -85,7 +85,7 @@ test "toolbar: docked across the top of its window whatever order its widgets we
 
     # A button of a toolbar is told as any is.
     ui.inject(@app, input: .click(widget: save)).must()
-    assert ui.wait(@app, within: time.seconds(1).must()).must() == .clicked(widget: save)
+    assert ui.wait(@app, within: time.seconds(1)).must() == .clicked(widget: save)
     ui.set_text(@app, widget: open, text: "Open file").must()
     assert ui.text_of(app, widget: open).must() == "Open file"
     ui.set_enabled(@app, widget: save, on: false).must()
@@ -140,11 +140,11 @@ test "toolbar: on the native side the system's own made, its items the system's 
         assert ui.frame_of(@app, widget: w).must().height > before.height
         assert ui.rect_of(@app, widget: w).must().height == 200
     ui.inject(@app, input: .click(widget: open)).must()
-    assert ui.wait(@app, within: time.seconds(2).must()).must() == .clicked(widget: open)
+    assert ui.wait(@app, within: time.seconds(2)).must() == .clicked(widget: open)
     ui.inject(@app, input: .type_text(widget: seek, text: "needle")).must()
-    assert ui.wait(@app, within: time.seconds(2).must()).must() == .text_changed(widget: seek, text: "needle")
+    assert ui.wait(@app, within: time.seconds(2)).must() == .text_changed(widget: seek, text: "needle")
     ui.inject(@app, input: .toggle(widget: wrap)).must()
-    assert ui.wait(@app, within: time.seconds(2).must()).must() == .toggled(widget: wrap, checked: true)
+    assert ui.wait(@app, within: time.seconds(2)).must() == .toggled(widget: wrap, checked: true)
     ui.set_enabled(@app, widget: open, on: false).must()
     ui.set_visible(@app, widget: bar, on: false).must()
     ui.set_visible(@app, widget: bar, on: true).must()

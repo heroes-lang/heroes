@@ -380,7 +380,7 @@ function turn(@h: state.Hub, limit: time.Duration) -> bool
 #
 # - `h`: the hub.
 function serve(@h: state.Hub)
-    while turn(@h, limit: time.seconds(1).must())
+    while turn(@h, limit: time.seconds(1))
         _ = 0
 
 # The settings the file at `config` holds, its paths read from its folder.

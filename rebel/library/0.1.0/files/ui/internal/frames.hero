@@ -464,7 +464,7 @@ test "tabs, a scrolled box and a split: on the native side made with their widge
     assert ui.rect_of(@app, widget: name).must().x == model.WINDOW_PADDING
     assert ui.selection_of(app, widget: t).must() == [0]
     ui.inject(@app, input: .choose(widget: t, indices: [1])).must()
-    assert ui.wait(@app, within: time.seconds(2).must()).must() == .selection_changed(widget: t, indices: [1])
+    assert ui.wait(@app, within: time.seconds(2)).must() == .selection_changed(widget: t, indices: [1])
     assert ui.selection_of(app, widget: t).must() == [1]
     ui.set_selection(@app, widget: t, indices: [0]).must()
     assert ui.selection_of(app, widget: t).must() == [0]
@@ -472,10 +472,10 @@ test "tabs, a scrolled box and a split: on the native side made with their widge
     laid = app.table.nodes[s.id].must()
     assert at == laid.value && laid.least < laid.most
     ui.inject(@app, input: .slide(widget: s, value: laid.least + 10)).must()
-    assert ui.wait(@app, within: time.seconds(2).must()).must() == .value_changed(widget: s, value: laid.least + 10)
+    assert ui.wait(@app, within: time.seconds(2)).must() == .value_changed(widget: s, value: laid.least + 10)
     assert ui.value_of(app, widget: s).must() == laid.least + 10
     ui.inject(@app, input: .slide(widget: s, value: 0)).must()
-    assert ui.wait(@app, within: time.seconds(2).must()).must() == .value_changed(widget: s, value: laid.least)
+    assert ui.wait(@app, within: time.seconds(2)).must() == .value_changed(widget: s, value: laid.least)
     ui.set_value(@app, widget: s, value: laid.most).must()
     _ = ui.rect_of(@app, widget: s).must()
     assert ui.value_of(app, widget: s).must() == laid.most
@@ -515,6 +515,6 @@ test "group: on the native side the system's frame made with its title and its w
     assert at.width >= inside.width + 2 * GROUP_PADDING + around[0] + around[2]
     assert under.y >= at.y + at.height
     ui.inject(@app, input: .type_text(widget: name, text: "Grace")).must()
-    assert ui.wait(@app, within: time.seconds(2).must()).must() == .text_changed(widget: name, text: "Grace")
+    assert ui.wait(@app, within: time.seconds(2)).must() == .text_changed(widget: name, text: "Grace")
     ui.destroy(@app, widget: box).must()
     ui.close(@app).must()

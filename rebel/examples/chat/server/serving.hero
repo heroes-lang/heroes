@@ -98,7 +98,7 @@ function start(s: settings.Settings) -> state.Server?
 # - `s`: the settings.
 function open_rest(@db: sqlite.Db, s: settings.Settings) -> state.Server?
     clock = if s.fixed_clock
-        clocks.fixed(start: demo_start(), step: time.minutes(1)?)
+        clocks.fixed(start: demo_start(), step: time.minutes(1))
     else
         clocks.wall()
 
@@ -380,7 +380,7 @@ function watch(srv: state.Server lent, set: poll.Set, @w: Watch)
 function run_loop(@srv: state.Server, set: poll.Set, l: net.Listener lent, listening: i64, hashed: i64, crew: Crew lent)
     w @= Watch(mqtt_key: -1, mqtt_streams: [], nats_key: -1, nats_streams: [])
     watch(srv, set: set, @w)
-    every = time.seconds(RELINK_SECONDS).must()
+    every = time.seconds(RELINK_SECONDS)
     relinking = poll.add_timer(set, first: every, every: every).default(-1)
 
     while true
@@ -392,7 +392,7 @@ function run_loop(@srv: state.Server, set: poll.Set, l: net.Listener lent, liste
         if mirroring.held_nats(srv.links) > 0
             take_nats(@srv)
 
-        events = match poll.wait(set, limit: time.hours(1).must())
+        events = match poll.wait(set, limit: time.hours(1))
             .ok got => got
             .err _  => return
 

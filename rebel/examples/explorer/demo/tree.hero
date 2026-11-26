@@ -65,7 +65,7 @@ function written_at(hours: i64) -> time.Instant
     first = time.from_date_time(
         time.DateTime(year: 2026, month: 3, day: 1, hour: 8, minute: 0, second: 0, nanosecond: 0)
     ).must()
-    return time.add(first, d: time.hours(hours).must()).must()
+    return time.add(first, d: time.hours(hours)).must()
 
 # The instant the demo's clock stands at when the explorer opens: 14 March
 # 2026, 09:30 UTC.

@@ -31,7 +31,7 @@ variant Link
 #
 # - `ms`: milliseconds, 1 or more here.
 function tls_deadline(ms: i64) -> time.Duration?
-    return ok(time.milliseconds(ms).default(time.max_duration()))
+    return ok(time.milliseconds_checked(ms).default(time.max_duration()))
 
 # The whole milliseconds of `d`, a part of one counting as a whole one, as
 # the session counts its waits; `d` below zero is -1, which the session

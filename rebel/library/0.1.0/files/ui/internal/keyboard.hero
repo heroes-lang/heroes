@@ -292,7 +292,7 @@ function changes(@app: ui.App, widget: ui.Widget) -> i64
     found @= 0
 
     while true
-        match ui.wait(@app, within: time.milliseconds(300).must())
+        match ui.wait(@app, within: time.milliseconds(300))
             .ok event =>
                 match event
                     .text_changed t =>
@@ -422,7 +422,7 @@ test "set_focus and focus_of: on the native side a text field, a text area and a
     assert fixture.code_of(ui.set_focus(@app, widget: label)) == ui.INVALID
     other = ui.window(@app, title: "Other", width: 100, height: 60).must()
     first = ui.text_field(@app, into: other, text: "").must()
-    _ = ui.wait(@app, within: time.milliseconds(100).must()).is_err()
+    _ = ui.wait(@app, within: time.milliseconds(100)).is_err()
     assert ui.focus_of(app, widget: other).must() == first
     ui.close(@app).must()
 

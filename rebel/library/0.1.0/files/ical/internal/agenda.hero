@@ -140,7 +140,7 @@ function of_event(e: ical.Event, skipped: [time.Instant], after: time.Instant, b
         .err _ => return ok([])
 
     length = length_of(e: e, start: start, floating: floating)?
-    reach = time.seconds(length.days * civil.DAY_SECONDS + length.seconds + civil.DAY_SECONDS)?
+    reach = time.seconds_checked(length.days * civil.DAY_SECONDS + length.seconds + civil.DAY_SECONDS)?
 
     if reach.nanoseconds < 0
         return fail(code: ical.UNSUPPORTED, msg: "an event that ends before it starts has no occurrences to place")

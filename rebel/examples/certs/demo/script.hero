@@ -150,8 +150,8 @@ function agreed_or_not(agreed: bool) -> str
 #
 # Fails as `time.now` fails.
 function day_zero() -> time.Instant?
-    now = time.truncate(time.now()?, unit: time.seconds(1)?)?
-    return time.add(now, d: time.days(-days.TODAY)?)
+    now = time.truncate(time.now()?, unit: time.seconds(1))?
+    return time.add(now, d: time.days(-days.TODAY))
 
 # The stand-ins started, their roots fetched, the configuration pointed at
 # them, written into the folder and read back.

@@ -86,7 +86,7 @@ function run(arg: str) -> events.Report?
     worker.poll @ s.poll
     worker.backoff @ policy
     client @= http.default_client()
-    client.deadline @ time.seconds(10)?
+    client.deadline @ time.seconds(10)
     client.max_redirects @ 0
     attempts: [events.Attempt] @= []
     problem: str @= ""

@@ -996,7 +996,7 @@ test "unescape_value: a value read"
 
 # A date, a UTC moment and a moment in a zone read from lines.
 test "whens_of: a date, a moment and a list"
-    zone = time.fixed_zone(name: "X", offset: time.hours(1).must()).must()
+    zone = time.fixed_zone(name: "X", offset: time.hours(1)).must()
     line = Line(
         group: fail(code: NOT_FOUND, msg: "none"),
         name: "EXDATE",
@@ -1169,7 +1169,7 @@ test "zone_from: a zone with one standard time and one daylight time"
     zone = zone_from(parts[0]).must()
     summer = time.offset_at(zone: zone, t: time.date(year: 2026, month: 7, day: 1).must())
     winter = time.offset_at(zone: zone, t: time.date(year: 2026, month: 1, day: 1).must())
-    assert zone.name == "Mine" && summer.from_utc == time.hours(2).must() && winter.from_utc == time.hours(1).must()
+    assert zone.name == "Mine" && summer.from_utc == time.hours(2) && winter.from_utc == time.hours(1)
 
 # A zone of the database written as a VTIMEZONE and read back as the same offsets.
 test "timezone_component: the changes of Rome in 2026"
@@ -1178,7 +1178,7 @@ test "timezone_component: the changes of Rome in 2026"
     assert c.name == "VTIMEZONE" && c.children.len() == 2
     back = zone_from(c).must()
     july = time.date(year: 2026, month: 7, day: 1).must()
-    assert time.offset_at(zone: back, t: july).from_utc == time.hours(2).must()
+    assert time.offset_at(zone: back, t: july).from_utc == time.hours(2)
 
 # The occurrences of a calendar's event in a window.
 test "occurrences: a daily event over three days"

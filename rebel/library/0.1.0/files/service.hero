@@ -764,7 +764,7 @@ test "start: a limit below zero is invalid on every system, and what the floor r
 test "start: a program run from a console is not a service, told failed with the system's words, twice"
     if !is_supported()
         return
-    first = start("heroes-console-test", limit: time.seconds(10).must())
+    first = start("heroes-console-test", limit: time.seconds(10))
 
     match first
         .ok _ => assert false
@@ -772,7 +772,7 @@ test "start: a program run from a console is not a service, told failed with the
             assert e.code == FAILED
             assert e.msg.len() > 40
 
-    assert reading.code_of(start("heroes-console-test", limit: time.seconds(10).must())) == FAILED
+    assert reading.code_of(start("heroes-console-test", limit: time.seconds(10))) == FAILED
 
 test "every call on no service says closed where services exist and unsupported where they do not"
     want = reading.code_without_service()
@@ -781,7 +781,7 @@ test "every call on no service says closed where services exist and unsupported 
     assert reading.code_of(arguments(s)) == want
     assert reading.code_of(report_running(s, accepts: [.stop])) == want
     assert reading.code_of(report_paused(s, accepts: [.pause_resume])) == want
-    assert reading.code_of(report_pending(s, state: .stop_pending, wait_hint: time.seconds(1).must())) == want
+    assert reading.code_of(report_pending(s, state: .stop_pending, wait_hint: time.seconds(1))) == want
     assert reading.code_of(end(s, exit_code: 0)) == want
     assert reading.code_of(wait(s, limit: time.nanoseconds(0))) == want
     assert reading.code_of(wait_forever(s)) == want
@@ -792,9 +792,9 @@ test "every call on no service says closed where services exist and unsupported 
 
 test "report_pending, end and wait: a state, a hint, an exit code and a limit out of range are invalid before the floor is asked"
     s = Service(name: "none")
-    assert reading.code_of(report_pending(s, state: .running, wait_hint: time.seconds(1).must())) == INVALID
-    assert reading.code_of(report_pending(s, state: .stopped, wait_hint: time.seconds(1).must())) == INVALID
-    assert reading.code_of(report_pending(s, state: .paused, wait_hint: time.seconds(1).must())) == INVALID
+    assert reading.code_of(report_pending(s, state: .running, wait_hint: time.seconds(1))) == INVALID
+    assert reading.code_of(report_pending(s, state: .stopped, wait_hint: time.seconds(1))) == INVALID
+    assert reading.code_of(report_pending(s, state: .paused, wait_hint: time.seconds(1))) == INVALID
     assert reading.code_of(report_pending(s, state: .start_pending, wait_hint: time.nanoseconds(-1))) == INVALID
     assert reading.code_of(report_pending(s, state: .pause_pending, wait_hint: time.nanoseconds(3600000000001))) == INVALID
     assert reading.code_of(end(s, exit_code: -1)) == INVALID
@@ -936,7 +936,7 @@ test "report_paused: a service that was never started"
 # the next report.
 test "report_pending: a service that was never started"
     s = Service(name: "none")
-    assert reading.code_of(report_pending(s, state: .stop_pending, wait_hint: time.seconds(1).must())) == reading.code_without_service()
+    assert reading.code_of(report_pending(s, state: .stop_pending, wait_hint: time.seconds(1))) == reading.code_without_service()
 
 # Ending a service that was never started.
 test "end: a service that was never started"

@@ -83,7 +83,7 @@ function new(s: settings.Settings, ticks: clock.Clock, spread: clock.Chance) -> 
             .err e     => return fail(code: INVALID, msg: f"the [graphql] schema does not read: {e.msg}")
 
     return ok(
-        Gateway(settings: s, table: routes.table_of(s.routes), store: responses.new(s.cache), limiter: tokens.new(), directory: instances.new(servers: s.discovery.servers, open_for: time.seconds(30)?)?, registry: telemetry.new(), clock: ticks, chance: spread, protos: protos, graph: graph)
+        Gateway(settings: s, table: routes.table_of(s.routes), store: responses.new(s.cache), limiter: tokens.new(), directory: instances.new(servers: s.discovery.servers, open_for: time.seconds(30))?, registry: telemetry.new(), clock: ticks, chance: spread, protos: protos, graph: graph)
     )
 
 # The time now by the gateway's clock.

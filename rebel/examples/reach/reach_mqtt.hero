@@ -16,6 +16,6 @@ function main()
                     c @= first
                     _ = mqtt.subscribe(@c, topic_filter: "reach/mqtt", qos: 1).default(-1)
                     _ = mqtt.publish(@c, topic: "reach/mqtt", payload: [104, 105], qos: 1, retain: false).is_err()
-                    got = mqtt.next_message(@c, wait: time.seconds(2).must())
+                    got = mqtt.next_message(@c, wait: time.seconds(2))
                     print(got.is_err())
                     print(mqtt.close(@c).is_err())

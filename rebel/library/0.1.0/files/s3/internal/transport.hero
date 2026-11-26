@@ -22,7 +22,7 @@ record Opened
 # Waits `ms` milliseconds.
 function pause(ms: i64)
     if ms > 0
-        time.sleep(time.milliseconds(ms).default(time.nanoseconds(0)))
+        time.sleep(time.milliseconds_checked(ms).default(time.nanoseconds(0)))
 
 # A connection to the host of `target`, its TLS checked against `roots`
 # where its scheme is `https`. Fails `unsupported` for another scheme, and as
@@ -51,7 +51,7 @@ function open(target: url.Url, deadline_ms: i64, roots: str) -> Opened?
 function tls_deadline(ms: i64) -> time.Duration?
     if ms == 0
         return ok(time.max_duration())
-    return ok(time.milliseconds(ms).default(time.max_duration()))
+    return ok(time.milliseconds_checked(ms).default(time.max_duration()))
 
 # The milliseconds of a client's `deadline` as the transport counts them:
 # `time.max_duration()` is 0, none; any other is rounded up to a whole

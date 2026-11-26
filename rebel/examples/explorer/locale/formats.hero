@@ -157,7 +157,7 @@ function sorted_names(f: Formats, names: [str]) -> [str]
 # The formats of German in a zone one hour east of UTC, which the tests of
 # this program's modules share.
 function german() -> Formats
-    zone = time.fixed_zone(name: "CET", offset: time.hours(1).must()).must()
+    zone = time.fixed_zone(name: "CET", offset: time.hours(1)).must()
     return formats_of("de-DE", zone: zone).must()
 
 test "size_text: zero, one, the last byte count, and each unit's first, with the locale's separator"

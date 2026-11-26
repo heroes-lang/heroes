@@ -49,7 +49,7 @@ function commented(m: Member, wait: time.Duration) -> ()?
     return web.write_comment(m.stream, text: "")
 
 test "bounded: a wait of zero or more as it is, and below zero none"
-    assert bounded(time.seconds(3).must()) == time.seconds(3).must()
+    assert bounded(time.seconds(3)) == time.seconds(3)
     assert bounded(time.Duration(nanoseconds: 0)) == time.Duration(nanoseconds: 0)
     assert bounded(time.Duration(nanoseconds: -9)) == time.Duration(nanoseconds: 0)
     assert bounded(time.max_duration()) == time.max_duration()

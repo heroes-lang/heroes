@@ -138,7 +138,7 @@ record Options
 function options(connection: str) -> Options
     return Options(
         target: .connection_string(text: connection),
-        login_timeout: time.seconds(15).must(),
+        login_timeout: time.seconds(15),
         query_timeout: time.max_duration()
     )
 
@@ -153,7 +153,7 @@ function options(connection: str) -> Options
 function dsn_options(dsn: str, user: str, password: str) -> Options
     return Options(
         target: .data_source(name: dsn, user: user, password: password),
-        login_timeout: time.seconds(15).must(),
+        login_timeout: time.seconds(15),
         query_timeout: time.max_duration()
     )
 
@@ -1157,10 +1157,10 @@ function format_connection(attributes: [Attribute]) -> str?
 test "options and dsn_options: the target, the default login timeout, no query timeout"
     o = options("Driver={SQLite3};Database=:memory:")
     assert o.target == .connection_string(text: "Driver={SQLite3};Database=:memory:")
-    assert o.login_timeout == time.seconds(15).must() && o.query_timeout == time.max_duration()
+    assert o.login_timeout == time.seconds(15) && o.query_timeout == time.max_duration()
     d = dsn_options(dsn: "shop", user: "ana", password: "s3cret")
     assert d.target == .data_source(name: "shop", user: "ana", password: "s3cret")
-    assert d.login_timeout == time.seconds(15).must()
+    assert d.login_timeout == time.seconds(15)
 
 test "open: timeouts out of range and a zero byte refused before the manager is asked"
     o @= options("DSN=x")
@@ -1170,8 +1170,8 @@ test "open: timeouts out of range and a zero byte refused before the manager is 
         .ok _  => assert false
         .err e => assert e.code == sql.INVALID && e.msg == "a login timeout of -1ns is outside zero to 4294967295 s"
 
-    o.login_timeout @ time.seconds(1).must()
-    o.query_timeout @ time.seconds(4294967296).must()
+    o.login_timeout @ time.seconds(1)
+    o.query_timeout @ time.seconds(4294967296)
     assert open(o).is_err()
     zero: [u8] = [0]
 
@@ -1448,7 +1448,7 @@ test "close: twice fails closed, and every call on a closed connection fails clo
         .err e => assert e.code == sql.CLOSED && e.msg == f"the connection to \"{db.name}\" is closed"
 
     assert exec(@db, "SELECT 1", []).is_err() && query(@db, "SELECT 1", []).is_err() && query_one(@db, "SELECT 1", []).is_err()
-    assert exec_script(@db, "SELECT 1").is_err() && prepare(@db, "SELECT 1").is_err() && set_query_timeout(@db, timeout: time.seconds(1).must()).is_err()
+    assert exec_script(@db, "SELECT 1").is_err() && prepare(@db, "SELECT 1").is_err() && set_query_timeout(@db, timeout: time.seconds(1)).is_err()
     assert begin(@db).is_err() && commit(@db).is_err() && rollback(@db).is_err() && ping(db).is_err() && info_of(db).is_err()
     assert tables(db, catalog: "", schema: "", table: "", kinds: "").is_err() && isolation_of(db).is_err()
 
@@ -1456,9 +1456,9 @@ test "the connection's settings: a query timeout in and out of range, the isolat
     if !fixture.has_sqlite()
         skip_test(reason: "no SQLite ODBC driver is installed here")
     db @= open(options(fixture.sqlite_memory())).must()
-    set_query_timeout(@db, timeout: time.seconds(30).must()).must()
-    assert db.query_timeout == time.seconds(30).must()
-    assert set_query_timeout(@db, timeout: time.nanoseconds(-1)).is_err() && set_query_timeout(@db, timeout: time.seconds(4294967296).must()).is_err()
+    set_query_timeout(@db, timeout: time.seconds(30)).must()
+    assert db.query_timeout == time.seconds(30)
+    assert set_query_timeout(@db, timeout: time.nanoseconds(-1)).is_err() && set_query_timeout(@db, timeout: time.seconds(4294967296)).is_err()
     assert sql.integer_at(query_one(@db, "SELECT 1", []).must(), 0).must() == 1
     assert isolation_of(db).must() == .serializable
     set_read_only(db, read_only: false).must()
@@ -1559,8 +1559,8 @@ test "open live against the PostgreSQL server REBEL_ODBC_POSTGRES names, through
 # changed.
 test "options: SQLite's ODBC driver and a file, with a statement's limit"
     opts @= options("Driver={SQLite3};Database=shop.db")
-    opts.query_timeout @ time.seconds(30).must()
-    assert opts.login_timeout == time.seconds(15).must()
+    opts.query_timeout @ time.seconds(30)
+    assert opts.login_timeout == time.seconds(15)
 
 # The options of a connection to a data source the manager knows.
 test "dsn_options: a data source, a user and a password"
@@ -1622,7 +1622,7 @@ test "set_query_timeout: ten seconds"
         .err e => skip_test(reason: f"no SQLite ODBC driver answered: {e.msg}")
         .ok first =>
             db @= first
-            set_query_timeout(@db, timeout: time.seconds(10).must()).must()
+            set_query_timeout(@db, timeout: time.seconds(10)).must()
             close(@db).must()
 
 # Transactions that behave as if they ran one after another.

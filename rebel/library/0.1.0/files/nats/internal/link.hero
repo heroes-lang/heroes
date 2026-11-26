@@ -50,7 +50,7 @@ function closed_failure<T>(target: str) -> T?
 function tls_deadline(ms: i64) -> time.Duration?
     if ms == 0
         return ok(time.max_duration())
-    return ok(time.milliseconds(ms).default(time.max_duration()))
+    return ok(time.milliseconds_checked(ms).default(time.max_duration()))
 
 # The whole milliseconds of `d`, a part of one counting as a whole one, as
 # the session counts its waits; below zero, -1, which the session refuses.
@@ -134,7 +134,7 @@ function open_socket(target: str, ms: i64, roots: str) -> Link?
     client.redirects @ 0
     client.settings.frame_bytes @ MOST_FRAME
     client.settings.message_bytes @ MOST_FRAME
-    client.settings.close_wait @ time.seconds(1).must()
+    client.settings.close_wait @ time.seconds(1)
     c = websocket.connect(target, client: client)?
     return ok(.socket(conn: c))
 

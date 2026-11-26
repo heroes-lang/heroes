@@ -479,7 +479,7 @@ test "mail_params: SIZE, 8BITMIME, SMTPUTF8 asked and refused"
 
 test "check_protected: a plain connection to another host refused, to this machine taken"
     two = net.pair(deadline_ms: 5000).must()
-    s @= wire.over_plain(two.first, deadline: time.seconds(5).must(), local_name: "x")
+    s @= wire.over_plain(two.first, deadline: time.seconds(5), local_name: "x")
     server @= two.second.stream
 
     match check_protected(s, host: "smtp.example.org")
@@ -521,5 +521,5 @@ test "open: arguments refused before any connection"
         security: PLAIN,
         roots: "",
         local_name: "x",
-        deadline: time.milliseconds(-1).must()
+        deadline: time.milliseconds(-1)
     ).is_err()

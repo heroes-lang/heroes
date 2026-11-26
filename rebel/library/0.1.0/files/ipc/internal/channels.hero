@@ -180,7 +180,7 @@ test "label and listener_label: a path in quotes, an abstract name and a pipe na
 test "bound_ms: zero, a nanosecond rounded up, the longest and max_duration, and below zero invalid"
     assert bound_ms(time.nanoseconds(0), asked: "x") == ok(0)
     assert bound_ms(time.nanoseconds(1), asked: "x") == ok(1)
-    assert bound_ms(time.milliseconds(1500).must(), asked: "x") == ok(1500)
+    assert bound_ms(time.milliseconds(1500), asked: "x") == ok(1500)
     assert bound_ms(time.nanoseconds(9223372036854775806), asked: "x") == ok(9223372036855)
     assert bound_ms(time.max_duration(), asked: "x") == ok(hero_ipc.HERO_IPC_FOREVER)
 
@@ -228,16 +228,16 @@ test "connect: nothing at the path is file_not_found, a bound of -5 is invalid, 
             assert e.code == failure.FILE_NOT_FOUND
             assert e.msg == "connecting to \"" + path + "\": nothing is at the path"
 
-    match connect(path, space: hero_ipc.HERO_IPC_SPACE_PATH, within: time.milliseconds(-5).must())
+    match connect(path, space: hero_ipc.HERO_IPC_SPACE_PATH, within: time.milliseconds(-5))
         .ok _  => assert false
         .err e => assert e.code == failure.INVALID
 
     l @= listen(path, space: hero_ipc.HERO_IPC_SPACE_PATH, permission: 0o600).must()
     where = label(path, space: hero_ipc.HERO_IPC_SPACE_PATH)
-    client @= connect(path, space: hero_ipc.HERO_IPC_SPACE_PATH, within: time.seconds(1).must()).must()
-    server @= accept(l, within: time.seconds(1).must(), where: where).must()
+    client @= connect(path, space: hero_ipc.HERO_IPC_SPACE_PATH, within: time.seconds(1)).must()
+    server @= accept(l, within: time.seconds(1), where: where).must()
     assert peer(server).must().pid == os.pid()
-    assert set_deadline(client, deadline: time.milliseconds(20).must()) == ok()
+    assert set_deadline(client, deadline: time.milliseconds(20)) == ok()
     assert set_deadline(client, deadline: time.nanoseconds(-1)).is_err()
 
     match io.read(client, n: 1)
@@ -248,7 +248,7 @@ test "connect: nothing at the path is file_not_found, a bound of -5 is invalid, 
     assert io.read(client, n: 1).must().len() == 0
     assert io.close(@client) == ok()
     assert io.close(@server) == ok()
-    assert set_deadline(server, deadline: time.milliseconds(5).must()).is_err()
+    assert set_deadline(server, deadline: time.milliseconds(5)).is_err()
 
     match accept(l, within: time.nanoseconds(0), where: where)
         .ok _  => assert false

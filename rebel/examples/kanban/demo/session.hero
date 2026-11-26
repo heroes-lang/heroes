@@ -51,7 +51,7 @@ function session(command: cli.Command) -> ()?
     db = schema.open(path.join_all([FOLDER, "kanban.sqlite"]))?
     start = time.from_unix(whole_seconds: START, extra_nanoseconds: 0)?
     app = ui.open(.headless)?
-    d @= opening.made(app, db: db, web: web, dates: clock.fixed(start: start, step: time.minutes(1)?), names: ids.counted(start))?
+    d @= opening.made(app, db: db, web: web, dates: clock.fixed(start: start, step: time.minutes(1)), names: ids.counted(start))?
     told = steps(@d)
     closed = desk.close(@d)
     told?

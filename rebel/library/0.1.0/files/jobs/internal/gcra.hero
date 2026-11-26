@@ -273,7 +273,7 @@ function origin() -> time.Instant
 #
 # - `n`: milliseconds, negative before it.
 function at_ms(n: i64) -> time.Instant
-    return time.add(t: origin(), d: time.milliseconds(n).must()).must()
+    return time.add(t: origin(), d: time.milliseconds(n)).must()
 
 # Whether two numbers agree to a billionth.
 #
@@ -287,7 +287,7 @@ function close(a: f64, b: f64) -> bool
 # - `every_ms`: milliseconds a token takes.
 # - `burst`: the burst.
 function bucket_of(every_ms: i64, burst: i64) -> jobs.Bucket
-    return make(every: time.milliseconds(every_ms).must(), burst: burst, at: origin()).must()
+    return make(every: time.milliseconds(every_ms), burst: burst, at: origin()).must()
 
 test "allow: a burst of three at one a second, as golang.org/x/time/rate answers AllowN at the same times"
     limit @= bucket_of(every_ms: 1000, burst: 3)
@@ -362,19 +362,19 @@ test "with_rate: the tokens held kept across a new rate and burst, a debt kept, 
     limit = bucket_of(every_ms: 1000, burst: 4)
     emptied = allow(limit: limit, at: at_ms(0), n: 4).must().bucket
     assert close(a: tokens(limit: emptied, at: at_ms(2000)), b: 2.0)
-    faster = reshape(limit: emptied, at: at_ms(2000), every: time.milliseconds(500).must(), burst: 4).must()
+    faster = reshape(limit: emptied, at: at_ms(2000), every: time.milliseconds(500), burst: 4).must()
     assert close(a: tokens(limit: faster, at: at_ms(2000)), b: 2.0) && close(a: tokens(limit: faster, at: at_ms(3000)), b: 4.0)
-    smaller = reshape(limit: faster, at: at_ms(3000), every: time.milliseconds(500).must(), burst: 2).must()
+    smaller = reshape(limit: faster, at: at_ms(3000), every: time.milliseconds(500), burst: 2).must()
     assert close(a: tokens(limit: smaller, at: at_ms(3000)), b: 2.0) && close(a: tokens(limit: smaller, at: at_ms(3500)), b: 2.0)
     debt @= bucket_of(every_ms: 1000, burst: 2)
     debt @ reserve(limit: debt, at: at_ms(0), n: 2).must().bucket
     debt @ reserve(limit: debt, at: at_ms(0), n: 2).must().bucket
     assert close(a: tokens(limit: debt, at: at_ms(0)), b: -2.0) && close(a: tokens(limit: debt, at: at_ms(3000)), b: 1.0) && close(a: tokens(limit: debt, at: at_ms(4000)), b: 2.0)
-    slower = reshape(limit: debt, at: at_ms(1000), every: time.seconds(2).must(), burst: 2).must()
+    slower = reshape(limit: debt, at: at_ms(1000), every: time.seconds(2), burst: 2).must()
     assert close(a: tokens(limit: slower, at: at_ms(1000)), b: -1.0)
     assert time.to_units(reserve(limit: slower, at: at_ms(1000), n: 1).must().delay, .millisecond) == 4000
 
-    match reshape(limit: debt, at: at_ms(0), every: time.milliseconds(0).must(), burst: 2)
+    match reshape(limit: debt, at: at_ms(0), every: time.milliseconds(0), burst: 2)
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
@@ -394,8 +394,8 @@ test "with_rate: a debt past an i64 of nanoseconds, which only a change of rate 
     assert owed.empty_at == time.Instant(unix_nanoseconds: 6_917_529_027_641_081_856)
     assert reshape(limit: owed, at: from, every: time.nanoseconds(1), burst: 1).must().empty_at == time.epoch()
     assert reshape(limit: owed, at: from, every: time.nanoseconds(2), burst: 1).must().empty_at == owed.empty_at
-    late = time.add(t: time.max_instant(), d: time.seconds(-5).must()).must()
-    short @= make(every: time.seconds(1).must(), burst: 1, at: late).must()
+    late = time.add(t: time.max_instant(), d: time.seconds(-5)).must()
+    short @= make(every: time.seconds(1), burst: 1, at: late).must()
     short @ reserve(limit: short, at: late, n: 1).must().bucket
     short @ reserve(limit: short, at: late, n: 1).must().bucket
 
@@ -445,14 +445,14 @@ test "available and tokens: 1 ns short of three tokens at 2^53 + 1 ns a token ho
 test "bucket: a rate of nothing, a burst of nothing, a burst that takes too long to earn, and an instant at the end of the range"
     now = origin()
     zero = time.Duration(nanoseconds: 0)
-    assert make(every: time.seconds(1).must(), burst: 1, at: now).must().burst == 1
+    assert make(every: time.seconds(1), burst: 1, at: now).must().burst == 1
 
-    for bad in [make(every: zero, burst: 1, at: now), make(every: time.seconds(-1).must(), burst: 1, at: now), make(every: time.seconds(1).must(), burst: 0, at: now), make(every: time.days(365).must(), burst: 100, at: now)]
+    for bad in [make(every: zero, burst: 1, at: now), make(every: time.seconds(-1), burst: 1, at: now), make(every: time.seconds(1), burst: 0, at: now), make(every: time.days(365), burst: 100, at: now)]
         match bad
             .ok _  => assert false
             .err e => assert e.code == INVALID
 
-    match make(every: time.seconds(1).must(), burst: 2, at: time.min_instant())
+    match make(every: time.seconds(1), burst: 2, at: time.min_instant())
         .ok _  => assert false
         .err e => assert e.code == DOES_NOT_FIT
 
@@ -515,7 +515,7 @@ test "sample: the first calls, every third, and an interval, as x/time/rate's So
 # - `every`: every so manyth call due.
 # - `interval_ms`: the span in milliseconds.
 function sometimes_for(first: i64, every: i64, interval_ms: i64) -> jobs.Sometimes
-    return jobs.sometimes(first: first, every: every, interval: time.milliseconds(interval_ms).must()).must()
+    return jobs.sometimes(first: first, every: every, interval: time.milliseconds(interval_ms)).must()
 
 # A bucket of a token every `row[0]` nanoseconds and a burst of `row[1]`,
 # full at the origin and `row[2]` tokens reserved there, changed `row[3]`

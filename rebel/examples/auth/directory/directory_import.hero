@@ -62,7 +62,7 @@ function options_of(l: settings.Ldap) -> ldap.Options?
         "plain" => opts.security @ .plain
         _ => return fail(code: INVALID, msg: f"the LDAP security \"{l.security}\" is none of start_tls, direct, plain")
 
-    opts.deadline @ time.seconds(30)?
+    opts.deadline @ time.seconds(30)
     return ok(opts)
 
 # The entries of the people `l` names, read as the service DN with

@@ -218,7 +218,7 @@ test "bucket: the client's own retries off, keys under the prefix"
         endpoint: "http://127.0.0.1:9000",
         credentials: s3.Credentials(access_key_id: "a", secret_access_key: "s", session_token: "")
     )
-    policy = policy_of(first: time.milliseconds(1).must(), longest: time.milliseconds(4).must(), attempts: 3).must()
+    policy = policy_of(first: time.milliseconds(1), longest: time.milliseconds(4), attempts: 3).must()
     b = bucket(client, name: "repo", prefix: "hosts/a", policy: policy, fraction: 0.5)
     assert b.client.max_attempts == 1 && b.policy.attempts == 3
     assert full_key(b, key: "config") == "hosts/a/config"
@@ -229,7 +229,7 @@ test "send: a key climbing out is refused before anything is sent"
         endpoint: "http://127.0.0.1:1",
         credentials: s3.Credentials(access_key_id: "a", secret_access_key: "s", session_token: "")
     )
-    policy = policy_of(first: time.milliseconds(1).must(), longest: time.milliseconds(1).must(), attempts: 1).must()
+    policy = policy_of(first: time.milliseconds(1), longest: time.milliseconds(1), attempts: 1).must()
     b @= bucket(client, name: "repo", prefix: "", policy: policy, fraction: 0.5)
 
     match send(@b, r: .get(key: "../x"))

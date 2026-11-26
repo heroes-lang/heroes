@@ -329,7 +329,7 @@ test "the refusals: a name empty, with a zero byte or too long, no token, no lim
         .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
-            second = time.seconds(1).must()
+            second = time.seconds(1)
             none = time.Duration(nanoseconds: 0)
             _ = set(@c, name: "real", every: second, burst: 2, clock: at_ms(0)).must()
             given = reserve_at(@c, name: "real", n: 1, ms: 0).must()
@@ -357,7 +357,7 @@ test "the refusals: a name empty, with a zero byte or too long, no token, no lim
                 assert bucket_code(set(@c, name: "real", every: rate, burst: 1, clock: at_ms(0))) == jobs.INVALID
 
             assert bucket_code(set(@c, name: "real", every: second, burst: 0, clock: at_ms(0))) == jobs.INVALID
-            assert bucket_code(set(@c, name: "real", every: time.days(365).must(), burst: 100, clock: at_ms(0))) == jobs.INVALID
+            assert bucket_code(set(@c, name: "real", every: time.days(365), burst: 100, clock: at_ms(0))) == jobs.INVALID
             assert read(@c, name: "real", clock: at_ms(0)).must().burst == 2
             _ = redis.call(
                 @c,
@@ -392,7 +392,7 @@ test "take: a burst of three at one a second, as golang.org/x/time/rate v0.14.0 
         .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
-            _ = set(@c, name: "crawl", every: time.seconds(1).must(), burst: 3, clock: at_ms(0)).must()
+            _ = set(@c, name: "crawl", every: time.seconds(1), burst: 3, clock: at_ms(0)).must()
             answers: [bool] @= []
 
             for ms in [0, 0, 0, 0, 1000, 1500, 2000]
@@ -408,7 +408,7 @@ test "take: reservations queue behind one another, a later one waits its turn, a
         .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
-            _ = set(@c, name: "api", every: time.milliseconds(500).must(), burst: 2, clock: at_ms(0)).must()
+            _ = set(@c, name: "api", every: time.milliseconds(500), burst: 2, clock: at_ms(0)).must()
             delays: [i64] @= []
 
             for n in [2, 1, 1]
@@ -427,7 +427,7 @@ test "give_back: a reservation given back, as far as no later one used it, and n
         .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
-            _ = set(@c, name: "slow", every: time.milliseconds(500).must(), burst: 2, clock: at_ms(0)).must()
+            _ = set(@c, name: "slow", every: time.milliseconds(500), burst: 2, clock: at_ms(0)).must()
 
             for n in [2, 1, 1]
                 _ = reserve_at(@c, name: "slow", n: n, ms: 0).must()
@@ -436,7 +436,7 @@ test "give_back: a reservation given back, as far as no later one used it, and n
             assert gcra.close(a: tokens_at(@c, name: "slow", ms: 1000), b: -1.0)
             _ = give_back(@c, name: "slow", taken: r5, clock: at_ms(1000)).must()
             assert gcra.close(a: tokens_at(@c, name: "slow", ms: 1000), b: 0.0)
-            _ = set(@c, name: "fast", every: time.milliseconds(250).must(), burst: 4, clock: at_ms(0)).must()
+            _ = set(@c, name: "fast", every: time.milliseconds(250), burst: 4, clock: at_ms(0)).must()
             whole = reserve_at(@c, name: "fast", n: 4, ms: 0).must()
             assert time.to_units(whole.delay, .millisecond) == 0 && gcra.close(a: tokens_at(@c, name: "fast", ms: 0), b: 0.0)
             _ = give_back(@c, name: "fast", taken: whole, clock: at_ms(0)).must()
@@ -457,19 +457,19 @@ test "set: the tokens held kept across a new rate and burst, and a debt kept, as
         .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
-            _ = set(@c, name: "feed", every: time.seconds(1).must(), burst: 4, clock: at_ms(0)).must()
+            _ = set(@c, name: "feed", every: time.seconds(1), burst: 4, clock: at_ms(0)).must()
             assert allow_at(@c, name: "feed", n: 4, ms: 0).must().granted
             assert gcra.close(a: tokens_at(@c, name: "feed", ms: 2000), b: 2.0)
-            _ = set(@c, name: "feed", every: time.milliseconds(500).must(), burst: 4, clock: at_ms(2000)).must()
+            _ = set(@c, name: "feed", every: time.milliseconds(500), burst: 4, clock: at_ms(2000)).must()
             assert gcra.close(a: tokens_at(@c, name: "feed", ms: 2000), b: 2.0) && gcra.close(a: tokens_at(@c, name: "feed", ms: 3000), b: 4.0)
-            _ = set(@c, name: "feed", every: time.milliseconds(500).must(), burst: 2, clock: at_ms(3000)).must()
+            _ = set(@c, name: "feed", every: time.milliseconds(500), burst: 2, clock: at_ms(3000)).must()
             assert gcra.close(a: tokens_at(@c, name: "feed", ms: 3000), b: 2.0) && gcra.close(a: tokens_at(@c, name: "feed", ms: 3500), b: 2.0)
-            _ = set(@c, name: "debt", every: time.seconds(1).must(), burst: 2, clock: at_ms(0)).must()
+            _ = set(@c, name: "debt", every: time.seconds(1), burst: 2, clock: at_ms(0)).must()
             _ = reserve_at(@c, name: "debt", n: 2, ms: 0).must()
             _ = reserve_at(@c, name: "debt", n: 2, ms: 0).must()
             assert gcra.close(a: tokens_at(@c, name: "debt", ms: 0), b: -2.0) && gcra.close(a: tokens_at(@c, name: "debt", ms: 3000), b: 1.0)
             assert gcra.close(a: tokens_at(@c, name: "debt", ms: 4000), b: 2.0)
-            _ = set(@c, name: "debt", every: time.seconds(2).must(), burst: 2, clock: at_ms(1000)).must()
+            _ = set(@c, name: "debt", every: time.seconds(2), burst: 2, clock: at_ms(1000)).must()
             assert gcra.close(a: tokens_at(@c, name: "debt", ms: 1000), b: -1.0)
             assert time.to_units(reserve_at(@c, name: "debt", n: 1, ms: 1000).must().delay, .millisecond) == 4000
             redis.close(@c).must()
@@ -479,16 +479,16 @@ test "take: time named earlier than an earlier call is read at that call's time,
         .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
-            _ = set(@c, name: "late", every: time.seconds(1).must(), burst: 2, clock: at_ms(0)).must()
+            _ = set(@c, name: "late", every: time.seconds(1), burst: 2, clock: at_ms(0)).must()
             assert allow_at(@c, name: "late", n: 2, ms: 5000).must().granted
             assert !allow_at(@c, name: "late", n: 1, ms: 0).must().granted
             assert gcra.close(a: tokens_at(@c, name: "late", ms: 0), b: 0.0)
-            _ = set(@c, name: "one", every: time.seconds(1).must(), burst: 1, clock: at_ms(0)).must()
+            _ = set(@c, name: "one", every: time.seconds(1), burst: 1, clock: at_ms(0)).must()
             assert allow_at(@c, name: "one", n: 1, ms: 0).must().granted
-            half = time.milliseconds(500).must()
+            half = time.milliseconds(500)
             assert reserve_code(taking.reserved(take(@c, name: "one", n: 1, longest: half, clock: at_ms(0)).must(), within: half)) == jobs.TIMEOUT
             assert gcra.close(a: tokens_at(@c, name: "one", ms: 0), b: 0.0)
-            second = time.seconds(1).must()
+            second = time.seconds(1)
             waited = taking.reserved(
                 take(@c, name: "one", n: 1, longest: second, clock: at_ms(0)).must(),
                 within: second
@@ -503,13 +503,13 @@ test "take, give_back and set: a thousand takings, reservations, give-backs and 
         .err e => skip_test(reason: e.msg)
         .ok first =>
             c @= first
-            mine @= set(@c, name: "twin", every: time.milliseconds(700).must(), burst: 5, clock: at_ms(0)).must()
-            assert mine == jobs.bucket(every: time.milliseconds(700).must(), burst: 5, at: gcra.at_ms(0)).must()
+            mine @= set(@c, name: "twin", every: time.milliseconds(700), burst: 5, clock: at_ms(0)).must()
+            assert mine == jobs.bucket(every: time.milliseconds(700), burst: 5, at: gcra.at_ms(0)).must()
             rates = [
                 time.nanoseconds(1)
                 time.nanoseconds(333)
-                time.milliseconds(700).must()
-                time.seconds(7).must()
+                time.milliseconds(700)
+                time.seconds(7)
                 time.nanoseconds(9_007_199_254_740_993)
             ]
             bursts = [1_000_000, 50, 5, 2, 200]

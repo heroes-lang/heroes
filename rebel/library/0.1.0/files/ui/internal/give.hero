@@ -450,7 +450,7 @@ test "activate: on the native side a row opened through the system's own path, a
     w = ui.window(@app, title: "Files", width: 240, height: 160).must()
     files = ui.list(@app, into: w, items: ["a.txt", "b.txt", "c.txt"], multiple: false).must()
     ui.inject(@app, input: .activate(widget: files, index: 2)).must()
-    offered = ui.wait(@app, within: time.milliseconds(300).must())
+    offered = ui.wait(@app, within: time.milliseconds(300))
     refusal = fixture.unsupported_words(offered)
 
     if refusal != ""
@@ -459,7 +459,7 @@ test "activate: on the native side a row opened through the system's own path, a
 
     assert offered.must() == .selection_changed(widget: files, indices: [2])
     ui.inject(@app, input: .activate(widget: files, index: 2)).must()
-    told = events_of(@app, within: time.milliseconds(300).must())
+    told = events_of(@app, within: time.milliseconds(300))
     assert told == [.activated(widget: files, index: 2), .activated(widget: files, index: 2)]
     assert ui.selection_of(app, widget: files).must() == [2]
     assert fixture.code_of(ui.inject(@app, input: .activate(widget: files, index: 3))) == ui.INVALID
@@ -496,7 +496,7 @@ test "submit: on the native side Return in a text field submitted, and its windo
     ok_button = ui.button(@app, into: w, text: "OK").must()
     cancel = ui.button(@app, into: w, text: "Cancel").must()
     ui.inject(@app, input: .submit(widget: field)).must()
-    offered = ui.wait(@app, within: time.milliseconds(300).must())
+    offered = ui.wait(@app, within: time.milliseconds(300))
     refusal = fixture.unsupported_words(offered)
 
     if refusal != ""
@@ -504,12 +504,12 @@ test "submit: on the native side Return in a text field submitted, and its windo
         skip_test(reason: refusal)
 
     assert offered.must() == .submitted(widget: field)
-    assert events_of(@app, within: time.milliseconds(300).must()) == []
+    assert events_of(@app, within: time.milliseconds(300)) == []
     ui.set_button_key(@app, widget: ok_button, key: .enter).must()
     ui.set_button_key(@app, widget: cancel, key: .escape).must()
     ui.inject(@app, input: .submit(widget: field)).must()
-    assert events_of(@app, within: time.milliseconds(300).must()) == [.clicked(widget: ok_button)]
+    assert events_of(@app, within: time.milliseconds(300)) == [.clicked(widget: ok_button)]
     ui.set_button_key(@app, widget: ok_button, key: .none).must()
     ui.inject(@app, input: .submit(widget: field)).must()
-    assert events_of(@app, within: time.milliseconds(300).must()) == [.submitted(widget: field)]
+    assert events_of(@app, within: time.milliseconds(300)) == [.submitted(widget: field)]
     ui.close(@app).must()

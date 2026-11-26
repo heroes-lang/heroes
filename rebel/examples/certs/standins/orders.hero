@@ -49,7 +49,7 @@ function new_order(@s: objects.State, r: http.Request) -> http.Response
             .ok _  => identifiers @ identifiers.push(i)
             .err e => return objects.problem_response(kind: e.code, detail: e.msg)
 
-    expires = time.add(s.now, d: time.days(PENDING_DAYS).must()).default(s.now)
+    expires = time.add(s.now, d: time.days(PENDING_DAYS)).default(s.now)
     authzs: [i64] @= []
 
     for i in identifiers

@@ -109,7 +109,7 @@ test "member_of: one digit, fifteen, and more"
 test "job_words: each start, and a job refused"
     j @= jobs.new_job("k", .object(members: {"a": .text(v: "città")}))
     assert job_words(j).must() == ["k", "default", "{\"a\":\"città\"}", "5", "25", "", "now", "0"]
-    j.start @ .after(wait: time.milliseconds(1_500).must())
+    j.start @ .after(wait: time.milliseconds(1_500))
     assert job_words(j).must()[6] == "after" && job_words(j).must()[7] == "1500000"
     j.start @ .at(instant: time.from_unix(whole_seconds: -1, extra_nanoseconds: 0).must())
     assert job_words(j).must()[7] == "-1000000"

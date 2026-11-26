@@ -50,10 +50,10 @@ test "now: a fixed clock answers its instant until advanced, then the later one"
     start = time.date(year: 2026, month: 3, day: 14).must()
     c @= fixed_clock(start)
     assert now(c) == start
-    advance(@c, by: time.minutes(5).must())
-    assert time.between(from: start, to: now(c)).must() == time.minutes(5).must()
+    advance(@c, by: time.minutes(5))
+    assert time.between(from: start, to: now(c)).must() == time.minutes(5)
 
 test "advance: the system's clock is left as it is"
     c @= system_clock()
-    advance(@c, by: time.hours(1).must())
+    advance(@c, by: time.hours(1))
     assert !c.fixed && c.at == time.epoch()

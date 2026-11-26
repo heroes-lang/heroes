@@ -42,7 +42,7 @@ function serve(folder: str, host: str, port: i64, told: (mailbox ready.Ready)) -
         l: listener,
         state: folder,
         handler: answer,
-        grace: time.seconds(1)?
+        grace: time.seconds(1)
     )
     _ = net.close_listener(@listener).is_err()
     return served

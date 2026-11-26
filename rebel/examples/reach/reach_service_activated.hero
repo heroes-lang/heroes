@@ -57,7 +57,7 @@ function serve(h: service.Handed)
             io.close(@s).must()
         .local_listener l =>
             listening @= l.socket
-            s @= ipc.accept(listening, within: time.seconds(5).must()).must()
+            s @= ipc.accept(listening, within: time.seconds(5)).must()
             io.write(s, bytes.from_text("hello\n")).must()
             io.close(@s).must()
             ipc.close_listener(@listening).must()
@@ -93,7 +93,7 @@ function tell_notices()
     ]
     sent = service.notify(notices).must()
     print(f"notices sent: {sent}")
-    time.sleep(time.seconds(20).must())
+    time.sleep(time.seconds(20))
 
 function main()
     given = args()

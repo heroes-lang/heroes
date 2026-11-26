@@ -91,16 +91,16 @@ function make(at: time.Instant, serials: [[u8]]) -> Authority?
 #
 # Fails as `make` fails.
 function certified(root_key: keypairs.PrivateKey, issuer_key: keypairs.PrivateKey, at: time.Instant, serials: [[u8]]) -> Authority?
-    start = time.add(at, d: time.days(-1)?)?
+    start = time.add(at, d: time.days(-1))?
     root_profile @= x509.default_profile()
     root_profile.role @ .authority
     root_profile.key_usage @ authority_usage()
-    root = x509.create_self_signed(x509.CertificateTemplate(serial: serial_of(serials[0]), subject: named(common: ROOT_NAME, organization: ORGANIZATION)?, not_before: time.to_date_time(start), not_after: time.to_date_time(time.add(start, d: time.days(7305)?)?), profile: root_profile, ocsp_urls: [], issuer_urls: [], crl_urls: []), signer: root_key, scheme: .ecdsa_sha256)?
+    root = x509.create_self_signed(x509.CertificateTemplate(serial: serial_of(serials[0]), subject: named(common: ROOT_NAME, organization: ORGANIZATION)?, not_before: time.to_date_time(start), not_after: time.to_date_time(time.add(start, d: time.days(7305))?), profile: root_profile, ocsp_urls: [], issuer_urls: [], crl_urls: []), signer: root_key, scheme: .ecdsa_sha256)?
     issuer_profile @= x509.default_profile()
     issuer_profile.role @ .limited_authority(path_len: 0)
     issuer_profile.key_usage @ authority_usage()
     issuer_profile.extended_key_usage @ server_purposes()
-    issuer = x509.create_certificate(x509.CertificateTemplate(serial: serial_of(serials[1]), subject: named(common: ISSUER_NAME, organization: ORGANIZATION)?, not_before: time.to_date_time(start), not_after: time.to_date_time(time.add(start, d: time.days(1826)?)?), profile: issuer_profile, ocsp_urls: [], issuer_urls: [], crl_urls: []), subject_key: x509.public_key_of(issuer_key)?, issuer: root, signer: root_key, scheme: .ecdsa_sha256)?
+    issuer = x509.create_certificate(x509.CertificateTemplate(serial: serial_of(serials[1]), subject: named(common: ISSUER_NAME, organization: ORGANIZATION)?, not_before: time.to_date_time(start), not_after: time.to_date_time(time.add(start, d: time.days(1826))?), profile: issuer_profile, ocsp_urls: [], issuer_urls: [], crl_urls: []), subject_key: x509.public_key_of(issuer_key)?, issuer: root, signer: root_key, scheme: .ecdsa_sha256)?
     return ok(
         Authority(root_key: root_key, issuer_key: issuer_key, root_pem: x509.format_certificate(root), issuer_pem: x509.format_certificate(issuer), issuer_der: issuer.der, issuer: issuer, issuer_key_id: signing.key_id(issuer.public_key.der)?)
     )
@@ -248,9 +248,9 @@ function https_identity(at: time.Instant, serials: [[u8]]) -> Https?
 #
 # Fails as `https_identity` fails.
 function https_signed(root_key: keypairs.PrivateKey, at: time.Instant, serials: [[u8]]) -> Https?
-    start = time.add(at, d: time.days(-1)?)?
+    start = time.add(at, d: time.days(-1))?
     not_before = time.to_date_time(start)
-    not_after = time.to_date_time(time.add(start, d: time.days(730)?)?)
+    not_after = time.to_date_time(time.add(start, d: time.days(730))?)
     root_profile @= x509.default_profile()
     root_profile.role @ .limited_authority(path_len: 0)
     root_profile.key_usage @ authority_usage()
@@ -287,8 +287,8 @@ test "issue: a certificate for a request, verified up to the root for its names"
         request: x509.decode_request(der).must(),
         domains: ["www.certs.test", "127.0.0.1"],
         serial: [0x11, 0x22],
-        not_before: time.add(at, d: time.hours(-1).must()).must(),
-        not_after: time.add(at, d: time.days(90).must()).must(),
+        not_before: time.add(at, d: time.hours(-1)).must(),
+        not_after: time.add(at, d: time.days(90)).must(),
         issuer_url: "https://ca.test/issuer"
     )
     leaf = x509.decode_certificate(issue(made, asked: asked).must()).must()

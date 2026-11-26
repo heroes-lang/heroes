@@ -82,7 +82,7 @@ function days_left(f: Facts, at: time.Instant) -> i64
 # - `f`: the certificate's facts.
 function lifetime_days(f: Facts) -> i64
     span = time.between(from: f.not_before, to: f.not_after).default(time.nanoseconds(0))
-    return time.to_units(time.round_duration(d: span, unit: time.hours(12).must()).default(span), unit: .day)
+    return time.to_units(time.round_duration(d: span, unit: time.hours(12)).default(span), unit: .day)
 
 ## Keys
 
@@ -95,7 +95,7 @@ function holds_key(cert: x509.Certificate, spki: [u8]) -> bool
 
 test "lifetime_days: ninety days less a second counts ninety"
     start = time.date(year: 2026, month: 1, day: 1).must()
-    end = time.add(start, d: time.difference(a: time.days(90).must(), b: time.seconds(1).must()).must()).must()
+    end = time.add(start, d: time.difference(a: time.days(90), b: time.seconds(1)).must()).must()
     f = Facts(subject: "", issuer: "", names: [], serial: "", not_before: start, not_after: end)
     assert lifetime_days(f) == 90
     assert days_left(f, at: start) == 89

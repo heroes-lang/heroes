@@ -234,7 +234,7 @@ function definition(name: str, program: str, arguments: [str], scope: Scope) -> 
         scope: scope,
         at_boot: false,
         restart: .never,
-        restart_delay: time.seconds(1).must()
+        restart_delay: time.seconds(1)
     )
 
 ## The system's manager
@@ -506,7 +506,7 @@ test "format_unit: every setting, a program with a space, arguments that a shell
     d.env @ {"PORT": "8080", "GREETING": "a $b\nc"}
     d.at_boot @ true
     d.restart @ .on_failure
-    d.restart_delay @ time.milliseconds(1500).must()
+    d.restart_delay @ time.milliseconds(1500)
     want = [
         "[Unit]"
         "Description=A web server, 100%% up"
@@ -558,7 +558,7 @@ test "format_job: every key, the arguments as strings XML escapes, a restart on 
     d.dir @ "/srv"
     d.env @ {"PORT": "8080"}
     d.restart @ .on_failure
-    d.restart_delay @ time.milliseconds(1500).must()
+    d.restart_delay @ time.milliseconds(1500)
     want = [
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
         "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">"
@@ -753,7 +753,7 @@ test "stop: a name nobody installed is not found"
     if manager().is_err()
         skip_test(reason: "this system has no manager this package reaches")
 
-    match stop("org.example.surely-not-installed", scope: .system, limit: time.seconds(1).must())
+    match stop("org.example.surely-not-installed", scope: .system, limit: time.seconds(1))
         .ok _  => assert false
         .err e => assert e.code == NOT_FOUND || e.code == PERMISSION
 
@@ -762,7 +762,7 @@ test "start: a name nobody installed is not found"
     if manager().is_err()
         skip_test(reason: "this system has no manager this package reaches")
 
-    match start("org.example.surely-not-installed", scope: .system, limit: time.seconds(1).must())
+    match start("org.example.surely-not-installed", scope: .system, limit: time.seconds(1))
         .ok _  => assert false
         .err e => assert e.code == NOT_FOUND || e.code == PERMISSION
 
@@ -771,7 +771,7 @@ test "restart: a name nobody installed is not found"
     if manager().is_err()
         skip_test(reason: "this system has no manager this package reaches")
 
-    match restart("org.example.surely-not-installed", scope: .system, limit: time.seconds(1).must())
+    match restart("org.example.surely-not-installed", scope: .system, limit: time.seconds(1))
         .ok _  => assert false
         .err e => assert e.code == NOT_FOUND || e.code == PERMISSION
 
@@ -780,7 +780,7 @@ test "remove: a name nobody installed is not found"
     if manager().is_err()
         skip_test(reason: "this system has no manager this package reaches")
 
-    match remove("org.example.surely-not-installed", scope: .system, limit: time.seconds(1).must())
+    match remove("org.example.surely-not-installed", scope: .system, limit: time.seconds(1))
         .ok _  => assert false
         .err e => assert e.code == NOT_FOUND || e.code == PERMISSION
 

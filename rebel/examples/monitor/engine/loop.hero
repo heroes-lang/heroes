@@ -57,7 +57,7 @@ function run_locked(c: settings.Config, dashboard: bool) -> ()?
         screens["on"] @ screen.open(m.set)?
 
     while !m.stop_asked
-        events = match poll.wait(m.set, limit: time.milliseconds(TURN_MS)?)
+        events = match poll.wait(m.set, limit: time.milliseconds(TURN_MS))
             .ok ready => ready
             .err _    => break
 

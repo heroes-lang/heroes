@@ -280,7 +280,7 @@ function options(host: str) -> Options
         direct: false,
         security: .plain,
         app_name: "",
-        connect_timeout: time.seconds(10).must(),
+        connect_timeout: time.seconds(10),
         socket_timeout: time.max_duration(),
         read_preference: .primary,
         read_concern: "",
@@ -1818,18 +1818,18 @@ function has_label(message: str, label: str) -> bool
 
 test "options and parse_url: the defaults, a string of every option this client reads, and the refusals"
     opts = options("db.example.com")
-    assert opts.retry_writes && opts.retry_reads && opts.connect_timeout == time.seconds(10).must() && opts.mechanism == .negotiated
+    assert opts.retry_writes && opts.retry_reads && opts.connect_timeout == time.seconds(10) && opts.mechanism == .negotiated
     full = parse_url(
         "mongodb://u:p@h:1/app?authSource=admin&authMechanism=SCRAM-SHA-1&appName=x&connectTimeoutMS=5&socketTimeoutMS=6&readPreference=nearest&readConcernLevel=majority&w=2&journal=false&wtimeoutMS=7&retryWrites=false&retryReads=false&maxPoolSize=10"
     ).must()
     assert full.mechanism == .scram_sha_1 && full.read_preference == .nearest && full.read_concern == "majority"
-    assert full.write_concern == WriteConcern(w: "2", journal: .not_required, timeout: time.milliseconds(7).must())
-    assert !full.retry_writes && !full.retry_reads && full.connect_timeout == time.milliseconds(5).must() && full.socket_timeout == time.milliseconds(6).must()
+    assert full.write_concern == WriteConcern(w: "2", journal: .not_required, timeout: time.milliseconds(7))
+    assert !full.retry_writes && !full.retry_reads && full.connect_timeout == time.milliseconds(5) && full.socket_timeout == time.milliseconds(6)
     srv = parse_url("mongodb+srv://cluster0.example.com/").must()
     assert srv.srv_name == "cluster0.example.com" && srv.security == .checked(roots: "") && srv.hosts.len() == 0
     assert parse_url("mongodb://h/?authMechanism=GSSAPI").is_err()
     assert connect(
-        Options(hosts: [], srv_name: "", srv_service_name: "mongodb", srv_max_hosts: 0, username: "", password: "", auth_source: "", mechanism: .negotiated, database: "", replica_set: "", direct: false, security: .plain, app_name: "", connect_timeout: time.milliseconds(1).must(), socket_timeout: time.max_duration(), read_preference: .primary, read_concern: "", write_concern: WriteConcern(w: "", journal: .server_default, timeout: time.max_duration()), retry_writes: true, retry_reads: true, server_api: "")
+        Options(hosts: [], srv_name: "", srv_service_name: "mongodb", srv_max_hosts: 0, username: "", password: "", auth_source: "", mechanism: .negotiated, database: "", replica_set: "", direct: false, security: .plain, app_name: "", connect_timeout: time.milliseconds(1), socket_timeout: time.max_duration(), read_preference: .primary, read_concern: "", write_concern: WriteConcern(w: "", journal: .server_default, timeout: time.max_duration()), retry_writes: true, retry_reads: true, server_api: "")
     ).is_err()
 
 test "connect: a port where nothing listens fails closed, and a port out of range invalid"
@@ -2285,7 +2285,7 @@ test "live: a change stream's insert and update, and a stream resumed after its 
                     drop_collection(@c, database: db, collection: "events").must()
                     create_collection(@c, database: db, collection: "events", opts: bson.Document(fields: [])).must()
                     wait @= default_watch_options()
-                    wait.max_await @ time.milliseconds(300).must()
+                    wait.max_await @ time.milliseconds(300)
                     wait.full_document @ "updateLookup"
                     stream @= watch(@c, database: db, collection: "events", pipeline: [], opts: wait).must()
 
@@ -2440,7 +2440,7 @@ test "set_timeout: five seconds for each reply"
         .err _ => skip_test(reason: "REBEL_MONGODB_URL names no server")
         .ok url =>
             c @= connect(parse_url(url).must()).must()
-            set_timeout(@c, timeout: time.seconds(5).must()).must()
+            set_timeout(@c, timeout: time.seconds(5)).must()
             ping(@c).must()
             close(@c).must()
 

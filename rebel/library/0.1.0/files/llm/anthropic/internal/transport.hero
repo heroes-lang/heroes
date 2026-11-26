@@ -99,7 +99,7 @@ function fraction() -> f64
 # Waits `ms` milliseconds.
 function pause(ms: i64)
     if ms > 0
-        time.sleep(time.milliseconds(ms).default(time.nanoseconds(0)))
+        time.sleep(time.milliseconds_checked(ms).default(time.nanoseconds(0)))
 
 # The failure `response` tells, its body read as an error's, `attempt` the
 # retry it would be.
@@ -182,7 +182,7 @@ function send(s: Settings, method: str, path: str, body: str) -> http.Response?
 function tls_deadline(ms: i64) -> time.Duration?
     if ms == 0
         return ok(time.max_duration())
-    return ok(time.milliseconds(ms).default(time.max_duration()))
+    return ok(time.milliseconds_checked(ms).default(time.max_duration()))
 
 # The milliseconds of a client's `deadline` as the transport counts them:
 # `time.max_duration()` is 0, none; any other is rounded up to a whole

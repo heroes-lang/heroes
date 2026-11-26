@@ -75,10 +75,10 @@ function settings(quick: bool) -> bench.Settings
     if !quick
         return bench.default_settings()
     s = bench.with_rounds(
-        bench.with_round(bench.default_settings(), round: time.milliseconds(1).default(time.nanoseconds(1_000_000))),
+        bench.with_round(bench.default_settings(), round: time.milliseconds(1)),
         rounds: QUICK_ROUNDS
     )
-    within = bench.with_time(s, most: time.seconds(60).default(time.nanoseconds(60_000_000_000)))
+    within = bench.with_time(s, most: time.seconds(60))
     return bench.with_waiting(within, share: math.INF)
 
 # How long the job takes.

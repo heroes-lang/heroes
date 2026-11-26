@@ -133,7 +133,7 @@ test "issue and check: a token read back, the role and the end kept"
         32
     ]
     now = time.from_unix(whole_seconds: 1_763_715_600, extra_nanoseconds: 0).must()
-    token = issue(key, name: "alice", role: "admin", now: now, ttl: time.hours(1).must()).must()
+    token = issue(key, name: "alice", role: "admin", now: now, ttl: time.hours(1)).must()
     c = check(key, token: token, now: now).must()
     assert c.subject == "alice" && c.role == "admin" && time.unix_seconds(c.expires) == 1_763_719_200
 
@@ -207,8 +207,8 @@ test "check: ended, another key, and a token changed by one character"
         32
     ]
     now = time.from_unix(whole_seconds: 1_763_715_600, extra_nanoseconds: 0).must()
-    token = issue(key, name: "alice", role: "admin", now: now, ttl: time.hours(1).must()).must()
-    assert check(key, token: token, now: time.add(now, d: time.hours(2).must()).must()).is_err()
+    token = issue(key, name: "alice", role: "admin", now: now, ttl: time.hours(1)).must()
+    assert check(key, token: token, now: time.add(now, d: time.hours(2)).must()).is_err()
     assert check(other, token: token, now: now).is_err()
     last = token.slice(from: token.len() - 1, to: token.len())
 

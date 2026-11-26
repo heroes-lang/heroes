@@ -179,13 +179,13 @@ function zone_from(c: ical.Component) -> time.Zone?
         else
             o.name
         changes @ changes.push(
-            time.ZoneChange(at: at, offset: time.ZoneOffset(from_utc: time.seconds(o.to)?, abbreviation: label, is_daylight: o.daylight))
+            time.ZoneChange(at: at, offset: time.ZoneOffset(from_utc: time.seconds_checked(o.to)?, abbreviation: label, is_daylight: o.daylight))
         )
         seen @ true
         last_at @ o.at
 
     first = time.ZoneOffset(
-        from_utc: time.seconds(ordered[0].from)?,
+        from_utc: time.seconds_checked(ordered[0].from)?,
         abbreviation: offset_text(ordered[0].from),
         is_daylight: false
     )
@@ -275,10 +275,10 @@ test "component_of and zone_from: a zone of the database written for a year and 
         t = time.date(year: 2026, month: month, day: 15).must()
         assert time.offset_at(zone: back, t: t).from_utc == time.offset_at(zone: rome, t: t).from_utc
 
-    fixed = time.fixed_zone(name: "Fix/Zone", offset: time.hours(-5).must()).must()
+    fixed = time.fixed_zone(name: "Fix/Zone", offset: time.hours(-5)).must()
     f = component_of(zone: fixed, from_year: 2020, to_year: 2030).must()
     assert f.children.len() == 1 && f.children[0].lines[1].value == "-0500" && f.children[0].lines[2].value == "-0500"
-    assert zone_from(f).must().first.from_utc == time.hours(-5).must()
+    assert zone_from(f).must().first.from_utc == time.hours(-5)
 
     for years in [[0, 5], [2030, 2020], [2020, 10000]]
         match component_of(zone: rome, from_year: years[0], to_year: years[1])

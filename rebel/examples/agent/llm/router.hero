@@ -57,7 +57,7 @@ constant OPENS_AFTER: i64
 #
 # Fails `invalid` where `opens_after` is below 1.
 function new_router(providers: [Provider], clock: timing.Clock, opens_after: i64) -> Router?
-    policy = retries.breaker_policy(failures: opens_after, open_for: time.minutes(1).must())?
+    policy = retries.breaker_policy(failures: opens_after, open_for: time.minutes(1))?
     breakers: [retries.Breaker] @= []
 
     for _ in providers

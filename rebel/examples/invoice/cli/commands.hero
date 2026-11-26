@@ -263,7 +263,7 @@ function quantities(words: [str]) -> [issue.Ordered]?
 # Fails `invalid` where it is neither, and as `time.now` fails.
 function day_of(text: str) -> time.Instant?
     if text == "today"
-        return time.truncate(time.now()?, unit: time.days(1)?)
+        return time.truncate(time.now()?, unit: time.days(1))
     return documents.parse_day(text)
 
 # The year the first of `rest` names.

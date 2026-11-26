@@ -78,7 +78,7 @@ function child() -> i64
 # Connects to the listener at `path`, reads one message and writes it back
 # with a `!` after it.
 function echo(path: str) -> ()?
-    s @= channels.connect(path, space: hero_ipc.HERO_IPC_SPACE_PATH, within: time.seconds(20).must())?
+    s @= channels.connect(path, space: hero_ipc.HERO_IPC_SPACE_PATH, within: time.seconds(20))?
     got @= messages.read(s, most: 1024)?
     got @ got.push('!')
     messages.write(s, data: got)?
@@ -100,11 +100,11 @@ function fill(name: str) -> ()?
 # waits for `go`, then releases it: killed meanwhile, it holds it to its end.
 function hold(lock: str, ready: str, go: str) -> ()?
     l @= waits.open_lock(lock, permission: 0o600)?
-    _ = waits.acquire_lock(l, name: lock, within: time.seconds(20).must())?
+    _ = waits.acquire_lock(l, name: lock, within: time.seconds(20))?
     told @= waits.open_semaphore(ready)?
     waits.release_semaphore(told, name: ready)?
     wait @= waits.open_semaphore(go)?
-    waits.acquire_semaphore(wait, name: go, within: time.seconds(30).must())?
+    waits.acquire_semaphore(wait, name: go, within: time.seconds(30))?
     waits.release_lock(l, name: lock)?
     waits.close_semaphore(@wait, name: go)?
     waits.close_semaphore(@told, name: ready)?

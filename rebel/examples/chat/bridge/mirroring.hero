@@ -90,7 +90,7 @@ function link_mqtt(@b: Bridge) -> ()?
     opts @= mqtt.parse_url(b.mqtt_url)?
     opts.client_id @ b.name
     opts.reconnect.attempts @ 0
-    opts.connect_timeout @ time.seconds(LINK_SECONDS)?
+    opts.connect_timeout @ time.seconds(LINK_SECONDS)
     client @= mqtt.connect(opts)?
     wanted: [mqtt.Subscription] @= []
 
@@ -125,7 +125,7 @@ function link_nats(@b: Bridge) -> ()?
     opts.name @ b.name
     opts.echo @ false
     opts.reconnect.attempts @ 0
-    opts.connect_timeout @ time.seconds(LINK_SECONDS)?
+    opts.connect_timeout @ time.seconds(LINK_SECONDS)
     client @= nats.connect(opts)?
 
     for m in b.mirrors

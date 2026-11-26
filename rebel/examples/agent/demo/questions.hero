@@ -60,7 +60,7 @@ function claude_client(port: i64, key: str) -> anthropic.Client
     c @= anthropic.default_client(key)
     c.base_url @ f"http://127.0.0.1:{port}"
     c.max_retries @ 0
-    c.deadline @ time.seconds(60).must()
+    c.deadline @ time.seconds(60)
     return c
 
 # A client of the OpenAI stand-in on `port`.
@@ -68,7 +68,7 @@ function gpt_client(port: i64) -> openai.Client
     c @= openai.local_client(f"http://127.0.0.1:{port}/v1")
     c.api_key @ OPENAI_KEY
     c.max_retries @ 0
-    c.deadline @ time.seconds(60).must()
+    c.deadline @ time.seconds(60)
     return c
 
 # Claude as a provider, through the stand-in on `port`.

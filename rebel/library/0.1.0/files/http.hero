@@ -837,7 +837,9 @@ function parse_set_cookie(s: str, now: time.Instant) -> Cookie?
         if a.max_age <= 0
             expires @ time.min_instant()
         else
-            expires @ time.add(now, d: time.seconds(a.max_age).default(time.max_duration())).default(time.max_instant())
+            expires @ time.add(now, d: time.seconds_checked(a.max_age).default(time.max_duration())).default(
+                time.max_instant()
+            )
     else if a.has_expires
         persistent @ true
         expires @ a.expires
@@ -1216,10 +1218,10 @@ record Client
 function default_client() -> Client
     return Client(
         max_redirects: 10,
-        deadline: time.seconds(30).must(),
+        deadline: time.seconds(30),
         limits: default_limits(),
         roots: "",
-        retries: Retries(count: 0, statuses: [429, 500, 502, 503, 504], backoff: retries.backoff(first: time.milliseconds(100).must(), multiplier: 2.0, longest: time.seconds(10).must()).must()),
+        retries: Retries(count: 0, statuses: [429, 500, 502, 503, 504], backoff: retries.backoff(first: time.milliseconds(100), multiplier: 2.0, longest: time.seconds(10)).must()),
         proxy: no_proxy(),
         user_agent: USER_AGENT
     )
@@ -1279,7 +1281,7 @@ function fetch(@s: Session, r: Request) -> Response?
 
     while true
         if whole > 0
-            s.client.deadline @ time.milliseconds(policy.left_ms(deadline_ms: whole, start: start)?)?
+            s.client.deadline @ time.milliseconds_checked(policy.left_ms(deadline_ms: whole, start: start)?)?
         outcome = fetch_once(@s, r: out)
         s.client.deadline @ given
         answer = outcome?
@@ -2095,7 +2097,7 @@ function event_reader(response: Response, limits: Limits) -> EventReader?
     b = streaming.body_of(status_code: response.status, fields: fields, method: METHOD_GET, most_fields: limits.field_count)?
     state = streaming.begin_events(b, most_bytes: limits.body_bytes)
     return ok(
-        EventReader(last_id: "", retry: time.milliseconds(state.scan.retry_ms).default(time.max_duration()), state: state)
+        EventReader(last_id: "", retry: time.milliseconds_checked(state.scan.retry_ms).default(time.max_duration()), state: state)
     )
 
 # The next event of the stream `events` reads, waiting for it: its lines read
@@ -2117,7 +2119,7 @@ function event_reader(response: Response, limits: Limits) -> EventReader?
 function read_event(@reader: io.Reader, @events: EventReader) -> Event?
     outcome = streaming.next_event(@reader, @events.state)
     events.last_id @ events.state.scan.last_id
-    events.retry @ time.milliseconds(events.state.scan.retry_ms).default(time.max_duration())
+    events.retry @ time.milliseconds_checked(events.state.scan.retry_ms).default(time.max_duration())
     got = outcome?
     return ok(Event(name: got.kind, data: got.data, id: got.id))
 
@@ -2161,7 +2163,7 @@ record Server
 
 # The usual server: `default_limits()` and connections of 30 seconds at most.
 function default_server() -> Server
-    return Server(limits: default_limits(), deadline: time.seconds(30).must())
+    return Server(limits: default_limits(), deadline: time.seconds(30))
 
 # Serves every connection `l` accepts with `handler`, one connection at a
 # time, until the program asks to stop.
@@ -4030,7 +4032,7 @@ test "send: an ftp URL is unsupported, a target with no scheme invalid, no netwo
 test "get: a server that never answers ends at the client's time limit"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     c @= default_client()
-    c.deadline @ time.milliseconds(200).must()
+    c.deadline @ time.milliseconds(200)
 
     match get(c, target: f"http://127.0.0.1:{l.address.port}/slow")
         .ok _  => assert false
@@ -4451,7 +4453,7 @@ test "send: an https:// request through a proxy that refuses the tunnel, CONNECT
 test "send: a tunnel opened, then TLS over it, which macOS's TLS does not begin"
     t @= canned.start(canned.script(responses: ["HTTP/1.1 200 Connection established\r\n\r\n"]))
     c @= default_client()
-    c.deadline @ time.seconds(10).must()
+    c.deadline @ time.seconds(10)
     c.proxy @ Proxy(http: "", https: f"http://127.0.0.1:{t.port}", bypass: [])
 
     match get(c, target: "https://example.test/")
@@ -4551,7 +4553,7 @@ test "tunnel: CONNECT to an HTTP proxy, a SOCKS proxy's handshake, and what is r
         proxy: f"http://u:p@127.0.0.1:{t.port}",
         host: "example.test",
         port: 443,
-        deadline: time.seconds(5).must()
+        deadline: time.seconds(5)
     ).must()
     io.close(@s).must()
     seen = threads.wait_text(@t.thread)
@@ -4561,12 +4563,12 @@ test "tunnel: CONNECT to an HTTP proxy, a SOCKS proxy's handshake, and what is r
         proxy: f"socks5h://127.0.0.1:{k.port}",
         host: "example.test",
         port: 8080,
-        deadline: time.seconds(5).must()
+        deadline: time.seconds(5)
     ).must()
     io.write(s2, data: [7]).must()
     assert strings.split(s: threads.wait_text(@k.thread), sep: canned.SEPARATOR)[2] == "07"
     io.close(@s2).must()
-    assert tunnel(proxy: "ftp://127.0.0.1:1", host: "a", port: 1, deadline: time.seconds(1).must()).is_err()
+    assert tunnel(proxy: "ftp://127.0.0.1:1", host: "a", port: 1, deadline: time.seconds(1)).is_err()
     assert tunnel(proxy: "127.0.0.1:1", host: "a", port: 1, deadline: time.Duration(nanoseconds: -1)).is_err()
 
 test "matching_cookies: an ended cookie, a secure one and a host-only one of another host are not sent"
@@ -4685,7 +4687,7 @@ test "serve_stream: a request over TLS from a client of the test authority"
         body: canned.ask_tls,
         arg: f"{l.port}" + canned.SEPARATOR + "TRACE /s HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
     ).must()
-    tls.set_accept_deadline(l, deadline: time.seconds(30).must()).must()
+    tls.set_accept_deadline(l, deadline: time.seconds(30)).must()
     served @= 0
 
     # A connection another program makes to the port fails its handshake,
@@ -4694,7 +4696,7 @@ test "serve_stream: a request over TLS from a client of the test authority"
     # (`tls.accept`); it is passed over, ten at most.
     for _ in range(from: 0, to: 10)
         if served == 0
-            match tls.accept(l, deadline: time.seconds(10).must())
+            match tls.accept(l, deadline: time.seconds(10))
                 .err _ => _ = 0
                 .ok accepted =>
                     stream @= accepted.stream
@@ -4708,7 +4710,7 @@ test "serve_stream: a request over TLS from a client of the test authority"
 
 test "get: https://example.com where the network answers, skipped where it does not"
     c @= default_client()
-    c.deadline @ time.seconds(10).must()
+    c.deadline @ time.seconds(10)
 
     match get(c, target: "https://example.com/")
         .ok got => assert got.status == 200 && strings.contains(s: text_of(got).default(""), substr: "Example Domain")
@@ -4828,9 +4830,9 @@ test "serve_tls: a client silent after its handshake dropped at the deadline, th
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["http/1.1"])
     ).must()
     t @= threads.start_text(body: canned.ask_tls, arg: f"{l.port}" + canned.SEPARATOR).must()
-    tls.set_accept_deadline(l, deadline: time.seconds(3).must()).must()
+    tls.set_accept_deadline(l, deadline: time.seconds(3)).must()
     s @= default_server()
-    s.deadline @ time.milliseconds(300).must()
+    s.deadline @ time.milliseconds(300)
     began = time.mark().must()
 
     match serve_tls(s, l: l, handler: respond_trace)
@@ -5142,7 +5144,7 @@ test "write_response: a text answer on the wire"
 # The usual client.
 test "default_client: ten redirects, thirty seconds, no retry"
     c = default_client()
-    assert c.max_redirects == 10 && c.deadline == time.seconds(30).must() && c.retries.count == 0
+    assert c.max_redirects == 10 && c.deadline == time.seconds(30) && c.retries.count == 0
     assert c.user_agent == "heroes-rebel-http/0.1.0" && c.user_agent == USER_AGENT
 
 test "send: the client's User-Agent sent once where the request holds none, the request's own in its place, none where the client's is empty"
@@ -5265,7 +5267,7 @@ test "round_trip: a GET on a held connection"
 
 # The usual server.
 test "default_server: thirty seconds a connection"
-    assert default_server().deadline == time.seconds(30).must() && default_server().limits == default_limits()
+    assert default_server().deadline == time.seconds(30) && default_server().limits == default_limits()
 
 # A server answering one connection, then ending as its listener's deadline
 # passes.
@@ -5593,7 +5595,7 @@ test "event_reader: a stream's events as they come"
     events @= event_reader(started, limits: default_limits()).must()
     first = read_event(@reader, @events).must()
     assert first.name == "tick" && first.data == "one" && first.id == "1"
-    assert events.last_id == "1" && events.retry == time.seconds(1).must()
+    assert events.last_id == "1" && events.retry == time.seconds(1)
     io.close(@reader.stream).must()
     io.close(@two.first.stream).must()
 
@@ -5744,7 +5746,7 @@ test "serve_until_stopped: one connection answered, then the listener's deadline
     io.write_text(conn.stream, text: "TRACE /t HTTP/1.1\r\nHost: h\r\nConnection: close\r\n\r\n").must()
     net.set_accept_deadline(l, deadline_ms: 300).must()
 
-    match serve_until_stopped(default_server(), l: l, state: "https://example.org", handler: respond_moved_to, grace: time.seconds(1).must())
+    match serve_until_stopped(default_server(), l: l, state: "https://example.org", handler: respond_moved_to, grace: time.seconds(1))
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT
 
@@ -5849,7 +5851,7 @@ test "serve_tls: an HTTP/2 client answered over HTTP/2"
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["h2", "http/1.1"])
     ).must()
     t @= threads.start_text(body: h2bridge.ask_h2_tls, arg: to_str(l.port)).must()
-    tls.set_accept_deadline(l, deadline: time.seconds(5).must()).must()
+    tls.set_accept_deadline(l, deadline: time.seconds(5)).must()
 
     match serve_tls(default_server(), l: l, handler: respond_not_found)
         .ok _  => assert false
@@ -5866,7 +5868,7 @@ test "round_trip_h2: two requests on one connection"
     c @= http2.connect_plain(
         host: "127.0.0.1",
         port: port,
-        deadline: time.seconds(10).must(),
+        deadline: time.seconds(10),
         options: http2.default_options()
     ).must()
     first = round_trip_h2(
@@ -6001,7 +6003,7 @@ test "tunnel: a connection through an HTTP proxy"
         proxy: f"http://127.0.0.1:{t.port}",
         host: "example.test",
         port: 443,
-        deadline: time.seconds(5).must()
+        deadline: time.seconds(5)
     ).must()
     io.close(@s).must()
     assert strings.has_prefix(s: threads.wait_text(@t.thread), prefix: "CONNECT example.test:443\n")

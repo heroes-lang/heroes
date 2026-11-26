@@ -411,7 +411,7 @@ function options(host: str, user: str, known_hosts: str) -> Options
         user: user,
         known_hosts: known_hosts,
         unknown_hosts: .refuse,
-        wait: time.seconds(30).must()
+        wait: time.seconds(30)
     )
 
 # A client connected to a server: its transport, its channels, its
@@ -1248,7 +1248,7 @@ test "dial, listen_remote, accept_remote and cancel_remote: the server's own por
             io.close(@conn.stream).must()
             close_channel(@c, channel: forwarded.channel).must()
             cancel_remote(@c, host: "127.0.0.1", port: bound).must()
-            assert fetch_host_key("127.0.0.1", port: found.port, wait: time.seconds(10).must()).must() == host_key(c)
+            assert fetch_host_key("127.0.0.1", port: found.port, wait: time.seconds(10)).must() == host_key(c)
             close_key(@key).must()
             close(@c).must()
 
@@ -1359,7 +1359,7 @@ test "fetch_host_key: the key a person checks"
     match opening.server()
         .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
         .ok found =>
-            key = fetch_host_key("127.0.0.1", port: found.port, wait: time.seconds(10).must()).must()
+            key = fetch_host_key("127.0.0.1", port: found.port, wait: time.seconds(10)).must()
             assert strings.has_prefix(s: fingerprint(key), prefix: "SHA256:")
 
 # The host key a client trusted.
@@ -1386,7 +1386,7 @@ test "set_wait: a minute"
         .err _ => skip_test(reason: "REBEL_SSH_PORT, REBEL_SSH_USER and REBEL_SSH_DIR name no sshd")
         .ok found =>
             c @= Client(state: opening.signed_in(found).must(), user: found.user)
-            set_wait(@c, wait: time.seconds(60).must()).must()
+            set_wait(@c, wait: time.seconds(60)).must()
             close(@c).must()
 
 # A client closed.

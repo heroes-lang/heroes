@@ -41,7 +41,7 @@ function storage_of(l: location.Location, credentials: s3.Credentials, region: s
     match l
         .folder f => return ok(.folder(root: f.root))
         .bucket b =>
-            policy = bucket.policy_of(first: time.milliseconds(50)?, longest: time.seconds(5)?, attempts: attempts)?
+            policy = bucket.policy_of(first: time.milliseconds(50), longest: time.seconds(5), attempts: attempts)?
 
             client @= if b.endpoint == ""
                 s3.client_from_env()?

@@ -131,7 +131,7 @@ test "opened: a TCP connection to a ws URL, the time left of a deadline, and not
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     stream @= opened(
         url.parse(f"ws://127.0.0.1:{l.address.port}/").must(),
-        deadline: time.seconds(5).must(),
+        deadline: time.seconds(5),
         secure: tls.Client(roots: "", protocols: []),
         proxy: http.no_proxy()
     ).must()
@@ -145,7 +145,7 @@ test "opened: a TCP connection to a ws URL, the time left of a deadline, and not
     net.close_listener(@l).must()
     assert opened(
         url.parse("ws://127.0.0.1:1/").must(),
-        deadline: time.seconds(1).must(),
+        deadline: time.seconds(1),
         secure: tls.Client(roots: "", protocols: []),
         proxy: http.no_proxy()
     ).is_err()
@@ -156,7 +156,7 @@ test "opened: a proxy for another scheme is not used, and one that is unreachabl
     target = url.parse("ws://example.test:8080/chat").must()
     assert opened(
         target,
-        deadline: time.seconds(1).must(),
+        deadline: time.seconds(1),
         secure: tls.Client(roots: "", protocols: []),
         proxy: nothing
     ).is_err()
@@ -165,7 +165,7 @@ test "opened: a proxy for another scheme is not used, and one that is unreachabl
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     direct @= opened(
         url.parse(f"ws://127.0.0.1:{l.address.port}/").must(),
-        deadline: time.seconds(5).must(),
+        deadline: time.seconds(5),
         secure: tls.Client(roots: "", protocols: []),
         proxy: only_https
     ).must()
@@ -174,8 +174,8 @@ test "opened: a proxy for another scheme is not used, and one that is unreachabl
 
 test "left_of: what is left of the time, and none"
     began = time.mark().must()
-    assert left_of(began, deadline: time.minutes(1).must()).must().nanoseconds > 59_000_000_000
+    assert left_of(began, deadline: time.minutes(1)).must().nanoseconds > 59_000_000_000
 
-    match left_of(began, deadline: time.milliseconds(-1).must())
+    match left_of(began, deadline: time.milliseconds(-1))
         .ok _  => assert false
         .err e => assert e.code == TIMEOUT

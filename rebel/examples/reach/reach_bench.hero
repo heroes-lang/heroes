@@ -17,7 +17,7 @@ function sum_to(n: i64) -> i64
 
 function main()
     settings = bench.with_rounds(
-        bench.with_round(bench.default_settings(), round: time.milliseconds(1).must()),
+        bench.with_round(bench.default_settings(), round: time.milliseconds(1)),
         rounds: 5
     )
 

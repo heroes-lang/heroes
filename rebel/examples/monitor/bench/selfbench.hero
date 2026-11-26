@@ -38,7 +38,7 @@ record Result
 # every round kept, within ten seconds.
 function quick_settings() -> bench.Settings
     s = bench.with_rounds(
-        bench.with_round(bench.default_settings(), round: time.milliseconds(1).default(time.nanoseconds(1_000_000))),
+        bench.with_round(bench.default_settings(), round: time.milliseconds(1)),
         rounds: 5
     )
     return bench.with_waiting(s, share: math.INF)

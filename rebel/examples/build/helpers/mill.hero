@@ -285,7 +285,7 @@ function wait(arguments: [str]) -> i64
 
     n = numbers.parse_int(arguments[0]).default(-1)
 
-    match time.milliseconds(n)
+    match time.milliseconds_checked(n)
         .ok d =>
             if n >= 0
                 time.sleep(d)

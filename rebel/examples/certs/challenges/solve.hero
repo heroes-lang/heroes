@@ -134,7 +134,7 @@ function by_dns(@client: acme.Client, s: settings.Settings, store: vault.Store, 
 # Fails as `acme.accept_challenge` and `acme.wait_authorization` fail.
 function accepted_and_waited(@client: acme.Client, c: acme.Challenge, url: str) -> ()?
     _ = acme.accept_challenge(@client, challenge: c)?
-    _ = acme.wait_authorization(@client, url: url, timeout: time.seconds(WAIT_SECONDS)?)?
+    _ = acme.wait_authorization(@client, url: url, timeout: time.seconds(WAIT_SECONDS))?
     return ok()
 
 # Where DNS-01's updates go and the key they are signed with, from

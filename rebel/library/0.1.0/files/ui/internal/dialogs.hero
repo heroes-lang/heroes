@@ -865,7 +865,7 @@ function dialogs_wait(app: ui.App) -> str
 # passed over, within about five seconds; a failure where none comes.
 function next_answer(@app: ui.App) -> ui.Event?
     for _ in range(from: 0, to: 50)
-        match ui.wait(@app, within: time.milliseconds(100).must())
+        match ui.wait(@app, within: time.milliseconds(100))
             .ok event =>
                 match event
                     .dialog_answered _ | .files_chosen _ | .print_chosen _ => return ok(event)

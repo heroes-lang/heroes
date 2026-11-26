@@ -105,15 +105,15 @@ function serve_h2_tls(arg: str) -> str
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: [http2.ALPN])
     ).must()
     canned.tell(control: control, port: l.port)
-    tls.set_accept_deadline(l, deadline: time.seconds(10).must()).must()
+    tls.set_accept_deadline(l, deadline: time.seconds(10)).must()
     answered: i64 @= 0
 
     for _ in range(from: 0, to: 10)
         if answered == 0
-            match tls.accept(l, deadline: time.seconds(10).must())
+            match tls.accept(l, deadline: time.seconds(10))
                 .ok accepted =>
                     stream @= accepted.stream
-                    tls.set_deadline(stream, deadline: time.seconds(10).must()).must()
+                    tls.set_deadline(stream, deadline: time.seconds(10)).must()
 
                     match http2.server(@stream, options: http2.default_options())
                         .ok made =>
@@ -193,7 +193,7 @@ function ask_on(@c: http2.Conn) -> str
 function ask_h2_tls(arg: str) -> str
     port = numbers.parse_int(arg).must()
 
-    match http2.connect(host: "localhost", port: port, deadline: time.seconds(10).must(), roots: tls.TEST_ROOT, options: http2.default_options())
+    match http2.connect(host: "localhost", port: port, deadline: time.seconds(10), roots: tls.TEST_ROOT, options: http2.default_options())
         .ok made =>
             c @= made
             return ask_on(@c)
@@ -204,7 +204,7 @@ function ask_h2_tls(arg: str) -> str
 function ask_h2_plain(arg: str) -> str
     port = numbers.parse_int(arg).must()
 
-    match http2.connect_plain(host: "127.0.0.1", port: port, deadline: time.seconds(10).must(), options: http2.default_options())
+    match http2.connect_plain(host: "127.0.0.1", port: port, deadline: time.seconds(10), options: http2.default_options())
         .ok made =>
             c @= made
             return ask_on(@c)

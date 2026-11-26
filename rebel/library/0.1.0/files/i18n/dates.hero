@@ -889,20 +889,20 @@ test "format_relative_duration: zero, under a second both ways, a minute's edges
     assert format_relative_duration(english, d: time.nanoseconds(0), style: .long) == "in 0 seconds"
     assert format_relative_duration(english, d: time.nanoseconds(-999999999), style: .long) == "in 0 seconds"
     assert format_relative_duration(english, d: time.nanoseconds(59999999999), style: .long) == "in 59 seconds"
-    assert format_relative_duration(english, d: time.seconds(-60).must(), style: .long) == "1 minute ago"
-    assert format_relative_duration(english, d: time.seconds(-119).must(), style: .short) == "1 min. ago"
+    assert format_relative_duration(english, d: time.seconds(-60), style: .long) == "1 minute ago"
+    assert format_relative_duration(english, d: time.seconds(-119), style: .short) == "1 min. ago"
     assert format_relative_duration(english, d: time.max_duration(), style: .long) == "in 292 years"
     assert format_relative_duration(english, d: time.min_duration(), style: .narrow) == "292y ago"
 
 test "format_relative_duration_named: now, yesterday, the day before yesterday in German, last week, next month and last year"
     english = i18n.parse_locale("en").must()
     assert format_relative_duration_named(english, d: time.nanoseconds(-1), style: .long) == "now"
-    assert format_relative_duration_named(english, d: time.hours(-47).must(), style: .long) == "yesterday"
-    assert format_relative_duration_named(i18n.parse_locale("de").must(), d: time.hours(-48).must(), style: .long) == "vorgestern"
-    assert format_relative_duration_named(english, d: time.days(-13).must(), style: .long) == "last week"
-    assert format_relative_duration_named(english, d: time.days(31).must(), style: .long) == "next month"
-    assert format_relative_duration_named(english, d: time.days(-366).must(), style: .long) == "last year"
-    assert format_relative_duration_named(english, d: time.hours(5).must(), style: .long) == "in 5 hours"
+    assert format_relative_duration_named(english, d: time.hours(-47), style: .long) == "yesterday"
+    assert format_relative_duration_named(i18n.parse_locale("de").must(), d: time.hours(-48), style: .long) == "vorgestern"
+    assert format_relative_duration_named(english, d: time.days(-13), style: .long) == "last week"
+    assert format_relative_duration_named(english, d: time.days(31), style: .long) == "next month"
+    assert format_relative_duration_named(english, d: time.days(-366), style: .long) == "last year"
+    assert format_relative_duration_named(english, d: time.hours(5), style: .long) == "in 5 hours"
 
 test "format_relative_instant: the same instant, a nanosecond apart, across 1970, and the farthest instants both ways"
     english = i18n.parse_locale("en").must()
@@ -918,8 +918,8 @@ test "format_relative_instant: the same instant, a nanosecond apart, across 1970
 test "format_relative_instant_named: tomorrow and yesterday in Italian, now in Japanese"
     now = time.from_unix(whole_seconds: 1773000000, extra_nanoseconds: 0).must()
     italian = i18n.parse_locale("it").must()
-    assert format_relative_instant_named(italian, t: time.add(t: now, d: time.hours(30).must()).must(), now: now, style: .long) == "domani"
-    assert format_relative_instant_named(italian, t: time.add(t: now, d: time.hours(-30).must()).must(), now: now, style: .long) == "ieri"
+    assert format_relative_instant_named(italian, t: time.add(t: now, d: time.hours(30)).must(), now: now, style: .long) == "domani"
+    assert format_relative_instant_named(italian, t: time.add(t: now, d: time.hours(-30)).must(), now: now, style: .long) == "ieri"
     assert format_relative_instant_named(i18n.parse_locale("ja").must(), t: now, now: now, style: .long) == "今"
 
 ## Examples
@@ -1037,12 +1037,12 @@ test "format_relative_named: yesterday and in three days"
 # Five minutes ago, and in two hours, the unit chosen for each.
 test "format_relative_duration: minutes ago and hours ahead"
     english = i18n.parse_locale("en").must()
-    assert format_relative_duration(english, d: time.seconds(-330).must(), style: .long) == "5 minutes ago"
-    assert format_relative_duration(english, d: time.hours(2).must(), style: .long) == "in 2 hours"
+    assert format_relative_duration(english, d: time.seconds(-330), style: .long) == "5 minutes ago"
+    assert format_relative_duration(english, d: time.hours(2), style: .long) == "in 2 hours"
 
 # Yesterday, as English names it.
 test "format_relative_duration_named: yesterday"
-    assert format_relative_duration_named(i18n.parse_locale("en").must(), d: time.hours(-30).must(), style: .long) == "yesterday"
+    assert format_relative_duration_named(i18n.parse_locale("en").must(), d: time.hours(-30), style: .long) == "yesterday"
 
 # A message's time written from the moment the program read.
 test "format_relative_instant: a message sent seven and a half minutes before now"
@@ -1053,7 +1053,7 @@ test "format_relative_instant: a message sent seven and a half minutes before no
 # Tomorrow, as French names it.
 test "format_relative_instant_named: tomorrow in French"
     now = time.from_unix(whole_seconds: 1773000000, extra_nanoseconds: 0).must()
-    later = time.add(t: now, d: time.hours(25).must()).must()
+    later = time.add(t: now, d: time.hours(25)).must()
     assert format_relative_instant_named(i18n.parse_locale("fr").must(), t: later, now: now, style: .long) == "demain"
 
 # Hours and minutes in English and in German.
@@ -1066,11 +1066,11 @@ test "format_duration: hours and minutes in English and German"
 # has no pattern for it, so the program writes the words around the duration
 # in the one language it controls.
 test "format_duration: inside a sentence of the program's own"
-    parts = duration_parts(time.seconds(450).must(), largest: .hour, smallest: .second)
+    parts = duration_parts(time.seconds(450), largest: .hour, smallest: .second)
     words = format_duration(i18n.parse_locale("en").must(), parts: parts, style: .long)
     assert f"sent {words} ago" == "sent 7 minutes, 30 seconds ago"
 
 # Seven and a half minutes broken into minutes and seconds.
 test "duration_parts: minutes and seconds"
-    parts = duration_parts(time.seconds(450).must(), largest: .hour, smallest: .second)
+    parts = duration_parts(time.seconds(450), largest: .hour, smallest: .second)
     assert parts == [DurationPart(unit: .minute, count: 7), DurationPart(unit: .second, count: 30)]

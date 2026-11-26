@@ -79,7 +79,7 @@ function reserved_code(r: jobs.Reservation?) -> str
         .err e => return e.code
 
 test "allowed: more than the burst refused before the instant is asked, one past an instant fails, a grant kept"
-    full = jobs.Bucket(every: time.seconds(1).must(), burst: 2, empty_at: gcra.at_ms(-2000), seen: gcra.at_ms(0))
+    full = jobs.Bucket(every: time.seconds(1), burst: 2, empty_at: gcra.at_ms(-2000), seen: gcra.at_ms(0))
     none = time.Duration(nanoseconds: 0)
     asked = Taken(granted: false, bucket: full, tokens: 3, fits: false, finish: gcra.at_ms(0), delay: none)
     assert !allowed(asked).must().granted
@@ -89,21 +89,21 @@ test "allowed: more than the burst refused before the instant is asked, one past
     assert allowed(given).must() == jobs.Allowed(granted: true, bucket: full)
 
 test "reserved: more than the burst invalid, past an instant does_not_fit, a wait too long timeout, and the instant it is ready"
-    full = jobs.Bucket(every: time.seconds(1).must(), burst: 2, empty_at: gcra.at_ms(0), seen: gcra.at_ms(0))
-    wait = time.seconds(1).must()
+    full = jobs.Bucket(every: time.seconds(1), burst: 2, empty_at: gcra.at_ms(0), seen: gcra.at_ms(0))
+    wait = time.seconds(1)
     asked = Taken(
         granted: false,
         bucket: full,
         tokens: 3,
         fits: true,
         finish: gcra.at_ms(3000),
-        delay: time.seconds(3).must()
+        delay: time.seconds(3)
     )
     assert reserved_code(reserved(asked, within: time.max_duration())) == jobs.INVALID
     past = Taken(granted: false, bucket: full, tokens: 1, fits: false, finish: gcra.at_ms(0), delay: wait)
     assert reserved_code(reserved(past, within: time.max_duration())) == jobs.DOES_NOT_FIT
     late = Taken(granted: false, bucket: full, tokens: 1, fits: true, finish: gcra.at_ms(1000), delay: wait)
-    assert reserved_code(reserved(late, within: time.milliseconds(999).must())) == jobs.TIMEOUT
+    assert reserved_code(reserved(late, within: time.milliseconds(999))) == jobs.TIMEOUT
     given = Taken(granted: true, bucket: full, tokens: 1, fits: true, finish: gcra.at_ms(1000), delay: wait)
     r = reserved(given, within: wait).must()
     assert r.ready == gcra.at_ms(1000) && r.finish == gcra.at_ms(1000) && r.delay == wait && r.tokens == 1

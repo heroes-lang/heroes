@@ -45,7 +45,7 @@ function open_memory() -> sqlite.Db?
 #
 # - `db`: the connection.
 function ready(@db: sqlite.Db) -> ()?
-    sqlite.set_busy_timeout(@db, timeout: time.seconds(5)?)?
+    sqlite.set_busy_timeout(@db, timeout: time.seconds(5))?
     _ = sqlite.exec(@db, statement: "PRAGMA foreign_keys = ON", params: [])?
     version = sql.integer_at(sqlite.query_one(@db, statement: "PRAGMA user_version", params: [])?, index: 0)?
 

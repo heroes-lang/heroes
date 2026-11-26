@@ -157,7 +157,7 @@ function looped(@app: state.App, set: poll.Set, l: net.Listener, conns: (mailbox
             by @ "api"
             break
 
-        events = match poll.wait(set, limit: time.seconds(1)?)
+        events = match poll.wait(set, limit: time.seconds(1))
             .ok got => got
             .err e =>
                 if e.code == poll.STOPPED

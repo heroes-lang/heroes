@@ -100,7 +100,7 @@ function served(config: str) -> ()?
         l: l,
         state: svc,
         handler: service.answer,
-        grace: time.seconds(GRACE_SECONDS)?
+        grace: time.seconds(GRACE_SECONDS)
     )
     net.close_listener(@l)?
     counts = answered?

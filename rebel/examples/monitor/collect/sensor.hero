@@ -351,7 +351,7 @@ test "ask and read_answer: a device on a pseudo-terminal answers, then stops ans
     spec.name @ "t"
     spec.port @ pair.path
     spec.query @ "T?"
-    spec.timeout @ time.milliseconds(200).must()
+    spec.timeout @ time.milliseconds(200)
     s @= new_sensor(spec, handed: false)
     open_port(@s).must()
     ask(@s).must()
@@ -370,14 +370,14 @@ test "read_once: a device that sends by itself, its last whole line taken"
     spec @= settings.no_sensor()
     spec.name @ "t"
     spec.port @ pair.path
-    spec.timeout @ time.milliseconds(200).must()
+    spec.timeout @ time.milliseconds(200)
     s @= new_sensor(spec, handed: false)
     open_port(@s).must()
     io.write_text(pair.controller, text: "20.0\n21.0\n22").must()
-    time.sleep(time.milliseconds(50).must())
+    time.sleep(time.milliseconds(50))
     assert read_once(@s).value == 21.0
     io.write_text(pair.controller, text: ".5\n").must()
-    time.sleep(time.milliseconds(50).must())
+    time.sleep(time.milliseconds(50))
     assert read_once(@s).value == 22.5
     assert read_once(@s).status == .silent
     close(@s)

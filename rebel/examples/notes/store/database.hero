@@ -23,7 +23,7 @@ use store/schema
 # Fails as `sqlite.open` and `sqlite.exec` fail.
 function open(path: str) -> sqlite.Db?
     db @= sqlite.open(path)?
-    sqlite.set_busy_timeout(@db, timeout: time.seconds(5)?)?
+    sqlite.set_busy_timeout(@db, timeout: time.seconds(5))?
     _ = sqlite.exec(@db, statement: "PRAGMA foreign_keys = ON", params: [])?
     return ok(db)
 

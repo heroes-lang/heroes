@@ -215,9 +215,9 @@ test "path_name: a path's last part, by either separator"
 
 test "chance_of: a seed draws the same numbers every time"
     r = settings.RetrySettings(
-        first: time.milliseconds(1).must(),
+        first: time.milliseconds(1),
         multiplier: 2.0,
-        longest: time.seconds(1).must(),
+        longest: time.seconds(1),
         seed: ok(7)
     )
     a @= chance_of(r).must()

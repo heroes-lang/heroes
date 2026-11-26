@@ -80,17 +80,17 @@ test "decide: a window not open and days to spare, a window open, no window and 
         names: [],
         serial: "",
         not_before: start,
-        not_after: time.add(start, d: time.days(90).must()).must()
+        not_after: time.add(start, d: time.days(90)).must()
     )
     w = Window(
-        start: time.add(start, d: time.days(60).must()).must(),
-        end: time.add(start, d: time.days(70).must()).must()
+        start: time.add(start, d: time.days(60)).must(),
+        end: time.add(start, d: time.days(70)).must()
     )
-    day30 = time.add(start, d: time.days(30).must()).must()
+    day30 = time.add(start, d: time.days(30)).must()
     early = decide(f, at: day30, days_before: 30, window: ok(w))
     assert !early.due && early.days_left == 60
     assert early.reason == "60 days left; the CA's renewal window opens in 30 days"
-    day61 = time.add(start, d: time.days(61).must()).must()
+    day61 = time.add(start, d: time.days(61)).must()
     assert decide(f, at: day61, days_before: 30, window: ok(w)).due
     bare = decide(f, at: day61, days_before: 30, window: fail(code: "not_found", msg: "none"))
     assert bare.due && bare.reason == "29 days left, 30 or fewer"
@@ -103,6 +103,6 @@ test "decide: expired, whatever the window"
         names: [],
         serial: "",
         not_before: start,
-        not_after: time.add(start, d: time.days(1).must()).must()
+        not_after: time.add(start, d: time.days(1)).must()
     )
-    assert decide(f, at: time.add(start, d: time.days(3).must()).must(), days_before: 30, window: fail(code: "not_found", msg: "none")).reason == "expired"
+    assert decide(f, at: time.add(start, d: time.days(3)).must(), days_before: 30, window: fail(code: "not_found", msg: "none")).reason == "expired"

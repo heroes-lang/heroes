@@ -70,7 +70,7 @@ function run(start: str, settings_path: str, locale: str) -> ()?
             return fail(code: x.code, msg: x.msg)
 
     c @= controller.new_controller(app, ex: ex)?
-    within = time.milliseconds(WAIT_MS)?
+    within = time.milliseconds(WAIT_MS)
 
     while !c.done
         if !events.step(@c, within: within)

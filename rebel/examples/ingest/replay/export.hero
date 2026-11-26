@@ -54,7 +54,7 @@ record Exported
 # out.
 function export_day(@p: pipeline.Pipeline, day: str) -> [Exported]?
     from = time.parse(day + "T00:00:00Z", .rfc3339)?
-    to = time.add(from, d: time.days(1)?)?
+    to = time.add(from, d: time.days(1))?
 
     for topic in p.settings.kafka.topics
         waiting = ledger.pending_between(@p.db, topic: topic, from: from, to: to)?

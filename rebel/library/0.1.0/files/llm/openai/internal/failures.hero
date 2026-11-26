@@ -170,7 +170,7 @@ function wait_before(retry_after_ms: str, retry_after: str, received: time.Insta
                 return n
         .err _ => _ = 0
 
-    longest = time.milliseconds(LONGEST_MS).must()
+    longest = time.milliseconds(LONGEST_MS)
 
     if retry_after != ""
         match retries.parse_retry_after(retry_after, received: received, longest: longest)

@@ -129,7 +129,7 @@ function parse(text: str) -> Settings?
         max_pages: integer_at(doc, path: ["crawl", "max_pages"], fallback: 1000, lowest: 1, highest: 1_000_000)?,
         max_depth: integer_at(doc, path: ["crawl", "max_depth"], fallback: 12, lowest: 0, highest: 1000)?,
         max_page_bytes: integer_at(doc, path: ["crawl", "max_page_bytes"], fallback: 2_000_000, lowest: 1, highest: 1_000_000_000)?,
-        timeout: time.seconds(seconds)?,
+        timeout: time.seconds_checked(seconds)?,
         trackers: texts_at(doc, path: ["crawl", "trackers"], fallback: TRACKERS)?,
         data: text_at(doc, path: ["index", "data"], fallback: "searchd-data")?,
         fold_marks: boolean_at(doc, path: ["index", "fold_marks"], fallback: true)?,
@@ -236,7 +236,7 @@ test "parse: the sample reads back with its own values"
     s = parse(sample(start: "http://127.0.0.1:8080/", data: "build/data", language: "sv")).must()
     assert s.start == "http://127.0.0.1:8080/" && s.data == "build/data" && s.agent == AGENT
     assert s.max_pages == 1000 && s.fold_marks && s.dimension == 1024 && s.trackers == TRACKERS
-    assert s.timeout == time.seconds(20).must() && s.port == 7700
+    assert s.timeout == time.seconds(20) && s.port == 7700
 
 test "parse: every key left out takes its default"
     s = parse("").must()

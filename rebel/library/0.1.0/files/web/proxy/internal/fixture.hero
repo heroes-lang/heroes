@@ -69,7 +69,7 @@ function upstream_echo_tls(ports: (mailbox i64)) -> i64
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: [])
     ).must()
     _ = ports.send(l.port).is_err()
-    conn = tls.accept(l, deadline: time.seconds(5).must()).must()
+    conn = tls.accept(l, deadline: time.seconds(5)).must()
     tls.close_listener(@l).must()
     return echoed(conn)
 
@@ -82,7 +82,7 @@ function echoed(conn: net.Conn) -> i64
     _ = http.read_request_head(@reader, limits: http.default_limits()).must()
     switching = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n"
     _ = io.write_text(conn.stream, text: switching).is_err()
-    _ = tls.set_deadline(conn.stream, deadline: time.seconds(5).must()).is_err()
+    _ = tls.set_deadline(conn.stream, deadline: time.seconds(5)).is_err()
     held = io.buffered(reader)
     _ = io.skip(@reader, n: held.len()).is_err()
     total: i64 @= 0
@@ -118,7 +118,7 @@ record Asking
 # passes. Answers what it read, the code of a failure that ended its reading
 # after it in angle brackets.
 function tls_client(a: Asking) -> str
-    deadline = time.seconds(5).must()
+    deadline = time.seconds(5)
     conn = tls.connect(
         host: "localhost",
         port: a.port,
@@ -128,7 +128,7 @@ function tls_client(a: Asking) -> str
 
     if a.asked != ""
         _ = io.write_text(conn.stream, text: a.asked).is_err()
-    _ = tls.set_deadline(conn.stream, deadline: time.milliseconds(a.hold_ms).must()).is_err()
+    _ = tls.set_deadline(conn.stream, deadline: time.milliseconds(a.hold_ms)).is_err()
     got: [u8] @= []
     ended: str @= ""
 
