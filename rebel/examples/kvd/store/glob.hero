@@ -1,0 +1,164 @@
+# Whether a key or a channel matches a glob pattern, by Redis's rules (its
+# `stringmatchlen`), over bytes: `*` any run of bytes, `?` one byte, `[abc]`
+# and `[a-z]` one byte of a class, `[^abc]` one outside it, `\` before a byte
+# making it stand for itself, inside a class too. `*` crosses every byte,
+# `/` and `.` included, since a key is no path.
+#
+# Rebel matches globs over paths alone (`path.matches`, whose `*` stops at a
+# separator and whose text must be UTF-8) and regular expressions over text
+# (`regex`), so this module is the smallest honest local one (a missing
+# face: `bytes.matches_glob(s: [u8], pattern: [u8]) -> bool`). It takes time
+# in proportion to the key times the pattern at most: a `*` remembers the
+# last place it stood and moves on from there, never back past it.
+
+use <rebel>/bytes
+
+# What one place of a pattern did with one byte: whether it took it, and
+# where the place after it begins.
+record Step
+    # Whether the byte matched.
+    matched: bool
+    # The index in the pattern after this place.
+    next: i64
+
+# What the class opening at `at`, its `[`, does with `c`.
+#
+# - `pattern`: the pattern.
+# - `at`: the index of the `[`.
+# - `c`: the byte.
+function class_step(pattern: [u8], at: i64, c: u8) -> Step
+    p @= at + 1
+    negated = p < pattern.len() && pattern[p] == '^'
+
+    if negated
+        p @ p + 1
+    found @= false
+    closed @= false
+
+    while p < pattern.len() && !closed
+        if pattern[p] == '\\' && p + 1 < pattern.len()
+            if pattern[p + 1] == c
+                found @ true
+            p @ p + 2
+        else if pattern[p] == ']'
+            closed @ true
+            p @ p + 1
+        else if p + 2 < pattern.len() && pattern[p + 1] == '-'
+            low = if pattern[p] <= pattern[p + 2]
+                pattern[p]
+            else
+                pattern[p + 2]
+
+            high = if pattern[p] <= pattern[p + 2]
+                pattern[p + 2]
+            else
+                pattern[p]
+
+            if c >= low && c <= high
+                found @ true
+            p @ p + 3
+        else
+            if pattern[p] == c
+                found @ true
+            p @ p + 1
+
+    return Step(matched: found != negated, next: p)
+
+# What the place of `pattern` at `at`, which is no `*`, does with `c`.
+#
+# - `pattern`: the pattern.
+# - `at`: the index of the place, below the pattern's length.
+# - `c`: the byte.
+function step(pattern: [u8], at: i64, c: u8) -> Step
+    t = pattern[at]
+
+    if t == '?'
+        return Step(matched: true, next: at + 1)
+
+    if t == '\\' && at + 1 < pattern.len()
+        return Step(matched: pattern[at + 1] == c, next: at + 2)
+
+    if t == '['
+        return class_step(pattern, at: at, c: c)
+    return Step(matched: t == c, next: at + 1)
+
+# Whether the whole of `s` matches `pattern`.
+#
+# - `s`: the key or the channel.
+# - `pattern`: the glob pattern; the empty pattern matches the empty key
+#   alone, `*` every key.
+function matches(s: [u8], pattern: [u8]) -> bool
+    p @= 0
+    at @= 0
+    star_next @= -1
+    star_at @= 0
+
+    while at < s.len()
+        if p < pattern.len() && pattern[p] == '*'
+            while p < pattern.len() && pattern[p] == '*'
+                p @ p + 1
+
+            star_next @ p
+            star_at @ at
+        else
+            took @= false
+
+            if p < pattern.len()
+                one = step(pattern, at: p, c: s[at])
+
+                if one.matched
+                    p @ one.next
+                    at @ at + 1
+                    took @ true
+
+            if !took
+                if star_next < 0
+                    return false
+                star_at @ star_at + 1
+                at @ star_at
+                p @ star_next
+
+    while p < pattern.len() && pattern[p] == '*'
+        p @ p + 1
+
+    return p == pattern.len()
+
+# Whether the text `s` matches the text `pattern`, for the tests.
+#
+# - `s`: the key.
+# - `pattern`: the pattern.
+function texts_match(s: str, pattern: str) -> bool
+    return matches(s: bytes.from_text(s), pattern: bytes.from_text(pattern))
+
+test "matches: the empty pattern, a lone star, and literal bytes"
+    assert texts_match(s: "", pattern: "")
+    assert !texts_match(s: "a", pattern: "")
+    assert texts_match(s: "", pattern: "*")
+    assert matches(s: [1, 2, 255], pattern: bytes.from_text("*"))
+    assert texts_match(s: "ab", pattern: "ab")
+    assert !texts_match(s: "ab", pattern: "a")
+
+test "matches: stars cross every byte, a slash and a dot included"
+    assert texts_match(s: "u/1.x", pattern: "u*x")
+    assert texts_match(s: "hello", pattern: "h*lo")
+    assert !texts_match(s: "hello", pattern: "h*lx")
+    assert texts_match(s: "aaab", pattern: "*ab")
+    assert texts_match(s: "città", pattern: "citt*")
+
+test "matches: a question mark, a class, a range, a negated class"
+    assert texts_match(s: "hallo", pattern: "h?llo")
+    assert texts_match(s: "hello", pattern: "h[ae]llo")
+    assert !texts_match(s: "hillo", pattern: "h[ae]llo")
+    assert texts_match(s: "hbllo", pattern: "h[a-b]llo")
+    assert texts_match(s: "hbllo", pattern: "h[b-a]llo")
+    assert !texts_match(s: "hello", pattern: "h[^e]llo")
+    assert texts_match(s: "hallo", pattern: "h[^e]llo")
+
+test "matches: a backslash makes a star and a bracket stand for themselves"
+    assert texts_match(s: "a*", pattern: "a\\*")
+    assert !texts_match(s: "ab", pattern: "a\\*")
+    assert texts_match(s: "[", pattern: "\\[")
+
+test "matches: a class left open reads to the pattern's end"
+    assert texts_match(s: "a", pattern: "[ab")
+    assert !texts_match(s: "c", pattern: "[ab")

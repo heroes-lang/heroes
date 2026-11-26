@@ -1,0 +1,112 @@
+# The arguments of a command read as Redis reads them: a command's name and
+# its options in any case, an integer as Redis's `string2ll` reads one (an
+# optional `-`, digits, no `+`, no space and no zero before another digit),
+# and a float as its `strtod` does, `inf` included and `nan` refused.
+
+use <rebel>/bytes
+use <rebel>/numbers
+
+# `word` in capitals, its ASCII letters raised and every other byte kept;
+# a byte that is not UTF-8 is read as U+FFFD, so no name matches it.
+#
+# - `word`: a command's name or an option, as sent.
+function upper(word: [u8]) -> str
+    out: [u8] @= []
+
+    for c in word
+        if c >= 'a' && c <= 'z'
+            out @ out.push(c - 32)
+        else
+            out @ out.push(c)
+
+    return bytes.to_text_lossy(out)
+
+# Whether `word`, in any case, is `name`, which is written in capitals.
+#
+# - `word`: the argument as sent.
+# - `name`: the option in capitals.
+function is(word: [u8], name: str) -> bool
+    return upper(word) == name
+
+# The integer `word` spells, as Redis's `string2ll` reads one.
+#
+# - `word`: the argument as sent.
+#
+# Fails `invalid` where it is empty, opens with `+`, a space or a zero
+# before another digit, holds any byte but digits after an optional `-`, or
+# lies outside `i64`.
+function integer(word: [u8]) -> i64?
+    if word.len() == 0 || word.len() > 20
+        return fail(code: "invalid", msg: "not an integer")
+
+    at = if word[0] == '-'
+        1
+    else
+        0
+
+    if at == word.len() || word[at] == '0' && word.len() > at + 1 || at == 1 && word[1] == '0'
+        return fail(code: "invalid", msg: "not an integer")
+
+    for c in word.slice(from: at, to: word.len())
+        if c < '0' || c > '9'
+            return fail(code: "invalid", msg: "not an integer")
+
+    return match numbers.parse_int(bytes.to_text_lossy(word))
+        .ok n  => ok(n)
+        .err _ => fail(code: "invalid", msg: "not an integer")
+
+# The float `word` spells, as Redis reads a score: decimal digits with an
+# optional point and exponent, or `inf`, `+inf` and `-inf`.
+#
+# - `word`: the argument as sent.
+#
+# Fails `invalid` where it is empty, holds a space, or spells no number,
+# `nan` included.
+function float(word: [u8]) -> f64?
+    text = match bytes.to_text(word)
+        .ok t  => t
+        .err _ => return fail(code: "invalid", msg: "not a float")
+
+    if text.len() == 0 || text.len() > 64
+        return fail(code: "invalid", msg: "not a float")
+
+    return match numbers.parse_float(text)
+        .ok x =>
+            if x != x
+                fail(code: "invalid", msg: "not a float")
+            else
+                ok(x)
+        .err _ => fail(code: "invalid", msg: "not a float")
+
+test "upper: letters raised, other bytes kept"
+    assert upper(bytes.from_text("get")) == "GET"
+    assert upper(bytes.from_text("ZrangeByScore")) == "ZRANGEBYSCORE"
+    assert upper([]) == ""
+    assert is(bytes.from_text("nx"), name: "NX")
+
+test "integer: what string2ll reads"
+    assert integer(bytes.from_text("0")).must() == 0
+    assert integer(bytes.from_text("-12")).must() == -12
+    assert integer(bytes.from_text("9223372036854775807")).must() == 9223372036854775807
+    assert integer(bytes.from_text("-9223372036854775808")).must() == -9223372036854775808
+
+test "integer: what string2ll refuses"
+    assert integer([]).is_err()
+    assert integer(bytes.from_text("-")).is_err()
+    assert integer(bytes.from_text("+1")).is_err()
+    assert integer(bytes.from_text("007")).is_err()
+    assert integer(bytes.from_text("-0")).is_err()
+    assert integer(bytes.from_text(" 1")).is_err()
+    assert integer(bytes.from_text("1.5")).is_err()
+    assert integer(bytes.from_text("9223372036854775808")).is_err()
+    assert integer(bytes.from_text("123456789012345678901")).is_err()
+
+test "float: numbers, exponents and infinities read; nan and bytes that are no text refused"
+    assert float(bytes.from_text("1.5")).must() == 1.5
+    assert float(bytes.from_text("-2e3")).must() == -2000.0
+    assert float(bytes.from_text("+inf")).must() == 1.0 / 0.0
+    assert float(bytes.from_text("-inf")).must() == -1.0 / 0.0
+    assert float(bytes.from_text("nan")).is_err()
+    assert float(bytes.from_text("")).is_err()
+    assert float(bytes.from_text("1 ")).is_err()
+    assert float([255]).is_err()
