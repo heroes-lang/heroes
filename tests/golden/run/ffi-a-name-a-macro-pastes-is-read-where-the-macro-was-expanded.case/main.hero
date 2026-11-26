@@ -1,0 +1,27 @@
+# A name a macro pastes is read where the macro was expanded, never as a
+# file of `.` (lane p261-beside, 2026-11-26; panel 245's R3; the draft
+# d-p261-math-linux). Bulk regression case, a correct program.
+#
+# glibc's `math.h` declares `nextafterf` by pasting `f` onto `nextafter`,
+# so clang's text dump places it at `<scratch space>:23:1`, a buffer of its
+# own. The compiler read that as the file `scratch space>`, which `.` holds
+# wherever `.` is a folder the build names: a program built from its own
+# folder, whose packages' units search it, or `C_INCLUDE_PATH=.` as here.
+# So on Linux every program reaching Rebel's `math` from its own folder was
+# refused `ffi_unpaired_release` beside the platform's own libm, *"declared
+# by a header of `.`"*, measured at `e5b7e30ab` in the Linux arm64 image.
+# `pasted.h` is the same shape on every platform: the case's own header
+# pastes `fdimf`, refused the same way on this Mac until the repair. Each is
+# now read in the file that expanded the macro, `bits/mathcalls.h` the
+# platform's and `pasted.h` the program's own, and the program links the
+# platform's libm with the platform's header.
+
+extern "pasted.h" link "m"
+    function fdimf(x: f32, y: f32) -> f32
+
+extern "math.h" link "m"
+    function nextafterf(x: f32, y: f32) -> f32
+
+function main()
+    print(fdimf(x: 5.0, y: 2.0))
+    print(nextafterf(x: 1.0, y: 2.0) > 1.0)

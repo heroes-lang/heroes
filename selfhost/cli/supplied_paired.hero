@@ -30,16 +30,16 @@
 # (`cli/header_bodies.hero`), since a door's own C is where 2448's fault
 # was. **A declaration the program's own folder found is the program's**,
 # its own word, paired with no release: such a name is judged by its first
-# declaration elsewhere, or not at all.
+# declaration elsewhere, or not at all. **A declaration a macro pasted is read
+# in the file that expanded the macro**, never in clang's `<scratch space>`
+# taken for a file of `.` (`cli/supplied_expanded.hero`, lane p261-beside).
 
 use ast
 use cli/bound_names
 use cli/clang_added
 use cli/defined_twice
 use cli/deps
-use cli/dump_tops
 use cli/header_bodies
-use cli/label_dump
 use cli/link_flags
 use cli/named_folders
 use cli/package_reads
@@ -51,6 +51,7 @@ use cli/read_back
 use cli/shadowed_words
 use cli/stand_in
 use cli/strings
+use cli/supplied_expanded
 use cli/supplied_halves
 use cli/supplied_judged
 use cli/supplied_names
@@ -111,7 +112,7 @@ function of_probings(t: toolchain.Toolchain, probings: [probing.Probing], s: sou
 
         if dumped.is_err()
             continue
-        files = declaring(dumped.must())
+        files = supplied_expanded.declaring(dumped.must())
         bodies = header_bodies.of_dump(dumped.must())
         where = folders(t, one: one, pkgconfigs: pkgconfigs)
 
@@ -126,7 +127,13 @@ function of_probings(t: toolchain.Toolchain, probings: [probing.Probing], s: sou
                 if !seen[name].is_err()
                     continue
                 seen[name] @ true
-                d = judged_file(name: name, decl: at, files: files[name].default([]), where: where, group: group)
+                read = supplied_expanded.resolved(
+                    t,
+                    probe: one.probe.must(),
+                    name: name,
+                    files: files[name].default([])
+                )
+                d = judged_file(name: name, decl: at, files: read, where: where, group: group)
 
                 if !d.is_err()
                     out @ out.push(d.must())
@@ -183,32 +190,6 @@ function judged_file(name: str, decl: i64, files: [str], where: Folders, group: 
         )
 
     return fail(code: "none", msg: "declared by the program's own headers alone")
-
-# Every file of the dump that declares each top-level function or object,
-# in the dump's order, each once.
-function declaring(dumped: str) -> {str: [str]}
-    out: {str: [str]} @= {}
-    place: label_dump.Located @= label_dump.Located(file: "", line: 0)
-    start: i64 @= 0
-    at: i64 @= 0
-
-    while at <= dumped.len()
-        if at == dumped.len() || dumped[at] == 10
-            row = dumped.slice(from: start, to: at)
-            place @ label_dump.located(row, at: place)
-
-            if header_bodies.is_top(row)
-                top = dump_tops.top_of(row)
-
-                if (top.kind == "FunctionDecl" || top.kind == "VarDecl") && !top.implicit && top.name.len() > 0
-                    held = out[top.name].default([])
-
-                    if !supplied_names.named_in(held, name: place.file)
-                        out[top.name] @ held.push(place.file)
-            start @ at + 1
-        at @ at + 1
-
-    return out
 
 # `from` and every name a body it reaches calls or uses as an object,
 # breadth first through the bodies the list defines, each once.
@@ -378,7 +359,7 @@ test "a dump's declarations are read with the file clang placed each in (panel 2
         "|-FunctionDecl 0x8 <line:20:1, col:30> col:13 history_get 'HIST_ENTRY *(int)'"
     ]
     dumped = rows.join("\n")
-    files = declaring(dumped)
+    files = supplied_expanded.declaring(dumped)
     assert files["history_get"].must() == ["/sdk/usr/include/readline/readline.h", "./hist.h"]
     assert files["history_base"].must() == ["/sdk/usr/include/readline/readline.h"]
     assert reached(header_bodies.of_dump(dumped), from: "data_is_null") == ["data_is_null", "history_get"]
