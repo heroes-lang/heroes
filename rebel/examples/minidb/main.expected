@@ -1,0 +1,235 @@
+-- A shop: customers, products and the orders between them.
+CREATE TABLE customers (id INTEGER PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE, city TEXT);
+CREATE TABLE products (id INTEGER PRIMARY KEY, name TEXT NOT NULL, price REAL NOT NULL, stock INTEGER);
+CREATE TABLE orders (
+    id INTEGER PRIMARY KEY,
+    customer_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    qty INTEGER NOT NULL,
+    placed TEXT
+);
+CREATE INDEX orders_by_customer ON orders (customer_id);
+.schema orders
+CREATE TABLE orders (
+    id INTEGER PRIMARY KEY,
+    customer_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    qty INTEGER NOT NULL,
+    placed TEXT
+);
+CREATE INDEX orders_by_customer ON orders (customer_id);
+INSERT INTO customers (name, email, city) VALUES
+    ('Ada', 'ada@example.org', 'London'),
+    ('Grace', 'grace@example.org', 'Arlington'),
+    ('Edsger', NULL, 'Nuenen'),
+    ('Barbara', 'barbara@example.org', NULL);
+INSERT INTO products (name, price, stock) VALUES
+    ('notebook', 3.5, 120), ('pencil', 0.75, 500), ('lamp', 24.0, 8), ('globe', 41.25, 3), ('stapler', 9.9, NULL);
+-- Four hundred orders, made by joining a table of ten digits with itself twice.
+CREATE TABLE digits (d INTEGER NOT NULL);
+INSERT INTO digits VALUES (0), (1), (2), (3), (4), (5), (6), (7), (8), (9);
+INSERT INTO orders (customer_id, product_id, qty, placed)
+    SELECT 1 + (a.d * 7 + b.d * 3 + c.d) % 4, 1 + (a.d + b.d * 2 + c.d * 3) % 5, 1 + (a.d * b.d + c.d) % 3, '2026-11-' || (10 + c.d)
+    FROM digits a, digits b, digits c
+    WHERE c.d < 4;
+.btree orders
+orders: 2 levels, 1 interior page, 14 leaves, 400 entries
+.btree orders_by_customer
+orders_by_customer: 2 levels, 1 interior page, 10 leaves, 400 entries
+SELECT COUNT(*) AS orders, SUM(qty) AS items, MIN(placed) AS first, MAX(placed) AS last FROM orders;
+orders  items  first       last
+------  -----  ----------  ----------
+400     754    2026-11-10  2026-11-13
+
+-- Who bought what: a join, groups, and their order.
+SELECT c.name, COUNT(*) AS orders, ROUND(SUM(o.qty * p.price), 2) AS spent
+    FROM customers c JOIN orders o ON o.customer_id = c.id JOIN products p ON p.id = o.product_id
+    GROUP BY c.name
+    HAVING SUM(o.qty) > 100
+    ORDER BY spent DESC;
+name     orders  spent
+-------  ------  -------
+Grace    100     3264.6
+Ada      100     3151.7
+Edsger   100     2738.4
+Barbara  100     2720.55
+EXPLAIN SELECT c.name, COUNT(*) FROM customers c JOIN orders o ON o.customer_id = c.id WHERE c.id = 2 GROUP BY c.name;
+QUERY PLAN
+|--SEARCH customers AS c USING INTEGER PRIMARY KEY (rowid=?)
+|--SEARCH orders AS o USING INDEX orders_by_customer (customer_id=?)
+`--USE TEMP B-TREE FOR GROUP BY
+EXPLAIN SELECT * FROM orders WHERE qty > 2 ORDER BY placed;
+QUERY PLAN
+|--SCAN orders
+`--USE TEMP B-TREE FOR ORDER BY
+EXPLAIN SELECT * FROM products WHERE id BETWEEN 2 AND 4;
+QUERY PLAN
+`--SEARCH products USING INTEGER PRIMARY KEY (rowid>=? AND rowid<=?)
+.stats on
+SELECT customer_id, product_id, qty FROM orders WHERE id = 321;
+-- pages: 4 visited, 0 of them read from the files
+customer_id  product_id  qty
+-----------  ----------  ---
+1            4           1
+SELECT customer_id, product_id, qty FROM orders WHERE id * 1 = 321;
+-- pages: 17 visited, 13 of them read from the files
+customer_id  product_id  qty
+-----------  ----------  ---
+1            4           1
+.stats off
+
+-- NULL is the unknown: it equals nothing, not even NULL.
+SELECT name, city FROM customers WHERE city <> 'London';
+name    city
+------  ---------
+Grace   Arlington
+Edsger  Nuenen
+SELECT name FROM customers WHERE city IS NULL OR email IS NULL;
+name
+-------
+Edsger
+Barbara
+SELECT COUNT(*) AS everyone, COUNT(email) AS with_email, COUNT(city) AS with_city FROM customers;
+everyone  with_email  with_city
+--------  ----------  ---------
+4         3           3
+SELECT 3 NOT IN (1, 2) AS plain, 3 NOT IN (1, NULL) AS with_null, NULL = NULL AS equal, NULL IS NULL AS same;
+plain  with_null  equal  same
+-----  ---------  -----  ----
+true   NULL       NULL   true
+SELECT name, stock, CASE WHEN stock IS NULL THEN 'unknown' WHEN stock < 10 THEN 'low' ELSE 'fine' END AS level
+    FROM products ORDER BY stock;
+name      stock  level
+--------  -----  -------
+stapler   NULL   unknown
+globe     3      low
+lamp      8      low
+notebook  120    fine
+pencil    500    fine
+SELECT c.name, COUNT(o.id) AS orders FROM customers c LEFT JOIN orders o ON o.customer_id = c.id AND o.qty = 3
+    GROUP BY c.name ORDER BY c.name;
+name     orders
+-------  ------
+Ada      28
+Barbara  31
+Edsger   30
+Grace    29
+
+-- The constraints refuse, and the statement leaves nothing behind.
+INSERT INTO customers (name, email) VALUES ('Imposter', 'ada@example.org');
+Error: [23505] UNIQUE constraint failed: customers.email
+INSERT INTO customers (name, city) VALUES (NULL, 'Rome');
+Error: [23502] NOT NULL constraint failed: customers.name
+INSERT INTO products (name, price) VALUES ('ghost', 'free');
+Error: [42804] column price is REAL, the value is text
+UPDATE products SET stock = stock + 9223372036854775807 WHERE id = 1;
+Error: [22003] integer out of range: 120 + 9223372036854775807
+SELECT price / 0 FROM products;
+Error: [22012] division by zero
+SELECT COUNT(*) FROM customers;
+COUNT(*)
+--------
+4
+
+-- A transaction rolled back, and one that fails and is refused until ROLLBACK.
+BEGIN;
+UPDATE products SET price = price * 2;
+SELECT name, price FROM products WHERE id = 1;
+name      price
+--------  -----
+notebook  7.0
+ROLLBACK;
+SELECT name, price FROM products WHERE id = 1;
+name      price
+--------  -----
+notebook  3.5
+BEGIN;
+DELETE FROM orders WHERE qty = 1;
+INSERT INTO nowhere VALUES (1);
+Error: [42P01] no such table: nowhere
+SELECT COUNT(*) FROM orders;
+Error: [25P02] the transaction failed: statements are refused until ROLLBACK
+COMMIT;
+Error: [40P01] the transaction failed, so COMMIT rolled it back
+SELECT COUNT(*) FROM orders;
+COUNT(*)
+--------
+400
+
+-- One writer at a time: connection 1 holds the lock while connection 0 reads its snapshot.
+.connection 1
+BEGIN;
+INSERT INTO customers (name, email, city) VALUES ('Alan', 'alan@example.org', 'Wilmslow');
+.connection 0
+INSERT INTO customers (name) VALUES ('Kathleen');
+Error: [55P03] the database is locked: another connection is writing
+SELECT COUNT(*) FROM customers;
+COUNT(*)
+--------
+4
+.connection 1
+COMMIT;
+.connection 0
+SELECT COUNT(*) FROM customers;
+COUNT(*)
+--------
+5
+.connection
+0: open, current
+1: open
+
+-- A crash after a commit: the log holds the transaction, and recovery keeps it.
+UPDATE products SET stock = stock - 1 WHERE name = 'globe';
+.crash
+crash: the connection is gone; its log holds nothing uncommitted
+.open
+recovery: the log holds 128 whole frames
+recovery: 128 frames of 11 committed transactions kept
+SELECT name, stock FROM products WHERE name = 'globe';
+name   stock
+-----  -----
+globe  2
+
+-- A crash in the middle of a transaction: its pages spilled to the log, the last frame torn.
+BEGIN;
+DELETE FROM orders WHERE customer_id <> 2;
+UPDATE products SET price = 0.0;
+.crash
+crash: the connection is gone mid-transaction: 52 uncommitted frames reached the log, the last one torn
+.open
+recovery: the log holds 180 whole frames
+recovery: 128 frames of 11 committed transactions kept
+recovery: 52 frames of a transaction that never committed cut off
+recovery: a torn frame after them cut off
+SELECT COUNT(*) AS orders, SUM(o.qty) AS items, MIN(p.price) AS cheapest FROM orders o JOIN products p ON p.id = o.product_id;
+orders  items  cheapest
+------  -----  --------
+400     754    0.75
+PRAGMA integrity_check;
+ok
+
+-- The log copied into the database file; the answers stay the same.
+.checkpoint
+checkpoint: 32 pages copied into the database file, the log emptied
+.mode csv
+SELECT * FROM customers ORDER BY id;
+id,name,email,city
+1,Ada,ada@example.org,London
+2,Grace,grace@example.org,Arlington
+3,Edsger,,Nuenen
+4,Barbara,barbara@example.org,
+5,Alan,alan@example.org,Wilmslow
+.mode json
+SELECT id, name, price FROM products WHERE price > 5 ORDER BY price DESC LIMIT 2;
+[{"id":4,"name":"globe","price":41.25},
+{"id":3,"name":"lamp","price":24}]
+.mode column
+DROP INDEX orders_by_customer;
+EXPLAIN SELECT * FROM orders WHERE customer_id = 3;
+QUERY PLAN
+`--SCAN orders
+DROP TABLE digits;
+PRAGMA integrity_check;
+ok
+.tables
+customers  orders  products

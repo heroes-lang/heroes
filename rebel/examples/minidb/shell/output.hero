@@ -1,0 +1,191 @@
+# A query's rows written as the shell's modes write them, the names those of
+# SQLite's shell: `column`, the columns padded to their widest value under
+# their names; `csv`, by RFC 4180 through Rebel's `csv`; `json`, an array of
+# objects through Rebel's `json`; `line`, one `name = value` a line. `NULL`
+# is written `NULL`, an empty field in CSV, `null` in JSON. No line ends
+# with a space.
+
+use <rebel>/csv
+use <rebel>/json
+use <rebel>/sql
+use <rebel>/strings
+
+use values/value
+
+## Modes
+
+# Whether `mode` is a mode the shell writes.
+#
+# - `mode`: the mode's name.
+function is_mode(mode: str) -> bool
+    return mode == "column" || mode == "csv" || mode == "json" || mode == "line"
+
+# The lines of `rows` in `mode`, the column names first where `headers` asks
+# and the mode has a header.
+#
+# - `rows`: the query's answer.
+# - `mode`: "column", "csv", "json" or "line".
+# - `headers`: whether the names are written.
+#
+# Fails `unsupported` where a value has no form in JSON.
+function lines_of(rows: sql.Rows, mode: str, headers: bool) -> [str]?
+    names: [str] @= []
+
+    for c in rows.columns
+        names @ names.push(c.name)
+
+    return match mode
+        "csv"  => ok(csv_lines(names, rows: rows.rows, headers: headers))
+        "json" => json_lines(rows.rows)
+        "line" => ok(line_lines(names, rows: rows.rows))
+        _      => ok(column_lines(names, rows: rows.rows, headers: headers))
+
+function column_lines(names: [str], rows: [sql.Row], headers: bool) -> [str]
+    widths @= names.map(width_of)
+
+    for r in rows
+        for k in range(from: 0, to: r.values.len())
+            w = width_of(value.display(r.values[k]))
+
+            if w > widths[k]
+                widths[k] @ w
+
+    out: [str] @= []
+
+    if headers
+        out @ out.push(padded(names, widths: widths))
+        out @ out.push(padded(widths.map(dashes), widths: widths))
+
+    for r in rows
+        out @ out.push(padded(r.values.map(value.display), widths: widths))
+
+    return out
+
+# The characters of a text, which its column's width counts.
+function width_of(s: str) -> i64
+    return s.chars().len()
+
+function dashes(n: i64) -> str
+    return repeat("-", to_u64(n).default(0))
+
+# The cells of a line, each padded to its column's width, two spaces apart,
+# the line's last spaces cut.
+function padded(cells: [str], widths: [i64]) -> str
+    parts: [str] @= []
+
+    for k in range(from: 0, to: cells.len())
+        parts @ parts.push(strings.pad_end(s: cells[k], width: widths[k], pad: " "))
+
+    return strings.trim_end(parts.join("  "))
+
+function csv_lines(names: [str], rows: [sql.Row], headers: bool) -> [str]
+    options @= csv.minimal_write_options()
+    options.line_end @ "\n"
+    out: [str] @= []
+
+    if headers
+        out @ out.push(strings.trim_suffix(s: csv.format_row(names, options: options), suffix: "\n"))
+
+    # A row is written with its line end, which the shell's `print` writes
+    # itself, so it is cut off.
+    for r in rows
+        out @ out.push(strings.trim_suffix(s: csv.format_row(r.values.map(csv_cell), options: options), suffix: "\n"))
+
+    return out
+
+function csv_cell(v: sql.Value) -> str
+    if v == .null_value
+        return ""
+    return value.display(v)
+
+# The rows as SQLite's shell writes JSON: an array of objects, one a line.
+function json_lines(rows: [sql.Row]) -> [str]?
+    if rows.len() == 0
+        return ok([])
+    out: [str] @= []
+
+    for k in range(from: 0, to: rows.len())
+        members: {str: json.Value} @= {}
+        r = rows[k]
+
+        for c in range(from: 0, to: r.names.len())
+            members[r.names[c]] @ json_of(r.values[c])
+
+        line @= json.format(.object(members: members))?
+
+        if k == 0
+            line @ "[" + line
+
+        if k == rows.len() - 1
+            line @ line + "]"
+        else
+            line @ line + ","
+        out @ out.push(line)
+
+    return ok(out)
+
+# A value as JSON has it. JSON's number is a float, so an integer past 2^53
+# would come out another number; it is written as a text instead, its digits
+# kept.
+function json_of(v: sql.Value) -> json.Value
+    return match v
+        .null_value          => .null_value
+        .boolean b           => .boolean(v: b.v)
+        .integer n           => integer_json(n.v)
+        .float x             => .number(v: x.v)
+        .text t              => .text(v: t.v)
+        .blob _ | .instant _ => .text(v: value.display(v))
+
+function integer_json(n: i64) -> json.Value
+    if n > 9_007_199_254_740_992 || n < -9_007_199_254_740_992
+        return .text(v: to_str(n))
+    return .number(v: to_f64(n))
+
+function line_lines(names: [str], rows: [sql.Row]) -> [str]
+    widest @= 0
+
+    for n in names
+        if width_of(n) > widest
+            widest @ width_of(n)
+
+    out: [str] @= []
+
+    for k in range(from: 0, to: rows.len())
+        if k > 0
+            out @ out.push("")
+        r = rows[k]
+
+        for c in range(from: 0, to: names.len())
+            out @ out.push(
+                strings.trim_end(strings.pad_start(s: names[c], width: widest, pad: " ") + " = " + value.display(r.values[c]))
+            )
+
+    return out
+
+## Tests
+
+function sample() -> sql.Rows
+    names = ["id", "name", "city"]
+    return sql.Rows(
+        columns: [sql.Column(name: "id", type_name: ""), sql.Column(name: "name", type_name: ""), sql.Column(name: "city", type_name: "")],
+        rows: [sql.Row(names: names, values: [.integer(v: 1), .text(v: "Ada"), .null_value]), sql.Row(names: names, values: [.integer(v: 22), .text(v: "Zoë, \"Z\""), .text(v: "Nuenen")])]
+    )
+
+test "lines_of: column mode pads to the widest value, characters of more than one byte counted once"
+    assert lines_of(sample(), mode: "column", headers: true).must() == ["id  name      city", "--  --------  ------", "1   Ada       NULL", "22  Zoë, \"Z\"  Nuenen"]
+
+test "lines_of: csv quotes what it must, NULL empty; json keeps the columns' order"
+    assert lines_of(sample(), mode: "csv", headers: true).must() == ["id,name,city", "1,Ada,", "22,\"Zoë, \"\"Z\"\"\",Nuenen"]
+    found = lines_of(sample(), mode: "json", headers: true).must()
+    assert found.len() == 2
+    assert found[0] == "[{\"id\":1,\"name\":\"Ada\",\"city\":null},"
+
+test "lines_of: line mode, and no row at all"
+    assert lines_of(sample(), mode: "line", headers: true).must()[0] == "  id = 1"
+    empty = sql.Rows(columns: [sql.Column(name: "n", type_name: "")], rows: [])
+    assert lines_of(empty, mode: "column", headers: true).must() == ["n", "-"]
+    assert lines_of(empty, mode: "json", headers: true).must().len() == 0
+
+test "json_of: an integer past 2^53 keeps its digits as a text"
+    assert json_of(.integer(v: 9_007_199_254_740_993)) == .text(v: "9007199254740993")
+    assert json_of(.integer(v: 42)) == .number(v: 42.0)
