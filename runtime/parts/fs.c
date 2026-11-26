@@ -30,6 +30,7 @@
 #include <windows.h>
 #include <direct.h>
 #else
+#include <limits.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -503,5 +504,73 @@ HeroStr hero_exe_path_shown(int64_t *status, int64_t *marks) {
         return hero_str_from_bytes("", 0);
     }
     return hero_bytes_shown(found, length, status, marks);
+#endif
+}
+
+/* WHAT A PATH TAKES OF THE SYSTEM'S LIMIT (M-rebel-library step 212a,
+ * `hero_compiler.h`, bound by `selfhost/cli/path_room.hero`). A build names
+ * files the program's name is part of, and the system refuses a path past its
+ * limit in words that never say so: on the Windows box (2026-11-26, Windows
+ * 10.0.26100, `LongPathsEnabled` 0) MSVC's `link.exe` 14.44.35207 wrote an
+ * output whose whole path took 259 UTF-16 units and refused 260 and more,
+ * `LNK1104: cannot open file`, a relative output judged by its whole path and
+ * a `\\?\` prefix refused all the same; `lld-link` wrote one of 266, and this
+ * runtime's own `MoveFileExW` then refused it with 3, *the path is not found*;
+ * `mkdir` made a folder of 247 and refused 248. So Windows' measure is the
+ * whole path `GetFullPathNameW` makes, the one the system's own conversion
+ * holds to MAX_PATH. A POSIX kernel copies the path it is handed, at most
+ * PATH_MAX bytes with its NUL, and judges it as handed, relative or not. */
+HeroStr hero_path_judged_shown(const char *path, int64_t *units, int64_t *status, int64_t *marks) {
+    hero_fs_why_code = 0;
+    *units = -1;
+    *marks = 0;
+    *status = HERO_OS_FAILED;
+#if defined(_WIN32)
+    wchar_t *wide = hero_win_wide(path, NULL);
+    if (wide == NULL) {
+        hero_fs_why_code = (int64_t)GetLastError();
+        return hero_str_from_bytes("", 0);
+    }
+    /* Asked until the answer fits, as `parts/run.c` asks a folder: this
+     * process's folder may move between the two calls. */
+    DWORD size = GetFullPathNameW(wide, 0, NULL, NULL);
+    DWORD failed = size == 0 ? GetLastError() : (DWORD)ERROR_INSUFFICIENT_BUFFER;
+    wchar_t *whole = NULL;
+    DWORD got = 0;
+    for (int tries = 0; size != 0 && tries < 4; tries += 1) {
+        whole = hero_alloc((size_t)size * sizeof *whole);
+        got = GetFullPathNameW(wide, size, whole, NULL);
+        if (got != 0 && got < size) break;
+        /* Read before the release below, which may move it. */
+        if (got == 0) failed = GetLastError();
+        hero_release(whole);
+        whole = NULL;
+        size = got;
+    }
+    hero_release(wide);
+    if (whole == NULL) {
+        hero_fs_why_code = (int64_t)(failed != 0 ? failed : (DWORD)ERROR_INSUFFICIENT_BUFFER);
+        return hero_str_from_bytes("", 0);
+    }
+    int64_t length = 0;
+    char *bytes = hero_win_bytes(whole, &length);
+    hero_release(whole);
+    HeroStr shown = hero_bytes_shown(bytes, length, status, marks);
+    hero_release(bytes);
+    *units = (int64_t)got;
+    return shown;
+#else
+    size_t length = strlen(path);
+    *units = (int64_t)length;
+    return hero_bytes_shown(path, (int64_t)length, status, marks);
+#endif
+}
+
+int64_t hero_path_limit(int64_t folder) {
+#if defined(_WIN32)
+    return folder != 0 ? (int64_t)(MAX_PATH - 12 - 1) : (int64_t)(MAX_PATH - 1);
+#else
+    (void)folder;
+    return (int64_t)(PATH_MAX - 1);
 #endif
 }

@@ -136,4 +136,20 @@ HeroStr hero_pdb_symbolized(const char *binary, const char *addresses, int64_t *
 #define HERO_FS_DEVICE 7
 int64_t hero_fs_special(const char *path);
 
+/* The path the system holds to its limit when `path` is handed to it, and in
+ * `*units` how much of that limit it takes (M-rebel-library step 212a,
+ * `parts/fs.c`, bound by `selfhost/cli/path_room.hero`). Windows reads a path
+ * into this process's folder and judges it whole, at most MAX_PATH UTF-16
+ * units with its NUL: the answer is `GetFullPathNameW`'s whole path and its
+ * units. A POSIX kernel judges a path as it is handed over, at most PATH_MAX
+ * bytes with its NUL: the answer is `path` and its bytes. `*status` is the
+ * shown read's, HERO_OS_OK or HERO_OS_NOT_TEXT and its marks; `*units` is -1,
+ * with "", where the system refused the question, `hero_fs_why` saying why. */
+HeroStr hero_path_judged_shown(const char *path, int64_t *units, int64_t *status, int64_t *marks);
+
+/* The most units such a path may take, a file's, and with `folder` nonzero a
+ * folder's own, which Windows holds to MAX_PATH less 12: 259 and 247 there,
+ * PATH_MAX less one elsewhere for both. */
+int64_t hero_path_limit(int64_t folder);
+
 #endif
