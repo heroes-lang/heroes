@@ -366,6 +366,61 @@ test "the layer's own maths give the C library's floor, ceil and nextafter bit f
 
     assert !process.remove_tree(dir).is_err()
 
+# **A float's `%` is the runtime's own, C's `fmod` bit for bit** (defect
+# d-lane-macro-members4-2, 2026-11-25): `runtime/parts/f64.c`'s
+# `hero_f64_rem`, which the unit calls since glibc keeps `fmod` in libm and a
+# program's link does not carry it, held to this machine's C library over every
+# pair of 32 numbers of every kind with both signs (both zeros, subnormals,
+# the least normal, 1 and 2^52 either side, the largest finite, the
+# infinities, quiet and signalling NaNs with payloads) and 1.2 million more:
+# any bits, close exponents with quotients up to 2^2046, and subnormals. A NaN
+# where C's answer is one, and on Darwin's arm64 the same NaN bit for bit,
+# the one the unit's `fmod` gave there until then. At -O0 and -O2, linked
+# with the runtime's object as a program is, libm named where the platform
+# keeps it apart, as a program calling `fmod` itself writes `link "m"`.
+test "a float's % is the runtime's own, the C library's fmod bit for bit over numbers of every kind"
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    dir = "build/selftest-float-rem"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+    unit = dir + "/rem.c"
+    assert !write_file(path: unit, text: "#include <math.h>\n#include <stdint.h>\n#include <stdio.h>\n#include <string.h>\n\ndouble hero_f64_rem(double x, double y);\n\nstatic uint64_t bits_of(double x) {\n    uint64_t b;\n    memcpy(&b, &x, sizeof b);\n    return b;\n}\n\nstatic double of_bits(uint64_t b) {\n    double x;\n    memcpy(&x, &b, sizeof x);\n    return x;\n}\n\nstatic uint64_t state = UINT64_C(0x2545f4914f6cdd1d);\n\nstatic uint64_t next(void) {\n    state ^= state << 13;\n    state ^= state >> 7;\n    state ^= state << 17;\n    return state;\n}\n\nstatic long pairs = 0;\nstatic long wrong = 0;\n\nstatic void one(double x, double y) {\n    volatile double vx = x;\n    volatile double vy = y;\n    double ours = hero_f64_rem(vx, vy);\n    double theirs = fmod(vx, vy);\n    pairs += 1;\n#if defined(__APPLE__) && defined(__aarch64__)\n    wrong += bits_of(ours) != bits_of(theirs);\n#else\n    wrong += bits_of(ours) != bits_of(theirs) && !(ours != ours && theirs != theirs);\n#endif\n}\n\nint main(void) {\n    const uint64_t edge[] = { 0, 1, 2, 3, UINT64_C(0x000fffffffffffff), UINT64_C(0x0010000000000000), UINT64_C(0x0010000000000001), UINT64_C(0x001fffffffffffff), UINT64_C(0x3fe0000000000000), UINT64_C(0x3ff0000000000000), UINT64_C(0x3ff0000000000001), UINT64_C(0x3fefffffffffffff), UINT64_C(0x4000000000000000), UINT64_C(0x401e000000000000), UINT64_C(0x4330000000000000), UINT64_C(0x4340000000000000), UINT64_C(0x433fffffffffffff), UINT64_C(0x7fefffffffffffff), UINT64_C(0x7fe0000000000000), UINT64_C(0x7ff0000000000000), UINT64_C(0x7ff8000000000000), UINT64_C(0x7ff8000000000123), UINT64_C(0x7ff0000000000789), UINT64_C(0x7ff4000000000000), UINT64_C(0x7fffffffffffffff), UINT64_C(0x3fb999999999999a), UINT64_C(0x400921fb54442d18), UINT64_C(0x401921fb54442d18), UINT64_C(0x3cb0000000000000), UINT64_C(0x0008000000000000), UINT64_C(0x0000000080000000), UINT64_C(0x7fe1ccf385ebc8a0) };\n    const size_t n = sizeof edge / sizeof edge[0];\n    const uint64_t sign = UINT64_C(0x8000000000000000);\n    for (size_t i = 0; i < n; i += 1) {\n        for (size_t j = 0; j < n; j += 1) {\n            for (int k = 0; k < 4; k += 1) {\n                one(of_bits(edge[i] | ((k & 1) ? sign : 0)), of_bits(edge[j] | ((k & 2) ? sign : 0)));\n            }\n        }\n    }\n    for (long k = 0; k < 400000; k += 1) {\n        uint64_t a = next();\n        uint64_t b = next();\n        uint64_t ea = next() % 2047;\n        uint64_t eb = ea - (next() % 64 > ea ? ea : next() % 64);\n        one(of_bits(a), of_bits(b));\n        one(of_bits((a & UINT64_C(0x800fffffffffffff)) | (ea << 52)), of_bits((b & UINT64_C(0x800fffffffffffff)) | (eb << 52)));\n        one(of_bits(a >> (next() % 64)), of_bits(b >> (next() % 64)));\n    }\n    printf(\"%ld pairs, %ld not the C library's\\n\", pairs, wrong);\n    return wrong == 0 ? 0 : 1;\n}\n").is_err()
+    libm: [str] @= []
+
+    if !libraries.in_the_c_runtime(library: "m")
+        libm @ ["m"]
+    none: [str] = []
+    no_output: str? = fail(code: "none", msg: "no -o")
+
+    for level in ["-O0", "-O2"]
+        object = dir + "/rem" + level + ".o"
+        line = strings.with_all(
+            list: strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: false)),
+            more: ["-c", unit, "-I", t.runtime, "-o", object]
+        )
+        assert !toolchain.run_clang(line: line, what: "the float remainder's probe", err_path: dir + "/rem.err.txt").is_err()
+        runtime = toolchain.runtime_object(t, level: level, sanitize: false).must()
+        binary = link.link_objects(
+            t,
+            objects: [runtime, object],
+            module: "rem" + level.slice(from: 1, to: level.len()),
+            output: no_output,
+            level: level,
+            sanitize: false,
+            search_library: none,
+            pkgconfig_flags: none,
+            link_names: libm,
+            judging: supplied.nothing()
+        ).must()
+        said = dir + "/rem" + level + ".txt"
+        ran = process.run(program: binary, words: [binary], out: said, err: process.discard())
+
+        if !ran.started || ran.code != 0
+            io.eprint(text: "the float remainder at " + level + ": " + read_file(said).default("no answer"))
+        assert ran.started && ran.code == 0
+
+    assert !process.remove_tree(dir).is_err()
+
 # **A build that links nothing asks the layer nothing** (`--emit-c`): no
 # word for a link it never makes, and no member asked or compiled, so its
 # `build/` is never even made; a build that links is every other test's.

@@ -465,6 +465,13 @@ int64_t hero_f64_to_int(double v);
 bool hero_f64_fits_int(double v);
 double hero_int_to_f64(int64_t v);
 
+/* `%` of two floats: C's `fmod`, exact, computed by the runtime so a unit
+ * calls no maths library (`parts/f64.c`; defect d-lane-macro-members4-2).
+ * Added beside the declarations above and changing none of them, so
+ * `HERO_RUNTIME_ABI` stands: a runtime without it is a compile error at the
+ * first unit that takes a float's `%`. */
+double hero_f64_rem(double x, double y);
+
 /* -- the failure side of `T?` (design.md §4.6) -------------------------------
  *
  * `fail(code, msg)`, and the two fields the spec names: a stable snake_case code

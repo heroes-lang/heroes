@@ -1,0 +1,56 @@
+# Fixed 2026-11-25, lane macro-members5 (found by lane macro-members4 beside
+# its repair of a bound name's value after C's library).
+# Symptom: a program taking `%` of two `f64`, `qd % 2.0`, built in the Linux
+# arm64 image, stopped at exit 2 with *internal error: linking failed*,
+# `undefined reference to 'fmod'`, at -O0 and at -O2; on this Mac it built.
+# Cause: the unit wrote the remainder as `__builtin_fmod` (`fmod` until the
+# day before), which clang lowers to a call to `fmod`, and glibc keeps `fmod`
+# in libm, which the link of a program that says no `link "m"` does not carry.
+# Repair: the unit calls the runtime's `hero_f64_rem`, C's `fmod` computed
+# exactly, so a float's `%` needs no maths library on any platform. Every
+# answer below is the one this Mac's C library gave the compiler of the day
+# before, at every level: the sign of a zero kept, a zero divisor and an
+# infinite dividend giving `nan`, an infinite divisor giving the dividend, a
+# subnormal, a quotient past 2^1000 and an `f32` remainder.
+
+# 2 to the power `n`, by doubling or halving, exact for each `n` from -1074
+# to 1023: the language writes no exponent in a literal.
+function two_to(n: i64) -> f64
+    out: f64 @= 1.0
+    k: i64 @= 0
+
+    while k < n
+        out @ out * 2.0
+        k @ k + 1
+
+    while k > n
+        out @ out / 2.0
+        k @ k - 1
+
+    return out
+
+function main()
+    qd: f64 = 7.5
+    print(qd % 2.0)
+    print(-qd % 2.0)
+    print(qd % -2.0)
+    zero: f64 = 0.0
+    inf = 1.0 / zero
+    nan = zero / zero
+    print(-zero % 3.0)
+    print(zero % -3.0)
+    print(qd % zero)
+    print(inf % 2.0)
+    print(2.0 % inf)
+    print(-2.0 % -inf)
+    print(nan % 2.0)
+    print(two_to(1000) * 1.5 % 0.7)
+    print((2.0 - two_to(-52)) * two_to(1023) % 0.1)
+    print(two_to(-1074) % two_to(-1022))
+    print(two_to(-1022) % two_to(-1074))
+    print(7.0 * two_to(-1040) % (3.0 * two_to(-1070)))
+    print(0.1 % 0.01)
+    print(6.283185307179586 % 1.5707963267948966)
+    small: f32 = 7.5
+    print(small % 2.0)
+    print(-small % 0.75)

@@ -201,12 +201,17 @@ function binary(@w: writer.Writer, s: source.Source, c: state.Checked, names: ct
                 return
         .eq | .ne => fall @ fall
 
-    # % on two f64 is fmod, not C's %, which takes integers only —
+    # % on two floats is C's fmod, not C's %, which takes integers only —
     # t3 = t1 % t2 on doubles is a clang error on a program the spec
     # explicitly allows. fmod truncates toward zero, which is the rule
-    # the spec already states for / and %.
+    # the spec already states for / and %. It is the runtime's
+    # `hero_f64_rem`, exact and C's bit for bit, and never the library's
+    # (defect d-lane-macro-members4-2, 2026-11-25): `__builtin_fmod` until
+    # then, which clang lowers to a call to `fmod`, and glibc keeps that in
+    # libm, which a program's link does not carry, so `print(qd % 2.0)`
+    # stopped at exit 2 on Linux, *undefined reference to `fmod'*.
     if op == .rem
-        writer.line(@w, text: "    " + name + " = __builtin_fmod(" + l + ", " + r + ");")
+        writer.line(@w, text: "    " + name + " = hero_f64_rem(" + l + ", " + r + ");")
         return
     plain: str @= "+"
 
@@ -348,4 +353,4 @@ test "a nan stops an ordering, f64 % is fmod, and str + concatenates"
     binary(@w, got.s, got.c, got.names, got.f, op: .add, left: 5, right: 6, target: ok("t0"), site: 17)
     binary(@w, got.s, got.c, got.names, got.f, op: .lt, left: 5, right: 6, target: ok("t0"), site: 17)
     text = writer.finish(w)
-    assert text == "    if (t3 != t3 || t4 != t4) hero_panic_at(\"a nan in `<`: it is neither less nor greater, so both arms would be false\", \"t.hero\", \"t.t\", 2, 5);\n    t0 = t3 < t4;\n    t0 = __builtin_fmod(t3, t4);\n    t0 = hero_str_concat(t5, t6);\n    t0 = hero_str_cmp(t5, t6) < 0;\n"
+    assert text == "    if (t3 != t3 || t4 != t4) hero_panic_at(\"a nan in `<`: it is neither less nor greater, so both arms would be false\", \"t.hero\", \"t.t\", 2, 5);\n    t0 = t3 < t4;\n    t0 = hero_f64_rem(t3, t4);\n    t0 = hero_str_concat(t5, t6);\n    t0 = hero_str_cmp(t5, t6) < 0;\n"

@@ -67,7 +67,7 @@ constant NAMES: [str]
         "hero_desc_str hero_desc_thread hero_desc_u16 hero_desc_u32 hero_desc_u64 hero_desc_u8"
         "hero_dir_at hero_dir_at_shown hero_dir_release hero_dir_remove_tree"
         "hero_dir_scan hero_env_shown hero_exe_path_shown hero_exit"
-        "hero_f32_to_f64 hero_f32_to_str hero_f64_fits_int hero_f64_to_f32"
+        "hero_f32_to_f64 hero_f32_to_str hero_f64_fits_int hero_f64_rem hero_f64_to_f32"
         "hero_f64_to_int hero_f64_to_str hero_failure_closed hero_failure_does_not_fit"
         "hero_failure_eq hero_failure_hash hero_failure_limit hero_failure_missing_key"
         "hero_failure_not_text hero_failure_release hero_failure_retain hero_failure_send_closed hero_failure_send_stopped hero_failure_stopped hero_failure_timeout"
@@ -160,8 +160,9 @@ constant LEFT_LINES: [str]
 
 # The functions of `<math.h>` (C11 7.12) the list holds, `fmod` among them
 # since the unit's own C writes an `f64` `%` as `__builtin_fmod` (defect
-# d-lane-macro-members2-1, 2026-11-25; `emit/operator.hero`): a name the
-# unit's own C never writes, which the guard keeps for the C library's `<math.h>` read
+# d-lane-macro-members2-1, 2026-11-25; `emit/operator.hero`), and as the
+# runtime's `hero_f64_rem` since defect d-lane-macro-members4-2 the same day,
+# which links with no maths library: a name the unit's own C never writes, which the guard keeps for the C library's `<math.h>` read
 # after the groups (defect 568) and which `heroes_standard.h` now reads with
 # each such name a bound macro reaches saved and undefined (defect 2059,
 # `cli/bound_kept.hero`), so the guard can leave such a name as a group's

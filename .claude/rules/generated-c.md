@@ -27,7 +27,8 @@ every group's header, by a macro of the runtime's form (`HERO_DESC_EQ`,
 `HERO_THREAD_BOX_ARG`, `HERO_PLACE_PATH`), a
 failure's by `hero_code` and `hero_msg`; a macro of C's library is spelled in
 a form C reserves, `_Bool`, `((void *)0)`, `(-__INT64_MAX__ - 1)`,
-`__builtin_fmod`, `__builtin_huge_val()`; and the integer types keep their
+`__builtin_huge_val()`, and a float's `%` is the runtime's `hero_f64_rem`
+(below); and the integer types keep their
 names, which a debugger shows, a header defining one as a macro refused where
 the program binds it (`emit/library_types.hero`). **And a name the program
 binds means there what its header made it, whatever the C library read after
@@ -76,6 +77,17 @@ C never mentions the output path.
 
 Arithmetic aborts via `__builtin_*_overflow`, never C undefined behaviour, and
 `%` is guarded like `/`, because `INT64_MIN % -1` does not trap on arm64.
+**A unit calls no function of a library a program's link does not carry**
+(defect d-lane-macro-members4-2, 2026-11-25): a float's `%` is the runtime's
+`hero_f64_rem`, C's `fmod` computed exactly and its bit for bit, since clang
+lowers `__builtin_fmod` to a call to `fmod` and glibc keeps that in libm,
+which a program names with `link "m"`. Every other call the unit writes is
+the runtime's, a function the program binds and links itself, or a builtin
+clang compiles to instructions or to libc's `memcpy`, `memmove`, `memset` and
+`strlen` (the emitter's literals, read that day); in the Linux arm64 image
+each blessed emission's object, at -O0 and -O2, needed no other name than
+those, the runtime's object, the layer's members and what libc, ld.so,
+libc_nonshared, libgcc and libgcc_s define, but `fmod` until then.
 Every `int` literal is cast to its width's type by clang's own name,
 `((__INT64_TYPE__)n)`, `U` on an unsigned one past the signed top; it was
 `INT64_C(n)` until 2026-11-25 (above).

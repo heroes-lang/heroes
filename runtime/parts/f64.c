@@ -341,3 +341,121 @@ int64_t hero_f64_to_int(double v) {
  * Every language with these two types has it; Part 8 is where it belongs, and an
  * abort is not, because the value that loses precision is a legitimate `i64`. */
 double hero_int_to_f64(int64_t v) { return (double)v; }
+
+/* -- `%` of two floats (spec § 7: `/` and `%` truncate toward zero) ---------
+ *
+ * C's `fmod`, computed here, so a program's unit calls the runtime and no
+ * maths library (defect d-lane-macro-members4-2, 2026-11-25). The unit wrote
+ * `__builtin_fmod`, which clang lowers to a call to `fmod`, and glibc keeps
+ * `fmod` in libm, which no program's link carries unless it says `link "m"`:
+ * `print(qd % 2.0)` stopped at exit 2, *undefined reference to `fmod'*, in
+ * the Linux arm64 image at `-O0` and `-O2`. Libm on every link line was not
+ * taken: a program binding `sqrt` without `link "m"`, refused on Linux, would
+ * build (`platform/hero_layer_maths.h` says the same of the layer's members).
+ *
+ * EXACT, so the answer is C's bit for bit. `x - n * y`, `n` the quotient
+ * truncated, is a double whatever `x` and `y` are, so every correct `fmod`
+ * gives the same bits: the significands are integers below 2^53, and the
+ * remainder of `mx * 2^(ex - ey)` by `my` is taken a few bits of the exponent
+ * at a time, each step `(r << k) % my` with `r < my`, so nothing passes 64
+ * bits. Its sign is `x`'s, a zero's too.
+ *
+ * WHERE C GIVES A NaN, the one Darwin's libm gives on arm64, on every target:
+ * a NaN operand gives `x` where `x` is one, else `y`, a signalling one
+ * before a quiet one and made quiet (the order arm64's own arithmetic takes);
+ * an infinite `x` or a zero `y` gives the default NaN, `0x7ff8000000000000`.
+ * A float's `%` is this of the two doubles, which is `fmodf`'s answer, as
+ * `__builtin_fmod` gave it. Held to this machine's C library by the
+ * compiler's test (`cli/layer_reach.hero`), and on every leg at every level by
+ * `run/fixedbugs-a-float-remainder-is-the-c-library-s-fmod-bit-for-bit` and,
+ * linked with no maths library,
+ * `run/fixedbugs-a-float-remainder-links-with-no-maths-library-at-every-level`. */
+double hero_f64_rem(double x, double y) {
+    const uint64_t sign = UINT64_C(0x8000000000000000);
+    const uint64_t infinity = UINT64_C(0x7ff0000000000000);
+    const uint64_t quiet = UINT64_C(0x0008000000000000);
+    const uint64_t fraction = UINT64_C(0x000fffffffffffff);
+    uint64_t ux;
+    uint64_t uy;
+    uint64_t bits;
+    double out;
+
+    memcpy(&ux, &x, sizeof ux);
+    memcpy(&uy, &y, sizeof uy);
+    uint64_t ax = ux & ~sign;
+    uint64_t ay = uy & ~sign;
+
+    if (ax > infinity || ay > infinity) {
+        if (ax > infinity && (ux & quiet) == 0) {
+            bits = ux | quiet;
+        } else if (ay > infinity && (uy & quiet) == 0) {
+            bits = uy | quiet;
+        } else if (ax > infinity) {
+            bits = ux;
+        } else {
+            bits = uy;
+        }
+        memcpy(&out, &bits, sizeof out);
+        return out;
+    }
+    if (ax == infinity || ay == 0) {
+        bits = infinity | quiet;
+        memcpy(&out, &bits, sizeof out);
+        return out;
+    }
+    if (ax < ay) {
+        return x;
+    }
+    bits = ux & sign;
+    if (ax == ay) {
+        memcpy(&out, &bits, sizeof out);
+        return out;
+    }
+
+    /* Each operand `m * 2^(e - 1075)`, a subnormal's exponent field read
+     * as 1 and its significand without the implicit bit. */
+    int ex = (int)(ax >> 52);
+    int ey = (int)(ay >> 52);
+    uint64_t mx = ax & fraction;
+    uint64_t my = ay & fraction;
+
+    if (ex != 0) {
+        mx |= fraction + 1;
+    } else {
+        ex = 1;
+    }
+    if (ey != 0) {
+        my |= fraction + 1;
+    } else {
+        ey = 1;
+    }
+
+    /* `ax > ay`, so `ex >= ey`. A step shifts `r` by as many bits as `my`
+     * leaves free at the top, at least eleven. */
+    uint64_t r = mx % my;
+    int left = ex - ey;
+    int room = __builtin_clzll(my);
+
+    while (left > 0 && r != 0) {
+        int step = left < room ? left : room;
+        r = (r << step) % my;
+        left -= step;
+    }
+    if (r != 0) {
+        /* `r * 2^(ey - 1075)`, normalised down to the least exponent, where
+         * a value too small for it is the subnormal it is. */
+        int shift = __builtin_clzll(r) - 11;
+        if (shift > ey - 1) {
+            shift = ey - 1;
+        }
+        r <<= shift;
+        ey -= shift;
+        if (r > fraction) {
+            bits |= ((uint64_t)ey << 52) | (r & fraction);
+        } else {
+            bits |= r;
+        }
+    }
+    memcpy(&out, &bits, sizeof out);
+    return out;
+}
