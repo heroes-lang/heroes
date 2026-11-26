@@ -1,0 +1,116 @@
+# What `ffi_layer_redeclared` says of a function of the platform layer's
+# that a header of the program's own declares itself (design.md §4.17,
+# §4.19; defect 2856, 2026-11-26): the route a binding takes to
+# it, or the two declarations where nothing bound reaches it, each with its
+# file and line and, where they differ, clang's canonical types. Asked by
+# `cli/layer_declared.hero`; split from it along the seam between what clang
+# answers and how it is told.
+
+use check/layer_header
+use cli/layer_bound
+use cli/layer_route
+use cli/strings
+use cli/two_ways
+use cli/two_ways_ask
+use diag
+use token
+
+# One name the program's list declares itself that the layer declares too,
+# as clang answered each, and the layer's file in the runtime's folder.
+record Pair
+    name: str
+    own: two_ways_ask.Answer
+    layer: two_ways_ask.Answer
+    layer_file: str
+
+# A binding reaching a function of the layer's through a declaration of the
+# program's own, told at the binding, with both types where they differ; the
+# word `layer` asked for where its group does not say it already, since a
+# header including the layer's is one that binds the layer.
+function through(found: layer_route.Route, pair: Pair, own_file: str, says_layer: bool) -> diag.Diagnostic
+    how: str @= ""
+
+    if found.body.len() == 0
+        how @ "`" + found.binding.name + "` is a macro for `" + pair.name + "`"
+    else if found.macro.len() > 0
+        how @ "`" + found.binding.name + "` is a macro for `" + found.macro + "`, whose body names `" + pair.name + "`"
+    else
+        how @ "the body of `" + found.binding.name + "` names `" + pair.name + "`"
+    message: str @= how + ", the platform layer's function, declared by its `" + pair.layer_file + "`, and this group reaches it through `" + own_file + "`, which declares it itself" + at_row(pair.own) + " and includes none of the layer's headers"
+
+    if !two_ways.same_type(one: pair.own.type, other: pair.layer.type)
+        message @ message + ": `" + own_file + "` declares it `" + two_ways.shown_type(pair.own.type) + "`, and `" + pair.layer_file + "` `" + two_ways.shown_type(pair.layer.type) + "`, so a call through it reads what the layer's function is given and gives as another type"
+    message @ message + ": include `" + pair.layer_file + "` in `" + own_file + "` in place of the declaration"
+
+    if !says_layer
+        message @ message + ", and say `layer` after this group's header"
+    d: diag.Diagnostic @= diag.new_diagnostic(code: layer_header.REDECLARED, message: message, span: found.binding.span)
+    d.notes @ d.notes.push(layer_bound.REDECLARED)
+    return d
+
+# A declaration of the program's own that no binding reaches, of a function
+# of the layer's, with another type than the layer's: at the group.
+function disagreeing(pair: Pair, own_file: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: layer_header.REDECLARED,
+        message: "`" + pair.name + "` is the platform layer's function, declared `" + two_ways.shown_type(pair.layer.type) + "` by its `" + pair.layer_file + "`, and `" + own_file + "` declares it `" + two_ways.shown_type(pair.own.type) + "`" + at_row(pair.own) + ", including none of the layer's headers: declare it as `" + pair.layer_file + "` does, or include `" + pair.layer_file + "` in `" + own_file + "` in place of the declaration",
+        span: span
+    )
+    d.notes @ d.notes.push(DISAGREEING)
+    return d
+
+# Why a declaration nothing bound reaches is refused, which every such
+# refusal says.
+constant DISAGREEING: str
+    "this program links the layer, so its own object and the layer's function are one program, and C takes one function declared with two types as undefined, called or not (C11 6.2.7): a body a header defines outside `static`, or a pointer to the function it keeps, calls the layer's function through the program's type"
+
+function at_row(answer: two_ways_ask.Answer) -> str
+    if answer.row == 0
+        return ""
+    return " at line " + answer.row.to_str()
+
+## Tests
+
+# The words say which declaration is whose, with both types where they
+# differ, and never a type where they agree.
+test "a binding through the program's declaration is told by its route, and the types where they differ (defect 2856)"
+    at = token.Span(start: 0, end: 0)
+    b = layer_route.Binding(name: "now_ns", span: at, header: at)
+    own = two_ways_ask.Answer(type: "double (*)(void)", external: true, path: "./now.h", row: 6)
+    theirs = two_ways_ask.Answer(type: "long long (*)(void)", external: true, path: "rt/hero_time.h", row: 40)
+    wrong = Pair(name: "hero_time_monotonic_ns", own: own, layer: theirs, layer_file: "hero_time.h")
+    said = through(
+        layer_route.Route(binding: b, name: wrong.name, macro: wrong.name, body: "", file: ""),
+        pair: wrong,
+        own_file: "now.h",
+        says_layer: false
+    )
+    assert strings.starts_with(
+        text: said.message,
+        prefix: "`now_ns` is a macro for `hero_time_monotonic_ns`, the platform layer's function, declared by its `hero_time.h`, and this group reaches it through `now.h`, which declares it itself at line 6 and includes none of the layer's headers: `now.h` declares it `double (void)`, and `hero_time.h` `long long (void)`"
+    )
+    right = Pair(
+        name: wrong.name,
+        own: two_ways_ask.Answer(type: "long long (*)(void)", external: true, path: "./now.h", row: 6),
+        layer: theirs,
+        layer_file: "hero_time.h"
+    )
+    inline = through(
+        layer_route.Route(binding: layer_route.Binding(name: "now_inline", span: at, header: at), name: right.name, macro: "", body: "now_inline", file: "now.h"),
+        pair: right,
+        own_file: "now.h",
+        says_layer: true
+    )
+    assert strings.starts_with(text: inline.message, prefix: "the body of `now_inline` names `hero_time_monotonic_ns`")
+    assert !strings.holds(text: inline.message, needle: "long long")
+    assert strings.holds(
+        text: said.message,
+        needle: "in place of the declaration, and say `layer` after this group's header"
+    )
+    assert !strings.holds(text: inline.message, needle: "say `layer`")
+    told = disagreeing(wrong, own_file: "now.h", span: at)
+    assert told.code == "ffi_layer_redeclared"
+    assert strings.starts_with(
+        text: told.message,
+        prefix: "`hero_time_monotonic_ns` is the platform layer's function, declared `long long (void)` by its `hero_time.h`, and `now.h` declares it `double (void)` at line 6"
+    )

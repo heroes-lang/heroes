@@ -1,0 +1,16 @@
+# Fixed 2026-11-26, defect 2856 (d-p260-mixedown), lane room-mixedown: a
+# group saying `layer` whose header includes none of the layer's but
+# declares the layer's clock itself and makes a bound name a macro for it
+# (panel 260's `macrodecl`, door 1b).
+# Symptom: told `ffi_layer_unreached`, *so nothing it binds is the layer's*,
+# false, with `fix (certain): take \`layer\` out`, after which the program
+# was refused at its link.
+# Cause and fix: the word was judged by what the header includes alone. A
+# group saying it whose header reaches none of the layer's is asked first
+# whether a binding reaches, through a macro or a body, a function of the
+# layer's its header declares itself, and is told at that binding.
+extern "fixedbugs-2856-a-group-saying-layer-whose-header-declares-the-layers-function-for-a-macro-is-told-at-the-binding.h" layer
+    function now_ns() -> i64  #~ ffi_layer_redeclared
+
+function main()
+    print(now_ns() > 0)

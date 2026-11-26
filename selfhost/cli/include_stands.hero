@@ -48,6 +48,7 @@ use cli/header_stands
 use cli/include_lines
 use cli/include_told
 use cli/layer_bound
+use cli/layer_declared
 use cli/layer_libraries
 use cli/named_folders
 use cli/order_trial
@@ -128,8 +129,19 @@ function stopped(t: toolchain.Toolchain, under: compiling.Compiling, groups: [st
 
     # What each group's header reaches of the platform layer, and what its
     # library calls of it, judged against the word its head line says, once
-    # every folder's walk is read (panel 260, `cli/layer_bound.hero`).
-    for d in layer_bound.told(s, decls: decls, reaches: reaches, t: t, linking: layer_libraries.linking_of(s, decls, folders: folders, pkgconfig_flags: under.pkgconfig_flags))
+    # every folder's walk is read (panel 260, `cli/layer_bound.hero`); a
+    # word said of none of it asked first whether a binding reaches the
+    # layer's function through the header's own declaration
+    # (`cli/layer_declared.hero`, defect 2856).
+    judged = layer_bound.told(
+        s,
+        decls: decls,
+        reaches: reaches,
+        t: t,
+        linking: layer_libraries.linking_of(s, decls, folders: folders, pkgconfig_flags: under.pkgconfig_flags)
+    )
+
+    for d in layer_declared.unreached_read(t, under: under, s: s, decls: decls, judged: judged)
         if !said_already(out, d: d)
             out @ out.push(d)
 

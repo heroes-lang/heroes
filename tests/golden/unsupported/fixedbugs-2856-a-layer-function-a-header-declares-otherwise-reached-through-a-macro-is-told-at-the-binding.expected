@@ -1,0 +1,6 @@
+error[ffi_layer_redeclared]: `stop_now` is a macro for `hero_net_ask_stop`, the platform layer's function, declared by its `hero_net.h`, and this group reaches it through `fixedbugs-2856-a-layer-function-a-header-declares-otherwise-reached-through-a-macro-is-told-at-the-binding.h`, which declares it itself at line 5 and includes none of the layer's headers: `fixedbugs-2856-a-layer-function-a-header-declares-otherwise-reached-through-a-macro-is-told-at-the-binding.h` declares it `int (void)`, and `hero_net.h` `void (void)`, so a call through it reads what the layer's function is given and gives as another type: include `hero_net.h` in `fixedbugs-2856-a-layer-function-a-header-declares-otherwise-reached-through-a-macro-is-told-at-the-binding.h` in place of the declaration, and say `layer` after this group's header
+  at tests/golden/unsupported/fixedbugs-2856-a-layer-function-a-header-declares-otherwise-reached-through-a-macro-is-told-at-the-binding.hero:18:14
+     |
+  18 |     function stop_now() -> i32  #~ ffi_layer_redeclared
+     |              ^^^^^^^^
+  note: clang checks a binding against the header its group names, so a function of the layer's declared by the program itself is checked against nothing the layer wrote: a parameter or a result of another width there is a call the layer reads otherwise

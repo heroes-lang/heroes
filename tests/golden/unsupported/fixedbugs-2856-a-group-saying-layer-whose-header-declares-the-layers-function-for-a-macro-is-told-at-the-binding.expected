@@ -1,0 +1,6 @@
+error[ffi_layer_redeclared]: `now_ns` is a macro for `hero_time_monotonic_ns`, the platform layer's function, declared by its `hero_time.h`, and this group reaches it through `fixedbugs-2856-a-group-saying-layer-whose-header-declares-the-layers-function-for-a-macro-is-told-at-the-binding.h`, which declares it itself at line 4 and includes none of the layer's headers: include `hero_time.h` in `fixedbugs-2856-a-group-saying-layer-whose-header-declares-the-layers-function-for-a-macro-is-told-at-the-binding.h` in place of the declaration
+  at tests/golden/unsupported/fixedbugs-2856-a-group-saying-layer-whose-header-declares-the-layers-function-for-a-macro-is-told-at-the-binding.hero:13:14
+     |
+  13 |     function now_ns() -> i64  #~ ffi_layer_redeclared
+     |              ^^^^^^
+  note: clang checks a binding against the header its group names, so a function of the layer's declared by the program itself is checked against nothing the layer wrote: a parameter or a result of another width there is a call the layer reads otherwise

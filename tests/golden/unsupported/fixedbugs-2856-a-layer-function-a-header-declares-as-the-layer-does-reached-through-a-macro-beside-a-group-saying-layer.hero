@@ -1,0 +1,15 @@
+# Fixed 2026-11-26, defect 2856 (d-p260-mixedown), lane room-mixedown: spec
+# section 13, *a name one of these declares is bound only by a group whose
+# header is or includes it*, through a macro, with the declaration right and
+# another group saying `layer`: refused as R2 refuses the name bound by its
+# own (`layer-a-layer-function-declared-by-the-programs-own-header-beside-a-group-saying-layer`),
+# and with no type named, the two agreeing.
+extern "hero_net.h" layer
+    constant HERO_NET_INVALID: i64
+
+extern "fixedbugs-2856-a-layer-function-a-header-declares-as-the-layer-does-reached-through-a-macro-beside-a-group-saying-layer.h"
+    function now_ns() -> i64  #~ ffi_layer_redeclared
+
+function main()
+    print(HERO_NET_INVALID)
+    print(now_ns() > 0)
