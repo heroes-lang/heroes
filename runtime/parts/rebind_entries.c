@@ -48,10 +48,13 @@ static _Atomic int hero_rebind_stack_any = 0;
  * `setcontext` that abandons frames a buffer may still name), and dead only
  * by returning through `uc_link`, which the C library makes unseen (its
  * `_ctx_done`, which reads the context again). The context switched to is a
- * second witness, read after the switch only where it provably lives and by
- * the kernel (`hero_rebind_ctx_moved`): a yield through a switch this route
- * never sees still moves its stack pointer. Until defect d-lane-d2745-1 that
- * word was read wherever the context lay, and a coroutine that saved itself
+ * second witness, copied after the switch by the kernel wherever it is mapped
+ * (`hero_rebind_ctx_moved`): a yield through a switch this route never sees
+ * still moves its stack pointer, and a context that cannot be read proves no
+ * end (defect 2851: from defect d-lane-d2745-1 until then it was read only
+ * where it provably lived, and a heap context's coroutine yielding unseen
+ * was judged ended). Until defect d-lane-d2745-1 that
+ * word was loaded wherever the context lay, and a coroutine that saved itself
  * into another context and gave the first back crashed the program inside the
  * runtime (a SIGSEGV, a Bus error or a read of freed memory); and it was the
  * only witness, so such a yield was judged an end. A range no switch entered, or whose coroutine ended, holds no
@@ -60,8 +63,9 @@ static _Atomic int hero_rebind_stack_any = 0;
  * and the critic's `n6`), and a jump to it is judged on the stack it lies on,
  * the thread's own, where a target above a handler leaves it. A switch into
  * the range clears its end again. A coroutine left by a switch this file
- * never sees, where the context it was switched to does not provably live, is
- * judged ended: said in `rebind.c`'s module doc.
+ * never sees that saves into another context than the one it was switched
+ * to, leaving that one as it was, is judged ended: said in `rebind.c`'s
+ * module doc.
  *
  * A COROUTINE THE C LIBRARY STARTS THROUGH ANOTHER'S `uc_link` (defect 2850)
  * is entered by no switch this file sees (Darwin's `_ctx_done` switches to it):
@@ -278,8 +282,8 @@ static int hero_rebind_range_watch(uintptr_t at, unsigned *seq) {
 }
 
 /* The swap watching slot `i` returned in its frame at `here` (`ok`: the C
- * library's switch succeeded; `moved`: the context it switched to, read where
- * it provably lives, names another stack pointer since). Its coroutine ended
+ * library's switch succeeded; `moved`: the context it switched to, copied by
+ * the kernel, names another stack pointer since, or cannot be read). Its coroutine ended
  * where the slot still names the range it named, the swap does not run on
  * that range itself, no switch was made from the range since the swap began,
  * and the context did not move: the coroutine returned through `uc_link`. */
