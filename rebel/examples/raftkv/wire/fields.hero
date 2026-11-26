@@ -1,0 +1,165 @@
+# The fields every encoded value of this program is made of, written and
+# read: a number as a zig-zag varint (protocol buffers' `sint64`), a count
+# as an unsigned one, a flag as one byte, a text and a run of bytes as their
+# length and then themselves. The reader is the part that faces the network
+# and the disk: every read checks what stands before taking it, so bytes
+# that were cut, flipped or made up fail `invalid`, and a count no message
+# could hold fails before anything is made for it.
+
+use <rebel>/bytes
+
+## Writing
+
+# Adds `n` to `out` as a zig-zag varint.
+#
+# - `out`: the bytes written so far, which the caller holds.
+# - `n`: any `i64`.
+function put_int(@out: [u8], n: i64)
+    bytes.push_all(to: @out, from: bytes.encode_varint(n))
+
+# Adds `flag` to `out` as one byte, 1 or 0.
+#
+# - `out`: the bytes written so far.
+# - `flag`: the flag.
+function put_flag(@out: [u8], flag: bool)
+    if flag
+        out @ out.push(1)
+    else
+        out @ out.push(0)
+
+# Adds `s` to `out`: its length in bytes, then its bytes.
+#
+# - `out`: the bytes written so far.
+# - `s`: the text.
+function put_text(@out: [u8], s: str)
+    put_blob(out: @out, data: bytes.from_text(s))
+
+# Adds `data` to `out`: its length, then itself.
+#
+# - `out`: the bytes written so far.
+# - `data`: the bytes.
+function put_blob(@out: [u8], data: [u8])
+    put_int(@out, data.len())
+    bytes.push_all(to: @out, from: data)
+
+## Reading
+
+# A reader over bytes from outside: where it stands, and what it reads.
+record Reader
+    # The bytes read.
+    data: [u8]
+    # The index of the next byte to read.
+    at: i64
+
+# A reader at the first byte of `data`.
+#
+# - `data`: the bytes to read.
+function reader(data: [u8]) -> Reader
+    return Reader(data: data, at: 0)
+
+# Whether every byte has been read.
+#
+# - `r`: the reader.
+function is_done(r: Reader lent) -> bool
+    return r.at == r.data.len()
+
+# The next byte.
+#
+# - `r`: the reader, advanced past it.
+#
+# Fails `invalid` where no byte is left.
+function take_byte(@r: Reader) -> u8?
+    if r.at >= r.data.len()
+        return fail(code: "invalid", msg: f"the bytes end at {r.at}, where one more was expected")
+    b = r.data[r.at]
+    r.at @ r.at + 1
+    return ok(b)
+
+# The zig-zag varint that stands next.
+#
+# - `r`: the reader, advanced past it.
+#
+# Fails `invalid` where the bytes end inside it, `does_not_fit` where it
+# holds more than 64 bits.
+function take_int(@r: Reader) -> i64?
+    read = bytes.decode_varint(r.data, at: r.at)?
+    r.at @ r.at + read.width
+    return ok(read.value)
+
+# A count that stands next: a varint between 0 and `most`, and no larger
+# than the bytes left could hold, each element taking at least one.
+#
+# - `r`: the reader, advanced past it.
+# - `most`: the largest count accepted.
+#
+# Fails `invalid` where it is negative or larger, the message naming it.
+function take_count(@r: Reader, most: i64) -> i64?
+    n = take_int(@r)?
+
+    if n < 0 || n > most || n > r.data.len() - r.at
+        return fail(code: "invalid", msg: f"a count of {n} at byte {r.at}, where 0 to {most} fit in the bytes left")
+    return ok(n)
+
+# The flag that stands next, a byte 0 or 1.
+#
+# - `r`: the reader, advanced past it.
+#
+# Fails `invalid` where the byte is another.
+function take_flag(@r: Reader) -> bool?
+    b = take_byte(@r)?
+
+    if b > 1
+        return fail(code: "invalid", msg: f"a flag of {b} at byte {r.at - 1}, where 0 or 1 was expected")
+    return ok(b == 1)
+
+# The run of bytes that stands next, its length first.
+#
+# - `r`: the reader, advanced past it.
+#
+# Fails `invalid` where the length is negative or longer than what is left.
+function take_blob(@r: Reader) -> [u8]?
+    n = take_count(@r, most: r.data.len())?
+    data = r.data.slice(from: r.at, to: r.at + n)
+    r.at @ r.at + n
+    return ok(data)
+
+# The text that stands next, its length in bytes first.
+#
+# - `r`: the reader, advanced past it.
+#
+# Fails `invalid` as `take_blob` does, and `not_text` where its bytes are
+# not UTF-8.
+function take_text(@r: Reader) -> str?
+    return bytes.to_text(take_blob(@r)?)
+
+## Tests
+
+test "put and take: each field, read back in order"
+    out: [u8] @= []
+    put_int(@out, -1)
+    put_int(@out, 0x7fff_ffff_ffff_ffff)
+    put_flag(@out, true)
+    put_text(@out, "héllo")
+    put_blob(out: @out, data: [0, 255])
+    r @= reader(out)
+    assert take_int(@r).must() == -1
+    assert take_int(@r).must() == 0x7fff_ffff_ffff_ffff
+    assert take_flag(@r).must()
+    assert take_text(@r).must() == "héllo"
+    assert take_blob(@r).must() == [0, 255]
+    assert is_done(r)
+
+test "take: bytes cut, a flag of 2, a count past the end, and text that is not UTF-8"
+    empty @= reader([])
+    assert take_byte(@empty).is_err()
+    assert take_int(@empty).is_err()
+    flag @= reader([2])
+    assert take_flag(@flag).is_err()
+    long @= reader([0x14, 1, 2])
+    assert take_blob(@long).is_err()
+    negative @= reader([0x01])
+    assert take_count(@negative, most: 10).is_err()
+    broken @= reader([0x04, 0xc3, 0x28])
+    assert take_text(@broken).is_err()
+    cut @= reader([0x80])
+    assert take_int(@cut).is_err()

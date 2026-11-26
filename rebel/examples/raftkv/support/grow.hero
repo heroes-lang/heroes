@@ -1,0 +1,29 @@
+# Growing a list that stands in a field, in place. `xs @ xs.push(v)` grows
+# a list in place only where `xs` is a plain name; through a field, even a
+# field of an `@` parameter (`l.entries @ l.entries.push(e)`), it copies the
+# whole list at every push (spec § 10). Measured on this Mac on 2026-11-26:
+# 100,000 pushes through a field of an `@` record took 32 s of user time,
+# and the same pushes into that field lent to an `@` parameter, as `grow`
+# takes it, under 0.01 s. Rebel's `lists` answers new lists and has no push
+# in place, so this one function stands here, the program's own.
+
+## Growing
+
+# Adds `value` at the end of `xs`, in place.
+#
+# - `xs`: the list, which the caller lends, a field of its own included.
+# - `value`: the element added.
+function grow<T>(@xs: [T], value: T)
+    xs @ xs.push(value)
+
+## Tests
+
+test "grow: a field lent and grown in place"
+    held @= Held(items: [1])
+    grow(@held.items, value: 2)
+    assert held.items == [1, 2]
+
+# A record holding a list, for the test.
+record Held
+    # The list.
+    items: [i64]
