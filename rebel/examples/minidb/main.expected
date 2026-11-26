@@ -150,7 +150,7 @@ Error: [42P01] no such table: nowhere
 SELECT COUNT(*) FROM orders;
 Error: [25P02] the transaction failed: statements are refused until ROLLBACK
 COMMIT;
-Error: [40P01] the transaction failed, so COMMIT rolled it back
+Error: [40000] the transaction failed, so COMMIT rolled it back
 SELECT COUNT(*) FROM orders;
 COUNT(*)
 --------

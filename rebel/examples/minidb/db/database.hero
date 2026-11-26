@@ -174,7 +174,7 @@ function run(@db: Db, s: parser.Parsed, params: [sql.Value]) -> Outcome?
                 db.failed @ false
                 pager.rollback(@db.p)?
                 pager.end_read(@db.p)
-                return refuse_state(state: "40P01", message: "the transaction failed, so COMMIT rolled it back")
+                return refuse_state(state: "40000", message: "the transaction failed, so COMMIT rolled it back")
             _ = pager.commit(@db.p)?
             pager.end_read(@db.p)
             checkpoint_if_long(@db)
