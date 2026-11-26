@@ -11,7 +11,6 @@ use cli/libraries
 use cli/link_again
 use cli/link_flags
 use cli/link_output
-use cli/link_warning
 use cli/os_reason
 use cli/process
 use cli/publish
@@ -48,7 +47,7 @@ use module/reading as file_reading
 # **Its words reach clang in a file in the binary's home** (defect 583,
 # `response_file.for_link`): they name every object, and Windows refuses a
 # line past 32,767 characters, which the compiler's own build passed.
-function link_objects(t: toolchain.Toolchain, objects: [str], module: str, output: str?, level: str, sanitize: bool, search_library: [str], pkgconfig_flags: [str], link_names: [str], judging: supplied.Judging) -> str?
+function link_objects(t: toolchain.Toolchain, objects: [str], module: str, output: str?, level: str, sanitize: bool, search_library: [str], pkgconfig_flags: [str], link_names: [str], layer: [str], judging: supplied.Judging) -> str?
     line: [str] @= link_line(
         objects: objects,
         level: level,
@@ -56,7 +55,8 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
         target: t.target,
         search_library: search_library,
         pkgconfig_flags: pkgconfig_flags,
-        link_names: link_names
+        link_names: link_names,
+        layer: layer
     )
     home = link_output.binary_home(t, line: line, name: module + process.exe_suffix())
     binary: str @= home
@@ -87,7 +87,12 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
         # `clang -o /dev/null` does (measured), where a private name beside
         # it could not be made and the build was refused.
         if files.is_special(at)
-            return linked_into(line: response_file.for_link(line: line, home: home)?, t: t, at: at, binary: binary)
+            return link_output.linked_into(
+                line: response_file.for_link(line: line, home: home)?,
+                t: t,
+                at: at,
+                binary: binary
+            )
 
     # Who supplies each bound name and each name the runtime calls, asked of
     # this link itself, judged before anything is published (panel 239).
@@ -157,11 +162,13 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
 # Windows), the target's (`link_flags.target_words`: a reproducible output
 # from Apple's linker, defect 593), the `--library` directories, the
 # objects, a package's link words (`libraries.link_words`) and the `link`
-# names, these two in one group on a Linux target (panel 238's R3). No
+# names, these two in one group on a Linux target (panel 238's R3), and the
+# platform layer's archive `layer`, in that group after them where it stands,
+# since a library may call the layer (panel 260's R3), else after the objects. No
 # include directory: a link reads none, and until defect 206 the link took
 # the `--include` directories and a package's whole answer, whose `-F` clang
 # on Linux called *argument unused during compilation*.
-function link_line(objects: [str], level: str, sanitize: bool, target: str, search_library: [str], pkgconfig_flags: [str], link_names: [str]) -> [str]
+function link_line(objects: [str], level: str, sanitize: bool, target: str, search_library: [str], pkgconfig_flags: [str], link_names: [str], layer: [str]) -> [str]
     line: [str] @= strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: sanitize))
     line @ strings.with_all(list: line, more: link_flags.link_flags())
     line @ strings.with_all(list: line, more: link_flags.target_words(target))
@@ -179,6 +186,11 @@ function link_line(objects: [str], level: str, sanitize: bool, target: str, sear
 
     for name in link_names
         library @ library.push("-l" + name)
+
+    if library.len() > 0 && link_flags.groups_libraries(target)
+        library @ strings.with_all(list: library, more: layer)
+    else
+        line @ strings.with_all(list: line, more: layer)
 
     # **One group around every library word**, a package's and a `link`
     # name's together, where the target's linker reads an archive once, where
@@ -199,21 +211,6 @@ function link_line(objects: [str], level: str, sanitize: bool, target: str, sear
         return line
 
     return strings.with_all(list: line, more: library)
-
-# The link written straight into `at`, which is not a file. Answers the
-# author's own spelling, as a link published under `build/` does.
-function linked_into(line: [str], t: toolchain.Toolchain, at: str, binary: str) -> str?
-    err_path = publish.private_name(t.build + "/link-clang-stderr.txt")
-    linked = link_warning.run_link(
-        line: strings.with_all(list: line, more: ["-o", at]),
-        what: "linking",
-        err_path: err_path
-    )
-    publish.discard(err_path)
-
-    if linked.is_err()
-        return fail(code: link_code(linked), msg: units.failure_note(linked))
-    return ok(binary)
 
 # A refused link's code (defect 443): `clang` is a compile clang refused, and a
 # link whose objects the linker refused is this, so the sentence said after it
@@ -318,6 +315,7 @@ function build_beside(index: i64) -> i64
         search_library: none,
         pkgconfig_flags: none,
         link_names: none,
+        layer: [],
         judging: supplied.nothing()
     )
 
@@ -471,6 +469,7 @@ test "a binary's home is named by every word of its link line, and an author's -
         search_library: none,
         pkgconfig_flags: none,
         link_names: none,
+        layer: [],
         judging: supplied.nothing()
     ).must()
     assert binary == wanted
@@ -480,7 +479,7 @@ test "a binary's home is named by every word of its link line, and an author's -
     # elsewhere a byte of a name, and neither is split to name the output.
     assert !process.mkdir_all(t.build + "/sub").is_err()
     slashed = t.build + "/sub\\app" + process.exe_suffix()
-    assert link_objects(t, objects: [runtime, made], module: "linkprobe", output: ok(slashed), level: "-O0", sanitize: false, search_library: none, pkgconfig_flags: none, link_names: none, judging: supplied.nothing()).must() == slashed
+    assert link_objects(t, objects: [runtime, made], module: "linkprobe", output: ok(slashed), level: "-O0", sanitize: false, search_library: none, pkgconfig_flags: none, link_names: none, layer: [], judging: supplied.nothing()).must() == slashed
     assert process.path_exists(slashed)
     missing = link_objects(
         t,
@@ -492,6 +491,7 @@ test "a binary's home is named by every word of its link line, and an author's -
         search_library: none,
         pkgconfig_flags: none,
         link_names: none,
+        layer: [],
         judging: supplied.nothing()
     )
 
@@ -512,6 +512,7 @@ test "a binary's home is named by every word of its link line, and an author's -
         search_library: none,
         pkgconfig_flags: none,
         link_names: none,
+        layer: [],
         judging: supplied.nothing()
     ).must()
     assert bare == t.build + "/bare" + process.exe_suffix()
@@ -556,7 +557,8 @@ test "a link over a package's compile words carries none of them and prints noth
         target: t.target,
         search_library: none,
         pkgconfig_flags: words,
-        link_names: none
+        link_names: none,
+        layer: []
     )
 
     for word in words
@@ -628,6 +630,7 @@ test "a link whose objects pass what one Windows command line holds reads every 
         search_library: none,
         pkgconfig_flags: none,
         link_names: none,
+        layer: [],
         judging: supplied.nothing()
     ).must()
     ran = process.run(program: binary, words: [binary], out: process.discard(), err: process.discard())
@@ -639,7 +642,8 @@ test "a link whose objects pass what one Windows command line holds reads every 
         target: t.target,
         search_library: none,
         pkgconfig_flags: none,
-        link_names: none
+        link_names: none,
+        layer: []
     )
     home = link_output.binary_home(t, line: line, name: "linklong" + process.exe_suffix())
     assert binary == home
@@ -700,6 +704,7 @@ test "two links of the same objects into one path are one binary (defect 593)"
             search_library: none,
             pkgconfig_flags: none,
             link_names: none,
+            layer: [],
             judging: supplied.nothing()
         ).must()
         bytes_of @ bytes_of.push(file_reading.key_of(linked).must())
@@ -715,7 +720,8 @@ test "two links of the same objects into one path are one binary (defect 593)"
         target: t.target,
         search_library: none,
         pkgconfig_flags: none,
-        link_names: none
+        link_names: none,
+        layer: []
     )
     said: bool @= false
 
@@ -726,6 +732,46 @@ test "two links of the same objects into one path are one binary (defect 593)"
     assert said == link_flags.apple(t.target)
     assert !process.remove_tree(t.build).is_err()
 
+# Panel 260's R3 (the ffi-pragmatist's condition 4): a library of the
+# program's may call the platform layer, and GNU ld reads an archive once where
+# it stands, so the layer's archive goes inside the group, after the
+# libraries; with no library, and on Apple's linker, after the objects.
+test "the platform layer's archive stands inside a Linux link's group of libraries, and after the objects elsewhere (panel 260)"
+    none: [str] = []
+    linux = link_line(
+        objects: ["a.o"],
+        level: "-O0",
+        sanitize: false,
+        target: "aarch64-unknown-linux-gnu",
+        search_library: none,
+        pkgconfig_flags: none,
+        link_names: ["now"],
+        layer: ["layer.a"]
+    )
+    assert linux.slice(from: linux.len() - 5, to: linux.len()) == ["a.o", "-Wl,--start-group", "-lnow", "layer.a", "-Wl,--end-group"]
+    alone = link_line(
+        objects: ["a.o"],
+        level: "-O0",
+        sanitize: false,
+        target: "aarch64-unknown-linux-gnu",
+        search_library: none,
+        pkgconfig_flags: none,
+        link_names: none,
+        layer: ["layer.a"]
+    )
+    assert alone.slice(from: alone.len() - 2, to: alone.len()) == ["a.o", "layer.a"]
+    apple = link_line(
+        objects: ["a.o"],
+        level: "-O0",
+        sanitize: false,
+        target: "arm64-apple-darwin25.6.0",
+        search_library: none,
+        pkgconfig_flags: none,
+        link_names: ["now"],
+        layer: ["layer.a"]
+    )
+    assert apple.slice(from: apple.len() - 3, to: apple.len()) == ["a.o", "layer.a", "-lnow"]
+
 test "a Linux link holds its libraries in one group, and an Apple link holds none (panel 238)"
     none: [str] = []
     linux = link_line(
@@ -735,7 +781,8 @@ test "a Linux link holds its libraries in one group, and an Apple link holds non
         target: "aarch64-unknown-linux-gnu",
         search_library: none,
         pkgconfig_flags: ["-lp"],
-        link_names: ["top", "base"]
+        link_names: ["top", "base"],
+        layer: []
     )
     assert linux.slice(from: linux.len() - 5, to: linux.len()) == ["-Wl,--start-group", "-lp", "-ltop", "-lbase", "-Wl,--end-group"]
     apple = link_line(
@@ -745,7 +792,8 @@ test "a Linux link holds its libraries in one group, and an Apple link holds non
         target: "arm64-apple-darwin25.6.0",
         search_library: none,
         pkgconfig_flags: ["-lp"],
-        link_names: ["top", "base"]
+        link_names: ["top", "base"],
+        layer: []
     )
     assert apple.slice(from: apple.len() - 4, to: apple.len()) == ["a.o", "-lp", "-ltop", "-lbase"]
 
@@ -757,7 +805,8 @@ test "a Linux link holds its libraries in one group, and an Apple link holds non
         target: "aarch64-unknown-linux-gnu",
         search_library: none,
         pkgconfig_flags: none,
-        link_names: none
+        link_names: none,
+        layer: []
     )
 
     for word in bare
@@ -842,6 +891,7 @@ test "a library that needs another links in every order its words are written in
             search_library: [dir],
             pkgconfig_flags: pkgconfigs[at],
             link_names: names[at],
+            layer: [],
             judging: supplied.nothing()
         )
 

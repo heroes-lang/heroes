@@ -48,6 +48,7 @@ use cli/header_stands
 use cli/include_lines
 use cli/include_told
 use cli/layer_bound
+use cli/layer_libraries
 use cli/named_folders
 use cli/order_trial
 use cli/package_reads
@@ -98,7 +99,7 @@ record Walk
 # folder searched after them, a fetched package's under its own root; a FIFO
 # below a `path` package's header hung the build in its probes, after this
 # question's first form had passed (measured on this Mac).
-function stopped(t: toolchain.Toolchain, under: compiling.Compiling, groups: [str], s: source.Source, decls: [ast.Decl], permissive: bool) -> ()?
+function stopped(t: toolchain.Toolchain, under: compiling.Compiling, groups: [str], s: source.Source, decls: [ast.Decl], permissive: bool, folders: [str]) -> ()?
     heads: {str: [str]} @= {}
     places: {str: package_units.Place} @= {}
     heads[""] @ []
@@ -125,10 +126,10 @@ function stopped(t: toolchain.Toolchain, under: compiling.Compiling, groups: [st
             if !said_already(out, d: d)
                 out @ out.push(d)
 
-    # What each group's header reaches of the platform layer, judged against
-    # the word its head line says, once every folder's walk is read (panel
-    # 260, `cli/layer_bound.hero`).
-    for d in layer_bound.told(s, decls: decls, reaches: reaches, t: t)
+    # What each group's header reaches of the platform layer, and what its
+    # library calls of it, judged against the word its head line says, once
+    # every folder's walk is read (panel 260, `cli/layer_bound.hero`).
+    for d in layer_bound.told(s, decls: decls, reaches: reaches, t: t, linking: layer_libraries.linking_of(s, decls, folders: folders, pkgconfig_flags: under.pkgconfig_flags))
         if !said_already(out, d: d)
             out @ out.push(d)
 

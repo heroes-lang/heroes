@@ -2791,3 +2791,41 @@ test "a library defining a name a platform layer member the program takes calls 
     assert timed.code == 0
     assert ran_out(scratch: scratch, binary: dir + "/clock.out") == "7\ntrue\n"
     assert !shell.remove_tree(scratch).is_err()
+
+# Panel 260's R3 (provisional, author ratification pending): a library of the
+# program's own whose object calls the platform layer binds it, so its group
+# says `layer`. Where no group of the program says it, the link carries none
+# of the layer and is told at the group naming the library, never as a name
+# nothing on the link line defines (GNU ld's words under R6); where another
+# group says it, the library is asked before any link, so the program is told
+# alike on every linker, where Apple's built it and GNU ld refused it with a
+# false sentence (the critic's `linkmixed`); and said, it builds, the layer's
+# archive inside GNU ld's group of the libraries.
+test "a library calling the platform layer says layer on its group, told at the link or before it (panel 260)"
+    if !shell.can_run_scripts() || shell.exe_suffix() == ".exe"
+        return
+    scratch = shell.own_scratch()
+    compiler = shell.some_compiler().must()
+    dir = scratch + "/layer260"
+    assert !shell.mkdir_all(dir).is_err()
+    assert !c_library(scratch: scratch, dir: dir, library: "now", sources: [Written(name: "now.c", text: "#include <stdint.h>\nint64_t hero_time_monotonic_ns(void);\nint64_t lib_now(void) { return hero_time_monotonic_ns(); }\n")], shared: false).is_err()
+    unsaid = "extern \"libnow.h\" link \"now\"\n    function lib_now() -> i64\n"
+    said = "extern \"libnow.h\" layer link \"now\"\n    function lib_now() -> i64\n"
+    net = "extern \"hero_net.h\" layer\n    constant HERO_NET_INVALID: i64\n\n"
+    body = "\nfunction main()\n    print(lib_now() > 0)\n"
+    beside = "\nfunction main()\n    print(HERO_NET_INVALID != 0)\n    print(lib_now() > 0)\n"
+    assert !wrote(dir: dir, files: [Written(name: "libnow.h", text: "#include <stdint.h>\nint64_t lib_now(void);\n"), Written(name: "door.hero", text: unsaid + body), Written(name: "declared.hero", text: said + body), Written(name: "mixed.hero", text: net + unsaid + beside), Written(name: "both.hero", text: net + said + beside)]).is_err()
+    headline = "error[ffi_layer_undeclared]: the library `now` this group links calls `hero_time_monotonic_ns` of the platform layer's, and this group does not say `layer`"
+    door = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "door")
+    assert door.code == 1 && strings.contains(s: door.err, substr: headline) && strings.contains(s: door.err, substr: "\n  at " + dir + "/door.hero:1:8\n")
+    assert !strings.contains(s: door.err, substr: "internal error") && !strings.contains(s: door.err, substr: "ffi_missing_link") && !shell.exists(dir + "/door.out")
+    declared = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "declared")
+    assert declared.code == 0
+    assert ran_out(scratch: scratch, binary: dir + "/declared.out") == "true\n"
+    mixed = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "mixed")
+    assert mixed.code == 1 && strings.contains(s: mixed.err, substr: headline) && strings.contains(s: mixed.err, substr: "\n  at " + dir + "/mixed.hero:4:8\n")
+    assert !strings.contains(s: mixed.err, substr: "internal error") && !shell.exists(dir + "/mixed.out")
+    both = built_against(scratch: scratch, compiler: compiler, dir: dir, program: "both")
+    assert both.code == 0
+    assert ran_out(scratch: scratch, binary: dir + "/both.out") == "true\ntrue\n"
+    assert !shell.remove_tree(scratch).is_err()

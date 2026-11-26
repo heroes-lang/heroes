@@ -7,8 +7,12 @@
 # answers what its outputs are called.
 
 use cli/digest
+use cli/link
+use cli/link_warning
+use cli/publish
 use cli/strings
 use cli/toolchain
+use cli/units
 
 # **The author's `-o` takes the platform's suffix where its last part has
 # none** (defect 359, 2026-10-05): on Windows `build -o name` wrote `name`,
@@ -90,6 +94,22 @@ function published_as(binary: str, inner: str, module: str, relative: str) -> st
     if strings.starts_with(text: relative, prefix: module)
         return binary + relative.slice(from: module.len(), to: relative.len())
     return binary + "." + relative
+
+# The link written straight into `at`, which is not a file. Answers the
+# author's own spelling, as a link published under `build/` does
+# (`link.link_objects`).
+function linked_into(line: [str], t: toolchain.Toolchain, at: str, binary: str) -> str?
+    err_path = publish.private_name(t.build + "/link-clang-stderr.txt")
+    linked = link_warning.run_link(
+        line: strings.with_all(list: line, more: ["-o", at]),
+        what: "linking",
+        err_path: err_path
+    )
+    publish.discard(err_path)
+
+    if linked.is_err()
+        return fail(code: link.link_code(linked), msg: units.failure_note(linked))
+    return ok(binary)
 
 ## Tests
 

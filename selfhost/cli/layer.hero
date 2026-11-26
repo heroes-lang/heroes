@@ -232,6 +232,7 @@ function linked_program(t: toolchain.Toolchain, dir: str, name: str, body: str) 
         search_library: none,
         pkgconfig_flags: none,
         link_names: none,
+        layer: [],
         judging: supplied.nothing()
     ).must()
     ran = process.run(program: binary, words: [binary], out: process.discard(), err: process.discard())
