@@ -113,8 +113,9 @@ function reading(failed: ()?, art: compile.Artifact, s: source.Source, t: toolch
     # A name the platform layer's headers declare that the link misses (panel
     # 260, `cli/layer_link.hero`): in a program none of whose groups says
     # `layer`, whose link carries none of the layer, the group that owes the
-    # word. Asked before every other reader of a refused link, which would
-    # tell it as a library nobody names.
+    # word; in one that says it, the member no archive of this target holds.
+    # Asked before every other reader of a refused link, which would tell it
+    # as a library nobody names.
     if code == link.REFUSED
         unlayered = layer_link.told(message, s, art.decls, t, linked: under.pkgconfig_flags)
 

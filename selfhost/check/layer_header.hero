@@ -43,6 +43,11 @@ constant UNREACHED: str
 constant REDECLARED: str
     "ffi_layer_redeclared"
 
+# A name of the layer's that the link of a program saying `layer` misses,
+# since no member this target builds defines it (R4, `cli/layer_link.hero`).
+constant UNBUILT: str
+    "ffi_layer_unbuilt"
+
 # What a program that binds the layer pays and what one that does not is
 # spared, said by every refusal of this class: §4.17's fix, which names no
 # file the reader must open to find it.

@@ -1,7 +1,7 @@
 # A refused link missing a name the platform layer's headers declare, told as
-# what it is (design.md §1.11, §4.19, §4.17; panel 260's R2 and R3,
+# what it is (design.md §1.11, §4.19, §4.17; panel 260's R2 to R4,
 # provisional, author ratification pending), asked before every other reader
-# of a refused link (`cli/whose.hero`).
+# of a refused link (`cli/whose.hero`), for every program.
 #
 # **A program none of whose groups says `layer` links none of the layer**, so
 # its link misses the name wherever something it links calls the layer
@@ -13,19 +13,27 @@
 # failed`, and never as a name no group says which library has.
 #
 # **A program one of whose groups says `layer` links the archive**, inside
-# GNU ld's group of the libraries (`link.link_line`): a layer name its
-# link misses is left to the other readers.
+# GNU ld's group of the libraries (`link.link_line`), so a layer name
+# its link misses is one no member built for this target defines (R4): told
+# at its binding, or at the first group saying `layer`, with the member that
+# defines it and why this build holds none, a member written in Swift that
+# the layer compiles for an Apple target alone the measured case (the
+# critic's `swiftentry` in Linux arm64).
 
 use ast
 use check/layer_header
 use cli/layer_bound
 use cli/layer_libraries
 use cli/library_needs
+use cli/link_flags
 use cli/link_report
 use cli/runtime_bound
+use cli/runtime_key
 use cli/toolchain
 use diag
+use emit/c_words
 use emit/externs as emit_externs
+use module/reading
 use source
 use token
 
@@ -38,10 +46,8 @@ function told(message: str, s: source.Source, decls: [ast.Decl], t: toolchain.To
 
     if refs.len() == 0
         return out
-
-    if layer_header.declared(decls)
-        return out
     names = layer_bound.declared_names(t.runtime)
+    declared = layer_header.declared(decls)
     libs = library_needs.names_of(s, decls, linked: linked)
     calls: {str: [str]} @= {}
     told_names: {str: bool} @= {}
@@ -53,6 +59,11 @@ function told(message: str, s: source.Source, decls: [ast.Decl], t: toolchain.To
             continue
         told_names[one.symbol] @ true
 
+        if declared
+            out @ out.push(
+                unbuilt(name: one.symbol, header: header.must(), span: told_span(s, decls, name: one.symbol), t: t)
+            )
+            continue
         lib = library_needs.library_named(file: one.file, names: libs)
 
         if lib.len() > 0
@@ -106,6 +117,70 @@ function missing(name: str, header: str, span: token.Span, bound: bool) -> diag.
     )
     return d
 
+# A name of the layer's that the link of a program saying `layer` misses: the
+# member that defines it and why this build's archive holds no definition.
+function unbuilt(name: str, header: str, span: token.Span, t: toolchain.Toolchain) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: layer_header.UNBUILT,
+        message: "`" + name + "` is the platform layer's, declared by its `" + header + "`, and " + why_unbuilt(name: name, t: t),
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a program one of whose groups says `layer` links the layer's archive, which holds the members this target builds; a name only a member of another target defines leaves its link short on this one"
+    )
+    return d
+
+# Why the archive this build linked holds no definition of `name`: the member
+# written in Swift that defines it, compiled for an Apple target alone, or for
+# one only where a group's header reaches its own; a C member naming it, whose
+# object for this target defines it nowhere; or no member naming it at all.
+function why_unbuilt(name: str, t: toolchain.Toolchain) -> str
+    swift = runtime_key.swift_members(t.runtime).default([])
+
+    for member in swift
+        text = reading.text_of(member).default("")
+
+        if c_words.used(text)[name].default(false) || holds_text(text: text, needle: "@_cdecl(\"" + name + "\")")
+            where = inside(runtime: t.runtime, path: member)
+
+            if !link_flags.apple(t.target)
+                return "the member that defines it, `" + where + "`, is written in Swift, which the layer compiles for an Apple target alone, and this build's target is `" + t.target + "`"
+            return "the member that defines it, `" + where + "`, is written in Swift, which a build compiles only where a group's header reaches that member's own header, and none of this program's does"
+
+    for member in runtime_key.layer_members(t.runtime).default([])
+        if c_words.used(reading.text_of(member).default(""))[name].default(false)
+            return "of the layer's members `" + inside(runtime: t.runtime, path: member) + "` names it, and the object this target builds of it, `" + t.target + "`, defines it nowhere"
+
+    return "no member of the layer's names it, so no target's archive defines it"
+
+function inside(runtime: str, path: str) -> str
+    if path.len() > runtime.len() + 1 && path.slice(from: 0, to: runtime.len() + 1) == runtime + "/"
+        return path.slice(from: runtime.len() + 1, to: path.len())
+    return path
+
+function holds_text(text: str, needle: str) -> bool
+    if needle.len() > text.len()
+        return false
+
+    for at in range(from: 0, to: text.len() - needle.len() + 1)
+        if text.slice(from: at, to: at + needle.len()) == needle
+            return true
+
+    return false
+
+# Where an unbuilt name is told: its binding's header string, or the first
+# group saying `layer`.
+function told_span(s: source.Source, decls: [ast.Decl], name: str) -> token.Span
+    at = binding_of(s, decls, name: name)
+
+    if !at.is_err()
+        return at.must()
+    said = first_group(decls, said: true)
+
+    if !said.is_err()
+        return said.must()
+    return token.Span(start: 0, end: 0)
+
 # The header string of the group binding the C name `name`, where one does.
 function binding_of(s: source.Source, decls: [ast.Decl], name: str) -> token.Span?
     for decl in decls
@@ -127,3 +202,14 @@ function first_group(decls: [ast.Decl], said: bool) -> token.Span?
             return head.header
 
     return fail(code: "none", msg: "no group")
+
+## Tests
+
+test "a layer name no member of this target defines is told by the member that does (panel 260's R4)"
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.target @ "aarch64-unknown-linux-gnu"
+    assert why_unbuilt(name: "hero_ui_appkit_here", t: t) == "the member that defines it, `platform/hero_ui_appkit.swift`, is written in Swift, which the layer compiles for an Apple target alone, and this build's target is `aarch64-unknown-linux-gnu`"
+    assert why_unbuilt(name: "hero_no_such_name_anywhere", t: t) == "no member of the layer's names it, so no target's archive defines it"
+    assert inside(runtime: "rt", path: "rt/platform/x.c") == "platform/x.c"
+    assert holds_text(text: "@_cdecl(\"a\")", needle: "@_cdecl(\"a\")")
+    assert !holds_text(text: "ab", needle: "abc")
