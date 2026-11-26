@@ -1,0 +1,130 @@
+# A statement's operands asked for by kind, each refusal naming the line,
+# the instruction and the operand, so that every check of the assembler's
+# reads as the sentence it is: "line 7: addi's third operand is a value".
+
+use asm/syntax
+
+## Asking
+
+# The place of the operand at `at` in words: "first", "second".
+function ordinal(at: i64) -> str
+    return match at
+        0 => "first"
+        1 => "second"
+        2 => "third"
+        _ => f"operand {at + 1}"
+
+# Checks that `s` has exactly `n` operands.
+#
+# - `s`: the statement.
+# - `n`: how many it takes.
+#
+# Fails `invalid` where it has another number.
+function count(s: syntax.Statement, n: i64) -> ()?
+    if s.operands.len() != n
+        return fail(
+            code: "invalid",
+            msg: f"line {s.line}: {s.name} takes {n} operands, not {s.operands.len()}"
+        )
+    return ok()
+
+# The register the operand at `at` names.
+#
+# - `s`: the statement.
+# - `at`: the operand's index, below their count.
+#
+# Fails `invalid` where it is no register.
+function reg(s: syntax.Statement, at: i64) -> i64?
+    return match s.operands[at]
+        .register held                 => ok(held.n)
+        .value _ | .memory _ | .text _ => wrong(s: s, at: at, kind: "a register")
+
+# The value the operand at `at` names.
+#
+# - `s`: the statement.
+# - `at`: the operand's index, below their count.
+#
+# Fails `invalid` where it is no value.
+function value(s: syntax.Statement, at: i64) -> syntax.Expr?
+    return match s.operands[at]
+        .value held                       => ok(held.e)
+        .register _ | .memory _ | .text _ => wrong(s: s, at: at, kind: "a value")
+
+# The base register of the memory operand at `at`.
+#
+# - `s`: the statement.
+# - `at`: the operand's index, below their count.
+#
+# Fails `invalid` where it is not `offset(register)`.
+function base(s: syntax.Statement, at: i64) -> i64?
+    return match s.operands[at]
+        .memory m                        => ok(m.base)
+        .register _ | .value _ | .text _ => wrong(s: s, at: at, kind: "offset(register)")
+
+# The offset of the memory operand at `at`.
+#
+# - `s`: the statement.
+# - `at`: the operand's index, below their count.
+#
+# Fails `invalid` where it is not `offset(register)`.
+function offset(s: syntax.Statement, at: i64) -> syntax.Expr?
+    return match s.operands[at]
+        .memory m                        => ok(m.offset)
+        .register _ | .value _ | .text _ => wrong(s: s, at: at, kind: "offset(register)")
+
+# The text of the string operand at `at`.
+#
+# - `s`: the statement.
+# - `at`: the operand's index, below their count.
+#
+# Fails `invalid` where it is no string.
+function text(s: syntax.Statement, at: i64) -> str?
+    return match s.operands[at]
+        .text t                            => ok(t.s)
+        .register _ | .value _ | .memory _ => wrong(s: s, at: at, kind: "a string")
+
+function wrong<T>(s: syntax.Statement, at: i64, kind: str) -> T?
+    return fail(code: "invalid", msg: f"line {s.line}: {s.name}'s {ordinal(at)} operand is {kind}")
+
+## Making
+
+# A statement of `name` at `s`'s line, with `operands`, as a pseudo-
+# instruction expands into.
+#
+# - `s`: the statement expanded.
+# - `name`: the base instruction.
+# - `operands`: its operands.
+function made(s: syntax.Statement, name: str, operands: [syntax.Operand]) -> syntax.Statement
+    return syntax.Statement(line: s.line, labels: [], name: name, operands: operands)
+
+# A register operand.
+#
+# - `n`: the register, 0 to 31.
+function r(n: i64) -> syntax.Operand
+    return .register(n: n)
+
+# A value operand: `e`, its part replaced by `part`.
+#
+# - `e`: the value.
+# - `part`: the part taken.
+function v(e: syntax.Expr, part: syntax.Part) -> syntax.Operand
+    return .value(e: syntax.Expr(symbol: e.symbol, addend: e.addend, part: part))
+
+# A number operand.
+#
+# - `n`: the number.
+function num(n: i64) -> syntax.Operand
+    return .value(e: syntax.number(n))
+
+## Tests
+
+test "reg, value and count: what each asks, and the sentence it fails with"
+    s = syntax.Statement(line: 7, labels: [], name: "addi", operands: [r(10), r(10), r(5)])
+    assert reg(s, at: 0).must() == 10
+    assert value(s, at: 2).is_err()
+    assert count(s, n: 3).is_err() == false
+    assert count(s, n: 2).is_err()
+
+    match value(s, at: 2)
+        .ok _  => assert false
+        .err e => assert e.msg == "line 7: addi's third operand is a value"
