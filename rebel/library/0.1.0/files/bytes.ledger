@@ -348,12 +348,12 @@ capability bytes/is-ascii  whether every byte is ASCII
   python  bytes.isascii, bytearray.isascii
   note    Python answered true for no bytes and for 0x7F, false for 0x80
 
-capability bytes/all-of-a-class  whether every byte is a letter, a digit, white space, upper case or lower case
-  heroes  built-in all, with bytes.is_letter_ascii, bytes.is_digit_ascii, bytes.is_space_ascii, bytes.is_upper_ascii, bytes.is_lower_ascii
+capability bytes/all-of-a-class  whether a byte, or every byte, is a letter, a digit, a hexadecimal digit, white space, upper case or lower case
+  heroes  built-in all, with bytes.is_letter_ascii, bytes.is_digit_ascii, bytes.is_hex_digit_ascii, bytes.is_space_ascii, bytes.is_upper_ascii, bytes.is_lower_ascii
   go      -
-  rust    -
+  rust    u8::is_ascii_alphabetic, u8::is_ascii_digit, u8::is_ascii_hexdigit, u8::is_ascii_whitespace, u8::is_ascii_uppercase, u8::is_ascii_lowercase, u8::is_ascii_alphanumeric, u8::is_ascii_control, u8::is_ascii_graphic, u8::is_ascii_octdigit, u8::is_ascii_punctuation
   python  bytes.isalnum, bytes.isalpha, bytes.isdigit, bytes.islower, bytes.isspace, bytes.isupper, bytearray.isalnum, bytearray.isalpha, bytearray.isdigit, bytearray.islower, bytearray.isspace, bytearray.isupper
-  note    `all` answers true for no bytes, where Python answers false; Python's `islower` and `isupper` ask only of the letters, which `all` with `is_lower_ascii` does not; `isalnum` is a function of the program's own over two classes
+  note    `all` answers true for no bytes, where Python answers false; Python's `islower` and `isupper` ask only of the letters, which `all` with `is_lower_ascii` does not; `isalnum` is a function of the program's own over two classes; Rust's `is_ascii_whitespace` leaves out the vertical tab, 11, which `is_space_ascii` takes as Python's `isspace` does; Rust's alphanumeric, control, graphic, octal digit and punctuation classes are a program's own over these, as `unicode`'s `class/ascii-classes` says of `char`'s
 
 capability bytes/pad  bytes brought to a length with bytes repeated at the start, at the end or at both
   heroes  bytes.pad_start, bytes.pad_end, bytes.center

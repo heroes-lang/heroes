@@ -127,3 +127,36 @@ test "the samples: each order, equality and test answers as its comment says"
     assert add(acc: 1, item: 2) == 3 && append(acc: "a", item: "b") == "ab"
     assert parse_small("two").must() == 2
     assert parse_small("three").is_err()
+
+# Whether `item` is of the suit `state`.
+#
+# - `state`: the suit asked for, one letter.
+# - `item`: the card asked about.
+function of_suit(state: str, item: Card) -> bool
+    return item.suit == state
+
+# Whether `item` is the text `state`.
+#
+# - `state`: the text asked for.
+# - `item`: the text asked about.
+function is_text(state: str, item: str) -> bool
+    return item == state
+
+# Whether `a` stands nearer to `state` than `b` does.
+#
+# - `state`: the number distances are measured from.
+# - `a`: the number asked about.
+# - `b`: the number it is compared with.
+function nearer(state: i64, a: i64, b: i64) -> bool
+    return distance(x: a, y: state) < distance(x: b, y: state)
+
+# How far apart `x` and `y` are.
+function distance(x: i64, y: i64) -> i64
+    if x < y
+        return y - x
+    return x - y
+
+# An order with a state that says every element goes before every other,
+# which no order does: what a sort is given by mistake, and must survive.
+function always_with(state: i64, a: i64, b: i64) -> bool
+    return state == state && a == a && b == b

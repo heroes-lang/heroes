@@ -414,6 +414,13 @@ capability list/index-where  where the first element a function accepts stands
   rust    Iterator::position
   python  -
 
+capability list/search-with-state  where the first element a function accepts with a value of the caller's stands, and that element
+  heroes  lists.index_where_with, lists.find_with
+  go      -
+  rust    -
+  python  -
+  note    the caller's value, a name or a key, is handed beside the list to every call, since a function value holds none of its own (spec § 9): what Go's `slices.IndexFunc(xs, func(s Service) bool { return s.Name == name })` and Rust's `position(|s| s.name == name)` capture in a closure, the shape of `web.before_with` and `http.serve_with`
+
 capability list/index-where-last  where the last element a function accepts stands
   heroes  lists.index_where_last
   go      -
@@ -453,6 +460,13 @@ capability list/sort-by  a list in the order a function gives, equal elements ke
   rust    slice::sort_by, slice::sort_by_key, slice::sort_by_cached_key, slice::sort_unstable_by, slice::sort_unstable_by_key, slice::select_nth_unstable, slice::select_nth_unstable_by, slice::select_nth_unstable_by_key, slice::partial_sort_unstable, slice::partial_sort_unstable_by, slice::partial_sort_unstable_by_key
   python  sorted, list.sort
   note    always stable, so the unstable forms have no twin. Stability observed against Python's sorted and Go's SortStableFunc on cards of repeated rank, and held over a thousand repeated keys. A `nan` given to an order that compares with `<` aborts, as `<` does on one, where Python leaves such a list in no order. A key is said as an order comparing the two keys, since a key of a type parameter has no `<`; a descending order is an order the caller writes, which keeps equal elements in place as Python's `reverse=True` does. The nth smallest is this then an index, at the sort's cost
+
+capability list/sort-by-with-state  a list in the order a function gives with a value of the caller's, equal elements keeping their places
+  heroes  lists.sort_by_with
+  go      -
+  rust    -
+  python  -
+  note    `sort_by` with the caller's value handed to every comparison, the field a request asked to sort by or the point distances are measured from, which Go's `slices.SortStableFunc` and Rust's `sort_by` read from a closure and Python's `sorted(key=...)` from a lambda; stable, as `sort_by` is
 
 capability list/is-sorted  whether a list is in the order a function gives
   heroes  lists.is_sorted_by
