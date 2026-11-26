@@ -1,0 +1,54 @@
+# The ledger of `web/chain`: what Echo's middleware, Gin's and chi's handler
+# chains and Flask's request hooks let a program run around a route's
+# handler, one block per capability, and what Rebel answers. Rust's standard
+# library holds no web framework, so its lines are `-`.
+
+capability chain/every  a step every route runs, in the order the steps were added
+  heroes  web/chain.add_step, web.Router.steps
+  go      echo.Echo.Use, gin.Engine.Use, chi.Router.Use, chi.Chain
+  rust    -
+  python  flask.Flask.before_request, flask.Flask.after_request
+  note    run after the router found the route, as Echo's `Use` (its `Pre`, before the routing, is `web.before` in the program's loop); a request no route takes runs these steps too, then `web.not_routed`'s answer, as Echo's `Use` wraps its not-found handler, so a log line counts it
+
+capability chain/group  a step every route of a group runs
+  heroes  web/chain.add_step, web.Route.steps, web.mount
+  go      echo.Group.Use, gin.RouterGroup.Use, chi.Router.Group, chi.Router.Route
+  rust    -
+  python  flask.Blueprint.before_request, flask.Blueprint.after_request
+  note    added to the group's router before `web.mount` takes its routes and travelling with them, outermost group first; a step a group gains after the mount stays the group's, as a route it gains does
+
+capability chain/route  a step one route runs after its groups'
+  heroes  web/chain.add_route_step, web.Route.steps
+  go      echo.Echo.Add's middleware, echo.Echo.GET's middleware, chi.Router.With, gin.RouterGroup.Handle's handlers
+  rust    -
+  python  -
+  note    by the route's name, so every method sharing that name runs it
+
+capability chain/next  a step going on to the next, or answering without going on, its work after the rest seeing the response
+  heroes  web/chain.proceed, web/chain.Next
+  go      echo.MiddlewareFunc, echo.HandlerFunc, gin.Context.Next, gin.Context.Abort, gin.Context.IsAborted, gin.HandlersChain
+  rust    -
+  python  -
+  note    the `next` is data, `Next`, never a function returning a function that holds it, the language having no closure; a step goes on by calling `proceed` with the program's tables and the `Next` it was handed, and every step and answer is lent the program's state by `@`, so a step changes the state as a handler does
+
+capability chain/bind  a route added and bound to the function that answers it
+  heroes  web/chain.on
+  go      echo.Echo.GET, echo.Echo.POST, echo.Echo.Add, gin.RouterGroup.GET, chi.Router.Get, net/http.ServeMux.HandleFunc
+  rust    -
+  python  flask.Flask.route, flask.Flask.add_url_rule
+  note    the program keeps the function in its own table by the route's name, and the router the name alone, so nothing of the program's is held by the library
+
+capability chain/dispatch  a request answered through its route's steps and handler
+  heroes  web/chain.dispatch, web/chain.start, web/chain.Target
+  go      echo.Echo.ServeHTTP, gin.Engine.ServeHTTP, chi.Mux.ServeHTTP
+  rust    -
+  python  flask.Flask.full_dispatch_request
+  note    a name the program bound to no function aborts, a mistake in the program and never something a request can cause
+
+capability chain/route-read  the route a step reads: its name, its groups, its parameters
+  heroes  web/chain.found_of, web.Found
+  go      echo.Context.Path, echo.Context.Param, gin.Context.FullPath, chi.RouteContext
+  rust    -
+  python  flask.Request.url_rule, flask.Request.endpoint
+
+dropped  a context a step sets values in for the handler (Echo's `Context.Set`, Gin's `Context.Set`, Flask's `g`): the program's own state, lent by `@` to every step and answer, holds what a step finds
