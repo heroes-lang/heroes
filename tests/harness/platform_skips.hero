@@ -361,6 +361,11 @@ function unbuildable_on_windows() -> [Skip]
         Skip(name: "tests/golden/run/fixedbugs-2848-a-handler-jumps-into-a-coroutine-setcontext-started-on-the-heap-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2848-getcontext-and-setcontext-as-a-jump-on-the-own-stack-then-a-jump-out-of-a-handler-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2848-a-coroutine-makecontext-hands-twelve-arguments-reads-all-twelve-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2850-a-handler-jumps-into-a-coroutine-a-uc-link-started-on-the-heap-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2850-a-handler-jumps-into-a-coroutine-a-uc-link-started-on-the-runners-frame-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2850-a-handler-jumps-into-a-coroutine-made-after-the-uc-link-naming-it-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2850-a-handler-jumps-into-the-third-coroutine-of-a-chain-of-uc-links-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2850-a-siglongjmp-out-of-a-handler-onto-frames-that-reuse-a-uc-link-started-coroutines-ended-stack-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
     ]
 
 # Why the program at `source` is not built on this machine: one of
@@ -637,7 +642,10 @@ test "every program Windows cannot build is a file that exists, skipped there al
     # Then the 6 of defect 2848 (lane sig-family), whose one header, compiled
     # alone by `zig cc` 0.15.2 for both Windows targets on 2026-11-26, was
     # refused at `ucontext.h` not found (`POSIX_CONTEXT_SHAPES_ON_WINDOWS`).
-    assert unbuildable_on_windows().len() == 172
+    # Then the 5 of defect 2850 (lane sig-family), whose one header, compiled
+    # alone by `zig cc` 0.15.2 for both Windows targets on 2026-11-26, was
+    # refused at `ucontext.h` not found (`POSIX_CONTEXT_SHAPES_ON_WINDOWS`).
+    assert unbuildable_on_windows().len() == 177
 
     for one in unbuildable_on_windows()
         assert strings.has_prefix(s: one.name, prefix: "tests/golden/run/")

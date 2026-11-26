@@ -23,6 +23,22 @@ static uintptr_t hero_rebind_ctx_sp(const void *uc) {
     return hero_rebind_strip_d(hero_rebind_word((const unsigned char *)uc, HERO_REBIND_CTX_SP));
 }
 
+/* The stack-pointer word of the context at `uc`, copied by the kernel wherever
+ * it is mapped, so a context given back since is an answer and never a fault
+ * (defect 2850); false where the kernel refuses the copy. */
+static bool hero_rebind_ctx_word(const void *uc, uintptr_t *word) {
+    const unsigned char *at = (const unsigned char *)uc + HERO_REBIND_CTX_SP;
+    uintptr_t got_word = 0;
+    mach_vm_size_t got = 0;
+    if (uc == NULL || mach_vm_read_overwrite(mach_task_self(), (mach_vm_address_t)(uintptr_t)at, sizeof got_word,
+                                             (mach_vm_address_t)(uintptr_t)&got_word, &got) != KERN_SUCCESS ||
+        got != sizeof got_word) {
+        return false;
+    }
+    *word = hero_rebind_strip_d(got_word);
+    return true;
+}
+
 /* Whether the context a swap switched to names, once the switch has
  * returned, another stack pointer than `entered`: one witness of its
  * coroutine's life beside the switches made from its range (a yield through a

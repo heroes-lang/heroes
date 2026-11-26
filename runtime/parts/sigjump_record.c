@@ -103,6 +103,19 @@ static bool hero_jmp_lives(const HeroSignalStack *own, uintptr_t at, uint32_t si
     return false;
 }
 
+/* The stack-pointer word of the context at `context`, copied by the kernel
+ * wherever it is mapped, so a context given back since is an answer and never
+ * a fault (defect 2850: a coroutine the C library starts through `uc_link` is
+ * judged ended by its context naming what it named when the swap began);
+ * false where no context field decodes or the kernel refuses the copy. */
+static bool hero_jmp_context_word(const void *context, uintptr_t *word) {
+    uintptr_t at = context != NULL ? hero_jmp_context_sp_at((const ucontext_t *)context) : 0;
+    if (at == 0) return false;
+    struct iovec into = {word, sizeof *word};
+    struct iovec from = {(void *)at, sizeof *word};
+    return process_vm_readv(getpid(), &into, 1, &from, 1, 0) == (ssize_t)sizeof *word;
+}
+
 /* Whether the context a `swapcontext` switched to names, once the switch has
  * returned, another stack pointer than `entered`, the one it named at the
  * switch: a coroutine that yields saves itself there, by a save this runtime
