@@ -9,6 +9,7 @@
 # before it, `%text` by the start of its command, or by a child's process
 # number.
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/os
 use <rebel>/process
@@ -117,7 +118,7 @@ function finish(@job: state.Job) -> Waited
                     .signaled g => 128 + g.signal
                     .timed_out  => 124
             .err _ =>
-                _ = process.release(@job.children[k]).is_err()
+                errors.ignore(process.release(@job.children[k]))
                 1
 
     job.children @ []

@@ -5,6 +5,7 @@
 # stop once it has sent its last export; then the first thread prints what
 # the collector received, and the serial part's one line.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/os
 use <rebel>/time
@@ -25,7 +26,7 @@ constant MOST_MINUTES: i64
 #
 # Fails where the folder, the stand-ins or the thread cannot be made.
 function run(dir: str) -> ()?
-    _ = fs.remove_all(dir).is_err()
+    errors.ignore(fs.remove_all(dir))
     fs.make_dir_all(dir)?
     exe = os.executable_path()?
     most = time.minutes(MOST_MINUTES)
@@ -57,5 +58,5 @@ function run(dir: str) -> ()?
 
     print(outside.serial_line(o))
     outside.close(@o)
-    _ = fs.remove_all(dir).is_err()
+    errors.ignore(fs.remove_all(dir))
     return ok()

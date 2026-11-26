@@ -9,6 +9,7 @@
 # 2026-11-22), so the loop that runs the device reads its end with a read
 # timeout of zero at each turn: what is there, at once, or nothing.
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/numbers
 use <rebel>/serial
@@ -87,13 +88,13 @@ function serve(@d: Device)
 function answer(@d: Device, controller: io.Stream, line: str)
     if line != QUERY
         d.refused @ d.refused + 1
-        _ = io.write_text(controller, text: "ERR\r\n").is_err()
+        errors.ignore(io.write_text(controller, text: "ERR\r\n"))
         return
 
     if d.answered >= d.series.len()
         d.unanswered @ d.unanswered + 1
         return
-    _ = io.write_text(controller, text: answer_of(d.series[d.answered]) + "\r\n").is_err()
+    errors.ignore(io.write_text(controller, text: answer_of(d.series[d.answered]) + "\r\n"))
     d.answered @ d.answered + 1
 
 # Closes the device's end.
@@ -102,7 +103,7 @@ function answer(@d: Device, controller: io.Stream, line: str)
 function close(@d: Device)
     for path in keys(d.pairs)
         pair @= d.pairs[path].must()
-        _ = io.close(@pair.controller).is_err()
+        errors.ignore(io.close(@pair.controller))
 
     d.pairs @ {}
 

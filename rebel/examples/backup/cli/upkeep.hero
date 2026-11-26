@@ -5,6 +5,7 @@
 # the repository whatever happened.
 
 use <rebel>/archive
+use <rebel>/errors
 use <rebel>/flags
 use <rebel>/fs
 use <rebel>/io
@@ -113,7 +114,7 @@ function export_with(@r: repository.Repository, f: flags.Found) -> ()?
 
     if output == "-"
         done = exporter.export_tar(@r, s: s, to: io.stdout(), compression: compression, shown: false)?
-        _ = io.write_line(io.stderr(), line: report.export_line(done)).is_err()
+        errors.ignore(io.write_line(io.stderr(), line: report.export_line(done)))
         return ok()
     stream @= fs.create(output)?
     written = exporter.export_tar(@r, s: s, to: stream, compression: compression, shown: !flags.is_on(f, "quiet"))

@@ -8,6 +8,7 @@
 # asks, and takes its exclusive queues with it.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/poll
 
@@ -158,7 +159,7 @@ record Broker
 # - `channel`: the channel.
 # - `payload`: the payload.
 function send(b: Broker lent, i: i64, kind: i64, channel: i64, payload: [u8])
-    _ = io.write(b.peers[i].stream, data: amqp_wire.frame(kind: kind, channel: channel, payload: payload)).is_err()
+    errors.ignore(io.write(b.peers[i].stream, data: amqp_wire.frame(kind: kind, channel: channel, payload: payload)))
 
 # Writes a method on `channel` to peer `i`.
 #
@@ -280,8 +281,8 @@ function drop_peer(@b: Broker, set: poll.Set, i: i64)
     release(@b, i: i)
 
     # A connection ends here whatever its socket answers.
-    _ = poll.remove(set, key: b.peers[i].key).is_err()
-    _ = io.close(@b.peers[i].stream).is_err()
+    errors.ignore(poll.remove(set, key: b.peers[i].key))
+    errors.ignore(io.close(@b.peers[i].stream))
     b.peers[i].open @ false
     dispatch(@b)
 

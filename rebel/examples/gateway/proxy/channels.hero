@@ -10,6 +10,7 @@
 # connection is made the call is not tried again, since gRPC methods are not
 # known to be idempotent.
 
+use <rebel>/errors
 use <rebel>/grpc
 use <rebel>/json
 use <rebel>/protobuf
@@ -123,7 +124,7 @@ function call_json(@gw: state.Gateway, upstream: settings.Upstream, path: str, r
     opened = open(@gw, upstream: upstream, client: client, attempts: 2)?
     channel @= opened.channel
     reply = grpc.call(@channel, path: path, request: data, metadata: [], timeout: time.milliseconds(CHANNEL_MS))
-    _ = grpc.close(@channel).is_err()
+    errors.ignore(grpc.close(@channel))
     answered = reply?
 
     if answered.status.code != grpc.STATUS_OK || answered.messages.len() == 0

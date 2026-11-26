@@ -8,6 +8,7 @@
 # loop. The first then tells what the collector and the endpoints received.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/json
 use <rebel>/path
@@ -93,8 +94,8 @@ function drive(arg: str) -> str
                     match redis.connect(opts)
                         .ok first =>
                             c @= first
-                            _ = redis.call(@c, ["SHUTDOWN", "NOSAVE"]).is_err()
-                            _ = redis.close(@c).is_err()
+                            errors.ignore(errors.discard_value(redis.call(@c, ["SHUTDOWN", "NOSAVE"])))
+                            errors.ignore(redis.close(@c))
                         .err _ => _ = 0
                 .err _ => _ = 0
         .err _ => _ = 0
@@ -131,7 +132,7 @@ function run_script(arg: str) -> str?
     print("== the clock")
 
     ran = run_clock(@sup, s: s, origin: origin, horizon: horizon)
-    _ = fleet.ask_stop(@sup.client).is_err()
+    errors.ignore(fleet.ask_stop(@sup.client))
     reports = fleet.wait_all(@workers)
     ran?
     supervisor.take_reports(@sup, reports: reports)
@@ -231,7 +232,7 @@ function settle(@c: redis.Client, queues: [str]) -> i64?
 # Fails where the folder or the stand-ins cannot be made, as their calls
 # fail.
 function run(dir: str) -> ()?
-    _ = fs.remove_all(dir).is_err()
+    errors.ignore(fs.remove_all(dir))
     fs.make_dir_all(path.join_all([dir, "logs"]))?
     fs.write_bytes(path.join_all([dir, "upload.txt"]), data: bytes.from_text(script.upload_text()))?
     start_us = time.unix_microseconds(time.parse(START, layout: .rfc3339)?)
@@ -261,7 +262,7 @@ function run(dir: str) -> ()?
     say(["", "== webhook deliveries, by endpoint and key"])
     say(receiver.summary(h.hooks))
     host.close(@h)
-    _ = fs.remove_all(dir).is_err()
+    errors.ignore(fs.remove_all(dir))
     return ok()
 
 test "earliest_after: the earlier of two moments to come, one passed or none left out"

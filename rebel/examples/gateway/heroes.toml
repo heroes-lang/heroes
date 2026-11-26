@@ -8,6 +8,7 @@ packages = [
     "crypto",
     "crypto/keypairs",
     "dns",
+    "errors",
     "graphql",
     "grpc",
     "hash",

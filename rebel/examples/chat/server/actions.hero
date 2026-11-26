@@ -5,6 +5,8 @@
 # with a `refused` notice naming the code and the reason, and changes
 # nothing; the connection stays open.
 
+use <rebel>/errors
+
 use bridge/mirroring
 use bridge/places
 use core/model
@@ -78,7 +80,7 @@ function post(@srv: state.Server, room: str, author: str, origin: model.Origin, 
 
     # The room has the message whatever a broker answers; a broker gone is
     # told by its client's next read, and the message stays in the history.
-    _ = mirroring.mirror_out(@srv.links, m: m).is_err()
+    errors.ignore(errors.discard_value(mirroring.mirror_out(@srv.links, m: m)))
     return ok(hub.posted(srv.routing, m: m))
 
 # Acts on `c`, a request of the connection `key` signed in as `user`, and

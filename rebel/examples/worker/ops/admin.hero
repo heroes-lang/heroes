@@ -4,6 +4,7 @@
 # job enqueued, a failed job run again, a queue paused or resumed, the fleet
 # asked to stop, the jobs standing, the dead letters.
 
+use <rebel>/errors
 use <rebel>/jobs
 use <rebel>/jobs/redis_store
 use <rebel>/json
@@ -47,7 +48,7 @@ function enqueue(inv: command_line.Invocation) -> str?
     c @= connect(inv.settings)?
     tr @= tracer.new_tracer(inv.settings, thread: "enqueue")?
     id = producer.enqueue(@c, @tr, job: job, at: store_clock.now(@c)?)?
-    _ = redis.close(@c).is_err()
+    errors.ignore(redis.close(@c))
     return ok(f"enqueued job {id} {inv.kind} in {job.queue}")
 
 # Runs the failed job `inv.job` again and answers what to print.
@@ -58,7 +59,7 @@ function enqueue(inv: command_line.Invocation) -> str?
 function retry(inv: command_line.Invocation) -> str?
     c @= connect(inv.settings)?
     info = redis_store.retry(@c, id: inv.job)?
-    _ = redis.close(@c).is_err()
+    errors.ignore(redis.close(@c))
     return ok(
         f"job {info.id} {info.kind} is {jobs.state_name(info.state)} again, {info.max_attempts - info.attempt} attempts left"
     )
@@ -77,7 +78,7 @@ function pause_or_resume(inv: command_line.Invocation) -> str?
     else
         redis_store.resume(@c, queue: inv.queue)?
 
-    _ = redis.close(@c).is_err()
+    errors.ignore(redis.close(@c))
     return ok(f"queue {inv.queue} {inv.action}d")
 
 # Asks every worker of the store to stop once idle, and answers what to
@@ -89,7 +90,7 @@ function pause_or_resume(inv: command_line.Invocation) -> str?
 function stop(inv: command_line.Invocation) -> str?
     c @= connect(inv.settings)?
     fleet.ask_stop(@c)?
-    _ = redis.close(@c).is_err()
+    errors.ignore(redis.close(@c))
     return ok("every worker of the store will stop once idle")
 
 # The run `inv` asks for, its schedules read first.
@@ -117,5 +118,5 @@ function table(inv: command_line.Invocation) -> [str]?
         dashboard.stats_lines(@c)
     else
         dashboard.dead_lines(@c, queues: inv.settings.queues)
-    _ = redis.close(@c).is_err()
+    errors.ignore(redis.close(@c))
     return lines

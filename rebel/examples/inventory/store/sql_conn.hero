@@ -12,6 +12,7 @@
 # `integer`, or the digits of a `text` where MySQL answers a `SUM` as a
 # `DECIMAL` and SQLite's ODBC driver an expression's column as text.
 
+use <rebel>/errors
 use <rebel>/sql
 use <rebel>/sql/build
 use <rebel>/sql/mysql
@@ -152,11 +153,11 @@ function rollback(@c: Conn)
     match c
         .mysql x =>
             db @= x.db
-            _ = mysql.rollback(@db).is_err()
+            errors.ignore(mysql.rollback(@db))
             c @ .mysql(db: db)
         .odbc x =>
             db @= x.db
-            _ = odbc.rollback(@db).is_err()
+            errors.ignore(odbc.rollback(@db))
             c @ .odbc(db: db)
 
 # Ends the connection.

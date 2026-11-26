@@ -41,15 +41,15 @@ function run(s: settings.Settings, schedules: [jobs.Periodic]) -> str?
     workers @= errors.context(fleet.start(@sup.client, s: s), what: "starting the workers")?
 
     while !os.is_stop_asked() && !worker_loop.stop_asked(@sup.client)
-        _ = supervisor.tick(@sup).is_err()
-        _ = supervisor.refresh(@sup).is_err()
+        errors.ignore(errors.discard_value(supervisor.tick(@sup)))
+        errors.ignore(supervisor.refresh(@sup))
 
         if server.len() > 0
-            _ = dashboard.serve_for(server[0], registry: sup.registry, wait: s.poll).is_err()
+            errors.ignore(dashboard.serve_for(server[0], registry: sup.registry, wait: s.poll))
         else
             time.sleep(s.poll)
 
-    _ = fleet.ask_stop(@sup.client).is_err()
+    errors.ignore(fleet.ask_stop(@sup.client))
     supervisor.take_reports(@sup, reports: fleet.wait_all(@workers))
 
     for i in range(from: 0, to: server.len())

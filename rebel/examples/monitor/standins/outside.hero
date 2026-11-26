@@ -4,6 +4,7 @@
 # milliseconds, then a look at the thermometer's end without waiting, until
 # the collector is asked to stop or the run's longest time has passed.
 
+use <rebel>/errors
 use <rebel>/poll
 use <rebel>/time
 
@@ -78,7 +79,7 @@ function serve(@o: Outside, most: time.Duration) -> ()?
 function close(@o: Outside)
     collector.close(@o.collector, set: o.set)
     device.close(@o.device)
-    _ = poll.close(@o.set).is_err()
+    errors.ignore(poll.close(@o.set))
 
 # The one line of the serial part: the thermometer's queries where it ran
 # on a pseudo-terminal, else why it did not. The transcript's one line that

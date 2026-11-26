@@ -12,6 +12,7 @@
 # and its own is left out: the watch tells of it later.
 
 use <rebel>/containers/ordered
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/maps
 use <rebel>/path as paths
@@ -101,7 +102,7 @@ function drop(@l: Listing, name: str) -> bool
         .ok k  => k
         .err _ => return false
 
-    _ = ordered.remove(@l.shape, @l.keys, @l.entries, key: key, less: sorting.key_less).is_err()
+    errors.ignore(errors.discard_value(ordered.remove(@l.shape, @l.keys, @l.entries, key: key, less: sorting.key_less)))
     l.by_name @ maps.remove(l.by_name, key: name)
     return true
 

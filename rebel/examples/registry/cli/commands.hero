@@ -8,6 +8,7 @@
 # A command that fails prints its failure on one line and ends the program
 # with 1; arguments that do not read print the usage and end it with 2.
 
+use <rebel>/errors
 use <rebel>/flags
 use <rebel>/io
 use <rebel>/os
@@ -145,7 +146,7 @@ function run(arguments: [str]) -> i64
     found = match flags.parse_with_env(command(), arguments: arguments, env: os.env_all().default({}))
         .ok f => f
         .err e =>
-            _ = io.write_line(io.stderr(), line: e.msg).is_err()
+            errors.ignore(io.write_line(io.stderr(), line: e.msg))
             return EXIT_USAGE
 
     if flags.is_help(found)
@@ -161,7 +162,7 @@ function run(arguments: [str]) -> i64
     match dispatch(sub)
         .ok _ => return EXIT_OK
         .err e =>
-            _ = io.write_line(io.stderr(), line: f"registry {flags.name_of(sub)}: {e.code}: {e.msg}").is_err()
+            errors.ignore(io.write_line(io.stderr(), line: f"registry {flags.name_of(sub)}: {e.code}: {e.msg}"))
             return EXIT_FAILED
 
 # Runs the subcommand `sub` names.

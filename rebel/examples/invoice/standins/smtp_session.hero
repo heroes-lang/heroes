@@ -12,6 +12,7 @@
 # MAIL, RCPT and DATA reads them in order, as PIPELINING (RFC 2920) asks.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/strings
 
@@ -97,7 +98,7 @@ function session(stream: io.Stream, user: str, password: str) -> Tally
         else if verb == "NOOP"
             "250 2.0.0 OK"
         else if verb == "QUIT"
-            _ = reply(stream, line: "221 2.0.0 bye").is_err()
+            errors.ignore(reply(stream, line: "221 2.0.0 bye"))
             break
         else
             "502 5.5.2 command not recognized"

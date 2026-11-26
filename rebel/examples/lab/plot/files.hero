@@ -12,6 +12,7 @@
 # `png.encode` answers the same bytes for the same image every time, so the
 # size and the CRC of a plot are a fact of the notebook, not of the run.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/hash
 use <rebel>/image
@@ -112,4 +113,4 @@ test "write: the same image twice is the same bytes, and the file reads back as 
     assert info.width == 4 && info.height == 3
     back = read_back(dir: dir, file: "t.png").must()
     assert back == Checked(width: 4, height: 3, title: "t")
-    _ = fs.remove_all(dir).is_err()
+    errors.ignore(fs.remove_all(dir))

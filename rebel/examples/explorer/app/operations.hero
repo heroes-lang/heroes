@@ -5,6 +5,7 @@
 # job did into the explorer's state: its action kept for Undo, the folder
 # read again with what it made chosen, a search's results shown.
 
+use <rebel>/errors
 use <rebel>/path as paths
 
 use app/actions
@@ -169,7 +170,7 @@ function finish(@ex: explorer.Explorer, j: jobs.Job) -> [hashing.Digest]
     match j.work
         .searching _ => _ = 0
         .hashing _ | .trashing _ | .packing _ | .unpacking _ | .copying _ | .moving _ =>
-            _ = explorer.refresh(@ex).is_err()
+            errors.ignore(explorer.refresh(@ex))
 
             if after.len() > 0
                 explorer.choose_names(@ex, names: after)

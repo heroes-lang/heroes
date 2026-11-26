@@ -16,6 +16,7 @@
 
 use <rebel>/bytes
 use <rebel>/crypto
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/io
 use <rebel>/path
@@ -224,11 +225,11 @@ function write_file_node(@r: repository.Repository, @m: meter.Meter, dest: str, 
 
     match written
         .err e =>
-            _ = fs.remove(temp).is_err()
+            errors.ignore(fs.remove(temp))
             return fail(code: e.code, msg: e.msg)
         .ok digest =>
             if closed.is_err() || digest != node.digest
-                _ = fs.remove(temp).is_err()
+                errors.ignore(fs.remove(temp))
                 return fail(code: INVALID, msg: f"{dest} restored does not hold the content backed up")
 
     fs.rename(from: temp, to: dest)?

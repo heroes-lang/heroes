@@ -4,6 +4,7 @@
 # `mqtt_broker` reads packets and answers them; this module is what it
 # answers them with.
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/math
 use <rebel>/mqtt
@@ -100,8 +101,8 @@ function drop_peer(@b: Broker, set: poll.Set, i: i64)
 
     # A connection ends here whatever its socket answers: a failure to take it
     # out or to close it leaves nothing the broker could do better.
-    _ = poll.remove(set, key: b.peers[i].key).is_err()
-    _ = io.close(@b.peers[i].stream).is_err()
+    errors.ignore(poll.remove(set, key: b.peers[i].key))
+    errors.ignore(io.close(@b.peers[i].stream))
     b.peers[i].open @ false
 
 # The highest QoS a subscription of `peer` matching `topic` grants, -1 where

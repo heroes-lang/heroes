@@ -9,6 +9,7 @@
 # text, which a child reads from a temporary file, so no stage ever waits on
 # a pipe that nobody reads. The status is the last stage's.
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/process
 
@@ -53,7 +54,7 @@ function joint_after(child: process.Child, index: i64) -> Joint
 # - `children`: the children started, whose outputs are the pipes' ends.
 function release_joint(@j: Joint, @children: [process.Child])
     if j.from_child >= 0
-        _ = io.close(@children[j.from_child].output).is_err()
+        errors.ignore(io.close(@children[j.from_child].output))
 
     j.from_child @ -1
 
@@ -227,7 +228,7 @@ function start_all(@sh: state.Shell, prepared: [simple.Prepared], place: streams
                     joint @ joint_after(child, index: children.len() - 1)
             .err e =>
                 for k in range(from: 0, to: children.len())
-                    _ = process.release(@children[k]).is_err()
+                    errors.ignore(process.release(@children[k]))
 
                 return fail(code: e.code, msg: e.msg)
 

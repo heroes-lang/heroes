@@ -8,6 +8,7 @@
 # for, so no thread outlives the serving (panel 254's R4: a stop drains
 # what was queued, then holds).
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/net
 use <rebel>/time
@@ -114,7 +115,7 @@ function accepted(listener: tls.Listener, conns: (mailbox net.Conn)) -> Served
                         # Not sent, the workers' mailbox having answered the
                         # program's stop: the connection is still this
                         # thread's, and it ends it.
-                        _ = io.close(@conn.stream).is_err()
+                        errors.ignore(io.close(@conn.stream))
 
     return done
 

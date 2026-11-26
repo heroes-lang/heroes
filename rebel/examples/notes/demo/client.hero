@@ -6,6 +6,7 @@
 # matter, never a port, a time, a token or a path. Its last step asks the
 # server to stop, and reads the WebSocket's close.
 
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/websocket
 
@@ -36,7 +37,7 @@ function run(d: Driven) -> bool
         .ok _ => true
         .err e =>
             print(f"client: failed: {e.code}: {e.msg}")
-            _ = d.control.send("client").is_err()
+            errors.ignore(d.control.send("client"))
             false
 
 # Every step, in order. A step that fails ends the session, and `run` then

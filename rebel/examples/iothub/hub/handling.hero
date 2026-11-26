@@ -10,6 +10,7 @@
 # rather than lost; and the failure is what tells the hub the broker is gone.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/poll
 use <rebel>/time
 
@@ -68,15 +69,15 @@ function lose(@h: state.Hub, protocol: registry.Protocol, why: str)
 
     wait: time.Duration? = match protocol
         .mqtt =>
-            _ = poll.remove(h.set, key: h.mqtt.key).is_err()
+            errors.ignore(poll.remove(h.set, key: h.mqtt.key))
             mqtt_link.close(@h.mqtt)
             recovery.lose(@h.mqtt_state, chance: @h.chance, now: now)
         .amqp =>
-            _ = poll.remove(h.set, key: h.amqp.key).is_err()
+            errors.ignore(poll.remove(h.set, key: h.amqp.key))
             amqp_link.close(@h.amqp)
             recovery.lose(@h.amqp_state, chance: @h.chance, now: now)
         .nats =>
-            _ = poll.remove(h.set, key: h.nats.key).is_err()
+            errors.ignore(poll.remove(h.set, key: h.nats.key))
             nats_link.close(@h.nats)
             recovery.lose(@h.nats_state, chance: @h.chance, now: now)
         .serial => ok(time.nanoseconds(0))

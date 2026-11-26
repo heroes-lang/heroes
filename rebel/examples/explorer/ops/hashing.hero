@@ -6,6 +6,7 @@
 # check that a copy or a download is whole; none of them is a cryptographic
 # hash, and the explorer says so in the window that shows them.
 
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/hash
 use <rebel>/io
@@ -87,7 +88,7 @@ function step(@h: Hashing) -> ()?
 function close(@h: Hashing)
     if h.stream.len() > 0
         held @= h.stream[0]
-        _ = io.close(@held).is_err()
+        errors.ignore(io.close(@held))
 
     h.stream @ []
 

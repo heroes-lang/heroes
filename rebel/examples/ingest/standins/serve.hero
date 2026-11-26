@@ -11,6 +11,7 @@
 # messages with `consume`, and answers with `send`. A wait ends at the
 # program's stop (`os.ask_stop`), which is how the demo ends its stand-ins.
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/net
 use <rebel>/poll
@@ -80,21 +81,21 @@ function open(service: str, told: (mailbox notify.Ready)) -> Loop?
 
     match poll.make(MOST_ENTRIES)
         .err e =>
-            _ = net.close_listener(@listener).is_err()
+            errors.ignore(net.close_listener(@listener))
             return fail(code: e.code, msg: e.msg)
         .ok made =>
             set @= made
 
             match poll.add_listener(set, l: listener)
                 .err e =>
-                    _ = poll.close(@set).is_err()
-                    _ = net.close_listener(@listener).is_err()
+                    errors.ignore(poll.close(@set))
+                    errors.ignore(net.close_listener(@listener))
                     return fail(code: e.code, msg: e.msg)
                 .ok key =>
                     match notify.ready(told, service: service, port: listener.address.port)
                         .err e =>
-                            _ = poll.close(@set).is_err()
-                            _ = net.close_listener(@listener).is_err()
+                            errors.ignore(poll.close(@set))
+                            errors.ignore(net.close_listener(@listener))
                             return fail(code: e.code, msg: e.msg)
                         .ok _ => _ = 0
 
@@ -251,9 +252,9 @@ function drop(@l: Loop, id: i64)
     at = index_of_id(l, id: id)
 
     if at >= 0
-        _ = poll.remove(l.set, key: l.peers[at].key).is_err()
+        errors.ignore(poll.remove(l.set, key: l.peers[at].key))
         conn @= l.peers[at].conn
-        _ = io.close(@conn.stream).is_err()
+        errors.ignore(io.close(@conn.stream))
         kept: [Peer] @= []
 
         for i in range(from: 0, to: l.peers.len())
@@ -269,5 +270,5 @@ function close(@l: Loop)
     while l.peers.len() > 0
         drop(@l, id: l.peers[0].id)
 
-    _ = poll.close(@l.set).is_err()
-    _ = net.close_listener(@l.listener).is_err()
+    errors.ignore(poll.close(@l.set))
+    errors.ignore(net.close_listener(@l.listener))

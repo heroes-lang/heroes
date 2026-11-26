@@ -5,6 +5,7 @@
 # firing, `q` quits. The terminal's input joins the loop's set, so a key is
 # read as soon as it is pressed and never waited for.
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/poll
 use <rebel>/term
@@ -59,7 +60,7 @@ function show(@s: Screen, v: view.View)
         .ok held =>
             t @= held
             frame = draw.draw(v, area: tui.area_of(t), selected: s.selected)
-            _ = tui.flush(@t, frame: frame, cursor: .hidden).is_err()
+            errors.ignore(tui.flush(@t, frame: frame, cursor: .hidden))
             s.terminals[HELD] @ t
 
 # What the keys pressed since the last look ask, read without waiting.
@@ -121,12 +122,12 @@ function ask_of(@s: Screen, key: term.Key, services: i64) -> Ask
 # - `set`: the loop's set.
 function close(@s: Screen, set: poll.Set)
     if s.key >= 0
-        _ = poll.remove(set, key: s.key).is_err()
+        errors.ignore(poll.remove(set, key: s.key))
 
     match s.terminals[HELD]
         .ok held =>
             t @= held
-            _ = tui.stop(@t).is_err()
+            errors.ignore(tui.stop(@t))
         .err _ => _ = 0
 
     s.terminals @ {}

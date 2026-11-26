@@ -9,6 +9,7 @@
 
 use <rebel>/bytes
 use <rebel>/crypto/seal
+use <rebel>/errors
 use <rebel>/json
 
 use vault/kdf
@@ -57,7 +58,7 @@ function make(password: str, master: [u8], salt: [u8], params: kdf.Params) -> Ke
     derived = kdf.derive(password, salt: salt, params: params)?
     key @= seal.from_secret(.aes_256_gcm, secret: derived)?
     sealed = seal.seal(key: key, text: master, associated: bytes.from_text(BOUND))
-    _ = seal.close(@key).is_err()
+    errors.ignore(seal.close(@key))
     return ok(KeyFile(params: params, salt: salt, sealed: sealed?))
 
 # The master key's bytes `k` seals, opened with `password`.
@@ -71,7 +72,7 @@ function unlock(k: KeyFile, password: str) -> [u8]?
     derived = kdf.derive(password, salt: k.salt, params: k.params)?
     key @= seal.from_secret(.aes_256_gcm, secret: derived)?
     opened = seal.open(key: key, sealed: k.sealed, associated: bytes.from_text(BOUND))
-    _ = seal.close(@key).is_err()
+    errors.ignore(seal.close(@key))
 
     return match opened
         .ok master => ok(master)

@@ -17,6 +17,7 @@
 # program is asked to stop; its thread answers what it served.
 
 use <rebel>/bson
+use <rebel>/errors as failures
 use <rebel>/io
 use <rebel>/net
 
@@ -57,7 +58,7 @@ function served(told: (mailbox ready.Ready), sessions: (mailbox ready.Session)) 
 
     match ready.tell(told, service: "mongodb", port: listener.address.port)
         .err e =>
-            _ = net.close_listener(@listener).is_err()
+            failures.ignore(net.close_listener(@listener))
             return fail(code: e.code, msg: e.msg)
         .ok _ => _ = 0
 
@@ -70,12 +71,12 @@ function served(told: (mailbox ready.Ready), sessions: (mailbox ready.Session)) 
             .ok made =>
                 conn @= made
                 connections @ connections + 1
-                _ = sessions.send(.began).is_err()
+                failures.ignore(sessions.send(.began))
                 commands @ commands + session(@data, stream: conn.stream, id: connections)
-                _ = io.close(@conn.stream).is_err()
-                _ = sessions.send(.ended).is_err()
+                failures.ignore(io.close(@conn.stream))
+                failures.ignore(sessions.send(.ended))
 
-    _ = net.close_listener(@listener).is_err()
+    failures.ignore(net.close_listener(@listener))
     return ok(f"mongodb stand-in: {connections} connections served, {commands} commands answered")
 
 # One connection's commands answered until the client leaves; answers how

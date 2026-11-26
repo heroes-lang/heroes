@@ -11,6 +11,7 @@
 # count of watchers, never retried: it connects again itself.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/io
 use <rebel>/metrics
@@ -64,7 +65,7 @@ function open_feed(listen: str, set: poll.Set) -> Feed?
     key = match poll.add_listener(set, l: l)
         .ok k => k
         .err e =>
-            _ = net.close_listener(@l).is_err()
+            errors.ignore(net.close_listener(@l))
             return fail(code: e.code, msg: e.msg)
 
     return ok(Feed(listeners: [l], key: key, waiting: [], watchers: [], served: 0))
@@ -88,7 +89,7 @@ function accept(@f: Feed, set: poll.Set)
     key = match poll.add_stream(set, s: conn.stream, interest: .read)
         .ok k => k
         .err _ =>
-            _ = io.close(@conn.stream).is_err()
+            errors.ignore(io.close(@conn.stream))
             return
 
     waiting @= f.waiting
@@ -104,8 +105,8 @@ function accept(@f: Feed, set: poll.Set)
 # - `keep`: whether its stream went to a watcher.
 function forget(@f: Feed, set: poll.Set, w: i64, keep: bool)
     if !keep
-        _ = poll.remove(set, key: f.waiting[w].key).is_err()
-        _ = io.close(@f.waiting[w].reader.stream).is_err()
+        errors.ignore(poll.remove(set, key: f.waiting[w].key))
+        errors.ignore(io.close(@f.waiting[w].reader.stream))
 
     kept: [Waiting] @= []
 
@@ -140,7 +141,7 @@ function answer(@f: Feed, set: poll.Set, w: i64, registry: metrics.Registry lent
                 # The request's deadline, counted from the accept, is taken
                 # away: a dashboard stays as long as it watches, and its
                 # connection is read only when poll says a read is ready.
-                _ = websocket.set_deadline(conn, deadline: time.max_duration()).is_err()
+                errors.ignore(websocket.set_deadline(conn, deadline: time.max_duration()))
                 watchers @= f.watchers
                 watchers @ watchers.push(Watcher(key: key, conn: conn))
                 f.watchers @ watchers
@@ -161,7 +162,7 @@ function answer(@f: Feed, set: poll.Set, w: i64, registry: metrics.Registry lent
         _          => http.respond_not_found(r)
 
     response.closing @ true
-    _ = http.write_answer(f.waiting[w].reader.stream, r: r, response: response).is_err()
+    errors.ignore(http.write_answer(f.waiting[w].reader.stream, r: r, response: response))
     forget(@f, set: set, w: w, keep: false)
 
 # Reads what dashboard `k` sent: its pings answered and its close
@@ -183,8 +184,8 @@ function on_watcher(@f: Feed, set: poll.Set, k: i64)
 # - `set`: the poll set.
 # - `k`: the watcher's index.
 function drop_watcher(@f: Feed, set: poll.Set, k: i64)
-    _ = poll.remove(set, key: f.watchers[k].key).is_err()
-    _ = websocket.drop(@f.watchers[k].conn).is_err()
+    errors.ignore(poll.remove(set, key: f.watchers[k].key))
+    errors.ignore(websocket.drop(@f.watchers[k].conn))
     kept: [Watcher] @= []
 
     for i in range(from: 0, to: f.watchers.len())
@@ -250,7 +251,7 @@ function close(@f: Feed, set: poll.Set)
         forget(@f, set: set, w: 0, keep: false)
 
     if f.listeners.len() > 0
-        _ = poll.remove(set, key: f.key).is_err()
-        _ = net.close_listener(@f.listeners[0]).is_err()
+        errors.ignore(poll.remove(set, key: f.key))
+        errors.ignore(net.close_listener(@f.listeners[0]))
 
     f.listeners @ []

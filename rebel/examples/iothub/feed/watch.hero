@@ -5,6 +5,7 @@
 # on a screen of their own, so the output can be kept in a file or a pipe.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/os
 use <rebel>/websocket
 
@@ -30,7 +31,7 @@ function run(target: str) -> ()?
             .err e =>
                 if e.code == websocket.STOPPED || e.code == websocket.CLOSED
                     break
-                _ = websocket.drop(@conn).is_err()
+                errors.ignore(websocket.drop(@conn))
                 return fail(code: e.code, msg: e.msg)
 
         text = match bytes.to_text(websocket.data_of(got))
@@ -51,6 +52,6 @@ function run(target: str) -> ()?
         print(row)
 
     if websocket.is_open(conn)
-        _ = websocket.close(@conn, code: websocket.CLOSE_NORMAL, reason: "").is_err()
+        errors.ignore(websocket.close(@conn, code: websocket.CLOSE_NORMAL, reason: ""))
 
     return ok()

@@ -5,6 +5,7 @@
 # drive this one value, a key at a time, and draw it; nothing here reads a
 # terminal or a clock, so a session played twice ends the same.
 
+use <rebel>/errors
 use <rebel>/path as paths
 use <rebel>/regex
 use <rebel>/tui
@@ -227,7 +228,7 @@ function name_of(path: str) -> str
 # - `e`: the editor.
 # - `path`: the buffer's path.
 function close_path(@e: Editor, path: str)
-    _ = list.remove(@e.buffers, path: path).is_err()
+    errors.ignore(errors.discard_value(list.remove(@e.buffers, path: path)))
 
     match disk.stop_watching(@e.watched, path: path)
         .ok _  => _ = 0

@@ -11,6 +11,7 @@
 
 use <rebel>/acme
 use <rebel>/crypto/keypairs
+use <rebel>/errors
 use <rebel>/net
 use <rebel>/time
 use <rebel>/x509
@@ -68,7 +69,7 @@ function key_name(name: str) -> str
 function obtain(@client: acme.Client, s: settings.Settings, store: vault.Store, lineage: settings.Lineage, c: clock.Clock) -> Obtained?
     key @= keypairs.generate(.p256)?
     got = with_key(@client, s: s, store: store, lineage: lineage, c: c, key: key)
-    _ = keypairs.close_private(@key).is_err()
+    errors.ignore(keypairs.close_private(@key))
     return got
 
 # `obtain`'s work once the certificate's key is made, so the caller closes

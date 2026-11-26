@@ -11,6 +11,7 @@
 # read the system's clocks. So the same calls at the same moments make the
 # same journal, the same alerts and the same frames.
 
+use <rebel>/errors
 use <rebel>/log
 use <rebel>/metrics
 use <rebel>/poll
@@ -420,6 +421,6 @@ function stop(@m: Monitor, at: time.Instant) -> export.Sent
     files.close_all(@m.files)
     sensor.close(@m.sensor)
     server.close(@m.control)
-    _ = events.close(@m.journal).is_err()
-    _ = poll.close(@m.set).is_err()
+    errors.ignore(events.close(@m.journal))
+    errors.ignore(poll.close(@m.set))
     return sent

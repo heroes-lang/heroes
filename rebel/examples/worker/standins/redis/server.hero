@@ -11,6 +11,7 @@
 # `TIME` and its times to live read, which a real server refuses as unknown.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/maps
 use <rebel>/net
@@ -180,8 +181,8 @@ function drop(@s: Standin, set: poll.Set, key: i64)
         .err _ => _ = 0
         .ok session =>
             gone @= session
-            _ = poll.remove(set, key: key).is_err()
-            _ = io.close(@gone.conn.stream).is_err()
+            errors.ignore(poll.remove(set, key: key))
+            errors.ignore(io.close(@gone.conn.stream))
             s.sessions @ maps.remove(s.sessions, key: key)
 
 # Closes every client and the listener.
@@ -192,8 +193,8 @@ function close(@s: Standin, set: poll.Set)
     for key in keys(s.sessions)
         drop(@s, set: set, key: key)
 
-    _ = poll.remove(set, key: s.listen_key).is_err()
-    _ = net.close_listener(@s.listener).is_err()
+    errors.ignore(poll.remove(set, key: s.listen_key))
+    errors.ignore(net.close_listener(@s.listener))
 
 # The words of a command as text. Fails `not_text` naming the argument that
 # is not UTF-8, which the stand-in cannot hold.

@@ -69,7 +69,7 @@ constant USAGE: i64
 #
 # - `message`: the line.
 function complain(message: str)
-    _ = io.write_line(io.stderr(), line: message).is_err()
+    errors.ignore(io.write_line(io.stderr(), line: message))
 
 # The words after `--helper`, where the program was run as one of the
 # demo's helpers; absent where it was not. Asked before the command line is
@@ -118,7 +118,7 @@ function main()
             # half collected: the scheduler starts nothing more and keeps
             # the records of what ran. Where the system refuses, Ctrl-C ends
             # the program as it would, the log holding every step collected.
-            _ = os.catch_stop().is_err()
+            errors.ignore(os.catch_stop())
 
             match session.run(i.options)
                 .ok r => r.code

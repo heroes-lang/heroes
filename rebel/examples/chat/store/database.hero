@@ -6,6 +6,7 @@
 # its version in SQLite's `user_version`, and `open` brings an older file up
 # to date in one transaction.
 
+use <rebel>/errors
 use <rebel>/sql
 use <rebel>/sql/sqlite
 use <rebel>/time
@@ -67,7 +68,7 @@ function open(path: str) -> sqlite.Db?
         .err e =>
             # The failure told is the one that stopped the opening; a close
             # that fails after it adds nothing the caller could act on.
-            _ = sqlite.close(@db).is_err()
+            errors.ignore(sqlite.close(@db))
             return fail(code: e.code, msg: e.msg)
 
 # A database in memory with the schema made, for a test.
@@ -102,7 +103,7 @@ function prepare(@db: sqlite.Db) -> ()?
             .err e =>
                 # The statement's failure is the one told; SQLite rolls the
                 # transaction back at the close where this fails too.
-                _ = sqlite.rollback(@db).is_err()
+                errors.ignore(sqlite.rollback(@db))
                 return fail(code: e.code, msg: e.msg)
 
     sqlite.exec_script(@db, script: f"PRAGMA user_version = {SCHEMA_VERSION}")?

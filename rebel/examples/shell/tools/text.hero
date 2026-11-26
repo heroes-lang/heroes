@@ -7,6 +7,7 @@
 #     sorted [-r] [-u] [file...]  its lines sorted by their bytes
 #     first [n] [file...]      its first n lines, 10 by default
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/lists
 use <rebel>/numbers
@@ -48,7 +49,7 @@ function finish(name: str, text: str, mistakes: [str]) -> i64
     written = io.write_text(io.stdout(), text: text)
 
     for m in mistakes
-        _ = io.write_text(io.stderr(), text: f"{name}: {m}\n").is_err()
+        errors.ignore(io.write_text(io.stderr(), text: f"{name}: {m}\n"))
 
     if mistakes.len() > 0 || written.is_err()
         return 1

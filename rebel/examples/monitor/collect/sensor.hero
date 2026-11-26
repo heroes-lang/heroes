@@ -11,6 +11,7 @@
 # without pseudo-terminals), the values are handed in by `hand`, and every
 # other part of the monitor sees them as it sees a port's.
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/numbers
 use <rebel>/serial
@@ -139,7 +140,7 @@ function open_port(@s: Sensor) -> ()?
     match serial.set_timeouts(port, timeouts: serial.Timeouts(read_ms: read_wait, write_ms: wait, gap_ms: 0))
         .ok _ => s.ports[s.spec.port] @ port
         .err e =>
-            _ = io.close(@port).is_err()
+            errors.ignore(io.close(@port))
             return fail(code: e.code, msg: e.msg)
 
     return ok()
@@ -150,7 +151,7 @@ function open_port(@s: Sensor) -> ()?
 function close(@s: Sensor)
     for name in keys(s.ports)
         port @= s.ports[name].must()
-        _ = io.close(@port).is_err()
+        errors.ignore(io.close(@port))
 
     s.ports @ {}
 
@@ -180,7 +181,7 @@ function read_once(@s: Sensor) -> Reading
 # - `s`: the sensor, its port open.
 function ask(@s: Sensor) -> ()?
     port = s.ports[s.spec.port].must()
-    _ = serial.discard_input(port).is_err()
+    errors.ignore(serial.discard_input(port))
 
     match io.write_text(port, text: s.spec.query + "\n")
         .ok _ => return ok()

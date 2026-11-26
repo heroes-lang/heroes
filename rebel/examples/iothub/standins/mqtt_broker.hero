@@ -13,6 +13,7 @@
 # and written by `mqtt`'s own `decode` and `encode`.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/math
 use <rebel>/mqtt
@@ -276,7 +277,7 @@ function accept(@b: mqtt_state.Broker, set: poll.Set, l: net.Listener lent)
     key = match poll.add_stream(set, s: conn.stream, interest: .read)
         .ok k => k
         .err _ =>
-            _ = io.close(@conn.stream).is_err()
+            errors.ignore(io.close(@conn.stream))
             return
 
     peers @= b.peers
@@ -320,22 +321,22 @@ function serve_on(to: (mailbox told.Told)) -> str?
     l @= match net.listen(host: "127.0.0.1", port: 0)
         .ok got => got
         .err e =>
-            _ = told.failed(to, why: e.msg).is_err()
+            errors.ignore(told.failed(to, why: e.msg))
             return fail(code: e.code, msg: e.msg)
 
     set @= match poll.make(256)
         .ok got => got
         .err e =>
-            _ = net.close_listener(@l).is_err()
-            _ = told.failed(to, why: e.msg).is_err()
+            errors.ignore(net.close_listener(@l))
+            errors.ignore(told.failed(to, why: e.msg))
             return fail(code: e.code, msg: e.msg)
 
     listening = match poll.add_listener(set, l: l)
         .ok key => key
         .err e =>
-            _ = poll.close(@set).is_err()
-            _ = net.close_listener(@l).is_err()
-            _ = told.failed(to, why: e.msg).is_err()
+            errors.ignore(poll.close(@set))
+            errors.ignore(net.close_listener(@l))
+            errors.ignore(told.failed(to, why: e.msg))
             return fail(code: e.code, msg: e.msg)
 
     told.ready(to, listening: l.address.port)?

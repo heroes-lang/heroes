@@ -6,6 +6,7 @@ packages = [
     "containers/deque",
     "containers/ordered",
     "diff",
+    "errors",
     "flags",
     "fs",
     "fs/watch",

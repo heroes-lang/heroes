@@ -9,6 +9,7 @@
 # stop.
 
 use <rebel>/dns
+use <rebel>/errors
 use <rebel>/net
 use <rebel>/time
 
@@ -79,7 +80,7 @@ function served(z: zone.Zone, told: (mailbox ready.Ready)) -> zone.Zone?
 
     match ready.tell(told, said: ready.Ready(service: "dns", port: socket.address.port, https_root: ""))
         .err e =>
-            _ = net.close_udp(@socket).is_err()
+            errors.ignore(net.close_udp(@socket))
             return fail(code: e.code, msg: e.msg)
         .ok _ => _ = 0
 
@@ -96,7 +97,7 @@ function served(z: zone.Zone, told: (mailbox ready.Ready)) -> zone.Zone?
                 failures @ 0
                 datagram(@held, socket: socket, d: d)
 
-    _ = net.close_udp(@socket).is_err()
+    errors.ignore(net.close_udp(@socket))
     return ok(held)
 
 # One datagram answered; one that is no message, or no query, is dropped as

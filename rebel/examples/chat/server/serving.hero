@@ -16,6 +16,7 @@
 # connection, the bridge and the database are closed.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/io
 use <rebel>/mqtt
@@ -89,7 +90,7 @@ function start(s: settings.Settings) -> state.Server?
         .ok srv => return ok(srv)
         .err e =>
             # The failure told is the one that stopped the start.
-            _ = sqlite.close(@db).is_err()
+            errors.ignore(sqlite.close(@db))
             return fail(code: e.code, msg: e.msg)
 
 # What `start` makes once its database is open.
@@ -131,8 +132,8 @@ function answer_and_close(@stream: io.Stream, r: http.Request, response: http.Re
     closing.closing @ true
 
     # A client gone before its answer is written loses only its own answer.
-    _ = http.write_answer(stream, r: r, response: closing).is_err()
-    _ = io.close(@stream).is_err()
+    errors.ignore(http.write_answer(stream, r: r, response: closing))
+    errors.ignore(io.close(@stream))
 
 # Answers a request a reader read: the API's, or the WebSocket's upgrade.
 #
@@ -160,7 +161,7 @@ function on_read(@srv: state.Server, set: poll.Set, @reader: io.Reader, r: http.
 # - `set`: the poll set.
 # - `crew`: the readers' mailboxes and the doorbell.
 function on_doorbell(@srv: state.Server, set: poll.Set, crew: Crew lent)
-    _ = net.receive(crew.doorbell).is_err()
+    errors.ignore(errors.discard_value(net.receive(crew.doorbell)))
 
     while true
         match readers.next_read(crew.reads)
@@ -185,7 +186,7 @@ function begin_sign_in(@srv: state.Server, stream: io.Stream, r: http.Request, b
         .hashing h =>
             # The request's deadline was for reading it; its answer comes
             # when the hash does, which may be seconds away.
-            _ = net.set_deadline(held, deadline_ms: net.FOREVER).is_err()
+            errors.ignore(net.set_deadline(held, deadline_ms: net.FOREVER))
             hashing.park(@srv.jobs, work: h.work, stream: held, request: r)
 
 # Answers the sign-in whose hash a thread has just made, as its datagram
@@ -225,19 +226,19 @@ function open_socket(@srv: state.Server, set: poll.Set, @reader: io.Reader, r: h
         .ok c => c
         .err _ =>
             # `upgrade` has answered the refusal; the stream is still ours.
-            _ = io.close(@reader.stream).is_err()
+            errors.ignore(io.close(@reader.stream))
             return
 
     srv.requests @ srv.requests + 1
 
     # The request's deadline ends with the request: the connection lives as
     # long as its user stays.
-    _ = net.set_deadline(socket.stream, deadline_ms: net.FOREVER).is_err()
+    errors.ignore(net.set_deadline(socket.stream, deadline_ms: net.FOREVER))
 
     key = match poll.add_stream(set, s: socket.stream, interest: .read)
         .ok k => k
         .err _ =>
-            _ = websocket.drop(@socket).is_err()
+            errors.ignore(websocket.drop(@socket))
             return
 
     rooms = database.rooms_of(@srv.db, member: user).default([])
@@ -303,8 +304,8 @@ function sweep(@srv: state.Server, set: poll.Set)
 
         # The connection is over whatever these answer: it was closed by its
         # peer, failed a write, or is dropped here.
-        _ = poll.remove(set, key: gone.key).is_err()
-        _ = websocket.drop(@gone.socket).is_err()
+        errors.ignore(poll.remove(set, key: gone.key))
+        errors.ignore(websocket.drop(@gone.socket))
         state.deliver(@srv, told: hub.close_session(@srv.routing, key: gone.key))
         i @ 0
 
@@ -346,7 +347,7 @@ function watch(srv: state.Server lent, set: poll.Set, @w: Watch)
 
     if mqtt_live != w.mqtt_streams
         if w.mqtt_key >= 0
-            _ = poll.remove(set, key: w.mqtt_key).is_err()
+            errors.ignore(poll.remove(set, key: w.mqtt_key))
         w.mqtt_key @ -1
 
         if mqtt_live.len() == 1
@@ -361,7 +362,7 @@ function watch(srv: state.Server lent, set: poll.Set, @w: Watch)
 
     if nats_live != w.nats_streams
         if w.nats_key >= 0
-            _ = poll.remove(set, key: w.nats_key).is_err()
+            errors.ignore(poll.remove(set, key: w.nats_key))
         w.nats_key @ -1
 
         if nats_live.len() == 1
@@ -428,7 +429,7 @@ function shut(@srv: state.Server)
 
     while i < srv.conns.len()
         # At the stop no closing handshake is waited for.
-        _ = websocket.drop(@srv.conns[i].socket).is_err()
+        errors.ignore(websocket.drop(@srv.conns[i].socket))
         i @ i + 1
 
     srv.conns @ []
@@ -437,11 +438,11 @@ function shut(@srv: state.Server)
     # and its connection closed.
     for job in hashing.drain(@srv.jobs)
         held @= job.stream
-        _ = io.close(@held).is_err()
+        errors.ignore(io.close(@held))
 
-    _ = net.close_udp(@srv.hasher).is_err()
+    errors.ignore(net.close_udp(@srv.hasher))
     mirroring.close(@srv.links)
-    _ = sqlite.close(@srv.db).is_err()
+    errors.ignore(sqlite.close(@srv.db))
 
 # What a server carried, in one line.
 #
@@ -464,7 +465,7 @@ function serve(s: settings.Settings) -> str?
         .ok said => return ok(said)
         .err e =>
             if s.told_port > 0
-                _ = told.failed(port: s.told_port, why: e.msg).is_err()
+                errors.ignore(told.failed(port: s.told_port, why: e.msg))
             return fail(code: e.code, msg: e.msg)
 
 # What `serve` does, a failure before it is ready answered. Whatever the
@@ -479,7 +480,7 @@ function serve_ready(s: settings.Settings) -> str?
     srv @= match start(s)
         .ok got => got
         .err e =>
-            _ = net.close_listener(@l).is_err()
+            errors.ignore(net.close_listener(@l))
             return fail(code: e.code, msg: e.msg)
 
     ended = serve_started(@srv, s: s, l: l)
@@ -524,17 +525,17 @@ function serve_started(@srv: state.Server, s: settings.Settings, l: net.Listener
     hashed = match poll.add_udp(set, u: srv.hasher, interest: .read)
         .ok key => key
         .err e =>
-            _ = poll.close(@set).is_err()
+            errors.ignore(poll.close(@set))
             return fail(code: e.code, msg: e.msg)
 
     bell @= match net.open_udp(host: "127.0.0.1", port: 0)
         .ok u => u
         .err e =>
-            _ = poll.close(@set).is_err()
+            errors.ignore(poll.close(@set))
             return fail(code: e.code, msg: e.msg)
 
     ended = with_doorbell(@srv, set: set, s: s, l: l, hashed: hashed, bell: bell)
-    _ = net.close_udp(@bell).is_err()
+    errors.ignore(net.close_udp(@bell))
     closed = poll.close(@set)
     ended?
     return closed
@@ -572,7 +573,7 @@ function with_doorbell(@srv: state.Server, set: poll.Set, s: settings.Settings, 
             .err _ => break
             .ok got =>
                 read @= got
-                _ = io.close(@read.reader.stream).is_err()
+                errors.ignore(io.close(@read.reader.stream))
 
     for t in pool
         _ = t.wait()

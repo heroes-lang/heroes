@@ -4,6 +4,7 @@
 # as a child. Preparing and running are apart, so a pipeline can learn which
 # of its stages are programs before it decides how to join them.
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/maps
 use <rebel>/process
@@ -390,7 +391,7 @@ function wait_child(@child: process.Child) -> i64
     return match process.wait(@child)
         .ok s => code_of(s)
         .err _ =>
-            _ = process.release(@child).is_err()
+            errors.ignore(process.release(@child))
             1
 
 # Starts a prepared program as a child, its redirections applied and what

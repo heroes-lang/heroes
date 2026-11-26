@@ -11,6 +11,7 @@
 # printed, and the environment it reads is a map of its own, so the
 # transcript is the same on every run.
 
+use <rebel>/errors
 use <rebel>/time
 
 use demo/files
@@ -36,7 +37,7 @@ function run() -> i64
         .ok _ => return 0
         .err x =>
             print(f"the demo stopped: {x.msg}")
-            _ = files.remove_all().is_err()
+            errors.ignore(files.remove_all())
             return 1
 
 # The scenes in order.

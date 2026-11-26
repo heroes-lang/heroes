@@ -57,7 +57,7 @@ use standins/host
 #
 # - `message`: the line.
 function complain(message: str)
-    _ = io.write_line(io.stderr(), line: message).is_err()
+    errors.ignore(io.write_line(io.stderr(), line: message))
 
 # The exit code of a command line the program does not read.
 constant USAGE: i64

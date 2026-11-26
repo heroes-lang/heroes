@@ -21,6 +21,7 @@
 # text that open with a line naming their kind, so `link` refuses what no
 # `compile` made.
 
+use <rebel>/errors
 use <rebel>/io
 use <rebel>/numbers
 use <rebel>/regex
@@ -72,7 +73,7 @@ record Reading
 #
 # - `line`: the line.
 function tell(line: str)
-    _ = io.write_line(io.stderr(), line: line).is_err()
+    errors.ignore(io.write_line(io.stderr(), line: line))
 
 # The helper `arguments[0]` run on the rest, and its exit code.
 #

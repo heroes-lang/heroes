@@ -9,6 +9,7 @@
 # `fs.glob` matches paths by its own rules (`*` names hidden files, `**`
 # walks a tree), which are not the shell's, so the parts are matched here.
 
+use <rebel>/errors
 use <rebel>/fs
 
 use expand/patterns
@@ -110,7 +111,7 @@ test "split_parts: a relative and an absolute pattern"
 
 test "expand: files in a folder of the build, hidden ones left out"
     dir = "build/shell-test-glob"
-    _ = fs.remove_all(dir).is_err()
+    errors.ignore(fs.remove_all(dir))
     fs.make_dir_all(dir + "/sub").must()
     write_file(path: dir + "/a.txt", text: "").must()
     write_file(path: dir + "/b.txt", text: "").must()

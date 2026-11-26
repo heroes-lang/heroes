@@ -17,6 +17,7 @@
 # worker has ended, or when the program's stop finds its mailbox empty: a
 # stop drains what was already asked, then holds (spec § 11).
 
+use <rebel>/errors
 use <rebel>/http
 
 use server/api
@@ -77,12 +78,12 @@ function own(start: Start) -> Ended
 
     match opened
         .err e =>
-            _ = start.begun.send(.failed(msg: e.msg)).is_err()
+            errors.ignore(start.begun.send(.failed(msg: e.msg)))
             start.begun.close()
             return Ended(answered: 0, problem: e.msg)
         .ok first =>
             state @= first
-            _ = start.begun.send(.ready).is_err()
+            errors.ignore(start.begun.send(.ready))
             start.begun.close()
 
             while true
@@ -119,4 +120,4 @@ function answer(owner: (mailbox Ask), r: http.Request) -> http.Response?
 #
 # - `owner`: the owner's mailbox of requests.
 function stop(owner: (mailbox Ask))
-    _ = owner.send(.stop).is_err()
+    errors.ignore(owner.send(.stop))

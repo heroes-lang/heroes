@@ -5,6 +5,7 @@
 # demo shows the bridge from the side a real device or service stands on.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/json
 use <rebel>/mqtt
 use <rebel>/nats
@@ -52,7 +53,7 @@ function sensor(port: i64, name: str, topic: str) -> mqtt.Client?
     match mqtt.subscribe_many(@c, subscriptions: [s], properties: [])
         .ok _ => return ok(c)
         .err e =>
-            _ = mqtt.close(@c).is_err()
+            errors.ignore(mqtt.close(@c))
             return fail(code: e.code, msg: e.msg)
 
 # Publishes `text` from the sensor on `topic`, at QoS 1.
@@ -91,7 +92,7 @@ function bot(port: i64, name: str, subject: str) -> nats.Client?
     match subscribe_flushed(@c, subject: subject)
         .ok _ => return ok(c)
         .err e =>
-            _ = nats.close(@c).is_err()
+            errors.ignore(nats.close(@c))
             return fail(code: e.code, msg: e.msg)
 
 # Subscribes `c` to `subject` and waits for the server to have read it.

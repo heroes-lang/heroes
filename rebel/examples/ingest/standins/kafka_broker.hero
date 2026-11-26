@@ -11,6 +11,7 @@
 # the versions it advertises, the login before any request past it, each
 # batch's format, length and CRC-32C, the group's generation and members.
 
+use <rebel>/errors
 use <rebel>/os
 use <rebel>/time
 
@@ -261,7 +262,7 @@ function act(@loop: serve.Loop, @b: kafka_state.Broker, @held: [Held], peer: i64
                 return false
             return true
         .last_reply r =>
-            _ = serve.send(loop, id: peer, data: answer(correlation, body: r.body)).is_err()
+            errors.ignore(serve.send(loop, id: peer, data: answer(correlation, body: r.body)))
             let_go(@loop, b: @b, held: @held, peer: peer)
             return false
         .silent => return true

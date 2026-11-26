@@ -4,6 +4,7 @@ packages = [
     "amqp",
     "bytes",
     "cbor",
+    "errors",
     "flags",
     "fs",
     "http",

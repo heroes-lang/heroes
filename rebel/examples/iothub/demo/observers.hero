@@ -9,6 +9,7 @@
 
 use <rebel>/amqp
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/json
 use <rebel>/mqtt
 use <rebel>/nats
@@ -163,7 +164,7 @@ function dashboard_sees(@o: Observers) -> str?
 # Fails as `pager_connection` fails.
 function reconnect_pager(@o: Observers, port: i64) -> ()?
     # The broker closed the old one; its own close answers that.
-    _ = amqp.close(@o.pager[0]).is_err()
+    errors.ignore(amqp.close(@o.pager[0]))
     o.pager @ [pager_connection(port)?]
     return ok()
 
@@ -173,16 +174,16 @@ function reconnect_pager(@o: Observers, port: i64) -> ()?
 # - `o`: the observers.
 function close_observers(@o: Observers)
     for i in range(from: 0, to: o.dashboard.len())
-        _ = websocket.close(@o.dashboard[i], code: websocket.CLOSE_NORMAL, reason: "").is_err()
+        errors.ignore(websocket.close(@o.dashboard[i], code: websocket.CLOSE_NORMAL, reason: ""))
 
     for i in range(from: 0, to: o.historian.len())
-        _ = nats.close(@o.historian[i]).is_err()
+        errors.ignore(nats.close(@o.historian[i]))
 
     for i in range(from: 0, to: o.pager.len())
-        _ = amqp.close(@o.pager[i]).is_err()
+        errors.ignore(amqp.close(@o.pager[i]))
 
     for i in range(from: 0, to: o.panel.len())
-        _ = mqtt.close(@o.panel[i]).is_err()
+        errors.ignore(mqtt.close(@o.panel[i]))
 
     o.dashboard @ []
     o.historian @ []

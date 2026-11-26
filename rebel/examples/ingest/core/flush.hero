@@ -86,7 +86,7 @@ function flush_window(@p: pipeline.Pipeline, w: windows.Window) -> ()?
     match errors.context(recorded(@p, batches: batches, copies: copies), what: f"recording the window of {stamp}")
         .ok _ => postgres.commit(@p.db)?
         .err e =>
-            _ = postgres.rollback(@p.db).is_err()
+            errors.ignore(postgres.rollback(@p.db))
             return fail(code: e.code, msg: e.msg)
 
     for c in copies

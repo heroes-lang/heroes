@@ -6,6 +6,7 @@
 # standard error with the command's name, and the exit code says which
 # kind it was: 0 done, 1 failed, 2 the arguments were not understood.
 
+use <rebel>/errors
 use <rebel>/flags
 use <rebel>/io
 use <rebel>/os
@@ -179,7 +180,7 @@ function run(arguments: [str]) -> i64
 #
 # - `message`: one line.
 function complain(message: str)
-    _ = io.write_line(io.stderr(), line: message).is_err()
+    errors.ignore(io.write_line(io.stderr(), line: message))
 
 test "declaration: run takes a folder and tags; restore needs a target"
     c = declaration()

@@ -5,6 +5,7 @@
 
 use <rebel>/bytes
 use <rebel>/config
+use <rebel>/errors
 use <rebel>/flags
 use <rebel>/io
 use <rebel>/log
@@ -47,7 +48,7 @@ function settings_from(path: str, found: flags.Found) -> settings.Settings?
 #
 # - `msg`: what failed.
 function failed(msg: str) -> i64
-    _ = io.write_line(io.stderr(), line: f"notes: {msg}").is_err()
+    errors.ignore(io.write_line(io.stderr(), line: f"notes: {msg}"))
     return 1
 
 ## serve

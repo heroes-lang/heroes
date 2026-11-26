@@ -5,6 +5,7 @@
 # lines of text, written to the terminal by `worker stats` and `worker
 # dead`, and by the demo at its end.
 
+use <rebel>/errors
 use <rebel>/http
 use <rebel>/io
 use <rebel>/jobs
@@ -123,10 +124,10 @@ function serve_for(m: MetricsServer lent, registry: metrics.Registry lent, wait:
                             else
                                 http.respond_not_found(r)
                             answer.closing @ true
-                            _ = http.write_answer(conn.stream, r: r, response: answer).is_err()
+                            errors.ignore(http.write_answer(conn.stream, r: r, response: answer))
                         .err _ => _ = 0
 
-                    _ = io.close(@conn.stream).is_err()
+                    errors.ignore(io.close(@conn.stream))
 
     return ok()
 
@@ -134,5 +135,5 @@ function serve_for(m: MetricsServer lent, registry: metrics.Registry lent, wait:
 #
 # - `m`: the server, closed after.
 function close_metrics(@m: MetricsServer)
-    _ = poll.close(@m.set).is_err()
-    _ = net.close_listener(@m.listener).is_err()
+    errors.ignore(poll.close(@m.set))
+    errors.ignore(net.close_listener(@m.listener))

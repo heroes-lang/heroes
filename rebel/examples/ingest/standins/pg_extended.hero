@@ -10,6 +10,7 @@
 # until `Sync`, as PostgreSQL's does.
 
 use <rebel>/bytes
+use <rebel>/errors
 use <rebel>/numbers
 
 use standins/pg_query
@@ -267,7 +268,7 @@ function execute(@shared: pg_state.Shared, @s: pg_state.Session, body: [u8]) -> 
     match pg_query.run_in_block(@shared, s: @s, stmt: portal.statement, params: portal.params)
         .err e =>
             if s.block == .implicit
-                _ = pg_query.close_block(@shared, s: @s, commit: false).is_err()
+                errors.ignore(pg_query.close_block(@shared, s: @s, commit: false))
             return extended(@s, answered: fail(code: e.code, msg: e.msg))
         .ok ran =>
             out: [u8] @= []

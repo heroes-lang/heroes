@@ -9,6 +9,7 @@
 # it go however it ended. A dry run and a tool write nothing and take no
 # lock, so they answer while a build runs.
 
+use <rebel>/errors
 use <rebel>/time
 
 use engine/clean
@@ -145,7 +146,7 @@ function run(o: Options) -> Result?
     if o.clean
         held @= lock.take(o.dir)?
         cleaned = clean.run(r.plan, steps: r.steps, root: o.dir, verbose: o.verbose)
-        _ = lock.release(@held).is_err()
+        errors.ignore(lock.release(@held))
         n = cleaned?
         print(f"build: {report.count_of(n, noun: "file")} removed")
         return ok(Result(code: 0, ran: n, up_to_date: 0, failed: 0))
@@ -157,7 +158,7 @@ function run(o: Options) -> Result?
 
     held @= lock.take(o.dir)?
     done = build(r, o: o)
-    _ = lock.release(@held).is_err()
+    errors.ignore(lock.release(@held))
     return done
 
 # The build of `r` as `o` asks, its lines printed.

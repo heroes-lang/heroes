@@ -9,6 +9,7 @@
 # mends it. Each job is claimed once a replay: one that failed waits, and
 # the replay ends when no job is ready.
 
+use <rebel>/errors
 use <rebel>/jobs
 use <rebel>/jobs/postgres_store
 use <rebel>/json
@@ -98,7 +99,7 @@ function replay_one(@p: pipeline.Pipeline, worker: jobs.Worker, claimed: jobs.In
             match finished(@p, key: k.key, claimed: claimed, etag: etag)
                 .ok _ => postgres.commit(@p.db)?
                 .err e =>
-                    _ = postgres.rollback(@p.db).is_err()
+                    errors.ignore(postgres.rollback(@p.db))
                     return fail(code: e.code, msg: e.msg)
 
             telemetry.count(@p.registry, name: telemetry.REPLAYED, labels: [])

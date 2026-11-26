@@ -9,6 +9,7 @@
 # `finish` exports its telemetry and closes it. The real run's loop and the
 # demo's both drive it, each with its own way of letting time pass.
 
+use <rebel>/errors
 use <rebel>/jobs
 use <rebel>/jobs/redis_store
 use <rebel>/log
@@ -105,7 +106,7 @@ function rescue_every_us(s: settings.Settings) -> i64
 # - `msg`: what happened.
 # - `fields`: what it happened to.
 function note(@sup: Supervisor, level: log.Level, at: time.Instant, msg: str, fields: [log.Field])
-    _ = journal.write(@sup.log_file, level: level, at: at, msg: msg, fields: fields).is_err()
+    errors.ignore(journal.write(@sup.log_file, level: level, at: at, msg: msg, fields: fields))
 
 # Enqueues `job` as a producer, counting and logging it, and answers its id.
 #
@@ -119,7 +120,7 @@ function enqueue(@sup: Supervisor, job: jobs.Job) -> i64?
 
     match result
         .ok id =>
-            _ = registry.record_enqueued(@sup.registry, queue: job.queue, kind: job.kind).is_err()
+            errors.ignore(registry.record_enqueued(@sup.registry, queue: job.queue, kind: job.kind))
             note(
                 @sup,
                 level: .info,
@@ -153,11 +154,11 @@ function tick(@sup: Supervisor) -> [i64]?
         for p in sup.schedules
             if p.name == t.schedule
                 ids = redis_store.enqueue_due(@sup.client, schedules: [p])?
-                _ = registry.record_schedule(@sup.registry, name: p.name, runs: ids.len()).is_err()
+                errors.ignore(registry.record_schedule(@sup.registry, name: p.name, runs: ids.len()))
 
                 for id in ids
                     enqueued @ enqueued.push(id)
-                    _ = registry.record_enqueued(@sup.registry, queue: p.job.queue, kind: p.job.kind).is_err()
+                    errors.ignore(registry.record_enqueued(@sup.registry, queue: p.job.queue, kind: p.job.kind))
                     note(
                         @sup,
                         level: .info,
@@ -176,7 +177,7 @@ function tick(@sup: Supervisor) -> [i64]?
         sup.next_rescue_us @ now_us + rescue_every_us(sup.settings)
 
         if rescued > 0
-            _ = registry.record_rescued(@sup.registry, count: rescued).is_err()
+            errors.ignore(registry.record_rescued(@sup.registry, count: rescued))
             note(@sup, level: .warn, at: now, msg: "leases ran out", fields: [log.integer(key: "jobs", value: rescued)])
 
     return ok(enqueued)
@@ -203,7 +204,7 @@ function take_reports(@sup: Supervisor, reports: [events.Report])
 
     for r in reports
         for a in r.attempts
-            _ = registry.record_attempt(@sup.registry, a: a).is_err()
+            errors.ignore(registry.record_attempt(@sup.registry, a: a))
 
         attempts @ attempts + r.attempts.len()
         note(@sup, level: .info, at: now, msg: "worker stopped", fields: [log.text(key: "worker", value: r.worker)])
@@ -242,6 +243,6 @@ function finish(@sup: Supervisor) -> str
         .ok _  => _ = 0
         .err e => problems @ problems.push(f"spans not exported: {e.code}")
 
-    _ = journal.close(@sup.log_file).is_err()
-    _ = redis.close(@sup.client).is_err()
+    errors.ignore(journal.close(@sup.log_file))
+    errors.ignore(redis.close(@sup.client))
     return problems.join("; ")
