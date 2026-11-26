@@ -1,0 +1,41 @@
+# Reaches Rebel's `web/steps`, so that `heroes test` on this file runs the
+# tests of its face and its private modules (spec § 12). It answers one
+# request through a chain whose one step writes the minimal security
+# headers, and prints `200 with 3 headers` on every run, touching no network
+# and no file.
+
+use <rebel>/http
+use <rebel>/web
+use <rebel>/web/chain
+use <rebel>/web/steps
+
+record App
+    router: web.Router
+    steps: {str: (function(@App, chain.Next, http.Request) -> http.Response?)}
+    answers: {str: (function(@App, web.Found, http.Request) -> http.Response?)}
+
+function go_on(@app: App, n: chain.Next, r: http.Request) -> http.Response?
+    return chain.proceed(@app, steps: app.steps, answers: app.answers, n: n, r: r)
+
+function secured(@app: App, n: chain.Next, r: http.Request) -> http.Response?
+    return steps.security_headers(@app, n: n, r: r, headers: web.minimal_security_headers(), go_on: go_on)
+
+function home(_: App lent, found: web.Found, r: http.Request) -> http.Response?
+    _ = found
+    _ = r
+    return ok(http.respond_status(http.STATUS_OK))
+
+function main()
+    app @= App(router: web.new_router(), steps: {}, answers: {})
+    router @= app.router
+    chain.add_step(@router, @app.steps, name: "secure", step: secured).must()
+    chain.on(@router, @app.answers, method: http.METHOD_GET, pattern: "/", name: "home", answer: home).must()
+    app.router @ router
+    got = chain.dispatch(
+        @app,
+        router: app.router,
+        steps: app.steps,
+        answers: app.answers,
+        r: http.request(method: "GET", target: "/").must()
+    ).must()
+    print(got.status, " with ", got.headers.len(), " headers")

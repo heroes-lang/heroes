@@ -1,0 +1,197 @@
+# What the tests and examples of `web/steps` share and cannot declare in a
+# test: a program's state with its tables, a clock it advances itself, its
+# accounts, four answers, and a step of its own binding each of the face's,
+# as a program binds them.
+
+use bytes
+use http
+use io
+use log
+use time
+use web
+use web/chain
+use web/steps
+
+# A program's state.
+record App
+    # Every route.
+    router: web.Router
+    # The program's steps, by their names.
+    steps: {str: (function(@App, chain.Next, http.Request) -> http.Response?)}
+    # The program's answers, by their routes' names.
+    answers: {str: (function(@App, web.Found, http.Request) -> http.Response?)}
+    # Where `logged` writes its lines.
+    logger: log.Logger
+    # The clock's reading, in milliseconds since 1970: each read advances it
+    # by 5.
+    now_ms: i64
+    # The accounts `accepts` takes: each name's password.
+    accounts: {str: str}
+    # The credentials `accepts` refused.
+    refused: i64
+
+# The program's clock: 5 milliseconds later at each read, from the reading
+# its state holds.
+#
+# - `app`: the state, whose reading advances.
+function clock(@app: App) -> time.Instant?
+    app.now_ms @ app.now_ms + 5
+    return time.from_unix_milliseconds(app.now_ms)
+
+# Whether `given` names an account and its password, a refusal counted.
+#
+# - `app`: the state, its accounts read and its refusals counted.
+# - `given`: the credentials.
+function accepts(@app: App, given: http.Credentials) -> bool
+    if app.accounts[given.user].default("") == given.password && given.password != ""
+        return true
+    app.refused @ app.refused + 1
+    return false
+
+# The program's one line that goes on.
+#
+# - `app`: the state.
+# - `n`: where the request stands.
+# - `r`: the request.
+function go_on(@app: App, n: chain.Next, r: http.Request) -> http.Response?
+    return chain.proceed(@app, steps: app.steps, answers: app.answers, n: n, r: r)
+
+# `steps.access_log` through the state's logger and clock.
+#
+# - `app`: the state.
+# - `n`: where the request stands.
+# - `r`: the request.
+function logged(@app: App, n: chain.Next, r: http.Request) -> http.Response?
+    return steps.access_log(@app, n: n, r: r, logger: app.logger, clock: clock, go_on: go_on)
+
+# `steps.request_id`.
+#
+# - `app`: the state.
+# - `n`: where the request stands.
+# - `r`: the request.
+function identified(@app: App, n: chain.Next, r: http.Request) -> http.Response?
+    return steps.request_id(@app, n: n, r: r, go_on: go_on)
+
+# `steps.cors` for the origin `https://a.example`.
+#
+# - `app`: the state.
+# - `n`: where the request stands.
+# - `r`: the request.
+function crossed(@app: App, n: chain.Next, r: http.Request) -> http.Response?
+    return steps.cors(@app, n: n, r: r, policy: web.default_cors(["https://a.example"]), go_on: go_on)
+
+# `steps.basic_auth` in the realm `admin`, by the state's accounts.
+#
+# - `app`: the state.
+# - `n`: where the request stands.
+# - `r`: the request.
+function guarded(@app: App, n: chain.Next, r: http.Request) -> http.Response?
+    return steps.basic_auth(@app, n: n, r: r, realm: "admin", accepts: accepts, go_on: go_on)
+
+# `steps.body_limit` at 4 bytes.
+#
+# - `app`: the state.
+# - `n`: where the request stands.
+# - `r`: the request.
+function limited(@app: App, n: chain.Next, r: http.Request) -> http.Response?
+    return steps.body_limit(@app, n: n, r: r, most_bytes: 4, go_on: go_on)
+
+# `steps.security_headers` with the three that cost no page anything.
+#
+# - `app`: the state.
+# - `n`: where the request stands.
+# - `r`: the request.
+function secured(@app: App, n: chain.Next, r: http.Request) -> http.Response?
+    return steps.security_headers(@app, n: n, r: r, headers: web.minimal_security_headers(), go_on: go_on)
+
+# `steps.gzip` from 1,024 bytes.
+#
+# - `app`: the state.
+# - `n`: where the request stands.
+# - `r`: the request.
+function zipped(@app: App, n: chain.Next, r: http.Request) -> http.Response?
+    return steps.gzip(@app, n: n, r: r, min_bytes: 1024, go_on: go_on)
+
+# 200 `hello`.
+#
+# - `found`: the route.
+# - `r`: the request.
+function home(_: App lent, found: web.Found, r: http.Request) -> http.Response?
+    _ = found
+    _ = r
+    return ok(http.respond_text(http.STATUS_OK, text: "hello"))
+
+# 200 and a body of 2,048 bytes.
+#
+# - `found`: the route.
+# - `r`: the request.
+function big(_: App lent, found: web.Found, r: http.Request) -> http.Response?
+    _ = found
+    _ = r
+    return ok(http.respond_text(http.STATUS_OK, text: repeat("a", 2048)))
+
+# 201 and the request's body back.
+#
+# - `found`: the route.
+# - `r`: the request.
+function echo(_: App lent, found: web.Found, r: http.Request) -> http.Response?
+    _ = found
+    return ok(http.respond_text(http.STATUS_CREATED, text: bytes.to_text_lossy(r.body)))
+
+# A failure, as a handler whose store is down answers.
+#
+# - `found`: the route.
+# - `r`: the request.
+function broken(_: App lent, found: web.Found, r: http.Request) -> http.Response?
+    _ = found
+    _ = r
+    return fail(code: "failed", msg: "the store is down")
+
+# A program whose every route runs the step `name`, bound to `step`, and
+# whose logger writes to `stream`: `GET /`, `GET /big`, `POST /echo` and
+# `GET /broken`; the account `ana`, password `pw`.
+#
+# - `name`: the step's name.
+# - `step`: the step.
+# - `stream`: where the logger writes.
+function program(name: str, step: (function(@App, chain.Next, http.Request) -> http.Response?), stream: io.Stream) -> App
+    app @= App(
+        router: web.new_router(),
+        steps: {},
+        answers: {},
+        logger: log.with_clock(log.to(stream), clock: fixed),
+        now_ms: 784_111_777_000,
+        accounts: {"ana": "pw"},
+        refused: 0
+    )
+    router @= app.router
+    chain.add_step(@router, @app.steps, name: name, step: step).must()
+    chain.on(@router, @app.answers, method: http.METHOD_GET, pattern: "/", name: "home", answer: home).must()
+    chain.on(@router, @app.answers, method: http.METHOD_GET, pattern: "/big", name: "big", answer: big).must()
+    chain.on(@router, @app.answers, method: http.METHOD_POST, pattern: "/echo", name: "echo", answer: echo).must()
+    chain.on(@router, @app.answers, method: http.METHOD_GET, pattern: "/broken", name: "broken", answer: broken).must()
+    app.router @ router
+    return app
+
+# The logger's clock, which never moves: the time every line names.
+function fixed() -> time.Instant?
+    return time.from_unix(whole_seconds: 784_111_777, extra_nanoseconds: 0)
+
+# The answer of `app` to `r`.
+#
+# - `app`: the state.
+# - `r`: the request.
+function answer(@app: App, r: http.Request) -> http.Response?
+    return chain.dispatch(@app, router: app.router, steps: app.steps, answers: app.answers, r: r)
+
+# A request of `method` for `target`, with `headers` and the body `body`.
+#
+# - `method`: the method.
+# - `target`: the target.
+# - `headers`: its fields.
+# - `body`: the body, as text.
+function asked(method: str, target: str, headers: [http.Header], body: str) -> http.Request
+    made @= http.request(method: method, target: target).must()
+    made.headers @ headers
+    made.body @ bytes.from_text(body)
+    return made
