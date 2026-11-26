@@ -9,6 +9,7 @@ packages = [
     "fs",
     "hash",
     "io",
+    "lists",
     "math",
     "numbers",
     "path",

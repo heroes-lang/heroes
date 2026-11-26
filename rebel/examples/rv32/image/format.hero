@@ -1,0 +1,216 @@
+# A program as the assembler makes it and the loader places it: the bytes
+# of a flat image, the address they load at, where to start, and the
+# symbols, which the disassembler and the debugger name addresses by.
+#
+# On disk it is a flat binary with a small header, every number
+# little-endian whatever the host's order, so a file written on one machine
+# loads on any:
+#
+#     offset  bytes  what
+#     0       4      the magic, "RV32"
+#     4       2      the format's version, 1
+#     6       2      the header's size, 28
+#     8       4      the load address
+#     12      4      the entry address
+#     16      4      the payload's length in bytes
+#     20      4      the payload's CRC-32 (IEEE 802.3, as zlib computes it)
+#     24      4      how many symbols follow the payload
+#     28      ...    the payload, then each symbol: its address (4 bytes),
+#                    its name's length (2) and its name in UTF-8
+#
+# A file that does not open with the magic is a raw flat binary, as
+# `objcopy -O binary` writes one: its bytes load at the RAM's start, which
+# is also its entry, and it names no symbol. Reading never trusts a length
+# it has not checked against the file: a truncated, corrupted or hostile
+# file fails `invalid` and says where, and never aborts.
+
+use <rebel>/bytes
+use <rebel>/hash
+
+use isa/word
+
+## The program
+
+# An address with a name.
+record Symbol
+    # The label or the name.
+    name: str
+    # Its address, a word.
+    address: i64
+
+# A program ready to load.
+record Program
+    # The address its first byte loads at.
+    base: i64
+    # The address it starts at.
+    entry: i64
+    # Its bytes: the code, then the data.
+    image: [u8]
+    # Its symbols, by address and then by name.
+    symbols: [Symbol]
+
+# The image's magic, "RV32".
+constant MAGIC: str
+    "RV32"
+
+# The format's version this program writes and reads.
+constant VERSION: i64
+    1
+
+# The header's size in bytes.
+constant HEADER: i64
+    28
+
+## Writing
+
+# `p` as the bytes of an image file.
+#
+# - `p`: the program; its addresses are words, its names under 65,536
+#   bytes, which the assembler's are.
+function encode(p: Program) -> [u8]
+    out @= bytes.from_text(MAGIC)
+    bytes.push_all(to: @out, from: bytes.encode_u16_le(to_u16(VERSION).must()))
+    bytes.push_all(to: @out, from: bytes.encode_u16_le(to_u16(HEADER).must()))
+    put_word(@out, p.base)
+    put_word(@out, p.entry)
+    put_word(@out, p.image.len())
+    bytes.push_all(to: @out, from: bytes.encode_u32_le(hash.crc32(p.image)))
+    put_word(@out, p.symbols.len())
+    bytes.push_all(to: @out, from: p.image)
+
+    for s in p.symbols
+        put_word(@out, s.address)
+        name = bytes.from_text(s.name)
+        bytes.push_all(to: @out, from: bytes.encode_u16_le(to_u16(name.len()).must()))
+        bytes.push_all(to: @out, from: name)
+
+    return out
+
+# Appends `w`, a word the program made, as four bytes. A word always fits
+# `u32`; the conversion still answers `u32?` (spec § 11).
+function put_word(@out: [u8], w: i64)
+    bytes.push_all(to: @out, from: bytes.encode_u32_le(to_u32(word.wrap(w)).must()))
+
+## Reading
+
+# The program the bytes of an image file hold.
+#
+# - `data`: the file's bytes, from anywhere.
+# - `raw_base`: where a raw flat binary loads and starts.
+#
+# Fails `invalid` where the header is cut short, names another version or
+# size, its lengths pass the file's end, the payload's CRC-32 is not the one
+# the header holds, or a symbol's name is not UTF-8.
+function decode(data: [u8], raw_base: i64) -> Program?
+    if !bytes.has_prefix(s: data, prefix: bytes.from_text(MAGIC))
+        return ok(Program(base: raw_base, entry: raw_base, image: data, symbols: []))
+
+    if data.len() < HEADER
+        return refuse(f"the header is cut short: {data.len()} bytes of {HEADER}")
+    version = half_at(data, at: 4)
+    size = half_at(data, at: 6)
+
+    if version != VERSION || size != HEADER
+        return refuse(
+            f"version {version} with a header of {size} bytes; this program reads version {VERSION}, {HEADER} bytes"
+        )
+    base = word_at(data, at: 8)
+    entry = word_at(data, at: 12)
+    length = word_at(data, at: 16)
+    count = word_at(data, at: 24)
+
+    if length > data.len() - HEADER
+        return refuse(f"the payload's {length} bytes pass the file's end at {data.len()}")
+    image = data.slice(from: HEADER, to: HEADER + length)
+
+    if bytes.encode_u32_le(hash.crc32(image)) != data.slice(from: 20, to: 24)
+        return refuse("the payload's CRC-32 is not the header's: the file is damaged")
+    symbols = read_symbols(data: data, from: HEADER + length, count: count)?
+    return ok(Program(base: base, entry: entry, image: image, symbols: symbols))
+
+function read_symbols(data: [u8] lent, from: i64, count: i64) -> [Symbol]?
+    found: [Symbol] @= []
+    at: i64 @= from
+    k: i64 @= 0
+
+    # A `while`, never `for k in range(...)`: `range` makes its whole list
+    # first (spec § 11), and `count` is the file's, up to 2^32 - 1.
+    while k < count
+        if data.len() - at < 6
+            return refuse(f"symbol {k} of {count} is cut short at byte {at}")
+        address = word_at(data, at: at)
+        length = half_at(data, at: at + 4)
+        at @ at + 6
+
+        if data.len() - at < length
+            return refuse(f"symbol {k}'s name of {length} bytes passes the file's end")
+        name = bytes.to_text(data.slice(from: at, to: at + length))
+
+        if name.is_err()
+            return refuse(f"symbol {k}'s name is not UTF-8")
+        found @ found.push(Symbol(name: name.must(), address: address))
+        at @ at + length
+        k @ k + 1
+
+    if at != data.len()
+        return refuse(f"{data.len() - at} bytes follow the last symbol")
+    return ok(found)
+
+# The word at `at`, whose four bytes the caller has checked are there.
+function word_at(data: [u8] lent, at: i64) -> i64
+    return to_i64(bytes.decode_u32_le(data, at: at).must()).must()
+
+# The half-word at `at`, whose two bytes the caller has checked are there.
+function half_at(data: [u8] lent, at: i64) -> i64
+    return to_i64(bytes.decode_u16_le(data, at: at).must()).must()
+
+function refuse<T>(why: str) -> T?
+    return fail(code: "invalid", msg: "not an rv32 image: " + why)
+
+## Tests
+
+function sample() -> Program
+    return Program(
+        base: 0x8000_0000,
+        entry: 0x8000_0004,
+        image: [0x13, 0x00, 0x00, 0x00, 0x73, 0x00, 0x10, 0x00],
+        symbols: [Symbol(name: "_start", address: 0x8000_0004), Symbol(name: "données", address: 0x8000_0008)]
+    )
+
+test "encode and decode: a program round-trips, its header little-endian"
+    data = encode(sample())
+    assert data.slice(from: 0, to: 12) == [0x52, 0x56, 0x33, 0x32, 1, 0, 28, 0, 0, 0, 0, 0x80]
+    assert decode(data, raw_base: 0).must() == sample()
+
+test "decode: a raw flat binary loads at the base it is given"
+    p = decode([0x13, 0, 0, 0], raw_base: 0x8000_0000).must()
+    assert p.base == 0x8000_0000
+    assert p.entry == 0x8000_0000
+    assert p.symbols.len() == 0
+
+test "decode: every byte cut off, a flipped bit, and bytes after the symbols"
+    data = encode(sample())
+
+    for n in range(from: 4, to: data.len())
+        assert decode(data.slice(from: 0, to: n), raw_base: 0).is_err()
+
+    flipped @= data
+    flipped[HEADER + 1] @ 0x01
+    assert decode(flipped, raw_base: 0).is_err()
+    longer @= data
+    longer @ longer.push(0)
+    assert decode(longer, raw_base: 0).is_err()
+
+test "decode: a length past the file's end is refused, never read"
+    data @= encode(sample())
+    data[16] @ 0xff
+    data[17] @ 0xff
+    data[18] @ 0xff
+    data[19] @ 0xff
+    assert decode(data, raw_base: 0).is_err()
+    many @= encode(sample())
+    many[24] @ 0xff
+    many[25] @ 0xff
+    many[26] @ 0xff
+    many[27] @ 0x7f
+    assert decode(many, raw_base: 0).is_err()
