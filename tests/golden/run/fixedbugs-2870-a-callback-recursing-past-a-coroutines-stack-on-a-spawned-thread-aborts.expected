@@ -1,0 +1,2 @@
+!sanitizer: stack-overflow
+!panic: stack exhausted in fixedbugs-2870-a-callback-recursing-past-a-coroutines-stack-on-a-spawned-thread-aborts.deep

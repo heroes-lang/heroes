@@ -652,8 +652,11 @@ static const char *hero_stack_symbol(uintptr_t addr) {
 
 /* The Heroes function on the interrupted stack nearest the fault: the pc's own
  * symbol if it is one, else the first frame up the chain that is. Every fp is
- * checked against the stack range before it is read, and the walk must go up. */
-static const char *hero_stack_blame(uintptr_t pc, uintptr_t fp, uintptr_t lr) {
+ * checked against the stack range before it is read, and the walk must go up.
+ * The range is the stack the fault ran on, `[lo, hi)` with the window below
+ * it: the thread's own (`hero_stack_blame`), or since defect 2870 a C
+ * coroutine's the guard found it ran out of. */
+static const char *hero_stack_blame_in(uintptr_t pc, uintptr_t fp, uintptr_t lr, uintptr_t lo, uintptr_t hi) {
     const char *first = hero_stack_symbol(pc);
     if (hero_stack_is_heroes(first)) return first;
     /* The link register, once, BEFORE the chain: on AArch64 it holds the return
@@ -667,7 +670,7 @@ static const char *hero_stack_blame(uintptr_t pc, uintptr_t fp, uintptr_t lr) {
         if (hero_stack_is_heroes(caller)) return caller;
     }
     for (int i = 0; i < 64; i++) {
-        if (fp < hero_stack_lo - HERO_STACK_WINDOW || fp + 16 > hero_stack_hi || (fp & 7) != 0) break;
+        if (fp < lo - HERO_STACK_WINDOW || fp + 16 > hi || (fp & 7) != 0) break;
         uintptr_t next_fp = *(uintptr_t *)fp;
         uintptr_t ret = *(uintptr_t *)(fp + 8);
         if (ret == 0) break;
@@ -677,6 +680,10 @@ static const char *hero_stack_blame(uintptr_t pc, uintptr_t fp, uintptr_t lr) {
         fp = next_fp;
     }
     return first;
+}
+
+static const char *hero_stack_blame(uintptr_t pc, uintptr_t fp, uintptr_t lr) {
+    return hero_stack_blame_in(pc, fp, lr, hero_stack_lo, hero_stack_hi);
 }
 
 #endif
@@ -919,18 +926,18 @@ static void hero_stack_pass_on(int signum, siginfo_t *si, void *ctx) {
  * the first sentence alone. */
 #define HERO_STACK_SEEN 64
 
-static int hero_stack_names(uintptr_t pc, uintptr_t fp, uintptr_t lr, const char **out) {
+static int hero_stack_names(uintptr_t pc, uintptr_t fp, uintptr_t lr, uintptr_t lo, uintptr_t hi, const char **out) {
     int n = 0;
     uintptr_t first_ret = 0;
     const char *own = hero_stack_symbol(pc);
     if (hero_stack_is_heroes(own)) out[n++] = own;
-    if (fp >= hero_stack_lo - HERO_STACK_WINDOW && fp + 16 <= hero_stack_hi && (fp & 7) == 0) first_ret = *(uintptr_t *)(fp + 8);
+    if (fp >= lo - HERO_STACK_WINDOW && fp + 16 <= hi && (fp & 7) == 0) first_ret = *(uintptr_t *)(fp + 8);
     if (lr != 0 && lr != first_ret) {
         const char *caller = hero_stack_symbol(lr - 1);
         if (hero_stack_is_heroes(caller)) out[n++] = caller;
     }
     for (int i = 0; i < 64 && n < HERO_STACK_SEEN; i++) {
-        if (fp < hero_stack_lo - HERO_STACK_WINDOW || fp + 16 > hero_stack_hi || (fp & 7) != 0) break;
+        if (fp < lo - HERO_STACK_WINDOW || fp + 16 > hi || (fp & 7) != 0) break;
         uintptr_t next_fp = *(uintptr_t *)fp;
         uintptr_t ret = *(uintptr_t *)(fp + 8);
         if (ret == 0) break;
@@ -946,9 +953,10 @@ static int hero_stack_names(uintptr_t pc, uintptr_t fp, uintptr_t lr, const char
  * from the cycle's first name by `strcmp`, so a mutual recursion reads the
  * same whichever of its functions ran out; nothing where no name repeats or
  * the cycle is `who` alone. */
-static void hero_stack_say_recursion(uintptr_t pc, uintptr_t fp, uintptr_t lr, const char *who) {
+static void hero_stack_say_recursion(uintptr_t pc, uintptr_t fp, uintptr_t lr, uintptr_t lo, uintptr_t hi,
+                                     const char *who) {
     const char *names[HERO_STACK_SEEN];
-    int n = hero_stack_names(pc, fp, lr, names);
+    int n = hero_stack_names(pc, fp, lr, lo, hi, names);
     int start = -1, len = 0;
     for (int j = 1; j < n && start < 0; j++) {
         for (int k = 0; k < j; k++) {
@@ -1004,12 +1012,12 @@ static int hero_stack_pc_is_probe(uintptr_t pc) {
     return strcmp(name, "chkstk_darwin") == 0;
 }
 
-static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
-    uintptr_t addr = (uintptr_t)si->si_addr;
-    uintptr_t pc, fp, sp, lr;
-    hero_stack_regs(ctx, &pc, &fp, &sp, &lr);
-    int in_guard = addr >= hero_stack_lo - HERO_STACK_WINDOW && addr < hero_stack_lo;
-    int sp_low = sp >= hero_stack_lo - HERO_STACK_WINDOW && sp < hero_stack_lo + 4096;
+/* WHETHER A FAULT AT `addr` IS THE STACK WHOSE LOWEST ADDRESS IS `lo` RUNNING
+ * OUT, `sp` and `pc` the interrupted thread's: the fault in the window below
+ * `lo`, and the second witness in one of its three shapes. */
+static int hero_stack_ran_out(uintptr_t addr, uintptr_t sp, uintptr_t pc, uintptr_t lo) {
+    int in_guard = addr >= lo - HERO_STACK_WINDOW && addr < lo;
+    int sp_low = sp >= lo - HERO_STACK_WINDOW && sp < lo + 4096;
     /* THE SECOND WITNESS HAS THREE SHAPES, and this file knew one of them until
      * defect 007 and two until defect 2253. A function whose frame is larger
      * than a page does not touch it after moving `sp`: clang's prologue calls
@@ -1031,17 +1039,115 @@ static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
      * platform's routine made from a shallow `sp` (above the handler). Asked
      * last, since it names the pc's symbol. */
     int probed = in_guard && !sp_low && !probing && addr < sp && hero_stack_pc_is_probe(pc);
-    if (in_guard && (sp_low || probing || probed)) {
-        hero_stack_tell_first();
-        const char *who = hero_stack_blame(pc, fp, lr);
-        hero_stack_say("panic: stack exhausted");
-        if (who != NULL) {
-            hero_stack_say(" in ");
-            hero_stack_say_heroes_name(who);
-            hero_stack_say_recursion(pc, fp, lr, who);
-        }
-        hero_stack_say("\n");
-        hero_abort();
+    return in_guard && (sp_low || probing || probed);
+}
+
+/* `panic: stack exhausted in <function>`, the walk bounded by the stack that
+ * ran out, `[lo, hi)` and the window below it. */
+static _Noreturn void hero_stack_tell_exhausted(uintptr_t pc, uintptr_t fp, uintptr_t lr, uintptr_t lo,
+                                                uintptr_t hi) {
+    hero_stack_tell_first();
+    const char *who = hero_stack_blame_in(pc, fp, lr, lo, hi);
+    hero_stack_say("panic: stack exhausted");
+    if (who != NULL) {
+        hero_stack_say(" in ");
+        hero_stack_say_heroes_name(who);
+        hero_stack_say_recursion(pc, fp, lr, lo, hi, who);
+    }
+    hero_stack_say("\n");
+    hero_abort();
+}
+
+/* A C COROUTINE'S STACK, `makecontext`'s (defect 2870, 2026-11-27; panel
+ * 262's compiler-engineer, `so`). The guard measured the thread's own stack
+ * alone, so a callback recursing past the stack a C library gave its
+ * coroutine faulted where no range of this file lay: the fault went on to the
+ * default and the program died by it with nothing said, 139 on Linux arm64
+ * and 138 on this Mac, from `malloc` and from `mmap` with a page of no access
+ * below, where the same recursion on the thread's own stack says `panic: stack
+ * exhausted in so.deep`. A coroutine's stack is one `makecontext` was handed,
+ * which the runtime notes as it is (`parts/sigentries.c`, Darwin's
+ * `parts/rebind_entries.c`): where the thread's own stack does not explain
+ * the fault, the known range whose lowest address lies nearest above it is
+ * asked the same two witnesses, and the walk is bounded by that range.
+ *
+ * AND PAST THE WINDOW, WHERE THE FRAMES CLIMB INTO THE RANGE. A stack with no
+ * page of no access below it, a `malloc`'d one, is run past its lowest
+ * address into whatever lies mapped below until the first address that
+ * faults: on this Mac a 256 KiB block of the allocator's 4 MiB regions, the
+ * fault 4.1 MiB under the block with `sp` at it (lldb, `so` from `malloc`),
+ * past the window. There the second witness is the frame chain itself: the
+ * fault within the window under `sp` or a page above it, and the frame
+ * records from the faulting frame's climbing, each above the one before by
+ * less than the window, into the range, which a recursion run out of the range
+ * leaves and a wild store or a stack pointer set wild does not. A record read
+ * there lies in memory the recursion wrote; a chain that leads anywhere else
+ * may fault inside this handler, and the program then dies by the signal as it
+ * did before.
+ *
+ * What it does not reach, said: what lay below a stack with no page of no
+ * access is overwritten before the fault (a neighbour's bytes, or the
+ * allocator's own), which only C's choice of a guarded stack prevents, and a
+ * recursion that ends before the first address that faults ends having
+ * written there in silence. On this Mac at `-O2` the same `malloc`'d stack's
+ * recursion overwrote this runtime's own thread-local words before any fault,
+ * and the callback's next entry was refused as run on a thread the program
+ * did not start, 20 runs of 20 (the base hung, 3 of 3): a defect of its own.
+ * And a stack no `makecontext` handed out (a library's own switch), which no
+ * range names. */
+#if defined(__APPLE__)
+static bool hero_rebind_range_above(uintptr_t addr, uintptr_t sp, uintptr_t *lo, uintptr_t *hi);
+#else
+static bool hero_sig_range_above(uintptr_t addr, uintptr_t sp, uintptr_t *lo, uintptr_t *hi);
+#endif
+
+/* The most frame records the chain is climbed, each at least 16 bytes: 64 MiB
+ * or more of a stack run past its range. */
+#define HERO_STACK_CLIMB ((long)1 << 22)
+
+/* Whether the frame records from `fp` climb into `[lo, hi)`: each aligned and
+ * above the one before by less than the window, the first at or above `lo`
+ * lying below `hi`. */
+static int hero_stack_climbs(uintptr_t fp, uintptr_t lo, uintptr_t hi) {
+    for (long i = 0; i < HERO_STACK_CLIMB; i++) {
+        if (fp >= lo) return fp + 16 <= hi;
+        if ((fp & 7) != 0) return 0;
+        uintptr_t next = *(uintptr_t *)fp;
+        if (next <= fp || next - fp >= HERO_STACK_WINDOW) return 0;
+        fp = next;
+    }
+    return 0;
+}
+
+/* Whether the fault ran out of a coroutine's range: `lo` and `hi` the range,
+ * `walk_lo` the lowest address the walk may read (the range's own, or `sp`
+ * where the frames ran past the window). */
+static bool hero_stack_coroutine_ran_out(uintptr_t addr, uintptr_t sp, uintptr_t pc, uintptr_t fp, uintptr_t *lo,
+                                         uintptr_t *hi, uintptr_t *walk_lo) {
+#if defined(__APPLE__)
+    if (!hero_rebind_range_above(addr, sp, lo, hi)) return false;
+#else
+    if (!hero_sig_range_above(addr, sp, lo, hi)) return false;
+#endif
+    *walk_lo = *lo;
+    if (*lo - addr <= HERO_STACK_WINDOW && (sp >= *lo || *lo - sp <= HERO_STACK_WINDOW) &&
+        hero_stack_ran_out(addr, sp, pc, *lo)) {
+        return true;
+    }
+    int near_sp = addr >= sp ? addr - sp < 4096 : sp - addr < HERO_STACK_WINDOW;
+    if (sp >= *lo || !near_sp || !hero_stack_climbs(fp, *lo, *hi)) return false;
+    *walk_lo = sp;
+    return true;
+}
+
+static void hero_stack_handler(int signum, siginfo_t *si, void *ctx) {
+    uintptr_t addr = (uintptr_t)si->si_addr;
+    uintptr_t pc, fp, sp, lr;
+    hero_stack_regs(ctx, &pc, &fp, &sp, &lr);
+    if (hero_stack_ran_out(addr, sp, pc, hero_stack_lo)) hero_stack_tell_exhausted(pc, fp, lr, hero_stack_lo, hero_stack_hi);
+    uintptr_t co_lo = 0, co_hi = 0, walk_lo = 0;
+    if (hero_stack_coroutine_ran_out(addr, sp, pc, fp, &co_lo, &co_hi, &walk_lo)) {
+        hero_stack_tell_exhausted(pc, fp, lr, walk_lo, co_hi);
     }
 
     /* C past a buffer it was lent (the third witness, declared above). */
