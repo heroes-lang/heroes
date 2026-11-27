@@ -377,6 +377,7 @@ function unbuildable_on_windows() -> [Skip]
         Skip(name: "tests/golden/run/fixedbugs-2852-fibres-carved-from-a-frame-call-the-function-under-the-sanitizer-and-run.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-two-fibres-a-programs-own-assembly-starts-with-the-frame-pointer-at-their-top-call-the-function-and-run.hero", why: SYSV_SWITCH_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-frames-left-by-setcontext-on-three-stacks-run-under-the-sanitizer.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-openssl-async-jobs-on-heap-fibres-run-under-the-sanitizer.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
     ]
 
 # Why the program at `source` is not built on this machine: one of
@@ -679,7 +680,10 @@ test "every program Windows cannot build is a file that exists, skipped there al
     # Then the 1 of defect d-lane-sig-family-7, its header refused at
     # `sys/mman.h` not found by `zig cc` 0.15.2 for Windows x86-64 on
     # 2026-11-27 (`POSIX_CONTEXT_SHAPES_ON_WINDOWS`).
-    assert unbuildable_on_windows().len() == 188
+    # Then the 1 of defect d-lane-sig-family-8, which binds defect 2853's
+    # OpenSSL header, stopping itself with `#error` on Windows (`zig cc`
+    # 0.15.2 for Windows x86-64, 2026-11-27; `POSIX_CONTEXT_SHAPES_ON_WINDOWS`).
+    assert unbuildable_on_windows().len() == 189
 
     for one in unbuildable_on_windows()
         assert strings.has_prefix(s: one.name, prefix: "tests/golden/run/")
