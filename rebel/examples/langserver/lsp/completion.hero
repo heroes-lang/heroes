@@ -1,0 +1,176 @@
+# `textDocument/completion`: what may be written at the cursor. After a
+# `.`, the fields of the record the expression before it holds, whatever
+# that expression is, since the checker typed it; where a type is written,
+# after a `:` or a `->`, Kite's own types and the records; elsewhere the
+# parameters and bindings in scope there, the functions, Kite's own
+# functions and the keywords that may begin an expression. Each item says
+# what it is and its type, and the items come sorted by label.
+
+use <rebel>/json
+use <rebel>/lists
+use <rebel>/strings
+
+use lang/queries
+use lang/symbols
+use lang/types
+use lsp/document
+use lsp/server
+use lsp/wire
+
+# The protocol's kinds of completion item this server gives.
+constant FUNCTION: i64
+    3
+
+# A field.
+constant FIELD: i64
+    5
+
+# A parameter or a binding.
+constant VARIABLE: i64
+    6
+
+# A keyword.
+constant KEYWORD: i64
+    14
+
+# A record.
+constant STRUCT: i64
+    22
+
+# The keywords that may begin an expression.
+constant EXPRESSION_KEYWORDS: [str]
+    ["if", "true", "false"]
+
+# One item offered.
+record Item
+    # What is written.
+    label: str
+    # The protocol's kind.
+    kind: i64
+    # Its type or signature, shown beside it.
+    detail: str
+
+# Answers `textDocument/completion`: a list of items.
+#
+# - `s`: the server, only read.
+# - `params`: `textDocument` and `position`.
+#
+# Fails `invalid` where those are missing, `failed` where the document is not
+# open.
+function complete(s: server.Server lent, params: json.Value) -> json.Value?
+    doc = server.document_named(s, params: params)?
+    at = server.offset_named(s, doc: doc, params: params)?
+    a = doc.analysis
+    items @= in_scope(a, at: at)
+
+    match queries.field_site_at(a, at: at)
+        .ok site => items @ fields(a, owner: site.owner)
+        .err _ =>
+            if queries.in_type_position(doc.text, at: at)
+                items @ type_items(a)
+
+    written: [json.Value] @= []
+
+    for one in lists.sort_by(items, less: label_before)
+        written @ written.push(
+            wire.object({"label": wire.text(one.label), "kind": wire.number(one.kind), "detail": wire.text(one.detail)})
+        )
+
+    return ok(wire.object({"isIncomplete": wire.boolean(false), "items": wire.array(written)}))
+
+function label_before(a: Item, b: Item) -> bool
+    return strings.compare(a: a.label, b: b.label) < 0
+
+# The values in scope at `at` and the keywords that begin an expression.
+#
+# - `a`: the analysis.
+# - `at`: the cursor's offset.
+function in_scope(a: symbols.Analysis lent, at: i64) -> [Item]
+    items: [Item] @= []
+
+    for k in queries.values_at(a, at: at)
+        s = a.symbols[k]
+
+        kind = match s.kind
+            .function_symbol | .builtin_function                                           => FUNCTION
+            .param_symbol | .local_symbol | .field_symbol | .record_symbol | .builtin_type => VARIABLE
+
+        detail = match a.signatures[s.name]
+            .ok sig =>
+                if kind == FUNCTION
+                    types.format_signature(s.name, s: sig)
+                else
+                    types.format_type(s.type_of)
+            .err _ => types.format_type(s.type_of)
+
+        items @ items.push(Item(label: s.name, kind: kind, detail: detail))
+
+    for word in EXPRESSION_KEYWORDS
+        items @ items.push(Item(label: word, kind: KEYWORD, detail: "keyword"))
+
+    return items
+
+# The fields of the record `owner`, none where it is "".
+#
+# - `a`: the analysis.
+# - `owner`: the record's name.
+function fields(a: symbols.Analysis lent, owner: str) -> [Item]
+    items: [Item] @= []
+
+    if owner == ""
+        return items
+
+    for k in queries.fields_of(a, owner: owner)
+        items @ items.push(Item(label: a.symbols[k].name, kind: FIELD, detail: types.format_type(a.symbols[k].type_of)))
+
+    return items
+
+# Kite's own types and the records.
+#
+# - `a`: the analysis.
+function type_items(a: symbols.Analysis lent) -> [Item]
+    items: [Item] @= []
+
+    for k in queries.types_of(a)
+        s = a.symbols[k]
+
+        detail = if s.kind == .record_symbol
+            "record"
+        else
+            "Kite's own type"
+        items @ items.push(Item(label: s.name, kind: STRUCT, detail: detail))
+
+    return items
+
+## Tests
+
+test "complete: the fields after a dot, whatever the expression before it"
+    s @= server.new_server()
+    text = "record P { x: Int, y: Int }\nfn mk() -> P { P { x: 1, y: 2 } }\nfn f() -> Int { mk(). }"
+    s.documents["u"] @ document.open(uri: "u", version: 1, text: text)
+    asked = json.parse("{\"textDocument\": {\"uri\": \"u\"}, \"position\": {\"line\": 2, \"character\": 21}}").must()
+    items = json.items_of(json.value_at(complete(s, params: asked).must(), pointer: "/items").must()).must()
+    assert items.len() == 2
+    assert json.text_at(items[0], key: "label").must() == "x"
+
+test "complete: the names in scope, inner ones only where they are read"
+    s @= server.new_server()
+    text = "fn f(a: Int) -> Int {\n    let b = a;\n    b\n}"
+    s.documents["u"] @ document.open(uri: "u", version: 1, text: text)
+    inside = json.parse("{\"textDocument\": {\"uri\": \"u\"}, \"position\": {\"line\": 2, \"character\": 4}}").must()
+    labels: [str] @= []
+
+    for item in json.items_of(json.value_at(complete(s, params: inside).must(), pointer: "/items").must()).must()
+        labels @ labels.push(json.text_at(item, key: "label").must())
+
+    assert labels == ["a", "abs", "b", "f", "false", "if", "len", "show", "true"]
+    before = json.parse("{\"textDocument\": {\"uri\": \"u\"}, \"position\": {\"line\": 1, \"character\": 4}}").must()
+    count = json.items_of(json.value_at(complete(s, params: before).must(), pointer: "/items").must()).must().len()
+    assert count == 8
+
+test "complete: the types after a colon"
+    s @= server.new_server()
+    s.documents["u"] @ document.open(uri: "u", version: 1, text: "record P { }\nfn f(a: ) { }")
+    asked = json.parse("{\"textDocument\": {\"uri\": \"u\"}, \"position\": {\"line\": 1, \"character\": 8}}").must()
+    items = json.items_of(json.value_at(complete(s, params: asked).must(), pointer: "/items").must()).must()
+    assert items.len() == 5

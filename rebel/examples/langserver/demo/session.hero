@@ -1,0 +1,345 @@
+# The demo: a whole editing session between the client stand-in and this
+# program's own server, started as its child, every message printed as it
+# crosses the pipes. The client opens `shapes.kite`, takes the quick fix the
+# server offers for a misspelt name, fixes a field by hand, asks hover,
+# definition, references, renames (one taken, two refused), completion
+# after a `.`, the outline, then opens `messy.kite` and formats it, and
+# ends the session as the protocol ends one. On the way it is refused as the
+# protocol refuses: a request before `initialize`, a method the server does
+# not serve, a frame that is not JSON.
+#
+# The client keeps its own copy of each document, as an editor does, and
+# finds the places it asks about by their text, counting their characters
+# in UTF-16 as the server agreed at `initialize`; the body of
+# `shapes.kite`'s function `label` holds an emoji before the names asked
+# about, so a count in bytes or in code points would point elsewhere.
+
+use <rebel>/json
+use <rebel>/jsonrpc
+use <rebel>/os
+use <rebel>/path
+use <rebel>/strings
+
+use demo/peer
+use lsp/wire
+use text/edits
+use text/positions
+
+# The URI the client gives `shapes.kite`: no path of this machine is printed.
+constant SHAPES: str
+    "file:///demo/shapes.kite"
+
+# The URI it gives `messy.kite`.
+constant MESSY: str
+    "file:///demo/messy.kite"
+
+# The client's copy of an open document.
+record Copy
+    # Its URI.
+    uri: str
+    # Its text, as the editor shows it.
+    text: str
+    # Its version, raised with each change sent.
+    version: i64
+
+# Plays the session over the samples in `samples` and answers the exit
+# status: 0 where it ran to its end and the server ended with 0.
+#
+# - `samples`: the folder holding `shapes.kite` and `messy.kite`.
+function run(samples: str) -> i64
+    shapes = read_file(path.join_all([samples, "shapes.kite"]))
+    messy = read_file(path.join_all([samples, "messy.kite"]))
+    exe = os.executable_path()
+
+    if shapes.is_err() || messy.is_err() || exe.is_err()
+        print("demo: the samples or this program's own executable cannot be read")
+        return 1
+    print("Kite's language server, driven by a client stand-in over two pipes.")
+    print("The client opens shapes.kite, listed here with its lines numbered from 0, as the protocol numbers them:")
+    print("")
+    listing(shapes.must())
+    started = peer.start(exe.must())
+
+    if started.is_err()
+        print("demo: the server cannot be started")
+        return 1
+    p @= started.must()
+    played = steps(@p, shapes: shapes.must(), messy: messy.must())
+    ending = peer.finish(@p)
+    print("")
+
+    match played
+        .ok _  => _ = 0
+        .err e => print(f"demo: the session broke: {e.msg}")
+
+    match ending
+        .ok how =>
+            print(f"The server {how.text}.")
+
+            if played.is_err() || !how.clean
+                return 1
+            return 0
+        .err e =>
+            print(f"demo: the server could not be waited for: {e.msg}")
+            return 1
+
+# Prints `text`'s lines, each after its number from 0.
+#
+# - `text`: a document.
+function listing(text: str)
+    n @= 0
+
+    for line in strings.lines(text)
+        print(f"{strings.pad_start(s: f"{n}", width: 3, pad: " ")} | {line}")
+        n @ n + 1
+
+function heading(title: str, why: str)
+    print("")
+    print("== " + title)
+    print("   " + why)
+
+# Every step of the session, in order.
+#
+# - `p`: the session.
+# - `shapes`: `shapes.kite`'s text.
+# - `messy`: `messy.kite`'s text.
+function steps(@p: peer.Peer, shapes: str, messy: str) -> ()?
+    doc @= Copy(uri: SHAPES, text: shapes, version: 1)
+    heading(
+        title: "1. A request before `initialize`",
+        why: "The server serves nothing yet, and says so with the protocol's own code."
+    )
+    _ = peer.request(@p, method: "textDocument/hover", params: asked(doc, needle: "Point", into: 0)?)?
+    heading(
+        title: "2. `initialize`",
+        why: "The client offers UTF-16 alone for places; the server takes it and lists what it serves."
+    )
+    _ = peer.request(@p, method: "initialize", params: hello())?
+    heading(
+        title: "3. `initialized`",
+        why: "The server may now speak first: it says in the client's log that it is ready."
+    )
+    peer.notify(@p, method: "initialized", params: wire.object({}), shown: "", answers: 1)?
+    heading(
+        title: "4. The client opens shapes.kite",
+        why: "The text travels whole (shown above); the server answers with two errors and their places."
+    )
+    opened = opening(uri: doc.uri, text: doc.text)
+    elided = opening(uri: doc.uri, text: f"<the {doc.text.len()} bytes listed above>")
+    shown = jsonrpc.format(.notification(method: "textDocument/didOpen", params: elided))?
+    peer.notify(@p, method: "textDocument/didOpen", params: opened, shown: shown, answers: 1)?
+    quick_fix(@p, doc: @doc)?
+    heading(
+        title: "6. The client fixes `heigth` by hand",
+        why: "One change, its range counted on line 36; the server finds nothing wrong any more."
+    )
+    typed(@p, doc: @doc, needle: "heigth", into: 0, gone: 6, text: "height")?
+    questions(@p, doc: doc)?
+    renames(@p, doc: @doc)?
+    completion(@p, doc: @doc)?
+    heading(
+        title: "13. The outline",
+        why: "Records with their fields, functions with their parameters and bindings, each with its range."
+    )
+    _ = peer.request(@p, method: "textDocument/documentSymbol", params: named(doc))?
+    formatting(@p, messy: messy)?
+    heading(
+        title: "16. What the server does not serve, and a frame that is not JSON",
+        why: "Each refused with the code JSON-RPC gives it; the session goes on."
+    )
+    _ = peer.request(@p, method: "textDocument/foldingRange", params: named(doc))?
+    peer.send_text(@p, text: "{\"jsonrpc\": \"2.0\", \"id\": 99, \"method\":")?
+    heading(title: "17. The client closes shapes.kite", why: "The server clears what it showed for it.")
+    peer.notify(@p, method: "textDocument/didClose", params: named(doc), shown: "", answers: 1)?
+    heading(
+        title: "18. `shutdown`, then `exit`",
+        why: "The server answers `null`, then ends with status 0, as the protocol asks after a `shutdown`."
+    )
+    _ = peer.request(@p, method: "shutdown", params: wire.nothing())?
+    peer.notify(@p, method: "exit", params: wire.nothing(), shown: "", answers: 0)?
+    return ok()
+
+# What `initialize` sends: the client's name and its capabilities.
+function hello() -> json.Value
+    client: {str: json.Value} = {"name": wire.text("demo-client"), "version": wire.text("1.0")}
+    general: {str: json.Value} = {"positionEncodings": wire.array([wire.text("utf-16")])}
+    out: {str: json.Value} @= {}
+    out["processId"] @ wire.nothing()
+    out["clientInfo"] @ wire.object(client)
+    out["rootUri"] @ wire.nothing()
+    out["capabilities"] @ wire.object({"general": wire.object(general)})
+    return wire.object(out)
+
+# The parameters of `didOpen` for the document `uri` holding `text`.
+#
+# - `uri`: the document's URI.
+# - `text`: its text.
+function opening(uri: str, text: str) -> json.Value
+    item: {str: json.Value} @= {}
+    item["uri"] @ wire.text(uri)
+    item["languageId"] @ wire.text("kite")
+    item["version"] @ wire.number(1)
+    item["text"] @ wire.text(text)
+    return wire.object({"textDocument": wire.object(item)})
+
+# `{"textDocument": {"uri": ...}}` for `doc`.
+function named(doc: Copy) -> json.Value
+    return wire.object({"textDocument": wire.object({"uri": wire.text(doc.uri)})})
+
+# The place `into` bytes after where `needle` first stands in `doc`.
+#
+# - `doc`: the client's copy.
+# - `needle`: a text it holds.
+# - `into`: how far past its first byte.
+#
+# Fails `not_found` where `doc` does not hold `needle`.
+function place(doc: Copy, needle: str, into: i64) -> positions.Position?
+    at = strings.index_of(s: doc.text, substr: needle)?
+    return ok(positions.position_of(doc.text, starts: positions.line_starts(doc.text), at: at + into, e: .utf16))
+
+# A request's parameters naming `doc` and the place `place` finds.
+function asked(doc: Copy, needle: str, into: i64) -> json.Value?
+    where = place(doc, needle: needle, into: into)?
+    return ok(
+        wire.object({"textDocument": wire.object({"uri": wire.text(doc.uri)}), "position": wire.position_json(where)})
+    )
+
+# Sends `changes` as the next version of `doc`, after making them in the
+# client's copy, and reads the diagnostics the server publishes.
+#
+# - `p`: the session.
+# - `doc`: the client's copy, changed.
+# - `changes`: the changes, each read against the text the one before made.
+function change(@p: peer.Peer, @doc: Copy, changes: [edits.Change]) -> ()?
+    doc.text @ edits.apply_all(doc.text, changes: changes, e: .utf16)
+    doc.version @ doc.version + 1
+    sent: [json.Value] @= []
+
+    for c in changes
+        match c.range
+            .ok r  => sent @ sent.push(wire.object({"range": wire.range_json(r), "text": wire.text(c.text)}))
+            .err _ => sent @ sent.push(wire.object({"text": wire.text(c.text)}))
+
+    params = wire.object(
+        {"textDocument": wire.object({"uri": wire.text(doc.uri), "version": wire.number(doc.version)}), "contentChanges": wire.array(sent)}
+    )
+    return peer.notify(@p, method: "textDocument/didChange", params: params, shown: "", answers: 1)
+
+# Replaces `gone` bytes from where `needle` stands, `into` bytes in, with
+# `text`, as a person typing would.
+function typed(@p: peer.Peer, @doc: Copy, needle: str, into: i64, gone: i64, text: str) -> ()?
+    from = place(doc, needle: needle, into: into)?
+    to = place(doc, needle: needle, into: into + gone)?
+    return change(@p, doc: @doc, changes: [edits.replacing(start: from, end: to, text: text)])
+
+# The changes the edits of `answer` make, last first, so each is read
+# against the text the one before made.
+#
+# - `edits_json`: the protocol's `TextEdit`s, in the document's order.
+function changes_of(edits_json: [json.Value]) -> [edits.Change]?
+    out: [edits.Change] @= []
+    k @= edits_json.len() - 1
+
+    while k >= 0
+        r = wire.range_of(wire.member_of(edits_json[k], key: "range")?)?
+        out @ out.push(edits.Change(range: ok(r), text: wire.text_of(edits_json[k], key: "newText")?))
+        k @ k - 1
+
+    return ok(out)
+
+# The edits a `WorkspaceEdit` makes in `uri`.
+function edits_in(edit: json.Value, uri: str) -> [json.Value]?
+    return json.items_of(json.member(wire.member_of(edit, key: "changes")?, key: uri)?)
+
+function quick_fix(@p: peer.Peer, @doc: Copy) -> ()?
+    heading(
+        title: "5. The quick fix for `dist`",
+        why: "The client asks what fixes line 31, takes the action the server prefers, and sends its edit as a change."
+    )
+    line = place(doc, needle: "\"🎯 \" ++", into: 0)?.line
+    whole = positions.Range(
+        start: positions.Position(line: line, character: 0),
+        end: positions.Position(line: line + 1, character: 0)
+    )
+    params = wire.object({"textDocument": wire.object({"uri": wire.text(doc.uri)}), "range": wire.range_json(whole)})
+    actions = json.items_of(peer.request(@p, method: "textDocument/codeAction", params: params)?)?
+
+    if actions.len() == 0
+        return fail(code: "not_found", msg: "the server offered no quick fix")
+    fixes = edits_in(wire.member_of(actions[0], key: "edit")?, uri: doc.uri)?
+    return change(@p, doc: @doc, changes: changes_of(fixes)?)
+
+function questions(@p: peer.Peer, doc: Copy) -> ()?
+    heading(
+        title: "7. Hover",
+        why: "On `dist2`, after two emoji on its line: it begins at character 65 in UTF-16, 63 in code points, 69 in bytes. Then on the binding `right`."
+    )
+    _ = peer.request(@p, method: "textDocument/hover", params: asked(doc, needle: "dist2(p", into: 2)?)?
+    _ = peer.request(@p, method: "textDocument/hover", params: asked(doc, needle: "< right", into: 3)?)?
+    heading(title: "8. Go to definition", why: "From the call of `dist2` to its declaration on line 16.")
+    _ = peer.request(@p, method: "textDocument/definition", params: asked(doc, needle: "dist2(p", into: 0)?)?
+    heading(
+        title: "9. Find references",
+        why: "Every place the field `x` of `Point` stands, its declaration included, whatever expression it is read through."
+    )
+    where = place(doc, needle: "p.x >=", into: 2)?
+    params = wire.object(
+        {"textDocument": wire.object({"uri": wire.text(doc.uri)}), "position": wire.position_json(where), "context": wire.object({"includeDeclaration": wire.boolean(true)})}
+    )
+    _ = peer.request(@p, method: "textDocument/references", params: params)?
+    return ok()
+
+function renames(@p: peer.Peer, @doc: Copy) -> ()?
+    heading(
+        title: "10. Rename `dx` to `delta_x`",
+        why: "The server checks the name can be taken, answers one edit per place, and the client sends them as one change, last first."
+    )
+    _ = peer.request(@p, method: "textDocument/prepareRename", params: asked(doc, needle: "dx =", into: 0)?)?
+    edit = peer.request(@p, method: "textDocument/rename", params: with_name(asked(doc, needle: "dx =", into: 0)?, name: "delta_x"))?
+    change(@p, doc: @doc, changes: changes_of(edits_in(edit, uri: doc.uri)?)?)?
+    heading(
+        title: "11. Two renames refused",
+        why: "`dy` cannot take a name its function binds already, and `area` cannot become a keyword."
+    )
+    _ = peer.request(@p, method: "textDocument/rename", params: with_name(asked(doc, needle: "dy =", into: 0)?, name: "delta_x"))?
+    _ = peer.request(@p, method: "textDocument/rename", params: with_name(asked(doc, needle: "area", into: 0)?, name: "let"))?
+    return ok()
+
+function with_name(params: json.Value, name: str) -> json.Value
+    members @= json.members_of(params).default({})
+    members["newName"] @ wire.text(name)
+    return wire.object(members)
+
+function completion(@p: peer.Peer, @doc: Copy) -> ()?
+    heading(
+        title: "12. Completion after a `.`",
+        why: "The client types `+ b.corner.` at the end of `area`: one error while the name is missing, the fields of `Point` offered, and the typing undone."
+    )
+    typed(@p, doc: @doc, needle: "b.height\n}", into: 8, gone: 0, text: " + b.corner.")?
+    _ = peer.request(@p, method: "textDocument/completion", params: asked(doc, needle: "b.corner.\n", into: 9)?)?
+    typed(@p, doc: @doc, needle: " + b.corner.", into: 0, gone: 12, text: "")?
+    return ok()
+
+function formatting(@p: peer.Peer, messy: str) -> ()?
+    heading(
+        title: "14. The client opens messy.kite",
+        why: "A source written in a hurry, listed below; it holds one binding never read, a warning the editor fades."
+    )
+    print("")
+    listing(messy)
+    opened = opening(uri: MESSY, text: messy)
+    peer.notify(@p, method: "textDocument/didOpen", params: opened, shown: "", answers: 1)?
+    heading(
+        title: "15. Formatting messy.kite",
+        why: "The fewest whole-line edits that make it Kite's one layout; the client makes them, giving this text:"
+    )
+    copy = Copy(uri: MESSY, text: messy, version: 1)
+    answer = peer.request(@p, method: "textDocument/formatting", params: with_options(named(copy)))?
+    print("")
+    listing(edits.apply_all(messy, changes: changes_of(json.items_of(answer)?)?, e: .utf16))
+    return ok()
+
+function with_options(params: json.Value) -> json.Value
+    members @= json.members_of(params).default({})
+    members["options"] @ wire.object({"tabSize": wire.number(4), "insertSpaces": wire.boolean(true)})
+    return wire.object(members)

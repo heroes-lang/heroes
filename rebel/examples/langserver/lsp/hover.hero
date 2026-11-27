@@ -1,0 +1,109 @@
+# `textDocument/hover`: what stands under the cursor, in Markdown. On a name,
+# its declaration written as Kite writes it, then its documentation and what
+# it belongs to; elsewhere inside an expression, that expression's type.
+# Nothing, `null`, where neither stands.
+
+use <rebel>/json
+
+use lang/queries
+use lang/symbols
+use lang/syntax
+use lang/types
+use lsp/document
+use lsp/server
+use lsp/wire
+
+# Answers `textDocument/hover`.
+#
+# - `s`: the server, only read.
+# - `params`: `textDocument` and `position`.
+#
+# Fails `invalid` where those are missing, `failed` where the document is not
+# open.
+function hover(s: server.Server lent, params: json.Value) -> json.Value?
+    doc = server.document_named(s, params: params)?
+    at = server.offset_named(s, doc: doc, params: params)?
+    a = doc.analysis
+
+    match queries.symbol_at(a, at: at)
+        .ok k =>
+            place = occurrence(a, symbol: k, at: at)
+            return ok(answer(doc, text: describe(a, symbol: k), place: place, s: s))
+        .err _ =>
+            match queries.expression_at(a, at: at)
+                .ok node =>
+                    shown = fenced(types.format_type(a.types[node]))
+                    return ok(answer(doc, text: shown, place: a.tree.nodes[node].span, s: s))
+                .err _ => return ok(wire.nothing())
+
+function answer(doc: document.Document lent, text: str, place: syntax.Span, s: server.Server lent) -> json.Value
+    contents = wire.object({"kind": wire.text("markdown"), "value": wire.text(text)})
+    return wire.object(
+        {"contents": contents, "range": wire.range_json(document.range_of(doc, span: place, e: s.encoding))}
+    )
+
+# The place of `symbol`'s name the offset `at` stands on.
+#
+# - `a`: the analysis.
+# - `symbol`: the symbol found there.
+# - `at`: the offset.
+function occurrence(a: symbols.Analysis lent, symbol: i64, at: i64) -> syntax.Span
+    for place in queries.places_of(a, symbol: symbol, declaration: true)
+        if syntax.touches(place, at: at)
+            return place
+
+    return syntax.Span(start: at, end: at)
+
+# `code` in a fence of Kite.
+#
+# - `code`: one or more lines of Kite.
+function fenced(code: str) -> str
+    return "```kite\n" + code + "\n```"
+
+# What a hover says of `symbol`: its declaration, then its documentation.
+#
+# - `a`: the analysis.
+# - `symbol`: an index of `a.symbols`.
+function describe(a: symbols.Analysis lent, symbol: i64) -> str
+    s = a.symbols[symbol]
+
+    head = match s.kind
+        .function_symbol | .builtin_function =>
+            match a.signatures[s.name]
+                .ok sig => types.format_signature(s.name, s: sig)
+                .err _  => f"fn {s.name}"
+        .record_symbol => record_line(a, name: s.name)
+        .field_symbol  => f"{s.owner}.{s.name}: {types.format_type(s.type_of)}"
+        .param_symbol  => f"{s.name}: {types.format_type(s.type_of)}"
+        .local_symbol  => f"let {s.name}: {types.format_type(s.type_of)}"
+        .builtin_type  => s.name
+
+    parts: [str] @= [fenced(head)]
+
+    if s.doc != ""
+        parts @ parts.push(s.doc)
+
+    whose = match s.kind
+        .param_symbol                                     => f"A parameter of `{s.owner}`."
+        .local_symbol                                     => f"A binding in `{s.owner}`."
+        .builtin_function                                 => "One of Kite's own functions."
+        .builtin_type                                     => "One of Kite's own types."
+        .function_symbol | .record_symbol | .field_symbol => ""
+
+    if whose != ""
+        parts @ parts.push(whose)
+    return parts.join("\n\n")
+
+# `record Point { x: Int, y: Int }`.
+#
+# - `a`: the analysis.
+# - `name`: the record's name.
+function record_line(a: symbols.Analysis lent, name: str) -> str
+    fields: [str] @= []
+
+    for k in queries.fields_of(a, owner: name)
+        fields @ fields.push(f"{a.symbols[k].name}: {types.format_type(a.symbols[k].type_of)}")
+
+    if fields.len() == 0
+        return f"record {name} {{}}"
+    return f"record {name} {{ {fields.join(", ")} }}"

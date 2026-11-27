@@ -1,0 +1,38 @@
+# Shapes on a grid: the document the demo's editor opens.
+
+# A point on the grid.
+record Point {
+    x: Int,
+    y: Int,
+}
+
+# A box, from its lower left corner and its size.
+record Box {
+    corner: Point,
+    width: Int,
+    height: Int,
+}
+
+# The square of the distance between two points.
+fn dist2(a: Point, b: Point) -> Int {
+    let dx = a.x - b.x;
+    let dy = a.y - b.y;
+    dx * dx + dy * dy
+}
+
+# Whether `p` stands inside `b`.
+fn contains(b: Box, p: Point) -> Bool {
+    let right = b.corner.x + b.width;
+    let top = b.corner.y + b.height;
+    p.x >= b.corner.x && p.x < right && p.y >= b.corner.y && p.y < top
+}
+
+# A name for where `p` stands.
+fn label(p: Point) -> Str {
+    if p.x == 0 && p.y == 0 { "🎯 origin" } else { "🎯 " ++ show(dist(p, Point { x: 0, y: 0 })) }
+}
+
+# How many points `b` holds.
+fn area(b: Box) -> Int {
+    b.width * b.heigth
+}

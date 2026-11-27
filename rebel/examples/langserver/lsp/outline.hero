@@ -1,0 +1,106 @@
+# `textDocument/documentSymbol`: the document's outline, as a tree of the
+# protocol's `DocumentSymbol`s. A record holds its fields, a function its
+# parameters and bindings, each with its whole range and the range of its
+# name, which an editor selects; a function's detail is its signature, a
+# field's or a binding's its type.
+
+use <rebel>/json
+
+use lang/symbols
+use lang/syntax
+use lang/types
+use lsp/document
+use lsp/server
+use lsp/wire
+
+# The protocol's kind of a function.
+constant FUNCTION: i64
+    12
+
+# Its kind of a variable: a parameter or a binding.
+constant VARIABLE: i64
+    13
+
+# Its kind of a field.
+constant FIELD: i64
+    8
+
+# Its kind of a struct: a record.
+constant STRUCT: i64
+    23
+
+# Answers `textDocument/documentSymbol`: the records and functions in
+# source order, each with what it holds.
+#
+# - `s`: the server, only read.
+# - `params`: `textDocument`.
+#
+# Fails `invalid` where it is missing, `failed` where the document is not
+# open.
+function outline(s: server.Server lent, params: json.Value) -> json.Value?
+    doc = server.document_named(s, params: params)?
+    a = doc.analysis
+    tops: [json.Value] @= []
+
+    for k in range(from: 0, to: a.symbols.len())
+        top = a.symbols[k]
+
+        if top.kind == .record_symbol || top.kind == .function_symbol
+            children: [json.Value] @= []
+
+            for inner in a.symbols
+                held = inner.kind == .field_symbol || inner.kind == .param_symbol || inner.kind == .local_symbol
+
+                if held && inner.owner == top.name && syntax.touches(top.whole, at: inner.span.start)
+                    children @ children.push(entry(doc, sym: inner, children: [], s: s))
+
+            tops @ tops.push(entry(doc, sym: top, children: children, s: s))
+
+    return ok(wire.array(tops))
+
+# One `DocumentSymbol`.
+#
+# - `doc`: the document.
+# - `sym`: the symbol.
+# - `children`: what it holds, already written.
+# - `s`: the server, whose unit counts characters.
+function entry(doc: document.Document lent, sym: symbols.Symbol, children: [json.Value], s: server.Server lent) -> json.Value
+    kind = match sym.kind
+        .record_symbol                    => STRUCT
+        .field_symbol                     => FIELD
+        .function_symbol                  => FUNCTION
+        .param_symbol | .local_symbol     => VARIABLE
+        .builtin_function | .builtin_type => VARIABLE
+
+    detail = match sym.kind
+        .function_symbol => match doc.analysis.signatures[sym.name]
+            .ok sig => types.format_signature(sym.name, s: sig)
+            .err _  => ""
+        .record_symbol   => "record"
+        .field_symbol | .param_symbol | .local_symbol | .builtin_function | .builtin_type => types.format_type(
+            sym.type_of
+        )
+
+    members: {str: json.Value} @= {
+        "name": wire.text(sym.name)
+        "detail": wire.text(detail)
+        "kind": wire.number(kind)
+        "range": wire.range_json(document.range_of(doc, span: sym.whole, e: s.encoding))
+        "selectionRange": wire.range_json(document.range_of(doc, span: sym.span, e: s.encoding))
+    }
+
+    if children.len() > 0
+        members["children"] @ wire.array(children)
+    return wire.object(members)
+
+## Tests
+
+test "outline: a record with its fields, a function with its parameter and binding"
+    s @= server.new_server()
+    text = "record P { x: Int }\nfn f(p: P) -> Int { let y = p.x; y }"
+    s.documents["u"] @ document.open(uri: "u", version: 1, text: text)
+    tree = outline(s, params: json.parse("{\"textDocument\": {\"uri\": \"u\"}}").must()).must()
+    assert json.value_at(tree, pointer: "/0/children/0/name").must() == wire.text("x")
+    assert json.value_at(tree, pointer: "/1/detail").must() == wire.text("fn f(p: P) -> Int")
+    assert json.items_of(json.value_at(tree, pointer: "/1/children").must()).must().len() == 2
+    assert json.value_at(tree, pointer: "/1/selectionRange/start/character").must() == wire.number(3)

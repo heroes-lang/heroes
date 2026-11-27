@@ -1,0 +1,101 @@
+# An open document as the server holds it: the client's text, its version,
+# where its lines begin, and its analysis, made again after every change
+# so that every question the client asks reads one consistent picture.
+# Here a span of bytes becomes the protocol's range and back.
+
+use lang/checker
+use lang/symbols
+use lang/syntax
+use text/edits
+use text/positions
+
+# An open document.
+record Document
+    # Its URI, as the client names it.
+    uri: str
+    # Its version, which the client raises with each change.
+    version: i64
+    # Its text.
+    text: str
+    # Where each of its lines begins.
+    starts: [i64]
+    # Its analysis.
+    analysis: symbols.Analysis
+
+# The document `uri` opened with `text`, analysed.
+#
+# - `uri`: its URI.
+# - `version`: its version.
+# - `text`: its text.
+function open(uri: str, version: i64, text: str) -> Document
+    return Document(
+        uri: uri,
+        version: version,
+        text: text,
+        starts: positions.line_starts(text),
+        analysis: checker.analyse(text)
+    )
+
+# `doc` with `changes` made and analysed again.
+#
+# - `doc`: the document before.
+# - `changes`: the changes, in order.
+# - `version`: the version they make.
+# - `e`: the unit their ranges count characters in.
+function changed(doc: Document, changes: [edits.Change], version: i64, e: positions.Encoding) -> Document
+    return open(uri: doc.uri, version: version, text: edits.apply_all(doc.text, changes: changes, e: e))
+
+# The range `span` covers in `doc`.
+#
+# - `doc`: the document.
+# - `span`: bytes of its text.
+# - `e`: the unit to count characters in.
+function range_of(doc: Document lent, span: syntax.Span, e: positions.Encoding) -> positions.Range
+    return positions.Range(
+        start: positions.position_of(doc.text, starts: doc.starts, at: span.start, e: e),
+        end: positions.position_of(doc.text, starts: doc.starts, at: span.end, e: e)
+    )
+
+# The byte offset `p` names in `doc`, clamped into its text.
+#
+# - `doc`: the document.
+# - `p`: a place from the client.
+# - `e`: the unit its character counts in.
+function offset_of(doc: Document lent, p: positions.Position, e: positions.Encoding) -> i64
+    return positions.offset_of(doc.text, starts: doc.starts, p: p, e: e)
+
+# The span `r` covers in `doc`, start first.
+#
+# - `doc`: the document.
+# - `r`: a range from the client.
+# - `e`: the unit its characters count in.
+function span_of(doc: Document lent, r: positions.Range, e: positions.Encoding) -> syntax.Span
+    a = offset_of(doc, p: r.start, e: e)
+    b = offset_of(doc, p: r.end, e: e)
+
+    if b < a
+        return syntax.Span(start: b, end: a)
+    return syntax.Span(start: a, end: b)
+
+## Tests
+
+test "open and changed: the analysis follows the text"
+    doc = open(uri: "file:///a.kite", version: 1, text: "fn f() -> Int { x }")
+    assert doc.analysis.diagnostics.len() == 1
+    fix = edits.replacing(
+        start: positions.Position(line: 0, character: 16),
+        end: positions.Position(line: 0, character: 17),
+        text: "1"
+    )
+    after = changed(doc, changes: [fix], version: 2, e: .utf16)
+    assert after.text == "fn f() -> Int { 1 }"
+    assert after.version == 2
+    assert after.analysis.diagnostics.len() == 0
+
+test "range_of and span_of: through a character of four bytes"
+    doc = open(uri: "file:///a.kite", version: 1, text: "fn f() -> Str { \"🎈\" ++ g }")
+    span = syntax.Span(start: 26, end: 27)
+    r = range_of(doc, span: span, e: .utf16)
+    assert r.start == positions.Position(line: 0, character: 24)
+    assert range_of(doc, span: span, e: .utf8).start == positions.Position(line: 0, character: 26)
+    assert span_of(doc, r: r, e: .utf16) == span

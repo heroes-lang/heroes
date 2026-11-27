@@ -1,0 +1,125 @@
+# The protocol's lifecycle: `initialize`, where the client says what it
+# can do and the server answers what it serves; `initialized`, after which
+# the server may speak first; and `shutdown`, after which only `exit` is
+# awaited (the server's dispatch keeps the order and ends it).
+#
+# Places are counted in UTF-16 unless the client offers UTF-8 among its
+# `general.positionEncodings` (the protocol's 3.17), which the server then
+# takes, since its texts are UTF-8 and the count is then a byte's.
+
+use <rebel>/json
+
+use lsp/server
+use lsp/wire
+use text/positions
+
+# The server's name, as `initialize` answers it.
+constant NAME: str
+    "kite-langserver"
+
+# The server's version.
+constant VERSION: str
+    "0.1.0"
+
+# Answers `initialize`: the capabilities served and the unit agreed for
+# places.
+#
+# - `s`: the server, which takes the client's name and the unit.
+# - `params`: the request's parameters: `capabilities`, and `clientInfo`
+#   where the client gives it.
+#
+# Fails `invalid` where the parameters hold no `capabilities`.
+function initialize(@s: server.Server, params: json.Value) -> json.Value?
+    capabilities = wire.member_of(params, key: "capabilities")?
+    s.encoding @ chosen_encoding(capabilities)
+
+    match json.value_at(params, pointer: "/clientInfo/name")
+        .ok name =>
+            match json.text_of(name)
+                .ok n  => s.client @ n
+                .err _ => _ = 0
+        .err _ => _ = 0
+
+    s.phase @ .running
+    return ok(
+        wire.object({"capabilities": served(s.encoding), "serverInfo": wire.object({"name": wire.text(NAME), "version": wire.text(VERSION)})})
+    )
+
+# The unit the server counts characters in: UTF-8 where `capabilities`
+# offers it, else the protocol's UTF-16.
+#
+# - `capabilities`: the client's capabilities.
+function chosen_encoding(capabilities: json.Value) -> positions.Encoding
+    match json.value_at(capabilities, pointer: "/general/positionEncodings")
+        .ok offered =>
+            for one in json.items_of(offered).default([])
+                if json.text_of(one).default("") == "utf-8"
+                    return .utf8
+        .err _ => _ = 0
+
+    return .utf16
+
+# What the server serves, as `initialize` answers it.
+#
+# - `e`: the unit agreed for places.
+function served(e: positions.Encoding) -> json.Value
+    sync: {str: json.Value} = {"openClose": wire.boolean(true), "change": wire.number(2)}
+    on = wire.boolean(true)
+    out: {str: json.Value} @= {}
+    out["positionEncoding"] @ wire.text(positions.encoding_name(e))
+    out["textDocumentSync"] @ wire.object(sync)
+    out["hoverProvider"] @ on
+    out["definitionProvider"] @ on
+    out["referencesProvider"] @ on
+    out["renameProvider"] @ wire.object({"prepareProvider": on})
+    out["completionProvider"] @ wire.object({"triggerCharacters": wire.array([wire.text(".")])})
+    out["documentSymbolProvider"] @ on
+    out["documentFormattingProvider"] @ on
+    out["codeActionProvider"] @ wire.object({"codeActionKinds": wire.array([wire.text("quickfix")])})
+    return wire.object(out)
+
+# Takes `initialized`: the server says in the client's log that it is
+# ready.
+#
+# - `s`: the server.
+#
+# Its parameters, an empty object, are not read.
+function initialized(@s: server.Server, _: json.Value) -> ()?
+    who = if s.client == ""
+        "the client"
+    else
+        s.client
+    server.log(
+        @s,
+        level: 3,
+        text: f"{NAME} {VERSION} serves {who}, places counted in {positions.encoding_name(s.encoding)}"
+    )
+    return ok()
+
+# Answers `shutdown`: `null`, and nothing but `exit` is served after it.
+#
+# - `s`: the server.
+#
+# It takes no parameters.
+function shutdown(@s: server.Server, _: json.Value) -> json.Value?
+    s.phase @ .closing
+    return ok(wire.nothing())
+
+## Tests
+
+test "initialize: UTF-16 by default, UTF-8 where offered, the client's name kept"
+    s @= server.new_server()
+    plain = json.parse("{\"capabilities\": {}, \"clientInfo\": {\"name\": \"vim\"}}").must()
+    answer = initialize(@s, params: plain).must()
+    assert json.value_at(answer, pointer: "/capabilities/positionEncoding").must() == wire.text("utf-16")
+    assert s.client == "vim"
+    assert s.phase == .running
+    t @= server.new_server()
+    offered = json.parse("{\"capabilities\": {\"general\": {\"positionEncodings\": [\"utf-32\", \"utf-8\"]}}}").must()
+    _ = initialize(@t, params: offered).must()
+    assert t.encoding == .utf8
+
+test "initialize: parameters with no capabilities are refused as invalid"
+    s @= server.new_server()
+    assert initialize(@s, params: json.parse("{}").must()).is_err()
+    assert s.phase == .waiting
