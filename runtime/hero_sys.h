@@ -340,9 +340,13 @@ int64_t hero_sys_cpu_times(int64_t *user_us, int64_t *system_us, int64_t *idle_u
  * `HERO_SYS_DENIED` where the system does not let this process read that one
  * (on Darwin a process of another user). On Darwin `proc_pidinfo`'s
  * `PROC_PIDTASKINFO`, its times converted by `mach_timebase_info` and the
- * virtual memory the size of the address space; on Linux `/proc/<pid>/stat`,
- * the times in the ticks of `sysconf(_SC_CLK_TCK)` and the resident memory
- * in pages; on Windows `GetProcessTimes` and `K32GetProcessMemoryInfo` of a
+ * virtual memory the size of the address space; on Linux `/proc/<pid>/stat`
+ * for the times, in the ticks of `sysconf(_SC_CLK_TCK)`, and the virtual
+ * memory, and the resident memory from the `Rss:` of `/proc/<pid>/smaps_rollup`,
+ * the kernel's count of the pages the process holds, or where this process
+ * may not read that file from `/proc/<pid>/statm`, never from `stat`, whose
+ * count the kernel keeps in parts for each processor and reads 0 for a child
+ * just started; on Windows `GetProcessTimes` and `K32GetProcessMemoryInfo` of a
  * handle `OpenProcess` gives for `PROCESS_QUERY_LIMITED_INFORMATION`, the
  * resident memory the working set and the virtual memory the bytes committed
  * for the process alone (`PagefileUsage`), not its address space. A process

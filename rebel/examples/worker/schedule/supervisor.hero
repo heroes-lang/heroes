@@ -12,9 +12,11 @@
 use <rebel>/errors
 use <rebel>/jobs
 use <rebel>/jobs/redis_store
+use <rebel>/lists
 use <rebel>/log
 use <rebel>/metrics
 use <rebel>/redis
+use <rebel>/strings
 use <rebel>/time
 use <rebel>/tracing
 
@@ -194,18 +196,27 @@ function refresh(@sup: Supervisor) -> ()?
 # Folds the workers' reports into the run's metrics and log, each attempt
 # once; a worker's problem is logged. The log counts the fleet's attempts
 # together: how they fell to each worker is the threads' choice, which a
-# line of the log should not depend on.
+# line of the log should not depend on. So are the metrics: the attempts are
+# recorded in the order of their job and their number, never the reports',
+# since a histogram's sum adds floats, whose last digit moves with the order
+# they are added in (the webhooks' wait sum printed `13.042677999999999` for
+# `13.042678` in two runs of eight, the same binary, 2026-11-27).
 #
 # - `sup`: the supervisor.
 # - `reports`: what the workers answered.
 function take_reports(@sup: Supervisor, reports: [events.Report])
     now = store_clock.now(@sup.client).default(sup.started)
     attempts: i64 @= 0
+    every: [events.Attempt] @= []
 
     for r in reports
         for a in r.attempts
-            errors.ignore(registry.record_attempt(@sup.registry, a: a))
+            every @ every.push(a)
 
+    for a in lists.sort_by(every, less: attempt_before)
+        errors.ignore(registry.record_attempt(@sup.registry, a: a))
+
+    for r in reports
         attempts @ attempts + r.attempts.len()
         note(@sup, level: .info, at: now, msg: "worker stopped", fields: [log.text(key: "worker", value: r.worker)])
 
@@ -225,6 +236,30 @@ function take_reports(@sup: Supervisor, reports: [events.Report])
         msg: "fleet stopped",
         fields: [log.integer(key: "workers", value: reports.len()), log.integer(key: "attempts", value: attempts)]
     )
+
+# Whether attempt `a` is recorded before attempt `b`: by their job, their
+# number, then when each began, waited and ran and how it went, so two
+# reports of one attempt (a lease run out and its attempt run again) keep an
+# order of their own too.
+#
+# - `a`: an attempt.
+# - `b`: another.
+function attempt_before(a: events.Attempt, b: events.Attempt) -> bool
+    if a.job != b.job
+        return a.job < b.job
+
+    if a.attempt != b.attempt
+        return a.attempt < b.attempt
+
+    if a.began_us != b.began_us
+        return a.began_us < b.began_us
+
+    if a.waited_us != b.waited_us
+        return a.waited_us < b.waited_us
+
+    if a.ran_us != b.ran_us
+        return a.ran_us < b.ran_us
+    return strings.compare(a: a.outcome, b: b.outcome) < 0
 
 # Exports the run's metrics and the supervisor's spans, and closes its log
 # and its connection. Answers what could not be exported, "" where all was.
@@ -246,3 +281,28 @@ function finish(@sup: Supervisor) -> str
     errors.ignore(journal.close(@sup.log_file))
     errors.ignore(redis.close(@sup.client))
     return problems.join("; ")
+
+# An attempt of job `job`, number `attempt`, that waited `waited_us`.
+function attempt_of(job: i64, attempt: i64, waited_us: i64) -> events.Attempt
+    return events.Attempt(
+        job: job,
+        kind: "deliver_webhook",
+        queue: "webhooks",
+        attempt: attempt,
+        outcome: "retrying",
+        error: "",
+        began_us: 0,
+        waited_us: waited_us,
+        ran_us: 0,
+        next_us: 0
+    )
+
+test "attempt_before: the fleet's attempts in one order whatever order the reports gave them, by job, then number"
+    a = attempt_of(job: 2, attempt: 1, waited_us: 0)
+    b = attempt_of(job: 2, attempt: 2, waited_us: 191000)
+    c = attempt_of(job: 1, attempt: 1, waited_us: 2276000)
+    one = lists.sort_by([a, b, c], less: attempt_before)
+    two = lists.sort_by([b, c, a], less: attempt_before)
+    assert one == [c, a, b]
+    assert two == [c, a, b]
+    assert !attempt_before(a: a, b: a)

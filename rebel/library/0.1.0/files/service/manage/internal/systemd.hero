@@ -166,9 +166,22 @@ function undone(at: str, scope: manage.Scope)
 # whether it is done already: no job stands for the unit (`Job=` empty, as
 # systemd 257 shows an idle unit's) and the unit stands where the job takes
 # it.
+#
+# A unit systemd knows no file of is `not_found` before any job is asked, as
+# systemd itself refuses it to a caller who may manage units: a start or a
+# restart of it, and a stop where it does not run (a unit whose file went
+# while it ran is stopped). Asked first, through `systemctl show`, which every
+# user may ask, so the answer does not hang on who may manage the system's
+# units: systemd asks a job's caller for that right before it looks for the
+# unit, so a user's job of a unit nobody installed is a refusal of the right,
+# by whatever answers for the system there, and never names the unit.
 function job(verb: str, name: str, scope: manage.Scope, limit: time.Duration) -> ()?
     unit = unit_of(name)
     asking = f"{verb} of the unit \"{unit}\""
+    before = shown(name, scope: scope)?
+
+    if unknown(verb: verb, load: before["LoadState"].default(""), active: before["ActiveState"].default(""))
+        return fail(code: failure.NOT_FOUND, msg: f"{asking}: systemd knows no unit \"{unit}\"")
 
     if limit.nanoseconds > 0
         r = called(scope, words: [verb, unit], limit: limit)?
@@ -194,6 +207,15 @@ function job(verb: str, name: str, scope: manage.Scope, limit: time.Duration) ->
     if there
         return ok()
     return fail(code: failure.TIMEOUT, msg: f"{asking}: asked, and not done at once; the job stands")
+
+# Whether `verb` (`start`, `stop`, `restart`) of a unit whose `LoadState` is
+# `load` and whose `ActiveState` is `active` names a unit systemd does not
+# know: no file of it, and for a stop not running either, since systemd stops
+# a unit whose file went while it ran.
+function unknown(verb: str, load: str, active: str) -> bool
+    if load != "not-found"
+        return false
+    return verb != "stop" || active == "inactive"
 
 # Starts the unit of `name`.
 function start(name: str, scope: manage.Scope, limit: time.Duration) -> ()?
@@ -327,6 +349,16 @@ test "state_of: every state systemd 257 writes, a failure's exit code and signal
     assert state_of(active: "failed", code_kind: "killed", status: 9).must() == .failed(code: -9)
     assert state_of(active: "failed", code_kind: "", status: 0).must() == .failed(code: 0)
     assert state_of(active: "maintenance", code_kind: "", status: 0).is_err()
+
+test "unknown: a start or a restart of a unit with no file, a stop of one that does not run, never a loaded one or a stop of one still running"
+    assert unknown(verb: "start", load: "not-found", active: "inactive")
+    assert unknown(verb: "restart", load: "not-found", active: "inactive")
+    assert unknown(verb: "restart", load: "not-found", active: "active")
+    assert unknown(verb: "stop", load: "not-found", active: "inactive")
+    assert !unknown(verb: "stop", load: "not-found", active: "active")
+    assert !unknown(verb: "stop", load: "not-found", active: "failed")
+    assert !unknown(verb: "start", load: "loaded", active: "inactive")
+    assert !unknown(verb: "stop", load: "masked", active: "inactive")
 
 test "end_kind: the numbers and the words of ExecMainCode"
     assert end_kind("1") == "exited"

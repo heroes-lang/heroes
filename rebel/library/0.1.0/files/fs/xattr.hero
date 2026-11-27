@@ -23,7 +23,8 @@
 #
 # **Every function follows a link at the path's end**, but the `link_`
 # functions and `write_with` told `follow: false`, which work on the link
-# itself; Linux keeps no `user.` attribute on a link. A value is read whole,
+# itself; Linux keeps no `user.` attribute on a link, so a write of one there
+# fails `permission` and a reading or a removal `not_found`. A value is read whole,
 # at most a GiB of it.
 #
 # It fails with `invalid`, `file_not_found`, `not_found`, `exists`,
@@ -190,8 +191,9 @@ function write_with(path: str, name: str, value: [u8], when: When, follow: bool)
 # - `path`: the file or folder written.
 # - `name`: the attribute's name.
 #
-# Fails `not_found` where `path` has no attribute of that name, and as `read`
-# does.
+# Fails `not_found` where `path` has no attribute of that name, a `user.` one
+# on Linux of anything but a file or a folder (a pipe, a device), which keeps
+# none, and as `read` does.
 function remove(path: str, name: str) -> ()?
     return calls.removed(path: path, name: name, follow: 1)
 
@@ -199,6 +201,8 @@ function remove(path: str, name: str) -> ()?
 #
 # - `path`: the link written.
 # - `name`: the attribute's name.
+#
+# A `user.` name of a Linux link is `not_found`, the link keeping none.
 #
 # Fails as `remove` does.
 function link_remove(path: str, name: str) -> ()?
@@ -428,6 +432,44 @@ test "the link_ functions ask the link itself, and the others what it names"
         .err e => assert e.code == NOT_FOUND
 
     assert read(path: file, name: "user.rebel.t").must() == [5]
+    fs.remove_all(dir).must()
+
+# Linux keeps no `user.` attribute on a link: a write there is refused, and
+# the removal of the name the refused write would have made is `not_found`,
+# never `permission`, the link holding none (the kernel answers both
+# `EPERM`). Where the system keeps one on a link, it is the link's alone.
+test "write_with on the link itself: the link's alone where the system keeps one, refused where it keeps none, and its removal not_found either way once gone"
+    dir = fixture.folder("link-write")
+    file = dir + "/f"
+    link = dir + "/l"
+    fs.write_bytes(file, data: []).must()
+
+    if !fixture.kept(file)
+        fs.remove_all(dir).must()
+        skip_test(reason: "this volume keeps no user. extended attribute: write answers unsupported")
+
+    match fs.symlink(target: "f", name: link)
+        .ok _ => assert fs.is_link(link).must()
+        .err e =>
+            assert e.code == fs.PERMISSION
+            fs.remove_all(dir).must()
+            skip_test(reason: "this user may not make a symbolic link: symlink answers permission")
+
+    match write_with(path: link, name: "user.rebel.own", value: [7], when: .always, follow: false)
+        .err e => assert e.code == PERMISSION
+        .ok _ =>
+            assert link_read(path: link, name: "user.rebel.own").must() == [7]
+            assert read(path: file, name: "user.rebel.own").is_err()
+            link_remove(path: link, name: "user.rebel.own").must()
+
+    match link_remove(path: link, name: "user.rebel.own")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    match link_read(path: link, name: "user.rebel.own")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
     fs.remove_all(dir).must()
 
 test "copy: every attribute of one file on another, the other's own kept"

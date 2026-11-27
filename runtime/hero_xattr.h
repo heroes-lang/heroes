@@ -81,7 +81,8 @@
  * is not 0, and works on the link itself where it is 0 (Darwin's
  * `XATTR_NOFOLLOW`, Linux's `l` calls, Windows' `FILE_FLAG_OPEN_REPARSE_POINT`).
  * Linux keeps no `user.` attribute on a link, so writing one there is
- * `HERO_XATTR_DENIED`.
+ * `HERO_XATTR_DENIED`, and reading or removing one `HERO_XATTR_ABSENT`, as on
+ * a pipe, a socket or a device, which keep none either.
  *
  * THE FILL FORM, as `hero_sys.h` says it, for the two that answer bytes: up
  * to `count` bytes are written into `buffer`, and the answer is how many
