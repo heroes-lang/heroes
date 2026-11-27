@@ -24,6 +24,7 @@
 # group naming no library, and they change with the toolchain, whose key
 # names the answer.
 
+use cli/author_file
 use cli/clang_asked
 use cli/digest
 use cli/link_flags
@@ -143,7 +144,7 @@ function keep(path: str, p: supplied_probe.Probes, opened: [str])
         if !plain_line(line)
             return
 
-    _ = publish.rewrite(path: path, text: lines.join("\n") + "\n").is_err()
+    _ = author_file.rewrite(path: path, text: lines.join("\n") + "\n").is_err()
 
 # Whether `line` is three fields with no line end in any, a duplicate's files
 # split only by the `|` between them.
@@ -200,7 +201,7 @@ function object_needs(t: toolchain.Toolchain, object: str, what: str) -> [str]
     out = alone_needs(t, object: object, what: what)
 
     if out.len() > 0
-        _ = publish.rewrite(path: needs_at, text: out.join("\n") + "\n").is_err()
+        _ = author_file.rewrite(path: needs_at, text: out.join("\n") + "\n").is_err()
     return out
 
 # The name `object`'s needs are kept by: its folder's name and its own. A
@@ -349,8 +350,8 @@ function alone_words(t: toolchain.Toolchain) -> [str]
 test "a kept answer is taken while its files keep their keys, and asked again once one moves (panel 239)"
     dir = "build/selftest-supplied-kept"
     assert !process.mkdir_all(dir).is_err()
-    _ = publish.rewrite(path: dir + "/liba.a", text: "one\n").is_err()
-    _ = publish.rewrite(path: dir + "/libb.a", text: "two\n").is_err()
+    _ = author_file.rewrite(path: dir + "/liba.a", text: "one\n").is_err()
+    _ = author_file.rewrite(path: dir + "/libb.a", text: "two\n").is_err()
     p: supplied_probe.Probes @= supplied_probe.none()
     p.reversed @ true
     p.reversed_linked @ true
@@ -367,7 +368,7 @@ test "a kept answer is taken while its files keep their keys, and asked again on
     # A library file the link reads that the answer never saw, and one
     # rebuilt, are each asked again.
     assert kept(path: at, opened: [dir + "/libc.a"]).is_err()
-    _ = publish.rewrite(path: dir + "/libb.a", text: "two, rebuilt\n").is_err()
+    _ = author_file.rewrite(path: dir + "/libb.a", text: "two, rebuilt\n").is_err()
     assert kept(path: at, opened: [dir + "/liba.a"]).is_err()
     publish.discard(dir + "/liba.a")
     publish.discard(dir + "/libb.a")
@@ -384,7 +385,7 @@ test "the platform layer's archive is found among a link's objects, and its reco
     assert !process.mkdir_all(dir).is_err()
     archive = dir + "/layer-3-4.a"
     assert layer_needs(archive).len() == 0
-    assert !publish.rewrite(path: layer_needs_path(archive), text: "hero_net\tsocket\nhero_time\tclock_gettime\nno tab\n\n").is_err()
+    assert !author_file.rewrite(path: layer_needs_path(archive), text: "hero_net\tsocket\nhero_time\tclock_gettime\nno tab\n\n").is_err()
     got = layer_needs(archive)
     assert got.len() == 2 && got[0].member == "hero_net" && got[0].name == "socket" && got[1].member == "hero_time"
     assert layer_needs("").len() == 0
@@ -404,11 +405,11 @@ test "an object's needs are kept by its folder and its name and read back with n
     assert kept_name(object) == "tu-1-main-0a1b2c3d4e5f6789.o"
     assert kept_name(object) != kept_name("build/tu-2/main-0a1b2c3d4e5f6789.o")
     assert kept_name("main.o") == "main.o"
-    assert !publish.rewrite(path: dir + "/supplied-alone-tu-1-main-0a1b2c3d4e5f6789.o.txt", text: "base2501\nputs\n").is_err()
+    assert !author_file.rewrite(path: dir + "/supplied-alone-tu-1-main-0a1b2c3d4e5f6789.o.txt", text: "base2501\nputs\n").is_err()
     assert object_needs(t, object: object, what: "a test") == ["base2501", "puts"]
     runtime = "build/runtime-1-2.o"
-    assert !publish.rewrite(path: dir + "/supplied-alone-build-runtime-1-2.o.txt", text: "printf\n").is_err()
-    assert !publish.rewrite(path: dir + "/supplied-needs-runtime-1-2.o.txt", text: "stale\n").is_err()
+    assert !author_file.rewrite(path: dir + "/supplied-alone-build-runtime-1-2.o.txt", text: "printf\n").is_err()
+    assert !author_file.rewrite(path: dir + "/supplied-needs-runtime-1-2.o.txt", text: "stale\n").is_err()
     assert runtime_needs(t, objects: ["build/tu-1/main-0a1b2c3d4e5f6789.o", runtime]) == ["printf"]
     assert !process.remove_tree(dir).is_err()
 

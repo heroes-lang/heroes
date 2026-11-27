@@ -171,17 +171,19 @@ function asserted(v: Variant) -> str
     return out.join("")
 
 # Every learned callback's assertions of the binding `name`, in the order of
-# its `count` parameters, after its probe on the probe's own line.
+# its `count` parameters, after its probe on the probe's own line: each
+# parameter's pushed onto a `[str]` and joined once, as `asserted` writes one
+# callback's (defect 105).
 function asserted_all(variants: {str: Variant}, name: str, count: i64) -> str
-    out: str @= ""
+    out: [str] @= []
 
     for i in range(from: 0, to: count)
         held = variants[site(name: name, index: i)]
 
         if !held.is_err()
-            out @ out + asserted(held.must())
+            out @ out.push(asserted(held.must()))
 
-    return out
+    return out.join("")
 
 constant MARKER: str
     "heroes-callback-fit "
@@ -355,6 +357,33 @@ test "a variant's key reads back as the variant"
     assert back.name == "call_size" && back.index == 0 && back.base == v.base && back.words == v.words && back.header == v.header
     assert thunk_of(v, thunk: "h_0cb_main_thrice") == "h_0cv" + tag(v) + "_main_thrice"
     assert header_of(v, thunk: "h_0cb_main_thrice", names: ["h1_x"]) == "unsigned long h_0cv" + tag(v) + "_main_thrice(unsigned long h1_x)"
+
+# A binding's assertions follow its parameters' order, whatever order its
+# variants were learned in, and a parameter with no learned variant writes
+# none: what `extern_probe` puts after the binding's probe.
+test "a binding's learned callbacks are asserted in the order of its parameters, each once"
+    first = Variant(
+        name: "f",
+        index: 0,
+        base: ["void", "int64_t"],
+        words: ["void", "long long"],
+        header: "void (*)(long long)"
+    )
+    third = Variant(
+        name: "f",
+        index: 2,
+        base: ["void", "uint32_t"],
+        words: ["void", "unsigned int"],
+        header: "void (*)(unsigned int)"
+    )
+    variants: {str: Variant} @= {}
+    variants[site(name: "f", index: 2)] @ third
+    variants[site(name: "f", index: 0)] @ first
+    assert asserted(first).len() > 0 && asserted(third).len() > 0
+    assert asserted_all(variants, name: "f", count: 3) == asserted(first) + asserted(third)
+    assert asserted_all(variants, name: "f", count: 1) == asserted(first)
+    assert asserted_all(variants, name: "f", count: 0) == ""
+    assert asserted_all(variants, name: "g", count: 3) == ""
 
 # A shape no word of C's integers explains learns nothing: another count, a
 # pointer, a type's name, a function returned.

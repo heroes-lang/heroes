@@ -57,13 +57,13 @@
 # could exist at all while Heroes refused module cycles (until panel 252's R1, 2026-11-19).
 
 use cli/agreed
+use cli/author_file
 use cli/compile
 use cli/compiling
 use cli/io
 use cli/one_file
 use cli/pointee_ask
 use cli/probing
-use cli/publish
 use cli/settled
 use cli/toolchain
 use emit
@@ -161,4 +161,4 @@ function write_c(t: toolchain.Toolchain, options: compile.Options, art: compile.
     # own `-o` refuses, replaced a link to one instead of writing through it,
     # reset its mode, and refused `/dev/null`, all four measured. `rewrite`
     # answers each as `fmt --in-place` does.
-    return publish.rewrite(path: options.output.must(), text: text)
+    return author_file.rewrite(path: options.output.must(), text: text)

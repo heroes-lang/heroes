@@ -22,10 +22,10 @@
 # `fetch/package_operand.hero`'s to tell (defect 2612).
 
 use cli/argv
+use cli/author_file
 use cli/files
 use cli/given_path
 use cli/process
-use cli/publish
 use cli/strings
 use fetch/catalogue_edit
 use fetch/closure
@@ -209,7 +209,7 @@ function with_line(program: str, name: str, packages: [str]) -> ()?
 
     if text.is_err()
         return fail(code: "cannot_place", msg: "cannot read " + path)
-    return publish.rewrite(path: path, text: with_listing(text: text.must(), name: name, packages: packages))
+    return author_file.rewrite(path: path, text: with_listing(text: text.must(), name: name, packages: packages))
 
 # The catalogue's text with the entry `name`'s `packages` line set to
 # `packages`: changed where it stands, the lines a list over several lines

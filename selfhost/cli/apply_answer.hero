@@ -15,6 +15,7 @@
 # that checked only the schema's number.
 
 use cli/argv
+use cli/author_file
 use cli/check_json
 use cli/holes_json
 use cli/io
@@ -95,7 +96,7 @@ function hand_back(s: source.Source, settled: Settled, inv: argv.Invocation, own
         if placed_files.within(s.name)
             io.eprint(text: "error: " + placed_files.refused(s.name))
             return .failed_exit
-        written = publish.rewrite(path: s.name, text: settled.text)
+        written = author_file.rewrite(path: s.name, text: settled.text)
 
         if written.is_err()
             io.eprint(text: "error: " + publish.message_of(written))
