@@ -5,18 +5,26 @@
     <span class="nod">· <a href="/about/thanks/#rebel-rebel">rebel rebel</a></span>
   </div>
   <p class="lede">
-    The library this project writes for Heroes. A program uses it, or does not.
+    Heroes&rsquo; non-standard standard library, written from scratch in Heroes. A program takes it or leaves it.
   </p>
+  <p class="shelves"><a href="/rebel/packages/">The packages</a> &middot;
+  <a href="/rebel/apps/">The applications</a> &middot;
+  <a href="#take">How a program takes it</a></p>
 
   <h2 id="what">What it is</h2>
   <p>
     Heroes imposes no standard library. The language gives a program its built-ins, reading and writing a file, the command line and little more, and everything beyond them a program takes from a C library or from a package of Heroes code it carries. Rebel is such a package, a broad one: text and numbers, files and folders, time and time zones, the network and the web, data formats from JSON to spreadsheets, compression, cryptography and databases, written from scratch in Heroes by this project.
   </p>
   <p>
-    It is optional, which is what its name says. Nothing of Rebel is compiled into the compiler or into the runtime, the piece of program that sits underneath every Heroes program; the compiler itself is written without it; and a program that does not take it carries none of it. The repository calls it the non-standard standard library.
+    It is optional, which is what its name says. Nothing of Rebel is compiled into the compiler or into the runtime, the piece of program that sits underneath every Heroes program; the compiler itself is written without it; and a program that does not take it carries none of it.
   </p>
   <p>
-    Go&rsquo;s, Rust&rsquo;s and Python&rsquo;s libraries are its inspirations and its yardstick: a package of Rebel is complete when every capability those three offer in its area is offered here, or refused in writing with the reason. Its names, its tree and its code are its own. A program that uses Rebel owes nothing for it, as it owes nothing for the runtime, the exception in the licence that covers one covering the other, with one exception of its own: two pieces of Rebel are the work of others and keep their notices, the Public Suffix List in <code>http/suffixes</code> and the tables taken from tiktoken in <code>tokenizer/tables</code>. Their notices travel with those files, so a program whose catalogue lists neither package carries neither.
+    Go&rsquo;s, Rust&rsquo;s and Python&rsquo;s libraries are its inspirations and its yardstick: a package of Rebel is complete when every capability those three offer in its area is offered here, or refused in writing with the reason. Its names, its tree and its code are its own.
+  </p>
+
+  <h2 id="apps">What is built with it</h2>
+  <p>
+    With Rebel this project has written {{rebelApplications}} applications, among them a small SQL database made the way SQLite is, a small Redis, a replicated store in the manner of etcd&rsquo;s put to the test in a simulated network, a small RISC-V machine in the manner of QEMU&rsquo;s virt board, and a language server, the program an editor asks for errors as you type, for Kite, a small language the program defines itself. Each has a recorded demo session, which a check runs again and compares with the recording whenever Rebel or the program changes. The servers it talks to are stand-ins the program carries, so nothing leaves the machine. <a href="/rebel/apps/">Every application&nbsp;&rarr;</a>
   </p>
 
   <h2 id="take">How a program takes it</h2>
@@ -50,16 +58,21 @@ wrote heroes.toml</code></pre>
     <a href="/docs/packages/">The chapter on packages</a> takes the same program through both routes, the index and the folder, with what the compiler says at each step.
   </p>
   <p>
-    Or it does not take Rebel at all. A program that would rather bind a C library itself does, as the programs in <code>examples/</code> do, and the rules Rebel follows for its own packages bind no program. <a href="/examples/#rebel">The programs written with Rebel</a> stand beside the others on the examples page.
+    Or it does not take Rebel at all. A program that would rather bind a C library itself does, as the programs in <code>examples/</code> do, and the rules Rebel follows for its own packages bind no program. <a href="/examples/#rebel">The programs written with Rebel</a> also stand beside the others on the examples page.
   </p>
 
   <h2 id="packages">The packages, layer by layer</h2>
-{{packages}}
+{{packagesLead}}
+
+  <h2 id="owes">What a program owes for it</h2>
+  <p>
+    A program that uses Rebel owes nothing for it, as it owes nothing for the runtime, the exception in the licence that covers one covering the other, with one exception of its own: two pieces of Rebel are the work of others and keep their notices, the Public Suffix List in <code>http/suffixes</code> and the tables taken from tiktoken in <code>tokenizer/tables</code>. Their notices travel with those files, so a program whose catalogue lists neither package carries neither.
+  </p>
 
   <p class="next away">
     How it is made and how its code is written, for whoever writes the next package: <a href="https://github.com/heroes-lang/heroes/blob/main/rebel/examples/README.md">Rebel&rsquo;s guide for its writers</a>.
   </p>
 
   <footer>
-    <p>The list of packages is read from <code>rebel/examples/README.md</code>, section A1, when the site is built, and every reference page from what <code>heroes doc</code> prints for the package, so neither is copied by hand. The transcript is the program <code>rebel/examples/reach/reach_csv.hero</code> in a folder of its own, taking Rebel from the repository&rsquo;s folder, and the sizes are that program&rsquo;s placed copy against the whole version, as the chapter on packages shows them.</p>
+    <p>The counts of the packages, of their ledgers and of the applications are read from the repository&rsquo;s tree when the site is built, so none is copied by hand. The transcript is the program <code>rebel/examples/reach/reach_csv.hero</code> in a folder of its own, taking Rebel from the repository&rsquo;s folder, and the sizes are that program&rsquo;s placed copy against the whole version, as the chapter on packages shows them.</p>
   </footer>

@@ -79,6 +79,8 @@ export interface Row {
   package: string;
   /** What the package holds, as the README writes it, Markdown code spans and all. */
   holds: string;
+  /** The column *C under it*: the headers and libraries below the package, empty where none. */
+  c: string;
   /** The faces this row stands for: its own, and those under it that no row names. */
   faces: string[];
 }
@@ -128,9 +130,9 @@ export function rows(): Row[] {
   if (start < 0 || end < start) throw new Error(`${GUIDE}: no section between \`## A1.\` and \`## A2.\` to read the packages from.`);
   const out: Row[] = [];
   for (const line of text.slice(start, end).split('\n')) {
-    const cells = /^\| (\d+) \| `([a-z0-9_/]+)` \| (.*?) \| .*? \| .*? \|$/.exec(line);
+    const cells = /^\| (\d+) \| `([a-z0-9_/]+)` \| (.*?) \| .*? \| (.*?) \|$/.exec(line);
     if (cells === null) continue;
-    out.push({ layer: Number(cells[1]), package: cells[2], holds: cells[3], faces: [cells[2]] });
+    out.push({ layer: Number(cells[1]), package: cells[2], holds: cells[3], c: cells[4], faces: [cells[2]] });
   }
   if (out.length < ROWS_FLOOR) {
     throw new Error(`${GUIDE} § A1: read ${out.length} rows and the floor is ${ROWS_FLOOR}; the table's shape changed under this reader.`);
@@ -223,6 +225,13 @@ export function colouredReference(one: Reference): string {
   assertVerbatim(body, html, `the reference of <rebel>/${one.face}`);
   return html;
 }
+
+/**
+ * The two catalogues that stand beside the reference pages under `/rebel/`,
+ * `/rebel/packages/` and `/rebel/apps/` (`rebel-page.ts`): names no face may
+ * take, since a face's page answers at `/rebel/<face>/`.
+ */
+export const REBEL_CATALOGUES = ['packages', 'apps'];
 
 /** The address of a face's page, in one edition. */
 export function referenceUrl(face: string, lang: 'en' | 'it'): string {

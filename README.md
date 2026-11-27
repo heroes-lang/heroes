@@ -22,7 +22,8 @@
   <a href="ROADMAP.md">The chain</a> &nbsp;&middot;&nbsp;
   <a href="docs/records/journal/README.md">The journals</a> &nbsp;&middot;&nbsp;
   <a href="docs/panel/">The panels</a> &nbsp;&middot;&nbsp;
-  <a href="examples/">The examples</a>
+  <a href="examples/">The examples</a> &nbsp;&middot;&nbsp;
+  <a href="https://heroes-lang.org/rebel/">Rebel</a>
 </p>
 
 A language for the age of agents, designed so that **every plausible mistake a
@@ -170,6 +171,17 @@ under `rebel/library/`, is one such package: a program takes it through its
 catalogue or leaves it, and the compiler is written without it. There is no
 standard library to obey; there is a Rebel to call, or not. Why is
 `docs/design.md` §1.11.
+
+Rebel's own programs show how far it reaches: more than thirty applications
+in [`rebel/examples/`](rebel/examples/INDEX.md), among them a small SQL
+database made the way SQLite is, a small Redis, a replicated store in the
+manner of etcd's under a simulated network, a small RISC-V machine in the
+manner of QEMU's `virt` board and a language server for Kite, a small
+language it defines itself, each with a recorded demo that a check runs
+again whenever Rebel or the program changes. Its packages, one row each
+with its ledger against Go, Rust and Python, and its applications, each with
+the tool it is modelled on, are listed at
+[heroes-lang.org/rebel](https://heroes-lang.org/rebel/).
 
 The chain from here is `ROADMAP.md` § The chain. What is already built has
 one journal each, indexed at `docs/records/journal/README.md`.

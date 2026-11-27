@@ -104,8 +104,25 @@ function name_of(t: Token) -&gt; str
   <p>
     Tra gli esempi trovi programmi che usano un database, chiamano una libreria grafica e inviano una richiesta web. Le pagine mostrano anche l&rsquo;output registrato, quando disponibile. <a href="/it/examples/#c">Gli esempi con librerie C&nbsp;&rarr;</a>
   </p>
+
+  <h2 id="rebel">Una libreria, se la vuoi <span class="nod">&middot; <a href="/it/about/thanks/#rebel-rebel">rebel rebel</a> &middot;</span></h2>
+  <p class="joke">Heroes non ha una libreria standard, a meno che tu non voglia <a href="/it/rebel/">ribellarti</a>.</p>
   <p>
-    Heroes non impone una libreria standard: oltre al C, un programma può prendere pacchetti di codice Heroes, e questo progetto ne scrive una libreria ampia, Rebel, che un programma prende o lascia. <a href="/it/rebel/">Rebel&nbsp;&rarr;</a>
+    Rebel è la libreria che questo progetto scrive per Heroes, da zero e in Heroes: {{rebelPackages}} pacchetti, dal testo e dai fusi orari alla rete, ai database e alla crittografia. È facoltativa. Il compilatore è scritto senza, e un programma che non la prende non se ne porta dietro niente.
+  </p>
+  <p>
+    Con Rebel il progetto ha scritto {{rebelApplications}} applicazioni, programmi che qualcuno userebbe davvero. Ognuna ha una sessione dimostrativa registrata, che un controllo riesegue e confronta con la registrazione ogni volta che Rebel o il programma cambiano. Alcune:
+  </p>
+  <ul class="apps">
+    <li><a href="/it/examples/rebel/minidb/">minidb</a>, un piccolo database SQL fatto come SQLite: tabelle, indici, transazioni e la ripresa dopo un crash.</li>
+    <li><a href="/it/examples/rebel/kvd/">kvd</a>, un piccolo Redis, un server che conserva valori sotto un nome e ne parla il protocollo.</li>
+    <li><a href="/it/examples/rebel/raftkv/">raftkv</a>, un archivio replicato alla maniera di etcd, tenuto da Raft, il metodo con cui più macchine si accordano su una sola storia dei dati, e messo alla prova in una rete simulata.</li>
+    <li><a href="/it/examples/rebel/rv32/">rv32</a>, una piccola macchina RISC-V alla maniera della scheda virt di QEMU, un programma che fa la parte del processore, con il suo assembler e un debugger.</li>
+    <li><a href="/it/examples/rebel/langserver/">langserver</a>, un language server, il programma a cui un editor chiede gli errori mentre scrivi, per Kite, un piccolo linguaggio che il programma stesso definisce.</li>
+    <li><a href="/it/examples/rebel/auth/">auth</a>, un piccolo Keycloak, <a href="/it/examples/rebel/gateway/">gateway</a>, alla maniera di Envoy e Kong, e <a href="/it/examples/rebel/notes/">notes</a>, un piccolo server di blog e note: servizi web costruiti sul router di Rebel e sui suoi middleware, i passi che una richiesta attraversa prima della risposta.</li>
+  </ul>
+  <p>
+    <a href="/it/rebel/apps/">Tutte le applicazioni, e a che cosa somiglia ognuna&nbsp;&rarr;</a>&nbsp;&middot; <a href="/it/rebel/packages/">i pacchetti, livello per livello&nbsp;&rarr;</a>
   </p>
 
   <h2>La tesi</h2>
@@ -144,6 +161,9 @@ failed: not_a_digit (expected 0-9)
     <code>failed</code> è l&rsquo;esempio che rifiuta un carattere che non sa
     leggere.
     <a href="/it/start/">La guida per iniziare&nbsp;&rarr;</a>&nbsp;&middot; <a href="/it/docs/">il linguaggio, un&rsquo;idea alla volta&nbsp;&rarr;</a>
+  </p>
+  <p>
+    Con lo stesso compilatore, <code>./heroes run rebel/examples/minidb/main.hero -- demo &lt; rebel/examples/minidb/main.stdin</code> esegue la dimostrazione di minidb, il database SQL scritto con Rebel, e stampa byte per byte quello che mostra <a href="/it/examples/rebel/minidb/">la sua pagina</a>.
   </p>
 
   <h2>Chi lo sta costruendo</h2>
