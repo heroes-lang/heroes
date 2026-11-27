@@ -24,15 +24,15 @@ Run from the repository's root with the words of `main.args` and `main.stdin` on
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 7 faces on its `packages` line, each linked here to its reference: [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`json/jq`](https://heroes-lang.org/rebel/json/jq/), [`os`](https://heroes-lang.org/rebel/os/), [`time`](https://heroes-lang.org/rebel/time/), [`toml`](https://heroes-lang.org/rebel/toml/), [`yaml`](https://heroes-lang.org/rebel/yaml/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 8 faces on its `packages` line, each linked here to its reference: [`errors`](https://heroes-lang.org/rebel/errors/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`json/jq`](https://heroes-lang.org/rebel/json/jq/), [`os`](https://heroes-lang.org/rebel/os/), [`time`](https://heroes-lang.org/rebel/time/), [`toml`](https://heroes-lang.org/rebel/toml/), [`yaml`](https://heroes-lang.org/rebel/yaml/).
 
 ## Its folders
 
-1 folder, 5 files and 292 lines, this page aside; of them 1 module, `.hero` files, of 284 lines.
+1 folder, 5 files and 293 lines, this page aside; of them 1 module, `.hero` files, of 285 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
-| `./` | 5 | 292 | 1 | 284 |
+| `./` | 5 | 293 | 1 | 285 |
 
 ---
 

@@ -62,24 +62,24 @@ Run from the repository's root with the words of `main.args`, as the check of Re
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 26 faces on its `packages` line, each linked here to its reference: [`archive`](https://heroes-lang.org/rebel/archive/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`compress`](https://heroes-lang.org/rebel/compress/), [`containers/ordered`](https://heroes-lang.org/rebel/containers/ordered/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`fs/watch`](https://heroes-lang.org/rebel/fs/watch/), [`hash`](https://heroes-lang.org/rebel/hash/), [`i18n`](https://heroes-lang.org/rebel/i18n/), [`i18n/collate`](https://heroes-lang.org/rebel/i18n/collate/), [`i18n/dates`](https://heroes-lang.org/rebel/i18n/dates/), [`i18n/numbers`](https://heroes-lang.org/rebel/i18n/numbers/), [`image`](https://heroes-lang.org/rebel/image/), [`image/jpeg`](https://heroes-lang.org/rebel/image/jpeg/), [`image/png`](https://heroes-lang.org/rebel/image/png/), [`io`](https://heroes-lang.org/rebel/io/), [`maps`](https://heroes-lang.org/rebel/maps/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`regex`](https://heroes-lang.org/rebel/regex/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/), [`toml`](https://heroes-lang.org/rebel/toml/), [`ui`](https://heroes-lang.org/rebel/ui/), [`unicode/encodings`](https://heroes-lang.org/rebel/unicode/encodings/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 27 faces on its `packages` line, each linked here to its reference: [`archive`](https://heroes-lang.org/rebel/archive/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`compress`](https://heroes-lang.org/rebel/compress/), [`containers/ordered`](https://heroes-lang.org/rebel/containers/ordered/), [`errors`](https://heroes-lang.org/rebel/errors/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`fs/watch`](https://heroes-lang.org/rebel/fs/watch/), [`hash`](https://heroes-lang.org/rebel/hash/), [`i18n`](https://heroes-lang.org/rebel/i18n/), [`i18n/collate`](https://heroes-lang.org/rebel/i18n/collate/), [`i18n/dates`](https://heroes-lang.org/rebel/i18n/dates/), [`i18n/numbers`](https://heroes-lang.org/rebel/i18n/numbers/), [`image`](https://heroes-lang.org/rebel/image/), [`image/jpeg`](https://heroes-lang.org/rebel/image/jpeg/), [`image/png`](https://heroes-lang.org/rebel/image/png/), [`io`](https://heroes-lang.org/rebel/io/), [`maps`](https://heroes-lang.org/rebel/maps/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`regex`](https://heroes-lang.org/rebel/regex/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/), [`toml`](https://heroes-lang.org/rebel/toml/), [`ui`](https://heroes-lang.org/rebel/ui/), [`unicode/encodings`](https://heroes-lang.org/rebel/unicode/encodings/).
 
 ## Its folders
 
-10 folders, 43 files and 9,924 lines, this page aside; of them 39 modules, `.hero` files, of 8,912 lines.
+10 folders, 43 files and 9,942 lines, this page aside; of them 39 modules, `.hero` files, of 8,929 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
-| `./` | 5 | 1,144 | 1 | 132 |
-| `app/` | 6 | 1,454 | 6 | 1,454 |
-| `demo/` | 4 | 1,002 | 4 | 1,002 |
+| `./` | 5 | 1,145 | 1 | 132 |
+| `app/` | 6 | 1,457 | 6 | 1,457 |
+| `demo/` | 4 | 1,003 | 4 | 1,003 |
 | `locale/` | 1 | 192 | 1 | 192 |
-| `model/` | 7 | 1,497 | 7 | 1,497 |
-| `ops/` | 8 | 2,400 | 8 | 2,400 |
-| `preview/` | 4 | 751 | 4 | 751 |
+| `model/` | 7 | 1,500 | 7 | 1,500 |
+| `ops/` | 8 | 2,406 | 8 | 2,406 |
+| `preview/` | 4 | 753 | 4 | 753 |
 | `search/` | 2 | 320 | 2 | 320 |
 | `store/` | 2 | 344 | 2 | 344 |
-| `views/` | 4 | 820 | 4 | 820 |
+| `views/` | 4 | 822 | 4 | 822 |
 
 ---
 

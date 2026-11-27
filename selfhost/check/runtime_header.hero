@@ -59,7 +59,7 @@ function refused(@c: state.Checker, s: source.Source, decls: [ast.Decl])
 function diagnostic(span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: CODE,
-        message: "`heroes_runtime.h` is the Heroes runtime's own header, the interface the C this compiler writes calls, and no program binds it: its functions count the references of the program's own values and free them, so one called from Heroes frees what the program still holds",
+        message: "`heroes_runtime.h` is the Heroes runtime's own header, the interface the C this compiler writes calls, and no program binds it: its functions count the references of the program's own values and free them, so one called from Heroes can free what the program still holds",
         span: span
     )
     d.notes @ d.notes.push(INSTEAD)

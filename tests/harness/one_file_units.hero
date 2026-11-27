@@ -18,6 +18,7 @@
 
 use shell
 use strings
+use unit_files
 
 # The code `--emit-c` refuses its one file with.
 constant REFUSED: str
@@ -107,7 +108,11 @@ test "a unit is this program's where its first line names it, and the code is th
 
 # The real compiler on two modules whose headers declare one `twice` two ways:
 # `--emit-c` refuses the one file, and the units `build` writes are found, one
-# per module and the library's, twice alike.
+# per module and the library's, twice alike. Each unit's file is named by its
+# module's stem since defect 2877 (`unit_files.hero`, the compiler's names
+# mirrored), so the four are asked of the mirror, in the order `units_of`
+# sorts them, and never pasted: a change to the compiler's names fails the
+# mirror's own test, not this one in silence.
 test "the units of a program whose one file is refused are found, alike twice (defect 453)"
     compiler = shell.some_compiler()
 
@@ -133,7 +138,13 @@ test "the units of a program whose one file is refused are found, alike twice (d
     for unit in one.must()
         names @ names.push(unit.name)
 
-    assert names == ["left.c", "library.c", "main.c", "right.c"]
+    wanted: [str] = [
+        unit_files.c_name("left")
+        unit_files.c_name("library")
+        unit_files.c_name("main")
+        unit_files.c_name("right")
+    ]
+    assert names == wanted.sort()
     assert one.must().len() == two.must().len()
 
     for i in range(from: 0, to: one.must().len())

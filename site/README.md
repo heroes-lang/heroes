@@ -114,7 +114,8 @@ answers at drops the extension and gains a slash, so `why.html` is `/why/` and
 | `log.html` | the build log, one postcard per milestone, newest first. A postcard is the milestone name, the sentence in bold that is the news, one concrete sentence and a link: 1,517 words where it was 4,846 |
 | `examples/` | **the examples browser, generated from `examples/` at build time**: an index, one page per program and per gallery file, and `index.json`. Its own § below |
 | `docs/` | the documentation: landing + chapters |
-| `404.html` | what a reader gets for an address that does not exist, one per edition, with four links out: home, guide, examples, the language in one file. **Without it Cloudflare Pages assumes a single-page application** and answers every unknown path with the home page at status 200, which was measured on this deployment and on the two before it. The nested one has to reach the output as `it/404.html` rather than `it/404/index.html`, which is what `astro.config.mjs`'s `heroes:nested-404` does and says why |
+| `rebel.html` | **Rebel**, the library a program takes or leaves: what it is, what is built with it, how a program takes it, its packages' counts and what a program owes for it. Under it, by the author's request of 2026-11-27 (*I cannot find a catalogue of its packages, nor one of the applications built with it*): `rebel/packages.html`, every package by layer, each row § A1's line, its ledger's three counts, *over C* where C stands under it and the applications that take it; `rebel/apps.html`, every application the walk of `rebel/examples/` finds, one card each, its line opening with the known tool it is modelled on where its README or its code names one; and a reference page per face, `heroes doc`'s output. All three generated at build time (`rebel-page.ts`, `rebel-catalogue.ts`, `reference.ts`). Not in the nav row: the tenth entry Rebel asked for is the author's choice, as the nav's paragraphs above say |
+| `404.html` | what a reader gets for an address that does not exist, one per edition, with four links out: home, docs, examples, the language in one file. **Without it Cloudflare Pages assumes a single-page application** and answers every unknown path with the home page at status 200, which was measured on this deployment and on the two before it. The nested one has to reach the output as `it/404.html` rather than `it/404/index.html`, which is what `astro.config.mjs`'s `heroes:nested-404` does and says why |
 | `style.css` | the only cross-page *stylesheet* |
 | `images/` | the one binary asset the site has: `giuseppe-arici.jpg`, the author's portrait, used by both editions of `about.html` |
 
@@ -250,6 +251,37 @@ learn it, see it, take it, and the specification is what a visitor pastes into a
 prompt. The Italian label is `Specifica` and not `Spec`: § The reader is never
 assumed to be an expert outranks the twenty pixels, and `Grazie`'s precedent was
 about a word four characters longer than this one.
+
+**The second entry says `Docs` in both editions since 2026-11-27, and Rebel
+asked for a tenth that the row does not hold** (the author's request that
+morning, meant as: *Rebel has no menu entry ... and perhaps the Guide entry
+should be renamed Docs?*). `Guide` was the one label that matched neither its
+address, `/docs/`, nor its page's title, *Documentation*. Measured in Chrome
+headless the same morning, both editions, every 10px from 1200px down to 390px,
+each width a same-origin iframe of that width (§ The visual system, *How to
+verify it*), the labels and the entry set on the built page:
+
+| the list at 1200px | English | Italian |
+|---|---|---|
+| nine, `Guide` and `Guida`, until that day | 528px | 615px |
+| nine, `Docs` and `Docs` | 520px | 607px |
+| nine, `Docs` and `Documentazione` | 520px | 687px |
+| ten, `Rebel` after `Spec`, `Docs` and `Docs` | 579px | 666px |
+
+| where the chrome changes | English | Italian |
+|---|---|---|
+| nine, `Guide` and `Guida` | one row from 830px up, two rows 820 to 801px, the list scrolls from 510px down | one row from 920px up, two rows 910 to 801px, scrolls from 600px down |
+| nine, `Docs` and `Docs` | one row from 830px up, scrolls from 500px down | one row from 910px up, scrolls from 590px down |
+| nine, `Docs` and `Documentazione` | as above | two rows from 980px down, **three rows 850 to 801px**, scrolls from 670px down |
+| ten, `Docs` and `Docs` | one row from 880px up, scrolls from 560px down | one row from 970px up, **three rows 830 to 801px**, scrolls from 650px down |
+
+At 800px and under the list always has its own row, so there only its scrolling
+moves. So the Italian label is `Docs`, which § The Italian edition already named
+as the Italian technical usage, and the row stays at nine: `Rebel` after `Spec`
+puts the Italian chrome on three rows, the state the rule below forbids, and a
+tenth entry enters only by displacing one, which is the author's choice, put to
+them with these widths. Until it is made, Rebel is reached from the home page
+and from the examples.
 
 **The row stays at seven, so a page enters it only by displacing one.** That
 rule is unchanged from when the row was nine (author instruction 2026-08-18);

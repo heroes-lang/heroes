@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { renderAppsPage } from '../../lib/rebel-page.ts';
+
+// The applications written with Rebel, as the walk of rebel/examples/ finds
+// them, one card each (`rebel-catalogue.ts`).
+const page = await renderAppsPage('en');
+---
+<BaseLayout url={page.url} title={page.title} description={page.description}>
+<Fragment set:html={page.html} />
+</BaseLayout>

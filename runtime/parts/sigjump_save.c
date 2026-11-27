@@ -66,7 +66,8 @@ __attribute__((noinline)) static void hero_jmp_leaving(void) {
 #endif
 }
 
-static _Noreturn void hero_jmp_go(hero_jmp_jump_fn real, struct __jmp_buf_tag *env, int val) {
+__attribute__((no_sanitize("address"))) static _Noreturn void
+hero_jmp_go(hero_jmp_jump_fn real, struct __jmp_buf_tag *env, int val) {
     hero_jmp_leaving();
     real(env, val);
     __builtin_unreachable();
@@ -86,6 +87,7 @@ static void hero_jmp_jump(const void *env) {
     bool standing = hero_sig_standing(own);
     if (!hero_jmp_recording()) {
         uintptr_t t = hero_jmp_sp_of((const struct __jmp_buf_tag *)env);
+        hero_signal_switch_left(own, t);
         if (standing) {
             hero_sig_landing(own, t);
             hero_sig_prune_to(own, t, true);
@@ -95,6 +97,7 @@ static void hero_jmp_jump(const void *env) {
         uintptr_t t = 0;
         bool back = false;
         if (hero_jmp_recorded(own, env, standing, &t, &back)) {
+            hero_signal_switch_left(own, t);
             if (standing) {
                 hero_sig_landing(own, t);
                 hero_sig_prune_to(own, t, true);
@@ -217,7 +220,7 @@ static uintptr_t hero_jmp_unwinds(const struct __jmp_buf_tag *env) {
 #if defined(__aarch64__) || defined(__x86_64__)
 static void hero_unwind_clear(void) { hero_jmp_leaving(); }
 
-static _Noreturn void hero_unwind_go(int kind, void *env, int value) {
+__attribute__((no_sanitize("address"))) static _Noreturn void hero_unwind_go(int kind, void *env, int value) {
     hero_jmp_jump_fn real = atomic_load_explicit(&hero_jmp_real_longjmp, memory_order_relaxed);
     if (kind == HERO_UNWIND__LONGJMP) real = atomic_load_explicit(&hero_jmp_real__longjmp, memory_order_relaxed);
     if (kind == HERO_UNWIND_SIGLONGJMP) real = atomic_load_explicit(&hero_jmp_real_siglongjmp, memory_order_relaxed);
@@ -226,8 +229,14 @@ static _Noreturn void hero_unwind_go(int kind, void *env, int value) {
 }
 #endif
 
-/* THE JUMPS. Each finds the C library's own first, as a save point does. */
-void(longjmp)(struct __jmp_buf_tag env[1], int val) {
+/* THE JUMPS. Each finds the C library's own first, as a save point does.
+ * Under AddressSanitizer none is instrumented (defect d-lane-sig-family-10):
+ * clang puts a call to `__asan_handle_no_return` before every call of a
+ * function that does not return, `hero_jmp_go` here, and on a coroutine's
+ * stack, which ASan was never told of, ASan clears nothing there and writes
+ * its warning into a correct program's stderr; what the jump leaves is
+ * cleared by `hero_jmp_leaving`, as Darwin's are (`parts/rebind_jump.c`). */
+__attribute__((no_sanitize("address"))) void(longjmp)(struct __jmp_buf_tag env[1], int val) {
     hero_jmp_find();
     uintptr_t unwinds = hero_jmp_unwinds(env);
     hero_jmp_jump(env);
@@ -235,7 +244,7 @@ void(longjmp)(struct __jmp_buf_tag env[1], int val) {
     hero_jmp_go(atomic_load_explicit(&hero_jmp_real_longjmp, memory_order_relaxed), env, val);
 }
 
-void(_longjmp)(struct __jmp_buf_tag env[1], int val) {
+__attribute__((no_sanitize("address"))) void(_longjmp)(struct __jmp_buf_tag env[1], int val) {
     hero_jmp_find();
     uintptr_t unwinds = hero_jmp_unwinds(env);
     hero_jmp_jump(env);
@@ -243,7 +252,7 @@ void(_longjmp)(struct __jmp_buf_tag env[1], int val) {
     hero_jmp_go(atomic_load_explicit(&hero_jmp_real__longjmp, memory_order_relaxed), env, val);
 }
 
-void(siglongjmp)(struct __jmp_buf_tag env[1], int val) {
+__attribute__((no_sanitize("address"))) void(siglongjmp)(struct __jmp_buf_tag env[1], int val) {
     hero_jmp_find();
     uintptr_t unwinds = hero_jmp_unwinds(env);
     hero_jmp_jump(env);
@@ -252,7 +261,7 @@ void(siglongjmp)(struct __jmp_buf_tag env[1], int val) {
 }
 
 void __longjmp_chk(struct __jmp_buf_tag env[1], int val);
-void __longjmp_chk(struct __jmp_buf_tag env[1], int val) {
+__attribute__((no_sanitize("address"))) void __longjmp_chk(struct __jmp_buf_tag env[1], int val) {
     hero_jmp_find();
     uintptr_t unwinds = hero_jmp_unwinds(env);
     hero_jmp_jump(env);
@@ -260,17 +269,39 @@ void __longjmp_chk(struct __jmp_buf_tag env[1], int val) {
     hero_jmp_go(atomic_load_explicit(&hero_jmp_real_chk, memory_order_relaxed), env, val);
 }
 
+/* The switch of contexts, of `call`, from `from` (none for `setcontext`) to
+ * `to`, that the wrapper whose frame is `frame` begins: refused where the
+ * handler the thread runs now interrupted a switch naming either, else noted
+ * until it is seen to end, the one it is made inside of kept in `prev`
+ * (defect 2871, `parts/sigguard.c`). */
+static void hero_jmp_switch_begins(HeroSignalStack *own, const char *call, uintptr_t frame, const void *from,
+                                   const void *to, HeroSigSwitch *prev) {
+    HeroSigSwitch next = {frame, 0, 0, (uintptr_t)from, (uintptr_t)to};
+    if (!hero_sig_target_range(own, frame, &next.lo, &next.hi)) next.lo = next.hi = 0;
+    hero_signal_switch_begin(own, call, &next, prev);
+}
+
 /* A switch made from this frame leaves the range it lies on, if a swap into
  * that range waits to return (`sigentries.c`, the life of a range). No
  * redzones in this frame (defect 2853, `parts/rebind_jump.c`'s reason): what
  * it judges runs in `hero_jmp_set`'s, which returns before the switch, and
- * what the switch leaves is cleared as a jump's is (`hero_jmp_leaving`). */
-__attribute__((no_sanitize("address"))) int(setcontext)(const ucontext_t *ucp) {
+ * what the switch leaves is cleared as a jump's is (`hero_jmp_leaving`). The
+ * C library's own is called, never reached by a tail call, so its frames link
+ * to this one while it switches (defect 2871); it returns only where it
+ * refused the context. */
+__attribute__((noinline, no_sanitize("address"))) int(setcontext)(const ucontext_t *ucp) {
     hero_jmp_find();
+    HeroSignalStack *own = hero_sig_own();
+    HeroSigSwitch outer = {0, 0, 0, 0, 0};
+    if (own != NULL) {
+        hero_jmp_switch_begins(own, "setcontext", (uintptr_t)__builtin_frame_address(0), NULL, ucp, &outer);
+    }
     hero_sig_range_left(hero_jmp_below());
     hero_jmp_set(ucp);
     hero_jmp_leaving();
-    return atomic_load_explicit(&hero_ctx_real_set, memory_order_relaxed)(ucp);
+    int r = atomic_load_explicit(&hero_ctx_real_set, memory_order_relaxed)(ucp);
+    if (own != NULL) hero_signal_switch_back(own, &outer, (uintptr_t)__builtin_frame_address(0));
+    return r;
 }
 
 /* Rule 5: a swap made while a handler stands suspends every standing entry
@@ -290,6 +321,10 @@ __attribute__((noinline, no_sanitize("address"))) HERO_CTX_SWAP_RETURN
 int(swapcontext)(ucontext_t *restrict oucp, const ucontext_t *restrict ucp) {
     hero_jmp_find();
     HeroSignalStack *own = hero_sig_own();
+    HeroSigSwitch outer = {0, 0, 0, 0, 0};
+    if (own != NULL) {
+        hero_jmp_switch_begins(own, "swapcontext", (uintptr_t)__builtin_frame_address(0), oucp, ucp, &outer);
+    }
     uint64_t marks[HERO_SIG_DEPTH];
     unsigned gens[HERO_SIG_DEPTH];
     int n = 0;
@@ -335,6 +370,7 @@ int(swapcontext)(ucontext_t *restrict oucp, const ucontext_t *restrict ucp) {
         }
     }
     int r = atomic_load_explicit(&hero_ctx_real_swap, memory_order_relaxed)(oucp, ucp);
+    if (own != NULL) hero_signal_switch_back(own, &outer, (uintptr_t)__builtin_frame_address(0));
     /* Back in this frame: where no switch was made from the range entered
      * and the context did not move, its coroutine returned through `uc_link`
      * and the range holds no frames of it any more (defect 2706,

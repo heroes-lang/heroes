@@ -32,6 +32,7 @@ import { version } from './tables.ts';
 import { checkClaims, specReal, ceilingK } from './claims.ts';
 import { fillSizes } from './sizes.ts';
 import { chainSection } from './chain.ts';
+import { fillRebel } from './rebel-catalogue.ts';
 
 /** One figure, as the check reads it. */
 interface Figure {
@@ -155,7 +156,7 @@ export function page(html: string, pagePath: string): string {
   // The figures last, so no fill above reads a program's `{{x}}` as its own.
   return fillFigures(
     fillOutbound(
-      fillChain(fillTracklist(fillCeiling(fillMeasured(fillSizes(fillVersion(html, pagePath)))), pagePath), pagePath)
+      fillChain(fillTracklist(fillCeiling(fillMeasured(fillSizes(fillRebel(fillVersion(html, pagePath), pagePath)))), pagePath), pagePath)
     ),
     pagePath
   );

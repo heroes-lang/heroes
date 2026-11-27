@@ -43,15 +43,15 @@ The twin of [`examples/spreadsheet/`](../../examples/spreadsheet/), the compiler
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 4 faces on its `packages` line, each linked here to its reference: [`math`](https://heroes-lang.org/rebel/math/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`strings`](https://heroes-lang.org/rebel/strings/), [`unicode`](https://heroes-lang.org/rebel/unicode/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 5 faces on its `packages` line, each linked here to its reference: [`bytes`](https://heroes-lang.org/rebel/bytes/), [`math`](https://heroes-lang.org/rebel/math/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`strings`](https://heroes-lang.org/rebel/strings/), [`unicode`](https://heroes-lang.org/rebel/unicode/).
 
 ## Its folders
 
-1 folder, 4 files and 705 lines, this page aside; of them 3 modules, `.hero` files, of 702 lines.
+1 folder, 4 files and 695 lines, this page aside; of them 3 modules, `.hero` files, of 692 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
-| `./` | 4 | 705 | 3 | 702 |
+| `./` | 4 | 695 | 3 | 692 |
 
 ---
 

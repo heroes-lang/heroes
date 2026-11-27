@@ -272,7 +272,7 @@ static void hero_rebind_image(const struct mach_header *header, intptr_t slide) 
  * warning into the program's stderr (defect d-lane-sig-family-8); this
  * runtime clears what the jump leaves itself (`hero_rebind_leaving`). */
 static void *hero_rebind_uninterposed(void *f) {
-    static const char *const segments[2] = {"__DATA", "__DATA_CONST"};
+    const char *const segments[2] = {"__DATA", "__DATA_CONST"};
     for (uint32_t i = 0; f != NULL && i < _dyld_image_count(); i += 1) {
         const struct mach_header_64 *h = (const struct mach_header_64 *)_dyld_get_image_header(i);
         for (int s = 0; s < 2; s += 1) {

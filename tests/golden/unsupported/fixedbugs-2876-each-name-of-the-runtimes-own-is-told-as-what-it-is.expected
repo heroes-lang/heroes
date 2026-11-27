@@ -1,0 +1,41 @@
+error[ffi_runtime_header]: `HeroThreadBox` is the Heroes runtime's own, a type its `heroes_runtime.h` declares, which every unit reads before its groups' headers whatever header a group names, and no program binds the runtime's own names: they are the C this compiler writes for itself, which another compiler may change or take away
+  at tests/golden/unsupported/fixedbugs-2876-each-name-of-the-runtimes-own-is-told-as-what-it-is.hero:16:20
+     |
+  16 |     record Box tag HeroThreadBox  #~ ffi_runtime_header
+     |                    ^^^^^^^^^^^^^
+  note: what the runtime offers a program is `hero_os.h`'s, threads, processes and files, and a constant or a type of the C library is its own header's, `stdint.h` or `limits.h`: name the header that declares the name the program needs
+
+error[ffi_runtime_header]: `HERO_RUNTIME_ABI` is the Heroes runtime's own, a macro its `heroes_runtime.h` defines, which every unit reads before its groups' headers whatever header a group names, and no program binds the runtime's own names: they are the C this compiler writes for itself, which another compiler may change or take away
+  at tests/golden/unsupported/fixedbugs-2876-each-name-of-the-runtimes-own-is-told-as-what-it-is.hero:17:14
+     |
+  17 |     constant HERO_RUNTIME_ABI: i64  #~ ffi_runtime_header
+     |              ^^^^^^^^^^^^^^^^
+  note: what the runtime offers a program is `hero_os.h`'s, threads, processes and files, and a constant or a type of the C library is its own header's, `stdint.h` or `limits.h`: name the header that declares the name the program needs
+
+error[ffi_runtime_header]: `HERO_DESC_EQ_AT` is the Heroes runtime's own, an enumeration constant its `heroes_runtime.h` declares, which every unit reads before its groups' headers whatever header a group names, and no program binds the runtime's own names: they are the C this compiler writes for itself, which another compiler may change or take away
+  at tests/golden/unsupported/fixedbugs-2876-each-name-of-the-runtimes-own-is-told-as-what-it-is.hero:18:14
+     |
+  18 |     constant HERO_DESC_EQ_AT: i64  #~ ffi_runtime_header
+     |              ^^^^^^^^^^^^^^^
+  note: what the runtime offers a program is `hero_os.h`'s, threads, processes and files, and a constant or a type of the C library is its own header's, `stdint.h` or `limits.h`: name the header that declares the name the program needs
+
+error[ffi_runtime_header]: `hero_desc_int` is the Heroes runtime's own, a variable its `heroes_runtime.h` declares, which every unit reads before its groups' headers whatever header a group names, and no program binds the runtime's own names: they are the C this compiler writes for itself, which another compiler may change or take away
+  at tests/golden/unsupported/fixedbugs-2876-each-name-of-the-runtimes-own-is-told-as-what-it-is.hero:19:14
+     |
+  19 |     constant hero_desc_int: i64  #~ ffi_runtime_header
+     |              ^^^^^^^^^^^^^
+  note: what the runtime offers a program is `hero_os.h`'s, threads, processes and files, and a constant or a type of the C library is its own header's, `stdint.h` or `limits.h`: name the header that declares the name the program needs
+
+error[ffi_runtime_header]: `hero_print_int` is the Heroes runtime's own, a function its `heroes_runtime.h` declares, which every unit reads before its groups' headers whatever header a group names, and no program binds the runtime's own names: the runtime's functions count the references of the program's own values and free them, so one called from Heroes can free what the program still holds
+  at tests/golden/unsupported/fixedbugs-2876-each-name-of-the-runtimes-own-is-told-as-what-it-is.hero:20:14
+     |
+  20 |     function hero_print_int(v: i64)  #~ ffi_runtime_header
+     |              ^^^^^^^^^^^^^^
+  note: what the runtime offers a program is `hero_os.h`'s, threads, processes and files; a function of the C library is its own header's, `stdio.h` or `string.h`; and what the language does itself, printing, strings and freeing what a program holds, is the language's: name the header that declares the function, or let Heroes do it
+
+error[ffi_runtime_header]: `HERO_STATIC_CONSTANTS` is the Heroes runtime's own, a macro its `heroes_runtime.h` defines, which every unit reads before its groups' headers whatever header a group names, and no program binds the runtime's own names: they are the C this compiler writes for itself, which another compiler may change or take away
+  at tests/golden/unsupported/fixedbugs-2876-each-name-of-the-runtimes-own-is-told-as-what-it-is.hero:23:14
+     |
+  23 |     constant HERO_STATIC_CONSTANTS: i64  #~ ffi_runtime_header
+     |              ^^^^^^^^^^^^^^^^^^^^^
+  note: what the runtime offers a program is `hero_os.h`'s, threads, processes and files, and a constant or a type of the C library is its own header's, `stdint.h` or `limits.h`: name the header that declares the name the program needs

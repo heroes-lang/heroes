@@ -21,7 +21,7 @@
  * - **every other page carries one**, because it is, and the reader arriving
  *   mid-site needs to know where they are.
  *
- * After it, the divide is not a habit: every chapter of the guide, every
+ * After it, the divide is not a habit: every chapter of the docs, every
  * example program and `/why/not/` carry a trail, and every page of the nav row,
  * the home among them, carries none. No count here: `assertCrumbsMatchTheNav`
  * prints both on every build, and a count typed into this comment went stale

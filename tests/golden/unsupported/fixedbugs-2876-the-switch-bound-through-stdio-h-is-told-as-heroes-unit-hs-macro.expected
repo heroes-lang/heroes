@@ -1,0 +1,6 @@
+error[ffi_runtime_header]: `HERO_STANDARD_AFTER_GROUPS` is the Heroes runtime's own, a macro its `heroes_unit.h` defines, which every unit reads before its groups' headers whatever header a group names, and no program binds the runtime's own names: they are the C this compiler writes for itself, which another compiler may change or take away
+  at tests/golden/unsupported/fixedbugs-2876-the-switch-bound-through-stdio-h-is-told-as-heroes-unit-hs-macro.hero:11:14
+     |
+  11 |     constant HERO_STANDARD_AFTER_GROUPS: i64  #~ ffi_runtime_header
+     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: what the runtime offers a program is `hero_os.h`'s, threads, processes and files, and a constant or a type of the C library is its own header's, `stdint.h` or `limits.h`: name the header that declares the name the program needs

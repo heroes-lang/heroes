@@ -20,6 +20,7 @@
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
 #pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
 #pragma clang diagnostic ignored "-Winvalid-source-encoding"
+#pragma clang diagnostic ignored "-Wmissing-format-attribute"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -161,7 +162,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_68c6c2a6, "answer ran for ");
 HERO_STR_STATIC(hero_str_8ac6592, "result: ");
 
-#line 165 "fixedbugs2872ahandleronacoroutinesstackthatsavedinsideitselfthenleftbyajumpisrefused.c"
+#line 166 "fixedbugs2872ahandleronacoroutinesstackthatsavedinsideitselfthenleftbyajumpisrefused.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t hero_tag;
@@ -214,7 +215,7 @@ __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(i
 __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
 __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
-#line 218 "fixedbugs2872ahandleronacoroutinesstackthatsavedinsideitselfthenleftbyajumpisrefused.c"
+#line 219 "fixedbugs2872ahandleronacoroutinesstackthatsavedinsideitselfthenleftbyajumpisrefused.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
@@ -245,7 +246,7 @@ __attribute__((__unused__)) static void (*hero_callback_of(void (*hero_f)(void))
 int64_t h_fixedbugs2872ahandleronacoroutinesstackthatsavedinsideitselfthenleftbyajumpisrefused_answer(int64_t h0_n) { hero_thread_guard("fixedbugs2872ahandleronacoroutinesstackthatsavedinsideitselfthenleftbyajumpisrefused.answer"); HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_68c6c2a6); t2 = h0_n; hero_print_str(t1); hero_print_int(t2); hero_print_end();
     t3 = h0_n; t4 = ((__INT64_TYPE__)10); if (__builtin_mul_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2872-a-handler-on-a-coroutines-stack-that-saved-inside-itself-then-left-by-a-jump-is-refused.hero", "fixedbugs-2872-a-handler-on-a-coroutines-stack-that-saved-inside-itself-then-left-by-a-jump-is-refused.answer", 19, 12); return t5;
-#line 249 "fixedbugs2872ahandleronacoroutinesstackthatsavedinsideitselfthenleftbyajumpisrefused.c"
+#line 250 "fixedbugs2872ahandleronacoroutinesstackthatsavedinsideitselfthenleftbyajumpisrefused.c"
 }
 
 __attribute__((__noinline__)) int64_t h_0cb_fixedbugs2872ahandleronacoroutinesstackthatsavedinsideitselfthenleftbyajumpisrefused_answer(int64_t h0_n) {
@@ -258,7 +259,7 @@ __attribute__((__noinline__)) int64_t h_0cb_fixedbugs2872ahandleronacoroutinesst
 #line 21 "tests/golden/run/fixedbugs-2872-a-handler-on-a-coroutines-stack-that-saved-inside-itself-then-left-by-a-jump-is-refused.hero"
 void h_fixedbugs2872ahandleronacoroutinesstackthatsavedinsideitselfthenleftbyajumpisrefused_main(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG int32_t t2, t3, t4, t5; HERO_NODEBUG h_0fn_48ac9712 t6; HERO_NODEBUG int64_t t7; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_8ac6592); t2 = ((__INT64_TYPE__)0); t3 = ((__INT64_TYPE__)0); t4 = ((__INT64_TYPE__)0); t5 = ((__INT64_TYPE__)1); t6 = h_fixedbugs2872ahandleronacoroutinesstackthatsavedinsideitselfthenleftbyajumpisrefused_answer; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2872-a-handler-on-a-coroutines-stack-that-saved-inside-itself-then-left-by-a-jump-is-refused.hero", "fixedbugs-2872-a-handler-on-a-coroutines-stack-that-saved-inside-itself-then-left-by-a-jump-is-refused.main", 22, 23}; t7 = ck_run(t2, t3, t4, t5, (h_0fn_48ac9712)hero_callback_of((void (*)(void))t6)); } hero_print_str(t1); hero_print_int(t7); hero_print_end(); return;
-#line 262 "fixedbugs2872ahandleronacoroutinesstackthatsavedinsideitselfthenleftbyajumpisrefused.c"
+#line 263 "fixedbugs2872ahandleronacoroutinesstackthatsavedinsideitselfthenleftbyajumpisrefused.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
     if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
@@ -357,7 +358,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6ec781eb178137b3", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0688e4253a6c6fee", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2872ahandleronacoroutinesstackthatsavedinsideitselfthenleftbyajumpisrefused\tfixedbugs-2872-a-handler-on-a-coroutines-stack-that-saved-inside-itself-then-left-by-a-jump-is-refused\n");

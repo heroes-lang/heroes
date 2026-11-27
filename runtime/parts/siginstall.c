@@ -166,12 +166,14 @@ __attribute__((no_sanitize("function"))) static void hero_sig_wrapper(int sig, s
         hero_jmp_observe(own);
         uintptr_t me = (uintptr_t)__builtin_frame_address(0);
         hero_sig_relived(own, me);
+        bool cut = hero_signal_in_switch(own, context);
         uintptr_t al = 0, ah = 0;
         if (!hero_sig_alt_now(&al, &ah) || me < al || me >= ah) al = ah = 0;
         if (!hero_sig_push(own, me, al, ah, 0, &mine)) {
             own->lost += 1;
             lost = true;
         }
+        hero_signal_mark_cut(own, mine, cut);
     }
     if ((flags & SA_SIGINFO) != 0) {
         ((hero_sig_info_fn)h)(sig, info, context);

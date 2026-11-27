@@ -1,6 +1,6 @@
 # Rebel's programs
 
-The programs of `rebel/examples/` written with Rebel, each a project of its own with its catalogue: 26 applications and 16 twins. `README.md` § A10 says what each kind is and how the check of Rebel's programs holds it; each program's own page says what it is and how to run it for real, its demo's command, the packages it uses and what its folders hold. Rebel's packages themselves are indexed in [`PACKAGES.md`](PACKAGES.md). The drivers beside them, `reach_<package>.hero`, run each package's tests and are no program of this list.
+The programs of `rebel/examples/` written with Rebel, each a project of its own with its catalogue: 31 applications and 16 twins. `README.md` § A10 says what each kind is and how the check of Rebel's programs holds it; each program's own page says what it is and how to run it for real, its demo's command, the packages it uses and what its folders hold. Rebel's packages themselves are indexed in [`PACKAGES.md`](PACKAGES.md). The drivers beside them, `reach_<package>.hero`, run each package's tests and are no program of this list.
 
 ## Applications
 
@@ -22,11 +22,16 @@ Programs somebody would use, each doing one job through many packages; its demo 
 - [iothub](iothub/README.md): an IoT hub.
 - [jq](jq/README.md): A small jq written with Rebel's `json/jq`: a filter run over the values of files, or of the standard input where no file is named, each value's outputs written one a line.
 - [kanban](kanban/README.md): a desktop kanban board in Tauri's shape.
+- [kvd](kvd/README.md): a small key-value server in Redis's manner, and its client.
 - [l10n](l10n/README.md): a translation management tool in gettext's family, for a program written in Heroes with HTML templates beside it.
 - [lab](lab/README.md): a scientific calculator and notebook, in the family of a computer algebra system's REPL and of Pluto's reactive notebooks in small.
+- [langserver](langserver/README.md): a language server for Kite, a small statically typed language of records, functions and `let` bindings that this program defines, its lexer, parser, scopes and type checker included.
+- [minidb](minidb/README.md): a small SQL database engine, not a client.
 - [monitor](monitor/README.md): a system monitor with alerts and a terminal dashboard, in the family of htop, Netdata and supervisord in small.
 - [notes](notes/README.md): a multi-user publishing service, a small blog and notes server written on Rebel's `web`.
-- [registry](registry/README.md): the site that serves Heroes packages, and its client.
+- [raftkv](raftkv/README.md): Raft consensus and a replicated key-value store, run under a deterministic simulated network.
+- [registry](registry/README.md): a Heroes package index in small, and its client.
+- [rv32](rv32/README.md): a RISC-V RV32IM emulator, with the two-pass assembler that makes its programs, a disassembler and a debugger.
 - [searchd](searchd/README.md): a search engine for one website, in the family of a small Meilisearch or Elasticsearch.
 - [shell](shell/README.md): a POSIX-flavoured command shell.
 - [sitegen](sitegen/README.md): a static site generator.

@@ -54,26 +54,26 @@ Run from the repository's root with the words of `main.args` and `main.stdin` on
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 29 faces on its `packages` line, each linked here to its reference: [`asn1`](https://heroes-lang.org/rebel/asn1/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`containers/cache`](https://heroes-lang.org/rebel/containers/cache/), [`containers/trie`](https://heroes-lang.org/rebel/containers/trie/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`crypto/keypairs`](https://heroes-lang.org/rebel/crypto/keypairs/), [`dns`](https://heroes-lang.org/rebel/dns/), [`graphql`](https://heroes-lang.org/rebel/graphql/), [`grpc`](https://heroes-lang.org/rebel/grpc/), [`hash`](https://heroes-lang.org/rebel/hash/), [`http`](https://heroes-lang.org/rebel/http/), [`http2`](https://heroes-lang.org/rebel/http2/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`maps`](https://heroes-lang.org/rebel/maps/), [`math`](https://heroes-lang.org/rebel/math/), [`metrics`](https://heroes-lang.org/rebel/metrics/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`pem`](https://heroes-lang.org/rebel/pem/), [`poll`](https://heroes-lang.org/rebel/poll/), [`protobuf`](https://heroes-lang.org/rebel/protobuf/), [`retries`](https://heroes-lang.org/rebel/retries/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/), [`tls`](https://heroes-lang.org/rebel/tls/), [`toml`](https://heroes-lang.org/rebel/toml/), [`x509`](https://heroes-lang.org/rebel/x509/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 32 faces on its `packages` line, each linked here to its reference: [`asn1`](https://heroes-lang.org/rebel/asn1/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`containers/cache`](https://heroes-lang.org/rebel/containers/cache/), [`containers/trie`](https://heroes-lang.org/rebel/containers/trie/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`crypto/keypairs`](https://heroes-lang.org/rebel/crypto/keypairs/), [`dns`](https://heroes-lang.org/rebel/dns/), [`errors`](https://heroes-lang.org/rebel/errors/), [`graphql`](https://heroes-lang.org/rebel/graphql/), [`grpc`](https://heroes-lang.org/rebel/grpc/), [`hash`](https://heroes-lang.org/rebel/hash/), [`http`](https://heroes-lang.org/rebel/http/), [`http2`](https://heroes-lang.org/rebel/http2/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`maps`](https://heroes-lang.org/rebel/maps/), [`math`](https://heroes-lang.org/rebel/math/), [`metrics`](https://heroes-lang.org/rebel/metrics/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`pem`](https://heroes-lang.org/rebel/pem/), [`poll`](https://heroes-lang.org/rebel/poll/), [`protobuf`](https://heroes-lang.org/rebel/protobuf/), [`retries`](https://heroes-lang.org/rebel/retries/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/), [`tls`](https://heroes-lang.org/rebel/tls/), [`toml`](https://heroes-lang.org/rebel/toml/), [`web`](https://heroes-lang.org/rebel/web/), [`web/chain`](https://heroes-lang.org/rebel/web/chain/), [`x509`](https://heroes-lang.org/rebel/x509/).
 
 ## Its folders
 
-12 folders, 40 files and 7,535 lines, this page aside; of them 36 modules, `.hero` files, of 7,291 lines.
+12 folders, 40 files and 7,629 lines, this page aside; of them 36 modules, `.hero` files, of 7,382 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
-| `./` | 5 | 320 | 1 | 76 |
-| `cache/` | 1 | 233 | 1 | 233 |
+| `./` | 5 | 323 | 1 | 76 |
+| `cache/` | 1 | 236 | 1 | 236 |
 | `config/` | 3 | 755 | 3 | 755 |
-| `core/` | 4 | 605 | 4 | 605 |
-| `demo/` | 5 | 924 | 5 | 924 |
+| `core/` | 4 | 606 | 4 | 606 |
+| `demo/` | 5 | 927 | 5 | 927 |
 | `discovery/` | 1 | 342 | 1 | 342 |
 | `graph/` | 1 | 275 | 1 | 275 |
 | `limits/` | 1 | 175 | 1 | 175 |
-| `listen/` | 8 | 1,174 | 8 | 1,174 |
-| `proxy/` | 4 | 967 | 4 | 967 |
+| `listen/` | 8 | 1,180 | 8 | 1,180 |
+| `proxy/` | 4 | 970 | 4 | 970 |
 | `route/` | 2 | 550 | 2 | 550 |
-| `standins/` | 5 | 1,215 | 5 | 1,215 |
+| `standins/` | 5 | 1,290 | 5 | 1,290 |
 
 ---
 

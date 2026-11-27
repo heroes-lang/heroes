@@ -54,24 +54,24 @@ Run from the repository's root with the words of `main.args`, as the check of Re
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 20 faces on its `packages` line, each linked here to its reference: [`bytes`](https://heroes-lang.org/rebel/bytes/), [`config`](https://heroes-lang.org/rebel/config/), [`containers/deque`](https://heroes-lang.org/rebel/containers/deque/), [`containers/ordered`](https://heroes-lang.org/rebel/containers/ordered/), [`diff`](https://heroes-lang.org/rebel/diff/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`fs/watch`](https://heroes-lang.org/rebel/fs/watch/), [`json`](https://heroes-lang.org/rebel/json/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`regex`](https://heroes-lang.org/rebel/regex/), [`strings`](https://heroes-lang.org/rebel/strings/), [`term`](https://heroes-lang.org/rebel/term/), [`time`](https://heroes-lang.org/rebel/time/), [`tui`](https://heroes-lang.org/rebel/tui/), [`unicode`](https://heroes-lang.org/rebel/unicode/), [`unicode/encodings`](https://heroes-lang.org/rebel/unicode/encodings/), [`unicode/segment`](https://heroes-lang.org/rebel/unicode/segment/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 21 faces on its `packages` line, each linked here to its reference: [`bytes`](https://heroes-lang.org/rebel/bytes/), [`config`](https://heroes-lang.org/rebel/config/), [`containers/deque`](https://heroes-lang.org/rebel/containers/deque/), [`containers/ordered`](https://heroes-lang.org/rebel/containers/ordered/), [`diff`](https://heroes-lang.org/rebel/diff/), [`errors`](https://heroes-lang.org/rebel/errors/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`fs/watch`](https://heroes-lang.org/rebel/fs/watch/), [`json`](https://heroes-lang.org/rebel/json/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`regex`](https://heroes-lang.org/rebel/regex/), [`strings`](https://heroes-lang.org/rebel/strings/), [`term`](https://heroes-lang.org/rebel/term/), [`time`](https://heroes-lang.org/rebel/time/), [`tui`](https://heroes-lang.org/rebel/tui/), [`unicode`](https://heroes-lang.org/rebel/unicode/), [`unicode/encodings`](https://heroes-lang.org/rebel/unicode/encodings/), [`unicode/segment`](https://heroes-lang.org/rebel/unicode/segment/).
 
 ## Its folders
 
-12 folders, 34 files and 6,572 lines, this page aside; of them 31 modules, `.hero` files, of 6,329 lines.
+12 folders, 34 files and 6,577 lines, this page aside; of them 31 modules, `.hero` files, of 6,333 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
-| `./` | 4 | 391 | 1 | 148 |
+| `./` | 4 | 393 | 1 | 149 |
 | `buffers/` | 3 | 624 | 3 | 624 |
-| `demo/` | 3 | 600 | 3 | 600 |
-| `editor/` | 6 | 1,424 | 6 | 1,424 |
+| `demo/` | 3 | 601 | 3 | 601 |
+| `editor/` | 6 | 1,425 | 6 | 1,425 |
 | `files/` | 3 | 548 | 3 | 548 |
 | `history/` | 1 | 337 | 1 | 337 |
 | `input/` | 2 | 428 | 2 | 428 |
 | `search/` | 2 | 362 | 2 | 362 |
 | `settings/` | 2 | 548 | 2 | 548 |
-| `terminal/` | 1 | 89 | 1 | 89 |
+| `terminal/` | 1 | 90 | 1 | 90 |
 | `text/` | 3 | 611 | 3 | 611 |
 | `view/` | 4 | 610 | 4 | 610 |
 

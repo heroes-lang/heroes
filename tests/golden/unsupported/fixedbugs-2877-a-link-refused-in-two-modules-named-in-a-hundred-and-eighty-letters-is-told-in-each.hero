@@ -1,0 +1,21 @@
+# fixedbugs, defect 2877, 2026-11-27, lane win-longname (M-rebel-library step
+# 212e).
+#
+# SYMPTOM: the shape beside the run case's: two modules whose names take 180
+# letters and share all but the last each bind an inline body of
+# `fixedbugs-2877-inline.h` that calls `base2877`, which nothing on the link
+# line defines. On Windows the program did not compile from the CI's
+# checkout, *the operating system's own reason is 3* at a unit's file, exit 2,
+# before the link could refuse anything.
+#
+# FIX: a unit's files are named by the module's stem
+# (`selfhost/cli/unit_names.hero`), and the link's refusal, which names an
+# object by its file alone under ld64 and MSVC's `link.exe`, is placed at the
+# module whose stem the object opens with (`cli/needs_placed.hero`): each
+# module told at its own binding, as defect 2495's case tells two modules
+# with short names. A name cut at a length would have left the two one name.
+use fixedbugs2877/amodulewhoseobjectisnamedbyadigestofitsnameistoldatitsownbindingwhenalinkrefusesanameitsheadersinlinebodiescallandsoisanothermodulewhosenamesharesallbutitslastletterwithitsownnamea as first
+use fixedbugs2877/amodulewhoseobjectisnamedbyadigestofitsnameistoldatitsownbindingwhenalinkrefusesanameitsheadersinlinebodiescallandsoisanothermodulewhosenamesharesallbutitslastletterwithitsownnameb as second
+
+function main()
+    print(first.a() + second.b())

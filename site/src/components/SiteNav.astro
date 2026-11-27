@@ -62,9 +62,32 @@ const other =
 // author instruction 2026-09-06, which is what made room for Examples and
 // Start without the row growing. Every surveyed language site has a learning
 // entry and an install entry in its top nav; this one had neither.
+//
+// **The second entry says `Docs` in both editions since 2026-11-27**, where it
+// said `Guide` and `Guida`: the author's question that morning, meant as
+// *perhaps the Guide entry should be renamed Docs?*, answered yes by the
+// coordinator as the batch's default the author may turn. It was the one label
+// that matched neither its address, `/docs/`, nor its page's title,
+// *Documentation*. The Italian is `Docs` and not `Documentazione` on the
+// measurement, the way `Grazie` was chosen over `Ringraziamenti`: with the
+// longer word the Italian row took two lines from 980px and THREE between 850
+// and 801px, where `Docs` keeps it on one line down to 910px (it was 920px
+// with `Guida`) and scrolls sideways only from 590px (600px with `Guida`).
+// The English row is 8px narrower than with `Guide` and breaks where it did.
+//
+// **Rebel asked for an entry the same morning, and has none yet**: the author's
+// words, meant as *Rebel has no menu entry*. Measured that day, Rebel after
+// Spec made the row 579px in English and 666px in Italian at 1200px (520 and
+// 607 without it): the English row went to two lines from 870px where it held
+// one down to 830px, and the Italian to two lines from 960px and three between
+// 830 and 801px, the state § Style guide's rule forbids. A tenth entry fits
+// only by displacing one, and which one is the author's choice, put to them
+// with those widths; until then Rebel is reached from the home page and the
+// examples. The widths, every 10px from 1200 to 390 in both editions, are
+// site/README.md's, beside Spec's.
 const entries = [
   { key: 'start', slug: 'start', en: 'Start', it: 'Inizia' },
-  { key: 'docs', slug: 'docs', en: 'Guide', it: 'Guida' },
+  { key: 'docs', slug: 'docs', en: 'Docs', it: 'Docs' },
   { key: 'examples', slug: 'examples', en: 'Examples', it: 'Esempi' },
   // **The ninth, added 2026-09-11 by author instruction** — *maybe it makes
   // sense to put spec in the top menu, because it has become very important* —

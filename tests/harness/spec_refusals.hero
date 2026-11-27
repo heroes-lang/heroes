@@ -210,6 +210,9 @@ test "a refusal that keeps neither claim, a sentence that loses one and an extra
 # The arms the sitting named, and HELD, added by defect 2745 (a jump onto a
 # stack route A holds a coroutine's, no switch into it seen), held to the
 # sentence as the rest are.
+# The arms are the ones panel 257's sitting named, and PARKED, which defect
+# 2872's repair added (step 199m: a jump off a coroutine's stack that leaves a
+# handler's frames there with a save made inside them).
 test "the runtime's refusals as the tree holds them keep a claim each, and the arms are the ones the sitting named"
     c = read_file("runtime/parts/sigguard.c").must()
     got = refusals(c)
@@ -218,5 +221,5 @@ test "the runtime's refusals as the tree holds them keep a claim each, and the a
     for arm in got
         kinds @ kinds.push(arm.kind)
 
-    assert kinds.join(" ") == "DELIVERED STANDING SWITCHED REENTERED ONSTACK HELD UNFOLLOWED default"
+    assert kinds.join(" ") == "DELIVERED STANDING SWITCHED REENTERED ONSTACK HELD PARKED UNFOLLOWED default"
     assert verdict(spec: read_file("spec/heroes-spec.md").must(), c: c) == ""

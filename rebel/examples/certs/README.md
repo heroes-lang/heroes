@@ -63,24 +63,24 @@ A line `main.varies` names is printed in another form where another machine deci
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 24 faces on its `packages` line, each linked here to its reference: [`acme`](https://heroes-lang.org/rebel/acme/), [`asn1`](https://heroes-lang.org/rebel/asn1/), [`big`](https://heroes-lang.org/rebel/big/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`crypto/keypairs`](https://heroes-lang.org/rebel/crypto/keypairs/), [`dns`](https://heroes-lang.org/rebel/dns/), [`fs`](https://heroes-lang.org/rebel/fs/), [`http`](https://heroes-lang.org/rebel/http/), [`io`](https://heroes-lang.org/rebel/io/), [`jose`](https://heroes-lang.org/rebel/jose/), [`json`](https://heroes-lang.org/rebel/json/), [`keyring`](https://heroes-lang.org/rebel/keyring/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`pem`](https://heroes-lang.org/rebel/pem/), [`random`](https://heroes-lang.org/rebel/random/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/), [`tls`](https://heroes-lang.org/rebel/tls/), [`toml`](https://heroes-lang.org/rebel/toml/), [`x509`](https://heroes-lang.org/rebel/x509/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 25 faces on its `packages` line, each linked here to its reference: [`acme`](https://heroes-lang.org/rebel/acme/), [`asn1`](https://heroes-lang.org/rebel/asn1/), [`big`](https://heroes-lang.org/rebel/big/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`crypto/keypairs`](https://heroes-lang.org/rebel/crypto/keypairs/), [`dns`](https://heroes-lang.org/rebel/dns/), [`errors`](https://heroes-lang.org/rebel/errors/), [`fs`](https://heroes-lang.org/rebel/fs/), [`http`](https://heroes-lang.org/rebel/http/), [`io`](https://heroes-lang.org/rebel/io/), [`jose`](https://heroes-lang.org/rebel/jose/), [`json`](https://heroes-lang.org/rebel/json/), [`keyring`](https://heroes-lang.org/rebel/keyring/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`pem`](https://heroes-lang.org/rebel/pem/), [`random`](https://heroes-lang.org/rebel/random/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/), [`tls`](https://heroes-lang.org/rebel/tls/), [`toml`](https://heroes-lang.org/rebel/toml/), [`x509`](https://heroes-lang.org/rebel/x509/).
 
 ## Its folders
 
-11 folders, 42 files and 7,405 lines, this page aside; of them 37 modules, `.hero` files, of 7,273 lines.
+11 folders, 42 files and 7,415 lines, this page aside; of them 37 modules, `.hero` files, of 7,282 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
-| `./` | 6 | 442 | 1 | 310 |
-| `challenges/` | 5 | 941 | 5 | 941 |
+| `./` | 6 | 443 | 1 | 310 |
+| `challenges/` | 5 | 942 | 5 | 942 |
 | `config/` | 2 | 530 | 2 | 530 |
 | `core/` | 2 | 149 | 2 | 149 |
 | `demo/` | 4 | 975 | 4 | 975 |
-| `issue/` | 2 | 300 | 2 | 300 |
-| `pki/` | 3 | 301 | 3 | 301 |
+| `issue/` | 2 | 301 | 2 | 301 |
+| `pki/` | 3 | 303 | 3 | 303 |
 | `renew/` | 2 | 294 | 2 | 294 |
-| `serve/` | 1 | 194 | 1 | 194 |
-| `standins/` | 12 | 2,768 | 12 | 2,768 |
+| `serve/` | 1 | 195 | 1 | 195 |
+| `standins/` | 12 | 2,772 | 12 | 2,772 |
 | `store/` | 3 | 511 | 3 | 511 |
 
 ---

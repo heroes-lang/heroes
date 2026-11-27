@@ -58,23 +58,23 @@ Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and l
 
 ## Its folders
 
-14 folders, 52 files and 9,960 lines, this page aside; of them 49 modules, `.hero` files, of 9,665 lines.
+14 folders, 52 files and 9,943 lines, this page aside; of them 49 modules, `.hero` files, of 9,648 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
 | `./` | 4 | 422 | 1 | 127 |
 | `cli/` | 2 | 481 | 2 | 481 |
-| `demo/` | 4 | 558 | 4 | 558 |
+| `demo/` | 4 | 559 | 4 | 559 |
 | `logs/` | 1 | 54 | 1 | 54 |
-| `ops/` | 2 | 259 | 2 | 259 |
-| `pool/` | 3 | 449 | 3 | 449 |
-| `queue/` | 4 | 316 | 4 | 316 |
-| `schedule/` | 4 | 427 | 4 | 427 |
-| `standins/` | 1 | 102 | 1 | 102 |
-| `standins/collector/` | 4 | 832 | 4 | 832 |
-| `standins/lua/` | 11 | 3,272 | 11 | 3,272 |
-| `standins/redis/` | 9 | 2,322 | 9 | 2,322 |
-| `standins/webhooks/` | 1 | 199 | 1 | 199 |
+| `ops/` | 2 | 261 | 2 | 261 |
+| `pool/` | 3 | 436 | 3 | 436 |
+| `queue/` | 4 | 317 | 4 | 317 |
+| `schedule/` | 4 | 428 | 4 | 428 |
+| `standins/` | 1 | 103 | 1 | 103 |
+| `standins/collector/` | 4 | 833 | 4 | 833 |
+| `standins/lua/` | 11 | 3,259 | 11 | 3,259 |
+| `standins/redis/` | 9 | 2,323 | 9 | 2,323 |
+| `standins/webhooks/` | 1 | 200 | 1 | 200 |
 | `telemetry/` | 2 | 267 | 2 | 267 |
 
 ---

@@ -60,6 +60,7 @@ use cli/response_file
 use cli/served
 use cli/strings
 use cli/toolchain
+use cli/unit_names
 use cli/unit_verdict
 use source
 
@@ -110,10 +111,11 @@ function components(s: source.Source) -> [str]
 
 # One TU compiled to its cached object. Everything lives under
 # build/tu-<key>/, so a text or configuration change is a different
-# directory; inside it the record `<m>.deps.txt` names the object
-# `<m>-<digest>.o` and the warnings `warnings-<digest>.txt` of the compile
+# directory; inside it the record `<stem>.deps.txt` names the object
+# `<stem>-<digest>.o` and the warnings `warnings-<digest>.txt` of the compile
 # whose headers it lists (`cli/deps.hero`), and a hit is that record still
-# vouching for its files, with both artifacts there.
+# vouching for its files, with both artifacts there. The stem is the
+# module's digest, never its name (`cli/unit_names.hero`, defect 2877).
 #
 # `@memo` is one build's answers about files on disk, threaded through
 # the whole loop: the 39 headers a trivial program reaches are 797 KB,
@@ -167,7 +169,7 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     key = digest.digest(named + "|reaches:" + opening.key_text(reach))
     dir = t.build + "/tu-" + key
     process.mkdir_all(dir)?
-    listed = dir + "/" + module + ".deps.txt"
+    listed = dir + "/" + unit_names.stem_of(module) + ".deps.txt"
     known = deps.vouched(listed, @memo)
 
     if !reach.is_err() && !known.is_err()
@@ -178,8 +180,8 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
         # type's declared limit — visible exactly once per edit.
         # Measured: suite_warnings went red on a warm cache before this
         # existed, on the program whose warnings are the expectation.
-        warned = kept.read(warnings_of(dir: dir, sum: known.must()))
-        object = object_of(dir: dir, module: module, sum: known.must())
+        warned = kept.read(unit_names.warnings_of(dir: dir, sum: known.must()))
+        object = unit_names.object_of(dir: dir, component: module, sum: known.must())
 
         # **And only as its compile wrote it** (defect 443): its bytes are
         # held to the seal beside it (`cli/served.hero`), and one a power cut
@@ -195,7 +197,7 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     # directory is named by this very text, so a copy another build put
     # there is these bytes. It was written in place until defect 134, and
     # a clang could read it while another build truncated it.
-    c_file = dir + "/" + module + ".c"
+    c_file = dir + "/" + unit_names.c_name(module)
     publish.write_whole(path: c_file, text: tu_text, keyed: true)?
 
     # **Clang's three outputs are this compile's alone** (defects 057 and
@@ -205,8 +207,8 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     # publish, and a build could read another's stderr torn, NUL bytes and
     # half a warning, and bake it into the replay below.
     err_path = publish.private_name(dir + "/clang-stderr.txt")
-    staged = publish.private_name(dir + "/" + module + ".o")
-    depfile = publish.private_name(dir + "/" + module + ".d")
+    staged = publish.private_name(dir + "/" + unit_names.stem_of(module) + ".o")
+    depfile = publish.private_name(dir + "/" + unit_names.stem_of(module) + ".d")
 
     # `-MT dep` names the listing's target a word rather than a path,
     # so the reader cuts at the first `:` on a fact it chose. The
@@ -227,7 +229,10 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
         list: line,
         more: ["-c", "-MD", "-MT", "dep", "-MF", depfile, "-fno-crash-diagnostics", c_file, "-o", staged]
     )
-    line @ strings.with_all(list: line, more: toolchain.object_words(t, named: dir + "/" + module + ".o"))
+    line @ strings.with_all(
+        list: line,
+        more: toolchain.object_words(t, named: dir + "/" + unit_names.stem_of(module) + ".o")
+    )
 
     # **What clang said is read once, and the words printed are the words
     # replayed** (defect 337): the replay below read the stream a second time
@@ -294,13 +299,13 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     # an object and warnings already in place, compiled from exactly the
     # files it lists. Both are keyed: the directory names the text and the
     # configuration, the digest every file the compile read.
-    object = object_of(dir: dir, module: module, sum: sum)
+    object = unit_names.object_of(dir: dir, component: module, sum: sum)
 
     # The seal is of what clang wrote, taken before the object is published
     # and published before the record (defect 443).
     served.seal(staged: staged, object: object)?
     publish.publish(staged: staged, path: object, keyed: true)?
-    kept.write(path: warnings_of(dir: dir, sum: sum), text: said)?
+    kept.write(path: unit_names.warnings_of(dir: dir, sum: sum), text: said)?
 
     # Keyed in the one sense a record can be: any record another build
     # published names artifacts of its own compile, and they are there. **And
@@ -310,13 +315,6 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
     if opening.covers(reach, listed: rows.must())
         publish.write_whole(path: listed, text: listing, keyed: true)?
     return ok(object)
-
-# The object a record's digest names, and the warnings its compile said.
-function object_of(dir: str, module: str, sum: str) -> str
-    return dir + "/" + module + "-" + sum + ".o"
-
-function warnings_of(dir: str, sum: str) -> str
-    return dir + "/warnings-" + sum + ".txt"
 
 function failure_note(failed: ()?) -> str
     match failed
@@ -717,3 +715,50 @@ test "a unit compiled beside two same-named headers is two objects, keyed by the
     assert first != second
     assert process.path_exists(path: first)
     assert process.path_exists(path: second)
+
+# **A unit's files take the same names whatever its module's length** (defect
+# 2877): a module named in 300 characters, as a nested module's C component
+# is where its folders and its file each take 150, is compiled into files
+# named by its stem, the longest the object's seal, in 48 characters. Each
+# file was named by the module until then, so its `.c` alone took 302 bytes,
+# past the 255 every platform's file system takes in one part of a path
+# (`cannot publish ... the operating system's own reason is 63`, this Mac's
+# ENAMETOOLONG), and on Windows a module of 180 passed the 259 of a whole path.
+test "a unit's files are named in at most 48 characters whatever its module's length (defect 2877)"
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.build @ "build/selftest-unit-long-module"
+    assert !process.remove_tree(t.build).is_err()
+    long = "m".repeat(300)
+    none: [str] = []
+    memo: {str: str} @= {}
+    opened: {str: str} @= {}
+    told: {str: bool} @= {}
+    object = tu_object(
+        t,
+        module: long,
+        tu_text: "int heroes_long_module(void);\nint heroes_long_module(void) { return 2877; }\n",
+        level: "-O0",
+        sanitize: false,
+        search: "",
+        pkgconfig_flags: none,
+        source_dir: "",
+        search_include: none,
+        memo: @memo,
+        opened: @opened,
+        @told
+    )
+    assert failure_text(object) == ""
+    assert process.path_exists(object.must())
+    assert unit_names.names_object(base: unit_names.base_of(object.must()), component: long)
+    longest: i64 @= 0
+
+    for path in process.files_under(t.build).must()
+        name = unit_names.base_of(path)
+        assert !strings.holds(text: name, needle: "mmmm")
+        assert !strings.ends_with(text: name, suffix: ".tmp")
+
+        if name.len() > longest
+            longest @ name.len()
+
+    assert longest == 48
+    assert !process.remove_tree(t.build).is_err()

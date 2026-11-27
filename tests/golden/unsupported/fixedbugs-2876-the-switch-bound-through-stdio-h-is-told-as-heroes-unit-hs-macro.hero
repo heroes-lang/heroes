@@ -1,0 +1,14 @@
+# Fixed 2026-11-27, defect 2876, lane runtime-names: the switch the
+# runtime's `heroes_unit.h` defines, bound through `stdio.h`, which declares
+# no such name (the defect's second reproducer).
+# Symptom: told as a name `heroes_runtime.h` declares, whose functions free
+# what the program holds; it is `heroes_unit.h`'s macro.
+# Cause and repair: `fixedbugs-2876-the-switch-heroes-unit-h-defines-bound-through-it-is-told-as-its-macro`.
+# Bound, it would read the compiler's `1`, found only because every unit
+# reads `heroes_unit.h` before the group's `stdio.h`.
+
+extern "stdio.h"
+    constant HERO_STANDARD_AFTER_GROUPS: i64  #~ ffi_runtime_header
+
+function main()
+    print(HERO_STANDARD_AFTER_GROUPS)

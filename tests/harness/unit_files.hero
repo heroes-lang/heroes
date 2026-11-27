@@ -1,0 +1,98 @@
+# The names a module's translation unit takes under `build/`, as the
+# compiler gives them (`selfhost/cli/unit_names.hero`; defect 2877,
+# 2026-11-27), for the two suites that ask a build's files by their module:
+# `units` finds a module's `.c` and `cache` says whose object moved.
+#
+# **A mirror, and the premise it rests on is written as a claim with a test
+# that fires when it dies** (`.claude/rules/module-shape.md`): the compiler
+# names every file of a module's unit by `unit-` and the sixteen hexadecimal
+# digits of its digest of the module's C component, two polynomial hashes,
+# bases 131 and 137, modulo 2^31 - 1 (`selfhost/cli/digest.hero`). Until that
+# defect each file was named by the module itself, and a module named in 180
+# characters passed the 259 a Windows path takes. The test below holds this
+# file to the stems the compiler's own test holds `unit_names.stem_of` to, the
+# same three literals in each; a suite that reads a stem the compiler does
+# not write finds no unit, which it says rather than passes.
+
+use strings
+
+# The stem of every file of the unit of the module whose C component is
+# `component`.
+function stem_of(component: str) -> str
+    return "unit-" + digest(component)
+
+# The unit's C, as its folder holds it.
+function c_name(component: str) -> str
+    return stem_of(component) + ".c"
+
+# The module of `known` whose object `name` is, a file without its folder,
+# `<stem>-<16>.o`. An older compiler's object is read as it named it,
+# `<module>-<16>.o` from defect 134 to defect 2877 and `<module>.o` before,
+# so the suites read every compiler the same way; and a name of no such shape
+# comes back whole, so a report names it rather than a guess.
+function module_of_object(name: str, known: [str]) -> str
+    if !strings.has_suffix(s: name, suffix: ".o")
+        return name
+
+    for one in known
+        head = stem_of(one) + "-"
+
+        if strings.has_prefix(s: name, prefix: head) && name.len() == head.len() + 18 && hexadecimal(name.slice(from: head.len(), to: name.len() - 2))
+            return one
+
+    stem = name.slice(from: 0, to: name.len() - 2)
+
+    if stem.len() > 17 && stem[stem.len() - 17] == '-' && hexadecimal(stem.slice(from: stem.len() - 16, to: stem.len()))
+        return stem.slice(from: 0, to: stem.len() - 17)
+    return stem
+
+function hexadecimal(text: str) -> bool
+    for i in range(from: 0, to: text.len())
+        if !(text[i] >= '0' && text[i] <= '9' || text[i] >= 'a' && text[i] <= 'f')
+            return false
+
+    return true
+
+# `selfhost/cli/digest.hero`'s digest, byte for byte.
+function digest(text: str) -> str
+    m = 2147483647
+    a: i64 @= 0
+    b: i64 @= 0
+    index: i64 @= 0
+
+    while index < text.len()
+        v = text[index].to_i64().must()
+        a @ (a * 131 + v) % m
+        b @ (b * 137 + v) % m
+        index @ index + 1
+
+    return hex8(a) + hex8(b)
+
+function hex8(number: i64) -> str
+    ds = "0123456789abcdef"
+    out: str @= ""
+    value: i64 @= number
+    count: i64 @= 0
+
+    while count < 8
+        d = value % 16
+        out @ ds.slice(from: d, to: d + 1) + out
+        value @ value / 16
+        count @ count + 1
+
+    return out
+
+## Tests
+
+# The same literals as `selfhost/cli/unit_names.hero`'s test: a change to
+# either side's naming fails one of the two.
+test "a unit's stem is the compiler's, for the modules the suites build (defect 2877)"
+    assert stem_of("unitprog") == "unit-6503b22872040a4f"
+    assert stem_of("unitshape") == "unit-6432a046419b0ef2"
+    assert stem_of("bind") == "unit-0d3d6cb50f23678d"
+    assert c_name("unitprog") == "unit-6503b22872040a4f.c"
+    assert module_of_object(name: "unit-0d3d6cb50f23678d-0123456789abcdef.o", known: ["prog", "bind"]) == "bind"
+    assert module_of_object(name: "unit-0d3d6cb50f23678d-0123.o", known: ["bind"]) == "unit-0d3d6cb50f23678d-0123"
+    assert module_of_object(name: "bind-0123456789abcdef.o", known: ["bind"]) == "bind"
+    assert module_of_object(name: "bind.o", known: ["bind"]) == "bind"
+    assert module_of_object(name: "libbind.a", known: ["bind"]) == "libbind.a"

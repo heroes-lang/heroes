@@ -1,0 +1,1 @@
+!panic: a signal handler called `setcontext` naming a context that the code the signal interrupted was itself switching from or to

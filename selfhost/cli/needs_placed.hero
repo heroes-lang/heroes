@@ -10,7 +10,7 @@
 
 use cli/library_needs
 use cli/link_report
-use cli/strings
+use cli/unit_names
 
 # Whether a reference of `refs` is placed in the object of one of `modules`.
 function holds_any(refs: [link_report.Reference], modules: [str]) -> bool
@@ -66,66 +66,67 @@ function list_of(lists: [[str]], module: str) -> i64
     return -1
 
 # Whether `file` is the object `cli/units.hero` compiles one of `modules`
-# into, `<module>-<digest>.o`, a module's C component being letters and
-# digits and the digest hexadecimal; the runtime's,
-# `runtime-<key>-<digest>.o`, is none.
+# into, `unit-<16>-<digest>.o`, its stem the digest of the module's C
+# component (`cli/unit_names.hero`); the runtime's,
+# `runtime-<key>-<digest>.o`, is none. **The object was `<module>-<digest>.o`
+# until defect 2877**, and a module's name long enough to pass what a Windows
+# path takes could not be compiled; ld64 and MSVC's `link.exe` name an object
+# by its file alone, so the module is read back from the stem, whatever its
+# length, and two modules sharing a beginning are two stems.
 function module_object(file: str, modules: [str]) -> bool
     base = library_needs.base_of(file)
 
-    if !strings.ends_with(text: base, suffix: ".o")
-        return false
-    end = base.len() - 2
-
     for module in modules
-        head = module + "-"
-
-        if strings.starts_with(text: base, prefix: head) && end > head.len() && hexadecimal(base.slice(from: head.len(), to: end))
+        if unit_names.names_object(base: base, component: module)
             return true
 
     return false
 
-function hexadecimal(text: str) -> bool
-    for i in range(from: 0, to: text.len())
-        b = text[i]
-
-        if !(b >= '0' && b <= '9' || b >= 'a' && b <= 'f')
-            return false
-
-    return true
-
 ## Tests
+
+# An object's file as `unit_names.object_of` names it, which a linker's words
+# name.
+function object_named(module: str, sum: str) -> str
+    return unit_names.base_of(unit_names.object_of(dir: "", component: module, sum: sum))
 
 test "a reference is the program's where every one is placed in a module's object or a library it names (defect 2372)"
     modules = ["inlineref", "lib"]
-    assert module_object(file: "inlineref-1d862cfd051b96b5.o", modules: modules)
-    assert module_object(file: "build/tu-0b92/inlineref-563fa1164bcae0e1.o", modules: modules)
+    inline = object_named(module: "inlineref", sum: "1d862cfd051b96b5")
+    assert module_object(file: inline, modules: modules)
+    assert module_object(
+        file: "build/tu-0b92/" + object_named(module: "inlineref", sum: "563fa1164bcae0e1"),
+        modules: modules
+    )
+    assert module_object(file: "C:\\w\\build\\tu-0b92\\" + inline, modules: modules)
     assert !module_object(file: "build/runtime-0128005f5ecb3c36-578c67547cb30f76.o", modules: ["runtime"])
-    assert !module_object(file: "other-563fa1164bcae0e1.o", modules: modules)
-    assert !module_object(file: "inlineref-.o", modules: modules)
+    assert !module_object(file: object_named(module: "other", sum: "563fa1164bcae0e1"), modules: modules)
+    assert !module_object(file: "inlineref-563fa1164bcae0e1.o", modules: modules)
+    assert !module_object(file: unit_names.stem_of("inlineref") + "-.o", modules: modules)
     assert !module_object(file: "libtop.a", modules: modules)
 
     # ld64 at `-O2`: the header's function and the compiler's caller, both
     # in the module's object; GNU ld naming the header's line under it.
-    ld64 = "Undefined symbols for architecture arm64:\n  \"_base_helper\", referenced from:\n      _top_fast in inlineref-1d862cfd051b96b5.o\n      _h_inlineref_main in inlineref-1d862cfd051b96b5.o\nld: symbol(s) not found for architecture arm64\n"
+    ld64 = "Undefined symbols for architecture arm64:\n  \"_base_helper\", referenced from:\n      _top_fast in " + inline + "\n      _h_inlineref_main in " + inline + "\nld: symbol(s) not found for architecture arm64\n"
     refs = link_report.references(ld64)
     assert holding(refs, symbol: "base_helper", lists: [modules], libraries: []).must() == ["inlineref"]
-    gnu = "/usr/bin/ld: build/tu-02/inlineref-563fa1164bcae0e1.o: in function `top_fast':\n/w/r/./fast.h:2:(.text+0x24): undefined reference to `base_helper'\n/usr/bin/ld: /w/r/./fast.h:2:(.text+0x3c): undefined reference to `base_helper'\n"
+    gnu = "/usr/bin/ld: build/tu-02/" + object_named(module: "inlineref", sum: "563fa1164bcae0e1") + ": in function `top_fast':\n/w/r/./fast.h:2:(.text+0x24): undefined reference to `base_helper'\n/usr/bin/ld: /w/r/./fast.h:2:(.text+0x3c): undefined reference to `base_helper'\n"
     assert holding(link_report.references(gnu), symbol: "base_helper", lists: [modules], libraries: []).must() == ["inlineref"]
 
     # MSVC's link.exe, the CI's, naming the module's object at the line's
     # start, its run 42721242127's words (defect 2398).
-    msvc = "fixedbugs2372twoinlinebodiescallingtwonamesareeachtold-11565d543efb34ff.o : error LNK2019: unresolved external symbol base2372_one referenced in function top2372_one\r\nfixedbugs2372twoinlinebodiescallingtwonamesareeachtold-11565d543efb34ff.o : error LNK2019: unresolved external symbol base2372_two referenced in function top2372_two\r\n"
     two = ["fixedbugs2372twoinlinebodiescallingtwonamesareeachtold"]
+    named = object_named(module: two[0], sum: "11565d543efb34ff")
+    msvc = named + " : error LNK2019: unresolved external symbol base2372_one referenced in function top2372_one\r\n" + named + " : error LNK2019: unresolved external symbol base2372_two referenced in function top2372_two\r\n"
     assert holding(link_report.references(msvc), symbol: "base2372_one", lists: [two], libraries: []).must() == two
     assert holding(link_report.references(msvc), symbol: "base2372_two", lists: [two], libraries: []).must() == two
     assert holding(link_report.references(msvc), symbol: "base2372_one", lists: [modules], libraries: []).is_err()
 
     # A library the program names refers too; one it does not name, the
     # runtime's object, and a library alone, are not the program's object.
-    both = "Undefined symbols for architecture arm64:\n  \"_base_helper\", referenced from:\n      _top_fast in inlineref-1d862cfd051b96b5.o\n      _top_value in libtop.a[2](top.o)\n"
+    both = "Undefined symbols for architecture arm64:\n  \"_base_helper\", referenced from:\n      _top_fast in " + inline + "\n      _top_value in libtop.a[2](top.o)\n"
     assert holding(link_report.references(both), symbol: "base_helper", lists: [modules], libraries: ["top"]).must() == ["inlineref"]
     assert holding(link_report.references(both), symbol: "base_helper", lists: [modules], libraries: []).is_err()
-    runtime = "Undefined symbols for architecture arm64:\n  \"_base_helper\", referenced from:\n      _top_fast in inlineref-1d862cfd051b96b5.o\n      _hero_x in runtime-0128005f5ecb3c36-578c67547cb30f76.o\n"
+    runtime = "Undefined symbols for architecture arm64:\n  \"_base_helper\", referenced from:\n      _top_fast in " + inline + "\n      _hero_x in runtime-0128005f5ecb3c36-578c67547cb30f76.o\n"
     assert holding(
         link_report.references(runtime),
         symbol: "base_helper",
@@ -139,7 +140,7 @@ test "a reference is the program's where every one is placed in a module's objec
     # Two modules each hold a reference, through two header lists or one:
     # each module answers for its own, in the lists' order, and a reference
     # in a module no list reads leaves the name the compiler's (defect 2495).
-    split = "Undefined symbols for architecture arm64:\n  \"_stop_requested\", referenced from:\n      _stop_asked in main-36e7573535033436.o\n      _stop_request in handler-4025180a6ae3b6b5.o\n"
+    split = "Undefined symbols for architecture arm64:\n  \"_stop_requested\", referenced from:\n      _stop_asked in " + object_named(module: "main", sum: "36e7573535033436") + "\n      _stop_request in " + object_named(module: "handler", sum: "4025180a6ae3b6b5") + "\n"
     lists = [["main"], ["handler"]]
     assert holding(link_report.references(split), symbol: "stop_requested", lists: lists, libraries: []).must() == ["main", "handler"]
     assert holding(link_report.references(split), symbol: "stop_requested", lists: [["handler", "main"]], libraries: []).must() == ["handler", "main"]
@@ -151,6 +152,23 @@ test "a reference is the program's where every one is placed in a module's objec
     # `heroes-linux-arm64` image's `ld.lld` wrote them on 2026-11-13: each
     # module placed by its object under `>>>`. lld lists three references and
     # folds the rest into `referenced N more times`, which names no object.
-    lld = "ld.lld: error: undefined symbol: stop2495_requested\n>>> referenced by fixedbugs-2495-stopflag.h:5 (tests/golden/unsupported/fixedbugs-2495-stopflag.h:5)\n>>>               build/tu-21b8aa211dc61a8e/fixedbugs2495flagwriter-37eda65b2609f932.o:(stop2495_request)\n>>> referenced by fixedbugs-2495-stopflag.h:6 (tests/golden/unsupported/fixedbugs-2495-stopflag.h:6)\n>>>               build/tu-5fbe157e3ed37b19/fixedbugs2495anobjecttwoheaderlistswriteandreadistoldineachmodule-6453d29c5b17488e.o:(stop2495_asked)\n>>> referenced 1 more times\n"
     root = "fixedbugs2495anobjecttwoheaderlistswriteandreadistoldineachmodule"
+    lld = "ld.lld: error: undefined symbol: stop2495_requested\n>>> referenced by fixedbugs-2495-stopflag.h:5 (tests/golden/unsupported/fixedbugs-2495-stopflag.h:5)\n>>>               build/tu-21b8aa211dc61a8e/" + object_named(module: "fixedbugs2495flagwriter", sum: "37eda65b2609f932") + ":(stop2495_request)\n>>> referenced by fixedbugs-2495-stopflag.h:6 (tests/golden/unsupported/fixedbugs-2495-stopflag.h:6)\n>>>               build/tu-5fbe157e3ed37b19/" + object_named(module: root, sum: "6453d29c5b17488e") + ":(stop2495_asked)\n>>> referenced 1 more times\n"
     assert holding(link_report.references(lld), symbol: "stop2495_requested", lists: [[root], ["fixedbugs2495flagwriter"]], libraries: []).must() == [root, "fixedbugs2495flagwriter"]
+
+# **A module whose name passes what a Windows path takes is placed by its
+# object all the same** (defect 2877): its object is named by its stem in 40
+# characters, and two modules whose names share their first 200 are two
+# objects, each told at its own module, under ld64's words and MSVC's.
+test "a module named in 300 characters is placed by its object, apart from one sharing its first 200 (defect 2877)"
+    long = "m".repeat(300)
+    near = "m".repeat(200) + "n"
+    one = object_named(module: long, sum: "0123456789abcdef")
+    other = object_named(module: near, sum: "0123456789abcdef")
+    assert one.len() == 40 && one != other
+    ld64 = "Undefined symbols for architecture arm64:\n  \"_base2877\", referenced from:\n      _top2877 in " + one + "\n      _top2877_b in " + other + "\n"
+    lists = [[near], [long]]
+    assert holding(link_report.references(ld64), symbol: "base2877", lists: lists, libraries: []).must() == [near, long]
+    msvc = one + " : error LNK2019: unresolved external symbol base2877 referenced in function top2877\r\n"
+    assert holding(link_report.references(msvc), symbol: "base2877", lists: lists, libraries: []).must() == [long]
+    assert holding(link_report.references(msvc), symbol: "base2877", lists: [[near]], libraries: []).is_err()

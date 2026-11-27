@@ -673,13 +673,23 @@ static int hero_alloc_interrupted(void) { return hero_alloc_inside != 0; }
 /* The stop, through the one every refusal of a signal's re-entrance takes
  * (`parts/sigguard.c`), async-signal-safe from its first call to its last and
  * latched once per process; its last words are the one remedy (panel 247's
- * R9). The first clause names both ways in, since the thunk's question does
- * not reach every shape the second names. */
+ * R9). A bracket found open says a call into the allocator never finished,
+ * and nothing more: a handler using the allocator while the code it
+ * interrupted is inside it, or a handler that jumped out of that code, which
+ * then never finishes (defect 2873: a watchdog a raw system call installed,
+ * which the jump hooks cannot see begin, so panel 258's stop at the jump is
+ * never asked, `siglongjmp`ed out of a Heroes function's allocation and was
+ * stopped at the next one, 7 runs of 34, in words naming *a Heroes function
+ * given to C as a signal handler* of a program that gives C none). The
+ * clause of a handler's own use names both ways in, since the thunk's
+ * question does not reach every shape it names. */
 static _Noreturn void hero_alloc_reentered(void) {
     static const char *const said[] = {
-        "panic: a signal handler used this runtime's allocator while the code it interrupted was "
-        "inside it, which would corrupt memory: a Heroes function given to C as a signal handler, "
-        "or called from one, does so whenever it builds or drops a value. ",
+        "panic: this runtime's allocator was entered again before a call into it had finished, which "
+        "would corrupt memory: either a signal handler used it while the code it interrupted was inside "
+        "it (a Heroes function given to C as a signal handler, or called from one, does so whenever it "
+        "builds or drops a value), or a signal handler jumped (`siglongjmp`, `longjmp`) out of the code "
+        "it interrupted while that code was inside it, which nothing will ever finish. ",
         HERO_SIGNAL_REMEDY,
     };
     hero_signal_stop(said, sizeof said / sizeof said[0]);

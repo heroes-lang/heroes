@@ -22,7 +22,8 @@
   <a href="ROADMAP.md">The chain</a> &nbsp;&middot;&nbsp;
   <a href="docs/records/journal/README.md">The journals</a> &nbsp;&middot;&nbsp;
   <a href="docs/panel/">The panels</a> &nbsp;&middot;&nbsp;
-  <a href="examples/">The examples</a>
+  <a href="examples/">The examples</a> &nbsp;&middot;&nbsp;
+  <a href="https://heroes-lang.org/rebel/">Rebel</a>
 </p>
 
 A language for the age of agents, designed so that **every plausible mistake a
@@ -160,7 +161,7 @@ working is a calculator, spread over four modules, with its own tests.
 | threads, isolated, with a stack guard that speaks on every one | the two books of `docs/records/book/`: how this language came to be, and the guide as a book you would find in a shop |
 | an FFI that binds raylib, SDL, SQLite and curl with no shim | |
 | `read_file`/`write_file`, `args()`, `exit(code)` | |
-| a guide, chapter by chapter, in English and Italian, at [heroes-lang.org/docs](https://heroes-lang.org/docs/) | |
+| the documentation, chapter by chapter, in English and Italian, at [heroes-lang.org/docs](https://heroes-lang.org/docs/) | |
 
 **Heroes imposes no standard library.** The language ships its compiler and a
 minimal runtime, and what a program needs beyond them comes from C through the
@@ -170,6 +171,17 @@ under `rebel/library/`, is one such package: a program takes it through its
 catalogue or leaves it, and the compiler is written without it. There is no
 standard library to obey; there is a Rebel to call, or not. Why is
 `docs/design.md` §1.11.
+
+Rebel's own programs show how far it reaches: more than thirty applications
+in [`rebel/examples/`](rebel/examples/INDEX.md), among them a small SQL
+database made the way SQLite is, a small Redis, a replicated store in the
+manner of etcd's under a simulated network, a small RISC-V machine in the
+manner of QEMU's `virt` board and a language server for Kite, a small
+language it defines itself, each with a recorded demo that a check runs
+again whenever Rebel or the program changes. Its packages, one row each
+with its ledger against Go, Rust and Python, and its applications, each with
+the tool it is modelled on, are listed at
+[heroes-lang.org/rebel](https://heroes-lang.org/rebel/).
 
 The chain from here is `ROADMAP.md` § The chain. What is already built has
 one journal each, indexed at `docs/records/journal/README.md`.
@@ -310,7 +322,7 @@ and in
 
 <p align="center">
   <sub><a href="https://heroes-lang.org">heroes-lang.org</a> is this language's home, in
-  English and Italian: the guide, the examples that run, and the build log.<br>
+  English and Italian: the docs, the examples that run, and the build log.<br>
   The name is an homage to David Bowie's <i>&ldquo;Heroes&rdquo;</i> (1977), and the
   quotation marks are his. The bolt is borrowed from 1973.</sub>
 </p>

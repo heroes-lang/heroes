@@ -510,6 +510,28 @@ the registered prediction of `260-briefs/blind/registration.md` § Registered 20
 (N1 and N2 there), whose instrument is the runner this reading used. **Unrun**: no reader has read the narrowed text;
 the re-read is registered and not run, a paid run the author is asked for.
 
+## The narrowed sentence, re-read 2026-11-27
+
+Added the morning after step 208b narrowed § 13's sentence: the re-read registered in `260-briefs/blind/registration.md`
+§ Registered 2026-11-26: the narrowed text, re-read ran on the author's authorisation of 2026-11-27 at about 08:25 (the
+answer *2a*, ceiling 12.00 USD), as registered, its report `260-reports/llm-ergonomist-reread.md`, the sessions' answers
+`260-reports/llm-ergonomist-reread-answers.tar.xz`, and every change of the runner from the first run's a `diff -u` in
+`260-briefs/blind/registration-runner-reread.md`, written before any session. Before any session every input held its
+registered hash, both arms rebuilt to theirs (`adopted` `70b8e497...`, `narrowed` `6874087d...`), and t2's six keys and
+W2's cell under step 208a were run again by today's `main` (`9f5c59e6b`, stage 2 `sources 1803fd0e58b66d44`) on this Mac
+and in Linux arm64: no cell moved. **20 sessions, every one a success, 4.135307 USD of the 12.00**; none voided, 20 of
+20 `context` answers saying no rule, contract or memory reached them. **N1 holds**: under `narrowed` 0 of 5 readers
+write `layer` in W2 (5 of 5 declared-right). **N2 holds**: under `narrowed` 5 of 5 readers build-right on t2's (4).
+**By the registration's rule the narrowing stands**, and it cost nothing measured: under `narrowed` W1, W3 and W4 5 of 5
+each, t2's other five 5 of 5 each, no reader naming the importer's file. **`adopted`, read again the same day under
+`claude` 2.1.326 (the first run's 2.1.323), reads as on 2026-11-26**: W2 0 of 5, (4) 0 of 5, everything else 5 of 5; so
+the move from 0 to 5 is the text's, not the day's. **And the build now agrees with the text**: the five `adopted` W2
+with `extern "hero_os.h" layer` are refused `ffi_layer_unreached` at `ident/me.hero:1:20` on both platforms, where on
+2026-11-26 they built. **What the narrowed text opens, for the sitting**: 5 of its 10 readers ask whether *"unless its
+library calls the layer"* means the library behind `hero_os.h` itself rather than one the group names with `link`; all
+ten chose the key's answer. **Unrun**: no verdict session (none registered), the x86-64 legs, Windows; the scorer was not
+blind; the narrowed sentence's real token count is step 208b's.
+
 ## Author's verdict
 
 **Pending.** The decision's draft is `docs/panel/260-reports/decision-draft.md`, filed with this sitting as `panel 260`.

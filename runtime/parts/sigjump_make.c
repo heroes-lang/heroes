@@ -43,6 +43,12 @@
 __attribute__((used, visibility("hidden"))) void hero_sig_made_context(const void *context);
 __attribute__((used, visibility("hidden"))) void hero_sig_made_context(const void *context) {
     hero_jmp_find();
+    const ucontext_t *uc = (const ucontext_t *)context;
+    HeroSignalStack *own = hero_sig_own();
+    if (own != NULL && uc != NULL) {
+        uintptr_t lo = (uintptr_t)uc->uc_stack.ss_sp;
+        hero_signal_switch_remade(own, lo, lo + (uintptr_t)uc->uc_stack.ss_size);
+    }
     /* Route A reads no switch's target, so it cannot see the range entered
      * or its coroutine end: the range is held from here on, and a target in
      * it lies on the coroutine (rule 7, defect 2745). */

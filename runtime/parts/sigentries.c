@@ -604,6 +604,8 @@ static bool hero_sig_push(HeroSignalStack *own, uintptr_t at, uintptr_t alt_lo, 
     e->unsure = unsure;
     e->saved = 0;
     e->dead = 0;
+    e->cut_from = 0;
+    e->cut_to = 0;
     atomic_signal_fence(memory_order_seq_cst);
     own->depth = i + 1;
     atomic_signal_fence(memory_order_seq_cst);

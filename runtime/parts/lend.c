@@ -212,12 +212,16 @@ static _Thread_local volatile sig_atomic_t hero_lend_inside = 0;
 static int hero_lend_interrupted(void) { return hero_lend_inside != 0; }
 #endif
 
-/* The stop, the allocator's in its words for this table (panel 247's R9). */
+/* The stop, the allocator's in its words for this table (panel 247's R9;
+ * defect 2873, both ways a call into it never finishes). */
 static _Noreturn void hero_lend_reentered(void) {
     static const char *const said[] = {
-        "panic: a signal handler used this runtime's record of the buffers lent to C while the code it "
-        "interrupted was inside it, which would corrupt memory: a Heroes function given to C as a signal "
-        "handler, or called from one, does so whenever it lends a buffer or a local to C through `@`. ",
+        "panic: this runtime's record of the buffers lent to C was entered again before a call into it "
+        "had finished, which would corrupt memory: either a signal handler used it while the code it "
+        "interrupted was inside it (a Heroes function given to C as a signal handler, or called from one, "
+        "does so whenever it lends a buffer or a local to C through `@`), or a signal handler jumped "
+        "(`siglongjmp`, `longjmp`) out of the code it interrupted while that code was inside it, which "
+        "nothing will ever finish. ",
         HERO_SIGNAL_REMEDY,
     };
     hero_signal_stop(said, sizeof said / sizeof said[0]);

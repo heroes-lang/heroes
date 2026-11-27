@@ -48,24 +48,24 @@ Run from the repository's root with the words of `main.args`, as the check of Re
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 36 faces on its `packages` line, each linked here to its reference: [`bytes`](https://heroes-lang.org/rebel/bytes/), [`config`](https://heroes-lang.org/rebel/config/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`html`](https://heroes-lang.org/rebel/html/), [`html/sanitize`](https://heroes-lang.org/rebel/html/sanitize/), [`http`](https://heroes-lang.org/rebel/http/), [`http/suffixes`](https://heroes-lang.org/rebel/http/suffixes/), [`i18n`](https://heroes-lang.org/rebel/i18n/), [`i18n/dates`](https://heroes-lang.org/rebel/i18n/dates/), [`io`](https://heroes-lang.org/rebel/io/), [`jose`](https://heroes-lang.org/rebel/jose/), [`json`](https://heroes-lang.org/rebel/json/), [`log`](https://heroes-lang.org/rebel/log/), [`markdown`](https://heroes-lang.org/rebel/markdown/), [`metrics`](https://heroes-lang.org/rebel/metrics/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`openapi`](https://heroes-lang.org/rebel/openapi/), [`os`](https://heroes-lang.org/rebel/os/), [`poll`](https://heroes-lang.org/rebel/poll/), [`search`](https://heroes-lang.org/rebel/search/), [`sql`](https://heroes-lang.org/rebel/sql/), [`sql/build`](https://heroes-lang.org/rebel/sql/build/), [`sql/migrate`](https://heroes-lang.org/rebel/sql/migrate/), [`sql/sqlite`](https://heroes-lang.org/rebel/sql/sqlite/), [`strings`](https://heroes-lang.org/rebel/strings/), [`template`](https://heroes-lang.org/rebel/template/), [`time`](https://heroes-lang.org/rebel/time/), [`toml`](https://heroes-lang.org/rebel/toml/), [`url`](https://heroes-lang.org/rebel/url/), [`uuid`](https://heroes-lang.org/rebel/uuid/), [`web`](https://heroes-lang.org/rebel/web/), [`websocket`](https://heroes-lang.org/rebel/websocket/), [`xml`](https://heroes-lang.org/rebel/xml/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 38 faces on its `packages` line, each linked here to its reference: [`bytes`](https://heroes-lang.org/rebel/bytes/), [`config`](https://heroes-lang.org/rebel/config/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`errors`](https://heroes-lang.org/rebel/errors/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`html`](https://heroes-lang.org/rebel/html/), [`html/sanitize`](https://heroes-lang.org/rebel/html/sanitize/), [`http`](https://heroes-lang.org/rebel/http/), [`http/suffixes`](https://heroes-lang.org/rebel/http/suffixes/), [`i18n`](https://heroes-lang.org/rebel/i18n/), [`i18n/dates`](https://heroes-lang.org/rebel/i18n/dates/), [`io`](https://heroes-lang.org/rebel/io/), [`jose`](https://heroes-lang.org/rebel/jose/), [`json`](https://heroes-lang.org/rebel/json/), [`log`](https://heroes-lang.org/rebel/log/), [`markdown`](https://heroes-lang.org/rebel/markdown/), [`metrics`](https://heroes-lang.org/rebel/metrics/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`openapi`](https://heroes-lang.org/rebel/openapi/), [`os`](https://heroes-lang.org/rebel/os/), [`poll`](https://heroes-lang.org/rebel/poll/), [`search`](https://heroes-lang.org/rebel/search/), [`sql`](https://heroes-lang.org/rebel/sql/), [`sql/build`](https://heroes-lang.org/rebel/sql/build/), [`sql/migrate`](https://heroes-lang.org/rebel/sql/migrate/), [`sql/sqlite`](https://heroes-lang.org/rebel/sql/sqlite/), [`strings`](https://heroes-lang.org/rebel/strings/), [`template`](https://heroes-lang.org/rebel/template/), [`time`](https://heroes-lang.org/rebel/time/), [`toml`](https://heroes-lang.org/rebel/toml/), [`url`](https://heroes-lang.org/rebel/url/), [`uuid`](https://heroes-lang.org/rebel/uuid/), [`web`](https://heroes-lang.org/rebel/web/), [`web/chain`](https://heroes-lang.org/rebel/web/chain/), [`websocket`](https://heroes-lang.org/rebel/websocket/), [`xml`](https://heroes-lang.org/rebel/xml/).
 
 ## Its folders
 
-12 folders, 52 files and 8,819 lines, this page aside; of them 49 modules, `.hero` files, of 8,704 lines.
+12 folders, 52 files and 8,947 lines, this page aside; of them 49 modules, `.hero` files, of 8,830 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
-| `./` | 4 | 234 | 1 | 119 |
-| `api/` | 4 | 785 | 4 | 785 |
-| `app/` | 3 | 615 | 3 | 615 |
+| `./` | 4 | 236 | 1 | 119 |
+| `api/` | 4 | 782 | 4 | 782 |
+| `app/` | 3 | 633 | 3 | 633 |
 | `auth/` | 3 | 414 | 3 | 414 |
 | `config/` | 1 | 394 | 1 | 394 |
-| `demo/` | 8 | 1,044 | 8 | 1,044 |
-| `domain/` | 7 | 934 | 7 | 934 |
-| `http/` | 8 | 1,918 | 8 | 1,918 |
+| `demo/` | 8 | 1,048 | 8 | 1,048 |
+| `domain/` | 7 | 924 | 7 | 924 |
+| `http/` | 8 | 2,034 | 8 | 2,034 |
 | `ops/` | 1 | 154 | 1 | 154 |
-| `realtime/` | 1 | 234 | 1 | 234 |
+| `realtime/` | 1 | 235 | 1 | 235 |
 | `store/` | 6 | 1,121 | 6 | 1,121 |
 | `views/` | 6 | 972 | 6 | 972 |
 

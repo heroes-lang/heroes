@@ -56,23 +56,23 @@ Run from the repository's root with the words of `main.args` and `main.stdin` on
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 13 faces on its `packages` line, each linked here to its reference: [`fs`](https://heroes-lang.org/rebel/fs/), [`io`](https://heroes-lang.org/rebel/io/), [`lists`](https://heroes-lang.org/rebel/lists/), [`maps`](https://heroes-lang.org/rebel/maps/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`process`](https://heroes-lang.org/rebel/process/), [`regex`](https://heroes-lang.org/rebel/regex/), [`strings`](https://heroes-lang.org/rebel/strings/), [`term`](https://heroes-lang.org/rebel/term/), [`time`](https://heroes-lang.org/rebel/time/), [`unicode/segment`](https://heroes-lang.org/rebel/unicode/segment/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 14 faces on its `packages` line, each linked here to its reference: [`errors`](https://heroes-lang.org/rebel/errors/), [`fs`](https://heroes-lang.org/rebel/fs/), [`io`](https://heroes-lang.org/rebel/io/), [`lists`](https://heroes-lang.org/rebel/lists/), [`maps`](https://heroes-lang.org/rebel/maps/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`process`](https://heroes-lang.org/rebel/process/), [`regex`](https://heroes-lang.org/rebel/regex/), [`strings`](https://heroes-lang.org/rebel/strings/), [`term`](https://heroes-lang.org/rebel/term/), [`time`](https://heroes-lang.org/rebel/time/), [`unicode/segment`](https://heroes-lang.org/rebel/unicode/segment/).
 
 ## Its folders
 
-9 folders, 45 files and 9,348 lines, this page aside; of them 41 modules, `.hero` files, of 8,963 lines.
+9 folders, 45 files and 9,361 lines, this page aside; of them 41 modules, `.hero` files, of 8,975 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
-| `./` | 5 | 620 | 1 | 235 |
+| `./` | 5 | 622 | 1 | 236 |
 | `builtins/` | 8 | 1,373 | 8 | 1,373 |
-| `demo/` | 2 | 169 | 2 | 169 |
+| `demo/` | 2 | 170 | 2 | 170 |
 | `diag/` | 1 | 134 | 1 | 134 |
-| `exec/` | 10 | 2,643 | 10 | 2,643 |
-| `expand/` | 7 | 1,616 | 7 | 1,616 |
-| `interactive/` | 2 | 235 | 2 | 235 |
+| `exec/` | 10 | 2,648 | 10 | 2,648 |
+| `expand/` | 7 | 1,617 | 7 | 1,617 |
+| `interactive/` | 2 | 237 | 2 | 237 |
 | `syntax/` | 7 | 2,281 | 7 | 2,281 |
-| `tools/` | 3 | 277 | 3 | 277 |
+| `tools/` | 3 | 279 | 3 | 279 |
 
 ---
 

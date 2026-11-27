@@ -20,6 +20,7 @@
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
 #pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
 #pragma clang diagnostic ignored "-Winvalid-source-encoding"
+#pragma clang diagnostic ignored "-Wmissing-format-attribute"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -164,7 +165,7 @@ HERO_STR_STATIC(hero_str_3a80852, "setcontext to the runner (70 is right): ");
 HERO_STR_STATIC(hero_str_4c08d9d8, "siglongjmp into the coroutine (70 is right): ");
 HERO_STR_STATIC(hero_str_6b1cdb46, "setcontext into the coroutine (70 is right): ");
 
-#line 168 "fixedbugs2872ahandleronacoroutinesstackleftbyajumpruns.c"
+#line 169 "fixedbugs2872ahandleronacoroutinesstackleftbyajumpruns.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t hero_tag;
@@ -217,7 +218,7 @@ __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(i
 __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
 __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
-#line 221 "fixedbugs2872ahandleronacoroutinesstackleftbyajumpruns.c"
+#line 222 "fixedbugs2872ahandleronacoroutinesstackleftbyajumpruns.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
@@ -248,7 +249,7 @@ __attribute__((__unused__)) static void (*hero_callback_of(void (*hero_f)(void))
 int64_t h_fixedbugs2872ahandleronacoroutinesstackleftbyajumpruns_answer(int64_t h0_n) { hero_thread_guard("fixedbugs2872ahandleronacoroutinesstackleftbyajumpruns.answer"); HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_68c6c2a6); t2 = h0_n; hero_print_str(t1); hero_print_int(t2); hero_print_end();
     t3 = h0_n; t4 = ((__INT64_TYPE__)10); if (__builtin_mul_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-2872-a-handler-on-a-coroutines-stack-left-by-a-jump-runs.hero", "fixedbugs-2872-a-handler-on-a-coroutines-stack-left-by-a-jump-runs.answer", 25, 12); return t5;
-#line 252 "fixedbugs2872ahandleronacoroutinesstackleftbyajumpruns.c"
+#line 253 "fixedbugs2872ahandleronacoroutinesstackleftbyajumpruns.c"
 }
 
 __attribute__((__noinline__)) int64_t h_0cb_fixedbugs2872ahandleronacoroutinesstackleftbyajumpruns_answer(int64_t h0_n) {
@@ -264,7 +265,7 @@ void h_fixedbugs2872ahandleronacoroutinesstackleftbyajumpruns_main(void) { HERO_
     t8 = HERO_STR_LIT(hero_str_3a80852); t9 = ((__INT64_TYPE__)0); t10 = ((__INT64_TYPE__)1); t11 = ((__INT64_TYPE__)0); t12 = ((__INT64_TYPE__)0); t13 = h_fixedbugs2872ahandleronacoroutinesstackleftbyajumpruns_answer; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2872-a-handler-on-a-coroutines-stack-left-by-a-jump-runs.hero", "fixedbugs-2872-a-handler-on-a-coroutines-stack-left-by-a-jump-runs.main", 29, 55}; t14 = ck_run(t9, t10, t11, t12, (h_0fn_48ac9712)hero_callback_of((void (*)(void))t13)); } hero_print_str(t8); hero_print_int(t14); hero_print_end();
     t15 = HERO_STR_LIT(hero_str_4c08d9d8); t16 = ((__INT64_TYPE__)0); t17 = ((__INT64_TYPE__)0); t18 = ((__INT64_TYPE__)1); t19 = ((__INT64_TYPE__)0); t20 = h_fixedbugs2872ahandleronacoroutinesstackleftbyajumpruns_answer; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2872-a-handler-on-a-coroutines-stack-left-by-a-jump-runs.hero", "fixedbugs-2872-a-handler-on-a-coroutines-stack-left-by-a-jump-runs.main", 30, 60}; t21 = ck_run(t16, t17, t18, t19, (h_0fn_48ac9712)hero_callback_of((void (*)(void))t20)); } hero_print_str(t15); hero_print_int(t21); hero_print_end();
     t22 = HERO_STR_LIT(hero_str_6b1cdb46); t23 = ((__INT64_TYPE__)0); t24 = ((__INT64_TYPE__)1); t25 = ((__INT64_TYPE__)1); t26 = ((__INT64_TYPE__)0); t27 = h_fixedbugs2872ahandleronacoroutinesstackleftbyajumpruns_answer; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2872-a-handler-on-a-coroutines-stack-left-by-a-jump-runs.hero", "fixedbugs-2872-a-handler-on-a-coroutines-stack-left-by-a-jump-runs.main", 31, 60}; t28 = ck_run(t23, t24, t25, t26, (h_0fn_48ac9712)hero_callback_of((void (*)(void))t27)); } hero_print_str(t22); hero_print_int(t28); hero_print_end(); return;
-#line 268 "fixedbugs2872ahandleronacoroutinesstackleftbyajumpruns.c"
+#line 269 "fixedbugs2872ahandleronacoroutinesstackleftbyajumpruns.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
     if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
@@ -363,7 +364,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7a79d3977cbe9740", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("123b35d11fa9cf7c", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2872ahandleronacoroutinesstackleftbyajumpruns\tfixedbugs-2872-a-handler-on-a-coroutines-stack-left-by-a-jump-runs\n");

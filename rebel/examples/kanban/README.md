@@ -40,19 +40,19 @@ Run from the repository's root with the words of `main.args`, as the check of Re
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 14 faces on its `packages` line, each linked here to its reference: [`fs`](https://heroes-lang.org/rebel/fs/), [`html/sanitize`](https://heroes-lang.org/rebel/html/sanitize/), [`json`](https://heroes-lang.org/rebel/json/), [`markdown`](https://heroes-lang.org/rebel/markdown/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`search`](https://heroes-lang.org/rebel/search/), [`sql`](https://heroes-lang.org/rebel/sql/), [`sql/sqlite`](https://heroes-lang.org/rebel/sql/sqlite/), [`template`](https://heroes-lang.org/rebel/template/), [`time`](https://heroes-lang.org/rebel/time/), [`ui`](https://heroes-lang.org/rebel/ui/), [`ui/webview`](https://heroes-lang.org/rebel/ui/webview/), [`uuid`](https://heroes-lang.org/rebel/uuid/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 15 faces on its `packages` line, each linked here to its reference: [`errors`](https://heroes-lang.org/rebel/errors/), [`fs`](https://heroes-lang.org/rebel/fs/), [`html/sanitize`](https://heroes-lang.org/rebel/html/sanitize/), [`json`](https://heroes-lang.org/rebel/json/), [`markdown`](https://heroes-lang.org/rebel/markdown/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`search`](https://heroes-lang.org/rebel/search/), [`sql`](https://heroes-lang.org/rebel/sql/), [`sql/sqlite`](https://heroes-lang.org/rebel/sql/sqlite/), [`template`](https://heroes-lang.org/rebel/template/), [`time`](https://heroes-lang.org/rebel/time/), [`ui`](https://heroes-lang.org/rebel/ui/), [`ui/webview`](https://heroes-lang.org/rebel/ui/webview/), [`uuid`](https://heroes-lang.org/rebel/uuid/).
 
 ## Its folders
 
-9 folders, 37 files and 3,480 lines, this page aside; of them 29 modules, `.hero` files, of 2,688 lines.
+9 folders, 37 files and 3,484 lines, this page aside; of them 29 modules, `.hero` files, of 2,691 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
-| `./` | 4 | 173 | 1 | 57 |
+| `./` | 4 | 174 | 1 | 57 |
 | `api/` | 5 | 554 | 5 | 554 |
-| `app/` | 6 | 413 | 6 | 413 |
+| `app/` | 6 | 414 | 6 | 414 |
 | `demo/` | 2 | 271 | 2 | 271 |
-| `store/` | 11 | 1,134 | 11 | 1,134 |
+| `store/` | 11 | 1,136 | 11 | 1,136 |
 | `support/` | 2 | 126 | 2 | 126 |
 | `text/` | 1 | 44 | 1 | 44 |
 | `transfer/` | 1 | 89 | 1 | 89 |
