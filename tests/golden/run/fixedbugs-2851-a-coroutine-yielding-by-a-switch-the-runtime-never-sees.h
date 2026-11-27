@@ -7,8 +7,10 @@
  *   table by hand, which the runtime never sees; on Darwin, where no door to
  *   the C library's own stands outside the runtime's answers, by the
  *   program's own `swapcontext`, which it sees. A handler then jumps into the
- *   coroutine through the buffer, and the coroutine calls the program inside
- *   the signal's extent: MUST BE REFUSED. Mode 0 keeps the coroutine's
+ *   coroutine through the buffer, and the coroutine calls the program: MUST
+ *   RUN, the handler saving nothing inside its own frames, so the jump leaves
+ *   it (ONSTACK's mirror of defect 2872, lane sig-family-3, step 199r; until
+ *   then MUST BE REFUSED, in ONSTACK's words). Mode 0 keeps the coroutine's
  *   context in static memory, 1 in a heap block.
  * rs_case(run, freed, depth, down, cb): a helper runs a coroutine whose
  *   context is a heap block, on a local array of its own frame, to its end

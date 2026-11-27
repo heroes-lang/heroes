@@ -834,8 +834,12 @@ static void hero_signal_measure(void) {
  * the handler onto a stack a context switch had entered and none saw end, a
  * coroutine's that `makecontext` was given (panel 257's `as_0`, defect 2705):
  * the runtime followed the jump and judged it, and a jump onto another stack
- * proves no handler left, since it cannot tell it from a jump onto frames the
- * handler itself switched to. STANDING's words, *C left the handler in a way
+ * proves no handler left where a save point was made inside the handler's
+ * frames, since it cannot tell it from a jump onto frames the handler itself
+ * switched to, through that save. With none made, nothing can switch back
+ * into the handler's frames, and the jump leaves it (the mirror of defect
+ * 2872's `ck`, lane sig-family-3): `as_0`, refused in these words until then,
+ * runs. STANDING's words, *C left the handler in a way
  * this runtime does not follow (an inline `__builtin_longjmp`, a C++
  * exception, a jump inside a system library)*, named three causes the program
  * has none of.

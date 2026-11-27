@@ -599,17 +599,27 @@ static void hero_rebind_saved_at(HeroSignalStack *own, uintptr_t frame) {
     }
 }
 
-/* Whether a jump from `here` to `t` leaves the handler of `e`, which runs on a
- * coroutine's stack, by leaving that stack (defect 2872): 1 where the jump is
- * made inside the handler's frames there and lands off that stack, no save
- * point having been made inside those frames since the handler began, so
- * nothing can switch back into them but a landing its left span catches
- * (rule 6); 2 where one was, which can; 0 otherwise, the handler on the
- * thread's own stack or an alternate one among them. */
-static int hero_rebind_off_coroutine(const HeroRebindEntry *e, uintptr_t here, uintptr_t t) {
-    uintptr_t lo = 0, hi = 0;
-    if (e->alt_hi > e->alt_lo || !hero_rebind_live_range(e->at, &lo, &hi)) return 0;
-    if (here < lo || here >= e->at || (t - 1 >= lo && t - 1 < hi)) return 0;
+/* Whether a jump from `here` to `t` leaves the handler of `e` by leaving the
+ * stack its frames lie on: 1 where the jump is made inside the handler's
+ * frames and lands on another stack, no save point having been made inside
+ * those frames since the handler began, so nothing can switch back into them
+ * but a landing its left span catches (rule 6); 2 where one was, which can;
+ * 0 otherwise. Two shapes, one case, as on Linux (`parts/sigentries.c`): a
+ * handler on a coroutine's stack landing off it (defect 2872, `ck`), and its
+ * mirror, a handler on the thread's own stack landing on a coroutine's (lane
+ * sig-family-3, `as_0`). A handler on an alternate stack is rule 6's. */
+static int hero_rebind_off_stack(const HeroSignalStack *own, const HeroRebindEntry *e, uintptr_t here, uintptr_t t) {
+    uintptr_t lo = 0, hi = 0, clo = 0, chi = 0;
+    if (e->alt_hi > e->alt_lo) return 0;
+    if (hero_rebind_live_range(e->at, &lo, &hi)) {
+        if (t - 1 >= lo && t - 1 < hi) return 0;
+    } else if (e->at >= own->lo && e->at < own->hi && hero_rebind_live_range(t, &clo, &chi)) {
+        lo = own->lo;
+        hi = own->hi;
+    } else {
+        return 0;
+    }
+    if (here < lo || here >= e->at) return 0;
     return e->saved ? 2 : 1;
 }
 
@@ -627,7 +637,7 @@ static void hero_rebind_prune_to(HeroSignalStack *own, uintptr_t t, bool by_jump
         if (e->dead || hero_rebind_pinned(e)) continue;
         bool above = ranged && e->at >= lo && e->at < hi && e->at <= t;
         bool left_alt = by_jump && e->alt_hi > e->alt_lo && !(t >= e->alt_lo && t < e->alt_hi);
-        int off = by_jump ? hero_rebind_off_coroutine(e, here, t) : 0;
+        int off = by_jump ? hero_rebind_off_stack(own, e, here, t) : 0;
         if (above || left_alt || off == 1) {
             hero_rebind_left_by_jump(own, e, here);
             hero_rebind_drop(own, i);
@@ -701,8 +711,8 @@ static void hero_rebind_settle(void);
 /* The kernel's call of the catcher, made here in its place, so its C type is
  * not checked, for `parts/siginstall.c`'s wrapper's reason; nor is its frame
  * instrumented by AddressSanitizer (it leaves by `__sigreturn`; panel 251).
- * Under route A the buffer saved last is fingerprinted first, where it
- * provably lives: a handler that refills it by a save no slot sees, then
+ * Under route A the buffer saved last is fingerprinted first, by the kernel:
+ * a handler that refills it by a save no slot sees, then
  * jumps to it, finds it no longer reads as its fingerprint (`t_unseen0`,
  * `x_unseen0` ran inside the signal when the fingerprint waited for the next
  * save or jump); on the decode path nothing is ever pending, and it returns at

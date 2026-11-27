@@ -3,13 +3,15 @@
  * Darwin (`_XOPEN_SOURCE`) and glibc (`_GNU_SOURCE`).
  * ul_run form 0: A (heap) ends, its `uc_link` names B (an array of the
  *   runner's frame), so the C library starts B; B saves a buffer and yields
- *   by `swapcontext`; a handler jumps into B, which calls the program:
- *   MUST BE REFUSED.
- * form 1: the same with B on the heap: MUST BE REFUSED.
+ *   by `swapcontext`; a handler jumps into B, which calls the program: MUST
+ *   RUN, the handler saving nothing inside its own frames, so the jump leaves
+ *   it (ONSTACK's mirror of defect 2872, lane sig-family-3, step 199r; until
+ *   then MUST BE REFUSED, in ONSTACK's words, and so every form below).
+ * form 1: the same with B on the heap: MUST RUN.
  * form 2: A made before B (A's `uc_link` names a context not yet made): MUST
- *   BE REFUSED.
+ *   RUN.
  * form 3: a chain, A (heap) to B (heap) to C (the runner's array); C saves,
- *   yields, and is jumped into: MUST BE REFUSED.
+ *   yields, and is jumped into: MUST RUN.
  * ul_reuse: a helper makes A (heap) and B (an array of its own frame), A's
  *   `uc_link` B and B's the helper's, runs both to their end and returns;
  *   later the thread saves a point in frames that occupy B's dead array, a
@@ -37,7 +39,13 @@ static volatile int64_t ul_got = -7;
 static void ul_body_a(void) {}
 static void ul_body_b(void) {}
 
-static void ul_body_last(void) {
+/* The coroutine's own body is not instrumented by `--sanitize`: clang's
+ * AddressSanitizer asks ASan to clear the stack's shadow before its
+ * `siglongjmp`, and on a heap stack, which ASan was never told of, ASan writes
+ * a warning instead (defect 2896, the program's own C); the runtime's rewrite
+ * of the jump clears the coroutine's range itself (step 199l). It reached
+ * that jump once the handler's jump into it ran (step 199r). */
+__attribute__((no_sanitize("address"))) static void ul_body_last(void) {
     if (sigsetjmp(ul_kb, 0) == 0) swapcontext(&ul_y, &ul_main);
     ul_got = ul_f(4);
     siglongjmp(ul_back, 1);
