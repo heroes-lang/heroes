@@ -224,11 +224,15 @@ function c_case(@r: report.Report, @skipped: i64, scratch: str, compiler: str, w
     target = written + "/" + item.name + ".c"
     through = dumped(scratch: scratch, compiler: compiler, item: item, flag: "--emit-c", into: target)
 
+    # The compiler's own words follow, as `first`'s do above: on the CI's
+    # Windows leg this line said *cannot emit ... through -o* and no more (run
+    # 45994435455), so the cause, the private name past the system's limit
+    # (step 218e), was read from the code instead of from what was said.
     if through.is_err()
         report.keep_failure(
             @r,
             label: "determinism/c/" + item.name,
-            detail: "  cannot emit " + item.source + " through -o"
+            detail: "  cannot emit " + item.source + " through -o " + target + ":\n" + last_error(through)
         )
         return
     kept = read_file(target)
@@ -585,4 +589,33 @@ test "fixedbugs: a walk that finds nothing in a directory fails by that director
     ).must()
     assert met.passed == 2
     assert met.failed == 0
+    assert !shell.remove_tree(scratch).is_err()
+
+# Step 218f (d-lane-ci-compiler-5): an emission `-o` cannot write is a
+# failure carrying the compiler's words, as one stdout cannot take carries
+# them; here the folder named for it is not there, which the compiler says.
+test "an emission -o cannot write is a failure carrying the compiler's words (d-lane-ci-compiler-5)"
+    compiler = shell.some_compiler()
+
+    if compiler.is_err()
+        return
+    scratch = shell.own_scratch()
+    tree = scratch + "/determinism-through"
+    assert !shell.remove_tree(tree).is_err()
+    assert !shell.mkdir_all(tree).is_err()
+    assert !write_file(path: tree + "/t.hero", text: "function main()\n    print(1)\n").is_err()
+    r: report.Report @= report.empty()
+    none_skipped: i64 @= 0
+    c_case(
+        @r,
+        @none_skipped,
+        scratch: scratch,
+        compiler: compiler.must(),
+        written: tree + "/nowhere",
+        item: cases.Case(source: tree + "/t.hero", expected: "", name: "t")
+    )
+    assert r.failed == 1
+    assert r.passed == 0
+    assert strings.contains(s: r.failures[0], substr: "through -o " + tree + "/nowhere/t.c:\n")
+    assert strings.contains(s: r.failures[0], substr: "its directory is not there")
     assert !shell.remove_tree(scratch).is_err()
