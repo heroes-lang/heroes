@@ -4,9 +4,12 @@
 # /v1/orders` takes an order and answers it created, numbered in the order
 # they came. Every answer says, in `X-Seen-Forwarded`, the `Forwarded` field
 # the request carried, so a client behind the gateway can see what the
-# gateway told the service about it. It runs on a thread of its own, tells
-# its port on a mailbox its supervisor waits on, and serves one connection
-# after another until the program is asked to stop.
+# gateway told the service about it. Its routes are `web`'s, each bound to
+# the function that answers it, and that field is the step every route runs,
+# by `web/chain`; a path no route takes is answered by `web.not_routed`, in
+# JSON. It runs on a thread of its own, tells its port on a mailbox its
+# supervisor waits on, and serves one connection after another until the
+# program is asked to stop.
 
 use <rebel>/bytes
 use <rebel>/errors
@@ -14,7 +17,8 @@ use <rebel>/http
 use <rebel>/io
 use <rebel>/json
 use <rebel>/net
-use <rebel>/strings
+use <rebel>/web
+use <rebel>/web/chain
 
 use demo/notify
 
@@ -39,6 +43,12 @@ record Item
 
 # What the service holds between requests.
 record Catalog
+    # The routes, each bound in `answers`.
+    router: web.Router
+    # The steps the routes run, by their names.
+    steps: {str: (function(@Catalog, chain.Next, http.Request) -> http.Response?)}
+    # The function that answers each route, by the route's name.
+    answers: {str: (function(@Catalog, web.Found, http.Request) -> http.Response?)}
     # The items, in the catalog's order.
     items: [Item]
     # The orders taken so far.
@@ -46,13 +56,25 @@ record Catalog
     # The requests answered.
     answered: i64
 
-# The demo's catalog, no order taken yet.
+# The demo's catalog, no order taken yet: its three routes, each bound to its
+# answer, and the step `seen` every route runs.
 function new() -> Catalog
-    return Catalog(
+    c @= Catalog(
+        router: web.new_router(),
+        steps: {},
+        answers: {},
         items: [Item(sku: "A-100", name: "Desk lamp", price_cents: 3900), Item(sku: "B-200", name: "Notebook", price_cents: 450), Item(sku: "C-300", name: "Pencil set", price_cents: 1200)],
         orders: 0,
         answered: 0
     )
+    rt @= c.router
+    rt.errors @ .json
+    chain.add_step(@rt, @c.steps, name: "seen", step: seen).must()
+    chain.on(@rt, @c.answers, method: http.METHOD_GET, pattern: "/v1/items", name: "items", answer: items).must()
+    chain.on(@rt, @c.answers, method: http.METHOD_GET, pattern: "/v1/items/:sku", name: "item", answer: one_item).must()
+    chain.on(@rt, @c.answers, method: http.METHOD_POST, pattern: "/v1/orders", name: "order", answer: ordered).must()
+    c.router @ rt
+    return c
 
 ## Serving
 
@@ -117,58 +139,63 @@ function conversation(@catalog: Catalog, conn: net.Conn)
                 if r.closing
                     break
 
-# The answer to `r`, saying the `Forwarded` field it carried.
+# The answer to `r`, through its route's step and answer.
 #
-# - `catalog`: the service's state; an order is counted.
+# - `catalog`: the service's state; an order is counted, and so is the
+#   answer.
 # - `r`: the request.
 function handled(@catalog: Catalog, r: http.Request) -> http.Response
+    return match chain.dispatch(@catalog, router: catalog.router, steps: catalog.steps, answers: catalog.answers, r: r)
+        .ok response => response
+        .err e       => json_answer(500, value: .object(members: {"error": .text(v: e.msg)}))
+
+# Every route's step: the answer counted, and saying in `X-Seen-Forwarded`
+# the `Forwarded` field the request carried.
+#
+# - `catalog`: the service's state, whose count of answers grows.
+# - `n`: where the request stands.
+# - `r`: the request.
+function seen(@catalog: Catalog, n: chain.Next, r: http.Request) -> http.Response?
     catalog.answered @ catalog.answered + 1
-    answer = routed(@catalog, r: r)
-    seen = http.value_of(r.headers, name: "Forwarded").default("none")
-    return http.Response(
-        status: answer.status,
-        reason: answer.reason,
-        headers: http.with_header(answer.headers, name: "X-Seen-Forwarded", value: seen),
-        body: answer.body,
-        closing: answer.closing
+    answer = chain.proceed(@catalog, steps: catalog.steps, answers: catalog.answers, n: n, r: r)?
+    forwarded = http.value_of(r.headers, name: "Forwarded").default("none")
+    return ok(
+        http.Response(status: answer.status, reason: answer.reason, headers: http.with_header(answer.headers, name: "X-Seen-Forwarded", value: forwarded), body: answer.body, closing: answer.closing)
     )
 
-# What the API answers for `r`'s method and path.
+# `GET /v1/items`: every item, cacheable.
 #
-# - `catalog`: the service's state.
-# - `r`: the request.
-function routed(@catalog: Catalog, r: http.Request) -> http.Response
-    path = r.url.path
+# - `catalog`: the service's state, its items read.
+function items(catalog: Catalog lent, _: web.Found, _: http.Request) -> http.Response?
+    list: [json.Value] @= []
 
-    if path == "/v1/items" && r.method == http.METHOD_GET
-        list: [json.Value] @= []
+    for each in catalog.items
+        list @ list.push(item_json(each))
 
-        for item in catalog.items
-            list @ list.push(item_json(item))
+    return ok(cacheable(json_answer(200, value: .object(members: {"items": .list(items: list)}))))
 
-        return cacheable(json_answer(200, value: .object(members: {"items": .list(items: list)})))
+# `GET /v1/items/:sku`: one item, cacheable, or 404 where the catalog holds
+# none of that code.
+#
+# - `catalog`: the service's state, its items read.
+# - `found`: the route, its parameter `sku`.
+function one_item(catalog: Catalog lent, found: web.Found, _: http.Request) -> http.Response?
+    sku = web.param_of(found, name: "sku")
 
-    if strings.has_prefix(s: path, prefix: "/v1/items/") && r.method == http.METHOD_GET
-        sku = path.slice(from: 10, to: path.len())
+    for each in catalog.items
+        if each.sku == sku
+            return ok(cacheable(json_answer(200, value: item_json(each))))
 
-        for item in catalog.items
-            if item.sku == sku
-                return cacheable(json_answer(200, value: item_json(item)))
+    return ok(json_answer(404, value: .object(members: {"error": .text(v: f"no item {sku}")})))
 
-        return json_answer(404, value: .object(members: {"error": .text(v: f"no item {sku}")}))
-
-    if path == "/v1/orders" && r.method == http.METHOD_POST
-        return ordered(@catalog, r: r)
-    return json_answer(404, value: .object(members: {"error": .text(v: f"no {r.method} {path}")}))
-
-# An order taken: its body names an item the catalog holds and a quantity
-# from 1.
+# `POST /v1/orders`: an order taken, its body naming an item the catalog
+# holds and a quantity from 1.
 #
 # - `catalog`: the service's state; the order is counted.
 # - `r`: the `POST`.
-function ordered(@catalog: Catalog, r: http.Request) -> http.Response
+function ordered(@catalog: Catalog, _: web.Found, r: http.Request) -> http.Response?
     match order_of(catalog, r: r)
-        .err e => return json_answer(400, value: .object(members: {"error": .text(v: e.msg)}))
+        .err e => return ok(json_answer(400, value: .object(members: {"error": .text(v: e.msg)})))
         .ok asked =>
             catalog.orders @ catalog.orders + 1
             id = f"order-{catalog.orders}"
@@ -176,12 +203,8 @@ function ordered(@catalog: Catalog, r: http.Request) -> http.Response
                 members: {"order": .text(v: id), "sku": .text(v: asked.sku), "quantity": .number(v: to_f64(asked.quantity))}
             )
             created = json_answer(201, value: body)
-            return http.Response(
-                status: created.status,
-                reason: created.reason,
-                headers: http.with_header(created.headers, name: "Location", value: "/v1/orders/" + id),
-                body: created.body,
-                closing: created.closing
+            return ok(
+                http.Response(status: created.status, reason: created.reason, headers: http.with_header(created.headers, name: "Location", value: "/v1/orders/" + id), body: created.body, closing: created.closing)
             )
 
 # What an order asks for.
@@ -239,19 +262,21 @@ function cacheable(response: http.Response) -> http.Response
         closing: response.closing
     )
 
-test "routed: the items, one item, a missing one, and an order"
+test "handled: the items, one item, a missing one, a path no route takes, and an order"
     c @= new()
-    listed = routed(@c, r: http.request(method: "GET", target: "/v1/items").must())
+    listed = handled(@c, r: http.request(method: "GET", target: "/v1/items").must())
     assert listed.status == 200 && http.value_of(listed.headers, name: "Cache-Control").must() == "public, max-age=60"
-    assert routed(@c, r: http.request(method: "GET", target: "/v1/items/B-200").must()).status == 200
-    assert routed(@c, r: http.request(method: "GET", target: "/v1/items/Z-1").must()).status == 404
+    assert handled(@c, r: http.request(method: "GET", target: "/v1/items/B-200").must()).status == 200
+    assert handled(@c, r: http.request(method: "GET", target: "/v1/items/Z-1").must()).status == 404
+    missed = handled(@c, r: http.request(method: "GET", target: "/v2").must())
+    assert missed.status == 404 && http.value_of(missed.headers, name: "X-Seen-Forwarded").must() == "none"
     order = http.with_text(
         http.request(method: "POST", target: "/v1/orders").must(),
         text: "{\"sku\": \"A-100\", \"quantity\": 2}"
     )
-    created = routed(@c, r: order)
+    created = handled(@c, r: order)
     assert created.status == 201 && http.value_of(created.headers, name: "Location").must() == "/v1/orders/order-1"
-    assert c.orders == 1
+    assert c.orders == 1 && c.answered == 5
 
 test "order_of: a quantity of zero and an item not held are refused"
     c = new()
