@@ -388,8 +388,9 @@ void hero_signal_learn(void) {
 #define HERO_SIG_JUMPS 32
 
 /* How many spans of frames of handlers left by a jump one thread keeps
- * (defect 2855); a full record widens its first span rather than forget one. */
-#define HERO_SIG_LEFT 8
+ * (defect 2855); a full record merges two spans of one stack rather than
+ * forget one (defect d-lane-sig-family-4). */
+#define HERO_SIG_LEFT 16
 #endif
 
 /* One handler of C's this thread is inside, on both routes (Darwin's trampoline,
@@ -444,6 +445,11 @@ typedef struct {
     uintptr_t left_slo[HERO_SIG_LEFT];
     uintptr_t left_shi[HERO_SIG_LEFT];
     int left_n;
+    /* Set once a span could be kept by no merge within its own stack: every
+     * one of the record's spans on a stack of its own (defect
+     * d-lane-sig-family-4); from then on a landing below the frame making the
+     * jump, on that frame's stack, is held a re-entry too, as before 2855. */
+    int left_lost;
     /* J, route A only: which buffer each save point filled, the serial of the
      * innermost entry standing at the save (0 for none), the buffer's bytes
      * as the C library left them (0 until read at this thread's next save
@@ -477,6 +483,11 @@ typedef struct {
     uintptr_t left_slo[HERO_SIG_LEFT];
     uintptr_t left_shi[HERO_SIG_LEFT];
     int left_n;
+    /* Set once a span could be kept by no merge within its own stack: every
+     * one of the record's spans on a stack of its own (defect
+     * d-lane-sig-family-4); from then on a landing below the frame making the
+     * jump, on that frame's stack, is held a re-entry too, as before 2855. */
+    int left_lost;
 #endif
 } HeroSignalStack;
 

@@ -404,12 +404,54 @@ static void hero_rebind_left_add(HeroSignalStack *own, uintptr_t lo, uintptr_t h
         own->left_n = k + 1;
         return;
     }
-    /* Full: the first span widened to hold this one, which refuses more and
-     * forgets nothing. */
-    if (lo < own->left_lo[0]) own->left_lo[0] = lo;
-    if (hi > own->left_hi[0]) own->left_hi[0] = hi;
-    if (slo < own->left_slo[0]) own->left_slo[0] = slo;
-    if (shi > own->left_shi[0]) own->left_shi[0] = shi;
+    /* Full (defect d-lane-sig-family-4): a span is widened only over spans of
+     * its own stack, where what lies between two of them is frames the thread
+     * left too; until then the first span was widened to the hull of two
+     * stacks, a static alternate stack and the thread's, and a correct
+     * coroutine resumed on a stack mapped between them read as re-entering a
+     * handler (panel 262's `wide`). First the nearest span of this one's stack
+     * takes it; else the two nearest spans of one stack merge, freeing a slot;
+     * else every span lies on a stack of its own, and the thread is marked. */
+    int near = -1;
+    uintptr_t gap = UINTPTR_MAX;
+    for (int k = 0; k < own->left_n; k += 1) {
+        if (own->left_slo[k] != slo || own->left_shi[k] != shi) continue;
+        uintptr_t d = own->left_hi[k] <= lo ? lo - own->left_hi[k] : own->left_lo[k] >= hi ? own->left_lo[k] - hi : 0;
+        if (d < gap) {
+            gap = d;
+            near = k;
+        }
+    }
+    if (near >= 0) {
+        if (lo < own->left_lo[near]) own->left_lo[near] = lo;
+        if (hi > own->left_hi[near]) own->left_hi[near] = hi;
+        return;
+    }
+    int a = -1, b = -1;
+    gap = UINTPTR_MAX;
+    for (int i = 0; i < own->left_n; i += 1) {
+        for (int j = i + 1; j < own->left_n; j += 1) {
+            if (own->left_slo[i] != own->left_slo[j] || own->left_shi[i] != own->left_shi[j]) continue;
+            uintptr_t d = own->left_hi[i] <= own->left_lo[j]   ? own->left_lo[j] - own->left_hi[i]
+                          : own->left_hi[j] <= own->left_lo[i] ? own->left_lo[i] - own->left_hi[j]
+                                                               : 0;
+            if (d < gap) {
+                gap = d;
+                a = i;
+                b = j;
+            }
+        }
+    }
+    if (a < 0) {
+        own->left_lost = 1;
+        return;
+    }
+    if (own->left_lo[b] < own->left_lo[a]) own->left_lo[a] = own->left_lo[b];
+    if (own->left_hi[b] > own->left_hi[a]) own->left_hi[a] = own->left_hi[b];
+    own->left_lo[b] = lo;
+    own->left_hi[b] = hi;
+    own->left_slo[b] = slo;
+    own->left_shi[b] = shi;
 }
 
 /* `e`'s frames, left by a jump made below `here` (its frame lies on the
@@ -546,7 +588,11 @@ static void hero_rebind_prune_to(HeroSignalStack *own, uintptr_t t, bool by_jump
 static void hero_rebind_reentered(HeroSignalStack *own, uintptr_t t, bool below, uintptr_t here);
 
 static void hero_rebind_reenter(HeroSignalStack *own, uintptr_t t) {
-    hero_rebind_reentered(own, t, hero_rebind_left_holds(own, t), (uintptr_t)__builtin_frame_address(0));
+    uintptr_t here = (uintptr_t)__builtin_frame_address(0);
+    bool held = hero_rebind_left_holds(own, t);
+    uintptr_t lo = 0, hi = 0;
+    if (!held && own->left_lost) held = hero_rebind_target_range(own, here, &lo, &hi) && (t >= lo && t < hi) && t < here;
+    hero_rebind_reentered(own, t, held, here);
 }
 
 /* The landing at `t` judged once it is known whether it lies below the frame
