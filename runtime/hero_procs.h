@@ -98,7 +98,8 @@
  * with `hidepid`, and on Windows the idle process (id 0) and a process the
  * caller may not open. Never an entry is made up for one. On Darwin the list
  * is `proc_listallpids` and each process is read with `proc_pidinfo`; on
- * Linux it is `/proc`, read as `ps` reads it, a name cut at fifteen bytes
+ * Linux it is `/proc`, read as `ps` reads it but for the resident memory,
+ * which is read as `hero_sys_process_usage` reads it, a name cut at fifteen bytes
  * given back whole from the executable's own name where that begins with it;
  * on Windows `CreateToolhelp32Snapshot`, a process opened for
  * `PROCESS_QUERY_LIMITED_INFORMATION`, its times and memory counted as

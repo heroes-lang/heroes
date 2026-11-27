@@ -2312,12 +2312,84 @@ int64_t hero_sys_cpu_times(int64_t *user_us, int64_t *system_us, int64_t *idle_u
     return 0;
 }
 
+/* The number after the label `label` that opens a line of `text`, as
+ * `/proc/<pid>/smaps_rollup` writes `Rss:   2972 kB`; false where no line
+ * opens with it or no number follows. */
+static bool hero_sys_proc_labelled(const char *text, size_t length, const char *label, uint64_t *value) {
+    size_t wide = strlen(label);
+    size_t at = 0;
+
+    while (at < length) {
+        if (length - at > wide && memcmp(text + at, label, wide) == 0) {
+            at += wide;
+            return hero_sys_proc_number(text, length, &at, value);
+        }
+        while (at < length && text[at] != '\n') {
+            at += 1;
+        }
+        at += 1;
+    }
+    return false;
+}
+
+/* The resident memory of the process `pid` in bytes, into `*bytes`. The
+ * `Rss:` line of `/proc/<pid>/smaps_rollup`, in KiB, which the kernel counts
+ * by walking the process's pages; where that file cannot be read (one of
+ * another user's, which its owner or a tracer alone may read; a process that
+ * has ended and is not yet waited for, whose file opens `ESRCH` where its
+ * `statm` reads seven zeros, measured) or holds no such line, the second
+ * field of `/proc/<pid>/statm`, in pages. Never the 24th field of `/proc/<pid>/stat`:
+ * the kernel keeps that count in parts, one for each processor, and adds them
+ * up only now and then (proc(5): "inaccurate because of a kernel-internal
+ * scalability optimization"), so a child read as it starts read 0, in 682
+ * of 3,000 children of `posix_spawn` in the Linux arm64 image (kernel
+ * 7.0.14, 2026-11-27), where `statm` read 0 in none and `smaps_rollup` in
+ * none. -1 with the kind set where neither can be read. */
+static int64_t hero_sys_proc_resident(const char *digits, uint64_t page, uint64_t *bytes) {
+    char path[48];
+    size_t wide = strlen(digits);
+    char *text = NULL;
+    size_t length = 0;
+    size_t at = 0;
+    uint64_t value = 0;
+    uint64_t skipped = 0;
+    bool counted = false;
+
+    /* `digits` holds at most the ten of an id below 2^31. */
+    if (wide > 10) {
+        return hero_sys_fail(HERO_SYS_INVALID, 0);
+    }
+    memcpy(path, "/proc/", 6);
+    memcpy(path + 6, digits, wide);
+    memcpy(path + 6 + wide, "/smaps_rollup", 14);
+    if (hero_sys_proc_file(path, &text, &length) == 0) {
+        counted = hero_sys_proc_labelled(text, length, "Rss:", &value);
+        hero_layer_free(text);
+        if (counted) {
+            if (__builtin_mul_overflow(value, (uint64_t)1024, bytes)) {
+                return hero_sys_fail(HERO_SYS_OTHER, 0);
+            }
+            return 0;
+        }
+    }
+    memcpy(path + 6 + wide, "/statm", 7);
+    if (hero_sys_proc_file(path, &text, &length) != 0) {
+        return -1;
+    }
+    counted = hero_sys_proc_number(text, length, &at, &skipped) && hero_sys_proc_number(text, length, &at, &value);
+    hero_layer_free(text);
+    if (!counted || __builtin_mul_overflow(value, page, bytes)) {
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
+    }
+    return 0;
+}
+
 /* `/proc/<pid>/stat` (proc(5)): the id, the command in parentheses, which
  * may hold spaces and parentheses itself, so the fields are counted from the
  * LAST `)`, then the state and the numbers; `utime` and `stime` are the 14th
- * and 15th fields, in ticks, `vsize` the 23rd, in bytes, and `rss` the 24th,
- * in pages. A process that has ended and is not yet waited for keeps its
- * line with a resident size of 0. */
+ * and 15th fields, in ticks, and `vsize` the 23rd, in bytes. The resident
+ * memory is `hero_sys_proc_resident`'s, read after it. A process that has
+ * ended and is not yet waited for answers a resident size of 0. */
 int64_t hero_sys_process_usage(int64_t pid, int64_t *resident, int64_t *virtual_bytes, int64_t *user_ns, int64_t *system_ns) {
     char path[32];
     char digits[20];
@@ -2386,12 +2458,20 @@ int64_t hero_sys_process_usage(int64_t pid, int64_t *resident, int64_t *virtual_
         }
     }
     hero_layer_free(text);
-    /* `fields[10]` is utime, `[11]` stime, `[19]` vsize, `[20]` rss. */
-    if (__builtin_mul_overflow(fields[20], (uint64_t)page, &resident_bytes) || resident_bytes > (uint64_t)INT64_MAX || fields[19] > (uint64_t)INT64_MAX) {
+    /* `fields[10]` is utime, `[11]` stime, `[19]` vsize; the 24th field,
+     * `fields[20]`, is read past and never used (`hero_sys_proc_resident`). */
+    if (fields[19] > (uint64_t)INT64_MAX) {
         return hero_sys_fail(HERO_SYS_OTHER, 0);
     }
     if (!hero_sys_scaled(fields[10], 1000000000, hertz, &out[0]) || !hero_sys_scaled(fields[11], 1000000000, hertz, &out[1])) {
         return hero_sys_fail(HERO_SYS_LIMIT, 0);
+    }
+    path[p] = 0;
+    if (hero_sys_proc_resident(path + 6, (uint64_t)page, &resident_bytes) != 0) {
+        return -1;
+    }
+    if (resident_bytes > (uint64_t)INT64_MAX) {
+        return hero_sys_fail(HERO_SYS_OTHER, 0);
     }
     *resident = (int64_t)resident_bytes;
     *virtual_bytes = (int64_t)fields[19];

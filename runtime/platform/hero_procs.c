@@ -829,6 +829,10 @@ static void hero_procs_ids_free(hero_procs_ids *ids) {
  * whose `intr` line one count for each interrupt. */
 #define HERO_PROCS_STAT_MOST ((size_t)16 << 20)
 
+/* The most a process's `smaps_rollup` or `statm` is read into: the first
+ * holds some twenty lines of under forty bytes, the second one line. */
+#define HERO_PROCS_ROLLUP 4096
+
 /* A file of `/proc` read into `buffer` (`size` bytes, a zero byte after what
  * is read) and its length into `*length`: 1 where it was read whole, 0 where
  * the process is gone or this caller may not read it, -1 with the kind set
@@ -1015,6 +1019,68 @@ static bool hero_procs_effective(const char *status, uint64_t *uid) {
     return false;
 }
 
+/* The resident memory of the process `pid` in bytes, into `*bytes`, read as
+ * `hero_sys_process_usage` reads it (`hero_sys.c`, `hero_sys_proc_resident`,
+ * which says why never the 24th field of `stat`): the `Rss:` line of its
+ * `smaps_rollup`, in KiB, where this caller may read that file and it holds
+ * one; else the second field of its `statm`, in pages. 1 where one was read,
+ * 0 where the process is gone or hidden from this caller, -1 with the kind
+ * set. */
+static int hero_procs_resident(int32_t pid, uint64_t page, uint64_t *bytes) {
+    char path[64];
+    char text[HERO_PROCS_ROLLUP];
+    size_t length = 0;
+    int read = 0;
+
+    /* A rollup this buffer cannot hold, or one whose reading fails, is
+     * passed over for `statm`, whose answer the listing then carries. */
+    (void)snprintf(path, sizeof path, "/proc/%d/smaps_rollup", (int)pid);
+    read = hero_procs_small(path, text, sizeof text, &length);
+    if (read > 0) {
+        const char *line = text;
+
+        while (line != NULL && *line != '\0') {
+            if (strncmp(line, "Rss:", 4) == 0) {
+                char *end = NULL;
+                uint64_t kib = 0;
+
+                errno = 0;
+                kib = strtoull(line + 4, &end, 10);
+                if (end != line + 4 && errno == 0 && !__builtin_mul_overflow(kib, (uint64_t)1024, bytes)) {
+                    return 1;
+                }
+                break;
+            }
+            line = strchr(line, '\n');
+            if (line != NULL) {
+                line += 1;
+            }
+        }
+    }
+    (void)snprintf(path, sizeof path, "/proc/%d/statm", (int)pid);
+    read = hero_procs_small(path, text, sizeof text, &length);
+    if (read <= 0) {
+        return read;
+    }
+    {
+        char *end = NULL;
+        const char *at = text;
+        uint64_t pages = 0;
+
+        errno = 0;
+        (void)strtoull(at, &end, 10);
+        if (end == at || errno != 0) {
+            return 0;
+        }
+        at = end;
+        pages = strtoull(at, &end, 10);
+        if (end == at || errno != 0 || __builtin_mul_overflow(pages, page, bytes)) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 /* What `/proc/<pid>` tells about the process, read into `row`: 1 where it is
  * whole, 0 where the process ended or is hidden from this caller, -1 with the
  * kind set. */
@@ -1029,7 +1095,6 @@ static int hero_procs_read(int32_t pid, int64_t boot_seconds, uint64_t ticks_per
     uint64_t system_ticks = 0;
     uint64_t start_ticks = 0;
     uint64_t virtual_bytes = 0;
-    uint64_t resident_pages = 0;
     uint64_t uid = 0;
     uint64_t resident = 0;
     int64_t started = 0;
@@ -1049,10 +1114,14 @@ static int hero_procs_read(int32_t pid, int64_t boot_seconds, uint64_t ticks_per
     if (open_paren == NULL || close_paren == NULL || close_paren < open_paren || close_paren[1] != ' ') {
         return 0;
     }
-    if (!hero_procs_stat_field(close_paren + 2, 4, &parent) || !hero_procs_stat_field(close_paren + 2, 14, &user_ticks) || !hero_procs_stat_field(close_paren + 2, 15, &system_ticks) || !hero_procs_stat_field(close_paren + 2, 22, &start_ticks) || !hero_procs_stat_field(close_paren + 2, 23, &virtual_bytes) || !hero_procs_stat_field(close_paren + 2, 24, &resident_pages)) {
+    if (!hero_procs_stat_field(close_paren + 2, 4, &parent) || !hero_procs_stat_field(close_paren + 2, 14, &user_ticks) || !hero_procs_stat_field(close_paren + 2, 15, &system_ticks) || !hero_procs_stat_field(close_paren + 2, 22, &start_ticks) || !hero_procs_stat_field(close_paren + 2, 23, &virtual_bytes)) {
         return 0;
     }
-    if (parent > (uint64_t)INT64_MAX || virtual_bytes > (uint64_t)INT64_MAX || __builtin_mul_overflow(resident_pages, page, &resident) || resident > (uint64_t)INT64_MAX) {
+    read = hero_procs_resident(pid, page, &resident);
+    if (read <= 0) {
+        return read;
+    }
+    if (parent > (uint64_t)INT64_MAX || virtual_bytes > (uint64_t)INT64_MAX || resident > (uint64_t)INT64_MAX) {
         return 0;
     }
     if (!hero_procs_scaled(start_ticks, 1000, ticks_per_second, &started) || __builtin_add_overflow(started, boot_seconds * 1000, &started) || !hero_procs_scaled(user_ticks, 1000000000u, ticks_per_second, &in_user) || !hero_procs_scaled(system_ticks, 1000000000u, ticks_per_second, &in_system)) {

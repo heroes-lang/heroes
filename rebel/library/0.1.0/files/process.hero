@@ -1736,6 +1736,16 @@ test "usage_of: a running child read twice, then refused once waited for, and re
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
+# A child read the moment it starts: on Linux the count of `/proc/<pid>/stat`
+# read 0 for about a fifth of them (`hero_sys.c`, `hero_sys_proc_resident`),
+# so twenty in a row each holding memory is what the reading owes.
+test "usage_of: each of twenty children read the moment it starts holds memory"
+    for _ in range(from: 0, to: 20)
+        child @= start(with_input(command(fixture.copier(), []), from: .pipe)).must()
+        assert usage_of(child).must().resident_bytes > 0
+        io.close(@child.input).must()
+        assert wait(@child).must() == .exited(code: 0)
+
 # A sleeper of thirty seconds, which every test below ends and waits for.
 test "with_own_group and with_group_of: this process's group by default, one of its own, and another child's"
     c = command(fixture.sleeper(), fixture.sleeper_arguments(30))
