@@ -293,10 +293,15 @@ nav.site {
   backdrop-filter: saturate(140%) blur(12px);
   -webkit-backdrop-filter: saturate(140%) blur(12px);
 }
+/* The gaps were 1.6rem here and 1.2rem between the items until Rebel took
+   Log's place in the row (2026-11-27): five letters where there were three
+   widened the English row by 16px, and 1.4rem and 1.1rem give it back, with
+   0.85rem between the items on a phone, so the row holds one line and scrolls
+   where it did (site/README.md, the nav). */
 nav.site > div {
   max-width: var(--shell); margin: 0 auto;
   padding: 0.65rem var(--gutter);
-  display: flex; align-items: center; gap: 1.6rem; flex-wrap: wrap;
+  display: flex; align-items: center; gap: 1.4rem; flex-wrap: wrap;
 }
 nav.site .mark {
   display: flex; align-items: center; gap: 0.5rem; text-decoration: none;
@@ -311,7 +316,7 @@ nav.site .mark svg {
 }
 nav.site .mark:hover svg { transform: rotate(8deg) scale(1.12); }
 nav.site ul {
-  display: flex; gap: 1.2rem; list-style: none; margin: 0; padding: 0;
+  display: flex; gap: 1.1rem; list-style: none; margin: 0; padding: 0;
   flex-wrap: wrap;
 }
 nav.site a:not(.mark) {
@@ -351,7 +356,7 @@ nav.site a.lang + .out { margin-left: 0; }
   nav.site .mark { font-size: 0.95rem; }
   nav.site a:not(.mark) { font-size: 0.74rem; letter-spacing: 0.02em; }
   nav.site ul {
-    order: 3; width: 100%; flex-wrap: nowrap; gap: 1rem;
+    order: 3; width: 100%; flex-wrap: nowrap; gap: 0.85rem;
     overflow-x: auto; overscroll-behavior-x: contain;
     scrollbar-width: none;
     /* The clipped item WAS the affordance, by the note above, and rendered at

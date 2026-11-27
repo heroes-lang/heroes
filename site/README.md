@@ -111,10 +111,10 @@ answers at drops the extension and gains a slash, so `why.html` is `/why/` and
 | `project.html` | three sections, and it replaced three pages (author instruction 2026-09-06): the fixpoint at `#self-hosted`, how a change is decided at `#panel`, and `heroes this` quoted verbatim at `#zen`. The twenty Zen lines are the binary's own text, lyric fragments included, so the titles-only rule governs the page's nod and not the quotation, and they stay English in both editions |
 | `about.html` | Giuseppe Arici, the bio in his own voice, the book, and *Who wrote this*, which says who did what. Governed by § The author and the book below, which is not optional copy guidance |
 | `about/thanks.html` | the credits: the designers of every language the design borrowed from, named one by one, each with the borrowing beside them. A **sub-page of `/about/`** since 2026-09-07, the way `errors.html` is one of `/docs/`, because the nav holds one entry for the author and the names may not be cut to fit a word budget. Governed by § The thanks page below |
-| `log.html` | the build log, one postcard per milestone, newest first. A postcard is the milestone name, the sentence in bold that is the news, one concrete sentence and a link: 1,517 words where it was 4,846 |
+| `log.html` | the build log, one postcard per milestone, newest first. Under Project since 2026-11-27, when its entry in the nav went to Rebel: it carries a crumb naming Project and marks Project as current, and the project page links it from its lede and after its chain. A postcard is the milestone name, the sentence in bold that is the news, one concrete sentence and a link: 1,517 words where it was 4,846 |
 | `examples/` | **the examples browser, generated from `examples/` at build time**: an index, one page per program and per gallery file, and `index.json`. Its own § below |
 | `docs/` | the documentation: landing + chapters |
-| `rebel.html` | **Rebel**, the library a program takes or leaves: what it is, what is built with it, how a program takes it, its packages' counts and what a program owes for it. Under it, by the author's request of 2026-11-27 (*I cannot find a catalogue of its packages, nor one of the applications built with it*): `rebel/packages.html`, every package by layer, each row § A1's line, its ledger's three counts, *over C* where C stands under it and the applications that take it; `rebel/apps.html`, every application the walk of `rebel/examples/` finds, one card each, its line opening with the known tool it is modelled on where its README or its code names one; and a reference page per face, `heroes doc`'s output. All three generated at build time (`rebel-page.ts`, `rebel-catalogue.ts`, `reference.ts`). Not in the nav row: the tenth entry Rebel asked for is the author's choice, as the nav's paragraphs above say |
+| `rebel.html` | **Rebel**, the library a program takes or leaves: what it is, what is built with it, how a program takes it, its packages' counts and what a program owes for it. Under it, by the author's request of 2026-11-27 (*I cannot find a catalogue of its packages, nor one of the applications built with it*): `rebel/packages.html`, every package by layer, each row § A1's line, its ledger's three counts, *over C* where C stands under it and the applications that take it; `rebel/apps.html`, every application the walk of `rebel/examples/` finds, one card each, its line opening with the known tool it is modelled on where its README or its code names one; and a reference page per face, `heroes doc`'s output. All three generated at build time (`rebel-page.ts`, `rebel-catalogue.ts`, `reference.ts`). In the nav row since the evening of 2026-11-27, in Log's place, as the nav's paragraphs above say, so `rebel.html` carries no crumb and its pages mark Rebel as current |
 | `404.html` | what a reader gets for an address that does not exist, one per edition, with four links out: home, docs, examples, the language in one file. **Without it Cloudflare Pages assumes a single-page application** and answers every unknown path with the home page at status 200, which was measured on this deployment and on the two before it. The nested one has to reach the output as `it/404.html` rather than `it/404/index.html`, which is what `astro.config.mjs`'s `heroes:nested-404` does and says why |
 | `style.css` | the only cross-page *stylesheet* |
 | `images/` | the one binary asset the site has: `giuseppe-arici.jpg`, the author's portrait, used by both editions of `about.html` |
@@ -282,6 +282,36 @@ puts the Italian chrome on three rows, the state the rule below forbids, and a
 tenth entry enters only by displacing one, which is the author's choice, put to
 them with these widths. Until it is made, Rebel is reached from the home page
 and from the examples.
+
+**Rebel took Log's place that evening, by the author's choice** (their answer
+2a, meant as: *Rebel replaces Log; the log is the project's diary and lives
+under Project*). So the row is still nine, Start · Docs · Examples · Spec ·
+Rebel · Why · Project · Author · Thanks, and in Italian Inizia · Docs · Esempi
+· Specifica · Rebel · Perché · Progetto · Autore · Grazie. Rebel stands after
+Spec rather than where Log stood: Log was one of the project's own shelves
+beside Why and Project, and Rebel is something a visitor takes, so it carries
+on the front half's intent order, run it, learn it, see it, take the
+language, take the library. The log is one click below Project, linked from
+its lede and after its chain, and wears a crumb naming Project, the entry it
+marks as current. **Five letters where Log had three widened the English list
+by 16px**, which moved its one-row threshold from 821px to 837px and its
+sideways scroll from 505px to 522px, measured to the pixel; so the gaps were
+tightened just enough to give it back, `1.6rem` to `1.4rem` around the list,
+`1.2rem` to `1.1rem` between its items, and `1rem` to `0.85rem` between them
+on a phone. Measured the same evening on the built page, every 10px from
+1200px to 390px and every pixel at the edges, the method above:
+
+| | English | Italian |
+|---|---|---|
+| the list at 1200px, before (with Log) | 520px | 607px |
+| the list at 1200px, after (with Rebel) | 523px | 587px |
+| one row, before | 821px and up | 909px and up |
+| one row, after | 815px and up | 879px and up |
+| the list scrolls, before | 505px and down | 593px and down |
+| the list scrolls, after | 500px and down | 564px and down |
+
+The row holds one line and stays unscrolled at every width where it did
+before, in both editions, and nowhere takes three rows.
 
 **The row stays at seven, so a page enters it only by displacing one.** That
 rule is unchanged from when the row was nine (author instruction 2026-08-18);
@@ -800,10 +830,13 @@ change one of them, which is the argument for having kept them this simple:
   English pages and `EN` on Italian ones, with `hreflang`/`lang` on the anchor
   and an Italian/English `title`. It is **not** a nav item: the row is full at
   nine, and a language is not a page.
-- Nav labels: Italian where Italian is what a reader would say (Perché Heroes ·
-  Grazie · Autore), English where the English word *is* the Italian technical
-  usage (Docs · Self-hosted · Zen · Panel · Log). Keeping those also keeps the
-  row the same width, which is what the nine-item measurement was about.
+- Nav labels: Italian where Italian is what a reader would say (Inizia ·
+  Esempi · Specifica · Perché · Progetto · Autore · Grazie), English where the
+  English word *is* the Italian technical usage (Docs) or a name (Rebel).
+  Keeping those also keeps the row the same width, which is what the nine-item
+  measurement was about. Until 2026-11-27 the list here read *Docs ·
+  Self-hosted · Zen · Panel · Log*, the labels of a row long gone; the last of
+  them, `Diario` in Italian by then, left the row for Rebel that day.
 - Accented characters are **real UTF-8 characters** (`è`, not `&egrave;`); HTML
   entities stay for typography only (`&mdash;`, `&rsquo;`, `&ldquo;`,
   `&middot;`). The pages are `charset=utf-8` and an entity-per-accent source is
