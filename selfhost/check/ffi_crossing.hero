@@ -56,8 +56,8 @@ use token
 # table the same way: a type id is an index into a table built before
 # this pass runs, so the walk is over a finite acyclic structure and not
 # over the program.
-function crosses_the_boundary(c: state.Checker, decls: [ast.Decl], ty: i64) -> bool
-    match table.get(c.out.types, ty)
+function crosses_the_boundary(t: table.Types, decls: [ast.Decl], ty: i64) -> bool
+    match table.get(t, ty)
         .named n =>
             match decls[n.decl].kind
                 .record_decl rec                                             => return !rec.header.is_err()
@@ -67,11 +67,11 @@ function crosses_the_boundary(c: state.Checker, decls: [ast.Decl], ty: i64) -> b
             if f.modes.len > 0
                 return false
 
-            for p in table.params_of(c.out.types, f.params)
-                if !crosses_the_boundary(c, decls, p)
+            for p in table.params_of(t, f.params)
+                if !crosses_the_boundary(t, decls, p)
                     return false
 
-            return crosses_the_boundary(c, decls, f.result)
+            return crosses_the_boundary(t, decls, f.result)
         .array | .fixed | .map | .fallible | .thread_ty | .mailbox_ty => return false
         .case_ty | .failure | .generic                                => return false
 
@@ -129,10 +129,10 @@ function carried_refusal(c: state.Checker, decls: [ast.Decl], ty: i64) -> i64
     match table.get(c.out.types, ty)
         .function_ty f =>
             for p in table.params_of(c.out.types, f.params)
-                if !crosses_the_boundary(c, decls, p)
+                if !crosses_the_boundary(c.out.types, decls, p)
                     return p
 
-            if !crosses_the_boundary(c, decls, f.result)
+            if !crosses_the_boundary(c.out.types, decls, f.result)
                 return f.result
 
             return -1
