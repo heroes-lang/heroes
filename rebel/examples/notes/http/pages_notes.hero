@@ -8,6 +8,7 @@
 use <rebel>/http
 use <rebel>/json
 use <rebel>/url
+use <rebel>/web
 
 use api/api_view
 use app/service
@@ -121,12 +122,22 @@ function list(@app: state.App, v: visit.Visit, r: http.Request, tag: str, headin
     html = layout.whole(app, v: v, title: heading, query: "", token: c.token, pieces: [.rendered(name: "list", value: jsonv.object(members))])?
     return ok(layout.reply_with(v, c: c, response: replies.page(http.STATUS_OK, html: html)))
 
+# `GET /tags/:tag`: the notes of a tag, headed by it.
+#
+# - `app`: the state.
+# - `v`: the visit.
+# - `found`: the route, its parameter `tag`.
+# - `r`: the request.
+function tag_page(@app: state.App, v: visit.Visit, found: web.Found, r: http.Request) -> replies.Reply?
+    tag = web.param_of(found, name: "tag")
+    return list(@app, v: v, r: r, tag: tag, heading: f"#{tag}")
+
 # The home page: the newest notes.
 #
 # - `app`: the state.
 # - `v`: the visit.
 # - `r`: the request.
-function home(@app: state.App, v: visit.Visit, r: http.Request) -> replies.Reply?
+function home(@app: state.App, v: visit.Visit, _: web.Found, r: http.Request) -> replies.Reply?
     return list(@app, v: v, r: r, tag: "", heading: locales.say(app.locales, tag: v.language, id: "Newest notes"))
 
 # The notes a search finds, the best first: `?q=` and its words.
@@ -134,7 +145,7 @@ function home(@app: state.App, v: visit.Visit, r: http.Request) -> replies.Reply
 # - `app`: the state.
 # - `v`: the visit.
 # - `r`: the request.
-function search(@app: state.App, v: visit.Visit, r: http.Request) -> replies.Reply?
+function search(@app: state.App, v: visit.Visit, _: web.Found, r: http.Request) -> replies.Reply?
     q = query_value(r, key: "q")
 
     found = match service.search_notes(@app, query: q)
@@ -173,9 +184,11 @@ function search(@app: state.App, v: visit.Visit, r: http.Request) -> replies.Rep
 #
 # - `app`: the state.
 # - `v`: the visit.
+# - `found`: the route, its parameter `slug`.
 # - `r`: the request.
-# - `slug`: the note's slug.
-function note(@app: state.App, v: visit.Visit, r: http.Request, slug: str) -> replies.Reply?
+function note(@app: state.App, v: visit.Visit, found: web.Found, r: http.Request) -> replies.Reply?
+    slug = web.param_of(found, name: "slug")
+
     n = match note_store.by_slug(@app.db, slug: slug)
         .ok got => got
         .err e  => return refusal(app, v: v, r: r, status: http.STATUS_NOT_FOUND, text: e.msg)
@@ -238,7 +251,7 @@ function note_page(@app: state.App, v: visit.Visit, n: model.Note, draft: str, e
 # - `app`: the state.
 # - `v`: the visit.
 # - `r`: the request.
-function note_new(app: state.App lent, v: visit.Visit, r: http.Request) -> replies.Reply?
+function note_new(app: state.App lent, v: visit.Visit, _: web.Found, r: http.Request) -> replies.Reply?
     user = match signed(v, r: r)
         .user s   => s.u
         .answer a => return ok(a.reply)
@@ -296,7 +309,7 @@ function form_errors(errors: [validate.FieldError], fields: [str]) -> json.Value
 # - `app`: the state.
 # - `v`: the visit.
 # - `r`: the request, a form of `title`, `tags` and `body`.
-function note_create(@app: state.App, v: visit.Visit, r: http.Request) -> replies.Reply?
+function note_create(@app: state.App, v: visit.Visit, _: web.Found, r: http.Request) -> replies.Reply?
     user = match signed(v, r: r)
         .user s   => s.u
         .answer a => return ok(a.reply)
@@ -320,9 +333,11 @@ function note_create(@app: state.App, v: visit.Visit, r: http.Request) -> replie
 #
 # - `app`: the state.
 # - `v`: the visit.
+# - `found`: the route, its parameter `slug`.
 # - `r`: the request.
-# - `slug`: the note's slug.
-function note_delete(@app: state.App, v: visit.Visit, r: http.Request, slug: str) -> replies.Reply?
+function note_delete(@app: state.App, v: visit.Visit, found: web.Found, r: http.Request) -> replies.Reply?
+    slug = web.param_of(found, name: "slug")
+
     user = match signed(v, r: r)
         .user s   => s.u
         .answer a => return ok(a.reply)
@@ -340,9 +355,11 @@ function note_delete(@app: state.App, v: visit.Visit, r: http.Request, slug: str
 #
 # - `app`: the state.
 # - `v`: the visit.
+# - `found`: the route, its parameter `slug`.
 # - `r`: the request, a form of `body`.
-# - `slug`: the note's slug.
-function comment_create(@app: state.App, v: visit.Visit, r: http.Request, slug: str) -> replies.Reply?
+function comment_create(@app: state.App, v: visit.Visit, found: web.Found, r: http.Request) -> replies.Reply?
+    slug = web.param_of(found, name: "slug")
+
     user = match signed(v, r: r)
         .user s   => s.u
         .answer a => return ok(a.reply)
@@ -379,7 +396,7 @@ constant FEED_SIZE: i64
 #
 # - `app`: the state.
 # - `v`: the visit; its clock stamps a feed with no note.
-function atom(@app: state.App, v: visit.Visit) -> replies.Reply?
+function atom(@app: state.App, v: visit.Visit, _: web.Found, _: http.Request) -> replies.Reply?
     notes = note_store.page(@app.db, tag: "", offset: 0, limit: FEED_SIZE)?
     text = feed.atom_of(feed.Site(title: app.settings.title, base_url: app.settings.base_url), notes: notes, empty_at: v.now)?
     return ok(replies.plain(http.respond_text(http.STATUS_OK, text: text).with_type(feed.MEDIA_TYPE)))
