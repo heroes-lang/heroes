@@ -363,7 +363,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("7a79d3977cbe9740", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("5400d6535dfa53fa", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2872ahandleronacoroutinesstackleftbyajumpruns\tfixedbugs-2872-a-handler-on-a-coroutines-stack-left-by-a-jump-runs\n");
