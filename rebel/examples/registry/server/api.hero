@@ -1,5 +1,6 @@
-# The registry's HTTP API: every route, who may call it, and the dispatch from
-# a route's name to its handler, with the server's state lent by `@`.
+# The registry's HTTP API: every route, each bound to the handler that
+# answers it, who may call it, and the steps around them, run by `web/chain`
+# with the server's state lent by `@`.
 #
 #     GET    /health
 #     GET    /api/v1/packages
@@ -21,16 +22,22 @@
 #     GET    /blobs/:digest
 #
 # A route marked with a scope needs `Authorization: Bearer` with a token that
-# carries it (`tokens`): a token missing or unknown is answered 401 with
-# RFC 6750's challenge, a token without the scope 403. Publications are
-# limited per publisher (`limits.publishes_per_hour` and `publish_burst`),
-# past which a publisher is answered 429 with `Retry-After`.
+# carries it (`tokens`): its scope is route data, kept beside its handler in
+# the state's `scopes`, and the route's own step `authorize` reads it, so a
+# token missing or unknown is answered 401 with RFC 6750's challenge and a
+# token without the scope 403 before the handler runs. Publications are
+# limited per publisher (`limits.publishes_per_hour` and `publish_burst`) by
+# the publication route's own step `limit`, past which a publisher is
+# answered 429 with `Retry-After`. Every request runs `log`, the log line of
+# `web/steps.access_log`, and inside it `failures`, which answers a handler's
+# failure with the API's JSON message.
 
 use <rebel>/bytes
-use <rebel>/errors
 use <rebel>/http
 use <rebel>/time
 use <rebel>/web
+use <rebel>/web/chain
+use <rebel>/web/steps
 
 use server/answers
 use server/reads
@@ -45,147 +52,156 @@ use store/database
 constant REALM: str
     "registry"
 
-# Every route of the API, by name.
+# Every route of the API, each bound to its handler in `handlers`, with the
+# steps every route runs and the writing routes' own, and each writing
+# route's scope in `scopes`.
+#
+# - `bound_steps`: the server's table of its steps, which gains them.
+# - `handlers`: the server's table of its handlers, which gains them.
+# - `scopes`: the scope each writing route needs, by its name.
 #
 # Fails as `web.add` does; the patterns here are all valid and apart, so a
 # failure is a broken route table.
-function router() -> web.Router?
+function router(@bound_steps: {str: (function(@serving.State, chain.Next, http.Request) -> http.Response?)}, @handlers: {str: (function(@serving.State, web.Found, http.Request) -> http.Response?)}, @scopes: {str: str}) -> web.Router?
     rt @= web.new_router()
+    rt.errors @ .json
+    chain.add_step(@rt, @bound_steps, name: "log", step: log)?
+    chain.add_step(@rt, @bound_steps, name: "failures", step: failures)?
     get = http.METHOD_GET
     put = http.METHOD_PUT
-    web.add(@rt, method: get, pattern: "/health", name: "health")?
-    web.add(@rt, method: get, pattern: "/api/v1/packages", name: "packages")?
-    web.add(@rt, method: get, pattern: "/api/v1/packages/:name", name: "package")?
-    web.add(@rt, method: get, pattern: "/api/v1/packages/:name/resolve", name: "resolve")?
-    web.add(@rt, method: get, pattern: "/api/v1/packages/:name/changes", name: "changes")?
-    web.add(@rt, method: get, pattern: "/api/v1/packages/:name/:version", name: "version")?
-    web.add(@rt, method: put, pattern: "/api/v1/packages/:name/:version", name: "publish")?
-    web.add(@rt, method: get, pattern: "/api/v1/packages/:name/:version/archive", name: "archive")?
-    web.add(@rt, method: get, pattern: "/api/v1/packages/:name/:version/signature", name: "signature")?
-    web.add(@rt, method: put, pattern: "/api/v1/packages/:name/:version/yank", name: "yank")?
-    web.add(@rt, method: http.METHOD_DELETE, pattern: "/api/v1/packages/:name/:version/yank", name: "unyank")?
-    web.add(@rt, method: get, pattern: "/api/v1/search", name: "search")?
-    web.add(@rt, method: get, pattern: "/api/v1/suggest", name: "suggest")?
-    web.add(@rt, method: put, pattern: "/api/v1/keys", name: "add_key")?
-    web.add(@rt, method: get, pattern: "/api/v1/keys/:id", name: "key")?
-    web.add(@rt, method: get, pattern: "/api/v1/publishers/:name/keys", name: "publisher_keys")?
-    web.add(@rt, method: get, pattern: "/index/:name", name: "index")?
-    web.add(@rt, method: get, pattern: "/blobs/:digest", name: "blob")?
-    rt.errors @ .json
+    chain.on(@rt, @handlers, method: get, pattern: "/health", name: "health", answer: reads.health)?
+    chain.on(@rt, @handlers, method: get, pattern: "/api/v1/packages", name: "packages", answer: reads.list_packages)?
+    chain.on(@rt, @handlers, method: get, pattern: "/api/v1/packages/:name", name: "package", answer: reads.show_package)?
+    chain.on(@rt, @handlers, method: get, pattern: "/api/v1/packages/:name/resolve", name: "resolve", answer: reads.resolve_range)?
+    chain.on(@rt, @handlers, method: get, pattern: "/api/v1/packages/:name/changes", name: "changes", answer: reads.show_changes)?
+    chain.on(@rt, @handlers, method: get, pattern: "/api/v1/packages/:name/:version", name: "version", answer: reads.show_version)?
+    writing(@rt, @bound_steps, @handlers, @scopes, method: put, pattern: "/api/v1/packages/:name/:version", name: "publish", scope: tokens.SCOPE_PUBLISH, answer: writes.publish_version)?
+    chain.add_route_step(@rt, @bound_steps, route: "publish", name: "limit", step: limit)?
+    chain.on(@rt, @handlers, method: get, pattern: "/api/v1/packages/:name/:version/archive", name: "archive", answer: reads.serve_archive)?
+    chain.on(@rt, @handlers, method: get, pattern: "/api/v1/packages/:name/:version/signature", name: "signature", answer: reads.show_signature)?
+    writing(@rt, @bound_steps, @handlers, @scopes, method: put, pattern: "/api/v1/packages/:name/:version/yank", name: "yank", scope: tokens.SCOPE_YANK, answer: writes.yank)?
+    writing(@rt, @bound_steps, @handlers, @scopes, method: http.METHOD_DELETE, pattern: "/api/v1/packages/:name/:version/yank", name: "unyank", scope: tokens.SCOPE_YANK, answer: writes.unyank)?
+    chain.on(@rt, @handlers, method: get, pattern: "/api/v1/search", name: "search", answer: reads.search_packages)?
+    chain.on(@rt, @handlers, method: get, pattern: "/api/v1/suggest", name: "suggest", answer: reads.suggest)?
+    writing(@rt, @bound_steps, @handlers, @scopes, method: put, pattern: "/api/v1/keys", name: "add_key", scope: tokens.SCOPE_KEYS, answer: writes.add_key)?
+    chain.on(@rt, @handlers, method: get, pattern: "/api/v1/keys/:id", name: "key", answer: reads.show_key)?
+    chain.on(@rt, @handlers, method: get, pattern: "/api/v1/publishers/:name/keys", name: "publisher_keys", answer: reads.publisher_keys)?
+    chain.on(@rt, @handlers, method: get, pattern: "/index/:name", name: "index", answer: reads.show_index)?
+    chain.on(@rt, @handlers, method: get, pattern: "/blobs/:digest", name: "blob", answer: reads.serve_blob)?
     return ok(rt)
+
+# A route that changes the registry: bound to `answer`, its scope kept beside
+# it, its own step `authorize` before it.
+#
+# - `rt`: the router.
+# - `bound_steps`: the server's steps.
+# - `handlers`: the server's handlers.
+# - `scopes`: the writing routes' scopes, which gain this one's.
+# - `method`: the method.
+# - `pattern`: the pattern.
+# - `name`: the route's name.
+# - `scope`: the scope its token must carry.
+# - `answer`: its handler.
+#
+# Fails as `web/chain.on` does.
+function writing(@rt: web.Router, @bound_steps: {str: (function(@serving.State, chain.Next, http.Request) -> http.Response?)}, @handlers: {str: (function(@serving.State, web.Found, http.Request) -> http.Response?)}, @scopes: {str: str}, method: str, pattern: str, name: str, scope: str, answer: (function(@serving.State, web.Found, http.Request) -> http.Response?)) -> ()?
+    chain.on(@rt, @handlers, method: method, pattern: pattern, name: name, answer: answer)?
+    scopes[name] @ scope
+    chain.add_route_step(@rt, @bound_steps, route: name, name: "authorize", step: authorize)?
+    return ok()
+
+# Binds every route of the API in `state`.
+#
+# - `state`: the server's state, whose router and tables are made here.
+#
+# Fails as `router` does.
+function bind(@state: serving.State) -> ()?
+    state.router @ router(@state.steps, @state.answers, @state.scopes)?
+    return ok()
 
 ## Answering
 
-# The answer to `r`: routed, checked for its token where the route changes
-# something, handed to its handler with the state, logged and counted.
+# The answer to `r`, through its route's steps and handler; the answers
+# counted.
 #
 # - `state`: the server's state; the handlers change it, and its count of
 #   answers grows by one.
 # - `r`: the request, as the server read it.
 function handle(@state: serving.State, r: http.Request) -> http.Response
-    now = time.now().default(time.epoch())
-
-    response = match web.route(state.router, r: r)
-        .ok found => dispatch(@state, r: r, found: found, now: now)
-        .err _    => web.not_routed(state.router, r: r)
-
     state.answered @ state.answered + 1
-    errors.ignore(web.log_request(state.logger, r: r, response: response, started: now))
-    return response
 
-# The answer of the handler `found` names.
-#
-# - `state`: the server's state.
-# - `r`: the request.
-# - `found`: the route that takes it, and its parameters.
-# - `now`: the moment the request is answered.
-function dispatch(@state: serving.State, r: http.Request, found: web.Found, now: time.Instant) -> http.Response
-    answered: http.Response? = match found.name
-        "health"   => ok(reads.health(state))
-        "packages" => reads.list_packages(@state)
-        "package"  => reads.show_package(@state, name: web.param_of(found, name: "name"))
-        "resolve"  => reads.resolve_range(@state, r: r, name: web.param_of(found, name: "name"))
-        "changes"  => reads.show_changes(@state, r: r, name: web.param_of(found, name: "name"))
-        "version" => reads.show_version(
-            @state,
-            name: web.param_of(found, name: "name"),
-            version: web.param_of(found, name: "version")
-        )
-        "archive" => reads.serve_archive(
-            @state,
-            r: r,
-            name: web.param_of(found, name: "name"),
-            version: web.param_of(found, name: "version")
-        )
-        "signature" => reads.show_signature(
-            @state,
-            name: web.param_of(found, name: "name"),
-            version: web.param_of(found, name: "version")
-        )
-        "search"         => reads.search_packages(@state, r: r)
-        "suggest"        => reads.suggest(state, r: r)
-        "key"            => reads.show_key(@state, id: web.param_of(found, name: "id"))
-        "publisher_keys" => reads.publisher_keys(@state, name: web.param_of(found, name: "name"))
-        "index"          => reads.show_index(@state, name: web.param_of(found, name: "name"))
-        "blob"           => reads.serve_blob(@state, r: r, d: web.param_of(found, name: "digest"))
-        _                => guarded(@state, r: r, found: found, now: now)
-
-    return match answered
+    return match chain.dispatch(@state, router: state.router, steps: state.steps, answers: state.answers, r: r)
         .ok response => response
         .err e       => answers.failure(code: e.code, message: e.msg)
 
-# The answer of a route that changes the registry: its token checked for the
-# route's scope, a publication's rate limited, then its handler.
+# The rest of `n`'s chain: the server's one line that goes on.
 #
 # - `state`: the server's state.
+# - `n`: where the request stands.
 # - `r`: the request.
-# - `found`: the route, whose pattern holds the package's name and version
-#   where it publishes or yanks.
-# - `now`: the moment the request is answered.
+function go_on(@state: serving.State, n: chain.Next, r: http.Request) -> http.Response?
+    return chain.proceed(@state, steps: state.steps, answers: state.answers, n: n, r: r)
+
+# The time, for the log line: the wall clock, whatever the state.
 #
-# Fails as the handler does.
-function guarded(@state: serving.State, r: http.Request, found: web.Found, now: time.Instant) -> http.Response?
-    scope = match found.name
-        "publish"         => tokens.SCOPE_PUBLISH
-        "yank" | "unyank" => tokens.SCOPE_YANK
-        _                 => tokens.SCOPE_KEYS
+# - `state`: the server's state, not read.
+function wall(_: serving.State lent) -> time.Instant?
+    return time.now()
 
-    grant = match authorized(@state, r: r, scope: scope)
-        .granted g   => g.grant
+# Every request's step: its line in the request log.
+#
+# - `state`: the server's state, whose logger writes the line.
+# - `n`: where the request stands.
+# - `r`: the request.
+function log(@state: serving.State, n: chain.Next, r: http.Request) -> http.Response?
+    return steps.access_log(@state, n: n, r: r, logger: state.logger, clock: wall, go_on: go_on)
+
+# Every request's step inside `log`: a handler's failure answered with the
+# API's JSON message and the status its code means.
+#
+# - `state`: the server's state.
+# - `n`: where the request stands.
+# - `r`: the request.
+function failures(@state: serving.State, n: chain.Next, r: http.Request) -> http.Response?
+    return match go_on(@state, n, r)
+        .ok response => ok(response)
+        .err e       => ok(answers.failure(code: e.code, message: e.msg))
+
+# A writing route's own step: the request's token checked for the scope kept
+# beside the route, its grant held in the state while the handler runs.
+#
+# - `state`: the server's state, whose `grant` holds the token's grant.
+# - `n`: where the request stands.
+# - `r`: the request.
+#
+# Fails `not_found` where the route has no scope, a route table bound wrong.
+function authorize(@state: serving.State, n: chain.Next, r: http.Request) -> http.Response?
+    found = chain.found_of(n)?
+    scope = state.scopes[found.name]?
+
+    match authorized(@state, r: r, scope: scope)
         .refused why => return ok(why.response)
+        .granted g =>
+            state.grant @ ok(g.grant)
+            got = go_on(@state, n, r)
+            state.grant @ fail(code: serving.NOT_FOUND, msg: "no request is being answered")
+            return got
 
-    if found.name == "publish"
-        match web.limit_rate(@state.publish_limiter, r: r, key: grant.publisher.name, now: now, form: .json)
-            .answer a => return ok(a.response)
-            .go_on _  => _ = 0
+# The publication route's own step, after `authorize`: the publisher's
+# bucket of publications taken from, or 429 with `Retry-After`.
+#
+# - `state`: the server's state, whose limiter changes.
+# - `n`: where the request stands.
+# - `r`: the request.
+#
+# Fails `not_found` where no grant is held, a step bound before `authorize`.
+function limit(@state: serving.State, n: chain.Next, r: http.Request) -> http.Response?
+    grant = state.grant?
+    now = time.now().default(time.epoch())
 
-        return writes.publish_version(
-            @state,
-            r: r,
-            grant: grant,
-            name: web.param_of(found, name: "name"),
-            version: web.param_of(found, name: "version"),
-            now: now
-        )
-
-    if found.name == "yank"
-        return writes.set_yanked(
-            @state,
-            grant: grant,
-            name: web.param_of(found, name: "name"),
-            version: web.param_of(found, name: "version"),
-            yanked: true
-        )
-
-    if found.name == "unyank"
-        return writes.set_yanked(
-            @state,
-            grant: grant,
-            name: web.param_of(found, name: "name"),
-            version: web.param_of(found, name: "version"),
-            yanked: false
-        )
-    return writes.add_key(@state, r: r, grant: grant, now: now)
+    match web.limit_rate(@state.publish_limiter, r: r, key: grant.publisher.name, now: now, form: .json)
+        .answer a => return ok(a.response)
+        .go_on _  => return go_on(@state, n, r)
 
 ## Tokens
 
@@ -244,15 +260,20 @@ function challenge(error: str, message: str) -> http.Response
     )
     return response
 
-test "router: every route found by its pattern"
-    rt = router().must()
+test "router: every route found by its pattern, each writing route with its scope and its steps"
+    bound_steps: {str: (function(@serving.State, chain.Next, http.Request) -> http.Response?)} @= {}
+    handlers: {str: (function(@serving.State, web.Found, http.Request) -> http.Response?)} @= {}
+    scopes: {str: str} @= {}
+    rt = router(@bound_steps, @handlers, @scopes).must()
+    assert handlers.len() == 18 && scopes["publish"].must() == tokens.SCOPE_PUBLISH && scopes.len() == 4
     r = http.request(method: http.METHOD_GET, target: "/api/v1/packages/textkit/1.0.0/archive").must()
     found = web.route(rt, r: r).must()
     assert found.name == "archive" && web.param_of(found, name: "version") == "1.0.0"
     resolve_request = http.request(method: http.METHOD_GET, target: "/api/v1/packages/textkit/resolve?req=%5E1").must()
     assert web.route(rt, r: resolve_request).must().name == "resolve"
     put_request = http.request(method: http.METHOD_PUT, target: "/api/v1/packages/textkit/1.0.0").must()
-    assert web.route(rt, r: put_request).must().name == "publish"
+    published = web.route(rt, r: put_request).must()
+    assert published.name == "publish" && published.steps == ["log", "failures", "authorize", "limit"]
 
 test "challenge: 401 with its field and the API's JSON message"
     c = challenge(error: "invalid_token", message: "no such token")

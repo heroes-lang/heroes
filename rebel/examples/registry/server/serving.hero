@@ -2,18 +2,20 @@
 # connection, the archives' store, the search catalog, the compiled manifest
 # schema, the router, the publishers' rate limiter and the request log.
 #
-# One `State` lives on the thread that serves, and every handler is handed it
-# by `@`: the language has no closure and no global, so this record is how
-# the router's handlers reach the database (`web`'s opening comment says why
-# the program dispatches).
+# One `State` lives on the thread that serves, and every step and handler is
+# handed it by `@`: the language has no closure and no global, so this record
+# holds the tables that bind each route's and each step's name to the
+# server's function (`api.bind`), and is how they reach the database.
 
 use <rebel>/errors
 use <rebel>/fs
+use <rebel>/http
 use <rebel>/io
 use <rebel>/json/schema
 use <rebel>/log
 use <rebel>/sql/sqlite
 use <rebel>/web
+use <rebel>/web/chain
 
 use packages/manifest_schema
 use search/catalog
@@ -26,6 +28,10 @@ use store/database
 # The code of settings that hold a value the server cannot start with.
 constant INVALID: str
     "invalid"
+
+# The code of a grant read where no request's token was checked.
+constant NOT_FOUND: str
+    "not_found"
 
 ## The state
 
@@ -43,8 +49,19 @@ record State
     catalog: catalog.Catalog
     # The manifest schema, compiled once.
     manifest_schema: schema.Schema
-    # The routes.
+    # The routes, each bound in `answers` by `api.bind`.
     router: web.Router
+    # The steps the routes run, by their names.
+    steps: {str: (function(@State, chain.Next, http.Request) -> http.Response?)}
+    # The handler of each route, by the route's name.
+    answers: {str: (function(@State, web.Found, http.Request) -> http.Response?)}
+    # The scope each writing route's token must carry, by the route's name:
+    # route data beside its handler, which the step `api.authorize` reads.
+    scopes: {str: str}
+    # What the token of the request being answered grants, which
+    # `api.authorize` holds here while a writing route's handler runs;
+    # `not_found` between requests.
+    grant: database.Grant?
     # One bucket of publications per publisher.
     publish_limiter: web.Limiter
     # The request log.
@@ -60,7 +77,8 @@ record State
 #
 # - `s`: the settings.
 # - `base_url`: the absolute URL clients reach it at, ending in `/`.
-# - `router`: the routes, as `api.router` makes them.
+# - `router`: the routes; `api.bind` binds them, and their tables, once the
+#   state is open.
 #
 # Fails as the folder, the database, the migrations and the log's file fail.
 # The caller closes what it answers with `close`.
@@ -71,7 +89,7 @@ function open(s: settings.Settings, base_url: str, router: web.Router) -> State?
     match pieces_of(@db, s: s)
         .ok p =>
             return ok(
-                State(settings: s, base_url: base_url, db: db, blobs: blobs.Blobs(root: settings.blobs_of(s)), catalog: p.catalog, manifest_schema: p.manifest_schema, router: router, publish_limiter: p.limiter, logger: p.logged.logger, owns_log: p.logged.owned, answered: 0)
+                State(settings: s, base_url: base_url, db: db, blobs: blobs.Blobs(root: settings.blobs_of(s)), catalog: p.catalog, manifest_schema: p.manifest_schema, router: router, steps: {}, answers: {}, scopes: {}, grant: fail(code: NOT_FOUND, msg: "no request is being answered"), publish_limiter: p.limiter, logger: p.logged.logger, owns_log: p.logged.owned, answered: 0)
             )
         .err e =>
             errors.ignore(sqlite.close(@db))

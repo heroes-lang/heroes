@@ -35,4 +35,6 @@ packages = [
     "toml",
     "url",
     "web",
+    "web/chain",
+    "web/steps",
 ]
