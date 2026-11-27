@@ -1,0 +1,162 @@
+# The Language Server Protocol's values as JSON, both ways: the few makers
+# every answer is built from, a place and a range written and read, and the
+# typed readers of a request's parameters. A parameter missing or of the
+# wrong kind is a failure `invalid`, which the server answers as the
+# protocol's `InvalidParams`, the member's name in its message.
+
+use <rebel>/json
+
+use text/positions
+
+## Making values
+
+# The JSON number `n`.
+#
+# - `n`: an integer, well inside the 2^53 a JSON number holds exactly.
+function number(n: i64) -> json.Value
+    return .number(v: to_f64(n))
+
+# The JSON string `s`.
+#
+# - `s`: any text.
+function text(s: str) -> json.Value
+    return .text(v: s)
+
+# JSON's `true` or `false`.
+#
+# - `b`: the value.
+function boolean(b: bool) -> json.Value
+    return .boolean(v: b)
+
+# A JSON object of `members`, in their order.
+#
+# - `members`: the members by key.
+function object(members: {str: json.Value}) -> json.Value
+    return .object(members: members)
+
+# A JSON array of `items`, in order.
+#
+# - `items`: the elements.
+function array(items: [json.Value]) -> json.Value
+    return .list(items: items)
+
+# JSON's `null`.
+function nothing() -> json.Value
+    return .null_value
+
+## Places
+
+# `p` as the protocol writes it: `{"line": 3, "character": 7}`.
+#
+# - `p`: a place.
+function position_json(p: positions.Position) -> json.Value
+    return object({"line": number(p.line), "character": number(p.character)})
+
+# `r` as the protocol writes it.
+#
+# - `r`: a range.
+function range_json(r: positions.Range) -> json.Value
+    return object({"start": position_json(r.start), "end": position_json(r.end)})
+
+# A place read from `v`, a `Position`.
+#
+# - `v`: the JSON value read.
+#
+# Fails `invalid` where it is no object holding `line` and `character` as
+# integers.
+function position_of(v: json.Value) -> positions.Position?
+    line = json.int_at(v, key: "line")
+    character = json.int_at(v, key: "character")
+
+    if line.is_err() || character.is_err()
+        return fail(code: "invalid", msg: "a position holds `line` and `character`, two integers")
+    return ok(positions.Position(line: line.must(), character: character.must()))
+
+# A range read from `v`, a `Range`.
+#
+# - `v`: the JSON value read.
+#
+# Fails `invalid` where it is no object holding `start` and `end` as places.
+function range_of(v: json.Value) -> positions.Range?
+    start = position_of(member_of(v, key: "start")?)?
+    end = position_of(member_of(v, key: "end")?)?
+    return ok(positions.Range(start: start, end: end))
+
+## Reading parameters
+
+# The member `key` of the object `v`.
+#
+# - `v`: the parameters, or a part of them.
+# - `key`: the member's name.
+#
+# Fails `invalid` where `v` is no object or holds no such member, the
+# message naming it, since the server answers it as `InvalidParams`.
+function member_of(v: json.Value, key: str) -> json.Value?
+    match json.member(v, key: key)
+        .ok found => return ok(found)
+        .err _    => return fail(code: "invalid", msg: f"the parameters hold no `{key}`")
+
+# The text of the member `key` of `v`.
+#
+# - `v`: an object.
+# - `key`: the member's name.
+#
+# Fails `invalid` where it is absent or no text.
+function text_of(v: json.Value, key: str) -> str?
+    match json.text_at(v, key: key)
+        .ok s  => return ok(s)
+        .err _ => return fail(code: "invalid", msg: f"the parameters' `{key}` is no text")
+
+# The integer of the member `key` of `v`.
+#
+# - `v`: an object.
+# - `key`: the member's name.
+#
+# Fails `invalid` where it is absent or no integer.
+function int_of(v: json.Value, key: str) -> i64?
+    match json.int_at(v, key: key)
+        .ok n  => return ok(n)
+        .err _ => return fail(code: "invalid", msg: f"the parameters' `{key}` is no integer")
+
+# The document a request names: `textDocument.uri`.
+#
+# - `params`: the request's parameters.
+#
+# Fails `invalid` where they name none.
+function uri_of(params: json.Value) -> str?
+    return text_of(member_of(params, key: "textDocument")?, key: "uri")
+
+# The place a request names: `position`.
+#
+# - `params`: the request's parameters.
+#
+# Fails `invalid` where they name none.
+function place_of(params: json.Value) -> positions.Position?
+    return position_of(member_of(params, key: "position")?)
+
+## Tests
+
+test "position_json and position_of: each the other's inverse"
+    p = positions.Position(line: 3, character: 7)
+    assert json.format(position_json(p)).must() == "{\"line\":3,\"character\":7}"
+    assert position_of(position_json(p)).must() == p
+
+test "range_of: a range, and one missing its end"
+    r = positions.Range(
+        start: positions.Position(line: 0, character: 1),
+        end: positions.Position(line: 2, character: 0)
+    )
+    assert range_of(range_json(r)).must() == r
+    half = object({"start": position_json(r.start)})
+    assert range_of(half).is_err()
+
+test "uri_of and place_of: present, absent, and of the wrong kind"
+    params = json.parse(
+        "{\"textDocument\": {\"uri\": \"file:///a.kite\"}, \"position\": {\"line\": 1, \"character\": 2}}"
+    ).must()
+    assert uri_of(params).must() == "file:///a.kite"
+    assert place_of(params).must() == positions.Position(line: 1, character: 2)
+    assert uri_of(json.parse("{}").must()).is_err()
+    wrong = json.parse("{\"textDocument\": {\"uri\": 7}, \"position\": {\"line\": 1.5, \"character\": 0}}").must()
+    assert uri_of(wrong).is_err()
+    assert place_of(wrong).is_err()

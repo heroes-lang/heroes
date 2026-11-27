@@ -1,0 +1,95 @@
+# The command line, declared with Rebel's `flags`: `serve`, the language
+# server an editor starts; `check` and `format`, the same analysis and layout
+# from a terminal; and `demo`, the scripted session. What the person typed
+# is read into a `Job`, so the rest of the program never sees a word of it
+# again.
+
+use <rebel>/flags
+
+## The declaration
+
+# The program's command line.
+function declaration() -> flags.Command
+    root @= flags.command(
+        name: "langserver",
+        about: "A language server for Kite, over the standard streams, with its checker and formatter."
+    )
+    flags.add_command(
+        c: @root,
+        sub: flags.command(name: "serve", about: "Serves an editor on the standard input and output, framed as the Language Server Protocol frames its messages.")
+    )
+    check @= flags.command(name: "check", about: "Checks Kite sources and prints what is wrong with each.")
+    flags.add(@check, flags.with_arity(flags.positional(name: "FILE", help: "a Kite source, .kite"), .at_least_one))
+    flags.add_command(c: @root, sub: check)
+    layout @= flags.command(name: "format", about: "Prints a Kite source in the one layout, or rewrites it.")
+    flags.add(@layout, flags.positional(name: "FILE", help: "a Kite source, .kite"))
+    flags.add(@layout, flags.flag(long: "write", short: "w", help: "rewrite the file instead of printing it"))
+    flags.add_command(c: @root, sub: layout)
+    demo @= flags.command(
+        name: "demo",
+        about: "Plays a scripted session between a client stand-in and this server, started as its child."
+    )
+    flags.add(@demo, flags.positional(name: "SAMPLES", help: "the folder holding the sample sources"))
+    flags.add_command(c: @root, sub: demo)
+    return root
+
+## The request
+
+# What the command line asks.
+variant Job
+    # Serve an editor on the standard streams.
+    serve
+    # Check the sources `files` names.
+    check
+        # Their paths.
+        files: [str]
+    # Format the source `file`.
+    format_file
+        # Its path.
+        file: str
+        # Whether to rewrite it in place.
+        write: bool
+    # The scripted session over the samples in `samples`.
+    demo
+        # The samples' folder.
+        samples: str
+    # Help was asked; `text` is it.
+    help
+        # The help.
+        text: str
+
+# The job `arguments` ask for.
+#
+# - `arguments`: the words after the program's name.
+#
+# Fails `invalid` where they are no command line of this program, the
+# message saying why and showing the usage.
+function read(arguments: [str]) -> Job?
+    found = flags.parse(declaration(), arguments)?
+
+    if flags.is_help(found)
+        return ok(.help(text: flags.help_text(found)))
+    sub = flags.subcommand(found)?
+    verb = flags.name_of(sub)
+
+    if verb == "serve"
+        return ok(.serve)
+
+    if verb == "check"
+        return ok(.check(files: flags.values_of(sub, "FILE")))
+
+    if verb == "format"
+        return ok(.format_file(file: flags.value_of(sub, "FILE")?, write: flags.is_on(sub, "write")))
+    return ok(.demo(samples: flags.value_of(sub, "SAMPLES")?))
+
+## Tests
+
+test "read: each subcommand and its words"
+    assert read(["serve"]).must() == .serve
+    assert read(["check", "a.kite", "b.kite"]).must() == .check(files: ["a.kite", "b.kite"])
+    assert read(["format", "a.kite", "-w"]).must() == .format_file(file: "a.kite", write: true)
+    assert read(["demo", "samples"]).must() == .demo(samples: "samples")
+
+test "read: what is no command line of this program"
+    for words in [[], ["fly"], ["check"], ["format"], ["serve", "extra"]]
+        assert read(words).is_err()

@@ -1,0 +1,140 @@
+# The client stand-in: the editor's side of a session, speaking to this
+# program's own `serve` started as its child, its standard input and output
+# two pipes, as an editor starts a language server. Every message crosses
+# those pipes framed as the protocol frames it, and is printed as it
+# crosses: `-->` what the client sends, `<--` what the server answers, each
+# as the compact JSON that travels. A request waits for its answer, the
+# messages the server sends first printed in their order; a notification
+# reads as many messages as the step says the server sends back.
+
+use <rebel>/io
+use <rebel>/json
+use <rebel>/jsonrpc
+use <rebel>/process
+
+# A session with the server.
+record Peer
+    # The server, a child process.
+    child: process.Child
+    # The reader of the server's output.
+    reader: io.Reader
+    # The id the next request takes.
+    next_id: i64
+
+# The server `program` runs with `serve`, started.
+#
+# - `program`: this program's own executable.
+#
+# Fails as `process.start` fails.
+function start(program: str) -> Peer?
+    asked = process.with_error(
+        process.with_output(process.with_input(process.command(program, arguments: ["serve"]), from: .pipe), to: .pipe),
+        to: .pipe
+    )
+    child = process.start(asked)?
+    return ok(Peer(child: child, reader: io.reader(child.output), next_id: 1))
+
+# Sends `m` and prints it, `shown` standing in its place where a part of it
+# is too long to print and is shown another way.
+#
+# - `p`: the session.
+# - `m`: the message.
+# - `shown`: the text printed for it; "" prints the message itself.
+#
+# Fails where the server's input is closed.
+function send(p: Peer lent, m: jsonrpc.Message, shown: str) -> ()?
+    jsonrpc.write_message(p.child.input, m: m, framing: .content_length)?
+
+    if shown == ""
+        print("--> " + jsonrpc.format(m)?)
+    else
+        print("--> " + shown)
+    return ok()
+
+# Reads the next message the server sends, and prints it.
+#
+# - `p`: the session.
+#
+# Fails where the server's output ends or a frame is broken.
+function receive(@p: Peer) -> jsonrpc.Message?
+    m = jsonrpc.read_message(@p.reader, framing: .content_length, limits: jsonrpc.default_limits())?
+    print("<-- " + jsonrpc.format(m)?)
+    return ok(m)
+
+# Sends the request `method` with `params`, prints what comes back until its
+# answer, and answers the answer's result.
+#
+# - `p`: the session.
+# - `method`: the request's method.
+# - `params`: its parameters.
+#
+# Fails where the session breaks; an error answer is no failure here, but
+# printed, and its result is JSON's `null`.
+function request(@p: Peer, method: str, params: json.Value) -> json.Value?
+    id: jsonrpc.Id = .number(v: to_f64(p.next_id))
+    p.next_id @ p.next_id + 1
+    send(p, m: .request(id: id, method: method, params: params), shown: "")?
+
+    while true
+        got = receive(@p)?
+
+        match got
+            .response r =>
+                if r.id == id
+                    return ok(jsonrpc.value_of(r.reply).default(.null_value))
+            .request _ | .notification _ => _ = 0
+
+# Sends the notification `method` with `params`, then reads and prints the
+# `answers` messages the server sends back for it.
+#
+# - `p`: the session.
+# - `method`: the notification's method.
+# - `params`: its parameters.
+# - `shown`: what is printed in its place, "" for itself.
+# - `answers`: how many messages the server sends back.
+#
+# Fails where the session breaks.
+function notify(@p: Peer, method: str, params: json.Value, shown: str, answers: i64) -> ()?
+    send(p, m: .notification(method: method, params: params), shown: shown)?
+    read @= 0
+
+    while read < answers
+        _ = receive(@p)?
+        read @ read + 1
+
+    return ok()
+
+# Sends `text` as one frame, whatever it holds, and prints what comes back.
+#
+# - `p`: the session.
+# - `text`: the frame's body.
+#
+# Fails where the session breaks.
+function send_text(@p: Peer, text: str) -> ()?
+    jsonrpc.write_text(p.child.input, text: text, framing: .content_length)?
+    print("--> " + text)
+    _ = receive(@p)?
+    return ok()
+
+# How the server ended.
+record Ending
+    # Whether it ended with status 0 and wrote nothing on its standard error.
+    clean: bool
+    # How it ended, in words.
+    text: str
+
+# Waits for the server to end and answers how it ended, with whatever it
+# wrote to its standard error.
+#
+# - `p`: the session, whose child is waited for and its pipes closed.
+#
+# Fails as `process.wait` fails.
+function finish(@p: Peer) -> Ending?
+    said = io.read_all_text(p.child.error).default("")
+    status = process.wait(@p.child)?
+
+    told = if said == ""
+        "nothing on its standard error"
+    else
+        f"its standard error: {said}"
+    return ok(Ending(clean: process.is_success(status) && said == "", text: f"{process.format_status(status)}, {told}"))

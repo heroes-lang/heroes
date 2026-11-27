@@ -1,0 +1,19 @@
+[dependencies.rebel]
+path = "../../library/0.1.0/files"
+packages = [
+    "diff",
+    "errors",
+    "flags",
+    "graphs",
+    "io",
+    "json",
+    "jsonrpc",
+    "lists",
+    "maps",
+    "os",
+    "path",
+    "process",
+    "scanner",
+    "strings",
+    "unicode",
+]

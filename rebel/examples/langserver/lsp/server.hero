@@ -1,0 +1,211 @@
+# The language server's state, and how one message received becomes the
+# messages written back. A request or a notification is dispatched by its
+# method's name to the program's own handler, which the table holds by that
+# name and lends the server's state with `@`: a handler that only reads,
+# such as hover, is declared taking the state `lent`, and stands in the same
+# table, since a function that only reads may stand where one that writes is
+# asked. The language has no closure, so nothing else could carry the state
+# to a handler a table chose.
+#
+# The protocol's lifecycle is kept here, for every method at once: before
+# `initialize` a request is refused `ServerNotInitialized` and a
+# notification dropped; after `shutdown` a request is refused
+# `InvalidRequest`; `exit` ends the server with 0 after a `shutdown`, 1
+# without. A handler's failure `invalid` is `InvalidParams`, any other
+# `RequestFailed`, its message the handler's own.
+
+use <rebel>/json
+use <rebel>/jsonrpc
+
+use lsp/document
+use lsp/wire
+use text/positions
+
+## Codes the protocol adds to JSON-RPC's
+
+# A request before `initialize`.
+constant SERVER_NOT_INITIALIZED: i64
+    -32002
+
+# A request the server understood and could not carry out.
+constant REQUEST_FAILED: i64
+    -32803
+
+## The state
+
+# Where the server stands in the protocol's lifecycle.
+variant Phase
+    # No `initialize` yet.
+    waiting
+    # Initialized: every method is served.
+    running
+    # `shutdown` answered: only `exit` is awaited.
+    closing
+    # `exit` received: the server ends.
+    ended
+
+# What the server holds between messages.
+record Server
+    # Where it stands.
+    phase: Phase
+    # The unit a place's character counts in, agreed at `initialize`.
+    encoding: positions.Encoding
+    # The open documents, by URI.
+    documents: {str: document.Document}
+    # The messages a handler asks to send besides its answer, in order:
+    # diagnostics published, lines logged. Taken out after each message.
+    outbox: [jsonrpc.Message]
+    # The status the process ends with, once `phase` is `ended`.
+    exit_code: i64
+    # The client's name, as `initialize` gave it.
+    client: str
+
+# What serves a request: the program's function of the server and the
+# request's parameters, answering the result.
+record Table
+    # The requests' handlers, by method.
+    requests: {str: (function(@Server, json.Value) -> json.Value?)}
+    # The notifications' handlers, by method.
+    notifications: {str: (function(@Server, json.Value) -> ()?)}
+
+# A server waiting for `initialize`, its places in UTF-16 until one is
+# agreed.
+function new_server() -> Server
+    return Server(phase: .waiting, encoding: .utf16, documents: {}, outbox: [], exit_code: 1, client: "")
+
+# The open document a request's `textDocument` names.
+#
+# - `s`: the server.
+# - `params`: the request's parameters.
+#
+# Fails `invalid` where they name none, and `failed` where it is not open.
+function document_named(s: Server lent, params: json.Value) -> document.Document?
+    uri = wire.uri_of(params)?
+
+    match s.documents[uri]
+        .ok d  => return ok(d)
+        .err _ => return fail(code: "failed", msg: f"{uri} is not open")
+
+# The byte offset a request's `position` names in `doc`.
+#
+# - `s`: the server, whose unit counts the character.
+# - `doc`: the document.
+# - `params`: the request's parameters.
+#
+# Fails `invalid` where they hold no position.
+function offset_named(s: Server lent, doc: document.Document lent, params: json.Value) -> i64?
+    return ok(document.offset_of(doc, p: wire.place_of(params)?, e: s.encoding))
+
+## Sending
+
+# Asks for the notification `method` with `params` to be sent after the
+# message being handled.
+#
+# - `s`: the server, whose outbox gains it.
+# - `method`: the notification's method.
+# - `params`: its parameters.
+function notify(@s: Server, method: str, params: json.Value)
+    s.outbox @ s.outbox.push(.notification(method: method, params: params))
+
+# Asks for `text` to be shown in the client's log, `window/logMessage`.
+#
+# - `s`: the server.
+# - `level`: 1 for an error, 2 a warning, 3 information, 4 a log line.
+# - `text`: the line.
+function log(@s: Server, level: i64, text: str)
+    notify(
+        @s,
+        method: "window/logMessage",
+        params: wire.object({"type": wire.number(level), "message": wire.text(text)})
+    )
+
+## Receiving
+
+# The messages to write back for `text`, one message or a batch received:
+# for each, in order, what its handler asked to send, then its answer.
+#
+# - `s`: the server, changed as the messages ask.
+# - `table`: the handlers.
+# - `text`: the text of one frame.
+function receive(@s: Server, table: Table lent, text: str) -> [jsonrpc.Message]
+    out: [jsonrpc.Message] @= []
+
+    match jsonrpc.parse(text, limits: jsonrpc.default_limits())
+        .err e =>
+            if e.code == jsonrpc.LIMIT
+                out @ out.push(jsonrpc.answer_invalid_request(e.msg))
+            else
+                out @ out.push(jsonrpc.answer_parse_error(e.msg))
+        .ok received =>
+            for item in received.messages
+                match item
+                    .err e => out @ out.push(jsonrpc.answer_invalid_request(e.msg))
+                    .ok m =>
+                        answer = handle(@s, table: table, m: m)
+
+                        for queued in s.outbox
+                            out @ out.push(queued)
+
+                        s.outbox @ []
+
+                        match answer
+                            .ok a  => out @ out.push(a)
+                            .err _ => _ = 0
+
+    return out
+
+# The answer to `m`, after its handler ran; absent for a notification or a
+# response, which nothing answers.
+#
+# - `s`: the server.
+# - `table`: the handlers.
+# - `m`: the message.
+function handle(@s: Server, table: Table lent, m: jsonrpc.Message) -> jsonrpc.Message?
+    match m
+        .request r => return ok(request(@s, table: table, id: r.id, method: r.method, params: r.params))
+        .notification n =>
+            notification(@s, table: table, method: n.method, params: n.params)
+            return fail(code: "not_found", msg: "a notification has no answer")
+        .response _ => return fail(code: "not_found", msg: "this server asks nothing, so a response answers nothing")
+
+# The answer to the request `method`: refused as the lifecycle asks, else its handler's answer.
+function request(@s: Server, table: Table lent, id: jsonrpc.Id, method: str, params: json.Value) -> jsonrpc.Message
+    if s.phase == .waiting && method != "initialize"
+        return jsonrpc.answer_error(id, code: SERVER_NOT_INITIALIZED, message: f"`{method}` before `initialize`")
+
+    if s.phase == .closing || s.phase == .ended
+        return jsonrpc.answer_error(id, code: jsonrpc.INVALID_REQUEST, message: f"`{method}` after `shutdown`")
+
+    if s.phase == .running && method == "initialize"
+        return jsonrpc.answer_error(id, code: jsonrpc.INVALID_REQUEST, message: "`initialize` a second time")
+
+    match table.requests[method]
+        .err _ => return jsonrpc.answer_error(id, code: jsonrpc.METHOD_NOT_FOUND, message: f"no method `{method}`")
+        .ok handler =>
+            match handler(@s, params)
+                .ok result => return jsonrpc.answer_result(id, value: result)
+                .err e =>
+                    if e.code == "invalid"
+                        return jsonrpc.answer_error(id, code: jsonrpc.INVALID_PARAMS, message: e.msg)
+                    return jsonrpc.answer_error(id, code: REQUEST_FAILED, message: e.msg)
+
+# Takes the notification `method`: `exit` ends the server; another is dropped
+# before `initialize`, else handed to its handler, a failure logged.
+function notification(@s: Server, table: Table lent, method: str, params: json.Value)
+    if method == "exit"
+        s.exit_code @ if s.phase == .closing
+            0
+        else
+            1
+        s.phase @ .ended
+        return
+
+    if s.phase == .waiting || s.phase == .ended
+        return
+
+    match table.notifications[method]
+        .err _ => _ = 0
+        .ok handler =>
+            match handler(@s, params)
+                .ok _  => _ = 0
+                .err e => log(@s, level: 1, text: f"`{method}` was not carried out: {e.msg}")

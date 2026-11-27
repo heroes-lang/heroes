@@ -1,0 +1,122 @@
+# What the analysis knows of a source once it is checked: every name it
+# declares (a symbol), every place a name is read or written (a reference to
+# a symbol), the type of every expression, and every finding. The server's
+# features are questions asked of this record, and none of them parses or
+# checks again.
+
+use lang/diagnostics
+use lang/syntax
+use lang/types
+
+## Symbols
+
+# What a symbol names.
+variant SymbolKind
+    # A function the source declares.
+    function_symbol
+    # A record type the source declares.
+    record_symbol
+    # A field of a record.
+    field_symbol
+    # A function's parameter.
+    param_symbol
+    # A `let` binding.
+    local_symbol
+    # A function every source can call.
+    builtin_function
+    # One of Kite's own types.
+    builtin_type
+
+# A name declared, and what is known of it.
+record Symbol
+    # The name.
+    name: str
+    # What it names.
+    kind: SymbolKind
+    # Where the name is declared; empty at 0 for a built-in.
+    span: syntax.Span
+    # The whole declaration: a function from `fn` to its last brace.
+    whole: syntax.Span
+    # The record a field belongs to, the function a parameter or a binding
+    # is declared in; empty for the others.
+    owner: str
+    # Its documentation.
+    doc: str
+    # Where its name may be read: the whole source for a declaration, the
+    # body for a parameter, from the end of its `let` to the end of its block
+    # for a binding; empty for a field, read only after a `.`.
+    visible: syntax.Span
+    # Its type: a binding's, a parameter's or a field's; a function's own
+    # `function_type`; a record's `record_type`.
+    type_of: types.Type
+
+# A place where a symbol's name stands, other than its declaration.
+record Reference
+    # The symbol, an index of `Analysis.symbols`.
+    symbol: i64
+    # Where the name stands.
+    span: syntax.Span
+
+# A source analysed.
+record Analysis
+    # The source.
+    source: str
+    # Its tree.
+    tree: syntax.Tree
+    # Every symbol: the built-ins first, then the source's own in the order
+    # they were met.
+    symbols: [Symbol]
+    # Every reference, in the order it was met.
+    refs: [Reference]
+    # The type of every node, by its index.
+    types: [types.Type]
+    # Each function's signature, by its name, the built-ins' included.
+    signatures: {str: types.Signature}
+    # Every finding: the lexer's and the parser's, then the checker's.
+    diagnostics: [diagnostics.Diagnostic]
+
+# A symbol with no place in the source: a built-in's.
+#
+# - `name`: its name.
+# - `kind`: `builtin_function` or `builtin_type`.
+# - `doc`: what it is.
+# - `type_of`: its type.
+function builtin(name: str, kind: SymbolKind, doc: str, type_of: types.Type) -> Symbol
+    nowhere = syntax.Span(start: 0, end: 0)
+    return Symbol(
+        name: name,
+        kind: kind,
+        span: nowhere,
+        whole: nowhere,
+        owner: "",
+        doc: doc,
+        visible: nowhere,
+        type_of: type_of
+    )
+
+# Whether `s` has a place in the source: every symbol but a built-in.
+#
+# - `s`: a symbol.
+function is_declared(s: Symbol) -> bool
+    return s.kind != .builtin_function && s.kind != .builtin_type
+
+# What a person calls a symbol of `kind`, for a message: "function".
+#
+# - `kind`: a symbol's kind.
+function kind_word(kind: SymbolKind) -> str
+    return match kind
+        .function_symbol  => "function"
+        .record_symbol    => "record"
+        .field_symbol     => "field"
+        .param_symbol     => "parameter"
+        .local_symbol     => "binding"
+        .builtin_function => "built-in function"
+        .builtin_type     => "built-in type"
+
+## Tests
+
+test "builtin: no place in the source"
+    s = builtin(name: "len", kind: .builtin_function, doc: "d", type_of: .function_type(name: "len"))
+    assert !is_declared(s)
+    assert s.span == syntax.Span(start: 0, end: 0)
+    assert kind_word(s.kind) == "built-in function"

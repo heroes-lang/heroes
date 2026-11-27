@@ -1,0 +1,310 @@
+# Kite's one layout, written from the tree: four spaces a level, one blank
+# line between declarations, a field and a parameter list on one line, a
+# trailing comma after each field of a record declared on its lines, a space
+# around every binary operator, parentheses only where the operators' levels
+# need them. A block with bindings, or a branch holding one, takes lines of
+# its own; a block with only its value stays on one line.
+#
+# The formatter rewrites a source only when nothing would be lost: one that
+# does not parse is refused, and so is one holding a comment anywhere but on
+# the lines above a declaration, a field or a binding, the only places the
+# tree keeps a comment.
+
+use <rebel>/strings
+
+use lang/expressions
+use lang/parser
+use lang/syntax
+
+# The digits of a `\x` escape.
+constant HEX: str
+    "0123456789abcdef"
+
+# The four spaces of one level.
+constant INDENT: str
+    "    "
+
+# `source` in Kite's one layout, ending with one line feed.
+#
+# - `source`: the text, UTF-8.
+#
+# Fails `invalid` where it does not parse, or holds a comment where the
+# layout keeps none, each message saying which.
+function format_source(source: str) -> str?
+    parsed = parser.parse(source)
+
+    if parsed.diagnostics.len() > 0
+        first = parsed.diagnostics[0]
+        return fail(
+            code: "invalid",
+            msg: f"the source does not parse ({first.message}), and is formatted once it does"
+        )
+    tree = parsed.tree
+
+    if tree.placed < tree.comments
+        lost = tree.comments - tree.placed
+        return fail(
+            code: "invalid",
+            msg: f"{lost} of its {tree.comments} comments stand where the layout keeps none; a comment is kept on the lines above a declaration, a field or a `let`"
+        )
+    out: [str] @= []
+
+    for d in tree.decls
+        if out.len() > 0
+            out @ out.push("")
+
+        match d
+            .record_decl r   => out @ out.push(record_text(r.r))
+            .function_decl f => out @ out.push(function_text(tree, f: f.f))
+
+    if out.len() == 0
+        return ok("")
+    return ok(out.join("\n") + "\n")
+
+# The comment lines of `doc` at `indent` levels, each ending with a line
+# feed; nothing for no documentation.
+#
+# - `doc`: the documentation, its lines joined by line feeds.
+# - `indent`: the level.
+function doc_lines(doc: str, indent: i64) -> str
+    if doc == ""
+        return ""
+    lines: [str] @= []
+
+    for line in strings.split(s: doc, sep: "\n")
+        if line == ""
+            lines @ lines.push(repeat(INDENT, to_u64(indent).must()) + "#\n")
+        else
+            lines @ lines.push(repeat(INDENT, to_u64(indent).must()) + "# " + line + "\n")
+
+    return lines.join("")
+
+# A record in the layout: one field a line, each ending with a comma.
+function record_text(r: syntax.RecordDecl) -> str
+    head = doc_lines(r.doc, indent: 0) + f"record {r.name} {{"
+
+    if r.fields.len() == 0
+        return head + "}"
+    lines: [str] @= [head]
+
+    for f in r.fields
+        lines @ lines.push(doc_lines(f.doc, indent: 1) + f"{INDENT}{f.name}: {f.type_ref.name},")
+
+    lines @ lines.push("}")
+    return lines.join("\n")
+
+# A function in the layout: its signature on one line, its body below.
+function function_text(t: syntax.Tree lent, f: syntax.FunctionDecl) -> str
+    params: [str] @= []
+
+    for p in f.params
+        params @ params.push(f"{p.name}: {p.type_ref.name}")
+
+    result = match f.result
+        .ok ref => f" -> {ref.name}"
+        .err _  => ""
+
+    head = doc_lines(f.doc, indent: 0) + f"fn {f.name}({params.join(", ")}){result} "
+    return head + block_text(t, node: f.body, indent: 0, open: true)
+
+# The text of the block `node`, its first line at `indent` levels.
+#
+# - `t`: the tree.
+# - `node`: a `.block` node.
+# - `indent`: the level of the line it begins on.
+# - `open`: whether it takes lines of its own even with no binding, as a
+#   function's body does.
+function block_text(t: syntax.Tree lent, node: i64, indent: i64, open: bool) -> str
+    match t.nodes[node].kind
+        .block b =>
+            unit = t.nodes[b.value].kind == .unit_lit
+
+            if b.lets.len() == 0 && !open
+                if unit
+                    return "{}"
+                return "{ " + expr_text(t, node: b.value, indent: indent) + " }"
+
+            if b.lets.len() == 0 && unit
+                return "{}"
+            pad = repeat(INDENT, to_u64(indent + 1).must())
+            lines: [str] @= ["{"]
+
+            for one in b.lets
+                written = match one.declared
+                    .ok ref => f"{one.name}: {ref.name}"
+                    .err _  => one.name
+
+                lines @ lines.push(
+                    doc_lines(one.doc, indent: indent + 1) + f"{pad}let {written} = {expr_text(t, node: one.value, indent: indent + 1)};"
+                )
+
+            if !unit
+                lines @ lines.push(pad + expr_text(t, node: b.value, indent: indent + 1))
+            lines @ lines.push(repeat(INDENT, to_u64(indent).must()) + "}")
+            return lines.join("\n")
+        .int_lit _ | .str_lit _ | .bool_lit _ | .unit_lit | .name _ | .unary _ | .binary _ | .call _ | .field _ | .construct _ | .if_else _ | .missing =>
+            return expr_text(t, node: node, indent: indent)
+
+# How tightly node `node` binds: a binary operator's level in
+# `expressions.LEVELS`, then 5 for a prefix operator, 6 for anything else.
+#
+# - `t`: the tree.
+# - `node`: a node's index.
+function binding_of(t: syntax.Tree lent, node: i64) -> i64
+    return match t.nodes[node].kind
+        .binary b => level_of(b.op)
+        .unary _  => 5
+        .int_lit _ | .str_lit _ | .bool_lit _ | .unit_lit | .name _ | .call _ | .field _ | .construct _ | .if_else _ | .block _ | .missing => 6
+
+# The level of `op` in `expressions.LEVELS`.
+function level_of(op: str) -> i64
+    for k in range(from: 0, to: expressions.LEVELS.len())
+        for one in expressions.LEVELS[k]
+            if one == op
+                return k
+
+    return 0
+
+# The text of node `node`, in parentheses where it binds looser than `at`.
+#
+# - `t`: the tree.
+# - `node`: a node's index.
+# - `indent`: the level of the line it begins on.
+# - `at`: the binding its place asks for.
+function operand_text(t: syntax.Tree lent, node: i64, indent: i64, at: i64) -> str
+    text = expr_text(t, node: node, indent: indent)
+
+    if binding_of(t, node: node) < at
+        return "(" + text + ")"
+    return text
+
+# The text of the expression `node`, its first line at `indent` levels.
+#
+# - `t`: the tree.
+# - `node`: a node's index.
+# - `indent`: the level of the line it begins on.
+function expr_text(t: syntax.Tree lent, node: i64, indent: i64) -> str
+    return match t.nodes[node].kind
+        .int_lit i  => f"{i.value}"
+        .str_lit s  => quoted(s.value)
+        .bool_lit b => f"{b.value}"
+        .unit_lit   => "{}"
+        .missing    => ""
+        .name n     => n.text
+        .unary u    => u.op + operand_text(t, node: u.operand, indent: indent, at: 5)
+        .binary b =>
+            level = level_of(b.op)
+
+            left_at = if level == expressions.COMPARISONS
+                level + 1
+            else
+                level
+            left = operand_text(t, node: b.left, indent: indent, at: left_at)
+            f"{left} {b.op} {operand_text(t, node: b.right, indent: indent, at: level + 1)}"
+        .call c      => call_text(t, callee: c.callee, arguments: c.args, indent: indent)
+        .field f     => operand_text(t, node: f.target, indent: indent, at: 6) + "." + f.name
+        .construct c => construct_text(t, name: c.type_ref.name, inits: c.inits, indent: indent)
+        .if_else i   => if_text(t, cond: i.cond, then: i.then, otherwise: i.otherwise, indent: indent)
+        .block _     => block_text(t, node: node, indent: indent, open: false)
+
+# A call in the layout: `f(a, b)`.
+function call_text(t: syntax.Tree lent, callee: i64, arguments: [i64], indent: i64) -> str
+    written: [str] @= []
+
+    for a in arguments
+        written @ written.push(expr_text(t, node: a, indent: indent))
+
+    return operand_text(t, node: callee, indent: indent, at: 6) + "(" + written.join(", ") + ")"
+
+# A record built in the layout: `Point { x: 1, y: 2 }`, or `Point {}`.
+function construct_text(t: syntax.Tree lent, name: str, inits: [syntax.FieldInit], indent: i64) -> str
+    if inits.len() == 0
+        return name + " {}"
+    written: [str] @= []
+
+    for one in inits
+        written @ written.push(f"{one.name}: {expr_text(t, node: one.value, indent: indent)}")
+
+    return name + " { " + written.join(", ") + " }"
+
+# An `if` in the layout, its branches on lines of their own where one holds a binding.
+function if_text(t: syntax.Tree lent, cond: i64, then: i64, otherwise: i64, indent: i64) -> str
+    long = has_lets(t, node: then) || has_lets(t, node: otherwise)
+    head = "if " + expr_text(t, node: cond, indent: indent) + " " + block_text(t, node: then, indent: indent, open: long)
+
+    rest = match t.nodes[otherwise].kind
+        .if_else i => if_text(t, cond: i.cond, then: i.then, otherwise: i.otherwise, indent: indent)
+        .int_lit _ | .str_lit _ | .bool_lit _ | .unit_lit | .name _ | .unary _ | .binary _ | .call _ | .field _ | .construct _ | .block _ | .missing =>
+            block_text(t, node: otherwise, indent: indent, open: long)
+
+    return head + " else " + rest
+
+# Whether node `node` is a block holding a binding, or an `if` one of whose
+# branches does: what puts a branch on lines of its own.
+#
+# - `t`: the tree.
+# - `node`: a node's index.
+function has_lets(t: syntax.Tree lent, node: i64) -> bool
+    return match t.nodes[node].kind
+        .block b   => b.lets.len() > 0
+        .if_else i => has_lets(t, node: i.then) || has_lets(t, node: i.otherwise)
+        .int_lit _ | .str_lit _ | .bool_lit _ | .unit_lit | .name _ | .unary _ | .binary _ | .call _ | .field _ | .construct _ | .missing => false
+
+# `s` as a Kite string literal: between double quotes, with `\"`, `\\`,
+# `\n`, `\t` and `\r` escaped, and every other control character written
+# `\x` and two digits.
+#
+# - `s`: the string's value.
+function quoted(s: str) -> str
+    pieces: [str] @= ["\""]
+
+    for c in s.chars()
+        if c == "\""
+            pieces @ pieces.push("\\\"")
+        else if c == "\\"
+            pieces @ pieces.push("\\\\")
+        else if c == "\n"
+            pieces @ pieces.push("\\n")
+        else if c == "\t"
+            pieces @ pieces.push("\\t")
+        else if c == "\r"
+            pieces @ pieces.push("\\r")
+        else if c.len() == 1 && (c[0] < 0x20 || c[0] == 0x7f)
+            code = to_i64(c[0]).must()
+            pieces @ pieces.push(
+                "\\x" + HEX.slice(from: code / 16, to: code / 16 + 1) + HEX.slice(from: code % 16, to: code % 16 + 1)
+            )
+        else
+            pieces @ pieces.push(c)
+
+    pieces @ pieces.push("\"")
+    return pieces.join("")
+
+## Tests
+
+test "format_source: a source written any way comes out in the one layout"
+    messy = "# A point.\nrecord Point{x:Int,\n  y : Int}\nfn dist2( a:Point,b:Point )->Int{let dx=a.x-b.x;\n# why\nlet dy = a.y-b.y; dx*dx+dy*dy}"
+    want = "# A point.\nrecord Point {\n    x: Int,\n    y: Int,\n}\n\nfn dist2(a: Point, b: Point) -> Int {\n    let dx = a.x - b.x;\n    # why\n    let dy = a.y - b.y;\n    dx * dx + dy * dy\n}\n"
+    assert format_source(messy).must() == want
+    assert format_source(want).must() == want
+
+test "format_source: parentheses kept only where the levels need them"
+    got = format_source("fn f(a: Int, b: Int) -> Bool { ((a + b) * 2 == a - (b - 1)) && !(a < b) }").must()
+    assert got == "fn f(a: Int, b: Int) -> Bool {\n    (a + b) * 2 == a - (b - 1) && !(a < b)\n}\n"
+
+test "format_source: an if with bindings in a branch takes lines, one without stays inline"
+    got = format_source(
+        "fn f(b: Bool) -> Int { let x = if b { 1 } else { 2 }; if b { let y = x; y } else { x } }"
+    ).must()
+    want = "fn f(b: Bool) -> Int {\n    let x = if b { 1 } else { 2 };\n    if b {\n        let y = x;\n        y\n    } else {\n        x\n    }\n}\n"
+    assert got == want
+
+test "format_source: a source that does not parse, and a comment with no place, are refused"
+    assert format_source("fn f( {").is_err()
+    trailing = format_source("fn f() -> Int { 1 } # one")
+    assert trailing.is_err()
+
+test "format_source: strings with escapes and characters of several bytes, an empty record, the empty source"
+    got = format_source("record E{}\nfn s() -> Str { \"a\\\"b\\n café\" }").must()
+    assert got == "record E {}\n\nfn s() -> Str {\n    \"a\\\"b\\n café\"\n}\n"
+    assert format_source("").must() == ""

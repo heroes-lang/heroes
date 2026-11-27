@@ -1,0 +1,81 @@
+# langserver: a language server for Kite, a small statically typed language
+# of records, functions and `let` bindings that this program defines, its
+# lexer, parser, scopes and type checker included. It speaks the Language
+# Server Protocol over its standard streams, JSON-RPC 2.0 framed by
+# `Content-Length` headers: `initialize` and the lifecycle, documents kept
+# in step by incremental sync with places counted in UTF-16 (or UTF-8 where
+# the client offers it), diagnostics published after every change, hover,
+# go to definition, find references, rename, completion, the document's
+# outline, formatting and quick fixes.
+#
+# Kite, as the server reads it:
+#
+#     # The square of the distance between two points.
+#     fn dist2(a: Point, b: Point) -> Int {
+#         let dx = a.x - b.x;
+#         let dy = a.y - b.y;
+#         dx * dx + dy * dy
+#     }
+#
+# Run for real:
+#
+#     langserver serve                  # what an editor starts
+#     langserver check shapes.kite      # findings as a compiler prints them
+#     langserver format messy.kite -w   # rewrites it in the one layout
+#
+# An editor starts `langserver serve` for files ending `.kite`: in Neovim,
+# `vim.lsp.start({ name = "kite", cmd = { "langserver", "serve" } })`; in
+# Helix, a `[language-server.kite]` with `command = "langserver"` and
+# `args = ["serve"]`.
+#
+# `langserver demo <folder>` plays a whole session over the samples of the
+# folder: a client stand-in starts this same program's `serve` as its
+# child, over two pipes, and prints every message as it crosses them.
+#
+# The packages of Rebel it uses, and what for:
+#
+# - `jsonrpc`, `json`: the protocol's messages, their framing and their
+#   values;
+# - `io`, `process`, `os`: the standard streams, and the server started as
+#   the demo's child;
+# - `scanner`: Kite's tokens;
+# - `diff`: the nearest name offered for one misspelt, and formatting sent
+#   as the fewest line edits;
+# - `graphs`: the records that hold themselves by value;
+# - `unicode`: places counted in UTF-16 or UTF-8;
+# - `lists`, `maps`, `strings`: lists sorted and joined, documents closed,
+#   text searched and padded;
+# - `flags`, `path`, `errors`: the command line, the samples' paths, a
+#   failure dropped on purpose.
+
+use <rebel>/io
+
+use app/terminal
+use cli/command_line
+use demo/session
+use lsp/transport
+
+# The exit status of a command line the program does not read.
+constant USAGE: i64
+    2
+
+# Reads the command line and does what it asks; a line it cannot read ends with status 2.
+function main()
+    match command_line.read(args())
+        .ok job => exit(code: perform(job))
+        .err e =>
+            terminal.complain(e.msg)
+            exit(code: USAGE)
+
+# Does what `job` asks; answers the exit status.
+#
+# - `job`: what the command line asked.
+function perform(job: command_line.Job) -> i64
+    return match job
+        .help h =>
+            print(h.text)
+            0
+        .serve         => transport.serve(input: io.stdin(), output: io.stdout())
+        .check c       => terminal.check(c.files)
+        .format_file f => terminal.format_file(f.file, write: f.write)
+        .demo d        => session.run(d.samples)

@@ -1,0 +1,68 @@
+# The methods the server serves, each bound by its name to the function
+# that serves it: one table for the requests, one for the notifications.
+# A handler that changes the server takes it with `@` (`initialize`, the
+# document's sync); one that only reads takes it `lent` (hover, rename,
+# completion), and both kinds stand in one table of `@` handlers, a reader
+# fitting where a writer is asked. This file is the whole list: a method
+# added to the server is one line here and one function where it belongs.
+
+use <rebel>/json
+use <rebel>/jsonrpc
+
+use lsp/actions
+use lsp/completion
+use lsp/formatting
+use lsp/hover
+use lsp/lifecycle
+use lsp/navigation
+use lsp/outline
+use lsp/rename
+use lsp/server
+use lsp/sync
+use lsp/wire
+
+# Every method the server serves, by name.
+function table() -> server.Table
+    requests: {str: (function(@server.Server, json.Value) -> json.Value?)} = {
+        "initialize": lifecycle.initialize
+        "shutdown": lifecycle.shutdown
+        "textDocument/hover": hover.hover
+        "textDocument/definition": navigation.definition
+        "textDocument/references": navigation.references
+        "textDocument/prepareRename": rename.prepare
+        "textDocument/rename": rename.rename
+        "textDocument/completion": completion.complete
+        "textDocument/documentSymbol": outline.outline
+        "textDocument/formatting": formatting.format_document
+        "textDocument/codeAction": actions.code_actions
+    }
+    notifications: {str: (function(@server.Server, json.Value) -> ()?)} = {
+        "initialized": lifecycle.initialized
+        "textDocument/didOpen": sync.did_open
+        "textDocument/didChange": sync.did_change
+        "textDocument/didClose": sync.did_close
+    }
+    return server.Table(requests: requests, notifications: notifications)
+
+## Tests
+
+test "table: a session's lifecycle through the table, every refusal on its way"
+    t = table()
+    s @= server.new_server()
+    early = server.receive(
+        @s,
+        table: t,
+        text: "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"textDocument/hover\", \"params\": {}}"
+    )
+    assert json.value_at(jsonrpc.message_json(early[0]), pointer: "/error/code").must() == wire.number(-32002)
+    init = "{\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"initialize\", \"params\": {\"capabilities\": {}}}"
+    assert server.receive(@s, table: t, text: init).len() == 1
+    unknown = server.receive(@s, table: t, text: "{\"jsonrpc\": \"2.0\", \"id\": 3, \"method\": \"workspace/symbol\"}")
+    assert json.value_at(jsonrpc.message_json(unknown[0]), pointer: "/error/code").must() == wire.number(-32601)
+    assert server.receive(@s, table: t, text: "{not json").len() == 1
+    _ = server.receive(@s, table: t, text: "{\"jsonrpc\": \"2.0\", \"id\": 4, \"method\": \"shutdown\"}")
+    after = server.receive(@s, table: t, text: "{\"jsonrpc\": \"2.0\", \"id\": 5, \"method\": \"textDocument/hover\"}")
+    assert json.value_at(jsonrpc.message_json(after[0]), pointer: "/error/code").must() == wire.number(-32600)
+    assert server.receive(@s, table: t, text: "{\"jsonrpc\": \"2.0\", \"method\": \"exit\"}").len() == 0
+    assert s.phase == .ended
+    assert s.exit_code == 0

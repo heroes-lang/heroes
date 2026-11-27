@@ -1,0 +1,341 @@
+# The parser's state and the moves every part of it makes: a cursor over
+# the tokens, the nodes made so far, the findings told, and the comments
+# waiting to become documentation. Two guards keep a hostile source from
+# exhausting the stack: the parser's own recursion and the depth of the
+# tree it builds are both bounded by `MAX_DEPTH`, past which the rest of the
+# source is told and passed over; every pass after the parser recurses over
+# the tree and so stays within the same bound.
+
+use <rebel>/scanner
+
+use lang/diagnostics
+use lang/lexer
+use lang/syntax
+
+# How deep the parser recurses and the tree nests before the rest of a source
+# is passed over.
+constant MAX_DEPTH: i64
+    200
+
+# A source being parsed.
+record Parser
+    # The code's tokens, the last of the kind `end`.
+    tokens: [scanner.Token]
+    # The index of the next token, never past the `end`.
+    at: i64
+    # The nodes made so far.
+    nodes: [syntax.Node]
+    # Each node's depth: 1 for a leaf.
+    depths: [i64]
+    # The source's comments, in order.
+    comments: [lexer.Comment]
+    # The first comment not yet looked at as documentation.
+    next_comment: i64
+    # How many comments became documentation.
+    placed: i64
+    # How deep the parser's recursion stands.
+    nesting: i64
+    # What was told.
+    told: [diagnostics.Diagnostic]
+    # Where the last finding begins: a second one there is not told, so one
+    # mistake makes one message.
+    last_told: i64
+
+# A parser at the first token of `lexed`.
+#
+# - `lexed`: the source's tokens and comments.
+function start(lexed: lexer.Lexed) -> Parser
+    return Parser(
+        tokens: lexed.tokens,
+        at: 0,
+        nodes: [],
+        depths: [],
+        comments: lexed.comments,
+        next_comment: 0,
+        placed: 0,
+        nesting: 0,
+        told: lexed.diagnostics,
+        last_told: -1
+    )
+
+## Tokens
+
+# The next token, not taken.
+#
+# - `p`: the parser.
+function peek(p: Parser lent) -> scanner.Token
+    return p.tokens[p.at]
+
+# Takes the next token and answers it; at the end it stays there.
+#
+# - `p`: the parser, moved one token on.
+function advance(@p: Parser) -> scanner.Token
+    t = p.tokens[p.at]
+
+    if t.kind != .end
+        p.at @ p.at + 1
+    return t
+
+# Whether the next token is the operator `text`.
+#
+# - `p`: the parser.
+# - `text`: the operator.
+function is_op(p: Parser lent, text: str) -> bool
+    t = p.tokens[p.at]
+    return t.kind == .operator && t.text == text
+
+# Whether the next token is the keyword `word`.
+#
+# - `p`: the parser.
+# - `word`: the keyword.
+function is_keyword(p: Parser lent, word: str) -> bool
+    t = p.tokens[p.at]
+    return t.kind == .keyword && t.text == word
+
+# Whether the source is read to its end.
+#
+# - `p`: the parser.
+function at_end(p: Parser lent) -> bool
+    return p.tokens[p.at].kind == .end
+
+# Whether the next token stands on a later line than the last one taken:
+# after a `let` whose `;` is missing, the next line is read as what follows
+# it rather than passed over.
+#
+# - `p`: the parser.
+function on_new_line(p: Parser lent) -> bool
+    return p.at > 0 && p.tokens[p.at].start.line > p.tokens[p.at - 1].end.line
+
+# Whether the next token begins a declaration, where a part left open stops.
+#
+# - `p`: the parser.
+function at_declaration(p: Parser lent) -> bool
+    return is_keyword(p, word: "fn") || is_keyword(p, word: "record") || at_end(p)
+
+# Where the next token stands, as an empty span at its start.
+#
+# - `p`: the parser.
+function here(p: Parser lent) -> syntax.Span
+    at = p.tokens[p.at].start.offset
+    return syntax.Span(start: at, end: at)
+
+# Where the last token taken ends, as an empty span: where a missing `;`
+# would go.
+#
+# - `p`: the parser.
+function after_last(p: Parser lent) -> syntax.Span
+    if p.at == 0
+        return syntax.Span(start: 0, end: 0)
+    at = p.tokens[p.at - 1].end.offset
+    return syntax.Span(start: at, end: at)
+
+# How a token is named in a message.
+#
+# - `t`: the token.
+function describe(t: scanner.Token) -> str
+    if t.kind == .end
+        return "the end of the source"
+    return f"`{t.text}`"
+
+## Findings
+
+# Tells `d`, unless a finding was told at the same place already.
+#
+# - `p`: the parser, which keeps it.
+# - `d`: the finding.
+function tell(@p: Parser, d: diagnostics.Diagnostic)
+    if d.span.start == p.last_told
+        return
+    p.last_told @ d.span.start
+    p.told @ p.told.push(d)
+
+# Takes the operator `text` where it comes next; else tells that it was
+# expected and takes nothing. Answers whether it came.
+#
+# - `p`: the parser.
+# - `text`: the operator.
+function expect_op(@p: Parser, text: str) -> bool
+    if is_op(p, text: text)
+        _ = advance(@p)
+        return true
+    t = peek(p)
+    tell(@p, diagnostics.error(here(p), code: "expected_token", message: f"expected `{text}`, found {describe(t)}"))
+    return false
+
+# Takes a name where one comes next and answers it with where it stands;
+# else tells that `what` was expected and answers the empty name, here.
+#
+# - `p`: the parser.
+# - `what`: what the name names, for the message: "a record's name".
+function expect_name(@p: Parser, what: str) -> syntax.TypeRef
+    t = peek(p)
+
+    if t.kind == .identifier
+        _ = advance(@p)
+        return syntax.TypeRef(name: t.text, span: lexer.span_of(t))
+    tell(@p, diagnostics.error(here(p), code: "expected_name", message: f"expected {what}, found {describe(t)}"))
+    return syntax.TypeRef(name: "", span: here(p))
+
+# Takes tokens until one of `stops` comes next, or a `let` or a declaration
+# begins, or the source ends; a pair of braces or parentheses opened on the
+# way is passed over whole. Takes at least one token where none of those comes
+# next.
+#
+# - `p`: the parser.
+# - `stops`: the operators to stop before.
+function skip_until(@p: Parser, stops: [str])
+    open: i64 @= 0
+
+    while !at_declaration(p)
+        t = peek(p)
+
+        if open == 0 && t.kind == .operator
+            for s in stops
+                if t.text == s
+                    return
+
+        if open == 0 && t.kind == .keyword && t.text == "let"
+            return
+
+        if t.kind == .operator && (t.text == "{" || t.text == "(")
+            open @ open + 1
+        else if t.kind == .operator && (t.text == "}" || t.text == ")")
+            if open == 0
+                _ = advance(@p)
+                return
+            open @ open - 1
+        _ = advance(@p)
+
+## Nodes
+
+# Adds a node and answers its index. A node nested past `MAX_DEPTH` is
+# told, the rest of the source is passed over, and a `.missing` node stands
+# in its place.
+#
+# - `p`: the parser, which keeps it.
+# - `kind`: what it is.
+# - `span`: where it stands.
+function add_node(@p: Parser, kind: syntax.NodeKind, span: syntax.Span) -> i64
+    depth: i64 @= 1
+
+    for child in syntax.children_of(kind)
+        if p.depths[child] + 1 > depth
+            depth @ p.depths[child] + 1
+
+    if depth > MAX_DEPTH
+        too_deep(@p)
+        return add_node(@p, kind: .missing, span: span)
+    p.nodes @ p.nodes.push(syntax.Node(kind: kind, span: span))
+    p.depths @ p.depths.push(depth)
+    return p.nodes.len() - 1
+
+# A `.missing` node at `span`: where no expression could be read.
+#
+# - `p`: the parser.
+# - `span`: where it stands.
+function missing(@p: Parser, span: syntax.Span) -> i64
+    return add_node(@p, kind: .missing, span: span)
+
+# The span of node `i`.
+#
+# - `p`: the parser.
+# - `i`: a node's index.
+function span_of(p: Parser lent, i: i64) -> syntax.Span
+    return p.nodes[i].span
+
+# Steps one level into the parser's recursion; answers false, having told
+# it and passed over the rest of the source, past `MAX_DEPTH`. Each `true`
+# is paired with one `leave`.
+#
+# - `p`: the parser.
+function enter(@p: Parser) -> bool
+    if p.nesting >= MAX_DEPTH
+        too_deep(@p)
+        return false
+    p.nesting @ p.nesting + 1
+    return true
+
+# Steps one level out of the parser's recursion.
+#
+# - `p`: the parser.
+function leave(@p: Parser)
+    p.nesting @ p.nesting - 1
+
+# Tells that the source nests too deep and moves to its end.
+#
+# - `p`: the parser.
+function too_deep(@p: Parser)
+    tell(
+        @p,
+        diagnostics.error(here(p), code: "too_deep", message: f"this source nests deeper than {MAX_DEPTH} levels; Kite reads no further")
+    )
+    p.at @ p.tokens.len() - 1
+
+## Documentation
+
+# The comment lines standing alone right above `line`, joined by line feeds:
+# a declaration's, a field's or a binding's documentation. The comments
+# before them are passed by and stay unplaced.
+#
+# - `p`: the parser, whose comments up to `line` are looked at.
+# - `line`: the line the documented part begins on, from 1.
+function doc_before(@p: Parser, line: i64) -> str
+    first = p.next_comment
+
+    while p.next_comment < p.comments.len() && p.comments[p.next_comment].line < line
+        p.next_comment @ p.next_comment + 1
+
+    taken: i64 @= p.next_comment
+    want: i64 @= line - 1
+
+    while taken > first && p.comments[taken - 1].alone && p.comments[taken - 1].line == want
+        taken @ taken - 1
+        want @ want - 1
+
+    lines: [str] @= []
+
+    for k in range(from: taken, to: p.next_comment)
+        lines @ lines.push(p.comments[k].text)
+
+    p.placed @ p.placed + lines.len()
+    return lines.join("\n")
+
+## Tests
+
+test "advance: stays at the end"
+    p @= start(lexer.lex("x"))
+    assert advance(@p).text == "x"
+    assert advance(@p).kind == .end
+    assert advance(@p).kind == .end
+    assert at_end(p)
+
+test "tell: a second finding at one place is not told"
+    p @= start(lexer.lex("x"))
+    at = syntax.Span(start: 0, end: 1)
+    tell(@p, diagnostics.error(at, code: "a", message: "first"))
+    tell(@p, diagnostics.error(at, code: "b", message: "second"))
+    assert p.told.len() == 1
+
+test "skip_until: stops before a stop, passes a nested pair, and before a declaration"
+    p @= start(lexer.lex("a (b, c) , d fn"))
+    skip_until(@p, stops: [","])
+    assert peek(p).text == ","
+    _ = advance(@p)
+    skip_until(@p, stops: [";"])
+    assert is_keyword(p, word: "fn")
+
+test "doc_before: the lines right above, a gap breaking the run, a trailing one passed"
+    p @= start(lexer.lex("# far\n\n# near one\n# near two\nfn f() {} # after\nfn g() {}"))
+    assert doc_before(@p, line: 5) == "near one\nnear two"
+    assert doc_before(@p, line: 6) == ""
+    assert p.placed == 2
+
+test "add_node: a tree nested past the bound is told once"
+    p @= start(lexer.lex("x"))
+    leaf @= add_node(@p, kind: .int_lit(value: 1), span: syntax.Span(start: 0, end: 1))
+
+    for _ in range(from: 0, to: MAX_DEPTH + 5)
+        leaf @ add_node(@p, kind: .unary(op: "-", operand: leaf), span: syntax.Span(start: 0, end: 1))
+
+    assert p.told.len() == 1
+    assert p.told[0].code == "too_deep"

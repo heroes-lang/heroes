@@ -1,0 +1,188 @@
+# `textDocument/prepareRename` and `textDocument/rename`: a name renamed at
+# its declaration and every place it is read, as one edit of the document.
+# A rename that would change what the program means is refused, its message
+# saying why: a new name Kite cannot bind, Kite's own names, a name another
+# declaration of the same scope holds, and a name that would capture a read
+# of another, as a binding renamed to the name of a function called in its
+# scope would.
+
+use <rebel>/json
+
+use lang/lexer
+use lang/queries
+use lang/symbols
+use lang/syntax
+use lsp/document
+use lsp/server
+use lsp/wire
+
+# Answers `textDocument/prepareRename`: the name's range and its text, or
+# `null` where no name stands.
+#
+# - `s`: the server, only read.
+# - `params`: `textDocument` and `position`.
+#
+# Fails `failed` on one of Kite's own names, which nothing renames.
+function prepare(s: server.Server lent, params: json.Value) -> json.Value?
+    doc = server.document_named(s, params: params)?
+    at = server.offset_named(s, doc: doc, params: params)?
+
+    match queries.symbol_at(doc.analysis, at: at)
+        .ok k =>
+            found = doc.analysis.symbols[k]
+
+            if !symbols.is_declared(found)
+                return fail(code: "failed", msg: f"`{found.name}` is Kite's own, and is not renamed")
+
+            for place in queries.places_of(doc.analysis, symbol: k, declaration: true)
+                if syntax.touches(place, at: at)
+                    r = document.range_of(doc, span: place, e: s.encoding)
+                    return ok(wire.object({"range": wire.range_json(r), "placeholder": wire.text(found.name)}))
+
+            return ok(wire.nothing())
+        .err _ => return ok(wire.nothing())
+
+# Answers `textDocument/rename`: a `WorkspaceEdit` replacing the name at
+# its declaration and at every read.
+#
+# - `s`: the server, only read.
+# - `params`: `textDocument`, `position` and `newName`.
+#
+# Fails `invalid` where `newName` is no name Kite binds, and `failed` where
+# no name stands there or the rename would change the program's meaning.
+function rename(s: server.Server lent, params: json.Value) -> json.Value?
+    doc = server.document_named(s, params: params)?
+    at = server.offset_named(s, doc: doc, params: params)?
+    wanted = wire.text_of(params, key: "newName")?
+
+    if !lexer.is_name(wanted)
+        return fail(
+            code: "invalid",
+            msg: f"`{wanted}` is no name Kite can bind: a letter or `_`, then letters, digits and `_`, and no keyword"
+        )
+    a = doc.analysis
+
+    k = match queries.symbol_at(a, at: at)
+        .ok found => found
+        .err _    => return fail(code: "failed", msg: "no name stands here to rename")
+
+    clash(a, symbol: k, wanted: wanted)?
+    edits: [json.Value] @= []
+
+    for place in queries.places_of(a, symbol: k, declaration: true)
+        r = document.range_of(doc, span: place, e: s.encoding)
+        edits @ edits.push(wire.object({"range": wire.range_json(r), "newText": wire.text(wanted)}))
+
+    changes: {str: json.Value} @= {}
+    changes[doc.uri] @ wire.array(edits)
+    return ok(wire.object({"changes": wire.object(changes)}))
+
+# Fails `failed` where renaming `symbol` to `wanted` would change what the
+# program means, the message saying what `wanted` would meet.
+#
+# - `a`: the analysis.
+# - `symbol`: the symbol renamed.
+# - `wanted`: the new name.
+function clash(a: symbols.Analysis lent, symbol: i64, wanted: str) -> ()?
+    mine = a.symbols[symbol]
+
+    if !symbols.is_declared(mine)
+        return fail(code: "failed", msg: f"`{mine.name}` is Kite's own, and is not renamed")
+
+    for k in range(from: 0, to: a.symbols.len())
+        other = a.symbols[k]
+
+        if k != symbol && other.name == wanted && meets(a, mine: mine, symbol: symbol, other: other)
+            return fail(
+                code: "failed",
+                msg: f"`{wanted}` is the name of the {symbols.kind_word(other.kind)} {where(other)} already"
+            )
+
+    return ok()
+
+# Whether `other`, named as `mine` would be, would meet it: one global
+# beside another, two fields of one record, two bindings whose scopes
+# overlap, a global read where the renamed binding is in scope, or a binding
+# in scope where the renamed global is read.
+function meets(a: symbols.Analysis lent, mine: symbols.Symbol, symbol: i64, other: symbols.Symbol) -> bool
+    global_mine = is_global(mine.kind)
+    global_other = is_global(other.kind)
+
+    if global_mine && global_other
+        return true
+
+    if mine.kind == .field_symbol || other.kind == .field_symbol
+        return mine.kind == .field_symbol && other.kind == .field_symbol && mine.owner == other.owner
+
+    if !global_mine && !global_other
+        return overlaps(a: mine.visible, b: other.visible)
+
+    if !global_mine
+        return read_within(a, name: other.name, scope: mine.visible)
+
+    for place in queries.places_of(a, symbol: symbol, declaration: false)
+        if place.start >= other.visible.start && place.start <= other.visible.end
+            return true
+
+    return false
+
+# Whether a symbol of `kind` is known everywhere in the source.
+function is_global(kind: symbols.SymbolKind) -> bool
+    return match kind
+        .function_symbol | .record_symbol | .builtin_function | .builtin_type => true
+        .field_symbol | .param_symbol | .local_symbol                         => false
+
+# Whether two scopes share a byte.
+function overlaps(a: syntax.Span, b: syntax.Span) -> bool
+    return a.start < b.end && b.start < a.end
+
+# Whether a reference to a global named `name` stands inside `scope`.
+function read_within(a: symbols.Analysis lent, name: str, scope: syntax.Span) -> bool
+    for r in a.refs
+        if a.symbols[r.symbol].name == name && is_global(a.symbols[r.symbol].kind) && r.span.start >= scope.start && r.span.start <= scope.end
+            return true
+
+    return false
+
+# Where `s` is, for a message: "in `f`", "of `Point`", or "".
+function where(s: symbols.Symbol) -> str
+    return match s.kind
+        .param_symbol | .local_symbol     => f"in `{s.owner}`"
+        .field_symbol                     => f"of `{s.owner}`"
+        .function_symbol | .record_symbol => "of this document"
+        .builtin_function | .builtin_type => "Kite gives every source"
+
+## Tests
+
+test "rename: a binding, at its declaration and its reads"
+    s @= server.new_server()
+    s.documents["u"] @ document.open(uri: "u", version: 1, text: "fn f() -> Int { let dx = 1; dx + dx }")
+    asked = json.parse(
+        "{\"textDocument\": {\"uri\": \"u\"}, \"position\": {\"line\": 0, \"character\": 21}, \"newName\": \"delta\"}"
+    ).must()
+    edit = rename(s, params: asked).must()
+    assert json.items_of(json.value_at(edit, pointer: "/changes/u").must()).must().len() == 3
+
+test "rename: refused for a keyword, Kite's own name, a clash and a capture"
+    s @= server.new_server()
+    text = "fn g() -> Int { 1 }\nfn f(a: Int) -> Int { let b = a; g() + b }"
+    s.documents["u"] @ document.open(uri: "u", version: 1, text: text)
+    for_b = "{\"textDocument\": {\"uri\": \"u\"}, \"position\": {\"line\": 1, \"character\": 26}, \"newName\": "
+    assert rename(s, params: json.parse(for_b + "\"let\"}").must()).is_err()
+    assert rename(s, params: json.parse(for_b + "\"a\"}").must()).is_err()
+    assert rename(s, params: json.parse(for_b + "\"g\"}").must()).is_err()
+    assert !rename(s, params: json.parse(for_b + "\"len\"}").must()).is_err()
+    for_g = "{\"textDocument\": {\"uri\": \"u\"}, \"position\": {\"line\": 0, \"character\": 3}, \"newName\": "
+    assert rename(s, params: json.parse(for_g + "\"b\"}").must()).is_err()
+    assert rename(s, params: json.parse(for_g + "\"f\"}").must()).is_err()
+    assert !rename(s, params: json.parse(for_g + "\"h\"}").must()).is_err()
+
+test "prepare: a name's range, Kite's own refused, nothing elsewhere"
+    s @= server.new_server()
+    s.documents["u"] @ document.open(uri: "u", version: 1, text: "fn f() -> Int { abs(1) }")
+    on_f = json.parse("{\"textDocument\": {\"uri\": \"u\"}, \"position\": {\"line\": 0, \"character\": 3}}").must()
+    assert json.value_at(prepare(s, params: on_f).must(), pointer: "/placeholder").must() == wire.text("f")
+    on_abs = json.parse("{\"textDocument\": {\"uri\": \"u\"}, \"position\": {\"line\": 0, \"character\": 17}}").must()
+    assert prepare(s, params: on_abs).is_err()
+    on_brace = json.parse("{\"textDocument\": {\"uri\": \"u\"}, \"position\": {\"line\": 0, \"character\": 14}}").must()
+    assert prepare(s, params: on_brace).must() == wire.nothing()

@@ -1,0 +1,73 @@
+# A document's findings as the protocol carries them: each a `Diagnostic`
+# with its range, severity, code, source and message, a finding about code
+# that does nothing tagged `Unnecessary` so an editor fades it; and the
+# notification `textDocument/publishDiagnostics` that sends all of a
+# document's findings at once, replacing what the client showed before.
+
+use <rebel>/json
+
+use lang/diagnostics
+use lsp/document
+use lsp/server
+use lsp/wire
+use text/positions
+
+# The name each finding is said to come from.
+constant SOURCE: str
+    "kite"
+
+# `d` as the protocol writes a diagnostic.
+#
+# - `doc`: the document it is about.
+# - `d`: the finding.
+# - `e`: the unit to count characters in.
+function diagnostic_json(doc: document.Document lent, d: diagnostics.Diagnostic, e: positions.Encoding) -> json.Value
+    members: {str: json.Value} @= {
+        "range": wire.range_json(document.range_of(doc, span: d.span, e: e))
+        "severity": wire.number(diagnostics.severity_number(d.severity))
+        "code": wire.text(d.code)
+        "source": wire.text(SOURCE)
+        "message": wire.text(d.message)
+    }
+
+    if d.unnecessary
+        members["tags"] @ wire.array([wire.number(1)])
+    return wire.object(members)
+
+# Asks for every finding of `doc` to be published.
+#
+# - `s`: the server, whose outbox gains the notification.
+# - `doc`: the document.
+function publish(@s: server.Server, doc: document.Document lent)
+    found: [json.Value] @= []
+
+    for d in doc.analysis.diagnostics
+        found @ found.push(diagnostic_json(doc, d: d, e: s.encoding))
+
+    server.notify(
+        @s,
+        method: "textDocument/publishDiagnostics",
+        params: wire.object({"uri": wire.text(doc.uri), "version": wire.number(doc.version), "diagnostics": wire.array(found)})
+    )
+
+# Asks for the findings shown for `uri` to be cleared: what a closed
+# document leaves.
+#
+# - `s`: the server.
+# - `uri`: the document's URI.
+function clear(@s: server.Server, uri: str)
+    server.notify(
+        @s,
+        method: "textDocument/publishDiagnostics",
+        params: wire.object({"uri": wire.text(uri), "diagnostics": wire.array([])})
+    )
+
+## Tests
+
+test "diagnostic_json: an error, and an unused binding tagged"
+    doc = document.open(uri: "file:///a.kite", version: 1, text: "fn f() -> Int { let a = 1; b }")
+    first = json.format(diagnostic_json(doc, d: doc.analysis.diagnostics[0], e: .utf16)).must()
+    assert first == "{\"range\":{\"start\":{\"line\":0,\"character\":27},\"end\":{\"line\":0,\"character\":28}},\"severity\":1,\"code\":\"unknown_name\",\"source\":\"kite\",\"message\":\"no value named `b`\"}"
+    second = diagnostic_json(doc, d: doc.analysis.diagnostics[1], e: .utf16)
+    assert json.value_at(second, pointer: "/tags/0").must() == wire.number(1)
+    assert json.value_at(second, pointer: "/severity").must() == wire.number(2)

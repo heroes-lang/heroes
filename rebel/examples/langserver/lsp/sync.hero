@@ -1,0 +1,116 @@
+# The documents the client opens, changes and closes, kept in step with
+# its editor by incremental sync: `didOpen` gives the whole text, each
+# `didChange` the ranges it replaces, `didClose` ends the document. After
+# each the document is analysed again and its findings published, so the
+# editor's underlines follow every keystroke.
+#
+# A change to a document the server does not hold, or one whose version is
+# not above the one held, is refused and logged rather than guessed at: the
+# client and the server would no longer agree on the text, and a later
+# answer would point at the wrong characters.
+
+use <rebel>/json
+use <rebel>/maps
+
+use lsp/document
+use lsp/report
+use lsp/server
+use lsp/wire
+use text/edits
+use text/positions
+
+# Takes `textDocument/didOpen`: the document held, analysed and its
+# findings published.
+#
+# - `s`: the server.
+# - `params`: `textDocument`, with its `uri`, `version` and `text`.
+#
+# Fails `invalid` where one of those is missing.
+function did_open(@s: server.Server, params: json.Value) -> ()?
+    item = wire.member_of(params, key: "textDocument")?
+    uri = wire.text_of(item, key: "uri")?
+    doc = document.open(uri: uri, version: wire.int_of(item, key: "version")?, text: wire.text_of(item, key: "text")?)
+    s.documents[uri] @ doc
+    report.publish(@s, doc: doc)
+    return ok()
+
+# Takes `textDocument/didChange`: the changes made in order, the document
+# analysed again and its findings published.
+#
+# - `s`: the server.
+# - `params`: `textDocument` with its `uri` and `version`, and
+#   `contentChanges`, each with a `text` and a `range` where it replaces one.
+#
+# Fails `invalid` where those are missing or malformed, and `failed` where
+# the document is not open or the version is not above the one held.
+function did_change(@s: server.Server, params: json.Value) -> ()?
+    item = wire.member_of(params, key: "textDocument")?
+    uri = wire.text_of(item, key: "uri")?
+    version = wire.int_of(item, key: "version")?
+
+    held = match s.documents[uri]
+        .ok d  => d
+        .err _ => return fail(code: "failed", msg: f"{uri} is not open")
+
+    if version <= held.version
+        return fail(code: "failed", msg: f"version {version} of {uri} is not above the {held.version} held")
+    changes: [edits.Change] @= []
+
+    for c in json.items_of(wire.member_of(params, key: "contentChanges")?).default([])
+        text = wire.text_of(c, key: "text")?
+
+        replaced: positions.Range? = match json.member(c, key: "range")
+            .ok r  => ok(wire.range_of(r)?)
+            .err _ => fail(code: "not_found", msg: "the whole text")
+
+        changes @ changes.push(edits.Change(range: replaced, text: text))
+
+    doc = document.changed(held, changes: changes, version: version, e: s.encoding)
+    s.documents[uri] @ doc
+    report.publish(@s, doc: doc)
+    return ok()
+
+# Takes `textDocument/didClose`: the document let go and its findings
+# cleared.
+#
+# - `s`: the server.
+# - `params`: `textDocument` with its `uri`.
+#
+# Fails `invalid` where the URI is missing.
+function did_close(@s: server.Server, params: json.Value) -> ()?
+    uri = wire.uri_of(params)?
+    s.documents @ maps.remove(s.documents, key: uri)
+    report.clear(@s, uri: uri)
+    return ok()
+
+## Tests
+
+test "did_open, did_change and did_close: the text kept in step, the findings published each time"
+    s @= server.new_server()
+    opened = json.parse(
+        "{\"textDocument\": {\"uri\": \"u\", \"version\": 1, \"text\": \"fn f() -> Int { x }\"}}"
+    ).must()
+    did_open(@s, params: opened).must()
+    assert s.outbox.len() == 1
+    changed = json.parse(
+        "{\"textDocument\": {\"uri\": \"u\", \"version\": 2}, \"contentChanges\": [{\"range\": {\"start\": {\"line\": 0, \"character\": 16}, \"end\": {\"line\": 0, \"character\": 17}}, \"text\": \"42\"}]}"
+    ).must()
+    did_change(@s, params: changed).must()
+    assert s.documents["u"].must().text == "fn f() -> Int { 42 }"
+    assert s.documents["u"].must().analysis.diagnostics.len() == 0
+    did_close(@s, params: json.parse("{\"textDocument\": {\"uri\": \"u\"}}").must()).must()
+    assert keys(s.documents).len() == 0
+    assert s.outbox.len() == 3
+
+test "did_change: a document not open, and a version not above the one held, refused"
+    s @= server.new_server()
+    stale = json.parse(
+        "{\"textDocument\": {\"uri\": \"u\", \"version\": 1}, \"contentChanges\": [{\"text\": \"x\"}]}"
+    ).must()
+    assert did_change(@s, params: stale).is_err()
+    did_open(
+        @s,
+        params: json.parse("{\"textDocument\": {\"uri\": \"u\", \"version\": 3, \"text\": \"\"}}").must()
+    ).must()
+    assert did_change(@s, params: stale).is_err()
+    assert s.documents["u"].must().version == 3

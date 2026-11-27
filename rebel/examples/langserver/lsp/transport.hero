@@ -1,0 +1,100 @@
+# The server on two streams, as an editor runs it on the process's own
+# input and output: each frame read after its `Content-Length` header by
+# Rebel's `jsonrpc`, handed to the server, and every message it answers
+# written back framed the same way, in order, before the next frame is read.
+#
+# How it ends: at `exit`, with 0 after a `shutdown` and 1 without; with 1
+# where the input ends with no `exit`, the client gone; and with 1, a line
+# on the standard error saying why, where a frame is broken (a header with
+# no length, a length past 16 MiB), since the stream is then no longer in
+# step and no later byte can be trusted. A frame that is not UTF-8 is
+# answered as a text that is not JSON, and the server goes on.
+
+use <rebel>/errors
+use <rebel>/io
+use <rebel>/json
+use <rebel>/jsonrpc
+
+use lsp/handlers
+use lsp/server
+
+# Serves the client on `input` and `output` until the session ends, and
+# answers the status the process ends with.
+#
+# - `input`: where the client's frames are read; its owner closes it.
+# - `output`: where the server's frames are written; its owner closes it.
+function serve(input: io.Stream, output: io.Stream) -> i64
+    reader @= io.reader(input)
+    s @= server.new_server()
+    t = handlers.table()
+    limits = jsonrpc.default_limits()
+
+    while true
+        answers: [jsonrpc.Message] @= []
+
+        match jsonrpc.read_text(@reader, framing: .content_length, limits: limits)
+            .ok text => answers @ server.receive(@s, table: t, text: text)
+            .err e =>
+                if e.code == jsonrpc.NOT_TEXT
+                    answers @ [jsonrpc.answer_parse_error(e.msg)]
+                else if e.code == jsonrpc.CLOSED
+                    return 1
+                else
+                    errors.ignore(
+                        io.write_line(io.stderr(), line: f"kite-langserver: the input is no longer in step: {e.msg}")
+                    )
+                    return 1
+
+        for m in answers
+            if jsonrpc.write_message(output, m: m, framing: .content_length).is_err()
+                return 1
+
+        if s.phase == .ended
+            return s.exit_code
+
+## Tests
+
+test "serve: a session over two pipes, from initialize to exit"
+    input @= io.pipe().must()
+    output @= io.pipe().must()
+    frames = [
+        "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"capabilities\":{}}}"
+        "{\"jsonrpc\":\"2.0\",\"method\":\"initialized\",\"params\":{}}"
+        "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"shutdown\"}"
+        "{\"jsonrpc\":\"2.0\",\"method\":\"exit\"}"
+    ]
+
+    for f in frames
+        jsonrpc.write_text(input.writer, text: f, framing: .content_length).must()
+
+    io.close(@input.writer).must()
+    assert serve(input: input.reader, output: output.writer) == 0
+    io.close(@input.reader).must()
+    io.close(@output.writer).must()
+    back @= io.reader(output.reader)
+    first = jsonrpc.read_message(@back, framing: .content_length, limits: jsonrpc.default_limits()).must()
+    logged = jsonrpc.read_message(@back, framing: .content_length, limits: jsonrpc.default_limits()).must()
+    closing = jsonrpc.read_message(@back, framing: .content_length, limits: jsonrpc.default_limits()).must()
+    assert json.value_at(closing_value(first), pointer: "/serverInfo/name").must() == .text(v: "kite-langserver")
+    assert jsonrpc.format(logged).must().len() > 0
+    assert closing == jsonrpc.answer_result(.number(v: 2.0), value: .null_value)
+    io.close(@output.reader).must()
+
+test "serve: an input that ends with no exit, and a broken header, end with 1"
+    input @= io.pipe().must()
+    output @= io.pipe().must()
+    io.write_text(input.writer, text: "Content-Lenght: 2\r\n\r\n{}").must()
+    io.close(@input.writer).must()
+    assert serve(input: input.reader, output: output.writer) == 1
+    io.close(@input.reader).must()
+    io.close(@output.writer).must()
+    io.close(@output.reader).must()
+
+# The result `m` carries, `null` for anything else: what a test compares.
+function closing_value(m: jsonrpc.Message) -> json.Value
+    return match m
+        .response r =>
+            match r.reply
+                .result v => v.value
+                .error _  => .null_value
+        .request _ | .notification _ => .null_value

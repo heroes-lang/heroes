@@ -1,0 +1,212 @@
+# Kite's tokens: a source read by Rebel's `scanner` under Kite's rules, its
+# comments set apart from its code. Names are ASCII letters, digits and `_`,
+# not beginning with a digit; integers are decimal, or Go's hexadecimal,
+# octal and binary forms; strings stand between double quotes with Go's
+# escapes and on one line; `#` begins a comment to the end of its line. A
+# character no rule reads is told and dropped, so the parser never meets it;
+# a malformed literal stays a token of the kind `invalid`, told here, and
+# the parser reads it as an expression it says nothing more about.
+
+use <rebel>/scanner
+
+use lang/diagnostics
+use lang/syntax
+
+## Tokens
+
+# The words Kite keeps for itself.
+constant KEYWORDS: [str]
+    ["fn", "record", "let", "if", "else", "true", "false"]
+
+# A comment of the source.
+record Comment
+    # Its text after the `#` and one space, where one follows.
+    text: str
+    # Its line, from 1.
+    line: i64
+    # Where it stands, from the `#` to the end of its line.
+    span: syntax.Span
+    # Whether no code stands before it on its line.
+    alone: bool
+
+# A source read into tokens.
+record Lexed
+    # The code's tokens, in order, the last of the kind `end`.
+    tokens: [scanner.Token]
+    # The comments, in order.
+    comments: [Comment]
+    # What was malformed: an unknown character, a literal never closed.
+    diagnostics: [diagnostics.Diagnostic]
+
+# The rules Kite's source is read by.
+function rules() -> scanner.Rules
+    r @= scanner.go_rules()
+    r.identifier_char @ is_name_char
+    r.keywords @ KEYWORDS
+    r.floats @ false
+    r.raw_quotes @ ""
+    r.char_quotes @ ""
+    r.line_comments @ ["#"]
+    r.block_comment_open @ ""
+    r.block_comment_close @ ""
+    r.keep_comments @ true
+    r.operators @ [
+        "{"
+        "}"
+        "("
+        ")"
+        ","
+        ":"
+        ";"
+        "."
+        "->"
+        "++"
+        "+"
+        "-"
+        "*"
+        "/"
+        "%"
+        "=="
+        "!="
+        "<="
+        ">="
+        "<"
+        ">"
+        "&&"
+        "||"
+        "!"
+        "="
+    ]
+    return r
+
+# Whether `c` may stand at `at` in a name: an ASCII letter or `_` anywhere,
+# a digit anywhere but first.
+#
+# - `c`: one character.
+# - `at`: its index in the name, from 0.
+function is_name_char(c: str, at: i64) -> bool
+    if c.len() != 1
+        return false
+    b = c[0]
+
+    if b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b == '_'
+        return true
+    return at > 0 && b >= '0' && b <= '9'
+
+# Whether `word` is a name Kite would read as one identifier, and not a
+# keyword: what a rename asks of the new name.
+#
+# - `word`: any text.
+function is_name(word: str) -> bool
+    if word.len() == 0
+        return false
+    at: i64 @= 0
+
+    for c in word.chars()
+        if !is_name_char(c, at: at)
+            return false
+        at @ at + 1
+
+    for k in KEYWORDS
+        if k == word
+            return false
+
+    return true
+
+# The span of `t`.
+#
+# - `t`: a token.
+function span_of(t: scanner.Token) -> syntax.Span
+    return syntax.Span(start: t.start.offset, end: t.end.offset)
+
+# `source` read into its code tokens and its comments.
+#
+# - `source`: the text, UTF-8, any line ends.
+#
+# Never fails: what is malformed is told among `diagnostics`.
+function lex(source: str) -> Lexed
+    tokens: [scanner.Token] @= []
+    comments: [Comment] @= []
+    told: [diagnostics.Diagnostic] @= []
+    code_line: i64 @= 0
+
+    for t in scanner.scan(source, rules())
+        match t.kind
+            .comment =>
+                comments @ comments.push(
+                    Comment(text: comment_text(t.text), line: t.start.line, span: span_of(t), alone: code_line != t.start.line)
+                )
+            .other =>
+                told @ told.push(
+                    diagnostics.error(span_of(t), code: "unknown_character", message: f"Kite has no `{t.text}`")
+                )
+            .invalid i =>
+                told @ told.push(
+                    diagnostics.error(span_of(t), code: "malformed_literal", message: what_is_wrong(i.reason))
+                )
+                tokens @ tokens.push(t)
+                code_line @ t.end.line
+            .identifier | .keyword | .integer | .float | .string | .raw_string | .character | .whitespace | .newline | .operator | .custom _ | .end =>
+                tokens @ tokens.push(t)
+                code_line @ t.end.line
+
+    return Lexed(tokens: tokens, comments: comments, diagnostics: told)
+
+# A comment's words: its `#` and the one space after it taken off.
+#
+# - `raw`: the comment as the source holds it.
+function comment_text(raw: str) -> str
+    if raw.len() >= 2 && raw[1] == ' '
+        return raw.slice(from: 2, to: raw.len())
+    return raw.slice(from: 1, to: raw.len())
+
+# The sentence for a literal the scanner could not read.
+#
+# - `reason`: the scanner's words.
+function what_is_wrong(reason: str) -> str
+    if reason == "literal not terminated"
+        return "this string is not closed before the end of its line"
+    return f"this literal cannot be read: {reason}"
+
+## Tests
+
+test "lex: keywords, names, operators by the longest, and the end"
+    found = lex("fn f(a: Int) -> Int { a ++ b <= 3 }")
+    assert found.diagnostics.len() == 0
+    assert found.tokens[0].kind == .keyword
+    assert found.tokens[1].kind == .identifier
+    assert found.tokens[7].text == "->"
+    assert found.tokens[11].text == "++"
+    assert found.tokens[13].text == "<="
+    assert found.tokens[found.tokens.len() - 1].kind == .end
+
+test "lex: a comment alone on its line and one after code"
+    found = lex("# about f\nfn f() { 1 } # trailing\n")
+    assert found.comments.len() == 2
+    assert found.comments[0].text == "about f"
+    assert found.comments[0].alone
+    assert !found.comments[1].alone
+    assert found.comments[1].line == 2
+
+test "lex: an unknown character is told and dropped, an open string kept"
+    found = lex("let x = 1 @ \"open\n")
+    assert found.diagnostics.len() == 2
+    assert found.diagnostics[0].code == "unknown_character"
+    assert found.diagnostics[1].code == "malformed_literal"
+    assert found.tokens[3].kind == .integer
+    assert found.tokens[4].kind == .invalid(reason: "literal not terminated")
+
+test "lex: characters of several bytes in a string and a comment keep their offsets"
+    found = lex("# café 🎈\nlet s = \"naïve\";")
+    assert found.comments[0].text == "café 🎈"
+    assert found.tokens[3].text == "\"naïve\""
+    assert found.tokens[3].start.offset == 21
+
+test "is_name: names, keywords, digits first, and the empty text"
+    assert is_name("dist2")
+    assert is_name("_x")
+    assert !is_name("2d")
+    assert !is_name("let")
+    assert !is_name("")
+    assert !is_name("a-b")
+    assert !is_name("é")
