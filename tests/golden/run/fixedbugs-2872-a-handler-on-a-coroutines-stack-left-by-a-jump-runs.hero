@@ -1,0 +1,31 @@
+# Fixed 2026-11-27, defect 2872, lane sig-family (step 199m): panel 262's
+# completeness critic's `ck`. A coroutine `makecontext` made on a heap stack
+# raises SIGUSR1; the handler, on the coroutine's stack, leaves by
+# `siglongjmp` or by `setcontext` to the save the runner made before it
+# switched in (the coroutine left suspended for good), or back into the
+# coroutine to a save made before it raised; the program's function is then
+# called twelve frames down. No save point is made inside the handler.
+# Symptom: before, the two exits to the runner were refused, exit 134, 3 runs
+# of 3, in words naming three causes the program has none of (*C left the
+# handler in a way this runtime does not follow (an inline
+# `__builtin_longjmp`, a C++ exception, a jump inside a system library)*);
+# the exits back into the coroutine ran.
+# Cause: a jump left a handler only by landing above its frames on the same
+# stack, or by leaving the alternate stack it ran on; a handler on a
+# coroutine's stack left by a jump to another stack stood for good.
+# Fix: a jump made inside the frames of a handler running on a coroutine's
+# stack, landing off that stack, leaves the handler where no save point was
+# made inside those frames since it began: nothing can switch back into them
+# but a landing their left span reads as a re-entry.
+extern "fixedbugs-2872-a-handler-on-a-coroutines-stack.h"
+    function ck_run(onstack: i32, how: i32, to: i32, save: i32, cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("siglongjmp to the runner (70 is right): ", ck_run(onstack: 0, how: 0, to: 0, save: 0, cb: answer))
+    print("setcontext to the runner (70 is right): ", ck_run(onstack: 0, how: 1, to: 0, save: 0, cb: answer))
+    print("siglongjmp into the coroutine (70 is right): ", ck_run(onstack: 0, how: 0, to: 1, save: 0, cb: answer))
+    print("setcontext into the coroutine (70 is right): ", ck_run(onstack: 0, how: 1, to: 1, save: 0, cb: answer))
