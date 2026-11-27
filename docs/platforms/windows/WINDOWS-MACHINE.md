@@ -113,6 +113,18 @@ offline, last seen 7 h before, and `ssh win` timed out**: a Running the box did
 not live up to. That is the case the author meets by pressing Connect, and the
 program presses it too.
 
+**2026-11-27, the author's instruction** (meant as: *you could have pressed
+Connect yourself*). The box read Running from 15:37 and again from a start out
+of Stopped at 20:52, and `ssh win` timed out for hours both times, Tailscale
+reading the box offline and later active; the coordinator waited, asked the
+author to look at the console, and lanes worked without the box. At about 23:50
+the author pressed Connect on the portal and the box answered. So **when the box
+reads Running and `ssh win` does not answer within a few minutes, the session
+presses Connect itself**, by running this program again (each real run presses
+it), and then, before concluding the box is down, **reads `tailscale status` on
+this Mac**: at 23:52 the same evening it read *Tailscale is stopped* here, and
+`ssh win` failed to resolve the box's name for that reason alone.
+
 ## Rebuilding the box
 
 Written 2026-09-21, the day the first one died. The work splits in two at one
