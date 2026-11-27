@@ -125,6 +125,33 @@ static int hero_dir_is_link(const char *path) {
 
 static int64_t hero_dir_scan_walk(const char *root, int64_t want, int64_t recursive, int follow);
 
+/* Whether `root` ends where a name follows it with no separator between
+ * (d-windows-ci-6-2, 2026-11-26): a separator, and on Windows a drive's `:`
+ * as well, as `hero_disk_scan` reads a folder (platform/hero_disk.c). The scan
+ * asked Windows for `<root>\*` and joined a child as `<root>/<name>`, so the
+ * drive's root, `/` or `\`, became `/\*` and `//name`, two separators that
+ * open a UNC path: measured on the Windows box, `FindFirstFileW` refuses
+ * `/\*` and `\\*` with 161 (ERROR_BAD_PATHNAME), `GetFullPathNameW` reading
+ * them as `\\*`, and lists the drive's entries where `*` follows the
+ * root's own separator, and for `C:/\*`;
+ * `hero_dir_scan("/")` answered -1 at every level. */
+static int hero_dir_open_ended(const char *root) {
+    size_t n = strlen(root);
+    if (n == 0) return 0;
+#if defined(_WIN32)
+    return root[n - 1] == '/' || root[n - 1] == '\\' || root[n - 1] == ':';
+#else
+    return root[n - 1] == '/';
+#endif
+}
+
+/* `root` and `name` as one path: one `/` between them, none where `root`
+ * ends open. snprintf's answer. */
+static int hero_dir_join(char *out, size_t room, const char *root, const char *name) {
+    if (hero_dir_open_ended(root)) return snprintf(out, room, "%s%s", root, name);
+    return snprintf(out, room, "%s/%s", root, name);
+}
+
 /* Everything `root` holds, of the kind asked for. Returns how many names, or
  * -1 when the directory could not be read at all — which the shell's
  * `2>/dev/null` used to hide. A link to a directory is walked into, as every
@@ -222,7 +249,7 @@ int64_t hero_dir_remove_tree(const char *path) {
     int64_t failed = 0;
 
     for (int64_t i = 0; i < found; i += 1) {
-        int written = snprintf(full, room, "%s/%s", path, hero_dir_names[i]);
+        int written = hero_dir_join(full, room, path, hero_dir_names[i]);
         if (written < 0 || (size_t)written >= room) { failed = 1; continue; }
         if (hero_fs_remove(full) != HERO_OS_OK) failed = 1;
     }
@@ -233,7 +260,7 @@ int64_t hero_dir_remove_tree(const char *path) {
     if (dirs < 0) { hero_release(full); return HERO_OS_FAILED; }
 
     for (int64_t i = dirs - 1; i >= 0; i -= 1) {
-        int written = snprintf(full, room, "%s/%s", path, hero_dir_names[i]);
+        int written = hero_dir_join(full, room, path, hero_dir_names[i]);
         if (written < 0 || (size_t)written >= room) { failed = 1; continue; }
         if (hero_fs_remove(full) != HERO_OS_OK) failed = 1;
     }
@@ -263,7 +290,7 @@ static int hero_dir_walk(const char *root, const char *prefix, int64_t want,
 #if defined(_WIN32)
     /* Wide, and a name carried back by `hero_win_name_bytes` (parts/codepage.c
      * says why the narrow listing cannot be kept). */
-    wchar_t *pattern = hero_win_wide(root, L"\\*");
+    wchar_t *pattern = hero_win_wide(root, hero_dir_open_ended(root) ? L"*" : L"\\*");
     WIN32_FIND_DATAW found;
     HANDLE search = pattern != NULL ? FindFirstFileW(pattern, &found) : INVALID_HANDLE_VALUE;
     if (pattern != NULL) hero_release(pattern);
@@ -288,7 +315,7 @@ static int hero_dir_walk(const char *root, const char *prefix, int64_t want,
             IsReparseTagNameSurrogate(found.dwReserved0)) {
             is_dir = 0;
             if (follow) {
-                if (snprintf(child, room, "%s/%s", root, name) < 0) { ok = 0; break; }
+                if (hero_dir_join(child, room, root, name) < 0) { ok = 0; break; }
                 is_dir = hero_fs_is_directory(child) != 0;
             }
         }
@@ -303,7 +330,7 @@ static int hero_dir_walk(const char *root, const char *prefix, int64_t want,
     while ((entry = readdir(open_dir)) != NULL) {
         const char *name = entry->d_name;
         if (!hero_dir_keep(name)) continue;
-        if (snprintf(child, room, "%s/%s", root, name) < 0) { ok = 0; break; }
+        if (hero_dir_join(child, room, root, name) < 0) { ok = 0; break; }
         int is_dir = (follow || !hero_dir_is_link(child)) && hero_fs_is_directory(child) != 0;
 #endif
         int wanted = is_dir ? (want == HERO_DIR_DIRECTORIES)
@@ -311,7 +338,7 @@ static int hero_dir_walk(const char *root, const char *prefix, int64_t want,
         if (wanted && !hero_dir_remember(prefix, name)) { ok = 0; break; }
 
         if (is_dir && recursive) {
-            if (snprintf(child, room, "%s/%s", root, name) < 0) { ok = 0; break; }
+            if (hero_dir_join(child, room, root, name) < 0) { ok = 0; break; }
             if (snprintf(deeper, room, "%s%s/", prefix, name) < 0) { ok = 0; break; }
             if (!hero_dir_walk(child, deeper, want, recursive, follow)) { ok = 0; break; }
         }
