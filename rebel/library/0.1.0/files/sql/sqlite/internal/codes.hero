@@ -28,6 +28,13 @@ record Refusal
 # file and path not found are 2 and 3), 13 a refusal (POSIX's `EACCES`; no
 # file's answer on Windows). Any other is `failed`, the number in the message:
 # 21 for a folder named as the file on this Mac.
+#
+# **A folder named as the file is `failed` on every platform**, as `open`
+# says (d-windows-ci-7-1, 2026-11-27): SQLite on POSIX answers it 14 with the
+# system's 21, and on Windows `SQLITE_CANTOPEN_ISDIR`, 526, with a 2 left by
+# the system (SQLite 3.54.1 on the Windows box), which this function told
+# `invalid` before its number was read, so the same mistake was two codes;
+# and read by the number, the 2 would tell it `not_found`.
 function code_of(extended: i64, words: str, system: i64) -> str
     primary = extended & 255
 
@@ -35,7 +42,7 @@ function code_of(extended: i64, words: str, system: i64) -> str
         return sql.EXISTS
 
     if extended == hero_sqlite3.SQLITE_CANTOPEN_ISDIR
-        return sql.INVALID
+        return sql.FAILED
 
     if primary == hero_sqlite3.SQLITE_ERROR
         return error_code(words)
@@ -175,7 +182,8 @@ test "code_of: a file that would not open, by the system's number"
     assert code_of(extended: 14, words: "unable to open database file", system: 13) == sql.PERMISSION
     assert code_of(extended: 14, words: "unable to open database file", system: 5) == sql.FAILED
     assert code_of(extended: 14, words: "unable to open database file", system: 0) == sql.FAILED
-    assert code_of(extended: 526, words: "unable to open database file", system: 21) == sql.INVALID
+    assert code_of(extended: 526, words: "unable to open database file", system: 21) == sql.FAILED
+    assert code_of(extended: 526, words: "unable to open database file", system: 2) == sql.FAILED
 
 test "code_of: every other primary code, an extended one read by its low byte"
     assert code_of(extended: 5, words: "database is locked", system: 0) == sql.TIMEOUT
