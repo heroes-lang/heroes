@@ -592,6 +592,36 @@ static _Thread_local HeroSignalStack hero_signal_stack;
  * a handler installed where no route stands. */
 #define HERO_SIG_SWITCH_WALK 8
 
+/* A wrapper's own note of the switch it is made inside of, empty, in the
+ * wrapper's frame. The wrappers carry no redzones (defect 2853: a switch may
+ * never return, and redzones left behind would poison later frames), so
+ * AddressSanitizer clears nothing of their frames on entry, and the shadow
+ * there may still mark the redzones of instrumented frames a switch abandoned
+ * (a handler that swapped away to a context its runner took above it leaves
+ * every frame below that context poisoned). So the note's bytes are cleared in
+ * the shadow before anything writes them: until then the C library's `memset`
+ * of the note, which ASan checks, read a redzone of `gr_raise_deep`'s abandoned
+ * frame as an overflow in `setcontext`, a correct program stopped at exit 1
+ * (`run/fixedbugs-2702-a-handler-swapped-away-from-and-resumed-after-it-was-
+ * left-form-2-on-the-own-stack-is-refused` at `--sanitize -O0` in Linux arm64,
+ * lane sig-family-3, step 199p, once that case's padding was kept whole). */
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define HERO_SIG_ASAN 1
+void __asan_unpoison_memory_region(void const volatile *addr, size_t size);
+#endif
+#endif
+static void hero_signal_switch_none(HeroSigSwitch *note) {
+#if defined(HERO_SIG_ASAN)
+    __asan_unpoison_memory_region(note, sizeof *note);
+#endif
+    note->frame = 0;
+    note->lo = 0;
+    note->hi = 0;
+    note->from = 0;
+    note->to = 0;
+}
+
 /* The switch `next` begins, the wrapper of `call` asking: refused where the
  * handler the thread runs now interrupted a switch and `next` names either
  * context of it, which the C library has yet to finish saving or loading;

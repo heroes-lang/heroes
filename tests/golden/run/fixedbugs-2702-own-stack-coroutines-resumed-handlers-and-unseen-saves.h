@@ -72,6 +72,7 @@ static void gr_handler(int sig) {
 __attribute__((noinline)) static void gr_raise_deep(void) {
     volatile char pad[16384];
     pad[0] = 1;
+    __asm__ volatile("" ::"r"(pad) : "memory"); /* kept whole at -O2 (step 199p) */
     raise(SIGUSR1);
     (void)pad[0];
 }

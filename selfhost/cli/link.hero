@@ -61,7 +61,11 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
         link_names: link_names,
         layer: layer
     )
-    home = link_output.binary_home(t, line: line, name: module + process.exe_suffix())
+
+    # The binary's own name, the module's held to a length (defect
+    # d-lane-win-longname-2): no path of this home grows with the program's.
+    named = link_output.home_name(module)
+    home = link_output.binary_home(t, line: line, name: named + process.exe_suffix())
     binary: str @= home
 
     # Where the binary lands, which is `binary` itself but for an author's
@@ -104,7 +108,7 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
 
     # The private folder, made, and the output's name in it, or the refusal
     # naming a path past the system's limit, before a byte is linked.
-    room = link_room.made(at: at, binary: binary, module: module, suffix: process.exe_suffix())?
+    room = link_room.made(at: at, binary: binary, module: named, suffix: process.exe_suffix())?
     stage = room.stage
     err_path = publish.private_name(t.build + "/link-clang-stderr.txt")
     inner = room.stem + process.exe_suffix()

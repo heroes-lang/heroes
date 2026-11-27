@@ -1,0 +1,26 @@
+# fixedbugs, defect d-lane-win-longname-1, 2026-11-27, lane win-paths
+# (M-rebel-library step 212g).
+#
+# SYMPTOM: a module whose path the system will not open for its length was
+# told as one that is not there. On Windows, a source of 180 letters read
+# from a checkout folder of 43 characters, 260 in all, was told `there is no
+# module` and *the directory lists it as* the same name, with `fix (guess):
+# write use <the same line>`, exit 1; on this Mac a `use` whose file's name
+# takes 256 bytes stopped the compilation at exit 2, *the system will not
+# look at it*, naming neither the `use` nor the length nor the limit.
+#
+# FIX: a source's path is asked of the system's limit before its failure is
+# read (`selfhost/cli/path_room.hero`'s `beyond`, the whole path and each
+# name in it), and one past it is told on its `use` line, the path, its
+# length and the limit, with no repair: no spelling of the line makes the
+# folder shorter. The words are POSIX's, a name of 256 bytes past NAME_MAX's
+# 255; Windows judges the whole path first, which names the checkout's own
+# folder, so the case's words are judged off Windows and its mark on all
+# three (`tests/harness/platform_skips.hero`). No file of that name is in the
+# tree, nor can be on any of the three.
+use amodulewhosefilesnametakestwohundredandfiftysixbytesonemorethanonenameinapathmaytakeonanyofthethreesystemssothesystemwillnotopenitanditsuseistoldsowiththelengthandthelimitandnorepairsincenospellingofthelinemakesitsfoldershorteroritsnameshorteranywhere  #~ unknown_module
+
+function main()
+    print(
+        amodulewhosefilesnametakestwohundredandfiftysixbytesonemorethanonenameinapathmaytakeonanyofthethreesystemssothesystemwillnotopenitanditsuseistoldsowiththelengthandthelimitandnorepairsincenospellingofthelinemakesitsfoldershorteroritsnameshorteranywhere.f()
+    )

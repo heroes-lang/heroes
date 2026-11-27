@@ -59,6 +59,7 @@ static inline int32_t depth_escape(int32_t sig, int32_t how) {
 static int64_t depth_down(int32_t n, int64_t (*cb)(int64_t)) {
     volatile char pad[512];
     pad[0] = (char)n;
+    __asm__ volatile("" ::"r"(pad) : "memory"); /* kept whole at -O2 (step 199p) */
     if (n <= 0) return cb(7) + pad[0];
     return depth_down(n - 1, cb) + pad[0] - pad[0];
 }

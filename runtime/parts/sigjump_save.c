@@ -312,7 +312,8 @@ static void hero_jmp_switch_begins(HeroSignalStack *own, const char *call, uintp
 __attribute__((noinline, no_sanitize("address"))) int(setcontext)(const ucontext_t *ucp) {
     hero_jmp_find();
     HeroSignalStack *own = hero_sig_own();
-    HeroSigSwitch outer = {0, 0, 0, 0, 0};
+    HeroSigSwitch outer;
+    hero_signal_switch_none(&outer);
     if (own != NULL) {
         hero_jmp_switch_begins(own, "setcontext", (uintptr_t)__builtin_frame_address(0), NULL, ucp, &outer);
     }
@@ -341,7 +342,8 @@ __attribute__((noinline, no_sanitize("address"))) HERO_CTX_SWAP_RETURN
 int(swapcontext)(ucontext_t *restrict oucp, const ucontext_t *restrict ucp) {
     hero_jmp_find();
     HeroSignalStack *own = hero_sig_own();
-    HeroSigSwitch outer = {0, 0, 0, 0, 0};
+    HeroSigSwitch outer;
+    hero_signal_switch_none(&outer);
     if (own != NULL) {
         hero_jmp_switch_begins(own, "swapcontext", (uintptr_t)__builtin_frame_address(0), oucp, ucp, &outer);
     }
