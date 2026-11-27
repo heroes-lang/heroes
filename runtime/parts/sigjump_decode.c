@@ -50,15 +50,6 @@ static uintptr_t hero_jmp_context_sp(const ucontext_t *uc) {
 #endif
 }
 
-/* Where that word lies, computed and never read. */
-static uintptr_t hero_jmp_context_sp_at(const ucontext_t *uc) {
-#if defined(__aarch64__)
-    return (uintptr_t)&uc->uc_mcontext.sp;
-#else
-    return (uintptr_t)&uc->uc_mcontext.gregs[REG_RSP];
-#endif
-}
-
 /* What the calibration has taken and verified so far, and where a context
  * `swapcontext`'s probe goes to may run. */
 typedef struct {
@@ -155,6 +146,53 @@ __attribute__((no_sanitize("address"))) static void hero_jmp_calibrate_here(void
                   hero_jmp_try(swap, HERO_JMP_SWAP, cal) && hero_jmp_try_far(swap, HERO_JMP_SWAP, cal);
 }
 
+/* THE C LIBRARY'S START ROUTINE (defect 2868): what runs a context
+ * `makecontext` made once its function has returned, to switch to its
+ * `uc_link`, read from a context made here, on a buffer of this file's, by the
+ * C library's own `makecontext`. Two layouts, each taken only where the
+ * context reads exactly as glibc writes it, its stack pointer inside the
+ * buffer and its link where glibc keeps it (x19 on aarch64, the word `rbx`
+ * names on x86-64): the function at the program counter and the routine as
+ * its return (the word the stack pointer names on x86-64; the link register's
+ * slot on aarch64, a glibc this file was not run on); or the routine at the
+ * program counter and the function in x20, which the routine calls (measured
+ * in Linux arm64, glibc 2.41: `bti c; blr x20; mov x0, x19; cbnz x0,
+ * setcontext; b exit`). Elsewhere 0, and no coroutine's end is ever seen
+ * (`sigjump_make.c`). */
+static void hero_ctx_learn_fn(void) {}
+
+static void hero_ctx_learn_start(void) {
+    static _Alignas(16) unsigned char stack[2048];
+    static ucontext_t made;
+    memset(&made, 0, sizeof made);
+    if (atomic_load_explicit(&hero_ctx_real_get, memory_order_relaxed)(&made) != 0) return;
+    made.uc_stack.ss_sp = stack;
+    made.uc_stack.ss_size = sizeof stack;
+    made.uc_link = &made;
+    atomic_load_explicit(&hero_ctx_real_make, memory_order_relaxed)(&made, hero_ctx_learn_fn, 0);
+    uintptr_t lo = (uintptr_t)stack, hi = lo + sizeof stack, sp = hero_jmp_context_sp(&made), start = 0;
+    int layout = HERO_CTX_RETURNS_TO;
+#if defined(__aarch64__)
+    uintptr_t fn = (uintptr_t)hero_ctx_learn_fn;
+    if (made.uc_mcontext.regs[19] != (uintptr_t)&made || sp <= lo || sp > hi) return;
+    if (made.uc_mcontext.pc == fn) {
+        start = (uintptr_t)made.uc_mcontext.regs[30];
+    } else if (made.uc_mcontext.regs[20] == fn && made.uc_mcontext.regs[30] == 0) {
+        start = (uintptr_t)made.uc_mcontext.pc;
+        layout = HERO_CTX_CALLS_FROM;
+    }
+#else
+    uintptr_t link = (uintptr_t)made.uc_mcontext.gregs[REG_RBX];
+    if ((uintptr_t)made.uc_mcontext.gregs[REG_RIP] != (uintptr_t)hero_ctx_learn_fn) return;
+    if (sp < lo || sp > hi - sizeof(uintptr_t) || link < lo || link > hi - sizeof(uintptr_t)) return;
+    if (*(const uintptr_t *)link != (uintptr_t)&made) return;
+    start = *(const uintptr_t *)sp;
+#endif
+    if (start == 0) return;
+    atomic_store_explicit(&hero_ctx_start_layout, layout, memory_order_relaxed);
+    atomic_store_explicit(&hero_ctx_start_routine, start, memory_order_release);
+}
+
 /* The calibration: every callee-saved register a pattern, the
  * stack pointer's word, a second mangled word and the unmangled ones verified
  * under one key, at frames 0x9230 bytes apart on the thread's own stack AND on
@@ -174,7 +212,10 @@ static void hero_jmp_calibrate(void) {
     if ((HERO_JMP_FORCE_UNCALIBRATED & 1) != 0) cal.key_ok = false;
     if ((HERO_JMP_FORCE_UNCALIBRATED & 2) != 0) cal.ctx_ok = false;
 #endif
-    if (cal.ctx_ok) atomic_store_explicit(&hero_ctx_decoding, 1, memory_order_release);
+    if (cal.ctx_ok) {
+        atomic_store_explicit(&hero_ctx_decoding, 1, memory_order_release);
+        hero_ctx_learn_start();
+    }
     if (!cal.key_ok || !cal.have) return;
     atomic_store_explicit(&hero_jmp_key, cal.key, memory_order_relaxed);
     atomic_store_explicit(&hero_jmp_decoding, 1, memory_order_release);
@@ -186,10 +227,6 @@ static uintptr_t hero_jmp_sp_of(const struct __jmp_buf_tag *env) {
     return 0;
 }
 static uintptr_t hero_jmp_context_sp(const ucontext_t *uc) {
-    (void)uc;
-    return 0;
-}
-static uintptr_t hero_jmp_context_sp_at(const ucontext_t *uc) {
     (void)uc;
     return 0;
 }

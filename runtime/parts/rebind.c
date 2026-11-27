@@ -121,10 +121,11 @@
  * its own; an interposer's own installs; a C++ exception out of a handler; a
  * save made where these files do not look that a later jump then resumes
  * after its handler was left on a stack other than the alternate one; a
- * coroutine left by a switch these files never see that saves into another
- * context than the one it was switched to, leaving that one as it was, which
- * is judged ended (`rebind_entries.c`, the life of a range; defects
- * d-lane-d2745-1 and 2851). Panel 255's R3 residue `rr_2`, a handler left by
+ * context a switch these files never see enters first, whose coroutine's end
+ * is then never seen, so its range, once entered, stays so
+ * (`rebind_entries.c`, the life of a range; defect 2868: until then a
+ * coroutine yielding by such a switch, saving into another context than the
+ * one it was switched to, was judged ended while alive). Panel 255's R3 residue `rr_2`, a handler left by
  * a jump and then landed in again from a coroutine on another range, is
  * reached since defect 2855 (step 199d): the frames a jump leaves are kept as
  * a span, and a landing inside them is that handler re-entered

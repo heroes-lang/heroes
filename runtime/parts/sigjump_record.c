@@ -53,41 +53,6 @@
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 
-/* The stack-pointer word of the context at `context`, copied by the kernel
- * wherever it is mapped, so a context given back since is an answer and never
- * a fault (defect 2850: a coroutine the C library starts through `uc_link` is
- * judged ended by its context naming what it named when the swap began);
- * false where no context field decodes or the kernel refuses the copy. */
-static bool hero_jmp_context_word(const void *context, uintptr_t *word) {
-    uintptr_t at = context != NULL ? hero_jmp_context_sp_at((const ucontext_t *)context) : 0;
-    if (at == 0) return false;
-    struct iovec into = {word, sizeof *word};
-    struct iovec from = {(void *)at, sizeof *word};
-    return process_vm_readv(getpid(), &into, 1, &from, 1, 0) == (ssize_t)sizeof *word;
-}
-
-/* Whether the coroutine a `swapcontext` switched to may still be alive once
- * the switch has returned, by the context it switched to: a coroutine that
- * yields saves itself there, by a save this runtime may never see (a switch
- * written in assembly, or found by walking an image's symbol table by hand),
- * so a stack pointer other than `entered`, the one it named at the switch, is
- * one witness of its life beside the switches made from its range
- * (`sigentries.c`). Copied by the kernel wherever the context is mapped
- * (`hero_jmp_context_word`), never loaded, so a context given back since is an
- * answer and never a fault (defect d-lane-d2745-1); and where nothing can be
- * read, or the swap returned on another thread, nothing proves the coroutine
- * ended, so it is held alive: a told refusal at worst. Until defect 2851 a
- * context that did not provably live (a heap block, a mapping) was not read
- * and its coroutine was judged ended, so one that yielded by a switch the
- * runtime never sees, saving into its heap context, was judged gone, and a
- * handler's jump into it, on a stack carved from the thread's own, ran the
- * program's function inside the signal. */
-static bool hero_jmp_context_moved(HeroSignalStack *own, const ucontext_t *ucp, uintptr_t entered) {
-    uintptr_t word = 0;
-    if (own == NULL || hero_sig_own() != own || !hero_jmp_context_word(ucp, &word)) return true;
-    return word != entered;
-}
-
 /* FNV-1a over the buffer's bytes, odd, so 0 can mean not yet read and
  * `HERO_JMP_UNREAD` a buffer that could not be read. The bytes are copied by
  * the kernel (`process_vm_readv` of this process), never loaded by this

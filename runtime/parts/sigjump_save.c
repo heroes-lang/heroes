@@ -249,8 +249,13 @@ static void hero_jmp_switch_begins(HeroSignalStack *own, const char *call, uintp
     hero_signal_switch_begin(own, call, &next, prev);
 }
 
-/* A switch made from this frame leaves the range it lies on, if a swap into
- * that range waits to return (`sigentries.c`, the life of a range). No
+/* `sigjump_make.c`: a context `makecontext` made, about to run first, has
+ * its function's return sent through `hero_ctx_end` (defect 2868). */
+static void hero_ctx_watch_end(const ucontext_t *ucp);
+
+/* A `setcontext` into a context `makecontext` made, that nothing has run,
+ * sends its function's return through `hero_ctx_end` first, so its range's
+ * end is seen (`sigentries.c`, the life of a range). No
  * redzones in this frame (defect 2853, `parts/rebind_jump.c`'s reason): what
  * it judges runs in `hero_jmp_set`'s, which returns before the switch, and
  * what the switch leaves is cleared as a jump's is (`hero_jmp_leaving`). The
@@ -265,8 +270,8 @@ __attribute__((noinline, no_sanitize("address"))) int(setcontext)(const ucontext
     if (own != NULL) {
         hero_jmp_switch_begins(own, "setcontext", (uintptr_t)__builtin_frame_address(0), NULL, ucp, &outer);
     }
-    hero_sig_range_left(hero_jmp_below());
     hero_jmp_set(ucp);
+    if (!hero_ctx_recording()) hero_ctx_watch_end(ucp);
     hero_jmp_leaving();
     int r = atomic_load_explicit(&hero_ctx_real_set, memory_order_relaxed)(ucp);
     if (own != NULL) hero_signal_switch_back(own, &outer, (uintptr_t)__builtin_frame_address(0));
@@ -278,12 +283,11 @@ __attribute__((noinline, no_sanitize("address"))) int(setcontext)(const ucontext
  * in its own frame, and only the entries it marked are released, by serial,
  * when the swap returns here (or fails). The target is judged only for a
  * landing in frames already left (rule 6). The C library saves into `oucp` at
- * the call below and the other context returns here through it. Once the
- * switch has returned the context switched to is copied by the kernel
- * wherever it is mapped, never loaded (defects d-lane-d2745-1 and 2851), a
- * context that cannot be read proving no end: the end of a range's
- * coroutine is what the switches made from it while this one waited say,
- * with that word (`hero_sig_range_returned`). It carries what the C
+ * the call below and the other context returns here through it. A context
+ * `makecontext` made, that nothing has run, has its function's return sent
+ * through `hero_ctx_end` first, so its range's end is seen (defect 2868);
+ * nothing of the context switched to is read once the switch has returned
+ * (defect d-lane-d2745-1: the program may have given it back). It carries what the C
  * library's declaration writes after its parameters (`HERO_CTX_SWAP_RETURN`,
  * `sigjump.c`), written before it, where a definition takes attributes. */
 __attribute__((noinline, no_sanitize("address"))) HERO_CTX_SWAP_RETURN
@@ -298,10 +302,6 @@ int(swapcontext)(ucontext_t *restrict oucp, const ucontext_t *restrict ucp) {
     uint64_t marks[HERO_SIG_DEPTH];
     unsigned gens[HERO_SIG_DEPTH];
     int n = 0;
-    int watched = -1;
-    unsigned seq = 0;
-    uintptr_t entered = 0;
-    hero_sig_range_left((uintptr_t)__builtin_frame_address(0));
     hero_sig_relived(own, (uintptr_t)__builtin_frame_address(0));
     hero_sig_saved_at(own, (uintptr_t)__builtin_frame_address(0));
     if (own != NULL && oucp != NULL && ucp != NULL) {
@@ -311,8 +311,6 @@ int(swapcontext)(ucontext_t *restrict oucp, const ucontext_t *restrict ucp) {
         bool known = field;
         if (field) {
             hero_sig_range_entered(t);
-            watched = hero_sig_range_watch(t, &seq);
-            entered = t;
         } else {
             known = hero_jmp_switch_target(own, ucp, hero_sig_range_switched(ucp), &t, &back);
         }
@@ -339,16 +337,9 @@ int(swapcontext)(ucontext_t *restrict oucp, const ucontext_t *restrict ucp) {
             }
         }
     }
+    if (!hero_ctx_recording()) hero_ctx_watch_end(ucp);
     int r = atomic_load_explicit(&hero_ctx_real_swap, memory_order_relaxed)(oucp, ucp);
     if (own != NULL) hero_signal_switch_back(own, &outer, (uintptr_t)__builtin_frame_address(0));
-    /* Back in this frame: where no switch was made from the range entered
-     * and the context did not move, its coroutine returned through `uc_link`
-     * and the range holds no frames of it any more (defect 2706,
-     * `sigentries.c`). */
-    if (watched >= 0) {
-        bool moved = hero_jmp_context_moved(own, ucp, entered);
-        hero_sig_range_returned(watched, seq, (uintptr_t)__builtin_frame_address(0), r == 0, moved);
-    }
     if (n > 0) {
         for (int j = 0; j < n; j += 1) {
             for (int i = 0; i < own->depth; i += 1) {

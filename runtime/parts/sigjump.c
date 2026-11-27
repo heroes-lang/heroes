@@ -73,9 +73,11 @@
  * a handler left by a switch or a jump this file never sees (an inline
  * `__builtin_longjmp`, hand-written assembly, a C++ exception or
  * `_Unwind_*`), which keeps its entry and is told in words that name it; a
- * coroutine left by such a switch that saves into another context than the
- * one it was switched to, leaving that one as it was, which is judged ended
- * (`sigentries.c`, the life of a range; defects d-lane-d2745-1 and 2851).
+ * context such a switch enters first, whose coroutine's end is then never
+ * seen, so its range, once entered, stays so (`sigentries.c`, the life of a
+ * range; defect 2868: until then a coroutine yielding by such a switch, saving
+ * into another context than the one it was switched to, was judged ended
+ * while alive).
  * Panel 255's R3 residue `rr_2`, a handler left by a jump and landed in again
  * from a coroutine on another range, is reached since defect 2855 (step
  * 199d): the frames a jump leaves are kept as a span, and a landing inside
@@ -203,6 +205,17 @@ static void hero_jmp_find(void) {
 static _Atomic int hero_jmp_decoding = 0;
 static _Atomic int hero_ctx_decoding = 0;
 static _Atomic uintptr_t hero_jmp_key = 0;
+/* The C library's start routine, which runs a context `makecontext` made once
+ * its function has returned (`sigjump_decode.c`, defect 2868): 0 where it was
+ * not taken; and how the context reaches it, `HERO_CTX_RETURNS_TO` the
+ * function returning into it (the layout this file reads on x86-64) or
+ * `HERO_CTX_CALLS_FROM` it calling the function from the context's own start
+ * (glibc 2.41 on aarch64, measured: the program counter names it, x20 the
+ * function). Written once, before `main`. */
+#define HERO_CTX_RETURNS_TO 1
+#define HERO_CTX_CALLS_FROM 2
+static _Atomic uintptr_t hero_ctx_start_routine = 0;
+static _Atomic int hero_ctx_start_layout = 0;
 
 int hero_signal_jump_route(void);
 int hero_signal_jump_route(void) {

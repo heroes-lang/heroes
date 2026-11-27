@@ -108,47 +108,45 @@ static _Atomic int hero_sig_stack_any = 0;
 /* THE LIFE OF A RANGE (defect 2706). A range `makecontext` was given may hold a
  * coroutine's frames only between two events this file sees: a switch INTO it
  * (a `swapcontext` or `setcontext` whose target lies there) and the end of that
- * switch's coroutine. The end is seen by a `swapcontext` into the range that
- * returns while no `swapcontext` or `setcontext` was made FROM the range since
- * it began: a coroutine leaves its range alive only by such a switch (a yield,
- * saving into the context it was switched to or into any other, or a
- * `setcontext` that abandons frames a buffer may still name), and dead only
- * by returning through `uc_link`, which the C library makes unseen. The
- * context switched to is a second witness, copied after the switch by the
- * kernel wherever it is mapped (`hero_jmp_context_moved`): a yield through a
- * switch this file never sees still moves its stack pointer, and a context
- * that cannot be read proves no end (defect 2851). Until defect
- * d-lane-d2745-1 that word was loaded wherever the context lay, and a
- * coroutine that gave its context back crashed the program inside the
- * runtime; and it was the only witness, so a yield saving into another
- * context than the one switched to was judged an end; from then until defect
- * 2851 it was read only where the context provably lived, and a heap
- * context's coroutine yielding unseen was judged ended. A range no switch entered, or whose coroutine ended,
+ * switch's coroutine, which is its function returning. The C library sends
+ * that return into its own start routine, which switches to the context's
+ * `uc_link` unseen; so at the first switch this file sees into a context
+ * `makecontext` made and nothing has run yet, the context's return is sent
+ * through `hero_ctx_end` first (`sigjump_make.c`), which tells the range its
+ * coroutine ended (`hero_sig_range_ended`) and goes on into the start routine.
+ * A coroutine leaves its range alive by any switch or jump, seen or not, and
+ * dead only by that return: no absence of a witness is read as an end (defect
+ * 2868). Until then the end was judged where a swap into the range returned
+ * with no switch made from the range meanwhile and the context switched to
+ * not moved, which a yield by a switch this file never sees, saving into
+ * another context than the one it was switched to, also leaves: the coroutine
+ * was judged ended while alive, and a handler's jump into it, or a handler on
+ * its stack leaving by a jump with a save made inside it, ran the program's
+ * function while the handler stood (`sf_0_1` and `sf_1_1` on Linux arm64,
+ * lane sig-family-3). A range no switch entered, or whose coroutine ended,
  * holds no coroutine's frames: a save point in it was made by the thread's own
  * code in memory a helper's returned frame once lent `makecontext` (panel
  * 257's `fp3` and the critic's `n6`), and a jump to it is judged on the stack
  * it lies on, the thread's own, where a target above a handler leaves it. A
- * switch into the range clears its end again. A coroutine left by a switch
- * this file never sees that saves into another context than the one it was
- * switched to, leaving that one as it was, is judged ended: said in
- * `sigjump.c`'s module doc.
+ * switch into the range clears its end again. A context that a switch this
+ * file never sees enters first keeps the C library's return, so its
+ * coroutine's end is never seen: its range, once entered, stays so, a told
+ * refusal at worst.
  *
  * A COROUTINE THE C LIBRARY STARTS THROUGH ANOTHER'S `uc_link` (defect 2850)
- * is entered by no switch this file sees: when the coroutine of a range ends,
- * the C library itself switches to the context its `uc_link` named, which may
- * be one `makecontext` was handed for another range. So the link is learned
- * where `makecontext` reads it (`hero_sig_stack_link`), and a range whose
- * coroutine is entered holds every range down its chain of links entered with
- * it, a range made after the context naming it as well: a coroutine started
- * that way may hold frames from the moment its linker may end. Its end is seen
- * where the swap into the first range of the chain returns: every range down
- * the chain from which no switch was made while the swap waited, and whose
- * context still names the stack pointer it named when the swap began (read
- * by the kernel, `hero_jmp_context_word`), ended, until the first that did
- * not; one whose context cannot be read stays entered. Until this defect such
- * a range was never entered, so a handler's jump into its coroutine, on a
- * stack carved from the thread's own, ran the program's function inside the
- * signal.
+ * is entered by no switch the program makes: when the coroutine of a range
+ * ends, the C library itself switches to the context its `uc_link` named,
+ * which may be one `makecontext` was handed for another range. So the link is
+ * learned where `makecontext` reads it (`hero_sig_stack_link`), and a range
+ * whose coroutine is entered holds every range down its chain of links
+ * entered with it, a range made after the context naming it as well: a
+ * coroutine started that way may hold frames from the moment its linker may
+ * end. Where the linker's end is seen (`hero_ctx_end`), the context it links
+ * to is the next switch's target, so its return is sent through
+ * `hero_ctx_end` too and the range it lands on entered; each range of the
+ * chain then ends where its own function returns. Until defect 2850 such a
+ * range was never entered, so a handler's jump into its coroutine, on a stack
+ * carved from the thread's own, ran the program's function inside the signal.
  *
  * WHERE CONTEXTS FALL TO ROUTE A (defect 2745) no switch's target is read and
  * no coroutine's end is seen, so a range is HELD from its `makecontext` on:
@@ -160,22 +158,11 @@ static _Atomic int hero_sig_stack_any = 0;
 #define HERO_SIG_RANGE_ENTERED 1
 #define HERO_SIG_RANGE_ENDED 2
 #define HERO_SIG_RANGE_HELD 4
-/* A switch was made from the range while a swap into it waited to return. */
-#define HERO_SIG_RANGE_LEFT 8
 static _Atomic int hero_sig_stack_state[HERO_SIG_STACKS];
-/* How many swaps into a range wait to return: only while one does is a
- * switch asked which range it is made from. */
-static _Atomic int hero_sig_watching = 0;
 static _Atomic uintptr_t hero_sig_stack_ctx[HERO_SIG_STACKS];
 /* The context each range's `uc_link` named when `makecontext` was handed it
- * (0 for none), and the stack pointer each context down a watched chain named
- * when the swap began (0 where it could not be read). */
+ * (0 for none). */
 static _Atomic uintptr_t hero_sig_stack_link[HERO_SIG_STACKS];
-static _Atomic uintptr_t hero_sig_stack_start[HERO_SIG_STACKS];
-
-/* `sigjump_record.c`: the stack-pointer word of the context at `context`,
- * read by the kernel wherever it is mapped; false where it cannot be read. */
-static bool hero_jmp_context_word(const void *context, uintptr_t *word);
 
 static void hero_sig_stack_put(int i, uintptr_t lo, uintptr_t hi) {
     atomic_fetch_add(&hero_sig_stack_seq[i], 1);
@@ -214,7 +201,6 @@ void hero_sig_known_stack(const void *context, bool held) {
     atomic_store_explicit(&hero_sig_stack_state[at], state, memory_order_relaxed);
     atomic_store(&hero_sig_stack_ctx[at], (uintptr_t)context);
     atomic_store(&hero_sig_stack_link[at], (uintptr_t)uc->uc_link);
-    atomic_store(&hero_sig_stack_start[at], 0);
     hero_sig_stack_put((int)at, lo, hi);
     atomic_store_explicit(&hero_sig_stack_any, 1, memory_order_release);
     atomic_store(&hero_sig_stack_writing, 0);
@@ -351,68 +337,13 @@ static void hero_sig_range_entered(uintptr_t at) {
     hero_sig_range_links(i);
 }
 
-/* A `swapcontext` or `setcontext` made from a frame at `frame`: while a swap
- * into a range waits to return, the range holding the frame is marked left by
- * a switch, so the swap's return proves no end of its coroutine. */
-static void hero_sig_range_left(uintptr_t frame) {
-    if (atomic_load_explicit(&hero_sig_watching, memory_order_acquire) == 0) return;
+/* The coroutine of the range holding `sp` returned from its function, seen by
+ * `hero_ctx_end` on that range's stack (defect 2868): the range holds no
+ * frames of it any more. */
+static void hero_sig_range_ended(uintptr_t sp) {
     uintptr_t lo = 0, hi = 0;
-    int i = hero_sig_range_slot(frame, &lo, &hi);
-    if (i >= 0) atomic_fetch_or_explicit(&hero_sig_stack_state[i], HERO_SIG_RANGE_LEFT, memory_order_relaxed);
-}
-
-/* A `swapcontext` whose target's stack pointer `at` lies on a known range,
- * entered just now, begins to wait: the range's slot and sequence word, -1
- * where no range holds `at` (nothing is then watched). */
-static int hero_sig_range_watch(uintptr_t at, unsigned *seq) {
-    uintptr_t lo = 0, hi = 0;
-    int i = hero_sig_range_slot(at, &lo, &hi);
-    if (i < 0) return -1;
-    *seq = atomic_load(&hero_sig_stack_seq[i]);
-    atomic_fetch_and_explicit(&hero_sig_stack_state[i], ~HERO_SIG_RANGE_LEFT, memory_order_relaxed);
-    /* Down its chain of links, what each context names now (defect 2850). */
-    int j = i;
-    for (int step = 0; step < HERO_SIG_STACKS; step += 1) {
-        int next = hero_sig_slot_of(atomic_load(&hero_sig_stack_link[j]));
-        if (next < 0 || next == i) break;
-        uintptr_t word = 0;
-        atomic_fetch_and_explicit(&hero_sig_stack_state[next], ~HERO_SIG_RANGE_LEFT, memory_order_relaxed);
-        atomic_store(&hero_sig_stack_start[next],
-                     hero_jmp_context_word((const void *)atomic_load(&hero_sig_stack_ctx[next]), &word) ? word : 0);
-        j = next;
-    }
-    atomic_fetch_add_explicit(&hero_sig_watching, 1, memory_order_release);
-    return i;
-}
-
-/* The swap watching slot `i` returned in its frame at `here` (`ok`: the C
- * library's switch succeeded; `moved`: the context it switched to, copied by
- * the kernel, names another stack pointer since, or cannot be read). Its coroutine ended
- * where the slot still names the range it named, the swap does not run on
- * that range itself, no switch was made from the range since the swap began,
- * and the context did not move: the coroutine returned through `uc_link`. */
-static void hero_sig_range_returned(int i, unsigned seq, uintptr_t here, bool ok, bool moved) {
-    atomic_fetch_sub_explicit(&hero_sig_watching, 1, memory_order_release);
-    if (!ok || moved || atomic_load(&hero_sig_stack_seq[i]) != seq) return;
-    uintptr_t lo = atomic_load(&hero_sig_stack_lo[i]), hi = atomic_load(&hero_sig_stack_hi[i]);
-    if (atomic_load(&hero_sig_stack_seq[i]) != seq || hero_sig_holds(lo, hi, here)) return;
-    int state = atomic_load_explicit(&hero_sig_stack_state[i], memory_order_relaxed);
-    if ((state & HERO_SIG_RANGE_LEFT) != 0) return;
-    atomic_fetch_or_explicit(&hero_sig_stack_state[i], HERO_SIG_RANGE_ENDED, memory_order_relaxed);
-    /* The coroutine ended through its `uc_link`: so did each one down the
-     * chain that no switch left and whose context names what it named when the
-     * swap began, until the first that did not (defect 2850). */
-    int j = i;
-    for (int step = 0; step < HERO_SIG_STACKS; step += 1) {
-        int next = hero_sig_slot_of(atomic_load(&hero_sig_stack_link[j]));
-        if (next < 0 || next == i) return;
-        uintptr_t start = atomic_load(&hero_sig_stack_start[next]), word = 0;
-        int was = atomic_load_explicit(&hero_sig_stack_state[next], memory_order_relaxed);
-        if ((was & HERO_SIG_RANGE_LEFT) != 0 || start == 0) return;
-        if (!hero_jmp_context_word((const void *)atomic_load(&hero_sig_stack_ctx[next]), &word) || word != start) return;
-        atomic_fetch_or_explicit(&hero_sig_stack_state[next], HERO_SIG_RANGE_ENDED, memory_order_relaxed);
-        j = next;
-    }
+    int i = hero_sig_range_slot(sp, &lo, &hi);
+    if (i >= 0) atomic_fetch_or_explicit(&hero_sig_stack_state[i], HERO_SIG_RANGE_ENDED, memory_order_relaxed);
 }
 
 /* The alternate stack registered now, where one is. */

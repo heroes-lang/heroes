@@ -1,0 +1,28 @@
+# Fixed 2026-11-27, defect 2868, lane sig-family-3 (step 199s): a helper runs
+# a coroutine on an array of its own frame to its end through `uc_link`, the
+# coroutine entered by `swapcontext`, and returns; the thread then saves a point
+# in frames lying where that array was, a signal comes 200 KiB below it, and
+# the handler saves its own point, then jumps back to the save point, into
+# the call the signal interrupted, which ends it (panel 262's R1); the program
+# is called after.
+# Symptom: none on either platform; this case pins that the end is still
+# seen where the inference that judged it before is gone.
+# Cause: the end of a range's coroutine was judged where a swap into the
+# range returned with no switch made from it meanwhile and the context
+# switched to not moved; a coroutine entered by `setcontext` has no swap to
+# return, so its end was never judged, and its range, carved from the
+# thread's own stack, still read as a coroutine's after it ended.
+# Fix: the end is seen where the coroutine's function returns: at the first
+# switch into a context `makecontext` made, the C library's start routine is
+# made to pass through the runtime's own (`hero_ctx_end` or `hero_ctx_call`
+# on glibc, `hero_rebind_ctx_tramp` on Darwin), which tells the range.
+# Correct: MUST RUN.
+extern "fixedbugs-2868-a-coroutine-run-to-its-end-whose-stack-a-handler-jumps-back-onto.h"
+    function re_run(how: i32, cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("re_0: ", re_run(how: 0, cb: answer))
