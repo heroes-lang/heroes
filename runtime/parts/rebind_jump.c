@@ -179,13 +179,13 @@ static bool hero_rebind_switch_target(HeroSignalStack *own, const void *uc, int 
 /* The switch of contexts, of `call`, from `from` (none for `setcontext`) to
  * `to`, that the wrapper whose frame is `frame` begins: refused where the
  * handler the thread runs now interrupted a switch naming either, else noted
- * until it is seen to end, the one it is made inside of kept in `prev`
- * (defect 2871, `parts/sigguard.c`). */
+ * until it is seen to end, its note opened by the wrapper before anything
+ * else (defect 2871, panel 263's gap, `parts/sigguard.c`). */
 static void hero_rebind_switch_begins(HeroSignalStack *own, const char *call, uintptr_t frame, const void *from,
-                                      const void *to, HeroSigSwitch *prev) {
+                                      const void *to) {
     HeroSigSwitch next = {frame, 0, 0, (uintptr_t)from, (uintptr_t)to};
     if (!hero_rebind_target_range(own, frame, &next.lo, &next.hi)) next.lo = next.hi = 0;
-    hero_signal_switch_begin(own, call, &next, prev);
+    hero_signal_switch_begin(own, call, &next);
 }
 
 /* A jump of the setjmp family to `env`: its target decoded at every jump,
@@ -274,14 +274,18 @@ __attribute__((noinline)) static void hero_rebind_set(const void *uc) {
  * the program may have given it back). */
 __attribute__((noinline, no_sanitize("address"))) static int hero_rebind_swapcontext(void *from, const void *to) {
     HeroSignalStack *own = hero_rebind_own();
+    HeroSigSwitch outer;
+    if (own != NULL) {
+        hero_signal_switch_open(own, (uintptr_t)__builtin_frame_address(0), (uintptr_t)from, (uintptr_t)to, &outer);
+    } else {
+        hero_signal_switch_none(&outer);
+    }
     uint64_t marks[HERO_SIG_DEPTH];
     unsigned gens[HERO_SIG_DEPTH];
     int n = 0;
     uintptr_t entered = 0;
-    HeroSigSwitch outer;
-    hero_signal_switch_none(&outer);
     if (own != NULL) {
-        hero_rebind_switch_begins(own, "swapcontext", (uintptr_t)__builtin_frame_address(0), from, to, &outer);
+        hero_rebind_switch_begins(own, "swapcontext", (uintptr_t)__builtin_frame_address(0), from, to);
     }
     hero_rebind_relived(own, (uintptr_t)__builtin_frame_address(0));
     hero_rebind_saved_at(own, (uintptr_t)__builtin_frame_address(0));
@@ -370,9 +374,11 @@ __attribute__((noreturn, no_sanitize("address"))) static void hero_rebind__longj
 __attribute__((noinline, no_sanitize("address"))) static int hero_rebind_setcontext(const void *context) {
     HeroSignalStack *own = hero_rebind_own();
     HeroSigSwitch outer;
-    hero_signal_switch_none(&outer);
     if (own != NULL) {
-        hero_rebind_switch_begins(own, "setcontext", (uintptr_t)__builtin_frame_address(0), NULL, context, &outer);
+        hero_signal_switch_open(own, (uintptr_t)__builtin_frame_address(0), 0, (uintptr_t)context, &outer);
+        hero_rebind_switch_begins(own, "setcontext", (uintptr_t)__builtin_frame_address(0), NULL, context);
+    } else {
+        hero_signal_switch_none(&outer);
     }
     hero_rebind_set(context);
     if (hero_rebind_decoding(HERO_REBIND_CTX) && hero_rebind_ctx_valid(context)) hero_rebind_watch_end(context);

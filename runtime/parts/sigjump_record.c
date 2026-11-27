@@ -68,6 +68,16 @@
  * UNREAD: a told refusal at its jump. */
 #define HERO_JMP_UNREAD 2
 #define HERO_JMP_PRINT_MAX 512
+
+/* One word at `at` for the stop's walk (`sigguard.c`'s
+ * `hero_signal_in_switch`), copied by the kernel as a fingerprint's bytes are
+ * below, never loaded: while a switch's stack is not yet known the walk is
+ * bounded by the interrupted stack pointer alone. */
+static bool hero_signal_word(uintptr_t at, uintptr_t *word) {
+    struct iovec into = {word, sizeof *word};
+    struct iovec from = {(void *)at, sizeof *word};
+    return process_vm_readv(getpid(), &into, 1, &from, 1, 0) == (ssize_t)sizeof *word;
+}
 static uint64_t hero_jmp_fingerprint(uintptr_t buf, uint32_t size) {
     unsigned char copy[HERO_JMP_PRINT_MAX];
     if (size > sizeof copy) return HERO_JMP_UNREAD;

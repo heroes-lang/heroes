@@ -563,11 +563,13 @@ static _Thread_local HeroSignalStack hero_signal_stack;
  * that interrupted one undefined.
  *
  * So each wrapper of `swapcontext` and `setcontext` notes the switch it
- * begins, its own frame, the stack that frame lies on and the two contexts,
- * until the switch is seen to end (`parts/rebind_jump.c`,
- * `parts/sigjump_save.c`); a delivery whose interrupted frame records reach
- * that frame within HERO_SIG_SWITCH_WALK records interrupted the switch
- * (each record read lies on that stack below the frame), and its entry keeps
+ * begins, first of all its own frame and the two contexts, then the stack
+ * that frame lies on once it has looked it up, until the switch is seen to
+ * end (`parts/rebind_jump.c`, `parts/sigjump_save.c`); a delivery whose
+ * interrupted frame records reach that frame within HERO_SIG_SWITCH_WALK
+ * records interrupted the switch (each record read lies on that stack below
+ * the frame, or, while the stack is not yet known, between the interrupted
+ * stack pointer and the frame, copied by the kernel), and its entry keeps
  * the two contexts; and a `swapcontext` or `setcontext` its handler then
  * calls naming either of them stops the program before it switches, saying
  * why. A handler's switch naming other contexts runs, as it ran before: no
@@ -588,8 +590,14 @@ static _Thread_local HeroSignalStack hero_signal_stack;
  * timer and then switches, its current thread already the first), whose
  * handler interrupts the program's own code and saves the thread that is
  * running into another's context, a race of the program's own that C alone
- * dies of too (forced: Bus error on this Mac, SIGTRAP as C alone, 3 of 3); and
- * a handler installed where no route stands. */
+ * dies of too (forced: Bus error on this Mac, SIGTRAP as C alone, 3 of 3); the
+ * same race wherever the signal lands after the program chose the context it
+ * will switch to and before its wrapper has noted the switch, in the program's
+ * own code or in the wrapper's first instructions, where no runtime has seen a
+ * switch begin (`gt.h` of panel 263 with that window of its own widened by
+ * a loop of 2000, Linux arm64, `-O0`: 20 runs of 20 died of SIGSEGV with
+ * nothing said; lane sig-family-3, step 199t); and a handler installed where
+ * no route stands. */
 #define HERO_SIG_SWITCH_WALK 8
 
 /* A wrapper's own note of the switch it is made inside of, empty, in the
@@ -622,13 +630,42 @@ static void hero_signal_switch_none(HeroSigSwitch *note) {
     note->to = 0;
 }
 
+/* The switch a wrapper begins, noted as the first thing the wrapper does: its
+ * frame `frame` and its two contexts, the stack that frame lies on not yet
+ * known (`lo` and `hi` 0, which `hero_signal_in_switch` then reads by the
+ * kernel), the switch it is made inside of kept in `prev`, whose shadow is
+ * cleared first as `hero_signal_switch_none` clears it. Until panel 263's gap
+ * (d-p263-switch-stop-gap) the note was written only once the wrapper had
+ * looked its frame's stack up among the ranges `makecontext` handed out and
+ * asked every entry whether the switch must stop, and a delivery landing in
+ * those steps found no switch noted: its handler's switch went through, and
+ * the program died of the race with nothing said, or the runtime's next read
+ * through a frame the race had reused faulted in words that blame a handle
+ * (Linux arm64, `gt.hero` mode 0, `main` at beecb6c30: 7 runs of 100 at `-O0`,
+ * the dying runs' deliveries read from their cores in `hero_sig_range_slot`
+ * and in the stop's own loop; 7 of 50 under `--sanitize`). */
+static void hero_signal_switch_open(HeroSignalStack *own, uintptr_t frame, uintptr_t from, uintptr_t to,
+                                    HeroSigSwitch *prev) {
+    hero_signal_switch_none(prev);
+    *prev = own->switching;
+    own->switching.frame = 0;
+    atomic_signal_fence(memory_order_seq_cst);
+    own->switching.lo = 0;
+    own->switching.hi = 0;
+    own->switching.from = from;
+    own->switching.to = to;
+    atomic_signal_fence(memory_order_seq_cst);
+    own->switching.frame = frame;
+}
+
 /* The switch `next` begins, the wrapper of `call` asking: refused where the
  * handler the thread runs now interrupted a switch and `next` names either
  * context of it, which the C library has yet to finish saving or loading;
- * else noted, the switch it was made inside of kept in `prev`. A switch
+ * else its note, opened by `hero_signal_switch_open`, takes the stack its
+ * frame lies on, `lo` before `hi` (a delivery between them reads the stack as
+ * not yet known), or is dropped where that stack is not known. A switch
  * naming other contexts is no harm the runtime sees, and runs. */
-static void hero_signal_switch_begin(HeroSignalStack *own, const char *call, const HeroSigSwitch *next,
-                                     HeroSigSwitch *prev) {
+static void hero_signal_switch_begin(HeroSignalStack *own, const char *call, const HeroSigSwitch *next) {
     for (int i = own->depth - 1; i >= 0; i -= 1) {
         const HeroSigEntry *e = &own->entries[i];
         if (e->dead) continue;
@@ -649,15 +686,13 @@ static void hero_signal_switch_begin(HeroSignalStack *own, const char *call, con
         };
         hero_signal_stop(said, sizeof said / sizeof said[0]);
     }
-    *prev = own->switching;
-    own->switching.frame = 0;
-    atomic_signal_fence(memory_order_seq_cst);
-    own->switching.lo = next->lo;
-    own->switching.hi = next->hi;
-    own->switching.from = next->from;
-    own->switching.to = next->to;
-    atomic_signal_fence(memory_order_seq_cst);
-    own->switching.frame = next->hi > next->lo && next->frame >= next->lo && next->frame < next->hi ? next->frame : 0;
+    if (next->hi > next->lo && next->frame >= next->lo && next->frame < next->hi) {
+        own->switching.lo = next->lo;
+        atomic_signal_fence(memory_order_seq_cst);
+        own->switching.hi = next->hi;
+    } else {
+        own->switching.frame = 0;
+    }
 }
 
 /* The switch noted has ended, its wrapper's frame `frame` running again: the
@@ -688,10 +723,18 @@ static void hero_signal_switch_remade(HeroSignalStack *own, uintptr_t lo, uintpt
     if (own->switching.frame != 0 && lo < own->switching.hi && own->switching.lo < hi) own->switching.frame = 0;
 }
 
+/* `sigjump_record.c`, `rebind_record.c`: one word at `at`, copied by the
+ * kernel, never loaded; false where the kernel refuses the copy. */
+static bool hero_signal_word(uintptr_t at, uintptr_t *word);
+
 /* Whether the code a delivery interrupted, its context `context`, is inside
  * the switch noted: its frame pointer is the noted frame, or links up to it
  * within HERO_SIG_SWITCH_WALK records, each read on the noted stack below the
- * noted frame and above the one before. The words read are other frames',
+ * noted frame and above the one before. While the note's stack is not yet
+ * known (its wrapper's first steps) the records are read between the
+ * interrupted stack pointer and the noted frame, each word copied by the
+ * kernel (`hero_signal_word`): a word a race left wrong is an answer, never a
+ * fault. The words read are other frames',
  * whose shadow AddressSanitizer may hold poisoned for their own locals, so
  * the walk is not instrumented: instrumented, it was told as an
  * `unknown-crash` inside the runtime under `--sanitize` at `-O2`, where a
@@ -704,10 +747,17 @@ __attribute__((no_sanitize("address"))) static bool hero_signal_in_switch(const 
     if (f == 0 || context == NULL) return false;
     uintptr_t pc = 0, fp = 0, sp = 0, lr = 0;
     hero_stack_regs(context, &pc, &fp, &sp, &lr);
+    bool known = own->switching.hi > own->switching.lo;
+    uintptr_t lo = known ? own->switching.lo : sp, hi = known ? own->switching.hi : f + 16;
     for (int i = 0; i < HERO_SIG_SWITCH_WALK; i += 1) {
         if (fp == f) return true;
-        if (fp < own->switching.lo || fp > f || fp + 16 > own->switching.hi || (fp & 7) != 0) return false;
-        uintptr_t next = *(const uintptr_t *)fp;
+        if (fp < lo || fp > f || fp + 16 > hi || (fp & 7) != 0) return false;
+        uintptr_t next = 0;
+        if (known) {
+            next = *(const uintptr_t *)fp;
+        } else if (!hero_signal_word(fp, &next)) {
+            return false;
+        }
         if (next <= fp) return false;
         fp = next;
     }

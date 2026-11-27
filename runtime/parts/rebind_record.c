@@ -63,6 +63,17 @@ static HeroRebindRecord *hero_rebind_probe(size_t home, int i) {
     return &hero_rebind_records[(home + (size_t)i) & (HERO_REBIND_RECORDS - 1)];
 }
 
+/* One word at `at` for the stop's walk (`sigguard.c`'s
+ * `hero_signal_in_switch`), copied by the kernel as a fingerprint's bytes are
+ * below, never loaded: while a switch's stack is not yet known the walk is
+ * bounded by the interrupted stack pointer alone. */
+static bool hero_signal_word(uintptr_t at, uintptr_t *word) {
+    mach_vm_size_t got = 0;
+    return mach_vm_read_overwrite(mach_task_self(), (mach_vm_address_t)at, sizeof *word,
+                                  (mach_vm_address_t)(uintptr_t)word, &got) == KERN_SUCCESS &&
+           got == sizeof *word;
+}
+
 /* A buffer's fingerprint (rule 3), into `*print`; false where it could not
  * be read. The bytes are copied by the kernel (`mach_vm_read_overwrite` of
  * this task) wherever the buffer is mapped, never loaded by this thread: the

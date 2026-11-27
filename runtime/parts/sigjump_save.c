@@ -240,13 +240,13 @@ __attribute__((no_sanitize("address"))) void __longjmp_chk(struct __jmp_buf_tag 
 /* The switch of contexts, of `call`, from `from` (none for `setcontext`) to
  * `to`, that the wrapper whose frame is `frame` begins: refused where the
  * handler the thread runs now interrupted a switch naming either, else noted
- * until it is seen to end, the one it is made inside of kept in `prev`
- * (defect 2871, `parts/sigguard.c`). */
+ * until it is seen to end, its note opened by the wrapper before anything
+ * else (defect 2871, panel 263's gap, `parts/sigguard.c`). */
 static void hero_jmp_switch_begins(HeroSignalStack *own, const char *call, uintptr_t frame, const void *from,
-                                   const void *to, HeroSigSwitch *prev) {
+                                   const void *to) {
     HeroSigSwitch next = {frame, 0, 0, (uintptr_t)from, (uintptr_t)to};
     if (!hero_sig_target_range(own, frame, &next.lo, &next.hi)) next.lo = next.hi = 0;
-    hero_signal_switch_begin(own, call, &next, prev);
+    hero_signal_switch_begin(own, call, &next);
 }
 
 /* `sigjump_make.c`: a context `makecontext` made, about to run first, has
@@ -263,12 +263,16 @@ static void hero_ctx_watch_end(const ucontext_t *ucp);
  * to this one while it switches (defect 2871); it returns only where it
  * refused the context. */
 __attribute__((noinline, no_sanitize("address"))) int(setcontext)(const ucontext_t *ucp) {
-    hero_jmp_find();
     HeroSignalStack *own = hero_sig_own();
     HeroSigSwitch outer;
-    hero_signal_switch_none(&outer);
     if (own != NULL) {
-        hero_jmp_switch_begins(own, "setcontext", (uintptr_t)__builtin_frame_address(0), NULL, ucp, &outer);
+        hero_signal_switch_open(own, (uintptr_t)__builtin_frame_address(0), 0, (uintptr_t)ucp, &outer);
+    } else {
+        hero_signal_switch_none(&outer);
+    }
+    hero_jmp_find();
+    if (own != NULL) {
+        hero_jmp_switch_begins(own, "setcontext", (uintptr_t)__builtin_frame_address(0), NULL, ucp);
     }
     hero_jmp_set(ucp);
     if (!hero_ctx_recording()) hero_ctx_watch_end(ucp);
@@ -292,12 +296,17 @@ __attribute__((noinline, no_sanitize("address"))) int(setcontext)(const ucontext
  * `sigjump.c`), written before it, where a definition takes attributes. */
 __attribute__((noinline, no_sanitize("address"))) HERO_CTX_SWAP_RETURN
 int(swapcontext)(ucontext_t *restrict oucp, const ucontext_t *restrict ucp) {
-    hero_jmp_find();
     HeroSignalStack *own = hero_sig_own();
     HeroSigSwitch outer;
-    hero_signal_switch_none(&outer);
     if (own != NULL) {
-        hero_jmp_switch_begins(own, "swapcontext", (uintptr_t)__builtin_frame_address(0), oucp, ucp, &outer);
+        hero_signal_switch_open(own, (uintptr_t)__builtin_frame_address(0), (uintptr_t)oucp, (uintptr_t)ucp,
+                                &outer);
+    } else {
+        hero_signal_switch_none(&outer);
+    }
+    hero_jmp_find();
+    if (own != NULL) {
+        hero_jmp_switch_begins(own, "swapcontext", (uintptr_t)__builtin_frame_address(0), oucp, ucp);
     }
     uint64_t marks[HERO_SIG_DEPTH];
     unsigned gens[HERO_SIG_DEPTH];
