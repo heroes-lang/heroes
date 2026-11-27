@@ -185,6 +185,12 @@
  * whose thunk entry begins the count. */
 #include "parts/callback.c"
 
+/* The values a C jump abandons, collected by an unwind of the frames it leaves
+ * and released when the call holding its target returns (panel 258's R2).
+ * Needs callback.c; before the jumps' routes below, whose hooks call it, and it
+ * names `alloc.c`'s raw `malloc`, defined below. */
+#include "parts/unwind.c"
+
 /* No Heroes code inside a signal handler (panel 247's R1, defect 2494): the
  * question every thunk asks first, the delivery's address it is asked against,
  * and the one stop every refusal of a signal's re-entrance ends through, which

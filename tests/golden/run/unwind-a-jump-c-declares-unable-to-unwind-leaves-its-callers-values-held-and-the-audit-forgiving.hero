@@ -1,0 +1,36 @@
+# Panel 258's R2, ratified by the author's reading on 2026-11-27 (decision
+# 2758): the shape that degrades. The callback calls a header's inline helper
+# that jumps by the C library's own `longjmp`, which glibc's `<setjmp.h>`
+# declares `__THROWNL`, a function that cannot unwind: clang then compiles the
+# helper's call, inlined into the callback, as one with no landing pad, and
+# an unwind that walks the callback's frame runs none of its cleanups. Darwin's
+# `<setjmp.h>` declares no such thing, and there the frame is collected as in
+# the cases beside this one.
+# Found by this lane's first Linux arm64 run of its own cases (2026-11-27):
+# the thunk counted its callback unwound, the callback's values were never
+# collected, and the exit audit, no longer forgiving, said `2000 heap blocks
+# still live at exit (a missing decref) — this is a compiler bug` of a correct
+# program, exit 134.
+# What it pins: the unwind's stop finds a frame with cleanups (its language
+# table) none of which ran (no mark of it), and counts a residue, so the audit
+# forgives the program as it did before R2 (`runtime/parts/unwind.c`,
+# `hero_unwind_stop`): no false word, exit 0, whatever the platform's header
+# says of `longjmp`.
+extern "unwind-catch.h"
+    function uw_guard(cb: (function(i64) -> i64), n: i64) -> i64
+    function uw_throw_direct()
+
+function body(n: i64) -> i64
+    held = f"held by the callback, round {n}"
+    words: [str] = [held, "and another"]
+    uw_throw_direct()
+    return words.len()
+
+function main()
+    jumped: i64 @= 0
+
+    for round in range(from: 0, to: 1000)
+        if uw_guard(cb: body, n: round) == -1
+            jumped @ jumped + 1
+
+    print("C jumped over the callback ", jumped, " times, by a jump its header says cannot unwind")
