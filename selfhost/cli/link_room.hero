@@ -1,0 +1,185 @@
+# Where a link stages its output, held to the system's limit on a path
+# (design.md §1.12, §3.1; M-rebel-library step 212a). `cli/link.hero` links
+# into a private folder beside the binary and publishes what the linker
+# wrote there (defect 134); this answers that folder's name and the name of
+# the output inside it, and refuses, in words that name the path and the
+# limit, a link whose binary, PDB or folder no name could fit.
+#
+# **The folder was `<binary>.<pid>-<n>.tmp` and the output inside it the
+# module's name until this step**, so the program's name stood twice in
+# one path. Measured on the Windows box (2026-11-26, `LongPathsEnabled` 0)
+# with a run case named in 134 characters: MSVC's `link.exe`, the CI's,
+# refused the staged output, `LNK1104: cannot open file`, and `lld-link`,
+# the box's own, wrote it, which the runtime's rename then refused with 3;
+# `link.exe` writes 259 characters of whole path and refuses 260
+# (`runtime/parts/fs.c`). So the folder is named by this process's id and
+# number alone, `link.<pid>-<n>.tmp` beside the binary, and holds the
+# program's name once, the module's own, which a linker's message names; and
+# where even that would pass the limit, it holds the longest beginning of
+# the module's name that fits. What the linker wrote is published under the
+# binary's own name all the same (`link_output.published_as`).
+
+use cli/path_room
+use cli/process
+use cli/publish
+use cli/strings
+
+# The private folder and the stem of the output inside it, `stem` and the
+# platform's suffix the output, `stem.pdb` its PDB on Windows.
+record Room
+    stage: str
+    stem: str
+
+# The room a link into `at` needs, for a module named `module`, or the
+# refusal that names the path past the limit, said of `binary`, the path as
+# the author or the build wrote it. Asked before anything is linked.
+function room(at: str, binary: str, module: str, suffix: str) -> Room?
+    whole = path_room.past(path: at, folder: false)
+
+    if whole.len() > 0
+        return refused(binary: binary, what: "its whole path, " + whole + ", so no linker can write it there")
+
+    # The PDB a Windows link publishes beside the binary, under its name
+    # and `.pdb` (`link_output.published_as`).
+    tail = tail_of(suffix)
+
+    if suffix == ".exe"
+        pdb = path_room.past(path: at + ".pdb", folder: false)
+
+        if pdb.len() > 0
+            return refused(binary: binary, what: "the PDB the link writes beside it, " + pdb)
+    stage = stage_of(at)
+    folder = path_room.past(path: stage, folder: true)
+
+    if folder.len() > 0
+        return refused(binary: binary, what: "no folder can be made beside it for the linker's output: " + folder)
+    stage_units = path_room.judged(stage).units
+
+    if stage_units < 0
+        return ok(Room(stage: stage, stem: module))
+    left = path_room.limit(folder: false) - stage_units - 1 - tail
+
+    if left < 1
+        return refused(
+            binary: binary,
+            what: "no name fits in the folder made beside it for the linker's output, " + stage
+        )
+    return ok(Room(stage: stage, stem: kept(name: module, most: left)))
+
+# The room, its folder made. A refusal is said of the binary's path, which
+# is untouched, and not of the private folder, whose name nobody gave
+# (measured: `could not create the directory ro/out.3932-27.tmp`, for an
+# `-o ro/out` in a read-only one), with the reason the failure carries, read
+# at once: asked again it was 0 (defect d-lane-blocking-small2-1).
+function made(at: str, binary: str, module: str, suffix: str) -> Room?
+    held = room(at: at, binary: binary, module: module, suffix: suffix)?
+    folder = process.made_dir(held.stage)
+
+    if folder.is_err()
+        said = publish.untouched(
+            path: binary,
+            what: "no directory could be made beside it for the linker's output" + publish.message_of(folder)
+        )
+        return fail(code: "not_written", msg: publish.message_of(said))
+    return ok(held)
+
+function refused(binary: str, what: str) -> Room?
+    said = publish.untouched(path: binary, what: what + ": a shorter folder, or a shorter name, would fit")
+    return fail(code: "not_written", msg: publish.message_of(said))
+
+# The private folder beside `at`: in the folder that holds it, named by this
+# process's id and a number no other call has had (`publish.private_name`),
+# and by nothing of the binary's own name. The last part ends at `/` or `\`,
+# Windows' two separators; elsewhere a `\` is a byte of a name, and the
+# folder is then a sibling of that name, in the folder that holds it all the
+# same.
+function stage_of(at: str) -> str
+    cut: i64 @= at.len()
+
+    while cut > 0 && at[cut - 1] != '/' && at[cut - 1] != '\\'
+        cut @ cut - 1
+
+    return publish.private_name(at.slice(from: 0, to: cut) + "link")
+
+# How much a staged file takes after its stem: the suffix, and on Windows,
+# where the link writes a PDB as long, `.pdb`'s four.
+function tail_of(suffix: str) -> i64
+    if suffix == ".exe"
+        return 4
+    return suffix.len()
+
+# The longest beginning of `name` of at most `most` bytes, cut at a
+# character: a UTF-8 continuation byte is 0x80 to 0xBF, and a slice may not
+# split one. Bytes, and never fewer units than Windows counts: a character
+# takes one or two UTF-16 units and one to four bytes.
+function kept(name: str, most: i64) -> str
+    if name.len() <= most
+        return name
+    end: i64 @= most
+
+    while end > 0 && name[end] >= 128 && name[end] < 192
+        end @ end - 1
+
+    return name.slice(from: 0, to: end)
+
+## Tests
+
+test "the stage is named by the process alone, beside the binary, whatever separates its folder (d-windows-ci-6-1)"
+    one = stage_of("build/0123456789abcdef/prog.exe")
+    assert strings.starts_with(text: one, prefix: "build/0123456789abcdef/link.")
+    assert strings.ends_with(text: one, suffix: ".tmp")
+    assert !strings.holds(text: one, needle: "prog")
+    assert strings.starts_with(text: stage_of("C:\\out\\app.exe"), prefix: "C:\\out\\link.")
+    assert strings.starts_with(text: stage_of("app"), prefix: "link.")
+    assert stage_of("app") != stage_of("app")
+
+test "the output inside the stage keeps the module's name, or the longest beginning of it that fits (d-windows-ci-6-1)"
+    assert kept(name: "prog", most: 10) == "prog"
+    assert kept(name: "abcdef", most: 3) == "abc"
+    assert kept(name: "aéb", most: 2) == "a"
+    assert kept(name: "aéb", most: 3) == "aé"
+    assert tail_of(".exe") == 4 && tail_of("") == 0
+
+# The program's name once, where the folder of `link_room` stands in the
+# build's own folder: the room holds it whole, and a name past what the
+# system takes in that folder keeps the beginning that fits, its staged
+# output exactly at the limit.
+test "a module's name past the limit is kept to the beginning that fits, and a binary past it is refused naming its path (d-windows-ci-6-1)"
+    suffix = process.exe_suffix()
+    held = room(at: "build/selftest-link-room/p" + suffix, binary: "p", module: "prog", suffix: suffix).must()
+    assert held.stem == "prog"
+    cut = room(
+        at: "build/selftest-link-room/p" + suffix,
+        binary: "p",
+        module: "m".repeat(to_u64(path_room.limit(folder: false)).must()),
+        suffix: suffix
+    ).must()
+    most = path_room.limit(folder: false) - path_room.judged(cut.stage).units - 1 - tail_of(suffix)
+    assert cut.stem.len() == most
+    assert path_room.judged(cut.stage + "/" + cut.stem + suffix).units + tail_of(suffix) - suffix.len() == path_room.limit(folder: false)
+    far = "build/" + "f".repeat(to_u64(path_room.limit(folder: false)).must())
+    said = message(room(at: far, binary: far, module: "prog", suffix: suffix))
+    assert strings.starts_with(text: said, prefix: "cannot write " + far + ": its whole path, ")
+    assert strings.holds(
+        text: said,
+        needle: ", so no linker can write it there: a shorter folder, or a shorter name, would fit; " + far + " "
+    )
+
+    # A binary two short of the limit: its PDB, four longer, is past it where
+    # a link writes one, and nothing is past it where none is written.
+    base = path_room.judged("build/x" + suffix).units - 1
+    near = "build/" + "p".repeat(to_u64(path_room.limit(folder: false) - 2 - base).must()) + suffix
+    assert path_room.judged(near).units == path_room.limit(folder: false) - 2
+
+    if suffix == ".exe"
+        assert strings.holds(
+            text: message(room(at: near, binary: near, module: "prog", suffix: suffix)),
+            needle: ": the PDB the link writes beside it, "
+        )
+    else
+        assert room(at: near, binary: near, module: "prog", suffix: suffix).must().stem == "prog"
+
+function message(r: Room?) -> str
+    match r
+        .ok _  => return ""
+        .err e => return e.msg
