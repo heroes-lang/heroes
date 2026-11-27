@@ -1,0 +1,221 @@
+# The questions an editor asks of an analysed source, each by a byte offset:
+# which symbol stands there, where else it stands, what can be written there,
+# and which expression ends there. Each walks the analysis once, so its cost
+# is linear in the source; none parses or checks again.
+
+use <rebel>/lists
+
+use lang/symbols
+use lang/syntax
+use lang/types
+
+# The symbol whose name stands at `at`, where it is declared or read. A name
+# the offset is inside wins over one it touches only at its end, so `a+b`
+# at the `+` is `a` and at the `b` is `b`.
+#
+# - `a`: the analysis.
+# - `at`: a byte offset.
+#
+# Fails `not_found` where no name stands there.
+function symbol_at(a: symbols.Analysis lent, at: i64) -> i64?
+    touching @= fail_none()
+
+    for k in range(from: 0, to: a.symbols.len())
+        s = a.symbols[k]
+
+        if symbols.is_declared(s) && syntax.touches(s.span, at: at) && s.span.end > s.span.start
+            if at < s.span.end
+                return ok(k)
+            touching @ ok(k)
+
+    for r in a.refs
+        if syntax.touches(r.span, at: at) && r.span.end > r.span.start
+            if at < r.span.end
+                return ok(r.symbol)
+            touching @ ok(r.symbol)
+
+    return touching
+
+# No symbol: what a search that found none answers.
+function fail_none() -> i64?
+    return fail(code: "not_found", msg: "no name stands there")
+
+# Every place the symbol `symbol` stands, in source order: where it is read,
+# and where it is declared when `declaration` asks it.
+#
+# - `a`: the analysis.
+# - `symbol`: an index of `a.symbols`.
+# - `declaration`: whether its declaration is among them.
+function places_of(a: symbols.Analysis lent, symbol: i64, declaration: bool) -> [syntax.Span]
+    found: [syntax.Span] @= []
+
+    if declaration && symbols.is_declared(a.symbols[symbol])
+        found @ found.push(a.symbols[symbol].span)
+
+    for r in a.refs
+        if r.symbol == symbol
+            found @ found.push(r.span)
+
+    return lists.sort_by(found, less: starts_before)
+
+# Whether `a` begins before `b`: the order of places in a source.
+function starts_before(a: syntax.Span, b: syntax.Span) -> bool
+    return a.start < b.start
+
+# The symbols whose name a value may be read by at `at`: the parameters and
+# bindings in scope there, the innermost of two of one name, then the
+# functions and the built-in functions, each name once.
+#
+# - `a`: the analysis.
+# - `at`: a byte offset.
+function values_at(a: symbols.Analysis lent, at: i64) -> [i64]
+    chosen: {str: i64} @= {}
+
+    for k in range(from: 0, to: a.symbols.len())
+        s = a.symbols[k]
+        local = s.kind == .param_symbol || s.kind == .local_symbol
+
+        if local && at >= s.visible.start && at <= s.visible.end && s.visible.end > s.visible.start
+            chosen[s.name] @ k
+
+    for k in range(from: 0, to: a.symbols.len())
+        s = a.symbols[k]
+
+        if (s.kind == .function_symbol || s.kind == .builtin_function) && chosen[s.name].is_err()
+            chosen[s.name] @ k
+
+    out: [i64] @= []
+
+    for name in keys(chosen)
+        out @ out.push(chosen[name].must())
+
+    return out
+
+# The symbols a type may be named by: Kite's own types and the records.
+#
+# - `a`: the analysis.
+function types_of(a: symbols.Analysis lent) -> [i64]
+    out: [i64] @= []
+
+    for k in range(from: 0, to: a.symbols.len())
+        kind = a.symbols[k].kind
+
+        if kind == .record_symbol || kind == .builtin_type
+            out @ out.push(k)
+
+    return out
+
+# The fields of the record `owner`, in the order declared.
+#
+# - `a`: the analysis.
+# - `owner`: the record's name.
+function fields_of(a: symbols.Analysis lent, owner: str) -> [i64]
+    out: [i64] @= []
+
+    for k in range(from: 0, to: a.symbols.len())
+        s = a.symbols[k]
+
+        if s.kind == .field_symbol && s.owner == owner
+            out @ out.push(k)
+
+    return out
+
+# What is read after a `.`: the record whose field is being written at `at`,
+# and the span of the name written so far, which a completion replaces.
+record FieldSite
+    # The record's name, or "" where the expression before the dot is no
+    # record.
+    owner: str
+    # The name written after the dot so far; empty right after it.
+    name_span: syntax.Span
+
+# The field read whose name is being written at `at`, as `p.` or `p.na`
+# leaves it.
+#
+# - `a`: the analysis.
+# - `at`: a byte offset, the cursor.
+#
+# Fails `not_found` where no field read's name stands there.
+function field_site_at(a: symbols.Analysis lent, at: i64) -> FieldSite?
+    for node in a.tree.nodes
+        match node.kind
+            .field f =>
+                if syntax.touches(f.name_span, at: at)
+                    owner = match a.types[f.target]
+                        .record_type r                                                                => r.name
+                        .int_type | .bool_type | .str_type | .unit_type | .function_type _ | .unknown => ""
+
+                    return ok(FieldSite(owner: owner, name_span: f.name_span))
+            .int_lit _ | .str_lit _ | .bool_lit _ | .unit_lit | .name _ | .unary _ | .binary _ | .call _ | .construct _ | .if_else _ | .block _ | .missing => _ = 0
+
+    return fail(code: "not_found", msg: "no field is being written there")
+
+# Whether `at` stands where a type is written: right after a `:` or a `->`,
+# the name begun or not.
+#
+# - `source`: the text.
+# - `at`: a byte offset.
+function in_type_position(source: str, at: i64) -> bool
+    k @= at
+
+    while k > 0 && is_name_byte(source[k - 1])
+        k @ k - 1
+
+    while k > 0 && (source[k - 1] == ' ' || source[k - 1] == '\t')
+        k @ k - 1
+
+    if k > 0 && source[k - 1] == ':'
+        return true
+    return k > 1 && source[k - 1] == '>' && source[k - 2] == '-'
+
+# Whether `b` may stand in a Kite name.
+function is_name_byte(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_'
+
+# The span of the name being written at `at`: from the first name byte
+# before it to `at`.
+#
+# - `source`: the text.
+# - `at`: a byte offset.
+function word_before(source: str, at: i64) -> syntax.Span
+    k @= at
+
+    while k > 0 && is_name_byte(source[k - 1])
+        k @ k - 1
+
+    return syntax.Span(start: k, end: at)
+
+# The smallest expression `at` stands inside, other than a block or an
+# `if`, whose type a hover can show.
+#
+# - `a`: the analysis.
+# - `at`: a byte offset.
+#
+# Fails `not_found` where none holds it.
+function expression_at(a: symbols.Analysis lent, at: i64) -> i64?
+    best @= fail_none()
+    width @= -1
+
+    for k in range(from: 0, to: a.tree.nodes.len())
+        node = a.tree.nodes[k]
+
+        plain = match node.kind
+            .block _ | .if_else _ | .missing | .unit_lit => false
+            .int_lit _ | .str_lit _ | .bool_lit _ | .name _ | .unary _ | .binary _ | .call _ | .field _ | .construct _ => true
+
+        if plain && at >= node.span.start && at < node.span.end
+            size = node.span.end - node.span.start
+
+            if width < 0 || size < width
+                best @ ok(k)
+                width @ size
+
+    return best
+
+# Whether `t` is a type a field read can follow.
+#
+# - `t`: a type.
+function is_record(t: types.Type) -> bool
+    return match t
+        .record_type _                                                                => true
+        .int_type | .bool_type | .str_type | .unit_type | .function_type _ | .unknown => false

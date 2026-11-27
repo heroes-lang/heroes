@@ -281,3 +281,51 @@ as a baseline: W1, W3 and W4 refused, `ffi_layer_undeclared` at `ticks/clock.her
 (the section's lines, `awk` from its heading to the next `## `), copied when the runner starts; `claude --version`
 `2.1.323 (Claude Code)` (14:09). The spend before this section: **0.00 USD** (no session had run; the blind run's first
 start was cut at 14:07 by the coordinator's restart, before any area existed).
+
+## Registered 2026-11-26: the narrowed text, re-read (REGISTERED, NOT RUN; the author is asked)
+
+Written by lane layer-narrow after the run above, **before any session of this re-read is drawn; none is drawn and none
+runs**: a paid run, the author's to authorise. No line above is changed. What it would measure: whether the sentence
+narrowed by the sitting's amendment (`docs/panel/260-a-group-that-binds-the-platform-layer-says-layer-a-program-none-of-whose-groups-says-it-links-nothing-of-the-layer-and-there-is-no-fallback.md` § Amended 2026-11-26 after the blind reading) stops the readers
+writing `layer` over `hero_os.h`, D2's failure and D3's on t2's (4), without costing what D1 and D1c held.
+
+**The arms, by hash** (`shasum -a 256`, rebuilt from `c3885b81b`'s `spec/heroes-spec.md` with `synthesis-adopted.diff`
+applied by `patch -p1`, then one substitution):
+
+| arm | what it is | sha256 |
+|---|---|---|
+| `adopted` | the first run's `adopted`, byte for byte (34,855 bytes) | `70b8e497cea7f490e7884d4b7f5d66ba95866d43b0bf16b44e8acbb7d513f1a7` |
+| `narrowed` | `adopted` with R6's sentence replaced by the narrowed text, the one line differing (`diff` prints one `<` and one `>`; 35,051 bytes) | `6874087d96bde1f310ec59eab39b97473154b83ab500e5bf9fa68c5a300374cc` |
+| the narrowed text alone | the two sentences step 208b writes into § 13, as they stand in the arm (834 bytes with its newline) | `cdd29e79abe90f07c4bec22de575b1db76262160c7b25bf1255c6145aa43624d` |
+
+The narrowed text, as the arm holds it: *"Anything beyond this document comes from packages or C libraries; processes and files from the language's `hero_os.h`, and sockets, clocks and the rest from its platform layer: `hero_net.h`, `hero_time.h` and every other `hero_` header the language provides but `hero_os.h` and the compiler's `hero_compiler.h`, the runtime's own interfaces and none of the layer's. A group whose header is one of the layer's or includes a file of the layer at any depth, or whose library calls the layer, must say `layer` after its header, and no other group may, so a group over `hero_os.h` or `hero_compiler.h` says no `layer` unless its library calls the layer; a name a header of the layer declares is bound only by a group whose header is or includes it, and a build links the layer only where a module it compiles holds a group saying `layer`."*
+
+**The sessions**: 20, one at a time, the first run's command and flags as `llm-ergonomist-blind.md` § How it was run
+gives them (`claude-opus-5-5`, `Read` and `Write` alone), the runner `registration-runner.md`'s with the arms' list
+read as `adopted` and `narrowed` and the session brief pinned at `ca8e2077…8beb` as before: **t1 under each arm 5,
+t2 under each arm 5**, the tasks and t2's programs byte for byte the first run's (`task-t1.md` `3d71ca51…`, `task-t2.md`
+`93d91f72…`, the 20 program files at their hashes in § Written 2026-11-26, after the landing). `adopted` is read again
+beside `narrowed` on the same day rather than taken from the first run, so that a change of the model's or the
+runner's between the two days is not read as the text's. No verdict session.
+
+**What is graded, and the key under the repaired build** (step 208a, `b626d4c050774cfccfe085b7ba61252e33f6360b`, measured on this Mac and in the
+Linux arm64 image, 2026-11-27, with the tree merged with `main` at `a77b45213`): **W2 of t1**, declared-right by § The grader's reading's own rows (*nothing*, each file); built under step 208a,
+where `extern "hero_os.h" layer` is now refused `ffi_layer_unreached` at `ident/me.hero`; and **t2's (4)**,
+build-right by the key, which step 208a leaves as it was: **builds**, `true` `true`. W1, W3, W4 and t2's other five are
+graded the same way and **reported, never a gate** (t2's six keys measured unchanged under step 208a on both
+platforms; t1's key is each reader's files, built after the sessions as the first run built them).
+
+**The decision rules**:
+
+- **N1, D2 on the narrowed text**: under `narrowed`, at most 1 of 5 readers declares in W2 (declared-right at least 4
+  of 5). Held: the narrowing stands. Failed: the text goes back to the sitting.
+- **N2, D3 on (4)**: under `narrowed`, at least 4 of 5 readers build-right on t2's (4). Held or failed as N1.
+- **Reported**: `adopted`'s W2 and (4) this day (the first run read 0 of 5 on each); and under `narrowed`, W1, W3 and W4
+  declared-right and t2's other five build-right: one below 4 of 5 is told as the narrowing's cost and named in the
+  scoring, for the sitting.
+
+**The cap**: 0.60 USD a session, margin 0.10, **a ceiling of 12.00 USD** (20 sessions at the cap). The price it rests on
+is the first run's measured cells, `adopted` t1 0.99 and t2 1.06 USD for five sessions each (§ The spend, in
+`llm-ergonomist-blind.md`), so **about 4.1 USD for the 20, an inference, unrun** (the narrowed arm is 196 bytes longer).
+A cheaper route, named and not registered: `narrowed` alone, 10 sessions, about 2.1 USD, read against the first run's
+`adopted` cells.

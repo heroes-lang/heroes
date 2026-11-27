@@ -159,8 +159,9 @@ function stderr() -> Stream
 ## Making and ending a stream
 
 # A new pipe's two ends, each closed by its own `close`. Fails `limit` where
-# the process has no descriptor left. One thread that writes more than the
-# system holds in a pipe waits until another thread reads.
+# the process has no descriptor left. A pipe holds 65,536 bytes on every
+# platform, Windows asked for what macOS and Linux give unasked; one thread
+# that writes more than a pipe holds waits until another thread reads.
 function pipe() -> Pipe?
     out_end: hero_stream.Stream @= nullptr
     in_end: hero_stream.Stream @= nullptr
@@ -691,6 +692,22 @@ test "write, write_text, write_line, write_lines through a pipe: every byte arri
     write_lines(p.writer, lines: ["a", "", "b"]).must()
     close(@p.writer).must()
     assert read_all_text(p.reader).must() == "Aé\nx\na\n\nb\n"
+    close(@p.reader).must()
+
+# **A pipe takes 65,536 bytes before its reader reads, on every platform**
+# (d-windows-ci-7-2, 2026-11-27): Windows' default pipe held 4,096, so
+# `archive`'s `encode_tar` test, which writes 5,120 bytes before it reads,
+# waited for ever there and ended on macOS and Linux.
+test "a pipe takes 65,536 bytes before its reader reads, on every platform (d-windows-ci-7-2)"
+    p @= pipe().must()
+    block: [u8] @= []
+
+    for i in range(from: 0, to: 65536)
+        block @ block.push(to_u8(i % 251).must())
+
+    write(p.writer, data: block).must()
+    close(@p.writer).must()
+    assert read_all(p.reader).must() == block
     close(@p.reader).must()
 
 # The test's own process is what a signal would end: reaching its last line

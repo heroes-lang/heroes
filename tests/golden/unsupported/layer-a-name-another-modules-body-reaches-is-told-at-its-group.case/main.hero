@@ -1,0 +1,14 @@
+# Defect d-lane-room-mixedown-1 (lane room-mixedown, 2026-11-26; panel 260's
+# R2 to R4, provisional, author ratification pending): a name of the layer's
+# that the header of another module's group calls from a `static inline`
+# body is told at that module's group, in the module whose object refers to
+# it, never at this module's first group, whose `answer` reaches nothing of
+# the layer.
+use late
+
+extern "a.h"
+    function answer() -> i64
+
+function main()
+    print(answer())
+    print(late.stopped())

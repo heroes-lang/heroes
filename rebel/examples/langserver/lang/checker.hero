@@ -1,0 +1,325 @@
+# The analysis of a whole Kite source: parsed, its declarations made known
+# by name, its records' fields typed, each function's body checked against
+# its signature, and the bindings never read told. Records and functions
+# see each other whatever their order, so the source is walked three times:
+# names first, then fields and signatures, then bodies. A record that holds
+# itself by value, through any chain of records, would never end, and Rebel's
+# `graphs` finds every such ring.
+
+use <rebel>/graphs
+use <rebel>/strings
+
+use lang/diagnostics
+use lang/infer
+use lang/parser
+use lang/scope
+use lang/symbols
+use lang/syntax
+use lang/types
+
+# `source` parsed and checked.
+#
+# - `source`: the text, UTF-8.
+#
+# Never fails: every mistake is a finding among `diagnostics`.
+function analyse(source: str) -> symbols.Analysis
+    parsed = parser.parse(source)
+    tree = parsed.tree
+    c @= scope.start(tree, told: parsed.diagnostics)
+    everywhere = syntax.Span(start: 0, end: source.len())
+
+    for d in tree.decls
+        match d
+            .record_decl r => name_global(
+                @c,
+                name: r.r.name,
+                span: r.r.span,
+                whole: r.r.whole,
+                doc: r.r.doc,
+                kind: .record_symbol,
+                everywhere: everywhere
+            )
+            .function_decl f => name_global(
+                @c,
+                name: f.f.name,
+                span: f.f.span,
+                whole: f.f.whole,
+                doc: f.f.doc,
+                kind: .function_symbol,
+                everywhere: everywhere
+            )
+
+    for d in tree.decls
+        match d
+            .record_decl r   => fields_of(@c, r: r.r)
+            .function_decl f => signature_of(@c, f: f.f)
+
+    rings(@c)
+
+    for d in tree.decls
+        match d
+            .record_decl _   => _ = 0
+            .function_decl f => body_of(@c, f: f.f)
+
+    unread(@c)
+    return symbols.Analysis(
+        source: source,
+        tree: tree,
+        symbols: c.symbols,
+        refs: c.refs,
+        types: c.types,
+        signatures: c.signatures,
+        diagnostics: c.told
+    )
+
+# Makes a record or a function known by its name, or tells that the name is
+# taken.
+#
+# - `c`: the checker.
+# - `name`: the name; empty where the parser found none, and then nothing
+#   is declared.
+# - `span`: where the name stands.
+# - `whole`: the whole declaration.
+# - `doc`: its documentation.
+# - `kind`: `record_symbol` or `function_symbol`.
+# - `everywhere`: the whole source, where the name is read.
+function name_global(@c: scope.Checker, name: str, span: syntax.Span, whole: syntax.Span, doc: str, kind: symbols.SymbolKind, everywhere: syntax.Span)
+    if name == ""
+        return
+
+    match c.globals[name]
+        .ok at =>
+            taken = c.symbols[at]
+
+            why = if symbols.is_declared(taken)
+                f"a {symbols.kind_word(taken.kind)} named `{name}` is declared already"
+            else
+                f"`{name}` is Kite's own {symbols.kind_word(taken.kind)}"
+            scope.tell(@c, diagnostics.error(span, code: "declared_twice", message: f"{why}; choose another name"))
+            return
+        .err _ => _ = 0
+
+    type_of: types.Type = if kind == .record_symbol
+        .record_type(name: name)
+    else
+        .function_type(name: name)
+    _ = scope.declare(
+        @c,
+        s: symbols.Symbol(name: name, kind: kind, span: span, whole: whole, owner: "", doc: doc, visible: everywhere, type_of: type_of)
+    )
+
+# Declares the fields of `r`, each typed, a field named twice told.
+#
+# - `c`: the checker.
+# - `r`: the record.
+function fields_of(@c: scope.Checker, r: syntax.RecordDecl)
+    seen: {str: bool} @= {}
+
+    for f in r.fields
+        typed = scope.resolve_type(@c, ref: f.type_ref)
+
+        if seen[f.name].default(false)
+            scope.tell(
+                @c,
+                diagnostics.error(f.span, code: "declared_twice", message: f"`{r.name}` has a field `{f.name}` already")
+            )
+        else if r.name != ""
+            seen[f.name] @ true
+            nowhere = syntax.Span(start: f.span.start, end: f.span.start)
+            whole = syntax.cover(first: f.span, last: f.type_ref.span)
+            _ = scope.declare(
+                @c,
+                s: symbols.Symbol(name: f.name, kind: .field_symbol, span: f.span, whole: whole, owner: r.name, doc: f.doc, visible: nowhere, type_of: typed)
+            )
+
+# Records the signature of `f`, its parameters' and result's types
+# resolved.
+#
+# - `c`: the checker.
+# - `f`: the function.
+function signature_of(@c: scope.Checker, f: syntax.FunctionDecl)
+    names: [str] @= []
+    params: [types.Type] @= []
+
+    for p in f.params
+        names @ names.push(p.name)
+        params @ params.push(scope.resolve_type(@c, ref: p.type_ref))
+
+    result: types.Type = match f.result
+        .ok ref => scope.resolve_type(@c, ref: ref)
+        .err _  => .unit_type
+
+    if f.name != "" && c.signatures[f.name].is_err()
+        c.signatures[f.name] @ types.Signature(names: names, params: params, result: result)
+
+# Tells every record that holds itself by value, through any chain of
+# records' fields.
+#
+# - `c`: the checker.
+function rings(@c: scope.Checker)
+    holds: {str: [str]} @= {}
+
+    for s in c.symbols
+        if s.kind == .record_symbol
+            holds[s.name] @ []
+
+    for s in c.symbols
+        match s.type_of
+            .record_type held =>
+                if s.kind == .field_symbol
+                    holds[s.owner] @ holds[s.owner].default([]).push(held.name)
+            .int_type | .bool_type | .str_type | .unit_type | .function_type _ | .unknown => _ = 0
+
+    for ring in graphs.strong_components(holds)
+        if ring.len() > 1 || holds_itself(holds, name: ring[0])
+            for name in ring
+                at = c.globals[name].must()
+                path = ring.join(" → ")
+                scope.tell(
+                    @c,
+                    diagnostics.error(c.symbols[at].span, code: "record_holds_itself", message: f"`{name}` holds itself by value ({path} → {ring[0]}), so a value of it would never end")
+                )
+
+# Whether the record `name` holds a field of its own type.
+#
+# - `holds`: the records each record's fields hold.
+# - `name`: a record's name.
+function holds_itself(holds: {str: [str]}, name: str) -> bool
+    for held in holds[name].default([])
+        if held == name
+            return true
+
+    return false
+
+# Checks the body of `f` against its signature.
+#
+# - `c`: the checker.
+# - `f`: the function.
+function body_of(@c: scope.Checker, f: syntax.FunctionDecl)
+    c.owner @ f.name
+    depth = c.scope.len()
+    seen: {str: bool} @= {}
+    body_span = c.tree.nodes[f.body].span
+
+    signature = c.signatures[f.name]
+    k: i64 @= 0
+
+    for p in f.params
+        typed = param_type(signature, at: k, count: f.params.len())
+        k @ k + 1
+
+        if seen[p.name].default(false)
+            scope.tell(
+                @c,
+                diagnostics.error(p.span, code: "declared_twice", message: f"`{f.name}` has a parameter `{p.name}` already")
+            )
+        else
+            seen[p.name] @ true
+            _ = scope.declare(
+                @c,
+                s: symbols.Symbol(name: p.name, kind: .param_symbol, span: p.span, whole: syntax.cover(first: p.span, last: p.type_ref.span), owner: f.name, doc: "", visible: body_span, type_of: typed)
+            )
+
+    found = infer.infer(@c, node: f.body)
+
+    wanted: types.Type = match c.signatures[f.name]
+        .ok s  => s.result
+        .err _ => .unknown
+
+    if !types.fits(wanted: wanted, found: found)
+        at = match c.tree.nodes[f.body].kind
+            .block b => c.tree.nodes[b.value].span
+            .int_lit _ | .str_lit _ | .bool_lit _ | .unit_lit | .name _ | .unary _ | .binary _ | .call _ | .field _ | .construct _ | .if_else _ | .missing => body_span
+
+        scope.tell(
+            @c,
+            diagnostics.error(at, code: "type_mismatch", message: f"`{f.name}` answers {infer.article(wanted)}, and its body {infer.article(found)}")
+        )
+    scope.close_scope(@c, depth: depth)
+
+# The type of the parameter at `at`, as `signature_of` resolved it; unknown
+# where the function's name was taken by another, whose signature differs.
+#
+# - `signature`: the function's signature, as the checker holds it.
+# - `at`: the parameter's index.
+# - `count`: how many parameters the declaration holds.
+function param_type(signature: types.Signature?, at: i64, count: i64) -> types.Type
+    return match signature
+        .ok s =>
+            if s.params.len() == count
+                s.params[at]
+            else
+                .unknown
+        .err _ => .unknown
+
+# Tells every binding no expression reads; a name beginning with `_` says
+# it is meant.
+#
+# - `c`: the checker.
+function unread(@c: scope.Checker)
+    reads: {i64: i64} @= {}
+
+    for r in c.refs
+        reads[r.symbol] @ reads[r.symbol].default(0) + 1
+
+    for k in range(from: 0, to: c.symbols.len())
+        s = c.symbols[k]
+
+        if s.kind == .local_symbol && reads[k].default(0) == 0 && !strings.has_prefix(s: s.name, prefix: "_")
+            scope.tell(
+                @c,
+                diagnostics.unused(s.span, code: "unused_binding", message: f"`{s.name}` is never read; name it `_{s.name}` if that is meant")
+            )
+
+## Tests
+
+test "analyse: a clean source declares its symbols and finds no fault"
+    a = analyse("record P { x: Int }\nfn f(p: P) -> Int { let y = p.x; y + 1 }\nfn g() -> P { P { x: f(P { x: 1 }) } }")
+    assert a.diagnostics.len() == 0
+    assert a.signatures["f"].must().result == .int_type
+
+test "analyse: an unknown name with its fix, and a wrong argument's type"
+    a = analyse("fn dist2(a: Int) -> Int { a }\nfn f() -> Int { dist(1) + dist2(\"x\") }")
+    assert a.diagnostics.len() == 2
+    assert a.diagnostics[0].code == "unknown_name"
+    assert a.diagnostics[0].replacement.must() == "dist2"
+    assert a.diagnostics[1].code == "type_mismatch"
+    assert a.diagnostics[1].message == "`dist2`'s `a` takes an `Int`, and this is a `Str`"
+
+test "analyse: a body answering the wrong type, and two branches that differ"
+    a = analyse("fn f(b: Bool) -> Int { if b { 1 } else { \"one\" } }\nfn g() -> Str { 2 }")
+    assert a.diagnostics.len() == 2
+    assert a.diagnostics[0].code == "branch_mismatch"
+    assert a.diagnostics[1].message == "`g` answers a `Str`, and its body an `Int`"
+
+test "analyse: fields unknown, missing, given twice, and a field of a number"
+    a = analyse("record P { x: Int, y: Int }\nfn f(n: Int) -> Int { let p = P { x: 1, x: 2, z: 3 }; p.w + n.x }")
+    codes: [str] @= []
+
+    for d in a.diagnostics
+        codes @ codes.push(d.code)
+
+    assert codes == ["field_twice", "unknown_name", "missing_field", "unknown_name", "no_fields"]
+
+test "analyse: a name declared twice, and a built-in's name taken"
+    a = analyse("fn f() { }\nfn f() { }\nrecord len { }")
+    assert a.diagnostics.len() == 2
+    assert a.diagnostics[0].message == "a function named `f` is declared already; choose another name"
+    assert a.diagnostics[1].message == "`len` is Kite's own built-in function; choose another name"
+
+test "analyse: a record holding itself, alone and through another"
+    a = analyse("record A { b: B }\nrecord B { a: A }\nrecord C { c: C }\nrecord D { n: Int }")
+    assert a.diagnostics.len() == 3
+
+    for d in a.diagnostics
+        assert d.code == "record_holds_itself"
+
+test "analyse: a binding never read, and one that says so with `_`"
+    a = analyse("fn f() -> Int { let a = 1; let _b = 2; 3 }")
+    assert a.diagnostics.len() == 1
+    assert a.diagnostics[0].code == "unused_binding"
+    assert a.diagnostics[0].unnecessary
+
+test "analyse: shadowing reads the innermost, and a block's bindings end with it"
+    a = analyse("fn f() -> Int { let x = 1; let y = { let x = \"s\"; len(x) }; x + y }")
+    assert a.diagnostics.len() == 0

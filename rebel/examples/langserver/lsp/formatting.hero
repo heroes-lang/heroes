@@ -1,0 +1,90 @@
+# `textDocument/formatting`: the document in Kite's one layout, sent as the
+# fewest whole-line edits that make it so, as gopls sends its own: the old
+# and the new lines compared by Rebel's `diff` (Myers's shortest script),
+# each run that changed one edit. An editor then keeps its cursor and its
+# undo history on every line the layout did not touch. The client's options,
+# its tab size among them, are not read: Kite has one layout.
+
+use <rebel>/diff
+use <rebel>/json
+
+use lang/printer
+use lang/syntax
+use lsp/document
+use lsp/server
+use lsp/wire
+
+# Answers `textDocument/formatting`: the edits, none where the document is
+# in the layout already.
+#
+# - `s`: the server, only read.
+# - `params`: `textDocument`, and `options`, which are not read.
+#
+# Fails `failed` where the document does not parse or holds a comment the
+# layout has no place for, the message saying which; `invalid` where the
+# document is not named.
+function format_document(s: server.Server lent, params: json.Value) -> json.Value?
+    doc = server.document_named(s, params: params)?
+
+    formatted = match printer.format_source(doc.text)
+        .ok text => text
+        .err e   => return fail(code: "failed", msg: e.msg)
+
+    old = diff.lines_of(doc.text)
+    new = diff.lines_of(formatted)
+    starts = line_offsets(old)
+    new_offsets = line_offsets(new)
+    edits: [json.Value] @= []
+
+    for op in diff.edits(old: old, new: new)
+        if op.tag != .equal
+            span = syntax.Span(start: starts[op.old_from], end: starts[op.old_to])
+            text = formatted.slice(from: new_offsets[op.new_from], to: new_offsets[op.new_to])
+            r = document.range_of(doc, span: span, e: s.encoding)
+            edits @ edits.push(wire.object({"range": wire.range_json(r), "newText": wire.text(text)}))
+
+    return ok(wire.array(edits))
+
+# The byte offset where each of `lines` begins in their text, and one more:
+# the text's end.
+#
+# - `lines`: lines as `diff.lines_of` cuts them, each with its line feed.
+function line_offsets(lines: [str]) -> [i64]
+    out: [i64] @= [0]
+    at: i64 @= 0
+
+    for line in lines
+        at @ at + line.len()
+        out @ out.push(at)
+
+    return out
+
+## Tests
+
+test "format_document: only the lines the layout changes are edited"
+    s @= server.new_server()
+    text = "fn f() -> Int {\n    let a = 1;\n  let b=2;\n    a + b\n}\n"
+    s.documents["u"] @ document.open(uri: "u", version: 1, text: text)
+    edits = json.items_of(
+        format_document(s, params: json.parse("{\"textDocument\": {\"uri\": \"u\"}}").must()).must()
+    ).must()
+    assert edits.len() == 1
+    assert json.value_at(edits[0], pointer: "/range/start/line").must() == wire.number(2)
+    assert json.value_at(edits[0], pointer: "/range/end/line").must() == wire.number(3)
+    assert json.text_at(edits[0], key: "newText").must() == "    let b = 2;\n"
+
+test "format_document: nothing to do, and a source that does not parse"
+    s @= server.new_server()
+    s.documents["u"] @ document.open(uri: "u", version: 1, text: "fn f() {}\n")
+    s.documents["v"] @ document.open(uri: "v", version: 1, text: "fn f( {")
+    assert json.items_of(format_document(s, params: json.parse("{\"textDocument\": {\"uri\": \"u\"}}").must()).must()).must().len() == 0
+    assert format_document(s, params: json.parse("{\"textDocument\": {\"uri\": \"v\"}}").must()).is_err()
+
+test "format_document: a last line with no line feed is given one"
+    s @= server.new_server()
+    s.documents["u"] @ document.open(uri: "u", version: 1, text: "fn f() {}")
+    edits = json.items_of(
+        format_document(s, params: json.parse("{\"textDocument\": {\"uri\": \"u\"}}").must()).must()
+    ).must()
+    assert edits.len() == 1
+    assert json.text_at(edits[0], key: "newText").must() == "fn f() {}\n"

@@ -450,6 +450,66 @@ task, programs and key did not exist before the run and were written first, unde
 no session could write `report.md`, each answer is the brief's fallback; the verdict session approved on a premise
 the landed build disproves (that the `hero_os.h` doubt can only lead to a refused build).
 
+## Amended 2026-11-26 after the blind reading
+
+**Provisional, this sitting's amendment, the author's reading pending.** Written by lane layer-narrow on the
+coordinator's brief, after the blind reading above found D2 failing and the landed build accepting what the text
+refuses. **Which side was wrong was measured before anything was written: the build** (case A of the brief). By the
+runtime's own list, `runtime_key.layer_files` (R2: `runtime.c`'s names under `platform/` and in its never-read
+`#if 0` block, `vendor/` left out), `hero_os.h` is none of the layer's: of `runtime/`'s 43 top-level `hero_*.h`,
+exactly two stand outside that block, `hero_os.h` and `hero_compiler.h` (`comm` of the two lists), each including
+`heroes_runtime.h` alone, and the compiler's own test *"a file is the layer's by its path in the runtime's folder, the
+runtime's own list (panel 260)"* asserts both outside it (run 2026-11-26 on the repaired compiler, `heroes test selfhost/main.hero --only "panel 260"`: 14 tests, all passed). **Why the build accepted the word**: `hero_os.h` is one of
+the compiler's seeds (`emit/externs.hero`'s `is_own`), which every unit's opening reads before the groups' headers and
+which `order_trial.theirs` keeps out of the walk's groups, so the walk read no reach for its group and
+`layer_bound.told` passed it over (*"a group with no reach read is not judged here"*); `hero_compiler.h`, no seed, was
+walked and refused `ffi_layer_unreached` already.
+
+**What the base did and what the repair does** (step 208a, `b626d4c050774cfccfe085b7ba61252e33f6360b`), each program `check`ed, built plain and at
+`-O2` and its binary run, on this Mac (the base: stage 3 of `0a550d397`, `sources 53029d882244322d`; the repair's column read
+again with the compiler of the tree merged with `main` at `a77b45213`, steps 208b and 208c in it, `sources
+1ad4e65506459704`, row for row the same) and in the Linux arm64 image (`heroes-linux-arm64:latest`, one container, removed after;
+stage 3 of each tree's seed, the base `sources 53029d882244322d` and the repaired tree `1ad4e65506459704`, this
+Mac's keys), every row read alike on both but where a cell names one:
+
+| program | the base | step 208a |
+|---|---|---|
+| `extern "hero_os.h" layer`, the program's own or a `path` package's module | **builds, runs `true`** | refused `ffi_layer_unreached` at the word, *"`hero_os.h` is the runtime's own header, none of the platform layer's, and includes none of them, so nothing it binds is the layer's: take the word out"*, fix `certain` |
+| the same, the package shipping its own file named `hero_os.h` | builds, runs `true` (the runtime's file is read first) | refused, as above, naming the runtime's file |
+| `extern "./hero_os.h" layer`, `extern "hero_compiler.h" layer` | refused `ffi_layer_unreached`, *"is none of the platform layer's headers"* | refused, named the runtime's own header |
+| `extern "hero_os.h"`, `extern "hero_compiler.h"`, no word; t2's (4) | builds | builds, the same output |
+| a group over `hero_os.h` binding `hero_time_monotonic_ns` beside a group saying `layer` | `ffi_unknown_name` (clang) | `ffi_layer_redeclared`, *"... through `hero_os.h`, the runtime's own header, which includes none of the layer's: name `hero_time.h` in the group"* |
+| the same over `hero_compiler.h` | `ffi_layer_redeclared`, *"... or include it in `hero_compiler.h`"* | as the row above |
+| `stdlib.h`, `mine.h`, `hero_util.h` (the program's own), `vendor/monocypher/monocypher.h`, with the word | `ffi_layer_unreached` | unchanged, word for word |
+| `a.h` including `b.h` including `hero_time.h`: with the word, without | builds; `ffi_layer_undeclared` | unchanged |
+| `hero_net.h`: with the word, without | builds; `ffi_layer_undeclared` at `check` and `build` | unchanged |
+| `heroes_unit.h`, binding its macro, with the word or without | `ffi_runtime_header` | unchanged |
+| t2's six | (1) builds, (2) refused, (3) builds, (4) builds, (5) refused, (6) refused | the same key |
+| `extern "hero_os.h" layer link "now"`, `libnow.a`'s `now.o` calling the clock | builds, runs `true` (Linux arm64; unrun here) | builds, runs `true` |
+| the same without the word, beside a group saying `layer` | builds, runs `true` `true` (Linux arm64; unrun here) | refused `ffi_layer_undeclared`, *"the library `now` this group links calls `hero_time_monotonic_ns` of the platform layer's, and this group does not say `layer`"* |
+| the same without the word, no group saying `layer` | builds, runs `true` (Linux arm64; unrun here) | builds, runs `true`: no group asks the layer, and the archive's member is never linked (R5) |
+
+`check` tells none of the `unreached` rows, as R2 has it for every group whose header reaches none of the layer: the
+name at `check`, the walk at `build`. The base's acceptance of a `hero_os.h` group whose library calls the layer, with no
+word, beside a group saying it, was the same blind spot as the word over `hero_os.h`: its group was never judged.
+
+**The sentence narrowed** (step 208b, the commit that carries this section): § 13's opening now reads *"... and every other `hero_` header the
+language provides but `hero_os.h` and the compiler's `hero_compiler.h`, the runtime's own interfaces and none of the
+layer's. A group whose header is one of the layer's or includes a file of the layer at any depth, or whose library
+calls the layer, must say `layer` after its header, and no other group may, so a group over `hero_os.h` or
+`hero_compiler.h` says no `layer` unless its library calls the layer; a name a header of the layer declares is bound
+only by ..."*; *"the language's `hero_os.h`"* stays, decision 2228's words. The exception for a library is the
+text's own R3: a group over `hero_os.h` whose `link` library calls the layer owes the word, and the build reads it so
+where the program's libraries are asked (the last three rows above).
+**Its count**: +56 vendored (10,507 to 10,563 on `cl100k_base`; legacy 10,318 to 10,374), **+73 real** (13,776 to
+13,849 on `claude-opus-5`, `heroes measure spec/heroes-spec.md --refresh` on the text merged with `main` at
+`deef27472`, digest `25b307910fc3ea19`; the same sentence counted first on `0a550d397`'s text read 13,439 to 13,512,
+the same +73, before panel 261's landing moved the document under it), inside 16,384. Past `DELTA_GATE`, paid by the blind reading's D2 (*"D2 failing narrows the text"*, the registration's own
+rule), by the author's rule of 2026-11-22 (the most robust solution always wins, at the specification's cost), and by
+the registered prediction of `260-briefs/blind/registration.md` § Registered 2026-11-26: the narrowed text, re-read
+(N1 and N2 there), whose instrument is the runner this reading used. **Unrun**: no reader has read the narrowed text;
+the re-read is registered and not run, a paid run the author is asked for.
+
 ## Author's verdict
 
 **Pending.** The decision's draft is `docs/panel/260-reports/decision-draft.md`, filed with this sitting as `panel 260`.

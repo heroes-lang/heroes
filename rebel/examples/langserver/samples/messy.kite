@@ -1,0 +1,8 @@
+# A sum, written in a hurry: the document the demo formats.
+record Pair{left:Int,right:Int}
+fn sum( p:Pair )->Int{
+  let total=p.left+p.right;
+      let unused = 0;
+  # what it answers
+  let answer = (total);
+    answer}

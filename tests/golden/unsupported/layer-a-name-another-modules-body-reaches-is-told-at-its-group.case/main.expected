@@ -1,0 +1,8 @@
+error[ffi_layer_undeclared]: `hero_net_stop_asked` is the platform layer's, declared by its `hero_net.h`, and this group's header puts a call to it in the program's own code through a header that includes none of the layer's, so no group of this program says `layer` and its link carries none of the layer: name `hero_net.h` in this group, or include it in the group's header, and say `layer` after the header
+  at tests/golden/unsupported/layer-a-name-another-modules-body-reaches-is-told-at-its-group.case/late.hero:3:8
+    |
+  3 | extern "stop.h"  #~ ffi_layer_undeclared
+    |        ^^^^^^^^
+  note: the platform layer's members are compiled and linked only for a program whose groups say `layer`; a program none of whose groups says it links nothing of the layer, so its build asks nothing of it
+  note: clang checks a binding against the header its group names, so a function of the layer's declared by the program itself is checked against nothing the layer wrote: a parameter or a result of another width there is a call the layer reads otherwise
+  fix (guess): name the layer's header and say `layer`

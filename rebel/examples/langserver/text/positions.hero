@@ -1,0 +1,213 @@
+# Where an editor says a place is, and where the program holds it. The
+# Language Server Protocol names a place by its line, from 0, and its
+# character within the line, counted by default in UTF-16 code units, the
+# unit of JavaScript's strings, so a character beyond U+FFFF, an emoji,
+# counts two; a client and a server may agree on UTF-8 bytes instead. The
+# program holds a byte offset into the UTF-8 text. A line ends at "\n",
+# "\r\n" or a lone "\r", as the protocol says all three do.
+#
+# A place from outside never aborts: a line past the last is the end of the
+# text, a character past its line's end is that end, a negative number is 0,
+# and a character that would cut a UTF-16 pair or a UTF-8 sequence in two
+# stands at the character's start.
+
+use <rebel>/unicode
+
+## Places
+
+# How characters are counted within a line.
+variant Encoding
+    # UTF-16 code units: the protocol's default.
+    utf16
+    # UTF-8 bytes.
+    utf8
+
+# A place as the protocol writes it.
+record Position
+    # The line, from 0.
+    line: i64
+    # The character within the line, from 0, in the agreed unit.
+    character: i64
+
+# The text between two places, `end` excluded.
+record Range
+    # Where it begins.
+    start: Position
+    # Where it ends.
+    end: Position
+
+# The name the protocol gives `e`: "utf-16" or "utf-8".
+#
+# - `e`: an encoding.
+function encoding_name(e: Encoding) -> str
+    return match e
+        .utf16 => "utf-16"
+        .utf8  => "utf-8"
+
+## Lines
+
+# The byte offset where each line of `text` begins: 0 first, then the byte
+# after each line end.
+#
+# - `text`: any text.
+function line_starts(text: str) -> [i64]
+    starts: [i64] @= [0]
+    at: i64 @= 0
+
+    while at < text.len()
+        b = text[at]
+
+        if b == '\n'
+            starts @ starts.push(at + 1)
+        else if b == '\r'
+            if at + 1 < text.len() && text[at + 1] == '\n'
+                at @ at + 1
+            starts @ starts.push(at + 1)
+        at @ at + 1
+
+    return starts
+
+# The offset where line `line`'s characters end, before its line end.
+#
+# - `text`: the text.
+# - `starts`: its `line_starts`.
+# - `line`: a line, from 0 to the last.
+function content_end(text: str, starts: [i64] lent, line: i64) -> i64
+    end @= text.len()
+
+    if line + 1 < starts.len()
+        end @ starts[line + 1]
+
+    while end > starts[line] && (text[end - 1] == '\n' || text[end - 1] == '\r')
+        end @ end - 1
+
+    return end
+
+# How many units of `e` the character beginning at `at` counts.
+#
+# - `text`: the text.
+# - `at`: the offset of a character's first byte.
+# - `e`: the encoding.
+function units_at(text: str, at: i64, e: Encoding) -> i64
+    width = bytes_at(text, at: at)
+
+    return match e
+        .utf8 => width
+        .utf16 =>
+            if width == 4
+                2
+            else
+                1
+
+# How many bytes the character beginning at `at` takes: 1 for a byte that
+# begins none, so a walk always moves.
+#
+# - `text`: the text.
+# - `at`: an offset inside it.
+function bytes_at(text: str, at: i64) -> i64
+    match unicode.utf8_len_of_first(text[at])
+        .ok n =>
+            if at + n <= text.len()
+                return n
+            return 1
+        .err _ => return 1
+
+## Converting
+
+# The byte offset `p` names in `text`, clamped into it.
+#
+# - `text`: the text.
+# - `starts`: its `line_starts`.
+# - `p`: the place, from outside.
+# - `e`: the unit its character counts in.
+function offset_of(text: str, starts: [i64] lent, p: Position, e: Encoding) -> i64
+    if p.line < 0
+        return 0
+
+    if p.line >= starts.len()
+        return text.len()
+    end = content_end(text, starts: starts, line: p.line)
+    at @= starts[p.line]
+    counted: i64 @= 0
+
+    while at < end && counted < p.character
+        units = units_at(text, at: at, e: e)
+
+        if counted + units > p.character
+            return at
+        counted @ counted + units
+        at @ at + bytes_at(text, at: at)
+
+    return at
+
+# The place the byte offset `at` names in `text`.
+#
+# - `text`: the text.
+# - `starts`: its `line_starts`.
+# - `at`: a byte offset, clamped from 0 to the text's length.
+# - `e`: the unit to count characters in.
+function position_of(text: str, starts: [i64] lent, at: i64, e: Encoding) -> Position
+    target @= at
+
+    if target < 0
+        target @ 0
+
+    if target > text.len()
+        target @ text.len()
+    line @= starts.len() - 1
+
+    while line > 0 && starts[line] > target
+        line @ line - 1
+
+    walk @= starts[line]
+    counted: i64 @= 0
+
+    while walk < target
+        counted @ counted + units_at(text, at: walk, e: e)
+        walk @ walk + bytes_at(text, at: walk)
+
+    return Position(line: line, character: counted)
+
+## Tests
+
+test "line_starts: every kind of line end, and none"
+    assert line_starts("") == [0]
+    assert line_starts("a\nb\r\nc\rd") == [0, 2, 5, 7]
+    assert line_starts("a\n") == [0, 2]
+
+test "offset_of: a character past four bytes counts two in UTF-16 and four in UTF-8"
+    text = "a🎈b\nxy"
+    starts = line_starts(text)
+    assert offset_of(text, starts: starts, p: Position(line: 0, character: 3), e: .utf16) == 5
+    assert offset_of(text, starts: starts, p: Position(line: 0, character: 5), e: .utf8) == 5
+    assert offset_of(text, starts: starts, p: Position(line: 1, character: 1), e: .utf16) == 8
+
+test "offset_of: past the line's end, past the last line, negative, and inside a pair"
+    text = "a🎈b\r\nxy"
+    starts = line_starts(text)
+    assert offset_of(text, starts: starts, p: Position(line: 0, character: 99), e: .utf16) == 6
+    assert offset_of(text, starts: starts, p: Position(line: 7, character: 0), e: .utf16) == text.len()
+    assert offset_of(text, starts: starts, p: Position(line: -1, character: -4), e: .utf16) == 0
+    assert offset_of(text, starts: starts, p: Position(line: 0, character: 2), e: .utf16) == 1
+    assert offset_of(text, starts: starts, p: Position(line: 0, character: 3), e: .utf8) == 1
+
+test "position_of: each unit, a line's start, the end, and past it"
+    text = "é🎈\nz"
+    starts = line_starts(text)
+    assert position_of(text, starts: starts, at: 6, e: .utf16) == Position(line: 0, character: 3)
+    assert position_of(text, starts: starts, at: 6, e: .utf8) == Position(line: 0, character: 6)
+    assert position_of(text, starts: starts, at: 7, e: .utf16) == Position(line: 1, character: 0)
+    assert position_of(text, starts: starts, at: 99, e: .utf16) == Position(line: 1, character: 1)
+
+test "position_of and offset_of: each the other's inverse at every character's start"
+    text = "naïve 🎈 café\r\nsecond ✓ line\rthird"
+    starts = line_starts(text)
+    both: [Encoding] = [.utf16, .utf8]
+    at @= 0
+
+    while at < text.len()
+        if text[at] != '\n' && text[at] != '\r'
+            for e in both
+                p = position_of(text, starts: starts, at: at, e: e)
+                assert offset_of(text, starts: starts, p: p, e: e) == at
+        at @ at + bytes_at(text, at: at)

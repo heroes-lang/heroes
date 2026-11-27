@@ -1,0 +1,107 @@
+# The server's analysis and layout from a terminal, for a person or a
+# build: `check` prints each finding as a compiler prints one,
+# `file:line:column: severity[code]: message`, the line from 1 and the
+# column a byte's from 1, as GCC counts it; `format` prints the layout or
+# writes it back. Neither starts a server: they call the same functions the
+# server calls.
+
+use <rebel>/io
+
+use lang/checker
+use lang/diagnostics
+use lang/printer
+use text/positions
+
+# Checks every one of `files`, printing its findings, and answers the exit
+# status: 0 where none holds an error, 1 where one does or cannot be read.
+#
+# - `files`: the sources' paths.
+function check(files: [str]) -> i64
+    status: i64 @= 0
+
+    for file in files
+        match read_file(file)
+            .ok text =>
+                for line in report(file: file, text: text)
+                    print(line)
+
+                if diagnostics.errors_in(checker.analyse(text).diagnostics) > 0
+                    status @ 1
+            .err e =>
+                complain(f"{file}: {e.msg}")
+                status @ 1
+
+    return status
+
+# The lines `check` prints for `text`, read from `file`.
+#
+# - `file`: the path, as the lines name it.
+# - `text`: the source.
+function report(file: str, text: str) -> [str]
+    starts = positions.line_starts(text)
+    lines: [str] @= []
+
+    for d in checker.analyse(text).diagnostics
+        at = positions.position_of(text, starts: starts, at: d.span.start, e: .utf8)
+        lines @ lines.push(
+            f"{file}:{at.line + 1}:{at.character + 1}: {severity_word(d.severity)}[{d.code}]: {d.message}"
+        )
+
+    return lines
+
+# The word a terminal line gives `s`.
+#
+# - `s`: a severity.
+function severity_word(s: diagnostics.Severity) -> str
+    return match s
+        .error       => "error"
+        .warning     => "warning"
+        .information => "note"
+        .hint        => "hint"
+
+# Prints `file` in the one layout, or writes it back where `write` asks;
+# answers the exit status.
+#
+# - `file`: the source's path.
+# - `write`: whether to rewrite it instead of printing it.
+function format_file(file: str, write: bool) -> i64
+    text = match read_file(file)
+        .ok t => t
+        .err e =>
+            complain(f"{file}: {e.msg}")
+            return 1
+
+    formatted = match printer.format_source(text)
+        .ok t => t
+        .err e =>
+            complain(f"{file}: {e.msg}")
+            return 1
+
+    if !write
+        match io.write_text(io.stdout(), text: formatted)
+            .ok _  => return 0
+            .err _ => return 1
+
+    if formatted == text
+        return 0
+
+    match write_file(path: file, text: formatted)
+        .ok _ => return 0
+        .err e =>
+            complain(f"{file}: {e.msg}")
+            return 1
+
+# Writes `line` to the standard error, "langserver: " before it.
+#
+# - `line`: what went wrong.
+function complain(line: str)
+    match io.write_line(io.stderr(), line: "langserver: " + line)
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+## Tests
+
+test "report: a finding's line and byte column, from 1, after a character of two bytes"
+    lines = report(file: "a.kite", text: "fn f() -> Str {\n    \"é\" ++ x\n}")
+    assert lines == ["a.kite:2:13: error[unknown_name]: no value named `x`"]
+    assert report(file: "b.kite", text: "fn f() { @ }") == ["b.kite:1:10: error[unknown_character]: Kite has no `@`"]
