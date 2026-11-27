@@ -1,0 +1,28 @@
+# Fixed 2026-11-27, defect 2873, lane sig-family (step 199n): panel 262's
+# completeness critic's `wdr`, its alarm repeating. A watchdog whose handler
+# a raw system call installed (no route of the runtime sees it begin)
+# `siglongjmp`s out of a loop of C calling a Heroes function that only
+# allocates, until one alarm lands inside this runtime's allocator.
+# Symptom: before, the stop at the next allocation said *a signal handler
+# used this runtime's allocator ... a Heroes function given to C as a signal
+# handler, or called from one*, of a program that gives C none.
+# Cause: the allocator's bracket found open names one way in, a handler's own
+# use, where a jump out of the code a handler interrupted leaves it open too;
+# the jump hooks ask panel 258's stop only of a handler they saw begin.
+# Fix: the stop says what the runtime knows, a call into the allocator never
+# finished, and both ways that happens.
+# MUST STOP, in words naming the jump as well as a handler's own use.
+extern "fixedbugs-2873-a-watchdog-installed-by-a-raw-system-call.h"
+    function wdj_run(cb: (function(i64) -> i64)) -> i64
+
+function work(n: i64) -> i64
+    xs: [i64] @= []
+
+    for i in range(from: 0, to: 64)
+        xs @ xs.push(i + n)
+
+    return len(xs)
+
+function main()
+    print("the watchdog starts")
+    print("a million alarms and none inside the allocator: ", wdj_run(cb: work))
