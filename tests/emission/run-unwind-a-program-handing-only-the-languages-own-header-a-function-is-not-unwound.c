@@ -248,7 +248,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("77b53d936ac9b96c", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("52f2c1fc50abda73", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("unwindaprogramhandingonlythelanguagesownheaderafunctionisnotunwound\tunwind-a-program-handing-only-the-languages-own-header-a-function-is-not-unwound\n");

@@ -388,6 +388,9 @@ function unbuildable_on_windows() -> [Skip]
         Skip(name: "tests/golden/run/fixedbugs-2872-a-handler-on-a-coroutines-stack-left-by-a-jump-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2872-a-handler-on-a-coroutines-stack-that-saved-inside-itself-then-left-by-a-jump-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2873-a-watchdog-jumping-out-of-the-allocator-is-stopped-in-words-naming-the-jump.hero", why: RAW_SYSCALL_ON_WINDOWS)
+        Skip(name: "tests/golden/run/unwind-a-coroutine-on-the-heap-left-for-good-by-a-jump-to-its-host-is-not-unwound.hero", why: SYSV_SWITCH_ON_WINDOWS)
+        Skip(name: "tests/golden/run/unwind-a-coroutine-of-a-librarys-own-switch-on-the-heap-left-for-good-is-not-unwound.hero", why: SYSV_SWITCH_ON_WINDOWS)
+        Skip(name: "tests/golden/run/unwind-a-catch-yielding-on-a-copied-coroutine-keeps-what-it-reads-past-the-others-return-at-its-address.hero", why: SYSV_SWITCH_ON_WINDOWS)
     ]
 
 # Why the program at `source` is not built on this machine: one of
@@ -716,7 +719,12 @@ test "every program Windows cannot build is a file that exists, skipped there al
     # Then the 1 of defect 2873, its header including defect 2522's raw
     # install, refused at `sys/syscall.h` not found by `zig cc` 0.15.2 for
     # Windows x86-64 on 2026-11-27 (`RAW_SYSCALL_ON_WINDOWS`).
-    assert unbuildable_on_windows().len() == 194
+    # Then the 3 of panel 258's R2, steps 214c and 214d (lane unwinder): two
+    # bind the System V switches of `unwind-sw.h` and `unwind-own.h`, and one
+    # the copying header of panel 259's System V switch, each stopping itself
+    # with `#error` on Windows, refused there by `zig cc` 0.15.2 for both
+    # Windows targets on 2026-11-27 (`SYSV_SWITCH_ON_WINDOWS`).
+    assert unbuildable_on_windows().len() == 197
 
     for one in unbuildable_on_windows()
         assert strings.has_prefix(s: one.name, prefix: "tests/golden/run/")

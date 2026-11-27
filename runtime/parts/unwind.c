@@ -39,7 +39,10 @@
  * owning it; on every other path a cleanup reads one word and returns.
  *
  * WHERE IT DOES NOTHING, AND THE PROGRAM IS AS IT WAS (the leak, forgiven):
- * a jump made inside a signal handler (no unwind is async-signal-safe); a
+ * a jump made inside a signal handler (no unwind is async-signal-safe), or
+ * while the thread blocks any signal, or from a frame stopped anywhere but
+ * just after a call; a jump made off the thread's own stack or over frame
+ * records that do not rise on it as one chain (`hero_unwind_chained`); a
  * jump whose target no frame of the chain stands at exactly (route A's
  * record, which names a frame near the save and not the stack pointer; a
  * frame that moved its stack pointer after the save; a switch of stacks made
@@ -58,7 +61,11 @@
  * those is past the call holding the catch, every frame below it having
  * returned, so the group is released there, never before. A frame is told by
  * its own pointer, never by an order of addresses, which a switch of stacks
- * can falsify (panel 259). A group whose catch is abandoned in turn by a later
+ * can falsify (panel 259), and by the number the nearest thunk at or above it
+ * held at the jump, which every thunk's activation draws for itself: a C
+ * library that copies coroutines' stacks in and out of one region stands two
+ * activations at one address in turn, and the pointer alone took the one's
+ * return for the other's (`hero_unwind_same`, step 214d). A group whose catch is abandoned in turn by a later
  * unwind, its landing frame being one that unwind leaves, by the same
  * equality, joins that unwind's group; and whatever still waits when the
  * program ends is released before the exit audit reads the balance
@@ -84,6 +91,7 @@
 
 #if !defined(_WIN32)
 #include <pthread.h>
+#include <signal.h>
 #include <unwind.h>
 #endif
 
@@ -128,13 +136,30 @@ typedef struct HeroUnwoundValue {
 
 #define HERO_UNWOUND_HEAD ((sizeof(HeroUnwoundValue) + 15) & ~(size_t)15)
 
-/* The values one unwind kept, and the frames whose return releases them. */
+/* A frame's activation, where no number tells it (`HeroUnwoundGroup`). */
+#define HERO_UNWIND_BY_ADDRESS ((uintptr_t)0)
+#define HERO_UNWIND_UNTOLD ((uintptr_t)1)
+
+/* The values one unwind kept, and the frames whose return releases them.
+ * Each frame is told by its pointer AND by the number the nearest thunk at or
+ * above it held at the jump, read again where the frame returns (`slots`, `tokens`):
+ * a C library that copies coroutines' stacks in and out of one region runs
+ * two coroutines' frames at the same addresses in turn, and a frame pointer
+ * alone took the one's return for the other's (below, `hero_unwind_same`).
+ * A frame with no thunk above it, on a chain that ends whole, is on a stack
+ * Heroes code started, where no other activation shares its address while it
+ * stands, and is told by its pointer (`HERO_UNWIND_BY_ADDRESS`); one whose
+ * chain the walk could not read to its end has no answer and is never taken
+ * for returned (`HERO_UNWIND_UNTOLD`): its group waits for the program's end,
+ * as every value did before R2. */
 typedef struct HeroUnwoundGroup {
     struct HeroUnwoundGroup *next;
     HeroUnwoundValue *values;
     uintptr_t landing;
     int frames_n;
     uintptr_t frames[HERO_UNWIND_ABOVE];
+    uintptr_t slots[HERO_UNWIND_ABOVE];
+    uint64_t tokens[HERO_UNWIND_ABOVE];
 } HeroUnwoundGroup;
 
 #if defined(_WIN32)
@@ -160,6 +185,12 @@ typedef struct {
     void *env;
     int value;
     uintptr_t target;
+    /* How many frames the walk met below the target, and how many the stop
+     * has been asked about: the stop knows the target's frame by its stack
+     * pointer and by its place in the walk, never by an order of addresses
+     * (`hero_unwind_stop`). */
+    int below;
+    int seen;
     HeroUnwoundGroup *group;
     /* The frame the unwind last walked: whether it has cleanups (a language
      * table), whether one of its marks ran, and whether a frame with cleanups
@@ -240,19 +271,94 @@ void hero_unwind_held(void) {
     __atomic_add_fetch(&hero_callbacks_residue, 1, __ATOMIC_RELAXED);
 }
 
-/* A thunk of a program that unwinds was entered: its mark's initialiser,
- * answering the mark's 0. */
-char hero_unwind_handed(void) {
+/* THE THUNKS' PLACES: for each thunk's code, where its mark lies from its
+ * frame pointer, the same in every activation of that code, so a walk that
+ * meets a frame of a thunk's code (`_Unwind_GetRegionStart`) reads the number
+ * its activation holds. Appended under the lock, read without it: an entry is
+ * written before the count that publishes it. Past the table's end no thunk
+ * is told, and `hero_unwind_places_full` makes every frame the walk cannot
+ * place untold rather than told by its address. */
+#define HERO_UNWIND_PLACES 1024
+typedef struct {
+    uintptr_t code;
+    intptr_t at;
+} HeroUnwindPlace;
+static HeroUnwindPlace hero_unwind_places[HERO_UNWIND_PLACES];
+static int64_t hero_unwind_places_n = 0;
+static int64_t hero_unwind_places_full = 0;
+
+/* This thread's side of a thunk's entry, one thread-local object so the
+ * entry asks the thread's storage once (on Darwin each object read so is a
+ * call): the code it placed last, and the block of numbers it draws from. */
+typedef struct {
+    uintptr_t placed;
+    uint64_t next;
+    uint64_t end;
+} HeroUnwindEntering;
+static _Thread_local HeroUnwindEntering hero_unwind_entering;
+
+/* The place of the thunk whose code starts at `code`, or -1. */
+static int64_t hero_unwind_place_of(uintptr_t code) {
+    int64_t n = __atomic_load_n(&hero_unwind_places_n, __ATOMIC_ACQUIRE);
+    for (int64_t i = 0; i < n; i += 1) {
+        if (hero_unwind_places[i].code == code) return i;
+    }
+    return -1;
+}
+
+static void hero_unwind_place(HeroUnwindEntering *mine, uintptr_t code, intptr_t at) {
+    mine->placed = code;
+    if (hero_unwind_place_of(code) >= 0) return;
+    hero_unwind_take();
+    int64_t n = hero_unwind_places_n;
+    if (hero_unwind_place_of(code) < 0) {
+        if (n < HERO_UNWIND_PLACES) {
+            hero_unwind_places[n].code = code;
+            hero_unwind_places[n].at = at;
+            __atomic_store_n(&hero_unwind_places_n, n + 1, __ATOMIC_RELEASE);
+        } else {
+            __atomic_store_n(&hero_unwind_places_full, 1, __ATOMIC_RELEASE);
+        }
+    }
+    hero_unwind_drop();
+}
+
+/* The activations' numbers: never 0, never given twice in a run, each thread
+ * taking them a block at a time. */
+static uint64_t hero_unwind_numbers = 0;
+
+/* A thunk of a program that unwinds was entered: its mark's initialiser. It
+ * opens the program to the hook, places the thunk's mark once per thread and
+ * code, and gives this activation its number, which the mark holds. */
+uint64_t hero_unwind_handed(void *slot, void *frame, void (*self)(void)) {
     if (__atomic_load_n(&hero_unwind_scoped, __ATOMIC_RELAXED) == 0) {
         __atomic_store_n(&hero_unwind_scoped, 1, __ATOMIC_RELAXED);
     }
-    return 0;
+    HeroUnwindEntering *mine = &hero_unwind_entering;
+    uintptr_t code = (uintptr_t)self;
+    if (__builtin_expect(mine->placed != code, 0)) {
+        hero_unwind_place(mine, code, (intptr_t)((uintptr_t)slot - (uintptr_t)frame));
+    }
+    if (__builtin_expect(mine->next == mine->end, 0)) {
+        uint64_t block = (uint64_t)1 << 20;
+        mine->next = __atomic_fetch_add(&hero_unwind_numbers, block, __ATOMIC_RELAXED) + 1;
+        mine->end = mine->next + block;
+    }
+    uint64_t number = mine->next;
+    mine->next = number + 1;
+    return number;
 }
 
-/* Whether `frame` is one of the group's. */
+/* Whether the activation the group's `i`th frame was is the one standing at
+ * its address now: the nearest thunk at or above it still holds the number it held
+ * at the jump, read by the kernel, since the address may now be another
+ * stack's or none (`parts/rebind_jump.c`, `parts/sigjump_save.c`). */
+static bool hero_unwind_same(const HeroUnwoundGroup *g, int i);
+
+/* Whether `frame` is one of the group's, the same activation. */
 static bool hero_unwind_names(const HeroUnwoundGroup *g, uintptr_t frame) {
     for (int i = 0; i < g->frames_n; i += 1) {
-        if (g->frames[i] == frame) return true;
+        if (g->frames[i] == frame && hero_unwind_same(g, i)) return true;
     }
     return false;
 }
@@ -373,13 +479,31 @@ typedef struct {
     uintptr_t target;
     uintptr_t lo;
     uintptr_t hi;
+    /* The first frame pointer whose record the chain's check did not find
+     * sound, or its last: the walk never steps from a frame standing there
+     * (`hero_unwind_chained`). */
+    uintptr_t limit;
+    /* Whether the record at the limit ends the chain (its saved frame
+     * pointer 0), and whether the walk ended there, every frame above the
+     * target met. */
+    bool whole;
+    bool ended;
     bool found;
     bool passed;
     bool stopped;
     int left_n;
     uintptr_t left[HERO_UNWIND_LEFT];
+    /* The frames at and above the target met, the first `HERO_UNWIND_ABOVE`
+     * kept; and the thunks among them, by their place in that count, each
+     * with its mark's address and the number it held (`HERO_UNWIND_UNTOLD`
+     * where the kernel would not read it). */
+    int above_n;
     int frames_n;
     uintptr_t frames[HERO_UNWIND_ABOVE];
+    int thunks_n;
+    int thunk_at[HERO_UNWIND_ABOVE + 1];
+    uintptr_t thunk_slot[HERO_UNWIND_ABOVE + 1];
+    uint64_t thunk_number[HERO_UNWIND_ABOVE + 1];
 } HeroUnwindWalk;
 
 static _Unwind_Reason_Code hero_unwind_walked(struct _Unwind_Context *ctx, void *arg) {
@@ -408,13 +532,73 @@ static _Unwind_Reason_Code hero_unwind_walked(struct _Unwind_Context *ctx, void 
         } else {
             if (walk->left_n < HERO_UNWIND_LEFT) walk->left[walk->left_n] = sp;
             walk->left_n += 1;
+            if ((uintptr_t)_Unwind_GetGR(ctx, HERO_UNWIND_FP) >= walk->limit) {
+                walk->stopped = true;
+                return _URC_NORMAL_STOP;
+            }
             return _URC_NO_REASON;
         }
     }
-    if (walk->frames_n >= HERO_UNWIND_ABOVE) return _URC_NORMAL_STOP;
-    walk->frames[walk->frames_n] = (uintptr_t)_Unwind_GetGR(ctx, HERO_UNWIND_FP);
-    walk->frames_n += 1;
+    uintptr_t fp = (uintptr_t)_Unwind_GetGR(ctx, HERO_UNWIND_FP);
+    int at = walk->above_n;
+    walk->above_n += 1;
+    if (at < HERO_UNWIND_ABOVE) {
+        walk->frames[at] = fp;
+        walk->frames_n = at + 1;
+    }
+    /* A thunk at or above the frame the jump lands in: the number its
+     * activation holds tells it, and the frames below it, from another
+     * activation's at their addresses. A thunk is a frame of its own too:
+     * at -O2 clang inlines the function a thunk calls, and the catch's call
+     * with it, into the thunk (this lane's case of a copied coroutine's catch,
+     * released early at -O2 alone while the thunk was asked only of the frames
+     * below it). The first one past the kept frames is the last the walk
+     * needs. */
+    int64_t place = hero_unwind_place_of((uintptr_t)_Unwind_GetRegionStart(ctx));
+    if (place >= 0 && walk->thunks_n < HERO_UNWIND_ABOVE + 1) {
+        uintptr_t slot = fp + (uintptr_t)hero_unwind_places[place].at;
+        uint64_t number = 0;
+        int k = walk->thunks_n;
+        walk->thunk_at[k] = at;
+        walk->thunk_slot[k] = hero_unwind_peek(slot, &number, sizeof number) ? slot : HERO_UNWIND_UNTOLD;
+        walk->thunk_number[k] = number;
+        walk->thunks_n = k + 1;
+        if (at >= HERO_UNWIND_ABOVE) return _URC_NORMAL_STOP;
+    }
+    /* The unwinder steps from this frame by reading its record, which the
+     * chain's check read sound only below the limit. */
+    if (fp >= walk->limit) {
+        walk->ended = fp == walk->limit;
+        return _URC_NORMAL_STOP;
+    }
     return _URC_NO_REASON;
+}
+
+/* What tells each kept frame of the walk from another activation at its
+ * address: the number of the nearest thunk at it or above it; with none, its address,
+ * where the walk met every frame up to the chain's end and the thunks' table
+ * held every thunk, and nothing otherwise. */
+static void hero_unwind_told(HeroUnwoundGroup *g, const HeroUnwindWalk *walk) {
+    bool whole = walk->whole && walk->ended && __atomic_load_n(&hero_unwind_places_full, __ATOMIC_ACQUIRE) == 0;
+    for (int i = 0; i < g->frames_n; i += 1) {
+        g->slots[i] = whole ? HERO_UNWIND_BY_ADDRESS : HERO_UNWIND_UNTOLD;
+        g->tokens[i] = 0;
+        for (int k = 0; k < walk->thunks_n; k += 1) {
+            if (walk->thunk_at[k] >= i) {
+                g->slots[i] = walk->thunk_slot[k];
+                g->tokens[i] = walk->thunk_number[k];
+                break;
+            }
+        }
+    }
+}
+
+static bool hero_unwind_same(const HeroUnwoundGroup *g, int i) {
+    uintptr_t slot = g->slots[i];
+    if (slot == HERO_UNWIND_BY_ADDRESS) return true;
+    if (slot == HERO_UNWIND_UNTOLD) return false;
+    uint64_t now = 0;
+    return hero_unwind_peek(slot, &now, sizeof now) && now == g->tokens[i];
 }
 
 /* The end of this thread's unwind: the group published, waiting for its
@@ -456,7 +640,15 @@ __attribute__((no_sanitize("address"))) static _Unwind_Reason_Code hero_unwind_s
      * declares `nothrow`, compiled as a call that cannot unwind) and what it
      * held stays held, so the exit audit must forgive as it did before. */
     if (me->frame_tabled && !me->frame_reached) me->missed = true;
-    if ((actions & _UA_END_OF_STACK) != 0 || (uintptr_t)_Unwind_GetCFA(ctx) >= me->target) {
+    /* THE TARGET'S FRAME BY ITS IDENTITY: the one standing at the jump's stack
+     * pointer exactly, or, should no frame stand there, the one at the walk's
+     * place for it, so no cleanup of the frame the jump lands in or of any
+     * above it ever runs. Never `CFA >= target`: frames on two stacks are not
+     * ordered by their addresses, and where C's stack lies below a stack a
+     * callback runs on, that order stopped an unwind at its first frame (panel
+     * 263's compiler-engineer, `fu/fu.c`, 0 of 3 slots released). */
+    me->seen += 1;
+    if ((actions & _UA_END_OF_STACK) != 0 || (uintptr_t)_Unwind_GetCFA(ctx) == me->target || me->seen > me->below) {
         int jump = me->kind;
         void *env = me->env;
         int value = me->value;
@@ -480,6 +672,11 @@ static void hero_unwind_adopt(HeroUnwoundGroup *into, const HeroUnwindWalk *walk
         HeroUnwoundGroup *g = *at;
         bool left = false;
         for (int i = 0; i < n && !left; i += 1) left = walk->left[i] == g->landing;
+        /* And the catch the group waits for is the one standing there now, not
+         * another coroutine's at its address (`hero_unwind_same`): told by the
+         * frame the jump landed in, the group's second, the first being the
+         * one it abandoned at the target. */
+        left = left && hero_unwind_same(g, g->frames_n > 1 ? 1 : 0);
         if (!left) {
             at = &g->next;
             continue;
@@ -498,6 +695,25 @@ static void hero_unwind_adopt(HeroUnwoundGroup *into, const HeroUnwindWalk *walk
     hero_unwind_drop();
 }
 
+/* WHETHER THE THREAD BLOCKS NO SIGNAL, asked of the kernel: a handler runs with
+ * the signal it handles blocked unless it asked otherwise, so a jump made with
+ * any signal blocked may come out of a handler that interrupted a frame in the
+ * middle of its code, and is not unwound. This is the answer the frames could
+ * not give: a handler a raw system call installed on Darwin returns through a
+ * trampoline of the program's own, an ordinary C function whose return
+ * address the walk reads as a call's, and `wdr` still released an array twice
+ * in 11 runs of 34 with every walked frame standing after a call (this lane's
+ * runs of the repair, 2026-11-27). A program that blocks signals of its own
+ * accord keeps the behaviour before R2, the safe side. */
+static bool hero_unwind_unmasked(void) {
+    sigset_t now;
+    if (pthread_sigmask(SIG_SETMASK, NULL, &now) != 0) return false;
+    for (int sig = 1; sig < NSIG; sig += 1) {
+        if (sigismember(&now, sig) == 1) return false;
+    }
+    return true;
+}
+
 /* WHETHER THE FRAMES FROM `fp` TO THE TARGET ARE ONE CHAIN ON THE THREAD'S OWN
  * STACK, asked before the unwinder reads any of them: each frame record's
  * saved frame pointer above the one before it and below the stack's top, up
@@ -508,16 +724,38 @@ static void hero_unwind_adopt(HeroUnwoundGroup *into, const HeroUnwindWalk *walk
  * host, ASan's SEGV inside `libunwind::UnwindCursor::step`, 3 runs of 3):
  * a chain that leaves the stack, turns back or ends is no unwind. A frame
  * kept with no record (x86-64's `-fomit-frame-pointer`) breaks the chain the
- * same way, the safe side. */
-static bool hero_unwind_chained(uintptr_t fp, uintptr_t target, uintptr_t lo, uintptr_t hi) {
+ * same way, the safe side.
+ *
+ * AND HOW FAR ABOVE THE TARGET THE WALK MAY STEP: the walk goes on past the
+ * target for the frames whose return releases the group, and the unwinder
+ * reads each of their records too. So the records are read on, up to
+ * `HERO_UNWIND_ABOVE` past the target, and the answer is the frame pointer of
+ * the first whose record is not sound, or of the last read: the walk never
+ * steps from a frame standing there. Until 2026-11-27 the check stopped at the
+ * target, and a jump inside a coroutine whose frames a library copies in and
+ * out of one region of the thread's stack walked on, past the landing, to the
+ * coroutine's first frame, whose record its library writes zero: SIGSEGV at
+ * address -8 inside `_Unwind_Backtrace` (`run/fixedbugs-a-c-longjmp-inside-
+ * coroutines-copied-out-and-in-of-one-carved-region-keeps-their-large-values`,
+ * `-O0`, 3 runs of 3, this lane). 0 where the chain below the target is not
+ * one. */
+static uintptr_t hero_unwind_chained(uintptr_t fp, uintptr_t target, uintptr_t lo, uintptr_t hi, bool *whole) {
+    *whole = false;
     for (int steps = 0; steps < 100000; steps += 1) {
-        if (fp >= target) return true;
-        if (fp < lo || fp + 2 * sizeof(uintptr_t) > hi || (fp & (sizeof(uintptr_t) - 1)) != 0) return false;
-        uintptr_t next = ((const uintptr_t *)fp)[0];
-        if (next <= fp || next >= hi) return false;
+        bool readable = fp >= lo && fp + 2 * sizeof(uintptr_t) <= hi && (fp & (sizeof(uintptr_t) - 1)) == 0;
+        uintptr_t next = readable ? ((const uintptr_t *)fp)[0] : 0;
+        bool sound = readable && next > fp && next < hi;
+        if (fp >= target) {
+            if (!sound) {
+                *whole = readable && next == 0;
+                return fp;
+            }
+        } else if (!sound) {
+            return 0;
+        }
         fp = next;
     }
-    return false;
+    return 0;
 }
 
 /* THE HOOK, before a jump of the setjmp family made outside every signal
@@ -532,13 +770,17 @@ __attribute__((noinline)) static void hero_unwind_jump(void *env, int value, int
     _Atomic int64_t *mine = hero_callback_mine;
     if (mine == NULL || atomic_load_explicit(mine, memory_order_relaxed) <= 0) return;
     HeroUnwindThread *me = &hero_unwind_this;
-    if (me->on) return;
-    if (!hero_unwind_chained((uintptr_t)__builtin_frame_address(0), target, lo, hi)) return;
+    if (me->on || !hero_unwind_unmasked()) return;
+    bool whole = false;
+    uintptr_t limit = hero_unwind_chained((uintptr_t)__builtin_frame_address(0), target, lo, hi, &whole);
+    if (limit == 0) return;
     HeroUnwindWalk walk;
     memset(&walk, 0, sizeof walk);
     walk.target = target;
     walk.lo = lo;
     walk.hi = hi;
+    walk.limit = limit;
+    walk.whole = whole;
     _Unwind_Backtrace(hero_unwind_walked, &walk);
     if (walk.stopped || !walk.found || walk.frames_n == 0) return;
     HeroUnwoundGroup *g = (HeroUnwoundGroup *)hero_malloc_raw(sizeof(HeroUnwoundGroup));
@@ -546,11 +788,14 @@ __attribute__((noinline)) static void hero_unwind_jump(void *env, int value, int
     g->landing = target;
     g->frames_n = walk.frames_n;
     memcpy(g->frames, walk.frames, sizeof(uintptr_t) * (size_t)walk.frames_n);
+    hero_unwind_told(g, &walk);
     hero_unwind_adopt(g, &walk);
     me->kind = kind;
     me->env = env;
     me->value = value;
     me->target = target;
+    me->below = walk.left_n;
+    me->seen = 0;
     me->group = g;
     me->frame_tabled = false;
     me->frame_reached = false;
@@ -572,7 +817,14 @@ __attribute__((noinline)) static void hero_unwind_jump(void *env, int value, int
     hero_unwind_finish(me);
 }
 
-#elif !defined(_WIN32)
+#else
+
+/* No walk here, so no group: every frame is its address. */
+static bool hero_unwind_same(const HeroUnwoundGroup *g, int i) { return g->slots[i] == HERO_UNWIND_BY_ADDRESS; }
+
+#endif
+
+#if !defined(_WIN32) && !(defined(__aarch64__) || defined(__x86_64__))
 
 /* A machine whose frame pointer this file does not name: no unwind, the jump
  * as it always was. */

@@ -258,7 +258,7 @@ __attribute__((__unused__)) static void (*hero_callback_of(void (*hero_f)(void))
 
 
 #line 22 "tests/golden/run/unwind-a-jump-whose-target-no-walked-frame-stands-at-leaves-the-jump-as-it-was.hero"
-int64_t h_unwindajumpwhosetargetnowalkedframestandsatleavesthejumpasitwas_body(int64_t h0_n) { hero_thread_guard("unwindajumpwhosetargetnowalkedframestandsatleavesthejumpasitwas.body"); HeroStr h1_held __attribute__((__cleanup__(hero_unwind_str))) = {0}; HeroArrayHeader * h2_words __attribute__((__cleanup__(hero_unwind_array))) = {0}; HERO_NODEBUG HeroStr h3_own3 __attribute__((__cleanup__(hero_unwind_str))) = {0}, h4_own4 __attribute__((__cleanup__(hero_unwind_str))) = {0}, t2, t3, t4, t5, t6, t10, t11, t12; HERO_NODEBUG HeroArrayHeader *h5_own5 __attribute__((__cleanup__(hero_unwind_array))) = {0}, *t7, *t8, *t13, *t14; HERO_NODEBUG int64_t t1, t9; HERO_NODEBUG char hero_unwind_mark __attribute__((__cleanup__(hero_unwind_frame))) = 0; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
+__attribute__((__no_sanitize__("address"))) int64_t h_unwindajumpwhosetargetnowalkedframestandsatleavesthejumpasitwas_body(int64_t h0_n) { hero_thread_guard("unwindajumpwhosetargetnowalkedframestandsatleavesthejumpasitwas.body"); HeroStr h1_held __attribute__((__cleanup__(hero_unwind_str))) = {0}; HeroArrayHeader * h2_words __attribute__((__cleanup__(hero_unwind_array))) = {0}; HERO_NODEBUG HeroStr h3_own3 __attribute__((__cleanup__(hero_unwind_str))) = {0}, h4_own4 __attribute__((__cleanup__(hero_unwind_str))) = {0}, t2, t3, t4, t5, t6, t10, t11, t12; HERO_NODEBUG HeroArrayHeader *h5_own5 __attribute__((__cleanup__(hero_unwind_array))) = {0}, *t7, *t8, *t13, *t14; HERO_NODEBUG int64_t t1, t9; HERO_NODEBUG char hero_unwind_mark __attribute__((__cleanup__(hero_unwind_frame))) = 0; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; t2 = HERO_STR_LIT(hero_str_3ec4b3a8); t3 = hero_int_to_str(t1); t10 = h3_own3; h3_own3 = t3; hero_str_decref(t10); t4 = hero_str_concat(t2, t3); t11 = h4_own4; h4_own4 = t4; hero_str_decref(t11); t12 = h1_held; hero_str_incref(t4); h1_held = t4; hero_str_decref(t12);
     t5 = h1_held; t6 = HERO_STR_LIT(hero_str_446cba7c); t7 = hero_array_new(&hero_desc_str, 2); hero_array_push_owned(&t7, &t5); hero_array_push_owned(&t7, &t6); t13 = h5_own5; h5_own5 = t7; hero_array_decref(t13); t14 = h2_words; hero_array_incref(t7); h2_words = t7; hero_array_decref(t14);
     { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"unwind-a-jump-whose-target-no-walked-frame-stands-at-leaves-the-jump-as-it-was.hero", "unwind-a-jump-whose-target-no-walked-frame-stands-at-leaves-the-jump-as-it-was.body", 25, 5}; (void)uw_throw(); hero_unwind_returned(__builtin_frame_address(0)); }
@@ -272,8 +272,8 @@ int64_t h_unwindajumpwhosetargetnowalkedframestandsatleavesthejumpasitwas_body(i
     return t9;
 }
 
-__attribute__((__noinline__)) int64_t h_0cb_unwindajumpwhosetargetnowalkedframestandsatleavesthejumpasitwas_body(int64_t h0_n) {
-    hero_callback_entered("unwindajumpwhosetargetnowalkedframestandsatleavesthejumpasitwas.body", __builtin_return_address(0), __builtin_frame_address(0)); HERO_NODEBUG char hero_unwound __attribute__((__cleanup__(hero_unwind_thunk))) = hero_unwind_handed();
+__attribute__((__no_sanitize__("address"))) __attribute__((__noinline__)) int64_t h_0cb_unwindajumpwhosetargetnowalkedframestandsatleavesthejumpasitwas_body(int64_t h0_n) {
+    hero_callback_entered("unwindajumpwhosetargetnowalkedframestandsatleavesthejumpasitwas.body", __builtin_return_address(0), __builtin_frame_address(0)); HERO_NODEBUG uint64_t hero_unwound __attribute__((__cleanup__(hero_unwind_thunk))) = hero_unwind_handed(&hero_unwound, __builtin_frame_address(0), (void (*)(void))h_0cb_unwindajumpwhosetargetnowalkedframestandsatleavesthejumpasitwas_body);
     int64_t hero_result = h_unwindajumpwhosetargetnowalkedframestandsatleavesthejumpasitwas_body(h0_n);
     hero_callback_left();
     return hero_result;
@@ -434,7 +434,7 @@ HERO_TU_LOCAL void h_0opt_e201354_unwound(void *hero_v) {
     hero_unwind_slot(hero_v, sizeof(h_0opt_e201354), h_0opt_e201354_unwound_release);
 }
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5a6b82543b02f066", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("35a906bd20e5116d", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("unwindajumpwhosetargetnowalkedframestandsatleavesthejumpasitwas\tunwind-a-jump-whose-target-no-walked-frame-stands-at-leaves-the-jump-as-it-was\n");

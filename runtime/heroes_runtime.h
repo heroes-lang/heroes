@@ -147,7 +147,9 @@ void hero_signal_learn(void);
  * function holding what the unwind leaves held says so (`hero_unwind_residue`),
  * every other collected frame says it was reached (`hero_unwind_frame`), and
  * the thunk's mark is initialised by the call that opens the program to the
- * unwind (`hero_unwind_handed`). Added beside the declarations above and changing
+ * unwind and gives the thunk's activation its own number, by which a group
+ * tells a frame on a stack a C library copies from another at its address
+ * (`hero_unwind_handed`). Added beside the declarations above and changing
  * none of them, so `HERO_RUNTIME_ABI` stands: a runtime without them is a
  * compile error at the first unit that names one. */
 extern int64_t hero_unwind_running;
@@ -161,7 +163,7 @@ void hero_unwind_unwound(void);
 void hero_unwind_framed(void);
 void hero_unwind_held(void);
 void hero_unwind_returned(void *);
-char hero_unwind_handed(void);
+uint64_t hero_unwind_handed(void *, void *, void (*)(void));
 static inline void hero_unwind_slot(void *hero_v, size_t hero_size, void (*hero_release)(void *)) {
     if (__builtin_expect(__atomic_load_n(&hero_unwind_running, __ATOMIC_RELAXED) != 0, 0)) {
         hero_unwind_kept(hero_v, hero_size, hero_release);

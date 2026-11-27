@@ -254,16 +254,6 @@ function frame_mark(c: state.Checked, names: ctype.Names, f: containers.Function
 
     return ""
 
-# What a thunk's first line carries after its entry in a program that
-# unwinds, "" in any other: a mark whose cleanup ends the callback's count as
-# one unwound where an unwind leaves the thunk, and does nothing on its return,
-# initialised by the call that opens the program to the runtime's hook, which
-# walks no other program's stack (`hero_unwind_handed`).
-function thunk_mark(names: ctype.Names) -> str
-    if !unwinds(names)
-        return ""
-    return " HERO_NODEBUG char hero_unwound " + CLEANUP + "hero_unwind_thunk))) = hero_unwind_handed();"
-
 # The line written after a call of a C library's group in a program that
 # unwinds: the values an unwind collected wait for the return of the call
 # holding the jump's target, and a frame of the target's or above it is past

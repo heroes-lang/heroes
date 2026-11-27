@@ -55,7 +55,7 @@ use emit/ctype
 use emit/large_value
 use emit/mangle
 use emit/signature
-use emit/unwind_scope
+use emit/unwound_frame
 use emit/writer
 use ir/containers
 use ir/instances
@@ -134,8 +134,8 @@ function written(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: sou
 
     writer.blank(@w)
     writer.at_generated(@w)
-    writer.line(@w, text: OWN_FRAME + head + " {")
-    writer.line(@w, text: "    " + in_signal(who) + unwind_scope.thunk_mark(names))
+    writer.line(@w, text: unwound_frame.thunk_words(names) + OWN_FRAME + head + " {")
+    writer.line(@w, text: "    " + in_signal(who) + unwound_frame.thunk_mark(names, thunk: thunk_name(real)))
 
     for slot_id in f.params
         declared = f.slots[slot_id]

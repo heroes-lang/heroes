@@ -89,6 +89,10 @@ record Prologue
     # reverse, and the closing brace undefines the second.
     off_frame: [str]
     defined: [str]
+    # Whether the frame carries an unwind's mark, and so slots whose cleanup
+    # takes their address, which `emit/unwound_frame.hero` leaves
+    # uninstrumented by AddressSanitizer.
+    marked: bool
 
 # What comes before a slot's declaration: nothing for a parameter or a
 # binding the author wrote, the debugger's word for a slot the lowering
@@ -310,4 +314,10 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
 
     if mark != ""
         nodebug.whole(@lines, text: mark)
-    return Prologue(lines: nodebug.statements(lines), defines: defines, off_frame: off_frame, defined: defined)
+    return Prologue(
+        lines: nodebug.statements(lines),
+        defines: defines,
+        off_frame: off_frame,
+        defined: defined,
+        marked: mark != ""
+    )
