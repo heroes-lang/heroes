@@ -226,7 +226,7 @@ function choose(cat: schema.Catalog lent, sc: scope.Scope lent, k: i64, conditio
         return ok(best)
     ranged = ranged_on(usable_here, column: rowid)
 
-    if !is_full(ranged)
+    if has_range(ranged)
         return ok(
             Access(index: "", by_rowid: true, column: "rowid", equal: [], low: ranged.low, low_inclusive: ranged.low_inclusive, high: ranged.high, high_inclusive: ranged.high_inclusive)
         )
@@ -234,7 +234,7 @@ function choose(cat: schema.Catalog lent, sc: scope.Scope lent, k: i64, conditio
     for i in schema.indexes_of(cat, table: t.name)
         on_index = ranged_on(usable_here, column: i.columns[0])
 
-        if !is_full(on_index)
+        if has_range(on_index)
             return ok(
                 Access(index: i.name, by_rowid: false, column: t.columns[i.columns[0]].name, equal: [], low: on_index.low, low_inclusive: on_index.low_inclusive, high: on_index.high, high_inclusive: on_index.high_inclusive)
             )
@@ -255,8 +255,8 @@ function rowid_place(t: schema.Table) -> i64
         return t.rowid_column
     return t.columns.len()
 
-# The range the comparisons give one column; a full access where they give
-# none. The first bound of each side is taken.
+# The range the comparisons give one column, as an access's bounds; none
+# where they give none. The first bound of each side is taken.
 function ranged_on(bounds: [Bounded], column: i64) -> Access
     a @= full()
 
@@ -265,13 +265,15 @@ function ranged_on(bounds: [Bounded], column: i64) -> Access
             if (u.op == ">" || u.op == ">=") && a.low.len() == 0
                 a.low @ [u.other]
                 a.low_inclusive @ u.op == ">="
-                a.by_rowid @ true
             else if (u.op == "<" || u.op == "<=") && a.high.len() == 0
                 a.high @ [u.other]
                 a.high_inclusive @ u.op == "<="
-                a.by_rowid @ true
 
     return a
+
+# Whether `a` bounds its key on either side.
+function has_range(a: Access) -> bool
+    return a.low.len() > 0 || a.high.len() > 0
 
 ## EXPLAIN
 
