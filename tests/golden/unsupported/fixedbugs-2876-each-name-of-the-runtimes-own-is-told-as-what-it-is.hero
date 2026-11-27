@@ -1,0 +1,26 @@
+# Fixed 2026-11-27, defect 2876, lane runtime-names: each kind of name the
+# Heroes runtime's headers declare or define, bound through a header that
+# holds none of them.
+# Symptom: every one was told as a name `heroes_runtime.h` declares whose
+# functions free what the program holds, and its note asked for the header
+# declaring the function: a type, a macro, an enumeration constant and a
+# variable alike.
+# Cause and repair: `fixedbugs-2876-the-switch-heroes-unit-h-defines-bound-through-it-is-told-as-its-macro`.
+# Each is told as what it is, a type, a macro, an enumeration constant, a
+# variable or a function, by the header that gives it; the function's
+# message alone says what the runtime's functions free, and its note alone
+# names the header declaring a function. `HERO_STATIC_CONSTANTS`, which
+# `heroes_runtime.h` both asks about and defines, is its macro.
+
+extern "stdio.h"
+    record Box tag HeroThreadBox  #~ ffi_runtime_header
+    constant HERO_RUNTIME_ABI: i64  #~ ffi_runtime_header
+    constant HERO_DESC_EQ_AT: i64  #~ ffi_runtime_header
+    constant hero_desc_int: i64  #~ ffi_runtime_header
+    function hero_print_int(v: i64)  #~ ffi_runtime_header
+
+extern "heroes_unit.h"
+    constant HERO_STATIC_CONSTANTS: i64  #~ ffi_runtime_header
+
+function main()
+    hero_print_int(v: HERO_RUNTIME_ABI + HERO_DESC_EQ_AT + hero_desc_int + HERO_STATIC_CONSTANTS)

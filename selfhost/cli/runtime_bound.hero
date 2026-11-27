@@ -1,7 +1,7 @@
-# A binding of a name the Heroes runtime's own header declares, refused at
-# `build` whatever header its group names (design.md §4.19, §4.20, §1.12;
-# panel 232's R6, provisional, author ratification pending; defect 2256,
-# 2026-10-29).
+# A binding of a name the Heroes runtime's own headers declare or define,
+# refused at `build` whatever header its group names (design.md §4.19, §4.20,
+# §1.12; panel 232's R6, provisional, author ratification pending; defects
+# 2256, 2026-10-29, and 2876, 2026-11-27).
 #
 # Every unit reads `heroes_unit.h`, and so `heroes_runtime.h`, before its
 # groups' headers, so a group binding a function of the runtime's finds it
@@ -15,30 +15,66 @@
 # (`check/runtime_header.hero`); this is the rest of that door, told at
 # `build`, which knows the runtime it compiles against and reads its header.
 #
-# **The runtime's names are the words its header's C writes in the compiler's
-# own forms** (`own_names.reserved`: `h_`, `hero_`, `Hero`, `HERO_`,
-# `HEROES_`, `main`), its comments and literals passed over
-# (`c_words.used`), forms panel 214's R4 holds every name and macro of
+# **The runtime's names are screened by the words its two first headers' C
+# writes in the compiler's own forms** (`own_names.reserved`: `h_`, `hero_`,
+# `Hero`, `HERO_`, `HEROES_`, `main`), their comments and literals passed
+# over (`c_words.used`), forms panel 214's R4 holds every name and macro of
 # the runtime's headers to (`cli/own_names.hero`'s test). A word of another
-# form the header writes, a parameter's `text` or C's own `int64_t`, is no
+# form a header writes, a parameter's `text` or C's own `int64_t`, is no
 # binding's business, and a third party's `hero_jump` the runtime does not
 # write binds as before. `hero_os.h`'s own names are not the header's, so a
 # program binds them as the library does.
+#
+# **Each screened name is told as what it is, and by the header that gives
+# it** (defect 2876): until then every word was told as a function
+# `heroes_runtime.h` declares, `HERO_STANDARD_AFTER_GROUPS` among them, a
+# macro `heroes_unit.h` defines and the runtime's header only tests, and a
+# member's name, `hero_code`, was refused where a program's own header
+# declared a function of it. `cli/runtime_kinds.hero` says what a word is: a
+# macro either header defines, or a function, variable, type or enumeration
+# constant clang reads the two declaring at the file's scope, each refused
+# and told so; a member's, a parameter's or a word an `#if` only tests is no
+# name of the runtime's, and its binding is told as any other's is.
+#
+# **The switch is refused, measured** (that day, the unit's C for the
+# binding written by hand, with the line the guard adds for a bound name of
+# its list): bound under `stdio.h`, `heroes_unit.h` or a header of the
+# program's own that defines nothing, its accessor read `1`, the compiler's
+# switch, found only because the unit reads `heroes_unit.h` first, where spec
+# § 13 holds a group's constant to the header it names; under a header that
+# defines it again as `7`, it read `7`. A program reads the value the
+# compiler set unless its own header undoes the compiler's switch, so the
+# name is the runtime's as its other names are.
 
 use ast
 use check/runtime_header
 use cli/compile
 use cli/own_names
+use cli/runtime_kinds
+use cli/strings
 use diag
-use emit/c_words
 use module/reading
 use source
 use token
 
+# Why no program binds a name of the runtime's, said of every kind but a
+# function.
+constant WHY_NAME: str
+    "they are the C this compiler writes for itself, which another compiler may change or take away"
+
+# Why no program binds a function of the runtime's.
+constant WHY_FUNCTION: str
+    "the runtime's functions count the references of the program's own values and free them, so one called from Heroes can free what the program still holds"
+
+# What the program binds instead, said of every kind but a function, whose
+# note is `runtime_header.INSTEAD`.
+constant INSTEAD_NAME: str
+    "what the runtime offers a program is `hero_os.h`'s, threads, processes and files, and a constant or a type of the C library is its own header's, `stdint.h` or `limits.h`: name the header that declares the name the program needs"
+
 # The build stopped where a binding names the runtime's own: its refusals
 # printed as `check`'s are, and the failure `compile.leave` gives a stage.
-function stopped(s: source.Source, decls: [ast.Decl], runtime: str, permissive: bool) -> ()?
-    stop = compile.stage(told(s, decls, runtime: runtime), s, permissive: permissive)
+function stopped(s: source.Source, decls: [ast.Decl], build: str, runtime: str, permissive: bool) -> ()?
+    stop = compile.stage(told(s, decls, build: build, runtime: runtime), s, permissive: permissive)
 
     if stop.is_err()
         return ok()
@@ -48,33 +84,83 @@ function stopped(s: source.Source, decls: [ast.Decl], runtime: str, permissive: 
 # Each binding of the runtime's own names, told at the name, in the order the
 # declarations stand; none where the runtime's header cannot be read now,
 # which the toolchain read before any unit was written (`runtime_places`).
-function told(s: source.Source, decls: [ast.Decl], runtime: str) -> [diag.Diagnostic]
+# clang is asked, under `build`, only where a binding of the compiler's forms
+# names a word the headers' code writes and no `#define` of theirs names.
+function told(s: source.Source, decls: [ast.Decl], build: str, runtime: str) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= []
-    read = reading.source_text(runtime + "/heroes_runtime.h")
-
-    if read.is_err()
-        return out
-    own = c_words.used(read.must().text)
+    formed: [token.Span] @= []
 
     for decl in decls
         named = bound(decl)
 
-        if named.is_err()
-            continue
-        name = source.span_text(s, named.must())
+        if !named.is_err() && own_names.reserved(source.span_text(s, named.must()))
+            formed @ formed.push(named.must())
 
-        if own_names.reserved(name) && !own[name].is_err()
-            out @ out.push(diagnostic(name: name, span: named.must()))
+    # A program binding no name of the compiler's forms reads no header here.
+    if formed.len() == 0
+        return out
+    read = reading.source_text(runtime + "/heroes_runtime.h")
+
+    if read.is_err()
+        return out
+    unit = reading.source_text(runtime + "/heroes_unit.h")
+
+    unit_text = if unit.is_err()
+        ""
+    else
+        unit.must().text
+    p = runtime_kinds.prefix_of(unit: unit_text, runtime: read.must().text)
+    screened: [token.Span] @= []
+    asks: bool @= false
+
+    for span in formed
+        name = source.span_text(s, span)
+
+        if runtime_kinds.written(p, name: name)
+            screened @ screened.push(span)
+            asks @ asks || !runtime_kinds.a_macro(p, name: name)
+
+    declared: {str: str} @= {}
+    answered: bool @= !asks
+
+    if asks
+        answer = runtime_kinds.asked(build: build, runtime: runtime)
+
+        if !answer.is_err()
+            declared @ answer.must()
+            answered @ true
+
+    for span in screened
+        name = source.span_text(s, span)
+        o = runtime_kinds.owned(p, name: name, declared: declared, answered: answered)
+
+        if !o.is_err()
+            out @ out.push(diagnostic(name: name, span: span, o: o.must()))
 
     return out
 
-function diagnostic(name: str, span: token.Span) -> diag.Diagnostic
+# The refusal of `name`, said as what `o` says it is and the header that
+# gives it.
+function diagnostic(name: str, span: token.Span, o: runtime_kinds.Owned) -> diag.Diagnostic
+    function_kind = o.what == runtime_kinds.FUNCTION
+
+    why = if function_kind
+        WHY_FUNCTION
+    else if o.what == runtime_kinds.WRITTEN
+        WHY_NAME + ", and its functions count the references of the program's own values and free them"
+    else
+        WHY_NAME
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: runtime_header.CODE,
-        message: "`" + name + "` is the Heroes runtime's own, declared by its `heroes_runtime.h`, which every unit reads before its groups' headers whatever header a group names, and no program binds the runtime's own names: its functions count the references of the program's own values and free them, so one called from Heroes frees what the program still holds",
+        message: "`" + name + "` is the Heroes runtime's own, " + o.what + " its `" + o.file + "` " + runtime_kinds.verb(o) + ", which every unit reads before its groups' headers whatever header a group names, and no program binds the runtime's own names: " + why,
         span: span
     )
-    d.notes @ d.notes.push(runtime_header.INSTEAD)
+
+    note = if function_kind
+        runtime_header.INSTEAD
+    else
+        INSTEAD_NAME
+    d.notes @ d.notes.push(note)
     return d
 
 # The C name a group's declaration binds, where it stands in the program: a
@@ -96,3 +182,37 @@ function bound(decl: ast.Decl) -> token.Span?
         .variant_decl | .test_decl => return fail(code: "none", msg: "no group")
 
     return fail(code: "none", msg: "no group")
+
+## Tests
+
+test "a name of the runtime's is told as what it is and by the header that gives it, a function alone as one that frees (defect 2876)"
+    span = token.Span(start: 0, end: 1)
+    unit_switch = diagnostic(
+        name: "HERO_STANDARD_AFTER_GROUPS",
+        span: span,
+        o: runtime_kinds.Owned(what: runtime_kinds.MACRO, file: runtime_kinds.UNIT)
+    )
+    assert strings.starts_with(
+        text: unit_switch.message,
+        prefix: "`HERO_STANDARD_AFTER_GROUPS` is the Heroes runtime's own, a macro its `heroes_unit.h` defines, which every unit reads"
+    )
+    assert !strings.holds(text: unit_switch.message, needle: "free") && unit_switch.notes == [INSTEAD_NAME]
+    function_d = diagnostic(
+        name: "hero_print_int",
+        span: span,
+        o: runtime_kinds.Owned(what: runtime_kinds.FUNCTION, file: runtime_kinds.RUNTIME)
+    )
+    assert strings.starts_with(
+        text: function_d.message,
+        prefix: "`hero_print_int` is the Heroes runtime's own, a function its `heroes_runtime.h` declares,"
+    )
+    assert strings.holds(text: function_d.message, needle: WHY_FUNCTION) && function_d.notes == [runtime_header.INSTEAD]
+    constant_d = diagnostic(
+        name: "HERO_DESC_EQ_AT",
+        span: span,
+        o: runtime_kinds.Owned(what: runtime_kinds.ENUMERATOR, file: runtime_kinds.RUNTIME)
+    )
+    assert strings.starts_with(
+        text: constant_d.message,
+        prefix: "`HERO_DESC_EQ_AT` is the Heroes runtime's own, an enumeration constant its `heroes_runtime.h` declares,"
+    )
