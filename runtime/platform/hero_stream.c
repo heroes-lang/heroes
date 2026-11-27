@@ -952,12 +952,24 @@ hero_stream *hero_stream_std(int64_t which) {
     return hero_stream_handle((uint32_t)which, 1);
 }
 
+/* What a pipe holds before its writer waits, on Windows: what POSIX gives a
+ * fresh pipe (d-windows-ci-7-2, 2026-11-27). Measured: this Mac's fresh pipe
+ * takes 65,536 bytes before a write waits; on the Windows box `CreatePipe`
+ * asked for 0, the default, holds 4,096 (`GetNamedPipeInfo` 4,096 each way,
+ * and a writer thread got 4,096 bytes in), and asked for 65,536 holds
+ * 65,536. So a program that writes 5,120 bytes into a pipe before it reads,
+ * Rebel's `encode_tar` test, ended on POSIX and waited for ever on Windows,
+ * stopped by the CI at 3,600 s. */
+#if defined(_WIN32)
+#define HERO_STREAM_PIPE_ROOM 65536
+#endif
+
 /* A pipe's two ends in `ends`, the reading one first, neither handed to a
  * child, and on Darwin the writing one marked; false with the failure named,
  * nothing left open. */
 static bool hero_stream_pipe_fds(hero_stream_fd ends[2]) {
 #if defined(_WIN32)
-    if (!CreatePipe(&ends[0], &ends[1], NULL, 0)) {
+    if (!CreatePipe(&ends[0], &ends[1], NULL, HERO_STREAM_PIPE_ROOM)) {
         hero_stream_failed_with(hero_stream_os_code());
         return false;
     }
