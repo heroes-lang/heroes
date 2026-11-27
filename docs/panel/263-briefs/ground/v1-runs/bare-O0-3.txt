@@ -1,0 +1,6 @@
+panic: stack exhausted in bare.deep
+time: command terminated abnormally
+real 0.11
+user 0.00
+sys 0.00
+exit 134

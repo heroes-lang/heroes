@@ -1,0 +1,2 @@
+co: kind 1 stack [0x779e80c000, 0x779e84c000) tls 0x779e800000
+exit 124

@@ -1,0 +1,549 @@
+ 10:29:40 up  3:54,  0 users,  load average: 0.23, 0.26, 0.52
+seed build 65 s
+heroes 0.6.0
+sources 1e1eb23a1927d35b
+build malloc -O0 failed
+build malloc -O2 failed
+build guarded -O0 failed
+build guarded -O2 failed
+build bare -O0 failed
+build bare -O2 failed
+build thread -O0 failed
+build thread -O2 failed
+build canary -O0 failed
+build canary -O2 failed
+build static -O0 failed
+build static -O2 failed
+build malloc --sanitize -O0 failed
+build malloc --sanitize -O2 failed
+build canary --sanitize -O0 failed
+build canary --sanitize -O2 failed
+malloc-O2                 1 exit 127  timeout: failed to run command '/w/scr/lx/rs/malloc-O2': No such file or directory
+malloc-O2                 2 exit 127  timeout: failed to run command '/w/scr/lx/rs/malloc-O2': No such file or directory
+malloc-O2                 3 exit 127  timeout: failed to run command '/w/scr/lx/rs/malloc-O2': No such file or directory
+malloc-O0                 1 exit 127  timeout: failed to run command '/w/scr/lx/rs/malloc-O0': No such file or directory
+malloc-O0                 2 exit 127  timeout: failed to run command '/w/scr/lx/rs/malloc-O0': No such file or directory
+malloc-O0                 3 exit 127  timeout: failed to run command '/w/scr/lx/rs/malloc-O0': No such file or directory
+malloc-san-O2             1 exit 127  timeout: failed to run command '/w/scr/lx/rs/malloc-san-O2': No such file or directory
+malloc-san-O2             2 exit 127  timeout: failed to run command '/w/scr/lx/rs/malloc-san-O2': No such file or directory
+malloc-san-O2             3 exit 127  timeout: failed to run command '/w/scr/lx/rs/malloc-san-O2': No such file or directory
+malloc-san-O0             1 exit 127  timeout: failed to run command '/w/scr/lx/rs/malloc-san-O0': No such file or directory
+malloc-san-O0             2 exit 127  timeout: failed to run command '/w/scr/lx/rs/malloc-san-O0': No such file or directory
+malloc-san-O0             3 exit 127  timeout: failed to run command '/w/scr/lx/rs/malloc-san-O0': No such file or directory
+guarded-O2                1 exit 127  timeout: failed to run command '/w/scr/lx/rs/guarded-O2': No such file or directory
+guarded-O2                2 exit 127  timeout: failed to run command '/w/scr/lx/rs/guarded-O2': No such file or directory
+guarded-O2                3 exit 127  timeout: failed to run command '/w/scr/lx/rs/guarded-O2': No such file or directory
+guarded-O0                1 exit 127  timeout: failed to run command '/w/scr/lx/rs/guarded-O0': No such file or directory
+guarded-O0                2 exit 127  timeout: failed to run command '/w/scr/lx/rs/guarded-O0': No such file or directory
+guarded-O0                3 exit 127  timeout: failed to run command '/w/scr/lx/rs/guarded-O0': No such file or directory
+bare-O2                   1 exit 127  timeout: failed to run command '/w/scr/lx/rs/bare-O2': No such file or directory
+bare-O2                   2 exit 127  timeout: failed to run command '/w/scr/lx/rs/bare-O2': No such file or directory
+bare-O2                   3 exit 127  timeout: failed to run command '/w/scr/lx/rs/bare-O2': No such file or directory
+bare-O0                   1 exit 127  timeout: failed to run command '/w/scr/lx/rs/bare-O0': No such file or directory
+bare-O0                   2 exit 127  timeout: failed to run command '/w/scr/lx/rs/bare-O0': No such file or directory
+bare-O0                   3 exit 127  timeout: failed to run command '/w/scr/lx/rs/bare-O0': No such file or directory
+thread-O2                 1 exit 127  timeout: failed to run command '/w/scr/lx/rs/thread-O2': No such file or directory
+thread-O2                 2 exit 127  timeout: failed to run command '/w/scr/lx/rs/thread-O2': No such file or directory
+thread-O2                 3 exit 127  timeout: failed to run command '/w/scr/lx/rs/thread-O2': No such file or directory
+thread-O0                 1 exit 127  timeout: failed to run command '/w/scr/lx/rs/thread-O0': No such file or directory
+thread-O0                 2 exit 127  timeout: failed to run command '/w/scr/lx/rs/thread-O0': No such file or directory
+thread-O0                 3 exit 127  timeout: failed to run command '/w/scr/lx/rs/thread-O0': No such file or directory
+static-O2                 1 exit 127  timeout: failed to run command '/w/scr/lx/rs/static-O2': No such file or directory
+static-O2                 2 exit 127  timeout: failed to run command '/w/scr/lx/rs/static-O2': No such file or directory
+static-O2                 3 exit 127  timeout: failed to run command '/w/scr/lx/rs/static-O2': No such file or directory
+static-O0                 1 exit 127  timeout: failed to run command '/w/scr/lx/rs/static-O0': No such file or directory
+static-O0                 2 exit 127  timeout: failed to run command '/w/scr/lx/rs/static-O0': No such file or directory
+static-O0                 3 exit 127  timeout: failed to run command '/w/scr/lx/rs/static-O0': No such file or directory
+canary-O2-n7000           1 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-O2': No such file or directory
+canary-O2-n7000           2 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-O2': No such file or directory
+canary-O2-n7000           3 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-O2': No such file or directory
+canary-san-O2-n7000       1 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-san-O2': No such file or directory
+canary-san-O2-n7000       2 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-san-O2': No such file or directory
+canary-san-O2-n7000       3 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-san-O2': No such file or directory
+canary-O2-n9000           1 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-O2': No such file or directory
+canary-O2-n9000           2 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-O2': No such file or directory
+canary-O2-n9000           3 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-O2': No such file or directory
+canary-san-O2-n9000       1 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-san-O2': No such file or directory
+canary-san-O2-n9000       2 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-san-O2': No such file or directory
+canary-san-O2-n9000       3 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-san-O2': No such file or directory
+canary-O2-n10000          1 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-O2': No such file or directory
+canary-O2-n10000          2 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-O2': No such file or directory
+canary-O2-n10000          3 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-O2': No such file or directory
+canary-san-O2-n10000      1 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-san-O2': No such file or directory
+canary-san-O2-n10000      2 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-san-O2': No such file or directory
+canary-san-O2-n10000      3 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-san-O2': No such file or directory
+canary-O0-n1200           1 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-O0': No such file or directory
+canary-O0-n1200           2 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-O0': No such file or directory
+canary-O0-n1200           3 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-O0': No such file or directory
+canary-san-O0-n1200       1 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-san-O0': No such file or directory
+canary-san-O0-n1200       2 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-san-O0': No such file or directory
+canary-san-O0-n1200       3 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-san-O0': No such file or directory
+canary-O0-n1500           1 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-O0': No such file or directory
+canary-O0-n1500           2 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-O0': No such file or directory
+canary-O0-n1500           3 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-O0': No such file or directory
+canary-san-O0-n1500       1 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-san-O0': No such file or directory
+canary-san-O0-n1500       2 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-san-O0': No such file or directory
+canary-san-O0-n1500       3 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-san-O0': No such file or directory
+canary-O0-n2000           1 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-O0': No such file or directory
+canary-O0-n2000           2 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-O0': No such file or directory
+canary-O0-n2000           3 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-O0': No such file or directory
+canary-san-O0-n2000       1 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-san-O0': No such file or directory
+canary-san-O0-n2000       2 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-san-O0': No such file or directory
+canary-san-O0-n2000       3 exit 127  timeout: failed to run command '/w/scr/lx/rs/canary-san-O0': No such file or directory
+run.sh 4 s
+== malloc by CO_N, base (seed)
+base malloc-O0 n1600: timeout: failed to run command 'rs/malloc-O0': No such file or directory|exit 127|
+
+base malloc-O0 n2000: timeout: failed to run command 'rs/malloc-O0': No such file or directory|exit 127|
+
+base malloc-O0 n3000: timeout: failed to run command 'rs/malloc-O0': No such file or directory|exit 127|
+
+base malloc-O0 n10000: timeout: failed to run command 'rs/malloc-O0': No such file or directory|exit 127|
+
+base malloc-O0 n20000: timeout: failed to run command 'rs/malloc-O0': No such file or directory|exit 127|
+
+base malloc-O0 n30000: timeout: failed to run command 'rs/malloc-O0': No such file or directory|exit 127|
+
+base malloc-O0 n50000: timeout: failed to run command 'rs/malloc-O0': No such file or directory|exit 127|
+
+base malloc-O2 n9600: timeout: failed to run command 'rs/malloc-O2': No such file or directory|exit 127|
+
+base malloc-O2 n9800: timeout: failed to run command 'rs/malloc-O2': No such file or directory|exit 127|
+
+base malloc-O2 n10000: timeout: failed to run command 'rs/malloc-O2': No such file or directory|exit 127|
+
+base malloc-O2 n14000: timeout: failed to run command 'rs/malloc-O2': No such file or directory|exit 127|
+
+== route c1 builds and runs
+error: cannot find the Heroes runtime (heroes_runtime.h and runtime.c).
+  looked in: ./runtime, runtime/ in `/w/scr/lx` and every directory above it
+  set HEROES_RUNTIME=<dir> to say where it is
+emit malloc failed
+error: cannot find the Heroes runtime (heroes_runtime.h and runtime.c).
+  looked in: ./runtime, runtime/ in `/w/scr/lx` and every directory above it
+  set HEROES_RUNTIME=<dir> to say where it is
+emit canary failed
+error: cannot find the Heroes runtime (heroes_runtime.h and runtime.c).
+  looked in: ./runtime, runtime/ in `/w/scr/lx` and every directory above it
+  set HEROES_RUNTIME=<dir> to say where it is
+emit static failed
+error: cannot find the Heroes runtime (heroes_runtime.h and runtime.c).
+  looked in: ./runtime, runtime/ in `/w/scr/lx` and every directory above it
+  set HEROES_RUNTIME=<dir> to say where it is
+emit thread failed
+error: cannot find the Heroes runtime (heroes_runtime.h and runtime.c).
+  looked in: ./runtime, runtime/ in `/w/scr/lx` and every directory above it
+  set HEROES_RUNTIME=<dir> to say where it is
+emit guarded failed
+error: cannot find the Heroes runtime (heroes_runtime.h and runtime.c).
+  looked in: ./runtime, runtime/ in `/w/scr/lx` and every directory above it
+  set HEROES_RUNTIME=<dir> to say where it is
+emit bare failed
+grep: /w/scr/lx/c1/build-*.txt: No such file or directory
+malloc-O0 #1                 exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-O0': No such file or directory|
+malloc-O0 #2                 exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-O0': No such file or directory|
+malloc-O0 #3                 exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-O0': No such file or directory|
+malloc-O2 #1                 exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-O2': No such file or directory|
+malloc-O2 #2                 exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-O2': No such file or directory|
+malloc-O2 #3                 exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-O2': No such file or directory|
+guarded-O0 #1                exit 127  timeout: failed to run command '/w/scr/lx/c1/guarded-O0': No such file or directory|
+guarded-O0 #2                exit 127  timeout: failed to run command '/w/scr/lx/c1/guarded-O0': No such file or directory|
+guarded-O0 #3                exit 127  timeout: failed to run command '/w/scr/lx/c1/guarded-O0': No such file or directory|
+guarded-O2 #1                exit 127  timeout: failed to run command '/w/scr/lx/c1/guarded-O2': No such file or directory|
+guarded-O2 #2                exit 127  timeout: failed to run command '/w/scr/lx/c1/guarded-O2': No such file or directory|
+guarded-O2 #3                exit 127  timeout: failed to run command '/w/scr/lx/c1/guarded-O2': No such file or directory|
+bare-O0 #1                   exit 127  timeout: failed to run command '/w/scr/lx/c1/bare-O0': No such file or directory|
+bare-O0 #2                   exit 127  timeout: failed to run command '/w/scr/lx/c1/bare-O0': No such file or directory|
+bare-O0 #3                   exit 127  timeout: failed to run command '/w/scr/lx/c1/bare-O0': No such file or directory|
+bare-O2 #1                   exit 127  timeout: failed to run command '/w/scr/lx/c1/bare-O2': No such file or directory|
+bare-O2 #2                   exit 127  timeout: failed to run command '/w/scr/lx/c1/bare-O2': No such file or directory|
+bare-O2 #3                   exit 127  timeout: failed to run command '/w/scr/lx/c1/bare-O2': No such file or directory|
+thread-O0 #1                 exit 127  timeout: failed to run command '/w/scr/lx/c1/thread-O0': No such file or directory|
+thread-O0 #2                 exit 127  timeout: failed to run command '/w/scr/lx/c1/thread-O0': No such file or directory|
+thread-O0 #3                 exit 127  timeout: failed to run command '/w/scr/lx/c1/thread-O0': No such file or directory|
+thread-O2 #1                 exit 127  timeout: failed to run command '/w/scr/lx/c1/thread-O2': No such file or directory|
+thread-O2 #2                 exit 127  timeout: failed to run command '/w/scr/lx/c1/thread-O2': No such file or directory|
+thread-O2 #3                 exit 127  timeout: failed to run command '/w/scr/lx/c1/thread-O2': No such file or directory|
+static-O0 #1                 exit 127  timeout: failed to run command '/w/scr/lx/c1/static-O0': No such file or directory|
+static-O0 #2                 exit 127  timeout: failed to run command '/w/scr/lx/c1/static-O0': No such file or directory|
+static-O0 #3                 exit 127  timeout: failed to run command '/w/scr/lx/c1/static-O0': No such file or directory|
+static-O2 #1                 exit 127  timeout: failed to run command '/w/scr/lx/c1/static-O2': No such file or directory|
+static-O2 #2                 exit 127  timeout: failed to run command '/w/scr/lx/c1/static-O2': No such file or directory|
+static-O2 #3                 exit 127  timeout: failed to run command '/w/scr/lx/c1/static-O2': No such file or directory|
+malloc-san-O0 #1             exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-san-O0': No such file or directory|
+static-san-O0 #1             exit 127  timeout: failed to run command '/w/scr/lx/c1/static-san-O0': No such file or directory|
+malloc-san-O0 #2             exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-san-O0': No such file or directory|
+static-san-O0 #2             exit 127  timeout: failed to run command '/w/scr/lx/c1/static-san-O0': No such file or directory|
+malloc-san-O0 #3             exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-san-O0': No such file or directory|
+static-san-O0 #3             exit 127  timeout: failed to run command '/w/scr/lx/c1/static-san-O0': No such file or directory|
+malloc-san-O2 #1             exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-san-O2': No such file or directory|
+static-san-O2 #1             exit 127  timeout: failed to run command '/w/scr/lx/c1/static-san-O2': No such file or directory|
+malloc-san-O2 #2             exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-san-O2': No such file or directory|
+static-san-O2 #2             exit 127  timeout: failed to run command '/w/scr/lx/c1/static-san-O2': No such file or directory|
+malloc-san-O2 #3             exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-san-O2': No such file or directory|
+static-san-O2 #3             exit 127  timeout: failed to run command '/w/scr/lx/c1/static-san-O2': No such file or directory|
+== canary, plain and sanitized, CO_N
+canary-O2 n7000 #1           exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O2': No such file or directory|
+canary-O2 n7000 #2           exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O2': No such file or directory|
+canary-O2 n7000 #3           exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O2': No such file or directory|
+canary-san-O2 n7000 #1       exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O2': No such file or directory|
+canary-san-O2 n7000 #2       exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O2': No such file or directory|
+canary-san-O2 n7000 #3       exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O2': No such file or directory|
+canary-O2 n9000 #1           exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O2': No such file or directory|
+canary-O2 n9000 #2           exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O2': No such file or directory|
+canary-O2 n9000 #3           exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O2': No such file or directory|
+canary-san-O2 n9000 #1       exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O2': No such file or directory|
+canary-san-O2 n9000 #2       exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O2': No such file or directory|
+canary-san-O2 n9000 #3       exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O2': No such file or directory|
+canary-O2 n10000 #1          exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O2': No such file or directory|
+canary-O2 n10000 #2          exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O2': No such file or directory|
+canary-O2 n10000 #3          exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O2': No such file or directory|
+canary-san-O2 n10000 #1      exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O2': No such file or directory|
+canary-san-O2 n10000 #2      exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O2': No such file or directory|
+canary-san-O2 n10000 #3      exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O2': No such file or directory|
+canary-O2 n14000 #1          exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O2': No such file or directory|
+canary-O2 n14000 #2          exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O2': No such file or directory|
+canary-O2 n14000 #3          exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O2': No such file or directory|
+canary-san-O2 n14000 #1      exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O2': No such file or directory|
+canary-san-O2 n14000 #2      exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O2': No such file or directory|
+canary-san-O2 n14000 #3      exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O2': No such file or directory|
+canary-O2 n50000 #1          exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O2': No such file or directory|
+canary-O2 n50000 #2          exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O2': No such file or directory|
+canary-O2 n50000 #3          exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O2': No such file or directory|
+canary-san-O2 n50000 #1      exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O2': No such file or directory|
+canary-san-O2 n50000 #2      exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O2': No such file or directory|
+canary-san-O2 n50000 #3      exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O2': No such file or directory|
+canary-O0 n1200 #1           exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O0': No such file or directory|
+canary-O0 n1200 #2           exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O0': No such file or directory|
+canary-O0 n1200 #3           exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O0': No such file or directory|
+canary-san-O0 n1200 #1       exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O0': No such file or directory|
+canary-san-O0 n1200 #2       exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O0': No such file or directory|
+canary-san-O0 n1200 #3       exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O0': No such file or directory|
+canary-O0 n1500 #1           exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O0': No such file or directory|
+canary-O0 n1500 #2           exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O0': No such file or directory|
+canary-O0 n1500 #3           exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O0': No such file or directory|
+canary-san-O0 n1500 #1       exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O0': No such file or directory|
+canary-san-O0 n1500 #2       exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O0': No such file or directory|
+canary-san-O0 n1500 #3       exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O0': No such file or directory|
+canary-O0 n2000 #1           exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O0': No such file or directory|
+canary-O0 n2000 #2           exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O0': No such file or directory|
+canary-O0 n2000 #3           exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O0': No such file or directory|
+canary-san-O0 n2000 #1       exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O0': No such file or directory|
+canary-san-O0 n2000 #2       exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O0': No such file or directory|
+canary-san-O0 n2000 #3       exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O0': No such file or directory|
+canary-O0 n3000 #1           exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O0': No such file or directory|
+canary-O0 n3000 #2           exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O0': No such file or directory|
+canary-O0 n3000 #3           exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O0': No such file or directory|
+canary-san-O0 n3000 #1       exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O0': No such file or directory|
+canary-san-O0 n3000 #2       exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O0': No such file or directory|
+canary-san-O0 n3000 #3       exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O0': No such file or directory|
+canary-O0 n30000 #1          exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O0': No such file or directory|
+canary-O0 n30000 #2          exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O0': No such file or directory|
+canary-O0 n30000 #3          exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-O0': No such file or directory|
+canary-san-O0 n30000 #1      exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O0': No such file or directory|
+canary-san-O0 n30000 #2      exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O0': No such file or directory|
+canary-san-O0 n30000 #3      exit 127  timeout: failed to run command '/w/scr/lx/c1/canary-san-O0': No such file or directory|
+== malloc by CO_N
+malloc-O0 n1600              exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-O0': No such file or directory|
+malloc-san-O0 n1600          exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-san-O0': No such file or directory|
+malloc-O0 n2000              exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-O0': No such file or directory|
+malloc-san-O0 n2000          exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-san-O0': No such file or directory|
+malloc-O0 n3000              exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-O0': No such file or directory|
+malloc-san-O0 n3000          exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-san-O0': No such file or directory|
+malloc-O0 n10000             exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-O0': No such file or directory|
+malloc-san-O0 n10000         exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-san-O0': No such file or directory|
+malloc-O0 n20000             exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-O0': No such file or directory|
+malloc-san-O0 n20000         exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-san-O0': No such file or directory|
+malloc-O0 n30000             exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-O0': No such file or directory|
+malloc-san-O0 n30000         exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-san-O0': No such file or directory|
+malloc-O0 n50000             exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-O0': No such file or directory|
+malloc-san-O0 n50000         exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-san-O0': No such file or directory|
+malloc-O2 n9600              exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-O2': No such file or directory|
+malloc-san-O2 n9600          exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-san-O2': No such file or directory|
+malloc-O2 n9800              exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-O2': No such file or directory|
+malloc-san-O2 n9800          exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-san-O2': No such file or directory|
+malloc-O2 n10000             exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-O2': No such file or directory|
+malloc-san-O2 n10000         exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-san-O2': No such file or directory|
+malloc-O2 n14000             exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-O2': No such file or directory|
+malloc-san-O2 n14000         exit 127  timeout: failed to run command '/w/scr/lx/c1/malloc-san-O2': No such file or directory|
+thread-O0 n1                 exit 127  timeout: failed to run command '/w/scr/lx/c1/thread-O0': No such file or directory|
+static-O0 n1                 exit 127  timeout: failed to run command '/w/scr/lx/c1/static-O0': No such file or directory|
+static-O2 n1                 exit 127  timeout: failed to run command '/w/scr/lx/c1/static-O2': No such file or directory|
+thread-O0 n1300              exit 127  timeout: failed to run command '/w/scr/lx/c1/thread-O0': No such file or directory|
+static-O0 n1300              exit 127  timeout: failed to run command '/w/scr/lx/c1/static-O0': No such file or directory|
+static-O2 n1300              exit 127  timeout: failed to run command '/w/scr/lx/c1/static-O2': No such file or directory|
+thread-O0 n9600              exit 127  timeout: failed to run command '/w/scr/lx/c1/thread-O0': No such file or directory|
+static-O0 n9600              exit 127  timeout: failed to run command '/w/scr/lx/c1/static-O0': No such file or directory|
+static-O2 n9600              exit 127  timeout: failed to run command '/w/scr/lx/c1/static-O2': No such file or directory|
+== counting canaries, base and c1
+base canary4 O0 failed
+base san canary4 O0 failed
+base canary4 O2 failed
+base san canary4 O2 failed
+base canary6 O0 failed
+base san canary6 O0 failed
+base canary6 O2 failed
+base san canary6 O2 failed
+error: cannot find the Heroes runtime (heroes_runtime.h and runtime.c).
+  looked in: ./runtime, runtime/ in `/w/scr/lx` and every directory above it
+  set HEROES_RUNTIME=<dir> to say where it is
+emit canary4 failed
+error: cannot find the Heroes runtime (heroes_runtime.h and runtime.c).
+  looked in: ./runtime, runtime/ in `/w/scr/lx` and every directory above it
+  set HEROES_RUNTIME=<dir> to say where it is
+emit canary6 failed
+base   canary4-O0       KB256   n1000    exit 127  
+base   canary4-O0       KB256   n1200    exit 127  
+base   canary4-O0       KB256   n1500    exit 127  
+base   canary4-O0       KB256   n2000    exit 127  
+base   canary4-O0       KB256   n3000    exit 127  
+base   canary4-O0       KB256   n30000   exit 127  
+base   canary4-san-O0   KB256   n1000    exit 127  
+base   canary4-san-O0   KB256   n1200    exit 127  
+base   canary4-san-O0   KB256   n1500    exit 127  
+base   canary4-san-O0   KB256   n2000    exit 127  
+base   canary4-san-O0   KB256   n3000    exit 127  
+base   canary4-san-O0   KB256   n30000   exit 127  
+base   canary4-O2       KB256   n7000    exit 127  
+base   canary4-O2       KB256   n9000    exit 127  
+base   canary4-O2       KB256   n10000   exit 127  
+base   canary4-O2       KB256   n14000   exit 127  
+base   canary4-O2       KB256   n50000   exit 127  
+base   canary4-san-O2   KB256   n7000    exit 127  
+base   canary4-san-O2   KB256   n9000    exit 127  
+base   canary4-san-O2   KB256   n10000   exit 127  
+base   canary4-san-O2   KB256   n14000   exit 127  
+base   canary4-san-O2   KB256   n50000   exit 127  
+base   canary6-O0       KB256   n1000    exit 127  
+base   canary6-O0       KB256   n1200    exit 127  
+base   canary6-O0       KB256   n1500    exit 127  
+base   canary6-O0       KB256   n2000    exit 127  
+base   canary6-O0       KB256   n3000    exit 127  
+base   canary6-O0       KB256   n30000   exit 127  
+base   canary6-san-O0   KB256   n1000    exit 127  
+base   canary6-san-O0   KB256   n1200    exit 127  
+base   canary6-san-O0   KB256   n1500    exit 127  
+base   canary6-san-O0   KB256   n2000    exit 127  
+base   canary6-san-O0   KB256   n3000    exit 127  
+base   canary6-san-O0   KB256   n30000   exit 127  
+base   canary6-O2       KB256   n7000    exit 127  
+base   canary6-O2       KB256   n9000    exit 127  
+base   canary6-O2       KB256   n10000   exit 127  
+base   canary6-O2       KB256   n14000   exit 127  
+base   canary6-O2       KB256   n50000   exit 127  
+base   canary6-san-O2   KB256   n7000    exit 127  
+base   canary6-san-O2   KB256   n9000    exit 127  
+base   canary6-san-O2   KB256   n10000   exit 127  
+base   canary6-san-O2   KB256   n14000   exit 127  
+base   canary6-san-O2   KB256   n50000   exit 127  
+base   canary4-O2       KB16    n300     exit 127  
+base   canary4-O2       KB16    n500     exit 127  
+base   canary4-O2       KB16    n1000    exit 127  
+base   canary4-O2       KB16    n40000   exit 127  
+base   canary4-O2       KB16    n1000000 exit 127  
+base   canary4-san-O2   KB16    n300     exit 127  
+base   canary4-san-O2   KB16    n500     exit 127  
+base   canary4-san-O2   KB16    n1000    exit 127  
+base   canary4-san-O2   KB16    n40000   exit 127  
+base   canary4-san-O2   KB16    n1000000 exit 127  
+base   canary6-O2       KB16    n300     exit 127  
+base   canary6-O2       KB16    n500     exit 127  
+base   canary6-O2       KB16    n1000    exit 127  
+base   canary6-O2       KB16    n40000   exit 127  
+base   canary6-O2       KB16    n1000000 exit 127  
+base   canary4-O0       KB16    n300     exit 127  
+base   canary4-O0       KB16    n500     exit 127  
+base   canary4-O0       KB16    n1000    exit 127  
+base   canary4-O0       KB16    n40000   exit 127  
+base   canary4-O0       KB16    n1000000 exit 127  
+base   canary4-O2       KB64    n300     exit 127  
+base   canary4-O2       KB64    n500     exit 127  
+base   canary4-O2       KB64    n1000    exit 127  
+base   canary4-O2       KB64    n40000   exit 127  
+base   canary4-O2       KB64    n1000000 exit 127  
+base   canary4-san-O2   KB64    n300     exit 127  
+base   canary4-san-O2   KB64    n500     exit 127  
+base   canary4-san-O2   KB64    n1000    exit 127  
+base   canary4-san-O2   KB64    n40000   exit 127  
+base   canary4-san-O2   KB64    n1000000 exit 127  
+base   canary6-O2       KB64    n300     exit 127  
+base   canary6-O2       KB64    n500     exit 127  
+base   canary6-O2       KB64    n1000    exit 127  
+base   canary6-O2       KB64    n40000   exit 127  
+base   canary6-O2       KB64    n1000000 exit 127  
+base   canary4-O0       KB64    n300     exit 127  
+base   canary4-O0       KB64    n500     exit 127  
+base   canary4-O0       KB64    n1000    exit 127  
+base   canary4-O0       KB64    n40000   exit 127  
+base   canary4-O0       KB64    n1000000 exit 127  
+base   canary4-O2       KB1024  n300     exit 127  
+base   canary4-O2       KB1024  n500     exit 127  
+base   canary4-O2       KB1024  n1000    exit 127  
+base   canary4-O2       KB1024  n40000   exit 127  
+base   canary4-O2       KB1024  n1000000 exit 127  
+base   canary4-san-O2   KB1024  n300     exit 127  
+base   canary4-san-O2   KB1024  n500     exit 127  
+base   canary4-san-O2   KB1024  n1000    exit 127  
+base   canary4-san-O2   KB1024  n40000   exit 127  
+base   canary4-san-O2   KB1024  n1000000 exit 127  
+base   canary6-O2       KB1024  n300     exit 127  
+base   canary6-O2       KB1024  n500     exit 127  
+base   canary6-O2       KB1024  n1000    exit 127  
+base   canary6-O2       KB1024  n40000   exit 127  
+base   canary6-O2       KB1024  n1000000 exit 127  
+base   canary4-O0       KB1024  n300     exit 127  
+base   canary4-O0       KB1024  n500     exit 127  
+base   canary4-O0       KB1024  n1000    exit 127  
+base   canary4-O0       KB1024  n40000   exit 127  
+base   canary4-O0       KB1024  n1000000 exit 127  
+c1     canary4-O0       KB256   n1000    exit 127  
+c1     canary4-O0       KB256   n1200    exit 127  
+c1     canary4-O0       KB256   n1500    exit 127  
+c1     canary4-O0       KB256   n2000    exit 127  
+c1     canary4-O0       KB256   n3000    exit 127  
+c1     canary4-O0       KB256   n30000   exit 127  
+c1     canary4-san-O0   KB256   n1000    exit 127  
+c1     canary4-san-O0   KB256   n1200    exit 127  
+c1     canary4-san-O0   KB256   n1500    exit 127  
+c1     canary4-san-O0   KB256   n2000    exit 127  
+c1     canary4-san-O0   KB256   n3000    exit 127  
+c1     canary4-san-O0   KB256   n30000   exit 127  
+c1     canary4-O2       KB256   n7000    exit 127  
+c1     canary4-O2       KB256   n9000    exit 127  
+c1     canary4-O2       KB256   n10000   exit 127  
+c1     canary4-O2       KB256   n14000   exit 127  
+c1     canary4-O2       KB256   n50000   exit 127  
+c1     canary4-san-O2   KB256   n7000    exit 127  
+c1     canary4-san-O2   KB256   n9000    exit 127  
+c1     canary4-san-O2   KB256   n10000   exit 127  
+c1     canary4-san-O2   KB256   n14000   exit 127  
+c1     canary4-san-O2   KB256   n50000   exit 127  
+c1     canary6-O0       KB256   n1000    exit 127  
+c1     canary6-O0       KB256   n1200    exit 127  
+c1     canary6-O0       KB256   n1500    exit 127  
+c1     canary6-O0       KB256   n2000    exit 127  
+c1     canary6-O0       KB256   n3000    exit 127  
+c1     canary6-O0       KB256   n30000   exit 127  
+c1     canary6-san-O0   KB256   n1000    exit 127  
+c1     canary6-san-O0   KB256   n1200    exit 127  
+c1     canary6-san-O0   KB256   n1500    exit 127  
+c1     canary6-san-O0   KB256   n2000    exit 127  
+c1     canary6-san-O0   KB256   n3000    exit 127  
+c1     canary6-san-O0   KB256   n30000   exit 127  
+c1     canary6-O2       KB256   n7000    exit 127  
+c1     canary6-O2       KB256   n9000    exit 127  
+c1     canary6-O2       KB256   n10000   exit 127  
+c1     canary6-O2       KB256   n14000   exit 127  
+c1     canary6-O2       KB256   n50000   exit 127  
+c1     canary6-san-O2   KB256   n7000    exit 127  
+c1     canary6-san-O2   KB256   n9000    exit 127  
+c1     canary6-san-O2   KB256   n10000   exit 127  
+c1     canary6-san-O2   KB256   n14000   exit 127  
+c1     canary6-san-O2   KB256   n50000   exit 127  
+c1     canary4-O2       KB16    n300     exit 127  
+c1     canary4-O2       KB16    n500     exit 127  
+c1     canary4-O2       KB16    n1000    exit 127  
+c1     canary4-O2       KB16    n40000   exit 127  
+c1     canary4-O2       KB16    n1000000 exit 127  
+c1     canary4-san-O2   KB16    n300     exit 127  
+c1     canary4-san-O2   KB16    n500     exit 127  
+c1     canary4-san-O2   KB16    n1000    exit 127  
+c1     canary4-san-O2   KB16    n40000   exit 127  
+c1     canary4-san-O2   KB16    n1000000 exit 127  
+c1     canary6-O2       KB16    n300     exit 127  
+c1     canary6-O2       KB16    n500     exit 127  
+c1     canary6-O2       KB16    n1000    exit 127  
+c1     canary6-O2       KB16    n40000   exit 127  
+c1     canary6-O2       KB16    n1000000 exit 127  
+c1     canary4-O0       KB16    n300     exit 127  
+c1     canary4-O0       KB16    n500     exit 127  
+c1     canary4-O0       KB16    n1000    exit 127  
+c1     canary4-O0       KB16    n40000   exit 127  
+c1     canary4-O0       KB16    n1000000 exit 127  
+c1     canary4-O2       KB64    n300     exit 127  
+c1     canary4-O2       KB64    n500     exit 127  
+c1     canary4-O2       KB64    n1000    exit 127  
+c1     canary4-O2       KB64    n40000   exit 127  
+c1     canary4-O2       KB64    n1000000 exit 127  
+c1     canary4-san-O2   KB64    n300     exit 127  
+c1     canary4-san-O2   KB64    n500     exit 127  
+c1     canary4-san-O2   KB64    n1000    exit 127  
+c1     canary4-san-O2   KB64    n40000   exit 127  
+c1     canary4-san-O2   KB64    n1000000 exit 127  
+c1     canary6-O2       KB64    n300     exit 127  
+c1     canary6-O2       KB64    n500     exit 127  
+c1     canary6-O2       KB64    n1000    exit 127  
+c1     canary6-O2       KB64    n40000   exit 127  
+c1     canary6-O2       KB64    n1000000 exit 127  
+c1     canary4-O0       KB64    n300     exit 127  
+c1     canary4-O0       KB64    n500     exit 127  
+c1     canary4-O0       KB64    n1000    exit 127  
+c1     canary4-O0       KB64    n40000   exit 127  
+c1     canary4-O0       KB64    n1000000 exit 127  
+c1     canary4-O2       KB1024  n300     exit 127  
+c1     canary4-O2       KB1024  n500     exit 127  
+c1     canary4-O2       KB1024  n1000    exit 127  
+c1     canary4-O2       KB1024  n40000   exit 127  
+c1     canary4-O2       KB1024  n1000000 exit 127  
+c1     canary4-san-O2   KB1024  n300     exit 127  
+c1     canary4-san-O2   KB1024  n500     exit 127  
+c1     canary4-san-O2   KB1024  n1000    exit 127  
+c1     canary4-san-O2   KB1024  n40000   exit 127  
+c1     canary4-san-O2   KB1024  n1000000 exit 127  
+c1     canary6-O2       KB1024  n300     exit 127  
+c1     canary6-O2       KB1024  n500     exit 127  
+c1     canary6-O2       KB1024  n1000    exit 127  
+c1     canary6-O2       KB1024  n40000   exit 127  
+c1     canary6-O2       KB1024  n1000000 exit 127  
+c1     canary4-O0       KB1024  n300     exit 127  
+c1     canary4-O0       KB1024  n500     exit 127  
+c1     canary4-O0       KB1024  n1000    exit 127  
+c1     canary4-O0       KB1024  n40000   exit 127  
+c1     canary4-O0       KB1024  n1000000 exit 127  
+ 10:31:08 up  3:55,  0 users,  load average: 1.95, 0.76, 0.67
+== stage 2
+stage 2 exit 0 810 s
+heroes 0.6.0
+sources 50e8403d5a885325
+build malloc -O0 failed
+build malloc -O2 failed
+build guarded -O0 failed
+build guarded -O2 failed
+build bare -O0 failed
+build bare -O2 failed
+build thread -O0 failed
+build thread -O2 failed
+build canary -O0 failed
+build canary -O2 failed
+build static -O0 failed
+build static -O2 failed
+build malloc --sanitize -O0 failed
+build malloc --sanitize -O2 failed
+build canary --sanitize -O0 failed
+build canary --sanitize -O2 failed
+malloc-O2                 1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/malloc-O2': No such file or directory
+malloc-O0                 1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/malloc-O0': No such file or directory
+malloc-san-O2             1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/malloc-san-O2': No such file or directory
+malloc-san-O0             1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/malloc-san-O0': No such file or directory
+guarded-O2                1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/guarded-O2': No such file or directory
+guarded-O0                1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/guarded-O0': No such file or directory
+bare-O2                   1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/bare-O2': No such file or directory
+bare-O0                   1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/bare-O0': No such file or directory
+thread-O2                 1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/thread-O2': No such file or directory
+thread-O0                 1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/thread-O0': No such file or directory
+static-O2                 1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/static-O2': No such file or directory
+static-O0                 1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/static-O0': No such file or directory
+canary-O2-n7000           1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/canary-O2': No such file or directory
+canary-san-O2-n7000       1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/canary-san-O2': No such file or directory
+canary-O2-n9000           1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/canary-O2': No such file or directory
+canary-san-O2-n9000       1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/canary-san-O2': No such file or directory
+canary-O2-n10000          1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/canary-O2': No such file or directory
+canary-san-O2-n10000      1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/canary-san-O2': No such file or directory
+canary-O0-n1200           1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/canary-O0': No such file or directory
+canary-san-O0-n1200       1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/canary-san-O0': No such file or directory
+canary-O0-n1500           1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/canary-O0': No such file or directory
+canary-san-O0-n1500       1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/canary-san-O0': No such file or directory
+canary-O0-n2000           1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/canary-O0': No such file or directory
+canary-san-O0-n2000       1 exit 127  timeout: failed to run command '/w/scr/lx/rs2/canary-san-O0': No such file or directory
+ 10:44:40 up  4:09,  0 users,  load average: 2.46, 3.08, 2.31
+docker exit 0

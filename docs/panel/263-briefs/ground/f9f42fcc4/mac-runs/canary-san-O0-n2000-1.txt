@@ -1,0 +1,3 @@
+co: 232195 bytes of the 262144 below the stack were written, the lowest 262144 bytes below it
+depth reached: 564721
+exit 0

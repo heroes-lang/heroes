@@ -1,0 +1,8 @@
+AddressSanitizer:DEADLYSIGNAL
+=================================================================
+==30429==ERROR: AddressSanitizer: stack-overflow on address 0x0001034f7ff0 (pc 0x000102eb64fc bp 0x0001034f8020 sp 0x0001034f7fe0 T0)
+    #0 0x000102eb64fc in hero_thread_guard thread.c:145
+
+SUMMARY: AddressSanitizer: stack-overflow thread.c:145 in hero_thread_guard
+==30429==ABORTING
+exit 134

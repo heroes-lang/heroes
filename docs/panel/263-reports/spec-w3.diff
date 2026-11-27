@@ -1,0 +1,11 @@
+--- a/spec/heroes-spec.md
++++ b/spec/heroes-spec.md
+@@ -338,7 +338,7 @@
+   a call that says none of these is an error. `xs.map(double)` takes both from
+   `double`'s signature.
+ - A source nested up to 2,000 deep compiles on every platform, and none is refused for
+-  its depth; running out of stack aborts.
++  its depth; running out of stack aborts, but a callback C calls on a stack of C's with nothing of no access below it may first write over what lies below, and the program may run on.
+ 
+     Args     = "(" [ Arg { "," Arg } ] ")" .
+     Arg      = [ ident ":" ] [ "@" ] Expression .

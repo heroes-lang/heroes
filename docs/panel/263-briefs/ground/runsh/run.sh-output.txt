@@ -1,0 +1,34 @@
+malloc-O2               1 exit 124  exit 124
+/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/panel263/docs/panel/263-briefs/reproducer/run.sh: line 24: 39254 Abort trap: 6           timeout "$T" "$OUT/$1" 2>&1
+malloc-O0               1 exit 134  panic: stack exhausted in malloc.deep
+malloc-san-O2           1 exit 1    AddressSanitizer:DEADLYSIGNAL
+/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/panel263/docs/panel/263-briefs/reproducer/run.sh: line 24: 39310 Abort trap: 6           timeout "$T" "$OUT/$1" 2>&1
+malloc-san-O0           1 exit 134  AddressSanitizer:DEADLYSIGNAL
+/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/panel263/docs/panel/263-briefs/reproducer/run.sh: line 24: 39333 Abort trap: 6           timeout "$T" "$OUT/$1" 2>&1
+guarded-O2              1 exit 134  panic: stack exhausted in guarded.deep
+/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/panel263/docs/panel/263-briefs/reproducer/run.sh: line 24: 39354 Abort trap: 6           timeout "$T" "$OUT/$1" 2>&1
+guarded-O0              1 exit 134  panic: stack exhausted in guarded.deep
+/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/panel263/docs/panel/263-briefs/reproducer/run.sh: line 24: 39381 Abort trap: 6           timeout "$T" "$OUT/$1" 2>&1
+bare-O2                 1 exit 134  panic: stack exhausted in bare.deep
+/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/panel263/docs/panel/263-briefs/reproducer/run.sh: line 24: 39400 Abort trap: 6           timeout "$T" "$OUT/$1" 2>&1
+bare-O0                 1 exit 134  panic: stack exhausted in bare.deep
+/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/panel263/docs/panel/263-briefs/reproducer/run.sh: line 24: 39426 Abort trap: 6           timeout "$T" "$OUT/$1" 2>&1
+thread-O2               1 exit 134  panic: stack exhausted in thread.deep
+/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/panel263/docs/panel/263-briefs/reproducer/run.sh: line 24: 39494 Abort trap: 6           timeout "$T" "$OUT/$1" 2>&1
+thread-O0               1 exit 134  panic: stack exhausted in thread.deep
+canary-O2-n7000         1 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+   1 co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-O2-n9000         1 exit 0    co: 25941 bytes of the 262144 below the stack were written, the lowest 25952 bytes below it
+   1 co: 25941 bytes of the 262144 below the stack were written, the lowest 25952 bytes below it
+canary-O2-n10000        1 exit 0    co: 57937 bytes of the 262144 below the stack were written, the lowest 57952 bytes below it
+   1 co: 57937 bytes of the 262144 below the stack were written, the lowest 57952 bytes below it
+canary-O0-n1200         1 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+   1 co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-O0-n1500         1 exit 0    co: 23964 bytes of the 262144 below the stack were written, the lowest 26120 bytes below it
+   1 co: 23964 bytes of the 262144 below the stack were written, the lowest 26120 bytes below it
+canary-O0-n2000         1 exit 0    co: 112450 bytes of the 262144 below the stack were written, the lowest 122120 bytes below it
+   1 co: 112450 bytes of the 262144 below the stack were written, the lowest 122120 bytes below it
+real 47.83
+user 18.42
+sys 20.59
+exit 0

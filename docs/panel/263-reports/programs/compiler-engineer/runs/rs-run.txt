@@ -1,0 +1,118 @@
+docs/panel/263-briefs/reproducer/run.sh: line 30: 94551 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+malloc-O2                 1 exit 134  panic: malloc.deep ran on a thread this program did not start: C called it back from a thread of its own, wher
+docs/panel/263-briefs/reproducer/run.sh: line 30: 94563 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+malloc-O2                 2 exit 134  panic: malloc.deep ran on a thread this program did not start: C called it back from a thread of its own, wher
+docs/panel/263-briefs/reproducer/run.sh: line 30: 94577 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+malloc-O2                 3 exit 134  panic: malloc.deep ran on a thread this program did not start: C called it back from a thread of its own, wher
+docs/panel/263-briefs/reproducer/run.sh: line 30: 94589 Bus error: 10           timeout -k 5 "$T" "$OUT/$1" 2>&1
+malloc-O0                 1 exit 138  exit 138
+docs/panel/263-briefs/reproducer/run.sh: line 30: 94616 Bus error: 10           timeout -k 5 "$T" "$OUT/$1" 2>&1
+malloc-O0                 2 exit 138  exit 138
+docs/panel/263-briefs/reproducer/run.sh: line 30: 94632 Bus error: 10           timeout -k 5 "$T" "$OUT/$1" 2>&1
+malloc-O0                 3 exit 138  exit 138
+malloc-san-O2             1 exit 1    AddressSanitizer:DEADLYSIGNAL
+docs/panel/263-briefs/reproducer/run.sh: line 30: 94694 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+malloc-san-O2             2 exit 134  AddressSanitizer:DEADLYSIGNAL
+malloc-san-O2             3 exit 1    AddressSanitizer:DEADLYSIGNAL
+malloc-san-O0             1 exit 1    AddressSanitizer:DEADLYSIGNAL
+docs/panel/263-briefs/reproducer/run.sh: line 30: 94920 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+malloc-san-O0             2 exit 134  AddressSanitizer:DEADLYSIGNAL
+malloc-san-O0             3 exit 1    AddressSanitizer:DEADLYSIGNAL
+docs/panel/263-briefs/reproducer/run.sh: line 30: 94943 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+guarded-O2                1 exit 134  panic: stack exhausted in guarded.deep
+docs/panel/263-briefs/reproducer/run.sh: line 30: 94969 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+guarded-O2                2 exit 134  panic: stack exhausted in guarded.deep
+docs/panel/263-briefs/reproducer/run.sh: line 30: 94981 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+guarded-O2                3 exit 134  panic: stack exhausted in guarded.deep
+docs/panel/263-briefs/reproducer/run.sh: line 30: 94994 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+guarded-O0                1 exit 134  panic: stack exhausted in guarded.deep
+docs/panel/263-briefs/reproducer/run.sh: line 30: 95047 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+guarded-O0                2 exit 134  panic: stack exhausted in guarded.deep
+docs/panel/263-briefs/reproducer/run.sh: line 30: 95064 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+guarded-O0                3 exit 134  panic: stack exhausted in guarded.deep
+docs/panel/263-briefs/reproducer/run.sh: line 30: 95090 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+bare-O2                   1 exit 134  panic: stack exhausted in bare.deep
+docs/panel/263-briefs/reproducer/run.sh: line 30: 95131 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+bare-O2                   2 exit 134  panic: stack exhausted in bare.deep
+docs/panel/263-briefs/reproducer/run.sh: line 30: 95148 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+bare-O2                   3 exit 134  panic: stack exhausted in bare.deep
+docs/panel/263-briefs/reproducer/run.sh: line 30: 95171 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+bare-O0                   1 exit 134  panic: stack exhausted in bare.deep
+docs/panel/263-briefs/reproducer/run.sh: line 30: 95198 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+bare-O0                   2 exit 134  panic: stack exhausted in bare.deep
+docs/panel/263-briefs/reproducer/run.sh: line 30: 95215 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+bare-O0                   3 exit 134  panic: stack exhausted in bare.deep
+docs/panel/263-briefs/reproducer/run.sh: line 30: 95229 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+thread-O2                 1 exit 134  panic: stack exhausted in thread.deep
+docs/panel/263-briefs/reproducer/run.sh: line 30: 95281 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+thread-O2                 2 exit 134  panic: stack exhausted in thread.deep
+docs/panel/263-briefs/reproducer/run.sh: line 30: 95302 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+thread-O2                 3 exit 134  panic: stack exhausted in thread.deep
+docs/panel/263-briefs/reproducer/run.sh: line 30: 95322 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+thread-O0                 1 exit 134  panic: stack exhausted in thread.deep
+docs/panel/263-briefs/reproducer/run.sh: line 30: 95364 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+thread-O0                 2 exit 134  panic: stack exhausted in thread.deep
+docs/panel/263-briefs/reproducer/run.sh: line 30: 95378 Abort trap: 6           timeout -k 5 "$T" "$OUT/$1" 2>&1
+thread-O0                 3 exit 134  panic: stack exhausted in thread.deep
+static-O2                 1 exit 124  exit 124
+static-O2                 2 exit 124  exit 124
+static-O2                 3 exit 124  exit 124
+static-O0                 1 exit 124  exit 124
+static-O0                 2 exit 124  exit 124
+static-O0                 3 exit 124  exit 124
+canary-O2-n7000           1 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-O2-n7000           2 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-O2-n7000           3 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+   3 co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-san-O2-n7000       1 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-san-O2-n7000       2 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-san-O2-n7000       3 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+   3 co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-O2-n9000           1 exit 0    co: 25130 bytes of the 262144 below the stack were written, the lowest 25952 bytes below it
+canary-O2-n9000           2 exit 0    co: 25941 bytes of the 262144 below the stack were written, the lowest 25952 bytes below it
+canary-O2-n9000           3 exit 0    co: 25941 bytes of the 262144 below the stack were written, the lowest 25952 bytes below it
+   1 co: 25130 bytes of the 262144 below the stack were written, the lowest 25952 bytes below it
+   2 co: 25941 bytes of the 262144 below the stack were written, the lowest 25952 bytes below it
+canary-san-O2-n9000       1 exit 0    co: 25965 bytes of the 262144 below the stack were written, the lowest 25968 bytes below it
+canary-san-O2-n9000       2 exit 0    co: 25965 bytes of the 262144 below the stack were written, the lowest 25968 bytes below it
+canary-san-O2-n9000       3 exit 0    co: 25957 bytes of the 262144 below the stack were written, the lowest 25968 bytes below it
+   1 co: 25957 bytes of the 262144 below the stack were written, the lowest 25968 bytes below it
+   2 co: 25965 bytes of the 262144 below the stack were written, the lowest 25968 bytes below it
+canary-O2-n10000          1 exit 0    co: 57937 bytes of the 262144 below the stack were written, the lowest 57952 bytes below it
+canary-O2-n10000          2 exit 0    co: 57937 bytes of the 262144 below the stack were written, the lowest 57952 bytes below it
+canary-O2-n10000          3 exit 0    co: 57937 bytes of the 262144 below the stack were written, the lowest 57952 bytes below it
+   3 co: 57937 bytes of the 262144 below the stack were written, the lowest 57952 bytes below it
+canary-san-O2-n10000      1 exit 0    co: 57953 bytes of the 262144 below the stack were written, the lowest 57968 bytes below it
+canary-san-O2-n10000      2 exit 0    co: 57953 bytes of the 262144 below the stack were written, the lowest 57968 bytes below it
+canary-san-O2-n10000      3 exit 0    co: 57953 bytes of the 262144 below the stack were written, the lowest 57968 bytes below it
+   3 co: 57953 bytes of the 262144 below the stack were written, the lowest 57968 bytes below it
+canary-O0-n1200           1 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-O0-n1200           2 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-O0-n1200           3 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+   3 co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-san-O0-n1200       1 exit 0    co: 57097 bytes of the 262144 below the stack were written, the lowest 64628 bytes below it
+canary-san-O0-n1200       2 exit 0    co: 57097 bytes of the 262144 below the stack were written, the lowest 64628 bytes below it
+canary-san-O0-n1200       3 exit 0    co: 57098 bytes of the 262144 below the stack were written, the lowest 64628 bytes below it
+   2 co: 57097 bytes of the 262144 below the stack were written, the lowest 64628 bytes below it
+   1 co: 57098 bytes of the 262144 below the stack were written, the lowest 64628 bytes below it
+canary-O0-n1500           1 exit 0    co: 23964 bytes of the 262144 below the stack were written, the lowest 26120 bytes below it
+canary-O0-n1500           2 exit 0    co: 23964 bytes of the 262144 below the stack were written, the lowest 26120 bytes below it
+canary-O0-n1500           3 exit 0    co: 23964 bytes of the 262144 below the stack were written, the lowest 26120 bytes below it
+   3 co: 23964 bytes of the 262144 below the stack were written, the lowest 26120 bytes below it
+canary-san-O0-n1500       1 exit 0    co: 129389 bytes of the 262144 below the stack were written, the lowest 146228 bytes below it
+canary-san-O0-n1500       2 exit 0    co: 129390 bytes of the 262144 below the stack were written, the lowest 146228 bytes below it
+canary-san-O0-n1500       3 exit 0    co: 129390 bytes of the 262144 below the stack were written, the lowest 146228 bytes below it
+   1 co: 129389 bytes of the 262144 below the stack were written, the lowest 146228 bytes below it
+   2 co: 129390 bytes of the 262144 below the stack were written, the lowest 146228 bytes below it
+canary-O0-n2000           1 exit 0    co: 112450 bytes of the 262144 below the stack were written, the lowest 122120 bytes below it
+canary-O0-n2000           2 exit 0    co: 112450 bytes of the 262144 below the stack were written, the lowest 122120 bytes below it
+canary-O0-n2000           3 exit 0    co: 112450 bytes of the 262144 below the stack were written, the lowest 122120 bytes below it
+   3 co: 112450 bytes of the 262144 below the stack were written, the lowest 122120 bytes below it
+canary-san-O0-n2000       1 exit 0    co: 232194 bytes of the 262144 below the stack were written, the lowest 262144 bytes below it
+canary-san-O0-n2000       2 exit 0    co: 232194 bytes of the 262144 below the stack were written, the lowest 262144 bytes below it
+canary-san-O0-n2000       3 exit 0    co: 232195 bytes of the 262144 below the stack were written, the lowest 262144 bytes below it
+   2 co: 232194 bytes of the 262144 below the stack were written, the lowest 262144 bytes below it
+   1 co: 232195 bytes of the 262144 below the stack were written, the lowest 262144 bytes below it
+real 238.61
+user 28.46
+sys 99.37

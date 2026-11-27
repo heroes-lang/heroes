@@ -1,0 +1,1 @@
+A callback called after C left a handler of C's by a jump no function of the C library makes (written in assembly, say), by a `swapcontext` away from it, by a jump or a `setcontext` onto a stack once given to `makecontext`, or by a jump that lands within it, may abort, saying the handler was not seen to end, or that C called it from inside one.

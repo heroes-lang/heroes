@@ -1,0 +1,27 @@
+(lldb) target create "./malloc-O2"
+Current executable set to '/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/panel263-scratch/run/malloc-O2' (arm64).
+(lldb) breakpoint set -n hero_thread_guard
+Breakpoint 1: where = malloc-O2`hero_thread_guard + 12 at thread.c:146:9, address = 0x0000000100002020
+(lldb) run
+co: kind 1 stack [0x7c6081c000, 0x7c6085c000) tls 0x7c60810000
+warning: malloc-O2 was compiled with optimization - stepping may behave oddly; variables may not be available.
+Process 10592 launched: '/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/panel263-scratch/run/malloc-O2' (arm64)
+Process 10592 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1
+       frame #0: 0x0000000100002020 malloc-O2`hero_thread_guard at thread.c:146:9 [opt]
+   143 	}
+   144 	
+   145 	void hero_thread_guard(const char *what) {
+-> 146 	    if (hero_thread_is_home) return;
+    	        ^
+   147 	    hero_thread_refuse(what);
+   148 	}
+Target 0: (malloc-O2) stopped.
+(lldb) expr -- (void *)((void *(*)(void *))(*(void **)&hero_thread_is_home))((void *)&hero_thread_is_home)
+(void *) $0 = 0x0000007c60810029
+(lldb) expr -- *(_Bool *)((void *(*)(void *))(*(void **)&hero_thread_is_home))((void *)&hero_thread_is_home)
+                 ˄      ˄
+                 │      ╰─ error: expected expression
+                 ╰─ error: use of undeclared identifier '_Bool'
+note: Expression evaluation in pure C not supported. Ran expression as 'ISO C++'.
+warning: warning: got name from symbols: hero_thread_is_home

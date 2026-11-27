@@ -1,0 +1,43 @@
+(lldb) target create "rs/static-O2"
+Current executable set to '/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/263-compiler-engineer-scratch/rs/static-O2' (arm64).
+(lldb) command source -s 0 'lldb/tramp2.txt'
+Executing commands in '/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/263-compiler-engineer-scratch/lldb/tramp2.txt'.
+(lldb) settings set platform.plugin.darwin.ignored-exceptions EXC_BAD_ACCESS|EXC_BAD_INSTRUCTION|EXC_ARITHMETIC
+(lldb) process handle SIGSEGV -s false -p true -n false
+NAME         PASS     STOP     NOTIFY
+===========  =======  =======  =======
+SIGSEGV      true     false    false  
+(lldb) process handle SIGBUS -s false -p true -n false
+NAME         PASS     STOP     NOTIFY
+===========  =======  =======  =======
+SIGBUS       true     false    false  
+(lldb) breakpoint set -n hero_rebind_tramp -c '(int)$x2 != 16'
+Breakpoint 1: where = static-O2`hero_rebind_tramp + 52 at rebind_entries.c:716:5, address = 0x000000010001d7a0
+(lldb) run
+warning: static-O2 was compiled with optimization - stepping may behave oddly; variables may not be available.
+Process 79351 launched: '/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/263-compiler-engineer-scratch/rs/static-O2' (arm64)
+Process 79351 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1
+       frame #0: 0x000000010001d7a0 static-O2`hero_rebind_tramp at rebind_entries.c:716:5 [opt]
+   713 	                                                                                  int sig, siginfo_t *info,
+   714 	                                                                                  void *context, uintptr_t token) {
+   715 	    (void)style;
+-> 716 	    hero_rebind_settle();
+    	    ^
+   717 	    HeroSignalStack *own = hero_rebind_own();
+   718 	    uint64_t mine = 0;
+   719 	    bool lost = false;
+Target 0: (static-O2) stopped.
+(lldb) register read x2
+      x2 = 0x000000000000000a
+(lldb) bt 8
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1
+   * frame #0: 0x000000010001d7a0 static-O2`hero_rebind_tramp at rebind_entries.c:716:5 [opt]
+     frame #1: 0x0000000100002030 static-O2`hero_thread_guard at thread.c:146:9 [opt]
+     frame #2: 0x00000001000223b4 static-O2`h_static_deep at static.hero:9:39 [opt]
+     frame #3: 0x00000001000223c4 static-O2`h_static_deep at static.hero:12:150 [opt]
+     frame #4: 0x00000001000223c4 static-O2`h_static_deep at static.hero:12:150 [opt]
+     frame #5: 0x00000001000223c4 static-O2`h_static_deep at static.hero:12:150 [opt]
+     frame #6: 0x00000001000223c4 static-O2`h_static_deep at static.hero:12:150 [opt]
+     frame #7: 0x00000001000223c4 static-O2`h_static_deep at static.hero:12:150 [opt]
+(lldb) continue

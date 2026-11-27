@@ -1,0 +1,21 @@
+  sectname __thread_vars
+      addr 0x00000001000301e8
+      size 0x00000000000003c0
+  sectname __thread_data
+      addr 0x00000001000305a8
+      size 0x0000000000000008
+  sectname __thread_bss
+      addr 0x00000001000305b0
+      size 0x000000000000a5b0
+00000001000305a8 _co_tls_probe$tlv$init
+00000001000305c8 _hero_alloc_inside$tlv$init
+0000000100030678 _hero_callback_mine$tlv$init
+0000000100030b58 _hero_run_variables$tlv$init
+0000000100032b58 _hero_run_words$tlv$init
+00000001000306c0 _hero_signal_stack$tlv$init
+0000000100030680 _hero_stack_alt$tlv$init
+0000000100030688 _hero_stack_alt_size$tlv$init
+0000000100030670 _hero_stack_hi$tlv$init
+0000000100030668 _hero_stack_lo$tlv$init
+00000001000306b8 _hero_stack_telling$tlv$init
+00000001000305d1 _hero_thread_is_home$tlv$init

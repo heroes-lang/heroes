@@ -1,0 +1,1 @@
+A source nested up to 2,000 deep compiles on every platform, and none is refused for its depth; running out of stack aborts, but a callback C calls on a stack this runtime did not see C make may first write over what lies below that stack.
