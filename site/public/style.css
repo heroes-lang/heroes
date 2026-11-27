@@ -1415,6 +1415,12 @@ figure.example.data pre { color: var(--dim); }
   font: 0.7rem/1.5 ui-monospace, 'SF Mono', Menlo, monospace;
   color: var(--dim); margin: 0 0 0.7rem;
 }
+/* And so does each package on Rebel's catalogue, under what it holds: its
+   ledger's three counts, the C under it, the applications that take it. */
+dl.packages .facts {
+  display: block; margin-top: 0.35rem;
+  font: 0.7rem/1.6 ui-monospace, 'SF Mono', Menlo, monospace; color: var(--dim);
+}
 
 /* The fingerprint, and the command that reproduces it. */
 p.fingerprint {

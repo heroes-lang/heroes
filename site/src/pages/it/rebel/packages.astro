@@ -1,0 +1,9 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { renderPackagesPage } from '../../../lib/rebel-page.ts';
+
+const page = await renderPackagesPage('it');
+---
+<BaseLayout url={page.url} title={page.title} description={page.description}>
+<Fragment set:html={page.html} />
+</BaseLayout>

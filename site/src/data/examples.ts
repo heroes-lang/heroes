@@ -31,6 +31,13 @@ export interface Group {
   en: string;
   it: string;
   slugs: string[];
+  /**
+   * Set on the shelves of Rebel's applications, and saying which kind they
+   * hold: the shelves `/rebel/apps/` lists, which `rebel-catalogue.ts` holds
+   * to the walk of `rebel/examples/`, so a shelf marked here and the folders
+   * holding their own `main.expected` are the same programs.
+   */
+  applications?: 'tool' | 'service';
 }
 
 export const groups: Group[] = [
@@ -141,22 +148,28 @@ export const groups: Group[] = [
   // twins last (`rebel/examples/README.md` § A10), in the order their
   // originals stand on the shelves above. `rebel` is the first shelf's key
   // because Rebel's page links `/examples/#rebel`.
+  //
+  // Each shelf of applications opens on the programs the author named as
+  // Rebel's strongest on 2026-11-27, minidb, rv32, raftkv and langserver among
+  // the tools and kvd among the services, since a reader meets a shelf from
+  // its top (the site's review of that morning found them mid-shelf).
   {
     key: 'rebel',
     en: 'Tools written with Rebel',
     it: 'Strumenti scritti con Rebel',
+    applications: 'tool',
     slugs: [
-      'rebel/jq',
-      'rebel/datakit',
       'rebel/minidb',
-      'rebel/lab',
-      'rebel/build',
       'rebel/rv32',
       'rebel/raftkv',
+      'rebel/langserver',
+      'rebel/jq',
+      'rebel/datakit',
+      'rebel/lab',
+      'rebel/build',
       'rebel/vcs',
       'rebel/shell',
       'rebel/editor',
-      'rebel/langserver',
       'rebel/explorer',
       'rebel/kanban',
       'rebel/backup',
@@ -172,11 +185,12 @@ export const groups: Group[] = [
     key: 'rebel-services',
     en: 'Services written with Rebel',
     it: 'Servizi scritti con Rebel',
+    applications: 'service',
     slugs: [
+      'rebel/kvd',
       'rebel/notes',
       'rebel/auth',
       'rebel/chat',
-      'rebel/kvd',
       'rebel/searchd',
       'rebel/registry',
       'rebel/gateway',

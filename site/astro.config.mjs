@@ -183,6 +183,9 @@ function priority(pathname) {
   if (path === '/examples/') return 0.8;
   if (path.startsWith('/examples/')) return 0.7;
   if (path === '/why/not/' || path === '/why/measured/') return 0.7;
+  // Rebel's two catalogues sit one click below its page, as the refusals do
+  // below Why's, so they take that tier rather than the reference pages'.
+  if (path === '/rebel/packages/' || path === '/rebel/apps/') return 0.7;
   if (path.startsWith('/rebel/') && path !== '/rebel/') return 0.6;
   return path.startsWith('/docs/') ? 0.6 : 0.8;
 }
