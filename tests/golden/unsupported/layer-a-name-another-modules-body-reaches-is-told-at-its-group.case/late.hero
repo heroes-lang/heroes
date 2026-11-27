@@ -1,0 +1,7 @@
+# The second module: its group's header calls the layer's stop from a body,
+# and no group of the program says `layer`.
+extern "stop.h"  #~ ffi_layer_undeclared
+    function stop_now() -> i64
+
+function stopped() -> bool
+    return stop_now() == 1
