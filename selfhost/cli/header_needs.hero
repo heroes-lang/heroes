@@ -19,7 +19,8 @@
 # 2381):
 #
 # - every reference is placed in the object of one of the program's modules,
-#   `<module>-<digest>.o` (`cli/units.hero`), or in a library the program
+#   `unit-<16>-<digest>.o`, its stem the digest of the module's C component
+#   (`cli/unit_names.hero`, defect 2877), or in a library the program
 #   names, one at least in a module's object (`cli/needs_placed.hero`), and
 #   each module whose object holds one answers the questions below through
 #   its own header list and its own groups, told at its own binding, as

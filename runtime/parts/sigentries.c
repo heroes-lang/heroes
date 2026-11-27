@@ -314,6 +314,29 @@ static bool hero_sig_coroutine_top(uintptr_t frame, uintptr_t *top) {
     return hero_sig_live_range(frame, &lo, top);
 }
 
+/* THE KNOWN RANGE A FAULT AT `addr` MAY HAVE RUN OUT OF (defect 2870), for the
+ * stack guard's handler (`parts/stack.c`), which asks no other and judges the
+ * fault's witnesses itself: of the ranges `makecontext` was handed whose lowest
+ * address lies above `addr`, with `sp` below their top, the one whose lowest
+ * address lies nearest. Every known range, ended or not: the witnesses say a
+ * stack ran out, and a range's life says only where a coroutine's frames may
+ * be. Atomic loads alone, a slot read while written skipped. Unused under the
+ * sanitizer, whose handler replaces the guard's. */
+__attribute__((unused)) static bool hero_sig_range_above(uintptr_t addr, uintptr_t sp, uintptr_t *lo, uintptr_t *hi) {
+    if (!atomic_load_explicit(&hero_sig_stack_any, memory_order_acquire)) return false;
+    bool found = false;
+    for (int i = 0; i < HERO_SIG_STACKS; i += 1) {
+        unsigned before = atomic_load(&hero_sig_stack_seq[i]);
+        uintptr_t l = atomic_load(&hero_sig_stack_lo[i]), h = atomic_load(&hero_sig_stack_hi[i]);
+        if ((before & 1) != 0 || atomic_load(&hero_sig_stack_seq[i]) != before || h <= l) continue;
+        if (addr >= l || sp >= h || (found && l >= *lo)) continue;
+        *lo = l;
+        *hi = h;
+        found = true;
+    }
+    return found;
+}
+
 /* A switch whose target's stack pointer is `at` enters the range holding it
  * (a `swapcontext` or `setcontext`, called before anything judges the target). */
 static void hero_sig_range_entered(uintptr_t at) {

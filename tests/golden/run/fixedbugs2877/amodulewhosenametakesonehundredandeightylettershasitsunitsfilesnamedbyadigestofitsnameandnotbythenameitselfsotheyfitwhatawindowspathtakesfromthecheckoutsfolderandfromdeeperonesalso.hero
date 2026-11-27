@@ -1,0 +1,8 @@
+# A module of defect 2877's run case, not a case of its own: its name takes
+# 180 letters, and every file of its unit is named by its stem.
+
+function greeting() -> str
+    return "a module named in 180 letters, compiled and run"
+
+function length() -> i64
+    return 180

@@ -45,6 +45,7 @@
 use report
 use shell
 use strings
+use unit_files
 
 # Where the two-module program lives for the duration, under the scratch
 # directory so `heroes build`'s own `build/` stays the one it always is.
@@ -130,9 +131,12 @@ function tu_sources(scratch: str) -> [str]?
     # `find` whose output had to be captured to a file under it, and it
     # comes from the runtime now. The parameter stays because two call
     # sites pass it and the harness's shape is uniform.
+    #
+    # Each is asked by the name its folder holds it under, the module's stem
+    # since defect 2877 (`unit_files`), `<module>.c` until then.
     _ = scratch
-    shapes = shell.found_under(dir: "build", suffix: "unitshape.c", reference: "")?
-    progs = shell.found_under(dir: "build", suffix: "unitprog.c", reference: "")?
+    shapes = shell.found_under(dir: "build", suffix: unit_files.c_name("unitshape"), reference: "")?
+    progs = shell.found_under(dir: "build", suffix: unit_files.c_name("unitprog"), reference: "")?
     out: [str] @= shapes
 
     for one in progs
@@ -255,8 +259,8 @@ function a_caller_compiles_the_prototype_the_definition_sits_beside(@r: report.R
     if got.is_err()
         report.keep_failure(@r, label: label, detail: "  the program did not emit under " + dir.must())
         return
-    declaring = text_of(e: got.must(), name: "unitshape.c")
-    calling = text_of(e: got.must(), name: "unitprog.c")
+    declaring = text_of(e: got.must(), name: unit_files.c_name("unitshape"))
+    calling = text_of(e: got.must(), name: unit_files.c_name("unitprog"))
 
     if declaring.len() == 0 || calling.len() == 0
         report.keep_failure(

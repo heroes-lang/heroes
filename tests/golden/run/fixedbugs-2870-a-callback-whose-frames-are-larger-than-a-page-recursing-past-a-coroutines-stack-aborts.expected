@@ -1,0 +1,2 @@
+!sanitizer: stack-overflow
+!panic: stack exhausted in fixedbugs-2870-a-callback-whose-frames-are-larger-than-a-page-recursing-past-a-coroutines-stack-aborts.deep

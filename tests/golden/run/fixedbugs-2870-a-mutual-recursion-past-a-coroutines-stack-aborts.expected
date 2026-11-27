@@ -1,0 +1,2 @@
+!sanitizer: stack-overflow
+!panic: stack exhausted in fixedbugs-2870-a-mutual-recursion-past-a-coroutines-stack-aborts.ping

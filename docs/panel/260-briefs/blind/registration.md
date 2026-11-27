@@ -329,3 +329,7 @@ is the first run's measured cells, `adopted` t1 0.99 and t2 1.06 USD for five se
 `llm-ergonomist-blind.md`), so **about 4.1 USD for the 20, an inference, unrun** (the narrowed arm is 196 bytes longer).
 A cheaper route, named and not registered: `narrowed` alone, 10 sessions, about 2.1 USD, read against the first run's
 `adopted` cells.
+
+**Authorised by the author, 2026-11-27, at about 08:25** (the answer *2a* to the coordinator's three routes, meant as:
+*yes, the registered re-read, at its ceiling*): the re-read registered above, 20 sessions, **ceiling 12.00 USD**, run
+as registered by whoever starts it, its runner's changes written as a `diff -u` beside this file before any session.
