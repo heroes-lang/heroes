@@ -1,0 +1,23 @@
+error[ffi_layer_unreached]: this group says `layer`, and `hero_os.h` is the runtime's own header, none of the platform layer's, and includes none of them, so nothing it binds is the layer's: take the word out
+  at tests/golden/unsupported/layer-a-group-saying-layer-over-the-runtimes-own-header.hero:13:20
+     |
+  13 | extern "hero_os.h" layer  #~ ffi_layer_unreached
+     |                    ^^^^^
+  note: the platform layer's members are compiled and linked only for a program whose groups say `layer`; a program none of whose groups says it links nothing of the layer, so its build asks nothing of it; a word that binds nothing makes every program reaching this group pay for the layer
+  fix (certain): take `layer` out
+
+error[ffi_layer_unreached]: this group says `layer`, and `hero_compiler.h` is the runtime's own header, none of the platform layer's, and includes none of them, so nothing it binds is the layer's: take the word out
+  at tests/golden/unsupported/layer-a-group-saying-layer-over-the-runtimes-own-header.hero:16:26
+     |
+  16 | extern "hero_compiler.h" layer  #~ ffi_layer_unreached
+     |                          ^^^^^
+  note: the platform layer's members are compiled and linked only for a program whose groups say `layer`; a program none of whose groups says it links nothing of the layer, so its build asks nothing of it; a word that binds nothing makes every program reaching this group pay for the layer
+  fix (certain): take `layer` out
+
+error[ffi_layer_unreached]: this group says `layer`, and `./hero_os.h` is the runtime's own header, none of the platform layer's, and includes none of them, so nothing it binds is the layer's: take the word out
+  at tests/golden/unsupported/layer-a-group-saying-layer-over-the-runtimes-own-header.hero:19:22
+     |
+  19 | extern "./hero_os.h" layer  #~ ffi_layer_unreached
+     |                      ^^^^^
+  note: the platform layer's members are compiled and linked only for a program whose groups say `layer`; a program none of whose groups says it links nothing of the layer, so its build asks nothing of it; a word that binds nothing makes every program reaching this group pay for the layer
+  fix (certain): take `layer` out

@@ -1,0 +1,22 @@
+# Panel 260's amendment after its blind reading (provisional, the author's
+# reading pending): a group over the runtime's own `hero_os.h` or
+# `hero_compiler.h` says no `layer`, and is judged like any group since the
+# amendment, so a program binding several of their names beside a group of
+# the layer's builds and runs: no name they declare is one of the layer's
+# (`cli/layer_bound.hero`'s test holds that premise), so none is told as the
+# layer's bound through the runtime's header. The blind reading's t2 (4).
+extern "hero_time.h" layer
+    function hero_time_monotonic_ns() -> i64
+
+extern "hero_os.h"
+    function hero_os_pid() -> i64
+    function hero_fs_exists(path: cstr lent) -> i64
+
+extern "hero_compiler.h"
+    function hero_frame_probes_asked() -> i64
+
+function main()
+    print(hero_time_monotonic_ns() > 0)
+    print(hero_os_pid() > 0)
+    print(hero_fs_exists(path: ".".cstr()) == 1)
+    print(hero_frame_probes_asked() >= 0)

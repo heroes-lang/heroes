@@ -100,7 +100,12 @@ record Located
 
 # The place after every location of a row, read in order: `<file>:L:C` sets
 # both, `line:L:C` the line. A path inside a quoted type, `struct (unnamed at
-# x.h:3:9)`, is not a location clang printed as one and is passed over.
+# x.h:3:9)`, is not a location clang printed as one and is passed over. **A
+# buffer of clang's own keeps its brackets**, `<scratch space>` where a `##`
+# made the name, `<built-in>`, `<command line>`: the bracket that opens it is
+# the one a token starts after, and read without it the buffer was the file
+# `scratch space>`, a relative path `.` holds (lane p261-beside, 2026-11-26;
+# `cli/supplied_expanded.hero`).
 function located(row: str, at: Located) -> Located
     file: str @= at.file
     line: i64 @= at.line
@@ -109,7 +114,7 @@ function located(row: str, at: Located) -> Located
     while i < row.len()
         if row[i] == ':' && digits_then_colon(row, from: i + 1)
             begin = token_start(row, before: i)
-            word = row.slice(from: begin, to: i)
+            word = buffer_whole(row: row, begin: begin, word: row.slice(from: begin, to: i))
             number = leading_number(row, from: i + 1)
 
             if word == "line"
@@ -120,6 +125,14 @@ function located(row: str, at: Located) -> Located
         i @ i + 1
 
     return Located(file: file, line: line)
+
+# `word` with the `<` before it where it ends with the `>` that closes a
+# buffer's name: clang prints a buffer in brackets, and no file's path it
+# prints ends with one.
+function buffer_whole(row: str, begin: i64, word: str) -> str
+    if begin > 0 && row[begin - 1] == '<' && word.len() > 0 && word[word.len() - 1] == '>'
+        return "<" + word
+    return word
 
 # Whether `row` holds digits from `from` and then `:` and a digit.
 function digits_then_colon(row: str, from: i64) -> bool
@@ -220,3 +233,17 @@ test "a label's place is read from the dump's locations in order"
     assert got[2].name == "main"
     assert got[2].label == "other_main"
     assert got[2].line == 2
+
+# glibc's `nextafterf`, as clang 22.1.8 dumped it in the Linux arm64 image:
+# its name pasted, so placed in `<scratch space>`, a buffer, whole with its
+# brackets in the range and after it, and a file's path left as it is.
+test "a buffer of clang's own is read whole, its brackets kept"
+    row = "|-FunctionDecl 0x2 prev 0x1 </usr/include/aarch64-linux-gnu/bits/mathcalls-macros.h:39:3, /usr/include/aarch64-linux-gnu/sys/cdefs.h:79:54> <scratch space>:23:1 nextafterf 'float (float, float)' extern"
+    placed = located(row, at: Located(file: "", line: 0))
+    assert placed.file == "<scratch space>" && placed.line == 23
+    implicit = located(
+        "|-FunctionDecl 0x1 <<scratch space>:23:1> col:1 implicit nextafterf 'float (float, float)' extern",
+        at: Located(file: "", line: 0)
+    )
+    assert implicit.file == "<scratch space>" && implicit.line == 23
+    assert located("|-FunctionDecl 0x3 <./x.h:4:1, col:9> col:5 f 'int (void)'", at: Located(file: "", line: 0)).file == "./x.h"

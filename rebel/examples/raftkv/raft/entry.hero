@@ -1,0 +1,70 @@
+# A log entry and what it carries: a client's operation, the members of a
+# new configuration, or nothing (the entry a new leader appends at once, so
+# that an entry of its own term commits and with it every entry before;
+# the Raft paper's section 5.4.2 and the dissertation's 6.4).
+
+use kv/op
+
+## The entry
+
+# What an entry carries.
+variant Payload
+    # Nothing: a new leader's first entry.
+    noop
+    # A client's operation.
+    command
+        # The client's number.
+        client: i64
+        # The operation's sequence number in that client's session.
+        seq: i64
+        # The operation, never a `get`.
+        operation: op.Op
+    # The cluster's members from this entry on: one more or one fewer than
+    # before (the dissertation's section 4.1).
+    config
+        # The members' numbers, ascending.
+        members: [i64]
+
+# One entry of the replicated log.
+record Entry
+    # Its place in the log, from 1.
+    index: i64
+    # The term of the leader that wrote it, from 1.
+    term: i64
+    # What it carries.
+    payload: Payload
+
+# `e` as the transcript names it: `5@2 put x 1` (index 5 of term 2).
+#
+# - `e`: the entry.
+function format_entry(e: Entry) -> str
+    return f"{e.index}@{e.term} " + format_payload(e.payload)
+
+# `p` as the transcript writes it.
+#
+# - `p`: the payload.
+function format_payload(p: Payload) -> str
+    return match p
+        .noop      => "noop"
+        .command c => op.format_op(c.operation)
+        .config c  => "members " + format_members(c.members)
+
+# Members as a set is written: `{1,2,3}`.
+#
+# - `members`: the members' numbers.
+function format_members(members: [i64]) -> str
+    words: [str] @= []
+
+    for m in members
+        words @ words.push(to_str(m))
+
+    return "{" + words.join(",") + "}"
+
+## Tests
+
+test "format_entry: each payload"
+    assert format_entry(Entry(index: 1, term: 1, payload: .noop)) == "1@1 noop"
+    put = Entry(index: 5, term: 2, payload: .command(client: 1, seq: 1, operation: .put(key: "x", value: "a b")))
+    assert format_entry(put) == "5@2 put x 'a b'"
+    assert format_entry(Entry(index: 9, term: 3, payload: .config(members: [1, 2, 6]))) == "9@3 members {1,2,6}"
+    assert format_members([]) == "{}"

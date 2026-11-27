@@ -1,0 +1,125 @@
+# Membership changes one server at a time (the dissertation's section 4.1):
+# a configuration that adds or removes a single member overlaps the old one
+# in a majority, so the two can never elect two leaders, and no joint
+# consensus is needed. A configuration counts from the moment a node
+# appends it, committed or not; the leader starts no second change before
+# the first commits, and a node whose log loses a configuration (cut as a
+# conflict) falls back to the one before.
+
+use raft/entry
+use raft/log
+use raft/node
+use raft/replication
+
+## The members
+
+# The members `l` names as of its last entry: its latest configuration, or
+# the snapshot's where the log holds none after it.
+#
+# - `l`: the log.
+# - `base`: the snapshot the log starts after.
+function members_of(l: log.Log lent, base: node.Snapshot) -> [i64]
+    return members_at(l, base: base, index: log.last_index(l))
+
+# The members as of `index`: the latest configuration at or before it.
+#
+# - `l`: the log.
+# - `base`: the snapshot the log starts after.
+# - `index`: the index, at least the log's base.
+function members_at(l: log.Log lent, base: node.Snapshot, index: i64) -> [i64]
+    at: i64 @= index
+
+    while at > l.base_index
+        match log.entry_at(l, index: at).payload
+            .config c          => return c.members
+            .noop | .command _ => _ = 0
+
+        at @ at - 1
+
+    return base.members
+
+# The index of the latest configuration in `l`'s entries, 0 where none.
+#
+# - `l`: the log.
+function latest_change(l: log.Log lent) -> i64
+    at: i64 @= log.last_index(l)
+
+    while at > l.base_index
+        match log.entry_at(l, index: at).payload
+            .config _          => return at
+            .noop | .command _ => _ = 0
+
+        at @ at - 1
+
+    return 0
+
+## Changes
+
+# Proposes the members with `member` added, or taken away, and answers the
+# new configuration's index.
+#
+# - `n`: the leader.
+# - `member`: the member added or removed.
+# - `adding`: whether it is added.
+#
+# Fails `invalid` where `n` does not lead, a change has not committed yet,
+# or the member is already in (added) or not in (removed), the message
+# saying which.
+function propose_change(@n: node.Node, member: i64, adding: bool) -> i64?
+    if n.role != .leader
+        return fail(code: "invalid", msg: f"node {n.id} does not lead")
+    pending = latest_change(n.log)
+
+    if pending > n.commit
+        return fail(code: "invalid", msg: f"the change at {pending} has not committed yet; one change at a time")
+    there = node.contains_member(n.members, member)
+
+    if adding && there
+        return fail(code: "invalid", msg: f"node {member} is a member already")
+
+    if !adding && !there
+        return fail(code: "invalid", msg: f"node {member} is no member")
+
+    if !adding && n.members.len() == 1
+        return fail(code: "invalid", msg: "the last member cannot be removed")
+    members: [i64] @= []
+
+    for m in n.members
+        if m != member
+            members @ members.push(m)
+
+    if adding
+        members @ sort(members.push(member))
+    index = replication.propose(@n, .config(members: members))
+    replication.broadcast(@n)
+    return ok(index)
+
+## Tests
+
+test "members_of: the latest configuration, else the snapshot's"
+    base = node.Snapshot(last_index: 2, last_term: 1, members: [1, 2, 3], data: [])
+    l @= log.empty()
+    log.reset_to(@l, index: 2, term: 1)
+    assert members_of(l, base: base) == [1, 2, 3]
+    log.append(@l, entry.Entry(index: 3, term: 1, payload: .config(members: [1, 2, 3, 4])))
+    log.append(@l, entry.Entry(index: 4, term: 1, payload: .noop))
+    assert members_of(l, base: base) == [1, 2, 3, 4]
+    assert members_at(l, base: base, index: 2) == [1, 2, 3]
+    assert latest_change(l) == 3
+
+test "propose_change: one at a time, and what is refused"
+    n @= node.new_node(id: 1, members: [1, 2, 3], settings: node.default_settings(), seed: 4, now: 0)
+    assert propose_change(@n, member: 4, adding: true).is_err()
+    n.role @ .leader
+    n.term @ 1
+    replication.track(@n, peer: 2)
+    replication.track(@n, peer: 3)
+    assert propose_change(@n, member: 4, adding: true).must() == 1
+    assert n.members == [1, 2, 3, 4]
+    assert n.progress[4].must().next == 2
+    assert propose_change(@n, member: 2, adding: false).is_err()
+    n.commit @ 1
+    assert propose_change(@n, member: 3, adding: true).is_err()
+    assert propose_change(@n, member: 9, adding: false).is_err()
+    assert propose_change(@n, member: 2, adding: false).must() == 2
+    assert n.members == [1, 3, 4]

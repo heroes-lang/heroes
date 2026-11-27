@@ -1,0 +1,7 @@
+# The package's one module: the process's id, over the runtime's own header,
+# with a word that header does not owe.
+extern "hero_os.h" layer  #~ ffi_layer_unreached
+    function hero_os_pid() -> i64
+
+function pid() -> i64
+    return hero_os_pid()

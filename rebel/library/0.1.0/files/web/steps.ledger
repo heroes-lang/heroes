@@ -1,0 +1,64 @@
+# The ledger of `web/steps`: the middleware Echo's `middleware` package, Gin
+# and chi ship ready for a router's chain, one block per capability, and what
+# Rebel answers as a step of `web/chain`. Each is made of a piece of `web`,
+# whose ledger holds the piece's own block. Rust's standard library holds no
+# web framework, and Python's none of these steps, so their lines are `-`.
+
+capability steps/log  a line for each request, with its status and the time it took
+  heroes  web/steps.access_log
+  go      echo/middleware.Logger, echo/middleware.LoggerWithConfig, echo/middleware.RequestLoggerWithConfig, gin.Logger, chi/middleware.Logger
+  rust    -
+  python  -
+  note    the time is read twice from a clock the program hands it, called with the program's state, so a test advances its own; the line's time is the logger's; a failure handed on is written at `error` with its code, where Echo's logger writes the error its handler answers
+
+capability steps/request-id  an identifier for each request, kept where the client sent one, copied into the response
+  heroes  web/steps.request_id
+  go      echo/middleware.RequestID, echo/middleware.RequestIDWithConfig, chi/middleware.RequestID
+  rust    -
+  python  -
+
+capability steps/cors  cross-origin requests allowed by origin, a preflight answered before the handler
+  heroes  web/steps.cors
+  go      echo/middleware.CORS, echo/middleware.CORSWithConfig, go-chi/cors.Handler
+  rust    -
+  python  -
+
+capability steps/basic-auth  a request refused 401 without credentials the program accepts, checked against its own state
+  heroes  web/steps.basic_auth
+  go      echo/middleware.BasicAuth, echo/middleware.BasicAuthWithConfig, gin.BasicAuth, chi/middleware.BasicAuth
+  rust    -
+  python  -
+  note    the check is called with the program's state by `@`, so it reads the program's accounts and may count a refusal, where Echo's validator closes over them
+
+capability steps/body-limit  a body past a size refused 413 before the handler
+  heroes  web/steps.body_limit
+  go      echo/middleware.BodyLimit, echo/middleware.BodyLimitWithConfig, chi/middleware.RequestSize
+  rust    -
+  python  -
+
+capability steps/secure  the security headers on every response
+  heroes  web/steps.security_headers
+  go      echo/middleware.Secure, echo/middleware.SecureWithConfig
+  rust    -
+  python  -
+
+capability steps/gzip  a response compressed by gzip where the client accepts it
+  heroes  web/steps.gzip
+  go      echo/middleware.Gzip, echo/middleware.GzipWithConfig, chi/middleware.Compress
+  rust    -
+  python  -
+
+capability steps/timeout  a handler stopped past a time
+  heroes  refused: a handler runs to its end on the thread that serves, and the language has no way to stop a function midway, so a step could answer late but never stop the work, and `web` offers no deadline a handler reads; `http.Server.deadline_ms` bounds a connection instead
+  go      echo/middleware.Timeout, echo/middleware.TimeoutWithConfig, echo/middleware.ContextTimeout, chi/middleware.Timeout
+  rust    -
+  python  -
+
+capability steps/rate-limit  requests of one client counted and refused 429 past a rate
+  heroes  web.limit_rate
+  go      echo/middleware.RateLimiter, echo/middleware.RateLimiterWithConfig
+  rust    -
+  python  -
+  note    called by a step of the program's own with the limiter its state holds, since no step generic over a state reaches a field of it
+
+dropped  a skipper deciding per request whether a step runs: a step of the program's own decides before calling one of these, or calls its `go_on` straight away

@@ -2,11 +2,17 @@
 # as a value is refused where it stands, named as the author wrote it, and the
 # qualified call beside it is quiet. No `check/` case holds a second module,
 # so `suite_surface`'s row is this shape's golden.
+#
+# Corrected 2026-11-26, panel 261's R1 (ratified, decision 2827): a function
+# of the program is a value of the type its signature writes, marks
+# included, across a module too, so `helper.bump` is a value of
+# `(function(@i64) -> ())` and a call through it writes the place, as the
+# qualified call does: the program prints 3.
 use helper
 
 function main()
-    f = helper.bump  #~ mutable_parameter_as_value
+    f = helper.bump
     x: i64 @= 1
     helper.bump(@x)
+    f(@x)
     print(x)
-    _ = f

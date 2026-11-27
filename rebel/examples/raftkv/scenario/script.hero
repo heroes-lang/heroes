@@ -1,0 +1,298 @@
+# A scenario, read from a TOML file: the cluster's size and seed, how the
+# network behaves, the nodes' settings, and the steps, each a table of the
+# array `step` naming what it does with `do`. Spans are TOML texts read as
+# durations, `"500ms"`, `"2s"`. A file this program cannot run is refused
+# whole, before anything runs, the message naming the step and the key.
+#
+#     name = "an election and a write"
+#     nodes = 3
+#     seed = 7
+#
+#     [[step]]
+#     do = "leader"
+#
+#     [[step]]
+#     do = "op"
+#     op = "put x 1"
+
+use <rebel>/errors
+use <rebel>/time
+use <rebel>/toml
+
+use kv/op
+use raft/node
+use sim/network
+
+## The script
+
+# One step of a scenario.
+variant Step
+    # Lets the time pass.
+    run
+        # How long, in milliseconds.
+        span: i64
+    # Runs until a node leads, and says which.
+    leader
+        # The most it waits, in milliseconds.
+        patience: i64
+    # Sends a client's operation and waits for its end.
+    operation
+        # The operation.
+        operation: op.Op
+        # The one node asked, or 0 for whichever leads.
+        target: i64
+        # How long the client waits, in milliseconds.
+        patience: i64
+    # Cuts the network into groups.
+    partition
+        # The groups.
+        groups: [[i64]]
+    # Joins the network again.
+    heal
+    # Crashes a node.
+    crash
+        # The node.
+        id: i64
+        # Whether a write it had begun is left cut short.
+        torn: bool
+    # Starts a crashed node again from its disk.
+    restart
+        # The node.
+        id: i64
+    # Starts a new node and asks the leader to add it.
+    add
+        # The new node's number.
+        id: i64
+    # Asks the leader to remove a node.
+    remove
+        # The node.
+        id: i64
+    # Makes a node start an election now.
+    campaign
+        # The node.
+        id: i64
+    # Prints every node's state.
+    show
+    # Prints a line of narration.
+    say
+        # The line.
+        text: str
+    # Prints what the checker found, and whether the running nodes' stores
+    # agree.
+    check
+
+# A whole scenario.
+record Script
+    # Its name.
+    name: str
+    # How many nodes start.
+    nodes: i64
+    # The seed of everything drawn.
+    seed: i64
+    # How the network behaves.
+    weather: network.Weather
+    # The nodes' settings.
+    settings: node.Settings
+    # Its steps, in order.
+    steps: [Step]
+
+# The scenario `text` writes.
+#
+# - `text`: the TOML file's text.
+#
+# Fails `invalid` where it is no TOML, or names a step or a key this program
+# does not know or a value of the wrong kind, the message saying where.
+function parse_script(text: str) -> Script?
+    doc = toml.parse(text)?
+    weather @= network.calm()
+    settings @= node.default_settings()
+
+    match toml.value_at(doc, path: ["network"])
+        .ok net =>
+            weather.delay_min @ span_or(net, key: "delay", otherwise: weather.delay_min)?
+            weather.delay_max @ weather.delay_min + span_or(net, key: "spread", otherwise: 20)? + 1
+            weather.drop_percent @ percent_or(net, key: "drop")?
+            weather.duplicate_percent @ percent_or(net, key: "duplicate")?
+            weather.damage_percent @ percent_or(net, key: "damage")?
+        .err _ => _ = 0
+
+    match toml.value_at(doc, path: ["settings"])
+        .ok given =>
+            settings.snapshot_every @ int_or(given, key: "snapshot_every", otherwise: settings.snapshot_every)?
+            settings.chunk @ int_or(given, key: "chunk", otherwise: settings.chunk)?
+            bug = text_or(given, key: "bug", otherwise: "")?
+
+            if bug == "votes-ignore-logs"
+                settings.votes_ignore_logs @ true
+            else if bug != ""
+                return fail(code: "invalid", msg: f"no bug named \"{bug}\"; the one planted is votes-ignore-logs")
+        .err _ => _ = 0
+
+    nodes = int_or(doc, key: "nodes", otherwise: 3)?
+
+    if nodes < 1 || nodes > 9
+        return fail(code: "invalid", msg: f"nodes = {nodes}, where 1 to 9 are run")
+    steps: [Step] @= []
+    tables = toml.items_at(doc, key: "step").default([])
+
+    for k in range(from: 0, to: tables.len())
+        steps @ steps.push(errors.context(parse_step(tables[k]), what: f"step {k + 1}")?)
+
+    return ok(
+        Script(name: text_or(doc, key: "name", otherwise: "a scenario")?, nodes: nodes, seed: int_or(doc, key: "seed", otherwise: 1)?, weather: weather, settings: settings, steps: steps)
+    )
+
+# The step `t` describes.
+#
+# - `t`: a table of the array `step`.
+#
+# Fails `invalid` where its `do` names no step, or a key it needs is missing
+# or of the wrong kind.
+function parse_step(t: toml.Value) -> Step?
+    verb = toml.text_at(t, key: "do")?
+
+    if verb == "run"
+        return ok(.run(span: span_of(t, key: "for")?))
+
+    if verb == "leader"
+        return ok(.leader(patience: span_or(t, key: "within", otherwise: 3000)?))
+
+    if verb == "op"
+        operation = op.parse_op(toml.text_at(t, key: "op")?)?
+        return ok(
+            .operation(operation: operation, target: int_or(t, key: "at", otherwise: 0)?, patience: span_or(t, key: "wait", otherwise: 3000)?)
+        )
+
+    if verb == "partition"
+        groups: [[i64]] @= []
+
+        for g in toml.items_at(t, key: "groups")?
+            groups @ groups.push(numbers_in(g)?)
+
+        return ok(.partition(groups: groups))
+
+    if verb == "heal"
+        return ok(.heal)
+
+    if verb == "crash"
+        return ok(.crash(id: toml.int_at(t, key: "node")?, torn: toml.bool_at(t, key: "torn").default(false)))
+
+    if verb == "restart"
+        return ok(.restart(id: toml.int_at(t, key: "node")?))
+
+    if verb == "add"
+        return ok(.add(id: toml.int_at(t, key: "node")?))
+
+    if verb == "remove"
+        return ok(.remove(id: toml.int_at(t, key: "node")?))
+
+    if verb == "campaign"
+        return ok(.campaign(id: toml.int_at(t, key: "node")?))
+
+    if verb == "show"
+        return ok(.show)
+
+    if verb == "say"
+        return ok(.say(text: toml.text_at(t, key: "text")?))
+
+    if verb == "check"
+        return ok(.check)
+    return fail(
+        code: "invalid",
+        msg: f"do = \"{verb}\" names no step: run, leader, op, partition, heal, crash, restart, add, remove, campaign, show, say or check"
+    )
+
+## Readers
+
+# The milliseconds of the span the member `key` of `t` writes, `"250ms"`.
+#
+# - `t`: a table.
+# - `key`: the member.
+#
+# Fails where it is missing, no text, or no duration of 0 or more.
+function span_of(t: toml.Value, key: str) -> i64?
+    d = time.parse_duration(toml.text_at(t, key: key)?)?
+    ms = time.to_units(d, unit: .millisecond)
+
+    if ms < 0
+        return fail(code: "invalid", msg: f"{key} = \"{time.format_duration(d)}\" is a span before now")
+    return ok(ms)
+
+# `span_of`, or `otherwise` where the member is missing.
+function span_or(t: toml.Value, key: str, otherwise: i64) -> i64?
+    if errors.has_code(toml.text_at(t, key: key), code: "not_found")
+        return ok(otherwise)
+    return span_of(t, key: key)
+
+# The integer of the member `key`, or `otherwise` where it is missing.
+function int_or(t: toml.Value, key: str, otherwise: i64) -> i64?
+    found = toml.int_at(t, key: key)
+
+    if errors.has_code(found, code: "not_found")
+        return ok(otherwise)
+    return found
+
+# The text of the member `key`, or `otherwise` where it is missing.
+function text_or(t: toml.Value, key: str, otherwise: str) -> str?
+    found = toml.text_at(t, key: key)
+
+    if errors.has_code(found, code: "not_found")
+        return ok(otherwise)
+    return found
+
+# A chance in a hundred, 0 where it is missing.
+function percent_or(t: toml.Value, key: str) -> i64?
+    n = int_or(t, key: key, otherwise: 0)?
+
+    if n < 0 || n > 100
+        return fail(code: "invalid", msg: f"{key} = {n}, where a chance in a hundred is 0 to 100")
+    return ok(n)
+
+# The integers of the array `v`.
+#
+# - `v`: an array of integers.
+#
+# Fails `invalid` where it is not one.
+function numbers_in(v: toml.Value) -> [i64]?
+    out: [i64] @= []
+
+    match v
+        .array a =>
+            for item in a.items
+                match item
+                    .integer i => out @ out.push(i.v)
+                    .text _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+                        return fail(code: "invalid", msg: "a group holds something other than a node's number")
+        .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .table _ =>
+            return fail(code: "invalid", msg: "a group is no array of nodes' numbers")
+
+    return ok(out)
+
+## Tests
+
+test "parse_script: every step, the network and the settings"
+    text = "name = \"all\"\nnodes = 5\nseed = 9\n[network]\ndelay = \"2ms\"\nspread = \"8ms\"\ndrop = 3\n[settings]\nsnapshot_every = 4\n[[step]]\ndo = \"run\"\nfor = \"1.5s\"\n[[step]]\ndo = \"op\"\nop = \"put k 'a b'\"\nat = 2\nwait = \"1s\"\n[[step]]\ndo = \"partition\"\ngroups = [[1, 2], [3, 4, 5]]\n[[step]]\ndo = \"crash\"\nnode = 3\ntorn = true\n[[step]]\ndo = \"leader\"\n"
+    s = parse_script(text).must()
+    assert s.name == "all" && s.nodes == 5 && s.seed == 9
+    assert s.weather.delay_min == 2 && s.weather.delay_max == 11 && s.weather.drop_percent == 3
+    assert s.settings.snapshot_every == 4
+    assert s.steps[0] == .run(span: 1500)
+    assert s.steps[1] == .operation(operation: .put(key: "k", value: "a b"), target: 2, patience: 1000)
+    assert s.steps[2] == .partition(groups: [[1, 2], [3, 4, 5]])
+    assert s.steps[3] == .crash(id: 3, torn: true)
+    assert s.steps[4] == .leader(patience: 3000)
+
+test "parse_script: what is refused, and where"
+    assert parse_script("[[step]]\ndo = \"fly\"\n").is_err()
+    assert parse_script("[[step]]\ndo = \"run\"\n").is_err()
+    assert parse_script("[[step]]\ndo = \"run\"\nfor = \"-1s\"\n").is_err()
+    assert parse_script("nodes = 0\n").is_err()
+    assert parse_script("[network]\ndrop = 101\n").is_err()
+    assert parse_script("[settings]\nbug = \"other\"\n").is_err()
+    assert parse_script("[[step]]\ndo = \"partition\"\ngroups = [[\"a\"]]\n").is_err()
+    refused = parse_script("[[step]]\ndo = \"leader\"\n[[step]]\ndo = \"op\"\nop = \"fly\"\n")
+    assert errors.format_line(refused).len() > 0
+
+    match refused
+        .ok _  => assert false
+        .err e => assert e.msg.len() > 0 && e.msg[0] == 's'

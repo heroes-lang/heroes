@@ -1,0 +1,263 @@
+# Runs a scenario's steps on a simulated cluster and prints its transcript:
+# every line the nodes and the cluster said, with its time on the
+# simulation's clock, and each step's own lines (a client's answer, the
+# leader found, the nodes' state). After every step the checker is asked
+# what it found; the first broken property ends the scenario, and is the
+# last line printed.
+
+use <rebel>/strings
+
+use check/safety
+use kv/op
+use kv/store
+use raft/entry
+use raft/log
+use raft/membership
+use raft/node
+use raft/server
+use scenario/script
+use sim/client
+use sim/cluster
+use sim/network
+
+## Running
+
+# What a scenario's run came to.
+record Report
+    # The properties found broken; none where it ran safely.
+    violations: [str]
+    # How many times the checker asked them.
+    checks: i64
+    # The operations the clients finished.
+    finished: i64
+
+# Runs `s` in a fresh cluster under `work`, printing its transcript.
+#
+# - `s`: the scenario.
+# - `work`: the folder for the nodes' folders, emptied first.
+#
+# Fails where a node's folder cannot be made, written or read back, with
+# the codes of `fs`, or `invalid` where a step names a node that is not
+# there.
+function run_script(s: script.Script, work: str) -> Report?
+    print(f"== {s.name}: {s.nodes} nodes, seed {s.seed}")
+    c @= cluster.new_cluster(size: s.nodes, settings: s.settings, weather: s.weather, seed: s.seed, work: work)?
+    writer = cluster.add_client(@c)
+    sticky = cluster.add_client(@c)
+    finished: i64 @= 0
+
+    for step in s.steps
+        finished @ finished + perform(@c, step, writer: writer, sticky: sticky)?
+        flush(@c)
+
+        if !safety.is_safe(c.checker)
+            cluster.say(@c, "-- checker: " + c.checker.violations[0])
+            flush(@c)
+            break
+
+    return ok(Report(violations: c.checker.violations, checks: c.checker.steps, finished: finished))
+
+# Prints the lines the cluster said, and forgets them.
+#
+# - `c`: the cluster.
+function flush(@c: cluster.Cluster)
+    for line in c.lines
+        print(line)
+
+    c.lines @ []
+
+# Performs one step; answers how many client operations it finished.
+function perform(@c: cluster.Cluster, step: script.Step, writer: i64, sticky: i64) -> i64?
+    match step
+        .run r => cluster.run_until(@c, until: c.now + r.span)?
+        .leader l =>
+            deadline = c.now + l.patience
+
+            while c.now < deadline && settled_leader(c).is_err() && safety.is_safe(c.checker)
+                cluster.step(@c)?
+
+            match settled_leader(c)
+                .ok id =>
+                    term = c.hosts[cluster.place_of(c, id: id)?].raft.term
+                    cluster.say(@c, f"-- node {id} leads term {term}")
+                .err _ =>
+                    if safety.is_safe(c.checker)
+                        cluster.say(@c, f"-- no leader within {l.patience}ms")
+        .operation o =>
+            who = if o.target == 0
+                writer
+            else
+                sticky
+            ask(@c, client_id: who, operation: o.operation, target: o.target, patience: o.patience)?
+            return ok(1)
+        .partition p =>
+            network.partition(@c.net, groups: p.groups)
+            cluster.say(@c, "-- the network is cut: " + groups_text(p.groups))
+        .heal =>
+            network.heal(@c.net)
+            cluster.say(@c, "-- the network is whole again")
+        .crash k   => cluster.crash(@c, id: k.id, torn: k.torn)?
+        .restart r => cluster.restart(@c, id: r.id)?
+        .add a     => change(@c, id: a.id, adding: true)?
+        .remove r  => change(@c, id: r.id, adding: false)?
+        .campaign k =>
+            at = cluster.place_of(c, id: k.id)?
+            server.campaign_now(@c.hosts[at].raft, now: c.now)
+            cluster.settle(@c, at: at)?
+        .show  => show(@c)
+        .say t => cluster.say(@c, "-- " + t.text)
+        .check => verdict(@c)
+
+    return ok(0)
+
+# The node that leads with every running member of its term following it.
+#
+# - `c`: the cluster.
+#
+# Fails `not_found` where none does yet.
+function settled_leader(c: cluster.Cluster lent) -> i64?
+    id = cluster.leader_of(c)?
+    at = cluster.place_of(c, id: id)?
+    lead = c.hosts[at].raft
+
+    if lead.commit < log.last_index(lead.log) || log.term_at(lead.log, index: lead.commit).default(0) != lead.term
+        return fail(code: "not_found", msg: "the leader has not committed its first entry")
+    return ok(id)
+
+# Sends `operation` from client `client_id` and runs until it ends, then
+# says how.
+function ask(@c: cluster.Cluster, client_id: i64, operation: op.Op, target: i64, patience: i64) -> ()?
+    k = client_id - cluster.FIRST_CLIENT
+
+    aim: i64? = if target == 0
+        fail(code: "not_found", msg: "any node")
+    else
+        ok(target)
+    client.submit(
+        @c.clients[k],
+        operation: operation,
+        target: aim,
+        nodes: cluster.ids(c),
+        patience: patience,
+        now: c.now
+    )
+    cluster.send_from_client(@c, at: k)
+    cluster.run_while_busy(@c, until: c.now + patience + cluster.TICK)?
+    done = c.clients[k].finished
+    c.clients[k].finished @ []
+
+    where = if target == 0
+        ""
+    else
+        f" (asking node {target} only)"
+
+    for d in done
+        tries = if d.attempts == 1
+            "1 attempt"
+        else
+            f"{d.attempts} attempts"
+        cluster.say(
+            @c,
+            f"client {client_id}: {op.format_op(d.operation)}{where} -> {client.format_ending(d.ending)}, {tries}"
+        )
+
+    return ok()
+
+# Asks the leader to add or remove node `id`, starting it first where it
+# is added, and runs until the change commits.
+function change(@c: cluster.Cluster, id: i64, adding: bool) -> ()?
+    if adding
+        cluster.add_host(@c, id: id, members: [])?
+    lead = cluster.leader_of(c)?
+    at = cluster.place_of(c, id: lead)?
+    index = membership.propose_change(@c.hosts[at].raft, member: id, adding: adding)?
+    cluster.settle(@c, at: at)?
+
+    verb = if adding
+        "add"
+    else
+        "remove"
+    cluster.say(@c, f"-- node {lead} proposes to {verb} node {id}, at index {index}")
+    deadline = c.now + 3000
+
+    while c.now < deadline && c.hosts[at].raft.commit < index && safety.is_safe(c.checker)
+        cluster.step(@c)?
+
+    return ok()
+
+# `groups` as the transcript writes a partition: `{1,2} | {3,4,5}`.
+function groups_text(groups: [[i64]]) -> str
+    parts: [str] @= []
+
+    for g in groups
+        parts @ parts.push(entry.format_members(g))
+
+    return parts.join(" | ")
+
+## Views
+
+# Says every node's state: its role and term, its log's range, its commit
+# and applied indices, and its store.
+#
+# - `c`: the cluster.
+function show(@c: cluster.Cluster)
+    head = [
+        strings.pad_start(s: "node", width: 4, pad: " ")
+        strings.pad_end(s: "role", width: 9, pad: " ")
+        strings.pad_start(s: "term", width: 5, pad: " ")
+        strings.pad_end(s: "log", width: 9, pad: " ")
+        strings.pad_start(s: "commit", width: 7, pad: " ")
+        strings.pad_start(s: "applied", width: 8, pad: " ")
+        "store"
+    ]
+    cluster.say(@c, "   " + head.join("  "))
+
+    for h in c.hosts
+        if !h.up
+            cluster.say(@c, "   " + strings.pad_start(s: to_str(h.id), width: 4, pad: " ") + "  down")
+        else
+            n = h.raft
+
+            range_text = if log.last_index(n.log) == n.log.base_index
+                f"({n.log.base_index})"
+            else
+                f"{n.log.base_index + 1}..{log.last_index(n.log)}"
+            row = [
+                strings.pad_start(s: to_str(n.id), width: 4, pad: " ")
+                strings.pad_end(s: node.role_name(n.role), width: 9, pad: " ")
+                strings.pad_start(s: to_str(n.term), width: 5, pad: " ")
+                strings.pad_end(s: range_text, width: 9, pad: " ")
+                strings.pad_start(s: to_str(n.commit), width: 7, pad: " ")
+                strings.pad_start(s: to_str(n.applied), width: 8, pad: " ")
+                store.format_store(n.machine)
+            ]
+            cluster.say(@c, "   " + row.join("  "))
+
+# Says what the checker found, and whether the running members of the
+# leader's configuration hold the same store.
+#
+# - `c`: the cluster.
+function verdict(@c: cluster.Cluster)
+    if safety.is_safe(c.checker)
+        cluster.say(@c, f"-- checker: {c.checker.steps} checks, every safety property held")
+    else
+        cluster.say(@c, f"-- checker: {c.checker.violations.len()} properties broken")
+
+    members = match cluster.leader_of(c)
+        .ok id => c.hosts[cluster.place_of(c, id: id).must()].raft.members
+        .err _ => cluster.ids(c)
+
+    texts: [str] @= []
+    agree: bool @= true
+
+    for n in cluster.running(c)
+        if node.contains_member(members, n.id)
+            texts @ texts.push(store.format_store(n.machine))
+
+            if texts[0] != texts[texts.len() - 1]
+                agree @ false
+
+    if agree && texts.len() > 0
+        cluster.say(@c, f"-- the {texts.len()} running members hold the same store: {texts[0]}")
+    else
+        cluster.say(@c, "-- the running members' stores differ")

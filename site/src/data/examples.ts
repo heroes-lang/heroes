@@ -150,6 +150,8 @@ export const groups: Group[] = [
       'rebel/datakit',
       'rebel/lab',
       'rebel/build',
+      'rebel/rv32',
+      'rebel/raftkv',
       'rebel/vcs',
       'rebel/shell',
       'rebel/editor',

@@ -244,10 +244,10 @@ function value_at(v: Value, path: [str]) -> Value?
 # - `key`: the member's key, compared byte for byte; a key holding a `.` is
 #   one key, never a path.
 #
-# Fails `not_found` where the table holds no such key, and the message names
-# the keys it holds. Fails `invalid` where `v` is not a table, or the member
-# is not a text, and the message names the key and the kind found. See also
-# `int_at`, `bool_at`, `items_at`, `value_at`.
+# Fails `not_found` where the table holds no such key, the message naming it
+# as `value_at`'s does. Fails `invalid` where `v` is not a table, or the
+# member is not a text, and the message names the key and the kind found. See
+# also `int_at`, `bool_at`, `items_at`, `value_at`.
 function text_at(v: Value, key: str) -> str?
     return typed.text_at(v, key: key)
 

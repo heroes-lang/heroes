@@ -1,0 +1,144 @@
+# The operations of the replicated key-value store, as a client sends them,
+# the log carries them and a scenario writes them: `put k v`, `delete k`,
+# `append k v`, `swap k old new` (set where it holds `old` now) and `get k`.
+# A `get` is the one operation the leader never writes to its log: it is read
+# at a commit index the leader has proved is current (`raft/reads`).
+
+use <rebel>/strings
+
+## The operation
+
+# One operation of the store.
+variant Op
+    # Sets `key` to `value`.
+    put
+        # The key.
+        key: str
+        # Its new value.
+        value: str
+    # Removes `key`; removing a key it does not hold does nothing.
+    delete
+        # The key.
+        key: str
+    # Adds `value` at the end of `key`'s value, the empty text where it has
+    # none.
+    append
+        # The key.
+        key: str
+        # The text added.
+        value: str
+    # Sets `key` to `value` where it holds `expected` now, and only there.
+    swap
+        # The key.
+        key: str
+        # The value it must hold.
+        expected: str
+        # Its new value.
+        value: str
+    # Reads `key`.
+    get
+        # The key.
+        key: str
+
+# Whether `o` only reads: a `get`, which no log entry carries.
+#
+# - `o`: the operation.
+function is_read(o: Op) -> bool
+    return match o
+        .get _                                   => true
+        .put _ | .delete _ | .append _ | .swap _ => false
+
+# The key `o` names.
+#
+# - `o`: the operation.
+function key_of(o: Op) -> str
+    return match o
+        .put p    => p.key
+        .delete d => d.key
+        .append a => a.key
+        .swap w   => w.key
+        .get g    => g.key
+
+## Text
+
+# The operation `text` writes: its words split as a shell splits them, so a
+# value with a space is written in quotes, `put greeting 'hello there'`.
+#
+# - `text`: the operation, its verb first.
+#
+# Fails `invalid` where the verb is none of the five or its words are too
+# few or too many, the message naming the verb and what it takes.
+function parse_op(text: str) -> Op?
+    words = strings.split_shell(text)?
+
+    if words.len() == 0
+        return fail(code: "invalid", msg: "an operation is empty; write put, delete, append, swap or get and its words")
+    verb = words[0]
+    count = words.len() - 1
+
+    if verb == "put" && count == 2
+        return ok(.put(key: words[1], value: words[2]))
+
+    if verb == "delete" && count == 1
+        return ok(.delete(key: words[1]))
+
+    if verb == "append" && count == 2
+        return ok(.append(key: words[1], value: words[2]))
+
+    if verb == "swap" && count == 3
+        return ok(.swap(key: words[1], expected: words[2], value: words[3]))
+
+    if verb == "get" && count == 1
+        return ok(.get(key: words[1]))
+    return fail(
+        code: "invalid",
+        msg: f"\"{text}\" is no operation: put KEY VALUE, delete KEY, append KEY VALUE, swap KEY OLD NEW or get KEY"
+    )
+
+# `o` as a scenario writes it, a value with a space or a quote in single
+# quotes.
+#
+# - `o`: the operation.
+function format_op(o: Op) -> str
+    return match o
+        .put p    => f"put {p.key} {quoted(p.value)}"
+        .delete d => f"delete {d.key}"
+        .append a => f"append {a.key} {quoted(a.value)}"
+        .swap w   => f"swap {w.key} {quoted(w.expected)} {quoted(w.value)}"
+        .get g    => f"get {g.key}"
+
+# `s` as one word of a shell line: as it stands where it holds no space and
+# no quote, else in single quotes, each single quote written `'\''`.
+#
+# - `s`: the word.
+function quoted(s: str) -> str
+    if s.len() > 0 && !strings.contains_any(s: s, set: " '\"\\#\t")
+        return s
+    return "'" + strings.replace_all(s: s, old: "'", new: "'\\''") + "'"
+
+## Tests
+
+test "parse_op: each verb, a quoted value, and what is no operation"
+    assert parse_op("put x 1").must() == .put(key: "x", value: "1")
+    assert parse_op("delete x").must() == .delete(key: "x")
+    assert parse_op("append log 'a b'").must() == .append(key: "log", value: "a b")
+    assert parse_op("swap x 1 2").must() == .swap(key: "x", expected: "1", value: "2")
+    assert parse_op("get x").must() == .get(key: "x")
+
+    for bad in ["", "put x", "fly x", "get", "swap x 1", "put x 'open"]
+        assert parse_op(bad).is_err()
+
+test "format_op: read back by parse_op, a quote and an empty value included"
+    samples: [Op] = [
+        .put(key: "k", value: "it's")
+        .append(key: "k", value: "")
+        .swap(key: "k", expected: "a b", value: "#")
+    ]
+
+    for o in samples
+        assert parse_op(format_op(o)).must() == o
+
+test "is_read and key_of: a get reads, the others write"
+    assert is_read(.get(key: "a"))
+    assert !is_read(.delete(key: "a"))
+    assert key_of(.swap(key: "s", expected: "", value: "")) == "s"

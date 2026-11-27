@@ -16,6 +16,7 @@
     { "include": "#keyword" },
     { "include": "#builtin-type" },
     { "include": "#thread-type" },
+    { "include": "#lent-position" },
     { "include": "#hole" },
     { "include": "#interpolated" },
     { "include": "#string" },
@@ -147,6 +148,13 @@
     "thread-type": {
       "comment": "spec § 3: `(thread T)` and `(mailbox T)`, a thread's and a mailbox's types (feature 2647; panel 254). The two words are contextual, `keywords.hero`'s `WORD_THREAD` and `WORD_MAILBOX`, names everywhere else, so each is painted only where the parser reads it as a type's: right after the `(` a type opens and before the type it carries, a name, a `[`, a `{` or a `(`. A parenthesised name in an expression, `(mailbox)`, stays a name.",
       "match": "(?<=\\()\\s*\\b(thread|mailbox)\\b(?=\\s+[A-Za-z_\\[{(])",
+      "captures": {
+        "1": { "name": "keyword.other.contextual.hero" }
+      }
+    },
+    "lent-position": {
+      "comment": "spec § 3's `TypeArg` (panel 261): `lent` after a function type's position, `(function(App lent) -> i64)`, wherever a type stands, a binding's, a field's or a list's as well as a signature's. Painted where the parser reads it, after a type's last character and one space and before the position's `,` or `)`; two words side by side are no expression, so a name `lent` in one is never painted.",
+      "match": "(?<=[A-Za-z0-9_\\])?] )\\b(lent)\\b(?=\\s*[,)])",
       "captures": {
         "1": { "name": "keyword.other.contextual.hero" }
       }

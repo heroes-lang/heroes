@@ -1,0 +1,310 @@
+# A client of the cluster: it sends one operation at a time, numbered in
+# its session, to the node it takes for the leader; a node that is not the
+# leader names the one it follows, and the client asks it; a node that knows
+# none, or a leader that could not finish, is asked again a little later,
+# the next node in turn; an attempt that gets no answer in time is sent
+# again to the next node, with the same number, so the store applies it at
+# most once (`kv/store`). A sticky client asks one node only and takes its
+# first answer, which is how a scenario shows what a cut-off leader says.
+
+use kv/op
+use kv/store
+use raft/message
+
+## The client
+
+# How an operation ended.
+variant Ending
+    # A node answered it.
+    answered
+        # The store's answer.
+        answer: store.Answer
+        # The index it was applied or read at.
+        index: i64
+        # The node that answered.
+        by: i64
+    # A sticky client's node refused it.
+    refused
+        # The node's words.
+        why: str
+        # The node.
+        by: i64
+    # No answer came before the client's patience ran out.
+    timed_out
+        # The patience, in milliseconds.
+        after: i64
+
+# An operation the client finished.
+record Done
+    # Its sequence number.
+    seq: i64
+    # The operation.
+    operation: op.Op
+    # How it ended.
+    ending: Ending
+    # How many times it was sent.
+    attempts: i64
+    # When it was first sent.
+    started: i64
+    # When it ended.
+    ended: i64
+
+# The operation in flight.
+record Request
+    # Its sequence number.
+    seq: i64
+    # The operation.
+    operation: op.Op
+    # When it was first sent.
+    started: i64
+    # When the client gives up.
+    deadline: i64
+    # When the current attempt is given up and the next one sent.
+    retry_at: i64
+    # The node asked now.
+    target: i64
+    # Whether only `target` is ever asked.
+    sticky: bool
+    # Whether `target` was already chosen for the next attempt, after a
+    # refusal; else the next attempt goes to the node after it.
+    chosen: bool
+    # The node whose attempt went unanswered last, 0 where none did: a
+    # redirect to it is not followed, since a leader cut off from its
+    # majority goes on naming itself, and its followers name it too.
+    avoid: i64
+    # How many times it was sent.
+    attempts: i64
+
+# A client.
+record Client
+    # Its number, above every node's.
+    id: i64
+    # The last sequence number it used.
+    seq: i64
+    # The node it takes for the leader; fails where it knows none.
+    leader: i64?
+    # The operation in flight; fails where none is.
+    request: Request?
+    # What it finished, oldest first, until the runner reads them.
+    finished: [Done]
+    # Messages to send.
+    outbox: [message.Envelope]
+
+# How long an attempt waits for its answer before the next is sent.
+constant ATTEMPT: i64
+    250
+
+# How long a client waits before asking again after a refusal.
+constant BACKOFF: i64
+    40
+
+# A client that has sent nothing.
+#
+# - `id`: its number.
+function new_client(id: i64) -> Client
+    return Client(
+        id: id,
+        seq: 0,
+        leader: fail(code: "not_found", msg: "no leader known"),
+        request: fail(code: "not_found", msg: "nothing in flight"),
+        finished: [],
+        outbox: []
+    )
+
+# Whether an operation is in flight.
+#
+# - `c`: the client.
+function is_busy(c: Client lent) -> bool
+    return !c.request.is_err()
+
+# Sends `operation` with the next sequence number: to `target` alone where
+# one is given, else to the leader it knows or the first of `nodes`.
+#
+# - `c`: the client, not busy.
+# - `operation`: the operation.
+# - `target`: the one node to ask; fails where any may be.
+# - `nodes`: the nodes it may ask, in turn.
+# - `patience`: how long it waits for an answer in all, in milliseconds.
+# - `now`: the time.
+function submit(@c: Client, operation: op.Op, target: i64?, nodes: [i64], patience: i64, now: i64)
+    assert !is_busy(c)
+    c.seq @ c.seq + 1
+    sticky = !target.is_err()
+    first = target.default(c.leader.default(first_of(nodes)))
+    c.request @ ok(
+        Request(seq: c.seq, operation: operation, started: now, deadline: now + patience, retry_at: now, target: first, sticky: sticky, chosen: false, avoid: 0, attempts: 0)
+    )
+    attempt(@c, now: now)
+
+function first_of(nodes: [i64]) -> i64
+    if nodes.len() == 0
+        return 0
+    return nodes[0]
+
+# Sends the request in flight to its target, now.
+#
+# - `c`: the client, busy.
+# - `now`: the time.
+function attempt(@c: Client, now: i64)
+    r @= c.request.must()
+    r.attempts @ r.attempts + 1
+    r.retry_at @ now + ATTEMPT
+    c.request @ ok(r)
+    c.outbox @ c.outbox.push(
+        message.Envelope(from: c.id, to: r.target, term: 0, body: .client_request(seq: r.seq, operation: r.operation))
+    )
+
+# Reads a node's answer: the end of the operation, or the node to ask next.
+#
+# - `c`: the client.
+# - `m`: the message; one for another sequence number is a late copy, and
+#   dropped.
+# - `seq`: the sequence number it answers.
+# - `outcome`: what the node says.
+# - `nodes`: the nodes it may ask.
+# - `now`: the time.
+function on_reply(@c: Client, m: message.Envelope, seq: i64, outcome: message.Outcome, nodes: [i64], now: i64)
+    if !is_busy(c) || c.request.must().seq != seq
+        return
+    r @= c.request.must()
+
+    match outcome
+        .answered a =>
+            c.leader @ ok(m.from)
+            finish(@c, ending: .answered(answer: a.answer, index: a.index, by: m.from), now: now)
+        .redirect d =>
+            c.leader @ ok(d.leader)
+
+            if r.sticky
+                finish(@c, ending: .refused(why: message.format_outcome(outcome), by: m.from), now: now)
+            else if d.leader == m.from || d.leader == r.avoid
+                r.target @ next_other(nodes, current: m.from, avoid: r.avoid)
+                r.chosen @ true
+                r.retry_at @ now + BACKOFF
+                c.request @ ok(r)
+            else
+                r.target @ d.leader
+                c.request @ ok(r)
+                attempt(@c, now: now)
+        .no_leader | .unavailable _ =>
+            c.leader @ fail(code: "not_found", msg: "no leader known")
+
+            if r.sticky
+                finish(@c, ending: .refused(why: message.format_outcome(outcome), by: m.from), now: now)
+            else
+                r.target @ after(nodes, current: r.target)
+                r.chosen @ true
+                r.retry_at @ now + BACKOFF
+                c.request @ ok(r)
+
+# Lets the time pass: an attempt past its time is sent to the next node,
+# and an operation past the client's patience ends unanswered.
+#
+# - `c`: the client.
+# - `nodes`: the nodes it may ask.
+# - `now`: the time.
+function tick(@c: Client, nodes: [i64], now: i64)
+    if !is_busy(c)
+        return
+    r @= c.request.must()
+
+    if now >= r.deadline
+        finish(@c, ending: .timed_out(after: r.deadline - r.started), now: now)
+        return
+
+    if now >= r.retry_at && !r.sticky
+        if !r.chosen
+            r.avoid @ r.target
+            r.target @ next_other(nodes, current: r.target, avoid: r.target)
+        r.chosen @ false
+        c.request @ ok(r)
+        attempt(@c, now: now)
+
+# The node after `current` in `nodes` that is not `avoid`, where one is.
+#
+# - `nodes`: the nodes, in order.
+# - `current`: the node asked last.
+# - `avoid`: a node passed over.
+function next_other(nodes: [i64], current: i64, avoid: i64) -> i64
+    next = after(nodes, current: current)
+
+    if next == avoid && nodes.len() > 1
+        return after(nodes, current: next)
+    return next
+
+# The node after `current` in `nodes`, round and round.
+#
+# - `nodes`: the nodes, in order; none answers 0.
+# - `current`: the node asked last.
+function after(nodes: [i64], current: i64) -> i64
+    if nodes.len() == 0
+        return 0
+
+    for k in range(from: 0, to: nodes.len())
+        if nodes[k] == current
+            return nodes[(k + 1) % nodes.len()]
+
+    return nodes[0]
+
+function finish(@c: Client, ending: Ending, now: i64)
+    r = c.request.must()
+    c.finished @ c.finished.push(
+        Done(seq: r.seq, operation: r.operation, ending: ending, attempts: r.attempts, started: r.started, ended: now)
+    )
+    c.request @ fail(code: "not_found", msg: "nothing in flight")
+
+# `e` as the transcript writes it.
+#
+# - `e`: the ending.
+function format_ending(e: Ending) -> str
+    return match e
+        .answered a  => f"{store.format_answer(a.answer)} from node {a.by} at index {a.index}"
+        .refused r   => f"node {r.by} answers: {r.why}"
+        .timed_out t => f"no answer within {t.after}ms"
+
+## Tests
+
+test "submit and on_reply: a redirect followed, then the answer"
+    c @= new_client(101)
+    submit(
+        @c,
+        operation: .put(key: "a", value: "1"),
+        target: fail(code: "not_found", msg: ""),
+        nodes: [1, 2, 3],
+        patience: 1000,
+        now: 0
+    )
+    assert c.outbox[0].to == 1
+    from_one = message.Envelope(from: 1, to: 101, term: 0, body: .vote_reply(granted: false))
+    on_reply(@c, from_one, seq: 1, outcome: .redirect(leader: 3), nodes: [1, 2, 3], now: 10)
+    assert c.outbox[1].to == 3
+    from_three = message.Envelope(from: 3, to: 101, term: 0, body: .vote_reply(granted: false))
+    on_reply(@c, from_three, seq: 1, outcome: .answered(answer: .done, index: 4), nodes: [1, 2, 3], now: 20)
+    assert !is_busy(c)
+    assert c.finished[0].ending == .answered(answer: .done, index: 4, by: 3)
+    assert c.finished[0].attempts == 2
+    assert c.leader.must() == 3
+
+test "tick: an unanswered attempt goes to the next node, and patience ends it"
+    c @= new_client(102)
+    submit(
+        @c,
+        operation: .get(key: "a"),
+        target: fail(code: "not_found", msg: ""),
+        nodes: [1, 2],
+        patience: 600,
+        now: 0
+    )
+    tick(@c, nodes: [1, 2], now: 249)
+    assert c.outbox.len() == 1
+    tick(@c, nodes: [1, 2], now: 250)
+    assert c.outbox[1].to == 2
+    tick(@c, nodes: [1, 2], now: 600)
+    assert c.finished[0].ending == .timed_out(after: 600)
+
+test "on_reply: a sticky client takes the refusal as its answer"
+    c @= new_client(103)
+    submit(@c, operation: .get(key: "a"), target: ok(2), nodes: [1, 2, 3], patience: 600, now: 0)
+    from_two = message.Envelope(from: 2, to: 103, term: 0, body: .vote_reply(granted: false))
+    on_reply(@c, from_two, seq: 1, outcome: .unavailable(why: "x"), nodes: [1, 2, 3], now: 5)
+    assert format_ending(c.finished[0].ending) == "node 2 answers: unavailable: x"

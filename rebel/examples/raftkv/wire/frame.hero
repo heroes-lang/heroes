@@ -1,0 +1,132 @@
+# A frame: the length of a payload and its CRC-32, four bytes each, little
+# endian, then the payload. The network carries every message in one, so a
+# byte the network flipped is found and the message dropped, as a TCP
+# segment with a bad checksum is; the disk writes every record in one, so a
+# record a crash cut in half is found on recovery and dropped (etcd's WAL
+# and LevelDB's log frame their records the same way).
+
+use <rebel>/bytes
+use <rebel>/hash
+
+# The bytes a frame's header takes.
+constant HEADER: i64
+    8
+
+# The longest payload a frame may announce, 16 MiB: a length past it is a
+# damaged header, never a reason to wait for that many bytes.
+constant MOST: i64
+    16_777_216
+
+## Frames
+
+# `payload` in a frame.
+#
+# - `payload`: the bytes framed, at most `MOST` of them.
+function encode_frame(payload: [u8]) -> [u8]
+    out: [u8] @= []
+    bytes.push_all(to: @out, from: bytes.encode_u32_le(to_u32(payload.len()).must()))
+    bytes.push_all(to: @out, from: bytes.encode_u32_le(hash.crc32(payload)))
+    bytes.push_all(to: @out, from: payload)
+    return out
+
+# The payload of the one frame `data` holds.
+#
+# - `data`: the bytes, from outside.
+#
+# Fails `invalid` where they are not exactly one frame whose checksum
+# holds, the message saying which.
+function decode_frame(data: [u8]) -> [u8]?
+    read = frame_at(data, at: 0)?
+
+    if read.next != data.len()
+        return fail(code: "invalid", msg: f"{data.len() - read.next} bytes after the frame")
+    return ok(read.payload)
+
+# A frame read from a run of them: its payload and where the next begins.
+record Read
+    # The payload.
+    payload: [u8]
+    # The index just past the frame.
+    next: i64
+
+# The frame that begins at `at` in `data`.
+#
+# - `data`: the bytes, from outside.
+# - `at`: where the frame begins, at most `data.len()`.
+#
+# Fails `invalid` where the bytes end inside it, its length is past `MOST`,
+# or its checksum does not hold.
+function frame_at(data: [u8], at: i64) -> Read?
+    if data.len() - at < HEADER
+        return fail(code: "invalid", msg: f"{data.len() - at} bytes at {at}, fewer than a frame's header")
+    length = to_i64(bytes.decode_u32_le(data, at: at)?).must()
+    sum = bytes.decode_u32_le(data, at: at + 4)?
+
+    if length > MOST || length > data.len() - at - HEADER
+        return fail(
+            code: "invalid",
+            msg: f"a frame at {at} announces {length} bytes, and {data.len() - at - HEADER} follow"
+        )
+    payload = data.slice(from: at + HEADER, to: at + HEADER + length)
+
+    if hash.crc32(payload) != sum
+        return fail(code: "invalid", msg: f"the frame at {at} fails its checksum")
+    return ok(Read(payload: payload, next: at + HEADER + length))
+
+# What a run of frames holds: the payloads of its whole frames, and how many
+# bytes after them make no whole frame.
+record Run
+    # The payloads, in order.
+    payloads: [[u8]]
+    # The bytes left after the last whole frame: a write a crash cut short.
+    torn: i64
+
+# The frames `data` holds, from its first byte until one does not read.
+#
+# - `data`: the bytes of a file of frames.
+#
+# What follows the first frame that does not read is counted in `torn` and
+# never read, since nothing after a cut can be trusted to begin a frame.
+function split_frames(data: [u8]) -> Run
+    payloads: [[u8]] @= []
+    at: i64 @= 0
+
+    while at < data.len()
+        match frame_at(data, at: at)
+            .ok read =>
+                payloads @ payloads.push(read.payload)
+                at @ read.next
+            .err _ =>
+                return Run(payloads: payloads, torn: data.len() - at)
+
+    return Run(payloads: payloads, torn: 0)
+
+## Tests
+
+test "decode_frame: a payload read back, the empty one too"
+    payloads: [[u8]] = [[1, 2, 3], []]
+
+    for payload in payloads
+        assert decode_frame(encode_frame(payload)).must() == payload
+
+test "decode_frame: a flipped byte, a cut, and a length past what follows"
+    good = encode_frame([10, 20, 30])
+
+    for at in range(from: 0, to: good.len())
+        flipped @= good
+        flipped[at] @ 255 - flipped[at]
+        assert decode_frame(flipped).is_err()
+
+        assert decode_frame(good.slice(from: 0, to: at)).is_err()
+
+    assert decode_frame([0xff, 0xff, 0xff, 0x7f, 0, 0, 0, 0]).is_err()
+
+test "split_frames: whole frames, then a torn tail counted and left"
+    data @= encode_frame([1])
+    bytes.push_all(to: @data, from: encode_frame([2, 2]))
+    whole = data.len()
+    bytes.push_all(to: @data, from: encode_frame([3, 3, 3]).slice(from: 0, to: 9))
+    run = split_frames(data)
+    assert run.payloads == [[1], [2, 2]]
+    assert run.torn == data.len() - whole
+    assert split_frames([]).torn == 0

@@ -1,0 +1,15 @@
+# Reaches Rebel's `web/chain`, so that `heroes test` on this file runs the
+# tests of its face and its private module (spec § 12). It prints where a
+# request no route takes ends, `unrouted 404, 0 steps`, on every run,
+# touching no network and no file.
+
+use <rebel>/http
+use <rebel>/web
+use <rebel>/web/chain
+
+function main()
+    n = chain.start(web.new_router(), http.request(method: "GET", target: "/").must())
+
+    match n.target
+        .route t    => print("routed ", t.found.name)
+        .unrouted u => print("unrouted ", u.response.status, ", ", n.names.len(), " steps")

@@ -1,0 +1,4 @@
+# `.`, the repository's root where the form runs, named for every clang the
+# build runs, as a program built from its own folder names it for a
+# package's unit.
+C_INCLUDE_PATH=.

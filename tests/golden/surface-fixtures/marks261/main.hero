@@ -1,0 +1,34 @@
+# Panel 261's marks in a function type on every shape it takes: `@` before a
+# position, named or not, `lent` after one, a field, a parameter, a result, a
+# binding, a list and a map, nested in another function type. The probe's
+# variants put a comment and a broken bracket at every place on these lines,
+# and `fmt` prints the file back byte for byte.
+record App
+    n: i64
+    on: (function(@App, i64) -> i64)
+
+function bump(@app: App, k: i64) -> i64
+    app.n @ app.n + k
+    return app.n
+
+function peek(app: App lent, k: i64) -> i64
+    return app.n + k
+
+function pick(first: bool) -> (function(@app: App, k: i64) -> i64)
+    if first
+        return bump
+    return peek
+
+function twice(@app: App, h: (function(@App, i64) -> i64), wrap: (function((function(App lent, i64) -> i64)) -> i64)) -> i64
+    _ = h(@app, 1)
+    return wrap(peek)
+
+function call_peek(f: (function(App lent, i64) -> i64)) -> i64
+    return f(App(n: 2, on: bump), 3)
+
+function main()
+    app @= App(n: 0, on: bump)
+    table: [(function(@App, i64) -> i64)] = [bump, peek]
+    named: {str: (function(@a: App, k: i64) -> i64)} = {"bump": bump}
+    print(twice(@app, h: table[1], wrap: call_peek))
+    print(named["bump"].must()(@app, 1) + pick(true)(@app, 1))

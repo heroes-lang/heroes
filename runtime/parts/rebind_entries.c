@@ -209,6 +209,15 @@ static bool hero_rebind_live_range(uintptr_t at, uintptr_t *lo, uintptr_t *hi) {
     return hero_rebind_range_life(at, lo, hi) != 0;
 }
 
+/* The top of the range that may hold a coroutine's frames now and holds the
+ * frame at `frame`: where the frame walk ends (`parts/sigguard.c`, defect
+ * 2852; Darwin's `makecontext` starts a coroutine's records at the range's
+ * very top, measured on this Mac). */
+static bool hero_rebind_coroutine_top(uintptr_t frame, uintptr_t *top) {
+    uintptr_t lo = 0;
+    return hero_rebind_live_range(frame, &lo, top);
+}
+
 /* Route A's switch to `context`: the range `makecontext` was handed it for,
  * where one was, entered (a pointer compared, nothing of the context read);
  * that range's slot, -1 where none was. */

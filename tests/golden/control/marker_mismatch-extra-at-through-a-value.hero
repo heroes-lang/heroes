@@ -1,0 +1,14 @@
+# Part 11's control arm (panel 226's R1) through a function value (panel
+# 261's R7, 2026-11-26): an `@` before an argument the value's type takes by
+# value *says nothing: the value is passed*, as by name
+# (`marker_mismatch-extra-at`). Found beside panel 261 by its brief's repair
+# (probe `x1`): `build --permissive` exited 2 at the base, clang refusing the
+# address handed to a by-value slot. Prints 6, then 3.
+function double(x: i64) -> i64
+    return x * 2
+
+function main()
+    fs = [double]
+    x @= 3
+    print(fs[0](@x))  #~ marker_mismatch
+    print(x)

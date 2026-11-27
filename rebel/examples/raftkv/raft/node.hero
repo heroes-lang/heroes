@@ -1,0 +1,397 @@
+# One Raft server's state, and what every part of the algorithm shares:
+# the roles, the timers, the outbox, the bookkeeping of what the disk must
+# be told. A node never touches the network, the disk or a clock: it is
+# given a message or a tick and the time, it changes, and it leaves behind
+# what to send (`outbox`), what to write (`unsaved`) and what happened
+# (`events`). The host (`sim/cluster`) writes before it sends, which is the
+# order Raft's persistence rule asks (the Raft paper's figure 2: "updated on
+# stable storage before responding to RPCs"). etcd's raft library is built
+# the same way.
+#
+# The algorithm itself is split by concern: `raft/election`,
+# `raft/replication`, `raft/snapshot`, `raft/membership`, `raft/reads`,
+# `raft/apply`, and `raft/server`, which routes each message to them.
+
+use <rebel>/lists
+use <rebel>/random
+
+use kv/store
+use raft/log
+use raft/message
+use support/grow
+
+## Settings
+
+# What a node is told about time and size, in milliseconds of the
+# simulation's clock and in entries and bytes.
+record Settings
+    # The shortest election timeout.
+    election_min: i64
+    # One past the longest.
+    election_max: i64
+    # How often a leader sends AppendEntries when it has nothing new.
+    heartbeat: i64
+    # How many applied entries past its snapshot a node keeps before it takes
+    # a new one.
+    snapshot_every: i64
+    # The bytes of one InstallSnapshot part.
+    chunk: i64
+    # The most entries one AppendEntries carries.
+    batch: i64
+    # How long a read waits for a majority to confirm its leader.
+    read_timeout: i64
+    # A planted bug, for showing the checker at work: votes are given
+    # without the log's up-to-date check of the paper's section 5.4.1.
+    votes_ignore_logs: bool
+
+# The settings the scenarios start from: the Raft paper's 150 to 300 ms of
+# election timeout, a heartbeat a third of the shortest.
+function default_settings() -> Settings
+    return Settings(
+        election_min: 150,
+        election_max: 300,
+        heartbeat: 50,
+        snapshot_every: 16,
+        chunk: 96,
+        batch: 64,
+        read_timeout: 400,
+        votes_ignore_logs: false
+    )
+
+## The node
+
+# The role a node plays in its term.
+variant Role
+    # It answers a leader and candidates.
+    follower
+    # It asks for votes.
+    candidate
+    # It takes the clients' operations and replicates them.
+    leader
+
+# A leader's view of one follower.
+record Progress
+    # The next index to send it.
+    next: i64
+    # The highest index known to match the leader's log.
+    matched: i64
+    # Whether a snapshot is on its way to it, part by part.
+    sending: bool
+    # The next byte of that snapshot to send.
+    offset: i64
+    # The latest round of read confirmation it answered.
+    round: i64
+
+# A snapshot: the state machine and the members as of an index.
+record Snapshot
+    # The last index it covers; 0 where there is none.
+    last_index: i64
+    # That entry's term.
+    last_term: i64
+    # The members as of that index.
+    members: [i64]
+    # The members and the store, in `kv/image`'s form.
+    data: [u8]
+
+# A snapshot arriving part by part.
+record Incoming
+    # Its last index; 0 where none is arriving.
+    last_index: i64
+    # Its term.
+    last_term: i64
+    # Its bytes so far.
+    data: [u8]
+    # How many parts came.
+    parts: i64
+
+# A client's write the leader appended and has not yet answered.
+record Pending
+    # The client.
+    client: i64
+    # Its sequence number.
+    seq: i64
+    # The entry's index.
+    index: i64
+
+# A client's read waiting for its leader to be confirmed.
+record Read
+    # The client.
+    client: i64
+    # Its sequence number.
+    seq: i64
+    # The key read.
+    key: str
+    # The round whose answers confirm the leader.
+    round: i64
+    # When it gives up, on the simulation's clock.
+    deadline: i64
+
+# What the disk does not yet hold.
+record Unsaved
+    # Whether the term or the vote changed.
+    state: bool
+    # The last index the log's file holds.
+    saved_index: i64
+    # Whether the log's file must be written again whole: entries were cut,
+    # or a snapshot replaced some.
+    rewrite: bool
+    # Whether a new snapshot must be written.
+    snapshot: bool
+
+# One Raft server.
+record Node
+    # Its number, from 1.
+    id: i64
+    # Its settings.
+    settings: Settings
+    # Its role.
+    role: Role
+    # Its current term, persisted.
+    term: i64
+    # The candidate it voted for in `term`, persisted; fails where none.
+    voted_for: i64?
+    # The leader it follows in `term`, itself when it leads; fails where it
+    # knows none.
+    leader: i64?
+    # Its log, persisted.
+    log: log.Log
+    # The highest index known to be committed.
+    commit: i64
+    # The highest index applied to `machine`.
+    applied: i64
+    # The members as of its last entry: a configuration counts from the
+    # moment it is appended (the dissertation's section 4.1).
+    members: [i64]
+    # The votes granted to it as a candidate.
+    votes: [i64]
+    # As leader, each other member's progress.
+    progress: {i64: Progress}
+    # When its election timer fires.
+    election_due: i64
+    # As leader, when it sends the next heartbeat.
+    heartbeat_due: i64
+    # When it last heard from a leader of its term.
+    heard: i64
+    # Its generator of election timeouts.
+    rng: random.Generator
+    # The state machine.
+    machine: store.Store
+    # Its latest snapshot.
+    snapshot: Snapshot
+    # A snapshot arriving.
+    incoming: Incoming
+    # As leader, writes not yet answered.
+    pending: [Pending]
+    # As leader, reads not yet answered.
+    reads: [Read]
+    # As leader, the rounds of read confirmation started.
+    round: i64
+    # Messages to send.
+    outbox: [message.Envelope]
+    # What happened, for the transcript.
+    events: [str]
+    # What the disk must be told.
+    unsaved: Unsaved
+    # The time of the last message or tick it was given.
+    now: i64
+
+# A node starting for the first time.
+#
+# - `id`: its number, from 1.
+# - `members`: the cluster it starts in, empty for a node that joins
+#   later and learns the members from the leader.
+# - `settings`: its settings.
+# - `seed`: the seed of its election timeouts.
+# - `now`: the time it starts.
+function new_node(id: i64, members: [i64], settings: Settings, seed: i64, now: i64) -> Node
+    n @= Node(
+        id: id,
+        settings: settings,
+        role: .follower,
+        term: 0,
+        voted_for: fail(code: "not_found", msg: "no vote"),
+        leader: fail(code: "not_found", msg: "no leader"),
+        log: log.empty(),
+        commit: 0,
+        applied: 0,
+        members: members,
+        votes: [],
+        progress: {},
+        election_due: 0,
+        heartbeat_due: 0,
+        heard: 0,
+        rng: random.Generator(high: to_u64(seed).default(0), low: to_u64(id).default(0)),
+        machine: store.empty(),
+        snapshot: Snapshot(last_index: 0, last_term: 0, members: members, data: []),
+        incoming: Incoming(last_index: 0, last_term: 0, data: [], parts: 0),
+        pending: [],
+        reads: [],
+        round: 0,
+        outbox: [],
+        events: [],
+        unsaved: Unsaved(state: true, saved_index: 0, rewrite: false, snapshot: true),
+        now: now
+    )
+    reset_election(@n)
+    return n
+
+## What every part shares
+
+# Whether `n` is one of its own members, and so may stand for election.
+#
+# - `n`: the node.
+function is_member(n: Node lent) -> bool
+    return n.members.contains_member(n.id)
+
+# Whether `members` holds `id`.
+#
+# - `members`: the members.
+# - `id`: the number asked.
+function contains_member(members: [i64], id: i64) -> bool
+    return lists.contains(members, value: id, same: same_number)
+
+function same_number(left: i64, right: i64) -> bool
+    return left == right
+
+# Whether `voters` are a majority of `n`'s members: more than half of them,
+# counting only the voters who are members.
+#
+# - `n`: the node.
+# - `voters`: the numbers that agreed.
+function is_quorum(n: Node lent, voters: [i64]) -> bool
+    count: i64 @= 0
+
+    for m in n.members
+        if voters.contains_member(m)
+            count @ count + 1
+
+    return count * 2 > n.members.len()
+
+# The members other than `n`.
+#
+# - `n`: the node.
+function peers(n: Node lent) -> [i64]
+    out: [i64] @= []
+
+    for m in n.members
+        if m != n.id
+            out @ out.push(m)
+
+    return out
+
+# Puts `body` in the outbox, to `to`, with `n`'s term.
+#
+# - `n`: the node.
+# - `to`: the receiver.
+# - `body`: the message.
+function send(@n: Node, to: i64, body: message.Body)
+    grow.grow(@n.outbox, value: message.Envelope(from: n.id, to: to, term: n.term, body: body))
+
+# Writes `line` to the transcript, the node's number first.
+#
+# - `n`: the node.
+# - `line`: what happened.
+function tell(@n: Node, line: str)
+    grow.grow(@n.events, value: f"node {n.id} {line}")
+
+# Draws a new election timeout and starts it from now.
+#
+# - `n`: the node.
+function reset_election(@n: Node)
+    span = random.int_in(@n.rng, from: n.settings.election_min, to: n.settings.election_max)
+    n.election_due @ n.now + span
+
+# Moves to `term`, a later one, as a follower with no vote; the leader is
+# unknown until one speaks.
+#
+# - `n`: the node.
+# - `term`: the later term.
+function enter_term(@n: Node, term: i64)
+    assert term > n.term
+    was_leader = n.role == .leader
+    n.term @ term
+    n.voted_for @ fail(code: "not_found", msg: "no vote")
+    n.leader @ fail(code: "not_found", msg: "no leader")
+    n.unsaved.state @ true
+
+    if n.role != .follower
+        become_follower(@n)
+
+    if was_leader
+        tell(@n, f"steps down: term {term} has begun")
+
+# Becomes a follower of its current term: a leader's writes and reads in
+# flight are answered unavailable, since it can no longer say what becomes
+# of them.
+#
+# - `n`: the node.
+function become_follower(@n: Node)
+    if n.role == .leader
+        for p in n.pending
+            send(
+                @n,
+                to: p.client,
+                body: .client_reply(seq: p.seq, outcome: .unavailable(why: "the leader stepped down; the write may still commit"))
+            )
+
+        for r in n.reads
+            send(
+                @n,
+                to: r.client,
+                body: .client_reply(seq: r.seq, outcome: .unavailable(why: "the leader stepped down"))
+            )
+
+        n.pending @ []
+        n.reads @ []
+        n.progress @ {}
+    n.role @ .follower
+    n.votes @ []
+    reset_election(@n)
+
+# The leader `n` follows, as the transcript writes it: its number, or `?`.
+#
+# - `n`: the node.
+function leader_name(n: Node lent) -> str
+    return match n.leader
+        .ok id => to_str(id)
+        .err _ => "?"
+
+# `r` as the transcript writes it.
+#
+# - `r`: the role.
+function role_name(r: Role) -> str
+    return match r
+        .follower  => "follower"
+        .candidate => "candidate"
+        .leader    => "leader"
+
+## Tests
+
+test "new_node: a follower of term 0 with its timer in the election range"
+    n = new_node(id: 2, members: [1, 2, 3], settings: default_settings(), seed: 7, now: 1000)
+    assert n.role == .follower
+    assert n.election_due >= 1150 && n.election_due < 1300
+    assert is_member(n)
+    assert peers(n) == [1, 3]
+    assert leader_name(n) == "?"
+
+test "is_quorum: a majority of the members, others not counted"
+    n = new_node(id: 1, members: [1, 2, 3, 4], settings: default_settings(), seed: 1, now: 0)
+    assert !is_quorum(n, voters: [1, 2])
+    assert is_quorum(n, voters: [1, 2, 3])
+    assert !is_quorum(n, voters: [1, 2, 9])
+    joining = new_node(id: 5, members: [], settings: default_settings(), seed: 1, now: 0)
+    assert !is_member(joining)
+
+test "enter_term: a leader steps down and answers what it held"
+    n @= new_node(id: 1, members: [1, 2, 3], settings: default_settings(), seed: 1, now: 0)
+    n.role @ .leader
+    n.term @ 2
+    n.pending @ [Pending(client: 101, seq: 4, index: 9)]
+    enter_term(@n, term: 3)
+    assert n.role == .follower
+    assert n.term == 3
+    assert n.voted_for.is_err()
+    assert n.outbox.len() == 1
+    assert n.events == ["node 1 steps down: term 3 has begun"]
+    assert n.unsaved.state

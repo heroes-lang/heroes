@@ -1,0 +1,168 @@
+# The key-value store every node keeps, the state machine Raft replicates:
+# a map of texts, and one session per client so an operation a client sends
+# twice (it timed out and asked again, or the network gave it twice) is
+# applied once and answered the same both times. This is Raft's
+# "linearizable semantics" of the dissertation's section 6.3: the session
+# keeps the last sequence number applied and its answer.
+
+use <rebel>/maps
+
+use kv/op
+
+## Answers
+
+# What the store answers an operation.
+variant Answer
+    # A write applied.
+    done
+    # The value a key holds.
+    value
+        # The value.
+        v: str
+    # The key holds no value.
+    missing
+    # A `swap` refused: the key held another value, which `held` is, or none.
+    refused
+        # The value it held, "" where it held none.
+        held: str
+    # The operation came after a newer one of its client: the client moved
+    # on, and an answer would be one it no longer waits for.
+    stale
+
+# `a` as a line of the transcript writes it: `OK`, the value in quotes,
+# `(nil)`, `refused` or `stale`.
+#
+# - `a`: the answer.
+function format_answer(a: Answer) -> str
+    return match a
+        .done      => "OK"
+        .value v   => f"\"{v.v}\""
+        .missing   => "(nil)"
+        .refused r => f"refused, it holds \"{r.held}\""
+        .stale     => "stale"
+
+## The store
+
+# The last operation a client had applied, and its answer.
+record Session
+    # The client's sequence number of the operation, from 1.
+    seq: i64
+    # What it was answered.
+    answer: Answer
+
+# The store: its keys, and its clients' sessions.
+record Store
+    # Every key and its value, in the order the keys were first written.
+    data: {str: str}
+    # Each client's last operation applied, by the client's number.
+    sessions: {i64: Session}
+
+# A store with no key and no client.
+function empty() -> Store
+    return Store(data: {}, sessions: {})
+
+# Applies `o`, the operation `seq` of `client`, and answers it. An
+# operation already applied (`seq` equal to the session's) is answered as it
+# was the first time and changes nothing; an older one is `stale`.
+#
+# - `s`: the store, changed in place.
+# - `client`: the client's number.
+# - `seq`: the operation's sequence number in that client's session.
+# - `o`: the operation.
+function apply(@s: Store, client: i64, seq: i64, o: op.Op) -> Answer
+    session = s.sessions[client]
+
+    if !session.is_err()
+        last = session.must()
+
+        if seq == last.seq
+            return last.answer
+
+        if seq < last.seq
+            return .stale
+    answer = perform(@s, o)
+    s.sessions[client] @ Session(seq: seq, answer: answer)
+    return answer
+
+# Performs `o` on the keys alone, with no session.
+#
+# - `s`: the store, changed in place.
+# - `o`: the operation.
+function perform(@s: Store, o: op.Op) -> Answer
+    return match o
+        .put p =>
+            s.data[p.key] @ p.value
+            .done
+        .delete d =>
+            s.data @ maps.remove(s.data, key: d.key)
+            .done
+        .append a =>
+            s.data[a.key] @ s.data[a.key].default("") + a.value
+            .done
+        .swap w =>
+            held = s.data[w.key].default("")
+
+            if !s.data[w.key].is_err() && held == w.expected
+                s.data[w.key] @ w.value
+                .done
+            else
+                .refused(held: held)
+        .get g => read(s, key: g.key)
+
+# What `key` holds, read without changing anything.
+#
+# - `s`: the store.
+# - `key`: the key.
+function read(s: Store lent, key: str) -> Answer
+    return match s.data[key]
+        .ok v  => .value(v: v)
+        .err _ => .missing
+
+# The store as one line, every key in the order first written: `a=1 b=2`.
+#
+# - `s`: the store.
+function format_store(s: Store lent) -> str
+    pieces: [str] @= []
+
+    for k in keys(s.data)
+        pieces @ pieces.push(f"{k}={s.data[k].must()}")
+
+    return pieces.join(" ")
+
+## Tests
+
+test "apply: each operation, and a key never written"
+    s @= empty()
+    assert apply(@s, client: 1, seq: 1, o: .put(key: "a", value: "1")) == .done
+    assert apply(@s, client: 1, seq: 2, o: .append(key: "a", value: "2")) == .done
+    assert apply(@s, client: 1, seq: 3, o: .append(key: "b", value: "x")) == .done
+    assert apply(@s, client: 1, seq: 4, o: .get(key: "a")) == .value(v: "12")
+    assert apply(@s, client: 1, seq: 5, o: .swap(key: "a", expected: "0", value: "9")) == .refused(held: "12")
+    assert apply(@s, client: 1, seq: 6, o: .swap(key: "a", expected: "12", value: "9")) == .done
+    assert apply(@s, client: 1, seq: 7, o: .delete(key: "b")) == .done
+    assert apply(@s, client: 1, seq: 8, o: .delete(key: "never")) == .done
+    assert apply(@s, client: 1, seq: 9, o: .get(key: "b")) == .missing
+    assert format_store(s) == "a=9"
+
+test "apply: an operation given twice is applied once, an older one is stale"
+    s @= empty()
+    assert apply(@s, client: 7, seq: 1, o: .append(key: "k", value: "x")) == .done
+    assert apply(@s, client: 7, seq: 1, o: .append(key: "k", value: "x")) == .done
+    assert read(s, key: "k") == .value(v: "x")
+    assert apply(@s, client: 7, seq: 2, o: .append(key: "k", value: "y")) == .done
+    assert apply(@s, client: 7, seq: 1, o: .append(key: "k", value: "x")) == .stale
+    assert read(s, key: "k") == .value(v: "xy")
+    assert apply(@s, client: 8, seq: 1, o: .append(key: "k", value: "z")) == .done
+    assert format_store(s) == "k=xyz"
+
+test "swap: a key that holds nothing refuses, even the empty text"
+    s @= empty()
+    assert perform(@s, .swap(key: "n", expected: "", value: "1")) == .refused(held: "")
+    assert read(s, key: "n") == .missing
+
+test "format_answer: each answer"
+    assert format_answer(.done) == "OK"
+    assert format_answer(.value(v: "a b")) == "\"a b\""
+    assert format_answer(.missing) == "(nil)"
+    assert format_answer(.refused(held: "1")) == "refused, it holds \"1\""
+    assert format_answer(.stale) == "stale"
