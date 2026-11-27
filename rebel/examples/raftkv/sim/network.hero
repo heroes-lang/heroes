@@ -1,0 +1,271 @@
+# The simulated network: every message in flight is a frame of bytes due
+# at a time on the simulation's clock, held in a priority queue ordered by
+# that time and, between two of the same time, by the order they were sent.
+# A seeded generator draws each delay, so messages overtake each other, and
+# decides which are dropped, given twice, or damaged by a flipped bit; a
+# partition cuts the links between groups of nodes, in flight included. The
+# same seed and the same sends give the same deliveries on every machine:
+# nothing here reads a clock, a thread or an address.
+
+use <rebel>/containers/heap
+use <rebel>/random
+
+## The network
+
+# A frame in flight.
+record Flight
+    # When it arrives, on the simulation's clock in milliseconds.
+    at: i64
+    # The order it was sent in, which breaks a tie of `at`.
+    seq: i64
+    # The sender.
+    from: i64
+    # The receiver.
+    to: i64
+    # The frame.
+    frame: [u8]
+
+# How the network behaves.
+record Weather
+    # The shortest delay, in milliseconds.
+    delay_min: i64
+    # One past the longest.
+    delay_max: i64
+    # The chance in a hundred that a message is lost.
+    drop_percent: i64
+    # The chance in a hundred that it arrives twice.
+    duplicate_percent: i64
+    # The chance in a hundred that a bit of it is flipped on the way.
+    damage_percent: i64
+
+# What the network did, counted.
+record Counts
+    # Messages sent.
+    sent: i64
+    # Messages handed to their receiver.
+    delivered: i64
+    # Messages lost by chance.
+    dropped: i64
+    # Messages a partition cut.
+    cut: i64
+    # Copies made by the network.
+    duplicated: i64
+    # Messages with a bit flipped.
+    damaged: i64
+    # Frames their receiver threw away, their checksum failing.
+    refused: i64
+
+# The network: what is in flight, how it behaves, and which links are cut.
+record Network
+    # The frames in flight, a heap ordered by `earlier`.
+    queue: [Flight]
+    # How many frames were ever put in flight.
+    seq: i64
+    # The generator of delays and chances.
+    rng: random.Generator
+    # How it behaves.
+    weather: Weather
+    # The links cut, each `a>b` for one direction.
+    cuts: {str: bool}
+    # What it did.
+    counts: Counts
+
+# A network with nothing in flight and no link cut.
+#
+# - `seed`: the seed of its generator.
+# - `weather`: how it behaves.
+function new_network(seed: i64, weather: Weather) -> Network
+    return Network(
+        queue: [],
+        seq: 0,
+        rng: random.Generator(high: to_u64(seed).default(0), low: 0x9e37_79b9_7f4a_7c15),
+        weather: weather,
+        cuts: {},
+        counts: Counts(sent: 0, delivered: 0, dropped: 0, cut: 0, duplicated: 0, damaged: 0, refused: 0)
+    )
+
+# A calm network: 5 to 25 ms of delay, nothing lost, given twice or damaged.
+function calm() -> Weather
+    return Weather(delay_min: 5, delay_max: 25, drop_percent: 0, duplicate_percent: 0, damage_percent: 0)
+
+# Whether `a` arrives before `b`: an earlier time, or the same time and
+# sent first.
+#
+# - `a`: one flight.
+# - `b`: another.
+function earlier(a: Flight, b: Flight) -> bool
+    if a.at != b.at
+        return a.at < b.at
+    return a.seq < b.seq
+
+## Sending
+
+# Puts `frame` in flight from `from` to `to` at `now`, as the weather
+# decides: lost, delayed, given twice, a bit flipped.
+#
+# - `net`: the network.
+# - `now`: the time it is sent.
+# - `from`: the sender.
+# - `to`: the receiver.
+# - `frame`: the frame.
+function send(@net: Network, now: i64, from: i64, to: i64, frame: [u8])
+    net.counts.sent @ net.counts.sent + 1
+
+    if is_cut(net, from: from, to: to)
+        net.counts.cut @ net.counts.cut + 1
+        return
+
+    if chance(@net, percent: net.weather.drop_percent)
+        net.counts.dropped @ net.counts.dropped + 1
+        return
+    copies: i64 @= 1
+
+    if chance(@net, percent: net.weather.duplicate_percent)
+        copies @ 2
+        net.counts.duplicated @ net.counts.duplicated + 1
+
+    while copies > 0
+        carried @= frame
+
+        if chance(@net, percent: net.weather.damage_percent) && carried.len() > 0
+            at = random.int_in(@net.rng, from: 0, to: carried.len())
+            bit = random.int_in(@net.rng, from: 0, to: 8)
+            carried[at] @ flipped(carried[at], bit: bit)
+            net.counts.damaged @ net.counts.damaged + 1
+        delay = random.int_in(@net.rng, from: net.weather.delay_min, to: net.weather.delay_max)
+        net.seq @ net.seq + 1
+        heap.add(@net.queue, Flight(at: now + delay, seq: net.seq, from: from, to: to, frame: carried), less: earlier)
+        copies @ copies - 1
+
+# Whether a draw out of a hundred falls under `percent`.
+#
+# - `net`: the network, whose generator is drawn from once.
+# - `percent`: the chance, 0 to 100.
+function chance(@net: Network, percent: i64) -> bool
+    if percent <= 0
+        return false
+    return random.int_in(@net.rng, from: 0, to: 100) < percent
+
+# `b` with its bit `bit` flipped.
+#
+# - `b`: the byte.
+# - `bit`: the bit, 0 to 7.
+function flipped(b: u8, bit: i64) -> u8
+    return to_u8(to_i64(b).must() ^ 1 << bit).must()
+
+## Receiving
+
+# When the next frame arrives; fails `not_found` where none is in flight.
+#
+# - `net`: the network.
+function next_due(net: Network lent) -> i64?
+    first = heap.peek(net.queue)?
+    return ok(first.at)
+
+# Takes the next frame to arrive: the first in flight, whatever its link.
+#
+# - `net`: the network.
+#
+# Fails `not_found` where nothing is in flight.
+function take_next(@net: Network) -> Flight?
+    return heap.pop(@net.queue, less: earlier)
+
+# Whether `f`, just taken, reaches its receiver: a partition that cut its
+# link while it was in flight loses it. Each is counted.
+#
+# - `net`: the network.
+# - `f`: the frame taken.
+function arrives(@net: Network, f: Flight) -> bool
+    if is_cut(net, from: f.from, to: f.to)
+        net.counts.cut @ net.counts.cut + 1
+        return false
+    net.counts.delivered @ net.counts.delivered + 1
+    return true
+
+## Partitions
+
+# Whether the link from `from` to `to` is cut.
+#
+# - `net`: the network.
+# - `from`: the sender.
+# - `to`: the receiver.
+function is_cut(net: Network lent, from: i64, to: i64) -> bool
+    return net.cuts[f"{from}>{to}"].default(false)
+
+# Cuts every link between two nodes of different groups, both ways; a node
+# in no group keeps its links to everyone.
+#
+# - `net`: the network.
+# - `groups`: the groups, each a list of nodes.
+function partition(@net: Network, groups: [[i64]])
+    net.cuts @ {}
+
+    for k in range(from: 0, to: groups.len())
+        for other in range(from: 0, to: groups.len())
+            if k != other
+                for a in groups[k]
+                    for b in groups[other]
+                        net.cuts[f"{a}>{b}"] @ true
+
+# Joins every link again.
+#
+# - `net`: the network.
+function heal(@net: Network)
+    net.cuts @ {}
+
+## Tests
+
+test "take_next: frames arrive by time, then by the order sent"
+    net @= new_network(
+        seed: 1,
+        weather: Weather(delay_min: 10, delay_max: 11, drop_percent: 0, duplicate_percent: 0, damage_percent: 0)
+    )
+    send(@net, now: 5, from: 1, to: 2, frame: [1])
+    send(@net, now: 0, from: 1, to: 2, frame: [2])
+    send(@net, now: 0, from: 2, to: 1, frame: [3])
+    assert next_due(net).must() == 10
+    assert take_next(@net).must().frame == [2]
+    assert take_next(@net).must().frame == [3]
+    last = take_next(@net).must()
+    assert last.frame == [1] && arrives(@net, last)
+    assert take_next(@net).is_err()
+    assert net.counts.delivered == 1
+
+test "send: the same seed gives the same delays, and a cut link loses the frame"
+    a @= new_network(seed: 42, weather: calm())
+    b @= new_network(seed: 42, weather: calm())
+
+    for k in range(from: 0, to: 20)
+        send(@a, now: k, from: 1, to: 2, frame: [])
+        send(@b, now: k, from: 1, to: 2, frame: [])
+
+    assert a.queue == b.queue
+    partition(@a, groups: [[1], [2, 3]])
+    assert is_cut(a, from: 1, to: 3) && is_cut(a, from: 3, to: 1)
+    assert !is_cut(a, from: 2, to: 3)
+    assert !is_cut(a, from: 101, to: 1)
+
+    for _ in range(from: 0, to: 20)
+        assert !arrives(@a, take_next(@a).must())
+
+    assert a.counts.cut == 20
+    heal(@a)
+    send(@a, now: 0, from: 1, to: 2, frame: [9])
+    assert take_next(@a).must().frame == [9]
+
+test "send: a stormy network loses, doubles and damages, and counts each"
+    net @= new_network(
+        seed: 7,
+        weather: Weather(delay_min: 1, delay_max: 50, drop_percent: 20, duplicate_percent: 20, damage_percent: 20)
+    )
+
+    for k in range(from: 0, to: 200)
+        send(@net, now: k, from: 1, to: 2, frame: [0, 0, 0, 0])
+
+    assert net.counts.dropped > 0 && net.counts.duplicated > 0 && net.counts.damaged > 0
+    assert net.queue.len() == 200 - net.counts.dropped + net.counts.duplicated
+
+test "flipped: each bit of a byte"
+    assert flipped(0, bit: 0) == 1
+    assert flipped(0xff, bit: 7) == 0x7f
+    assert flipped(0x10, bit: 4) == 0

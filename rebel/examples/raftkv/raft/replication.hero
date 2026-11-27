@@ -1,0 +1,343 @@
+# Log replication (the Raft paper's section 5.3): the leader appends a
+# client's entry to its own log and sends AppendEntries to each follower
+# from where that follower's log is known to match; a follower appends only
+# after its entry at `prev_index` holds the leader's term there, and cuts
+# whatever of its own conflicts; on a refusal the leader steps back, by
+# whole terms at a time (the paper's section 5.3, last paragraphs), and on
+# success it commits an entry of its term once a majority holds it
+# (section 5.4.2: never an older term's by counting).
+
+use <rebel>/math
+
+use raft/apply
+use raft/entry
+use raft/log
+use raft/membership
+use raft/message
+use raft/node
+use raft/reads
+use raft/snapshot
+
+## The leader
+
+# Starts tracking `peer`: its next index just past the leader's log,
+# nothing known to match.
+#
+# - `n`: the leader.
+# - `peer`: the follower.
+function track(@n: node.Node, peer: i64)
+    n.progress[peer] @ node.Progress(next: log.last_index(n.log) + 1, matched: 0, sending: false, offset: 0, round: 0)
+
+# Appends an entry carrying `payload` in the leader's term, and answers its
+# index. A configuration counts from now; its new member is tracked.
+#
+# - `n`: the leader.
+# - `payload`: what the entry carries.
+function propose(@n: node.Node, payload: entry.Payload) -> i64
+    index = log.last_index(n.log) + 1
+    log.append(@n.log, entry.Entry(index: index, term: n.term, payload: payload))
+
+    match payload
+        .config c =>
+            n.members @ c.members
+
+            for m in node.peers(n)
+                if n.progress[m].is_err()
+                    track(@n, peer: m)
+        .noop | .command _ => _ = 0
+
+    advance_commit(@n)
+    return index
+
+# Sends AppendEntries to every other member: their next entries, or a
+# heartbeat where they have them all.
+#
+# - `n`: the leader.
+function broadcast(@n: node.Node)
+    for peer in node.peers(n)
+        send_append(@n, peer: peer)
+
+# Sends `peer` what it lacks: the entries from its next index, or the
+# snapshot where those entries are compacted away.
+#
+# - `n`: the leader.
+# - `peer`: a follower it tracks.
+function send_append(@n: node.Node, peer: i64)
+    p = n.progress[peer]
+
+    if p.is_err()
+        return
+    next = p.must().next
+
+    if next <= n.log.base_index || p.must().sending
+        snapshot.send_part(@n, peer: peer)
+        return
+    prev = next - 1
+    prev_term = log.term_at(n.log, index: prev).must()
+    entries = log.entries_from(n.log, index: next, most: n.settings.batch)
+    body: message.Body = .append_request(
+        prev_index: prev,
+        prev_term: prev_term,
+        entries: entries,
+        commit: n.commit,
+        round: n.round
+    )
+    node.send(@n, to: peer, body: body)
+
+# Reads a follower's answer to AppendEntries: on success its progress
+# moves and the commit index may; on a refusal its next index steps back to
+# where the follower's hint says, and the entries are sent again.
+#
+# - `n`: the leader.
+# - `m`: the reply.
+# - `success`: whether the follower appended.
+# - `index`: its last matching index, or its hint.
+# - `round`: the round of the request answered.
+function on_append_reply(@n: node.Node, m: message.Envelope, success: bool, index: i64, round: i64)
+    if n.role != .leader || m.term != n.term || n.progress[m.from].is_err()
+        return
+    p @= n.progress[m.from].must()
+
+    if round > p.round
+        p.round @ round
+
+    if success
+        if index > p.matched
+            p.matched @ index
+
+        if index + 1 > p.next
+            p.next @ index + 1
+        n.progress[m.from] @ p
+        advance_commit(@n)
+
+        if p.next <= log.last_index(n.log)
+            send_append(@n, peer: m.from)
+    else
+        floor = p.matched + 1
+        step_back = p.next - 1
+        p.next @ math.clamp_i64(x: index, low: floor, high: math.max_i64(a: floor, b: step_back))
+        n.progress[m.from] @ p
+        send_append(@n, peer: m.from)
+    reads.serve(@n)
+
+# Moves the commit index to the highest entry of the leader's term a
+# majority holds, and applies what it newly commits.
+#
+# - `n`: the leader.
+function advance_commit(@n: node.Node)
+    if n.role != .leader
+        return
+    index: i64 @= log.last_index(n.log)
+
+    while index > n.commit
+        if log.term_at(n.log, index: index).must() == n.term && node.is_quorum(n, voters: holders(n, index: index))
+            n.commit @ index
+            apply.apply_committed(@n)
+            return
+        index @ index - 1
+
+# The members whose log holds `index`: the leader, and each follower whose
+# matched index reaches it.
+#
+# - `n`: the leader.
+# - `index`: the index.
+function holders(n: node.Node lent, index: i64) -> [i64]
+    out: [i64] @= [n.id]
+
+    for peer in node.peers(n)
+        match n.progress[peer]
+            .ok p =>
+                if p.matched >= index
+                    out @ out.push(peer)
+            .err _ => _ = 0
+
+    return out
+
+## The follower
+
+# Answers AppendEntries of `n`'s term, or refuses one of an older term so
+# its sender learns the newer one.
+#
+# - `n`: the node.
+# - `m`: the request.
+# - `prev_index`: the index before the entries.
+# - `prev_term`: its term.
+# - `entries`: the entries.
+# - `commit`: the leader's commit index.
+# - `round`: the leader's round, answered back.
+function on_append_request(@n: node.Node, m: message.Envelope, prev_index: i64, prev_term: i64, entries: [entry.Entry], commit: i64, round: i64)
+    if m.term < n.term
+        node.send(@n, to: m.from, body: .append_reply(success: false, index: log.last_index(n.log) + 1, round: round))
+        return
+    follow(@n, leader: m.from)
+    from_index: i64 @= prev_index
+    from_term: i64 @= prev_term
+    kept: [entry.Entry] @= entries
+
+    if from_index < n.log.base_index
+        kept @ after_base(kept, base: n.log.base_index)
+        from_index @ n.log.base_index
+        from_term @ n.log.base_term
+
+    if !log.holds(n.log, index: from_index, term: from_term)
+        node.send(
+            @n,
+            to: m.from,
+            body: .append_reply(success: false, index: hint(n.log, index: from_index), round: round)
+        )
+        return
+    last_new = from_index + kept.len()
+    append_new(@n, kept)
+
+    if commit > n.commit
+        n.commit @ math.min_i64(a: commit, b: last_new)
+        apply.apply_committed(@n)
+    node.send(@n, to: m.from, body: .append_reply(success: true, index: last_new, round: round))
+
+# Makes `n` a follower of `leader` in its term, its timer started again.
+#
+# - `n`: the node.
+# - `leader`: the leader that spoke.
+function follow(@n: node.Node, leader: i64)
+    if n.role != .follower
+        node.become_follower(@n)
+
+    known = match n.leader
+        .ok l  => l == leader
+        .err _ => false
+
+    if !known
+        n.leader @ ok(leader)
+        node.tell(@n, f"follows {leader} in term {n.term}")
+    n.heard @ n.now
+    node.reset_election(@n)
+
+# `entries` without those at or below `base`, which a snapshot holds.
+#
+# - `entries`: the entries, in order.
+# - `base`: the snapshot's last index.
+function after_base(entries: [entry.Entry], base: i64) -> [entry.Entry]
+    out: [entry.Entry] @= []
+
+    for e in entries
+        if e.index > base
+            out @ out.push(e)
+
+    return out
+
+# Where the leader should try next after `l` refused `index`: just past
+# `l`'s last entry where `index` lies beyond it, else the first index of the
+# term `l` holds at `index`, so the leader skips that whole term at once.
+#
+# - `l`: the follower's log.
+# - `index`: the index refused, above the base.
+function hint(l: log.Log lent, index: i64) -> i64
+    if index > log.last_index(l)
+        return log.last_index(l) + 1
+    conflict = log.term_at(l, index: index).must()
+    at: i64 @= index
+
+    while at - 1 > l.base_index && log.term_at(l, index: at - 1).must() == conflict
+        at @ at - 1
+
+    return at
+
+# Appends what `n`'s log lacks of `entries`: an entry already held with the
+# same term is skipped, one with another term cuts the log from there
+# (and the configuration is read again from what is left).
+#
+# - `n`: the follower.
+# - `entries`: entries that follow on from a matching index.
+function append_new(@n: node.Node, entries: [entry.Entry])
+    for e in entries
+        if e.index <= log.last_index(n.log)
+            if log.term_at(n.log, index: e.index).must() != e.term
+                cut = log.last_index(n.log) - e.index + 1
+                node.tell(@n, f"drops {cut} entries from {e.index} that conflict with the leader's")
+                log.cut_from(@n.log, index: e.index)
+                n.unsaved.rewrite @ true
+                n.members @ membership.members_of(n.log, base: n.snapshot)
+                log.append(@n.log, e)
+                after_append(@n, e)
+        else
+            log.append(@n.log, e)
+            after_append(@n, e)
+
+function after_append(@n: node.Node, e: entry.Entry)
+    match e.payload
+        .config c  => n.members @ c.members
+        .noop      => _ = 0
+        .command _ => _ = 0
+
+## Tests
+
+# A leader of term 2 with three members and four entries.
+function leading() -> node.Node
+    n @= node.new_node(id: 1, members: [1, 2, 3], settings: node.default_settings(), seed: 5, now: 0)
+    n.term @ 2
+    n.role @ .leader
+    n.leader @ ok(1)
+    n.log @ log.sample(count: 4, term: 2)
+    track(@n, peer: 2)
+    track(@n, peer: 3)
+    return n
+
+test "send_append: the entries from next, after the term of the one before"
+    n @= leading()
+    n.progress[2] @ node.Progress(next: 3, matched: 2, sending: false, offset: 0, round: 0)
+    send_append(@n, peer: 2)
+
+    match n.outbox[0].body
+        .append_request a =>
+            assert a.prev_index == 2 && a.prev_term == 2
+            assert a.entries.len() == 2
+        .vote_request _ | .vote_reply _ | .append_reply _ | .snapshot_request _ | .snapshot_reply _ | .client_request _ | .client_reply _ => assert false
+
+test "on_append_reply: a majority commits an entry of the term, and a refusal steps back"
+    n @= leading()
+    ok_reply = message.Envelope(from: 2, to: 1, term: 2, body: .vote_reply(granted: true))
+    on_append_reply(@n, ok_reply, success: true, index: 4, round: 0)
+    assert n.commit == 4
+    assert n.applied == 4
+    on_append_reply(
+        @n,
+        message.Envelope(from: 3, to: 1, term: 2, body: .vote_reply(granted: true)),
+        success: false,
+        index: 2,
+        round: 0
+    )
+    assert n.progress[3].must().next == 2
+
+test "advance_commit: an older term's entry is never committed by counting"
+    n @= leading()
+    n.term @ 3
+    n.progress[2] @ node.Progress(next: 5, matched: 4, sending: false, offset: 0, round: 0)
+    advance_commit(@n)
+    assert n.commit == 0
+
+test "on_append_request: append, then a conflict cut, then a refusal with a hint"
+    n @= node.new_node(id: 2, members: [1, 2, 3], settings: node.default_settings(), seed: 5, now: 0)
+    n.term @ 1
+    request = message.Envelope(from: 1, to: 2, term: 1, body: .vote_reply(granted: true))
+    first = log.sample(count: 3, term: 1).entries
+    on_append_request(@n, request, prev_index: 0, prev_term: 0, entries: first, commit: 2, round: 1)
+    assert log.last_index(n.log) == 3
+    assert n.commit == 2
+    assert n.leader.must() == 1
+    assert n.outbox[0].body == .append_reply(success: true, index: 3, round: 1)
+    n.term @ 2
+    later = message.Envelope(from: 3, to: 2, term: 2, body: .vote_reply(granted: true))
+    other = [entry.Entry(index: 3, term: 2, payload: .noop)]
+    on_append_request(@n, later, prev_index: 2, prev_term: 1, entries: other, commit: 2, round: 0)
+    assert log.term_at(n.log, index: 3).must() == 2
+    assert n.unsaved.rewrite
+    on_append_request(@n, later, prev_index: 7, prev_term: 2, entries: [], commit: 2, round: 0)
+    assert n.outbox[n.outbox.len() - 1].body == .append_reply(success: false, index: 4, round: 0)
+
+test "hint: past the end, and the first index of a conflicting term"
+    l @= log.sample(count: 2, term: 1)
+    log.append(@l, entry.Entry(index: 3, term: 2, payload: .noop))
+    log.append(@l, entry.Entry(index: 4, term: 2, payload: .noop))
+    assert hint(l, index: 9) == 5
+    assert hint(l, index: 4) == 3
+    assert hint(l, index: 2) == 1

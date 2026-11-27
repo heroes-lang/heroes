@@ -1,0 +1,200 @@
+# The fuzzer: a run whose faults are drawn from a seed instead of a script.
+# A client appends numbered values to a few keys without pause while the
+# network loses, doubles, damages and reorders messages, and, every so
+# often, cuts the cluster in two, heals it, crashes a node (in the middle of
+# a write, half the time) or restarts one, never more down at once than a
+# majority can lose. The checker asks Raft's properties after every act;
+# at the end the network heals, every node restarts, and the run asks what
+# a client can see: every running node holds one store, and every append a
+# node acknowledged is in it exactly once. A run that fails prints its seed,
+# and the same seed is the same run on every machine. This is how
+# FoundationDB and TigerBeetle test themselves, in miniature.
+
+use <rebel>/random
+use <rebel>/strings
+
+use check/safety
+use kv/op
+use kv/store
+use raft/node
+use sim/client
+use sim/cluster
+use sim/network
+
+## A run
+
+# What a run came to.
+record Outcome
+    # Its seed.
+    seed: i64
+    # The highest term any node reached.
+    terms: i64
+    # The writes acknowledged.
+    acknowledged: i64
+    # The writes that ended unanswered.
+    unanswered: i64
+    # The faults drawn: crashes and partitions.
+    crashes: i64
+    # Partitions drawn.
+    partitions: i64
+    # What the network did.
+    counts: network.Counts
+    # The checker's checks.
+    checks: i64
+    # What went wrong, in words; none where the run was safe and agreed.
+    problems: [str]
+
+# Runs the cluster under faults drawn from `seed` for `span` milliseconds,
+# then heals it and asks whether it is whole.
+#
+# - `seed`: the seed of everything drawn.
+# - `nodes`: how many nodes, 3 to 9.
+# - `span`: how long faults are drawn, in milliseconds.
+# - `work`: the folder for the nodes' folders.
+#
+# Fails with the codes of `fs` where a node's folder cannot be written or
+# read back.
+function run_fuzz(seed: i64, nodes: i64, span: i64, work: str) -> Outcome?
+    settings @= node.default_settings()
+    settings.snapshot_every @ 8
+    settings.chunk @ 64
+    weather = network.Weather(delay_min: 2, delay_max: 40, drop_percent: 3, duplicate_percent: 2, damage_percent: 1)
+    c @= cluster.new_cluster(size: nodes, settings: settings, weather: weather, seed: seed, work: work)?
+    rng @= random.Generator(high: to_u64(seed).default(0), low: 0x5851_f42d_4c95_7f2d)
+    writer = cluster.add_client(@c)
+    k = writer - cluster.FIRST_CLIENT
+    crashes: i64 @= 0
+    partitions: i64 @= 0
+    acknowledged: [op.Op] @= []
+    unanswered: i64 @= 0
+    written: i64 @= 0
+
+    while c.now < span && safety.is_safe(c.checker)
+        if !client.is_busy(c.clients[k])
+            written @ written + 1
+            key = f"k{random.int_in(@rng, from: 0, to: 4)}"
+            client.submit(
+                @c.clients[k],
+                operation: .append(key: key, value: f"{written},"),
+                target: fail(code: "not_found", msg: "any"),
+                nodes: cluster.ids(c),
+                patience: 1500,
+                now: c.now
+            )
+            cluster.send_from_client(@c, at: k)
+
+        if random.int_in(@rng, from: 0, to: 40) == 0
+            drawn = fault(@c, @rng)?
+
+            if drawn == "crash"
+                crashes @ crashes + 1
+            else if drawn == "partition"
+                partitions @ partitions + 1
+        cluster.step(@c)?
+
+        for d in c.clients[k].finished
+            match d.ending
+                .answered a =>
+                    if a.answer == .done
+                        acknowledged @ acknowledged.push(d.operation)
+                .refused _ | .timed_out _ => unanswered @ unanswered + 1
+
+        c.clients[k].finished @ []
+
+    network.heal(@c.net)
+
+    for h in c.hosts
+        if !h.up
+            cluster.restart(@c, id: h.id)?
+
+    cluster.run_until(@c, until: c.now + 4000)?
+    problems @= c.checker.violations
+
+    if safety.is_safe(c.checker)
+        problems @ whole(c, acknowledged: acknowledged)
+    c.lines @ []
+    return ok(
+        Outcome(seed: seed, terms: highest_term(c), acknowledged: acknowledged.len(), unanswered: unanswered, crashes: crashes, partitions: partitions, counts: c.net.counts, checks: c.checker.steps, problems: problems)
+    )
+
+# Draws one fault and makes it happen; answers its kind: `partition`,
+# `heal`, `crash`, `restart` or `none`.
+function fault(@c: cluster.Cluster, @rng: random.Generator) -> str?
+    down: [i64] @= []
+    up: [i64] @= []
+
+    for h in c.hosts
+        if h.up
+            up @ up.push(h.id)
+        else
+            down @ down.push(h.id)
+
+    kind = random.int_in(@rng, from: 0, to: 4)
+
+    if kind == 0
+        ids @= cluster.ids(c)
+        random.shuffle(@rng, @ids)
+        cut = random.int_in(@rng, from: 1, to: ids.len())
+        network.partition(@c.net, groups: [ids.slice(from: 0, to: cut), ids.slice(from: cut, to: ids.len())])
+        return ok("partition")
+
+    if kind == 1
+        network.heal(@c.net)
+        return ok("heal")
+
+    if kind == 2 && (down.len() + 1) * 2 < c.hosts.len()
+        victim = random.choose(@rng, up)?
+        cluster.crash(@c, id: victim, torn: random.int_in(@rng, from: 0, to: 2) == 0)?
+        return ok("crash")
+
+    if down.len() > 0
+        cluster.restart(@c, id: random.choose(@rng, down)?)?
+        return ok("restart")
+    return ok("none")
+
+# What is wrong with the healed cluster, in words: the stores the running
+# nodes hold that differ, an acknowledged append missing from them or there
+# twice.
+function whole(c: cluster.Cluster lent, acknowledged: [op.Op]) -> [str]
+    problems: [str] @= []
+    running = cluster.running(c)
+
+    for n in running
+        if store.format_store(n.machine) != store.format_store(running[0].machine)
+            problems @ problems.push(f"nodes {running[0].id} and {n.id} hold different stores")
+
+    if running.len() == 0
+        return problems
+    data = running[0].machine.data
+
+    for o in acknowledged
+        match o
+            .append a =>
+                held = data[a.key].default("")
+                times = strings.count_of(s: "," + held, substr: "," + a.value)
+
+                if times != 1
+                    problems @ problems.push(f"the acknowledged {op.format_op(o)} is in the store {times} times")
+            .put _ | .delete _ | .swap _ | .get _ => _ = 0
+
+    return problems
+
+function highest_term(c: cluster.Cluster lent) -> i64
+    best: i64 @= 0
+
+    for h in c.hosts
+        if h.raft.term > best
+            best @ h.raft.term
+
+    return best
+
+# `o` as one line: what was drawn, what the network did, and the verdict.
+#
+# - `o`: the outcome.
+function format_outcome(o: Outcome) -> str
+    verdict = if o.problems.len() == 0
+        "safe, the stores agree, every acknowledged append there once"
+    else
+        "FAILED: " + o.problems[0]
+    n = o.counts
+    return f"seed {o.seed}: {o.terms} terms, {o.acknowledged} appends acknowledged, {o.unanswered} unanswered, {o.crashes} crashes, {o.partitions} partitions; {n.sent} messages, {n.dropped} lost, {n.cut} cut, {n.duplicated} doubled, {n.damaged} damaged; {o.checks} checks: {verdict}"
