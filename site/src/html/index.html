@@ -102,8 +102,25 @@ function name_of(t: Token) -&gt; str
   <p>
     The examples include programs that use a database, call a graphics library and send a web request. Their pages also show recorded output where available. <a href="/examples/#c">Examples using C libraries&nbsp;&rarr;</a>
   </p>
+
+  <h2 id="rebel">A library, if you want one <span class="nod">&middot; <a href="/about/thanks/#rebel-rebel">rebel rebel</a> &middot;</span></h2>
+  <p class="joke">Heroes has no standard library, unless you want to <a href="/rebel/">rebel</a>.</p>
   <p>
-    Heroes imposes no standard library: beyond C, a program may take packages of Heroes code, and this project writes one broad library of them, Rebel, which a program takes or leaves. <a href="/rebel/">Rebel&nbsp;&rarr;</a>
+    Rebel is the library this project writes for Heroes, from scratch and in Heroes: {{rebelPackages}} packages, from text and time zones to the network, databases and cryptography. It is optional. The compiler is written without it, and a program that does not take it carries none of it.
+  </p>
+  <p>
+    With Rebel the project has written {{rebelApplications}} applications, programs somebody would use. Each has a recorded demo session, which a check runs again and compares with the recording whenever Rebel or the program changes. A few:
+  </p>
+  <ul class="apps">
+    <li><a href="/examples/rebel/minidb/">minidb</a>, a small SQL database made the way SQLite is: tables, indexes, transactions and recovery after a crash.</li>
+    <li><a href="/examples/rebel/kvd/">kvd</a>, a small Redis, a server that keeps values under names and speaks Redis&rsquo;s protocol.</li>
+    <li><a href="/examples/rebel/raftkv/">raftkv</a>, a replicated store in the manner of etcd&rsquo;s, kept by Raft, the method by which several machines agree on one history of data, and put to the test in a simulated network.</li>
+    <li><a href="/examples/rebel/rv32/">rv32</a>, a small RISC-V machine in the manner of QEMU&rsquo;s virt board, a program that plays the part of the processor, with its assembler and a debugger.</li>
+    <li><a href="/examples/rebel/langserver/">langserver</a>, a language server, the program an editor asks for errors as you type, for Kite, a small language the program defines itself.</li>
+    <li><a href="/examples/rebel/auth/">auth</a>, a small Keycloak, <a href="/examples/rebel/gateway/">gateway</a>, in the manner of Envoy and Kong, and <a href="/examples/rebel/notes/">notes</a>, a small blog and notes server: web services built on Rebel&rsquo;s router and its middleware, the steps a request passes through before its answer.</li>
+  </ul>
+  <p>
+    <a href="/rebel/apps/">Every application, and what each one is modelled on&nbsp;&rarr;</a>&nbsp;&middot; <a href="/rebel/packages/">the packages, layer by layer&nbsp;&rarr;</a>
   </p>
 
   <h2>The thesis</h2>
@@ -141,6 +158,9 @@ failed: not_a_digit (expected 0-9)
     written in Heroes, in a few minutes. The line saying
     <code>failed</code> is the example refusing a character it cannot read.
     <a href="/start/">The getting started guide&nbsp;&rarr;</a>&nbsp;&middot; <a href="/docs/">the language, one idea at a time&nbsp;&rarr;</a>
+  </p>
+  <p>
+    With the same compiler, <code>./heroes run rebel/examples/minidb/main.hero -- demo &lt; rebel/examples/minidb/main.stdin</code> runs the demo of minidb, the SQL database written with Rebel, and prints byte for byte what <a href="/examples/rebel/minidb/">its page</a> shows.
   </p>
 
   <h2>Who is building it</h2>

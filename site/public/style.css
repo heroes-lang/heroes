@@ -840,6 +840,13 @@ figure.example.record pre { white-space: pre-wrap; overflow-wrap: break-word; }
   margin: 1.2rem 0 0.6rem; font-weight: 700; text-wrap: balance;
 }
 .hero .promise em { color: var(--red); font-style: normal; }
+/* The home's Rebel section opens on the author's joke (2026-11-27), set as the
+   promise under the name is set: larger than the prose, bold, balanced. Its
+   one link is the verb, so the library's name arrives as the punchline. */
+main.home > p.joke {
+  font-size: clamp(1.15rem, 2.2vw, 1.4rem); line-height: 1.3;
+  margin: 1.2rem 0 1rem; font-weight: 700; text-wrap: balance;
+}
 .hero .tagline { font-size: 1.02rem; margin: 0.7rem 0 0; max-width: 30rem; }
 .hero .bolt {
   position: static; display: block; width: 2.8rem; height: auto;
