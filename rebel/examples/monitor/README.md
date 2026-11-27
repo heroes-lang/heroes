@@ -72,7 +72,7 @@ Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and l
 
 ## Its folders
 
-16 folders, 45 files and 8,687 lines, this page aside; of them 41 modules, `.hero` files, of 8,349 lines.
+16 folders, 45 files and 8,705 lines, this page aside; of them 41 modules, `.hero` files, of 8,367 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
@@ -80,18 +80,18 @@ Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and l
 | `alerts/` | 2 | 649 | 2 | 649 |
 | `bench/` | 1 | 131 | 1 | 131 |
 | `cli/` | 2 | 268 | 2 | 268 |
-| `collect/` | 4 | 928 | 4 | 928 |
+| `collect/` | 4 | 925 | 4 | 925 |
 | `conf/` | 2 | 736 | 2 | 736 |
-| `control/` | 4 | 421 | 4 | 421 |
-| `dash/` | 3 | 576 | 3 | 576 |
-| `demo/` | 4 | 731 | 4 | 731 |
-| `engine/` | 4 | 969 | 4 | 969 |
-| `journal/` | 1 | 150 | 1 | 150 |
+| `control/` | 4 | 424 | 4 | 424 |
+| `dash/` | 3 | 577 | 3 | 577 |
+| `demo/` | 4 | 735 | 4 | 735 |
+| `engine/` | 4 | 973 | 4 | 973 |
+| `journal/` | 1 | 151 | 1 | 151 |
 | `series/` | 2 | 372 | 2 | 372 |
-| `services/` | 4 | 986 | 4 | 986 |
-| `standins/` | 4 | 732 | 4 | 732 |
-| `telemetry/` | 2 | 381 | 2 | 381 |
-| `workload/` | 1 | 149 | 1 | 149 |
+| `services/` | 4 | 989 | 4 | 989 |
+| `standins/` | 4 | 735 | 4 | 735 |
+| `telemetry/` | 2 | 382 | 2 | 382 |
+| `workload/` | 1 | 150 | 1 | 150 |
 
 ---
 

@@ -59,24 +59,24 @@ A line `main.varies` names is printed in another form where another machine deci
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 26 faces on its `packages` line, each linked here to its reference: [`amqp`](https://heroes-lang.org/rebel/amqp/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`cbor`](https://heroes-lang.org/rebel/cbor/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`http`](https://heroes-lang.org/rebel/http/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`math`](https://heroes-lang.org/rebel/math/), [`metrics`](https://heroes-lang.org/rebel/metrics/), [`mqtt`](https://heroes-lang.org/rebel/mqtt/), [`msgpack`](https://heroes-lang.org/rebel/msgpack/), [`nats`](https://heroes-lang.org/rebel/nats/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`poll`](https://heroes-lang.org/rebel/poll/), [`protobuf`](https://heroes-lang.org/rebel/protobuf/), [`random`](https://heroes-lang.org/rebel/random/), [`retries`](https://heroes-lang.org/rebel/retries/), [`serial`](https://heroes-lang.org/rebel/serial/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/), [`uuid`](https://heroes-lang.org/rebel/uuid/), [`websocket`](https://heroes-lang.org/rebel/websocket/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 27 faces on its `packages` line, each linked here to its reference: [`amqp`](https://heroes-lang.org/rebel/amqp/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`cbor`](https://heroes-lang.org/rebel/cbor/), [`errors`](https://heroes-lang.org/rebel/errors/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`http`](https://heroes-lang.org/rebel/http/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`math`](https://heroes-lang.org/rebel/math/), [`metrics`](https://heroes-lang.org/rebel/metrics/), [`mqtt`](https://heroes-lang.org/rebel/mqtt/), [`msgpack`](https://heroes-lang.org/rebel/msgpack/), [`nats`](https://heroes-lang.org/rebel/nats/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`poll`](https://heroes-lang.org/rebel/poll/), [`protobuf`](https://heroes-lang.org/rebel/protobuf/), [`random`](https://heroes-lang.org/rebel/random/), [`retries`](https://heroes-lang.org/rebel/retries/), [`serial`](https://heroes-lang.org/rebel/serial/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/), [`uuid`](https://heroes-lang.org/rebel/uuid/), [`websocket`](https://heroes-lang.org/rebel/websocket/).
 
 ## Its folders
 
-10 folders, 45 files and 10,161 lines, this page aside; of them 41 modules, `.hero` files, of 10,001 lines.
+10 folders, 45 files and 10,180 lines, this page aside; of them 41 modules, `.hero` files, of 10,019 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
-| `./` | 5 | 448 | 1 | 288 |
-| `brokers/` | 5 | 653 | 5 | 653 |
+| `./` | 5 | 449 | 1 | 288 |
+| `brokers/` | 5 | 656 | 5 | 656 |
 | `codecs/` | 6 | 1,122 | 6 | 1,122 |
 | `config/` | 2 | 841 | 2 | 841 |
-| `demo/` | 5 | 1,086 | 5 | 1,086 |
-| `feed/` | 4 | 498 | 4 | 498 |
-| `hub/` | 5 | 1,088 | 5 | 1,088 |
+| `demo/` | 5 | 1,089 | 5 | 1,089 |
+| `feed/` | 4 | 500 | 4 | 500 |
+| `hub/` | 5 | 1,092 | 5 | 1,092 |
 | `routes/` | 2 | 426 | 2 | 426 |
-| `serial/` | 1 | 172 | 1 | 172 |
-| `standins/` | 10 | 3,827 | 10 | 3,827 |
+| `serial/` | 1 | 173 | 1 | 173 |
+| `standins/` | 10 | 3,832 | 10 | 3,832 |
 
 ---
 

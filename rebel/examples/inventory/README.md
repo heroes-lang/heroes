@@ -80,28 +80,28 @@ A line `main.varies` names is printed in another form where another machine deci
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 25 faces on its `packages` line, each linked here to its reference: [`bson`](https://heroes-lang.org/rebel/bson/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`config`](https://heroes-lang.org/rebel/config/), [`containers/indexed`](https://heroes-lang.org/rebel/containers/indexed/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`csv`](https://heroes-lang.org/rebel/csv/), [`fs`](https://heroes-lang.org/rebel/fs/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`lists`](https://heroes-lang.org/rebel/lists/), [`maps`](https://heroes-lang.org/rebel/maps/), [`mongodb`](https://heroes-lang.org/rebel/mongodb/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`random`](https://heroes-lang.org/rebel/random/), [`sql`](https://heroes-lang.org/rebel/sql/), [`sql/build`](https://heroes-lang.org/rebel/sql/build/), [`sql/mysql`](https://heroes-lang.org/rebel/sql/mysql/), [`sql/odbc`](https://heroes-lang.org/rebel/sql/odbc/), [`sql/sqlite`](https://heroes-lang.org/rebel/sql/sqlite/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/), [`uuid`](https://heroes-lang.org/rebel/uuid/), [`xlsx`](https://heroes-lang.org/rebel/xlsx/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 26 faces on its `packages` line, each linked here to its reference: [`bson`](https://heroes-lang.org/rebel/bson/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`config`](https://heroes-lang.org/rebel/config/), [`containers/indexed`](https://heroes-lang.org/rebel/containers/indexed/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`csv`](https://heroes-lang.org/rebel/csv/), [`errors`](https://heroes-lang.org/rebel/errors/), [`fs`](https://heroes-lang.org/rebel/fs/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`lists`](https://heroes-lang.org/rebel/lists/), [`maps`](https://heroes-lang.org/rebel/maps/), [`mongodb`](https://heroes-lang.org/rebel/mongodb/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`random`](https://heroes-lang.org/rebel/random/), [`sql`](https://heroes-lang.org/rebel/sql/), [`sql/build`](https://heroes-lang.org/rebel/sql/build/), [`sql/mysql`](https://heroes-lang.org/rebel/sql/mysql/), [`sql/odbc`](https://heroes-lang.org/rebel/sql/odbc/), [`sql/sqlite`](https://heroes-lang.org/rebel/sql/sqlite/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/), [`uuid`](https://heroes-lang.org/rebel/uuid/), [`xlsx`](https://heroes-lang.org/rebel/xlsx/).
 
 ## Its folders
 
-14 folders, 43 files and 10,080 lines, this page aside; of them 39 modules, `.hero` files, of 9,944 lines.
+14 folders, 43 files and 10,089 lines, this page aside; of them 39 modules, `.hero` files, of 9,952 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
-| `./` | 5 | 230 | 1 | 94 |
-| `cli/` | 1 | 288 | 1 | 288 |
+| `./` | 5 | 231 | 1 | 94 |
+| `cli/` | 1 | 289 | 1 | 289 |
 | `conf/` | 1 | 165 | 1 | 165 |
-| `demo/` | 3 | 617 | 3 | 617 |
+| `demo/` | 3 | 618 | 3 | 618 |
 | `exports/` | 1 | 195 | 1 | 195 |
-| `files/` | 1 | 198 | 1 | 198 |
+| `files/` | 1 | 199 | 1 | 199 |
 | `imports/` | 3 | 668 | 3 | 668 |
 | `model/` | 6 | 1,344 | 6 | 1,344 |
 | `report/` | 1 | 208 | 1 | 208 |
 | `service/` | 1 | 175 | 1 | 175 |
 | `standins/` | 1 | 124 | 1 | 124 |
-| `standins/mongo/` | 6 | 1,840 | 6 | 1,840 |
-| `standins/mysql/` | 6 | 1,779 | 6 | 1,779 |
-| `store/` | 7 | 2,249 | 7 | 2,249 |
+| `standins/mongo/` | 6 | 1,841 | 6 | 1,841 |
+| `standins/mysql/` | 6 | 1,782 | 6 | 1,782 |
+| `store/` | 7 | 2,250 | 7 | 2,250 |
 
 ---
 

@@ -71,29 +71,29 @@ Run from the repository's root with the words of `main.args`, as the check of Re
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 28 faces on its `packages` line, each linked here to its reference: [`archive`](https://heroes-lang.org/rebel/archive/), [`big`](https://heroes-lang.org/rebel/big/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`config`](https://heroes-lang.org/rebel/config/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`csv`](https://heroes-lang.org/rebel/csv/), [`fs`](https://heroes-lang.org/rebel/fs/), [`i18n`](https://heroes-lang.org/rebel/i18n/), [`i18n/dates`](https://heroes-lang.org/rebel/i18n/dates/), [`i18n/numbers`](https://heroes-lang.org/rebel/i18n/numbers/), [`image`](https://heroes-lang.org/rebel/image/), [`image/png`](https://heroes-lang.org/rebel/image/png/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`mail`](https://heroes-lang.org/rebel/mail/), [`mail/smtp`](https://heroes-lang.org/rebel/mail/smtp/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`pdf`](https://heroes-lang.org/rebel/pdf/), [`qr`](https://heroes-lang.org/rebel/qr/), [`sql`](https://heroes-lang.org/rebel/sql/), [`sql/sqlite`](https://heroes-lang.org/rebel/sql/sqlite/), [`strings`](https://heroes-lang.org/rebel/strings/), [`template`](https://heroes-lang.org/rebel/template/), [`time`](https://heroes-lang.org/rebel/time/), [`xlsx`](https://heroes-lang.org/rebel/xlsx/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 29 faces on its `packages` line, each linked here to its reference: [`archive`](https://heroes-lang.org/rebel/archive/), [`big`](https://heroes-lang.org/rebel/big/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`config`](https://heroes-lang.org/rebel/config/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`csv`](https://heroes-lang.org/rebel/csv/), [`errors`](https://heroes-lang.org/rebel/errors/), [`fs`](https://heroes-lang.org/rebel/fs/), [`i18n`](https://heroes-lang.org/rebel/i18n/), [`i18n/dates`](https://heroes-lang.org/rebel/i18n/dates/), [`i18n/numbers`](https://heroes-lang.org/rebel/i18n/numbers/), [`image`](https://heroes-lang.org/rebel/image/), [`image/png`](https://heroes-lang.org/rebel/image/png/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`mail`](https://heroes-lang.org/rebel/mail/), [`mail/smtp`](https://heroes-lang.org/rebel/mail/smtp/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`pdf`](https://heroes-lang.org/rebel/pdf/), [`qr`](https://heroes-lang.org/rebel/qr/), [`sql`](https://heroes-lang.org/rebel/sql/), [`sql/sqlite`](https://heroes-lang.org/rebel/sql/sqlite/), [`strings`](https://heroes-lang.org/rebel/strings/), [`template`](https://heroes-lang.org/rebel/template/), [`time`](https://heroes-lang.org/rebel/time/), [`xlsx`](https://heroes-lang.org/rebel/xlsx/).
 
 ## Its folders
 
-16 folders, 38 files and 7,869 lines, this page aside; of them 35 modules, `.hero` files, of 7,744 lines.
+16 folders, 38 files and 7,864 lines, this page aside; of them 35 modules, `.hero` files, of 7,738 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
-| `./` | 4 | 212 | 1 | 87 |
-| `bank/` | 3 | 578 | 3 | 578 |
+| `./` | 4 | 213 | 1 | 87 |
+| `bank/` | 3 | 567 | 3 | 567 |
 | `billing/` | 2 | 315 | 2 | 315 |
-| `books/` | 2 | 412 | 2 | 412 |
-| `cli/` | 1 | 319 | 1 | 319 |
+| `books/` | 2 | 411 | 2 | 411 |
+| `cli/` | 1 | 320 | 1 | 320 |
 | `conf/` | 1 | 320 | 1 | 320 |
-| `demo/` | 3 | 574 | 3 | 574 |
+| `demo/` | 3 | 575 | 3 | 575 |
 | `l10n/` | 2 | 434 | 2 | 434 |
 | `mailing/` | 1 | 175 | 1 | 175 |
 | `model/` | 2 | 443 | 2 | 443 |
 | `money/` | 1 | 349 | 1 | 349 |
 | `ops/` | 2 | 402 | 2 | 402 |
 | `render/` | 6 | 1,426 | 6 | 1,426 |
-| `standins/` | 3 | 575 | 3 | 575 |
-| `store/` | 3 | 850 | 3 | 850 |
+| `standins/` | 3 | 577 | 3 | 577 |
+| `store/` | 3 | 852 | 3 | 852 |
 | `tax/` | 2 | 485 | 2 | 485 |
 
 ---

@@ -1,6 +1,6 @@
 # Rebel 0.1.0: every package, for a program that uses it
 
-Rebel is the library a Heroes program takes or leaves, never the language's own. This index names every face of its version 0.1.0, the modules a program names with `use <rebel>/<face>`: 188 faces in 9 layers, with every one of their 6,116 functions, 1,063 records, 413 variants and 1,604 constants. Every word of it is read from what `heroes doc` prints of each face, so a name it gives is one the face declares, and a call it shows is one the checker accepts: write no name it does not give.
+Rebel is the library a Heroes program takes or leaves, never the language's own. This index names every face of its version 0.1.0, the modules a program names with `use <rebel>/<face>`: 190 faces in 10 layers, with every one of their 6,150 functions, 1,064 records, 414 variants and 1,607 constants. Every word of it is read from what `heroes doc` prints of each face, so a name it gives is one the face declares, and a call it shows is one the checker accepts: write no name it does not give.
 
 ## How to take Rebel
 
@@ -38,7 +38,7 @@ No index publishes Rebel yet, so `heroes add rebel` by its name, which asks an i
 - [`os`](https://heroes-lang.org/rebel/os/): The process's world: its environment, its working folder, the folders the system keeps for a program's data, state, cache, settings and sockets, who it runs as and on what machine, the machine's processes listed, users and groups found and the user changed, the signals it counts, a URL or a file handed to the application the user's system keeps for it, and a file shown selected in the system's file manager.
 - [`hash`](https://heroes-lang.org/rebel/hash/): Checksums and fast hashes that are not cryptographic, computed over bytes or over text, all at once or in steps: CRC-32 by the IEEE polynomial, by Castagnoli's or by one of the caller's; CRC-64 by ISO's polynomial, by ECMA's or by one of the caller's; Adler-32; FNV-1 and FNV-1a in 32 and 64 bits; and xxHash's XXH32 and XXH64, with a seed, the checksums of LZ4's and Zstandard's frames.
 - [`sets`](https://heroes-lang.org/rebel/sets/): Sets of values, kept in a `{K: bool}`: the language has no set type, and a map's keys are already distinct and found by hashing, so a set is a map whose keys are its elements, each under `true`.
-- [`errors`](https://heroes-lang.org/rebel/errors/): Failures told well: words added to a failure as it travels up, its code kept; several failures joined into one; and a failure told to a person, in one line or as an indented chain.
+- [`errors`](https://heroes-lang.org/rebel/errors/): Failures told well: words added to a failure as it travels up, its code kept; several failures joined into one; a failure told to a person, in one line or as an indented chain; and one dropped on purpose where it cannot matter.
 - [`threads`](https://heroes-lang.org/rebel/threads/): A function run on another thread and waited for, through the language's own `spawn` and `t.wait()` (spec § 11), under names of this package's own and with a pool that bounds how many run at once.
 - [`containers/ordered`](https://heroes-lang.org/rebel/containers/ordered/): An ordered map and an ordered set: keys kept in the order a function of the program gives, each found, added and taken out at a cost of the logarithm of the size, with the keys at or around a bound, a range walked in order, and the key of a rank and the rank of a key.
 - [`containers/deque`](https://heroes-lang.org/rebel/containers/deque/): A double-ended queue: items put in and taken out at either end in constant time over many calls, read and written by their place from the front, and, where it is bounded, the oldest dropped as new ones come.
@@ -241,6 +241,11 @@ No index publishes Rebel yet, so `heroes add rebel` by its name, which asks an i
 - [`mcp`](https://heroes-lang.org/rebel/mcp/): The Model Context Protocol, revision 2026-07-28, followed as that revision writes it: a server that offers a model tools (listed with the JSON Schema of their inputs, and called), resources and resource templates, prompts, completions, and change notifications on `subscriptions/listen`; that asks the user for more through elicitation, by multi round-trip requests; that tells progress and hears cancellation; over standard streams one message a line, and over Streamable HTTP.
 - [`openapi`](https://heroes-lang.org/rebel/openapi/): OpenAPI 3.1 documents built as data, written as JSON and YAML, read back, checked, served beside a program's routes, and requests and responses validated against them.
 - [`web/proxy`](https://heroes-lang.org/rebel/web/proxy/): A reverse proxy in the manner of nginx's `proxy_pass` and Go's `httputil.ReverseProxy`: each request a client sends passed to one of its upstreams, `http://` or `https://`, and the answer passed back, the bodies both ways in pieces as they come and never held whole.
+- [`web/chain`](https://heroes-lang.org/rebel/web/chain/): The steps a request runs on its way to a `web` router's answer, in the manner of Echo's middleware: a step every route runs (Echo's `e.Use`), a group's (`g.Use`) and one route's own, each a function of the program's that answers before the handler (a check refusing 401) or wraps it (a log line reading the response and the time).
+
+### Layer 9
+
+- [`web/steps`](https://heroes-lang.org/rebel/web/steps/): The usual steps of a `web/chain` chain, ready for a program to bind, in the manner of Echo's `middleware` package: a log line for each request with its status and the time it took, a request id kept or made, CORS, a Basic check against the program's own accounts, a body's limit, helmet's security headers and gzip.
 ## Each face
 
 ### unicode
@@ -542,11 +547,14 @@ What the built-ins do not do for a `[T]`: its ends, its parts, a list built or e
 - `function index_of_last<T>(xs: [T], value: T, same: (function(left: T, right: T) -> bool)) -> i64?`, called `lists.index_of_last(xs, value, same)`: The index of the last element of `xs` that `same` says is `value`. Fails `not_found`.
 - `function index_where<T>(xs: [T], accepts: (function(T) -> bool)) -> i64?`, called `lists.index_where(xs, accepts)`: The index of the first element of `xs` that `accepts` accepts. Fails `not_found`.
 - `function index_where_last<T>(xs: [T], accepts: (function(T) -> bool)) -> i64?`, called `lists.index_where_last(xs, accepts)`: The index of the last element of `xs` that `accepts` accepts. Fails `not_found`.
+- `function index_where_with<T, S>(xs: [T], state: S, accepts: (function(state: S, item: T) -> bool)) -> i64?`, called `lists.index_where_with(xs, state, accepts)`: The index of the first element of `xs` that `accepts` accepts with `state`: `index_where` for a test that reads a value of the caller's, a name or a key, since a function value holds none of its own (spec § 9). Fails `not_found`.
+- `function find_with<T, S>(xs: [T], state: S, accepts: (function(state: S, item: T) -> bool)) -> T?`, called `lists.find_with(xs, state, accepts)`: The first element of `xs` that `accepts` accepts with `state`: the built-in `find` for a test that reads a value of the caller's, a name or a key. Fails `not_found`.
 - `function count_of<T>(xs: [T], value: T, same: (function(left: T, right: T) -> bool)) -> i64`, called `lists.count_of(xs, value, same)`: How many elements of `xs` `same` says are `value`.
 - `function has_prefix<T>(xs: [T], prefix: [T], same: (function(left: T, right: T) -> bool)) -> bool`, called `lists.has_prefix(xs: xs, prefix: prefix, same)`: Whether `xs` begins with the elements of `prefix`, each the same as its own by `same`.
 - `function has_suffix<T>(xs: [T], suffix: [T], same: (function(left: T, right: T) -> bool)) -> bool`, called `lists.has_suffix(xs: xs, suffix: suffix, same)`: Whether `xs` ends with the elements of `suffix`, each the same as its own by `same`.
 - `function equal_by<T>(left: [T], right: [T], same: (function(left: T, right: T) -> bool)) -> bool`, called `lists.equal_by(left: left, right: right, same)`: Whether `left` and `right` hold as many elements and `same` accepts each pair at one index.
 - `function sort_by<T>(xs: [T], less: (function(a: T, b: T) -> bool)) -> [T]`, called `lists.sort_by(xs, less)`: The elements of `xs` in the order `less` gives, elements that are equal by it keeping the places they had among themselves.
+- `function sort_by_with<T, S>(xs: [T], state: S, less: (function(state: S, a: T, b: T) -> bool)) -> [T]`, called `lists.sort_by_with(xs, state, less)`: The elements of `xs` in the order `less` gives with `state`, elements that are equal by it keeping the places they had among themselves: `sort_by` for an order that reads a value of the caller's, the field a request asked to sort by or the point distances are measured from.
 - `function is_sorted_by<T>(xs: [T], less: (function(a: T, b: T) -> bool)) -> bool`, called `lists.is_sorted_by(xs, less)`: Whether `xs` is in the order `less` gives: no element goes before the one that precedes it.
 - `function min_by<T>(xs: [T], less: (function(a: T, b: T) -> bool)) -> T?`, called `lists.min_by(xs, less)`: The smallest element of `xs` by the order `less`, the first of them where several are equal. Fails `not_found`.
 - `function max_by<T>(xs: [T], less: (function(a: T, b: T) -> bool)) -> T?`, called `lists.max_by(xs, less)`: The largest element of `xs` by the order `less`, the first of them where several are equal. Fails `not_found`.
@@ -916,7 +924,7 @@ Sets of values, kept in a `{K: bool}`: the language has no set type, and a map's
 
 Layer 0, named `use <rebel>/errors`, [its reference](https://heroes-lang.org/rebel/errors/).
 
-Failures told well: words added to a failure as it travels up, its code kept; several failures joined into one; and a failure told to a person, in one line or as an indented chain.
+Failures told well: words added to a failure as it travels up, its code kept; several failures joined into one; a failure told to a person, in one line or as an indented chain; and one dropped on purpose where it cannot matter.
 
 - `function context<T>(r: T?, what: str) -> T?`, called `errors.context(r, what)`: `r` with `what` written before its message where it fails: the message becomes `what: <the old message>` and the code stays. Fails where `r` fails, with its code.
 - `function context_by<T, A>(r: T?, describe: (function(A) -> str), subject: A) -> T?`, called `errors.context_by(r, describe, subject)`: `r` with the words `describe` makes of `subject` written before its message where it fails; where `r` holds a value `describe` is not called, so words that cost something to build are built only for a failure. Fails where `r` fails, with its code.
@@ -924,6 +932,7 @@ Failures told well: words added to a failure as it travels up, its code kept; se
 - `function combine<T>(results: [T?]) -> ()?`, called `errors.combine(results)`: The failures of `results` joined into one, or `ok()` where none fails. Fails where any result fails, as above.
 - `function collect<T>(results: [T?]) -> [T]?`, called `errors.collect(results)`: Every value of `results` in order, where none fails; else their failures joined as `combine` joins them. Fails where any result fails: with that failure as it is where it is the only one, else with the joined failure `combine` answers.
 - `function discard_value<T>(r: T?) -> ()?`, called `errors.discard_value(r)`: `r` with its value dropped: `ok()` where it holds one, the same failure where it fails. Fails where `r` fails, with its code and its message.
+- `function ignore(r: ()?)`, called `errors.ignore(r)`: Nothing: the failure `r` may hold is dropped, for a failure that cannot change what the program does next.
 - `function chain_of<T>(r: T?) -> [str]`, called `errors.chain_of(r)`: The links of the message of `r`, the outermost first: what each `context` wrote, then the message the failure began with.
 - `function parts_of<T>(r: T?) -> [()?]`, called `errors.parts_of(r)`: The failures a joined failure holds, each with its own code and message; a failure that joins nothing is its own one part.
 - `function has_code<T>(r: T?, code: str) -> bool`, called `errors.has_code(r, code)`: Whether `r` fails with `code`, or joins, at any depth, a failure that does.
@@ -1554,6 +1563,7 @@ A `[u8]` searched, cut, joined and compared, and bytes written as text and read 
 - `function is_space_ascii(c: u8) -> bool`, called `bytes.is_space_ascii(c)`: Whether the byte `c` is ASCII white space: space, tab, line feed, vertical tab, form feed or carriage return, the bytes 32 and 9 to 13.
 - `function is_digit_ascii(c: u8) -> bool`, called `bytes.is_digit_ascii(c)`: Whether the byte `c` is an ASCII digit, `0` to `9`.
 - `function is_letter_ascii(c: u8) -> bool`, called `bytes.is_letter_ascii(c)`: Whether the byte `c` is an ASCII letter, `a` to `z` or `A` to `Z`.
+- `function is_hex_digit_ascii(c: u8) -> bool`, called `bytes.is_hex_digit_ascii(c)`: Whether the byte `c` is an ASCII hexadecimal digit, `0` to `9`, `a` to `f` or `A` to `F`.
 - `function is_upper_ascii(c: u8) -> bool`, called `bytes.is_upper_ascii(c)`: Whether the byte `c` is an ASCII upper-case letter, `A` to `Z`.
 - `function is_lower_ascii(c: u8) -> bool`, called `bytes.is_lower_ascii(c)`: Whether the byte `c` is an ASCII lower-case letter, `a` to `z`.
 - `function concat(parts: [[u8]]) -> [u8]`, called `bytes.concat(parts)`: The lists of `parts` one after another, as one list.
@@ -2159,6 +2169,10 @@ JSON read and written: the text of RFC 8259 read into a tree a program matches o
 - `function items_of(v: Value) -> [Value]?`, called `json.items_of(v)`: The elements of a list, in order. Fails `invalid`.
 - `function members_of(v: Value) -> {str: Value}?`, called `json.members_of(v)`: The members of an object by key, `keys` giving them in the order they were written. Fails `invalid`.
 - `function member(v: Value, key: str) -> Value?`, called `json.member(v, key)`: The member of the object `v` whose key is `key`. Fails `not_found`, `invalid`.
+- `function text_at(v: Value, key: str) -> str?`, called `json.text_at(v, key)`: The text of the member `key` of the object `v`: `member`, then `text_of`. Fails `not_found`, `invalid`.
+- `function int_at(v: Value, key: str) -> i64?`, called `json.int_at(v, key)`: The integer of the member `key` of the object `v`: `member`, then `int_of`. Fails `not_found`, `invalid`, `does_not_fit`.
+- `function bool_at(v: Value, key: str) -> bool?`, called `json.bool_at(v, key)`: The boolean of the member `key` of the object `v`: `member`, then `bool_of`. Fails `not_found`, `invalid`.
+- `function items_at(v: Value, key: str) -> [Value]?`, called `json.items_at(v, key)`: The elements of the list in the member `key` of the object `v`, in order: `member`, then `items_of`. Fails `not_found`, `invalid`.
 - `function element(v: Value, index: i64) -> Value?`, called `json.element(v, index)`: The element of the list `v` at `index`. Fails `not_found`, `invalid`.
 - `function value_at(v: Value, pointer: str) -> Value?`, called `json.value_at(v, pointer)`: The value inside `v` that `pointer` reaches. Fails `not_found`, `invalid`.
 - `function from_int(n: i64) -> Value?`, called `json.from_int(n)`: The number `n` as a value. Fails `does_not_fit`.
@@ -3517,13 +3531,20 @@ Time as a program counts it: an instant, a duration, the calendar, the text of a
 - `function round(t: Instant, unit: Duration) -> Instant?`, called `time.round(t, unit)`: `t` moved to the nearest whole multiple of `unit` counted from 1970-01-01T00:00:00Z. Fails `invalid`, `does_not_fit`.
 - `function duration_of(unit: Unit) -> Duration`, called `time.duration_of(unit)`: One `unit`, as a duration.
 - `function nanoseconds(n: i64) -> Duration`, called `time.nanoseconds(n)`: `n` nanoseconds, as a duration.
-- `function microseconds(n: i64) -> Duration?`, called `time.microseconds(n)`: `n` microseconds, as a duration. Fails `does_not_fit`.
-- `function milliseconds(n: i64) -> Duration?`, called `time.milliseconds(n)`: `n` milliseconds, as a duration. Fails `does_not_fit`.
-- `function seconds(n: i64) -> Duration?`, called `time.seconds(n)`: `n` seconds, as a duration. Fails `does_not_fit`.
-- `function minutes(n: i64) -> Duration?`, called `time.minutes(n)`: `n` minutes, as a duration. Fails `does_not_fit`.
-- `function hours(n: i64) -> Duration?`, called `time.hours(n)`: `n` hours, as a duration. Fails `does_not_fit`.
-- `function days(n: i64) -> Duration?`, called `time.days(n)`: `n` days of 24 hours, as a duration. Fails `does_not_fit`.
-- `function weeks(n: i64) -> Duration?`, called `time.weeks(n)`: `n` weeks of 7 days, as a duration. Fails `does_not_fit`.
+- `function microseconds(n: i64) -> Duration`, called `time.microseconds(n)`: `n` microseconds, as a duration.
+- `function microseconds_checked(n: i64) -> Duration?`, called `time.microseconds_checked(n)`: `n` microseconds as a duration, where that fits one: the twin of `microseconds` for a count read from outside the program. Fails `does_not_fit`.
+- `function milliseconds(n: i64) -> Duration`, called `time.milliseconds(n)`: `n` milliseconds, as a duration.
+- `function milliseconds_checked(n: i64) -> Duration?`, called `time.milliseconds_checked(n)`: `n` milliseconds as a duration, where that fits one: the twin of `milliseconds` for a count read from outside the program. Fails `does_not_fit`.
+- `function seconds(n: i64) -> Duration`, called `time.seconds(n)`: `n` seconds, as a duration.
+- `function seconds_checked(n: i64) -> Duration?`, called `time.seconds_checked(n)`: `n` seconds as a duration, where that fits one: the twin of `seconds` for a count read from outside the program. Fails `does_not_fit`.
+- `function minutes(n: i64) -> Duration`, called `time.minutes(n)`: `n` minutes, as a duration.
+- `function minutes_checked(n: i64) -> Duration?`, called `time.minutes_checked(n)`: `n` minutes as a duration, where that fits one: the twin of `minutes` for a count read from outside the program. Fails `does_not_fit`.
+- `function hours(n: i64) -> Duration`, called `time.hours(n)`: `n` hours, as a duration.
+- `function hours_checked(n: i64) -> Duration?`, called `time.hours_checked(n)`: `n` hours as a duration, where that fits one: the twin of `hours` for a count read from outside the program. Fails `does_not_fit`.
+- `function days(n: i64) -> Duration`, called `time.days(n)`: `n` days of 24 hours, as a duration.
+- `function days_checked(n: i64) -> Duration?`, called `time.days_checked(n)`: `n` days of 24 hours as a duration, where that fits one: the twin of `days` for a count read from outside the program. Fails `does_not_fit`.
+- `function weeks(n: i64) -> Duration`, called `time.weeks(n)`: `n` weeks of 7 days, as a duration.
+- `function weeks_checked(n: i64) -> Duration?`, called `time.weeks_checked(n)`: `n` weeks of 7 days as a duration, where that fits one: the twin of `weeks` for a count read from outside the program. Fails `does_not_fit`.
 - `function from_seconds_float(x: f64) -> Duration?`, called `time.from_seconds_float(x)`: The duration nearest to `x` seconds. Fails `invalid`, `does_not_fit`.
 - `function max_duration() -> Duration`, called `time.max_duration()`: The longest duration, 2^63 - 1 nanoseconds, about 292 years.
 - `function min_duration() -> Duration`, called `time.min_duration()`: The most negative duration, -2^63 nanoseconds.
@@ -4865,6 +4886,10 @@ TOML 1.1.0 read and written: a document of tables, keys and values, read into a 
 - `constant MAX_DEPTH: i64`, value `512`: The deepest a value may stand below the document: the keys of its path and the arrays and inline tables around it counted together.
 - `function parse(text: str) -> Value?`, called `toml.parse(text)`: The document `text` holds, as a `table`. Fails `invalid`, `does_not_fit`.
 - `function value_at(v: Value, path: [str]) -> Value?`, called `toml.value_at(v, path)`: The value under `path` in `v`, each step a key of a table or the index of an item of an array, read as `value_of` reads a document's path. Fails `not_found`, `invalid`.
+- `function text_at(v: Value, key: str) -> str?`, called `toml.text_at(v, key)`: The text of the member `key` of the table `v`. Fails `not_found`, `invalid`.
+- `function int_at(v: Value, key: str) -> i64?`, called `toml.int_at(v, key)`: The integer of the member `key` of the table `v`. Fails `not_found`, `invalid`.
+- `function bool_at(v: Value, key: str) -> bool?`, called `toml.bool_at(v, key)`: The boolean of the member `key` of the table `v`. Fails `not_found`, `invalid`.
+- `function items_at(v: Value, key: str) -> [Value]?`, called `toml.items_at(v, key)`: The items of the array in the member `key` of the table `v`, in order. Fails `not_found`, `invalid`.
 - `function instant_of(v: Value) -> time.Instant?`, called `toml.instant_of(v)`: The instant a `date_time` names. Fails `invalid`, `does_not_fit`.
 - `function format(v: Value) -> str?`, called `toml.format(v)`: `v`, a document, written as TOML 1.1.0 text that `parse` reads back as `v`. Fails `invalid`.
 - `record Document(text: str)`: A TOML document held as its text, so that an edit changes only the bytes of what it touches: its comments, blank lines, order, quotes and spacing kept everywhere else, as a program that writes a file a person also edits needs.
@@ -9325,21 +9350,21 @@ Routes for an HTTP server in the manner of Go's Echo: explicit routes, values, n
 - `constant NOT_FOUND: str`, value `"not_found"`: The code of a request no route takes, of a name no route has, of a parameter, a cookie or a token the request does not hold.
 - `constant EXISTS: str`, value `"exists"`: The code of a route whose method and shape a router holds already, and of a name given to a second pattern.
 - `constant LIMIT: str`, value `"limit"`: The code of a cookie that would pass `MOST_COOKIE_BYTES`.
-- `record Route(method: str, pattern: str, name: str, groups: [str])`: One route a router holds, as `add` made it.
+- `record Route(method: str, pattern: str, name: str, groups: [str], steps: [str])`: One route a router holds, as `add` made it.
 - `variant ErrorForm = .text | .json`: How this package writes an error's body.
-- `record Router(prefix: str, groups: [str], routes: [Route], redirect_slash: bool, errors: ErrorForm, index: routing.Index)`: A set of routes and how a request no route takes is answered.
-- `function new_router() -> Router`, called `web.new_router()`: An empty router: no prefix, no group, errors written as text, no slash redirected.
+- `record Router(prefix: str, groups: [str], routes: [Route], redirect_slash: bool, errors: ErrorForm, index: routing.Index, steps: [str])`: A set of routes and how a request no route takes is answered.
+- `function new_router() -> Router`, called `web.new_router()`: An empty router: no prefix, no group, no step, errors written as text, no slash redirected.
 - `function new_group(parent: Router, name: str, prefix: str) -> Router?`, called `web.new_group(parent, name: name, prefix: prefix)`: An empty router for the group `name`, whose routes take `prefix` after the prefix of `parent`, to be mounted into `parent` once its routes are added. Fails `invalid`.
 - `function add(@router: Router, method: str, pattern: str, name: str) -> ()?`, called `web.add(@router, method: method, pattern: pattern, name: name)`: Adds to `router` the route `name` for `method` and `pattern`. Fails `invalid`, `exists`.
 - `function add_any(@router: Router, pattern: str, name: str) -> ()?`, called `web.add_any(@router, pattern: pattern, name: name)`: Adds to `router` the route `name` for every method on `pattern`. Fails as `add` does.
 - `function mount(@router: Router, group: Router) -> ()?`, called `web.mount(router: @router, group: group)`: Adds to `router` every route of `group`, which `new_group` made from it. Fails `exists`.
 - `function path_for(router: Router, name: str, params: [Param]) -> str?`, called `web.path_for(router, name, params)`: The path of the route named `name`, its parameters filled from `params`. Fails `not_found`, `invalid`.
 - `record Param(name: str, value: str)`: One parameter of a route as a request fills it.
-- `record Found(name: str, pattern: str, groups: [str], params: [Param])`: The route that takes a request, and what its parameters hold.
+- `record Found(name: str, pattern: str, groups: [str], params: [Param], steps: [str])`: The route that takes a request, and what its parameters hold.
 - `function route(router: Router, r: http.Request) -> Found?`, called `web.route(router, r)`: The route of `router` that takes `r`, and its parameters. Fails `not_found`, `invalid`, `not_text`.
 - `function allowed_of(router: Router, r: http.Request) -> [str]`, called `web.allowed_of(router, r)`: The methods a route of `router` takes on `r`'s path, sorted by their bytes: what an `Allow` field says.
 - `function not_routed(router: Router, r: http.Request) -> http.Response`, called `web.not_routed(router, r)`: The answer to `r` where `route` found no route: what the client should be told.
-- `function param_of(found: Found, name: str) -> str?`, called `web.param_of(found, name)`: The value of the parameter `name` of `found`. Fails `not_found`.
+- `function param_of(found: Found, name: str) -> str`, called `web.param_of(found, name)`: The value of the parameter `name` of `found`, which its route's pattern declares: a value every request the route takes holds, so it is read with no failure to answer.
 - `function is_in_group(found: Found, name: str) -> bool`, called `web.is_in_group(found, name)`: Whether `found` was added in the group `name`, or in a group inside it.
 - `function json_of(r: http.Request) -> json.Value?`, called `web.json_of(r)`: The body of `r` as a JSON value. Fails `invalid`, `not_text`.
 - `function error_response(form: ErrorForm, status: i64, message: str) -> http.Response`, called `web.error_response(form, status, message)`: A response of `status` whose body says `message` in `form`.
@@ -10941,6 +10966,41 @@ A reverse proxy in the manner of nginx's `proxy_pass` and Go's `httputil.Reverse
 - `function new_state(proxy: ReverseProxy) -> State?`, called `proxy.new_state(proxy)`: The state `serve_stream` serves `proxy` with, nothing counted yet. Fails `invalid`.
 - `function serve(l: net.Listener, proxy: ReverseProxy) -> Served?`, called `proxy.serve(l, proxy)`: Serves every connection `l` accepts as a reverse proxy over `proxy.upstreams` until the program asks to stop: each request passed to an upstream the balancer chooses, and its answer passed back, the bodies both ways as they come and never held whole. Fails `invalid`, `limit`.
 - `function serve_stream(@state: State, stream: io.Stream, remote: str) -> Served`, called `proxy.serve_stream(@state, stream, remote)`: Serves the client on `stream` as `serve` serves each connection, on the calling thread, until its connection ends: for a program's own loop, or a connection it accepted itself.
+
+
+### web/chain
+
+Layer 8, named `use <rebel>/web/chain`, [its reference](https://heroes-lang.org/rebel/web/chain/).
+
+The steps a request runs on its way to a `web` router's answer, in the manner of Echo's middleware: a step every route runs (Echo's `e.Use`), a group's (`g.Use`) and one route's own, each a function of the program's that answers before the handler (a check refusing 401) or wraps it (a log line reading the response and the time).
+
+- `constant INVALID: str`, value `"invalid"`: The code of a step's name that is empty: `add_step` and `add_route_step` fail with it.
+- `constant EXISTS: str`, value `"exists"`: The code of a name bound already to another function, or of a step a router or a route runs already: `add_step`, `add_route_step` and `on` fail with it.
+- `constant NOT_FOUND: str`, value `"not_found"`: The code of a route's name no route of the router has, and of a request no route takes: `add_route_step` and `found_of` fail with it.
+- `variant Target = .route(found: web.Found) | .unrouted(response: http.Response)`: Where a request's chain ends: in the answer the program bound to the route that takes it, or in the answer `web.not_routed` gives.
+- `record Next(target: Target, names: [str], at: i64)`: Where a request stands in its chain: the `next` of Echo's middleware, passed as data.
+- `function add_step<S>(@router: web.Router, @steps: {str: (function(@S, Next, http.Request) -> http.Response?)}, name: str, step: (function(@S, Next, http.Request) -> http.Response?)) -> ()?`, called `chain.add_step(@router, @steps, name, step)`: Adds the step `name` to `router` and binds it to `step` in the program's table `steps`: a step every route runs where `router` is one `web.new_router` made, and the group's where it is one `web.new_group` made, which travels with the group's routes when `web.mount` takes them. Fails `invalid`, `exists`.
+- `function add_route_step<S>(@router: web.Router, @steps: {str: (function(@S, Next, http.Request) -> http.Response?)}, route: str, name: str, step: (function(@S, Next, http.Request) -> http.Response?)) -> ()?`, called `chain.add_route_step(@router, @steps, route: route, name: name, step)`: Adds the step `name` to the routes of `router` named `route`, after their groups' and their own steps added before it, and binds it to `step` in the program's table `steps`: Echo's middleware of one route. Fails `not_found`, `invalid`, `exists`.
+- `function on<S>(@router: web.Router, @answers: {str: (function(@S, web.Found, http.Request) -> http.Response?)}, method: str, pattern: str, name: str, answer: (function(@S, web.Found, http.Request) -> http.Response?)) -> ()?`, called `chain.on(@router, @answers, method: method, pattern: pattern, name: name, answer)`: Adds to `router` the route `name` for `method` and `pattern`, and binds it to `answer` in the program's table `answers`: `web.add` and the binding in one call, so no route stands without its answer. Fails `exists`.
+- `function start(router: web.Router, r: http.Request) -> Next`, called `chain.start(router, r)`: The chain `r` runs on `router`, at its first step: the route that takes it and its steps, or, where no route takes it, the router's own steps and `web.not_routed`'s answer.
+- `function proceed<S>(@state: S, steps: {str: (function(@S, Next, http.Request) -> http.Response?)}, answers: {str: (function(@S, web.Found, http.Request) -> http.Response?)}, n: Next, r: http.Request) -> http.Response?`, called `chain.proceed(@state, steps, answers, n, r)`: Runs the step `n` stands at, handing it `n` one step further, or, past the last, the answer its chain ends in: what a step calls to go on. Fails where the step or the answer fails, with its code.
+- `function dispatch<S>(@state: S, router: web.Router, steps: {str: (function(@S, Next, http.Request) -> http.Response?)}, answers: {str: (function(@S, web.Found, http.Request) -> http.Response?)}, r: http.Request) -> http.Response?`, called `chain.dispatch(@state, router, steps, answers, r)`: The answer to `r`: its chain started on `router` and run to its end, each step and the answer called with `state` lent by `@`. Fails and aborts as `proceed` does.
+- `function found_of(n: Next) -> web.Found?`, called `chain.found_of(n)`: The route `n`'s chain ends in, and its parameters: what a step of a group or of a route reads of the route. Fails `not_found`.
+
+
+### web/steps
+
+Layer 9, named `use <rebel>/web/steps`, [its reference](https://heroes-lang.org/rebel/web/steps/).
+
+The usual steps of a `web/chain` chain, ready for a program to bind, in the manner of Echo's `middleware` package: a log line for each request with its status and the time it took, a request id kept or made, CORS, a Basic check against the program's own accounts, a body's limit, helmet's security headers and gzip.
+
+- `function access_log<S>(@state: S, n: chain.Next, r: http.Request, logger: log.Logger, clock: (function(@S) -> time.Instant?), go_on: (function(@S, chain.Next, http.Request) -> http.Response?)) -> http.Response?`, called `steps.access_log(@state, n, r, logger, clock, go_on)`: Writes one line through `logger` for each request: its method, its path, the status answered, the body's bytes, the milliseconds it took by `clock`, its client and its request id; Echo's `Logger`. Fails where `clock` fails, and where `go_on` fails, with its code.
+- `function request_id<S>(@state: S, n: chain.Next, r: http.Request, go_on: (function(@S, chain.Next, http.Request) -> http.Response?)) -> http.Response?`, called `steps.request_id(@state, n, r, go_on)`: Hands on `r` with an `X-Request-Id`, the one the client sent or a new one, and copies it into the response: Echo's `RequestID`. Fails as `uuid.new_v4` does, before `go_on` is called, and where `go_on` fails, with its code.
+- `function cors<S>(@state: S, n: chain.Next, r: http.Request, policy: web.Cors, go_on: (function(@S, chain.Next, http.Request) -> http.Response?)) -> http.Response?`, called `steps.cors(@state, n, r, policy, go_on)`: Answers a CORS preflight 204 before the handler, and gives every other response the fields that let the page of an allowed origin read it: Echo's `CORSWithConfig`. Fails where `go_on` fails, with its code.
+- `function basic_auth<S>(@state: S, n: chain.Next, r: http.Request, realm: str, accepts: (function(@S, http.Credentials) -> bool), go_on: (function(@S, chain.Next, http.Request) -> http.Response?)) -> http.Response?`, called `steps.basic_auth(@state, n, r, realm, accepts, go_on)`: Refuses 401 a request without Basic credentials `accepts` takes, before the handler: Echo's `BasicAuth`. Fails where `go_on` fails, with its code.
+- `function body_limit<S>(@state: S, n: chain.Next, r: http.Request, most_bytes: i64, go_on: (function(@S, chain.Next, http.Request) -> http.Response?)) -> http.Response?`, called `steps.body_limit(@state, n, r, most_bytes, go_on)`: Refuses 413 a request whose body is longer than `most_bytes`, before the handler: Echo's `BodyLimit`. Fails where `go_on` fails, with its code.
+- `function security_headers<S>(@state: S, n: chain.Next, r: http.Request, headers: web.SecurityHeaders, go_on: (function(@S, chain.Next, http.Request) -> http.Response?)) -> http.Response?`, called `steps.security_headers(@state, n, r, headers, go_on)`: Gives the response the security headers `headers` writes: Echo's `Secure`, helmet's set. Fails where `go_on` fails, with its code.
+- `function gzip<S>(@state: S, n: chain.Next, r: http.Request, min_bytes: i64, go_on: (function(@S, chain.Next, http.Request) -> http.Response?)) -> http.Response?`, called `steps.gzip(@state, n, r, min_bytes, go_on)`: Compresses the response by gzip where the client accepts it and its body holds at least `min_bytes`: Echo's `Gzip`. Fails where `go_on` fails, with its code.
 
 ---
 

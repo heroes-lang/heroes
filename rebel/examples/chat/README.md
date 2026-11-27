@@ -49,24 +49,24 @@ Run from the repository's root with the words of `main.args`, as the check of Re
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 32 faces on its `packages` line, each linked here to its reference: [`bytes`](https://heroes-lang.org/rebel/bytes/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`http`](https://heroes-lang.org/rebel/http/), [`i18n`](https://heroes-lang.org/rebel/i18n/), [`i18n/dates`](https://heroes-lang.org/rebel/i18n/dates/), [`io`](https://heroes-lang.org/rebel/io/), [`jose`](https://heroes-lang.org/rebel/jose/), [`json`](https://heroes-lang.org/rebel/json/), [`math`](https://heroes-lang.org/rebel/math/), [`mqtt`](https://heroes-lang.org/rebel/mqtt/), [`nats`](https://heroes-lang.org/rebel/nats/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`poll`](https://heroes-lang.org/rebel/poll/), [`sql`](https://heroes-lang.org/rebel/sql/), [`sql/sqlite`](https://heroes-lang.org/rebel/sql/sqlite/), [`strings`](https://heroes-lang.org/rebel/strings/), [`term`](https://heroes-lang.org/rebel/term/), [`threads`](https://heroes-lang.org/rebel/threads/), [`time`](https://heroes-lang.org/rebel/time/), [`tui`](https://heroes-lang.org/rebel/tui/), [`unicode`](https://heroes-lang.org/rebel/unicode/), [`unicode/names`](https://heroes-lang.org/rebel/unicode/names/), [`unicode/segment`](https://heroes-lang.org/rebel/unicode/segment/), [`url`](https://heroes-lang.org/rebel/url/), [`uuid`](https://heroes-lang.org/rebel/uuid/), [`web`](https://heroes-lang.org/rebel/web/), [`websocket`](https://heroes-lang.org/rebel/websocket/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 33 faces on its `packages` line, each linked here to its reference: [`bytes`](https://heroes-lang.org/rebel/bytes/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`errors`](https://heroes-lang.org/rebel/errors/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`http`](https://heroes-lang.org/rebel/http/), [`i18n`](https://heroes-lang.org/rebel/i18n/), [`i18n/dates`](https://heroes-lang.org/rebel/i18n/dates/), [`io`](https://heroes-lang.org/rebel/io/), [`jose`](https://heroes-lang.org/rebel/jose/), [`json`](https://heroes-lang.org/rebel/json/), [`math`](https://heroes-lang.org/rebel/math/), [`mqtt`](https://heroes-lang.org/rebel/mqtt/), [`nats`](https://heroes-lang.org/rebel/nats/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`poll`](https://heroes-lang.org/rebel/poll/), [`sql`](https://heroes-lang.org/rebel/sql/), [`sql/sqlite`](https://heroes-lang.org/rebel/sql/sqlite/), [`strings`](https://heroes-lang.org/rebel/strings/), [`term`](https://heroes-lang.org/rebel/term/), [`threads`](https://heroes-lang.org/rebel/threads/), [`time`](https://heroes-lang.org/rebel/time/), [`tui`](https://heroes-lang.org/rebel/tui/), [`unicode`](https://heroes-lang.org/rebel/unicode/), [`unicode/names`](https://heroes-lang.org/rebel/unicode/names/), [`unicode/segment`](https://heroes-lang.org/rebel/unicode/segment/), [`url`](https://heroes-lang.org/rebel/url/), [`uuid`](https://heroes-lang.org/rebel/uuid/), [`web`](https://heroes-lang.org/rebel/web/), [`websocket`](https://heroes-lang.org/rebel/websocket/).
 
 ## Its folders
 
-10 folders, 40 files and 8,443 lines, this page aside; of them 37 modules, `.hero` files, of 8,275 lines.
+10 folders, 40 files and 8,452 lines, this page aside; of them 37 modules, `.hero` files, of 8,283 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
-| `./` | 4 | 358 | 1 | 190 |
+| `./` | 4 | 359 | 1 | 190 |
 | `auth/` | 2 | 231 | 2 | 231 |
-| `bridge/` | 2 | 494 | 2 | 494 |
+| `bridge/` | 2 | 495 | 2 | 495 |
 | `client/` | 8 | 1,988 | 8 | 1,988 |
 | `core/` | 3 | 488 | 3 | 488 |
-| `demo/` | 4 | 614 | 4 | 614 |
+| `demo/` | 4 | 616 | 4 | 616 |
 | `protocol/` | 3 | 551 | 3 | 551 |
-| `server/` | 8 | 2,113 | 8 | 2,113 |
-| `standins/` | 5 | 1,234 | 5 | 1,234 |
-| `store/` | 1 | 372 | 1 | 372 |
+| `server/` | 8 | 2,112 | 8 | 2,112 |
+| `standins/` | 5 | 1,239 | 5 | 1,239 |
+| `store/` | 1 | 373 | 1 | 373 |
 
 ---
 

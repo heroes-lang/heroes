@@ -61,21 +61,21 @@ Run from the repository's root with the words of `main.args`, as the check of Re
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 33 faces on its `packages` line, each linked here to its reference: [`big`](https://heroes-lang.org/rebel/big/), [`bson`](https://heroes-lang.org/rebel/bson/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`cbor`](https://heroes-lang.org/rebel/cbor/), [`csv`](https://heroes-lang.org/rebel/csv/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`hash`](https://heroes-lang.org/rebel/hash/), [`ini`](https://heroes-lang.org/rebel/ini/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`json/path`](https://heroes-lang.org/rebel/json/path/), [`lists`](https://heroes-lang.org/rebel/lists/), [`msgpack`](https://heroes-lang.org/rebel/msgpack/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`pdf`](https://heroes-lang.org/rebel/pdf/), [`property`](https://heroes-lang.org/rebel/property/), [`scanner`](https://heroes-lang.org/rebel/scanner/), [`sql`](https://heroes-lang.org/rebel/sql/), [`sql/build`](https://heroes-lang.org/rebel/sql/build/), [`sql/sqlite`](https://heroes-lang.org/rebel/sql/sqlite/), [`stats`](https://heroes-lang.org/rebel/stats/), [`strings`](https://heroes-lang.org/rebel/strings/), [`term`](https://heroes-lang.org/rebel/term/), [`time`](https://heroes-lang.org/rebel/time/), [`toml`](https://heroes-lang.org/rebel/toml/), [`tui`](https://heroes-lang.org/rebel/tui/), [`unicode/segment`](https://heroes-lang.org/rebel/unicode/segment/), [`xlsx`](https://heroes-lang.org/rebel/xlsx/), [`xml`](https://heroes-lang.org/rebel/xml/), [`yaml`](https://heroes-lang.org/rebel/yaml/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 35 faces on its `packages` line, each linked here to its reference: [`big`](https://heroes-lang.org/rebel/big/), [`bson`](https://heroes-lang.org/rebel/bson/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`cbor`](https://heroes-lang.org/rebel/cbor/), [`csv`](https://heroes-lang.org/rebel/csv/), [`errors`](https://heroes-lang.org/rebel/errors/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`hash`](https://heroes-lang.org/rebel/hash/), [`ini`](https://heroes-lang.org/rebel/ini/), [`io`](https://heroes-lang.org/rebel/io/), [`java_properties`](https://heroes-lang.org/rebel/java_properties/), [`json`](https://heroes-lang.org/rebel/json/), [`json/path`](https://heroes-lang.org/rebel/json/path/), [`lists`](https://heroes-lang.org/rebel/lists/), [`msgpack`](https://heroes-lang.org/rebel/msgpack/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`pdf`](https://heroes-lang.org/rebel/pdf/), [`property`](https://heroes-lang.org/rebel/property/), [`scanner`](https://heroes-lang.org/rebel/scanner/), [`sql`](https://heroes-lang.org/rebel/sql/), [`sql/build`](https://heroes-lang.org/rebel/sql/build/), [`sql/sqlite`](https://heroes-lang.org/rebel/sql/sqlite/), [`stats`](https://heroes-lang.org/rebel/stats/), [`strings`](https://heroes-lang.org/rebel/strings/), [`term`](https://heroes-lang.org/rebel/term/), [`time`](https://heroes-lang.org/rebel/time/), [`toml`](https://heroes-lang.org/rebel/toml/), [`tui`](https://heroes-lang.org/rebel/tui/), [`unicode/segment`](https://heroes-lang.org/rebel/unicode/segment/), [`xlsx`](https://heroes-lang.org/rebel/xlsx/), [`xml`](https://heroes-lang.org/rebel/xml/), [`yaml`](https://heroes-lang.org/rebel/yaml/).
 
 ## Its folders
 
-7 folders, 40 files and 9,279 lines, this page aside; of them 37 modules, `.hero` files, of 8,875 lines.
+7 folders, 40 files and 9,003 lines, this page aside; of them 37 modules, `.hero` files, of 8,597 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
-| `./` | 4 | 486 | 1 | 82 |
+| `./` | 4 | 488 | 1 | 82 |
 | `commands/` | 4 | 963 | 4 | 963 |
 | `demo/` | 2 | 348 | 2 | 348 |
-| `formats/` | 11 | 2,657 | 11 | 2,657 |
-| `model/` | 7 | 1,558 | 7 | 1,558 |
+| `formats/` | 11 | 2,384 | 11 | 2,384 |
+| `model/` | 7 | 1,554 | 7 | 1,554 |
 | `output/` | 4 | 992 | 4 | 992 |
-| `query/` | 8 | 2,275 | 8 | 2,275 |
+| `query/` | 8 | 2,274 | 8 | 2,274 |
 
 ---
 

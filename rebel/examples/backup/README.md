@@ -77,24 +77,24 @@ Run from the repository's root with the words of `main.args`, as the check of Re
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 25 faces on its `packages` line, each linked here to its reference: [`archive`](https://heroes-lang.org/rebel/archive/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`chunks`](https://heroes-lang.org/rebel/chunks/), [`compress`](https://heroes-lang.org/rebel/compress/), [`compress/zstd`](https://heroes-lang.org/rebel/compress/zstd/), [`containers/bits`](https://heroes-lang.org/rebel/containers/bits/), [`containers/indexed`](https://heroes-lang.org/rebel/containers/indexed/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`crypto/seal`](https://heroes-lang.org/rebel/crypto/seal/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`hash`](https://heroes-lang.org/rebel/hash/), [`http`](https://heroes-lang.org/rebel/http/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`retries`](https://heroes-lang.org/rebel/retries/), [`s3`](https://heroes-lang.org/rebel/s3/), [`strings`](https://heroes-lang.org/rebel/strings/), [`term`](https://heroes-lang.org/rebel/term/), [`time`](https://heroes-lang.org/rebel/time/), [`url`](https://heroes-lang.org/rebel/url/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 26 faces on its `packages` line, each linked here to its reference: [`archive`](https://heroes-lang.org/rebel/archive/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`chunks`](https://heroes-lang.org/rebel/chunks/), [`compress`](https://heroes-lang.org/rebel/compress/), [`compress/zstd`](https://heroes-lang.org/rebel/compress/zstd/), [`containers/bits`](https://heroes-lang.org/rebel/containers/bits/), [`containers/indexed`](https://heroes-lang.org/rebel/containers/indexed/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`crypto/seal`](https://heroes-lang.org/rebel/crypto/seal/), [`errors`](https://heroes-lang.org/rebel/errors/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`hash`](https://heroes-lang.org/rebel/hash/), [`http`](https://heroes-lang.org/rebel/http/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`retries`](https://heroes-lang.org/rebel/retries/), [`s3`](https://heroes-lang.org/rebel/s3/), [`strings`](https://heroes-lang.org/rebel/strings/), [`term`](https://heroes-lang.org/rebel/term/), [`time`](https://heroes-lang.org/rebel/time/), [`url`](https://heroes-lang.org/rebel/url/).
 
 ## Its folders
 
-10 folders, 49 files and 8,492 lines, this page aside; of them 46 modules, `.hero` files, of 8,379 lines.
+10 folders, 49 files and 8,510 lines, this page aside; of them 46 modules, `.hero` files, of 8,396 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
-| `./` | 4 | 201 | 1 | 88 |
+| `./` | 4 | 202 | 1 | 88 |
 | `chunking/` | 2 | 392 | 2 | 392 |
-| `cli/` | 5 | 805 | 5 | 805 |
-| `demo/` | 5 | 1,066 | 5 | 1,066 |
-| `engine/` | 9 | 1,669 | 9 | 1,669 |
+| `cli/` | 5 | 807 | 5 | 807 |
+| `demo/` | 5 | 1,069 | 5 | 1,069 |
+| `engine/` | 9 | 1,673 | 9 | 1,673 |
 | `model/` | 2 | 482 | 2 | 482 |
-| `repo/` | 10 | 1,933 | 10 | 1,933 |
-| `standins/` | 4 | 776 | 4 | 776 |
-| `store/` | 5 | 746 | 5 | 746 |
-| `vault/` | 3 | 422 | 3 | 422 |
+| `repo/` | 10 | 1,935 | 10 | 1,935 |
+| `standins/` | 4 | 777 | 4 | 777 |
+| `store/` | 5 | 747 | 5 | 747 |
+| `vault/` | 3 | 426 | 3 | 426 |
 
 ---
 

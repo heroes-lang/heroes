@@ -66,23 +66,23 @@ Run from the repository's root with the words of `main.args`, as the check of Re
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 33 faces on its `packages` line, each linked here to its reference: [`archive`](https://heroes-lang.org/rebel/archive/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`compress`](https://heroes-lang.org/rebel/compress/), [`compress/xz`](https://heroes-lang.org/rebel/compress/xz/), [`compress/zstd`](https://heroes-lang.org/rebel/compress/zstd/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`crypto/keypairs`](https://heroes-lang.org/rebel/crypto/keypairs/), [`diff`](https://heroes-lang.org/rebel/diff/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`hash`](https://heroes-lang.org/rebel/hash/), [`http`](https://heroes-lang.org/rebel/http/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`json/patch`](https://heroes-lang.org/rebel/json/patch/), [`json/schema`](https://heroes-lang.org/rebel/json/schema/), [`log`](https://heroes-lang.org/rebel/log/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`pem`](https://heroes-lang.org/rebel/pem/), [`retries`](https://heroes-lang.org/rebel/retries/), [`search`](https://heroes-lang.org/rebel/search/), [`semver`](https://heroes-lang.org/rebel/semver/), [`sql`](https://heroes-lang.org/rebel/sql/), [`sql/migrate`](https://heroes-lang.org/rebel/sql/migrate/), [`sql/sqlite`](https://heroes-lang.org/rebel/sql/sqlite/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/), [`toml`](https://heroes-lang.org/rebel/toml/), [`url`](https://heroes-lang.org/rebel/url/), [`web`](https://heroes-lang.org/rebel/web/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 36 faces on its `packages` line, each linked here to its reference: [`archive`](https://heroes-lang.org/rebel/archive/), [`bytes`](https://heroes-lang.org/rebel/bytes/), [`compress`](https://heroes-lang.org/rebel/compress/), [`compress/xz`](https://heroes-lang.org/rebel/compress/xz/), [`compress/zstd`](https://heroes-lang.org/rebel/compress/zstd/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`crypto/keypairs`](https://heroes-lang.org/rebel/crypto/keypairs/), [`diff`](https://heroes-lang.org/rebel/diff/), [`errors`](https://heroes-lang.org/rebel/errors/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`hash`](https://heroes-lang.org/rebel/hash/), [`http`](https://heroes-lang.org/rebel/http/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`json/patch`](https://heroes-lang.org/rebel/json/patch/), [`json/schema`](https://heroes-lang.org/rebel/json/schema/), [`log`](https://heroes-lang.org/rebel/log/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`pem`](https://heroes-lang.org/rebel/pem/), [`retries`](https://heroes-lang.org/rebel/retries/), [`search`](https://heroes-lang.org/rebel/search/), [`semver`](https://heroes-lang.org/rebel/semver/), [`sql`](https://heroes-lang.org/rebel/sql/), [`sql/migrate`](https://heroes-lang.org/rebel/sql/migrate/), [`sql/sqlite`](https://heroes-lang.org/rebel/sql/sqlite/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/), [`toml`](https://heroes-lang.org/rebel/toml/), [`url`](https://heroes-lang.org/rebel/url/), [`web`](https://heroes-lang.org/rebel/web/), [`web/chain`](https://heroes-lang.org/rebel/web/chain/), [`web/steps`](https://heroes-lang.org/rebel/web/steps/).
 
 ## Its folders
 
-9 folders, 43 files and 6,802 lines, this page aside; of them 39 modules, `.hero` files, of 6,660 lines.
+9 folders, 43 files and 6,938 lines, this page aside; of them 39 modules, `.hero` files, of 6,793 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
-| `./` | 5 | 218 | 1 | 76 |
-| `cli/` | 4 | 462 | 4 | 462 |
+| `./` | 5 | 221 | 1 | 76 |
+| `cli/` | 4 | 463 | 4 | 463 |
 | `client/` | 3 | 546 | 3 | 546 |
 | `demo/` | 6 | 834 | 6 | 834 |
 | `packages/` | 8 | 1,460 | 8 | 1,460 |
 | `search/` | 1 | 142 | 1 | 142 |
-| `server/` | 10 | 1,971 | 10 | 1,971 |
+| `server/` | 10 | 2,102 | 10 | 2,102 |
 | `signing/` | 2 | 414 | 2 | 414 |
-| `store/` | 4 | 755 | 4 | 755 |
+| `store/` | 4 | 756 | 4 | 756 |
 
 ---
 

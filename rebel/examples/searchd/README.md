@@ -37,7 +37,7 @@ is the full-text index and its BM25; `unicode/normalize` folds texts; the
 `vectors` holds them in an HNSW index and fingerprints near-duplicates;
 `containers/trie` holds the terms for suggestions and spelling;
 `containers/disjoint` gathers near-duplicates; `graphs` gives click depths
-and paths; `math/linear` multiplies PageRank's link matrix in blocks;
+and paths; `math/sparse` ranks the pages by PageRank;
 `i18n` and `i18n/collate` order titles as the site's language orders
 them; `hash` hashes the fingerprints' word runs; `toml` reads the
 settings; `flags` reads the command line; `json` is the crawl store, the
@@ -53,23 +53,23 @@ Run from the repository's root with the words of `main.args`, as the check of Re
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 31 faces on its `packages` line, each linked here to its reference: [`bytes`](https://heroes-lang.org/rebel/bytes/), [`containers/disjoint`](https://heroes-lang.org/rebel/containers/disjoint/), [`containers/trie`](https://heroes-lang.org/rebel/containers/trie/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`graphs`](https://heroes-lang.org/rebel/graphs/), [`hash`](https://heroes-lang.org/rebel/hash/), [`html`](https://heroes-lang.org/rebel/html/), [`html/sanitize`](https://heroes-lang.org/rebel/html/sanitize/), [`http`](https://heroes-lang.org/rebel/http/), [`i18n`](https://heroes-lang.org/rebel/i18n/), [`i18n/collate`](https://heroes-lang.org/rebel/i18n/collate/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`lists`](https://heroes-lang.org/rebel/lists/), [`math`](https://heroes-lang.org/rebel/math/), [`math/linear`](https://heroes-lang.org/rebel/math/linear/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`search`](https://heroes-lang.org/rebel/search/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/), [`tokenizer`](https://heroes-lang.org/rebel/tokenizer/), [`tokenizer/tables/cl100k_base`](https://heroes-lang.org/rebel/tokenizer/tables/cl100k_base/), [`toml`](https://heroes-lang.org/rebel/toml/), [`unicode`](https://heroes-lang.org/rebel/unicode/), [`unicode/normalize`](https://heroes-lang.org/rebel/unicode/normalize/), [`url`](https://heroes-lang.org/rebel/url/), [`vectors`](https://heroes-lang.org/rebel/vectors/), [`web`](https://heroes-lang.org/rebel/web/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 33 faces on its `packages` line, each linked here to its reference: [`bytes`](https://heroes-lang.org/rebel/bytes/), [`containers/disjoint`](https://heroes-lang.org/rebel/containers/disjoint/), [`containers/trie`](https://heroes-lang.org/rebel/containers/trie/), [`errors`](https://heroes-lang.org/rebel/errors/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`graphs`](https://heroes-lang.org/rebel/graphs/), [`hash`](https://heroes-lang.org/rebel/hash/), [`html`](https://heroes-lang.org/rebel/html/), [`html/sanitize`](https://heroes-lang.org/rebel/html/sanitize/), [`http`](https://heroes-lang.org/rebel/http/), [`i18n`](https://heroes-lang.org/rebel/i18n/), [`i18n/collate`](https://heroes-lang.org/rebel/i18n/collate/), [`io`](https://heroes-lang.org/rebel/io/), [`json`](https://heroes-lang.org/rebel/json/), [`lists`](https://heroes-lang.org/rebel/lists/), [`math`](https://heroes-lang.org/rebel/math/), [`math/sparse`](https://heroes-lang.org/rebel/math/sparse/), [`net`](https://heroes-lang.org/rebel/net/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`search`](https://heroes-lang.org/rebel/search/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/), [`tokenizer`](https://heroes-lang.org/rebel/tokenizer/), [`tokenizer/tables/cl100k_base`](https://heroes-lang.org/rebel/tokenizer/tables/cl100k_base/), [`toml`](https://heroes-lang.org/rebel/toml/), [`unicode`](https://heroes-lang.org/rebel/unicode/), [`unicode/normalize`](https://heroes-lang.org/rebel/unicode/normalize/), [`url`](https://heroes-lang.org/rebel/url/), [`vectors`](https://heroes-lang.org/rebel/vectors/), [`web`](https://heroes-lang.org/rebel/web/), [`web/chain`](https://heroes-lang.org/rebel/web/chain/).
 
 ## Its folders
 
-10 folders, 37 files and 6,951 lines, this page aside; of them 34 modules, `.hero` files, of 6,795 lines.
+10 folders, 37 files and 6,750 lines, this page aside; of them 34 modules, `.hero` files, of 6,592 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
-| `./` | 4 | 303 | 1 | 147 |
+| `./` | 4 | 305 | 1 | 147 |
 | `app/` | 3 | 604 | 3 | 604 |
 | `client/` | 1 | 313 | 1 | 313 |
-| `crawl/` | 5 | 1,507 | 5 | 1,507 |
-| `demo/` | 2 | 334 | 2 | 334 |
-| `index/` | 9 | 1,648 | 9 | 1,648 |
+| `crawl/` | 5 | 1,493 | 5 | 1,493 |
+| `demo/` | 2 | 335 | 2 | 335 |
+| `index/` | 8 | 1,411 | 8 | 1,411 |
 | `query/` | 5 | 917 | 5 | 917 |
-| `server/` | 4 | 607 | 4 | 607 |
-| `standins/` | 2 | 513 | 2 | 513 |
+| `server/` | 5 | 653 | 5 | 653 |
+| `standins/` | 2 | 514 | 2 | 514 |
 | `text/` | 2 | 205 | 2 | 205 |
 
 ---

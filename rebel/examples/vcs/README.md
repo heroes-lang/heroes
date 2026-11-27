@@ -71,16 +71,16 @@ Run from the repository's root with the words of `main.args`, as the check of Re
 
 ## The packages it uses
 
-Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 17 faces on its `packages` line, each linked here to its reference: [`bytes`](https://heroes-lang.org/rebel/bytes/), [`compress`](https://heroes-lang.org/rebel/compress/), [`containers/ordered`](https://heroes-lang.org/rebel/containers/ordered/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`diff`](https://heroes-lang.org/rebel/diff/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`graphs`](https://heroes-lang.org/rebel/graphs/), [`hash`](https://heroes-lang.org/rebel/hash/), [`io`](https://heroes-lang.org/rebel/io/), [`lists`](https://heroes-lang.org/rebel/lists/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`process`](https://heroes-lang.org/rebel/process/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/).
+Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and lists 18 faces on its `packages` line, each linked here to its reference: [`bytes`](https://heroes-lang.org/rebel/bytes/), [`compress`](https://heroes-lang.org/rebel/compress/), [`containers/ordered`](https://heroes-lang.org/rebel/containers/ordered/), [`crypto`](https://heroes-lang.org/rebel/crypto/), [`diff`](https://heroes-lang.org/rebel/diff/), [`errors`](https://heroes-lang.org/rebel/errors/), [`flags`](https://heroes-lang.org/rebel/flags/), [`fs`](https://heroes-lang.org/rebel/fs/), [`graphs`](https://heroes-lang.org/rebel/graphs/), [`hash`](https://heroes-lang.org/rebel/hash/), [`io`](https://heroes-lang.org/rebel/io/), [`lists`](https://heroes-lang.org/rebel/lists/), [`numbers`](https://heroes-lang.org/rebel/numbers/), [`os`](https://heroes-lang.org/rebel/os/), [`path`](https://heroes-lang.org/rebel/path/), [`process`](https://heroes-lang.org/rebel/process/), [`strings`](https://heroes-lang.org/rebel/strings/), [`time`](https://heroes-lang.org/rebel/time/).
 
 ## Its folders
 
-12 folders, 43 files and 7,702 lines, this page aside; of them 40 modules, `.hero` files, of 7,456 lines.
+12 folders, 43 files and 7,704 lines, this page aside; of them 40 modules, `.hero` files, of 7,457 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
-| `./` | 4 | 329 | 1 | 83 |
-| `cli/` | 2 | 345 | 2 | 345 |
+| `./` | 4 | 330 | 1 | 83 |
+| `cli/` | 2 | 346 | 2 | 346 |
 | `commands/` | 3 | 519 | 3 | 519 |
 | `demo/` | 3 | 525 | 3 | 525 |
 | `history/` | 3 | 684 | 3 | 684 |
