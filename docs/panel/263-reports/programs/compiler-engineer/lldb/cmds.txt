@@ -1,0 +1,19 @@
+command script import lldb/watch.py
+breakpoint set -n hero_thread_guard
+run
+command script add -f watch.go p263go
+p263go
+breakpoint delete 1
+register read sp
+continue
+bt 4
+register read pc sp x29 x30
+disassemble -p -c 4
+continue
+bt 4
+register read pc sp x29
+disassemble -p -c 4
+continue
+bt 3
+kill
+quit

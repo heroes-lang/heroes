@@ -4,6 +4,6 @@ import { renderPackagesPage } from '../../../lib/rebel-page.ts';
 
 const page = await renderPackagesPage('it');
 ---
-<BaseLayout url={page.url} title={page.title} description={page.description}>
+<BaseLayout url={page.url} title={page.title} description={page.description} current="rebel">
 <Fragment set:html={page.html} />
 </BaseLayout>

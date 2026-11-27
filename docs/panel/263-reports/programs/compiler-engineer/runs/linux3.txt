@@ -1,0 +1,464 @@
+ 11:07:46 up  4:32,  0 users,  load average: 4.32, 4.55, 3.94
+== (iii) a 64 KiB malloc stack (the clerk's co.h, CO_STACK changed)
+1
+64k malloc-O0 n100      #1 co: kind 1 stack [0xaaaac8669d10, 0xaaaac8679d10) tls 0xffff99243750|depth reached: 636733|exit 0|
+
+64k malloc-O0 n100      #2 co: kind 1 stack [0xaaaaecb84d10, 0xaaaaecb94d10) tls 0xffff84272750|depth reached: 636733|exit 0|
+
+64k malloc-O0 n300      #1 co: kind 1 stack [0xaaaaee574d10, 0xaaaaee584d10) tls 0xffffb5923750|depth reached: 509971|exit 0|
+
+64k malloc-O0 n300      #2 co: kind 1 stack [0xaaab12401d10, 0xaaab12411d10) tls 0xffff9b6f3750|depth reached: 509971|exit 0|
+
+64k malloc-O0 n1000     #1 /w/scr/lx/linux3.sh: line 10:    87 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaaaec6b3d10, 0xaaaaec6c3d10) tls 0xffff92243750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O0 n1000     #2 /w/scr/lx/linux3.sh: line 10:    96 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaab04c1fd10, 0xaaab04c2fd10) tls 0xffffad463750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O0 n1500     #1 /w/scr/lx/linux3.sh: line 10:   102 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaaadf00ed10, 0xaaaadf01ed10) tls 0xffff98460750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O0 n1500     #2 /w/scr/lx/linux3.sh: line 10:   110 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaab1b5ced10, 0xaaab1b5ded10) tls 0xffff90093750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O0 n1900     #1 /w/scr/lx/linux3.sh: line 10:   116 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaaaf7854d10, 0xaaaaf7864d10) tls 0xffff93ab3750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O0 n1900     #2 /w/scr/lx/linux3.sh: line 10:   124 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaaae39a9d10, 0xaaaae39b9d10) tls 0xffff8203f750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O0 n2000     #1 /w/scr/lx/linux3.sh: line 10:   131 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaab04fcbd10, 0xaaab04fdbd10) tls 0xffff8a160750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O0 n2000     #2 /w/scr/lx/linux3.sh: line 10:   135 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaaafda64d10, 0xaaaafda74d10) tls 0xffff898d3750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O0 n2100     #1 /w/scr/lx/linux3.sh: line 10:   145 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaaaea99dd10, 0xaaaaea9add10) tls 0xffff96703750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O0 n2100     #2 /w/scr/lx/linux3.sh: line 10:   152 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaaad7bf0d10, 0xaaaad7c00d10) tls 0xffffa3cbf750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O0 n2500     #1 /w/scr/lx/linux3.sh: line 10:   156 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaaaf5f89d10, 0xaaaaf5f99d10) tls 0xffffa8ca3750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O0 n2500     #2 /w/scr/lx/linux3.sh: line 10:   166 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaaadde30d10, 0xaaaadde40d10) tls 0xffff93d63750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O0 n3000     #1 /w/scr/lx/linux3.sh: line 10:   171 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaaae7ee4d10, 0xaaaae7ef4d10) tls 0xffffb0ad3750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O0 n3000     #2 /w/scr/lx/linux3.sh: line 10:   179 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaaafe009d10, 0xaaaafe019d10) tls 0xffff88f12750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O0 n10000    #1 /w/scr/lx/linux3.sh: line 10:   185 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaaadc863d10, 0xaaaadc873d10) tls 0xffff89fa1750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O0 n10000    #2 /w/scr/lx/linux3.sh: line 10:   192 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaaae7509d10, 0xaaaae7519d10) tls 0xffffbb1a3750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O0 n1000000  #1 co: kind 1 stack [0xaaaaee6e3d10, 0xaaaaee6f3d10) tls 0xffff94633750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O0 n1000000  #2 /w/scr/lx/linux3.sh: line 10:   200 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+/w/scr/lx/linux3.sh: line 10:   207 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaaae863bd10, 0xaaaae864bd10) tls 0xffffbc4c2750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O2 n100      #1 co: kind 1 stack [0xaaaac425dd10, 0xaaaac426dd10) tls 0xffff8db81750|depth reached: 636733|exit 0|
+
+64k malloc-O2 n100      #2 co: kind 1 stack [0xaaab1d516d10, 0xaaab1d526d10) tls 0xffffac1c3750|depth reached: 636733|exit 0|
+
+64k malloc-O2 n300      #1 co: kind 1 stack [0xaaaadd5b9d10, 0xaaaadd5c9d10) tls 0xffff8d823750|depth reached: 509971|exit 0|
+
+64k malloc-O2 n300      #2 co: kind 1 stack [0xaaaaed157d10, 0xaaaaed167d10) tls 0xffffb2aa3750|depth reached: 509971|exit 0|
+
+64k malloc-O2 n1000     #1 co: kind 1 stack [0xaaaadfe4ed10, 0xaaaadfe5ed10) tls 0xffffb97e3750|depth reached: 253577|exit 0|
+
+64k malloc-O2 n1000     #2 co: kind 1 stack [0xaaaadbd46d10, 0xaaaadbd56d10) tls 0xffffa8683750|depth reached: 253577|exit 0|
+
+64k malloc-O2 n1500     #1 co: kind 1 stack [0xaaaad1338d10, 0xaaaad1348d10) tls 0xffffbd2a3750|depth reached: 22407|exit 0|
+
+64k malloc-O2 n1500     #2 co: kind 1 stack [0xaaaada000d10, 0xaaaada010d10) tls 0xffffb7703750|depth reached: 22407|exit 0|
+
+64k malloc-O2 n1900     #1 co: kind 1 stack [0xaaaad1d04d10, 0xaaaad1d14d10) tls 0xffff90003750|depth reached: 776451|exit 0|
+
+64k malloc-O2 n1900     #2 co: kind 1 stack [0xaaaad5fccd10, 0xaaaad5fdcd10) tls 0xffffa0050750|depth reached: 776451|exit 0|
+
+64k malloc-O2 n2000     #1 co: kind 1 stack [0xaaaab95e2d10, 0xaaaab95f2d10) tls 0xffffb8e53750|depth reached: 564721|exit 0|
+
+64k malloc-O2 n2000     #2 co: kind 1 stack [0xaaaabed4dd10, 0xaaaabed5dd10) tls 0xffff9228f750|depth reached: 564721|exit 0|
+
+64k malloc-O2 n2100     #1 co: kind 1 stack [0xaaaaf827cd10, 0xaaaaf828cd10) tls 0xffff85b93750|depth reached: 704392|exit 0|
+
+64k malloc-O2 n2100     #2 co: kind 1 stack [0xaaab19c30d10, 0xaaab19c40d10) tls 0xffff824d3750|depth reached: 704392|exit 0|
+
+64k malloc-O2 n2500     #1 /w/scr/lx/linux3.sh: line 10:   313 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaaad4097d10, 0xaaaad40a7d10) tls 0xffffaf853750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O2 n2500     #2 /w/scr/lx/linux3.sh: line 10:   320 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaaae44f0d10, 0xaaaae4500d10) tls 0xffff84603750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O2 n3000     #1 /w/scr/lx/linux3.sh: line 10:   325 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaab0d117d10, 0xaaab0d127d10) tls 0xffffa7fb3750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O2 n3000     #2 /w/scr/lx/linux3.sh: line 10:   334 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaab1c0e6d10, 0xaaab1c0f6d10) tls 0xffffab173750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O2 n10000    #1 co: kind 1 stack [0xaaaabe4fbd10, 0xaaaabe50bd10) tls 0xffff9ebaf750|panic: stack exhausted in malloc.deep|exit 134|
+/w/scr/lx/linux3.sh: line 10:   341 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+
+64k malloc-O2 n10000    #2 /w/scr/lx/linux3.sh: line 10:   348 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaaafa4f9d10, 0xaaaafa509d10) tls 0xffff892a3750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O2 n1000000  #1 /w/scr/lx/linux3.sh: line 10:   351 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaaadfee9d10, 0xaaaadfef9d10) tls 0xffff80f61750|panic: stack exhausted in malloc.deep|exit 134|
+
+64k malloc-O2 n1000000  #2 /w/scr/lx/linux3.sh: line 10:   362 Aborted                 CO_SAY=1 CO_N=$n timeout -k 5 20 s64/m-$lv 2>&1
+co: kind 1 stack [0xaaaafcd3fd10, 0xaaaafcd4fd10) tls 0xffff83d01750|panic: stack exhausted in malloc.deep|exit 134|
+
+== the counting canary in the heap: CO_KB 32 (a 64 KiB block), base, c1 (c2's set for this program), b
+cc-base canary4-O2 n100    co: returned: 0 bytes below of 32768, lowest 0 below it|depth reached: 636733|exit 0|
+
+cc-base canary4-O2 n500    co: returned: 0 bytes below of 32768, lowest 0 below it|depth reached: 30478|exit 0|
+
+cc-base canary4-O2 n1000   co: returned: 0 bytes below of 32768, lowest 0 below it|depth reached: 253577|exit 0|
+
+cc-base canary4-O2 n2000   co: returned: 23484 bytes below of 32768, lowest 31328 below it|depth reached: 564721|exit 0|
+
+cc-base canary4-O2 n10000  /w/scr/lx/linux3.sh: line 12:   401 Aborted                 CO_KB=32 CO_N=$n timeout -k 5 20 $d/$b 2>&1
+panic: stack exhausted in canary4.deep|co: at the abort: 24572 bytes below of 32768, lowest 32768 below it|exit 134|
+
+cc-base canary4-O0 n100    co: returned: 0 bytes below of 32768, lowest 0 below it|depth reached: 636733|exit 0|
+
+cc-base canary4-O0 n500    /w/scr/lx/linux3.sh: line 12:   418 Aborted                 CO_KB=32 CO_N=$n timeout -k 5 20 $d/$b 2>&1
+panic: stack exhausted in canary4.deep|co: at the abort: 12454 bytes below of 32768, lowest 32712 below it|exit 134|
+
+cc-base canary4-O0 n1000   /w/scr/lx/linux3.sh: line 12:   426 Aborted                 CO_KB=32 CO_N=$n timeout -k 5 20 $d/$b 2>&1
+panic: stack exhausted in canary4.deep|co: at the abort: 12451 bytes below of 32768, lowest 32712 below it|exit 134|
+
+cc-base canary4-O0 n2000   /w/scr/lx/linux3.sh: line 12:   434 Aborted                 CO_KB=32 CO_N=$n timeout -k 5 20 $d/$b 2>&1
+panic: stack exhausted in canary4.deep|co: at the abort: 12454 bytes below of 32768, lowest 32712 below it|exit 134|
+
+cc-base canary4-O0 n10000  /w/scr/lx/linux3.sh: line 12:   442 Aborted                 CO_KB=32 CO_N=$n timeout -k 5 20 $d/$b 2>&1
+panic: stack exhausted in canary4.deep|co: at the abort: 12458 bytes below of 32768, lowest 32712 below it|exit 134|
+
+cc-c1   canary4-O2 n100    co: returned: 0 bytes below of 32768, lowest 0 below it|depth reached: 636733|exit 0|
+
+cc-c1   canary4-O2 n500    co: returned: 0 bytes below of 32768, lowest 0 below it|depth reached: 30478|exit 0|
+
+cc-c1   canary4-O2 n1000   /w/scr/lx/linux3.sh: line 12:   463 Aborted                 CO_KB=32 CO_N=$n timeout -k 5 20 $d/$b 2>&1
+panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes below of 32768, lowest 0 below it|exit 134|
+
+cc-c1   canary4-O2 n2000   /w/scr/lx/linux3.sh: line 12:   474 Aborted                 CO_KB=32 CO_N=$n timeout -k 5 20 $d/$b 2>&1
+panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes below of 32768, lowest 0 below it|exit 134|
+
+cc-c1   canary4-O2 n10000  /w/scr/lx/linux3.sh: line 12:   482 Aborted                 CO_KB=32 CO_N=$n timeout -k 5 20 $d/$b 2>&1
+panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes below of 32768, lowest 0 below it|exit 134|
+
+cc-c1   canary4-O0 n100    co: returned: 0 bytes below of 32768, lowest 0 below it|depth reached: 636733|exit 0|
+
+cc-c1   canary4-O0 n500    /w/scr/lx/linux3.sh: line 12:   498 Aborted                 CO_KB=32 CO_N=$n timeout -k 5 20 $d/$b 2>&1
+panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes below of 32768, lowest 0 below it|exit 134|
+
+cc-c1   canary4-O0 n1000   /w/scr/lx/linux3.sh: line 12:   506 Aborted                 CO_KB=32 CO_N=$n timeout -k 5 20 $d/$b 2>&1
+panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes below of 32768, lowest 0 below it|exit 134|
+
+cc-c1   canary4-O0 n2000   /w/scr/lx/linux3.sh: line 12:   514 Aborted                 CO_KB=32 CO_N=$n timeout -k 5 20 $d/$b 2>&1
+panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes below of 32768, lowest 0 below it|exit 134|
+
+cc-c1   canary4-O0 n10000  /w/scr/lx/linux3.sh: line 12:   521 Aborted                 CO_KB=32 CO_N=$n timeout -k 5 20 $d/$b 2>&1
+panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes below of 32768, lowest 0 below it|exit 134|
+
+bb      canary4-O2 n100    co: returned: 0 bytes below of 32768, lowest 0 below it|depth reached: 636733|exit 0|
+
+bb      canary4-O2 n500    co: returned: 0 bytes below of 32768, lowest 0 below it|depth reached: 30478|exit 0|
+
+bb      canary4-O2 n1000   co: returned: 0 bytes below of 32768, lowest 0 below it|depth reached: 253577|exit 0|
+
+bb      canary4-O2 n2000   co: returned: 0 bytes below of 32768, lowest 0 below it|depth reached: 564721|exit 0|
+
+bb      canary4-O2 n10000  co: returned: 0 bytes below of 32768, lowest 0 below it|depth reached: 742238|exit 0|
+
+bb      canary4-O0 n100    co: returned: 0 bytes below of 32768, lowest 0 below it|depth reached: 636733|exit 0|
+
+bb      canary4-O0 n500    co: returned: 0 bytes below of 32768, lowest 0 below it|depth reached: 30478|exit 0|
+
+bb      canary4-O0 n1000   co: returned: 0 bytes below of 32768, lowest 0 below it|depth reached: 253577|exit 0|
+
+bb      canary4-O0 n2000   co: returned: 0 bytes below of 32768, lowest 0 below it|depth reached: 564721|exit 0|
+
+bb      canary4-O0 n10000  co: returned: 0 bytes below of 32768, lowest 0 below it|depth reached: 742238|exit 0|
+
+== shape D
+dshape-emit.c: 1 of 1 checked
+base  O0 n1000    co: returned: 0 bytes below, lowest 0 below it|depth reached: 1000|exit 0|
+
+base  O0 n2500    co: returned: 0 bytes below, lowest 0 below it|depth reached: 2500|exit 0|
+
+base  O0 n3000    co: returned: 8974 bytes below, lowest 26144 below it|depth reached: 3000|exit 0|
+
+base  O0 n4000    co: returned: 41957 bytes below, lowest 122144 below it|depth reached: 4000|exit 0|
+
+base  O0 n6000    /w/scr/lx/linux3.sh: line 20:   774 Aborted                 CO_N=$n timeout -k 5 20 dd/$v-$lv 2>&1
+panic: stack exhausted in c_deep|co: at the abort: 68242 bytes below, lowest 262144 below it|exit 134|
+
+base  O0 n100000  /w/scr/lx/linux3.sh: line 20:   782 Aborted                 CO_N=$n timeout -k 5 20 dd/$v-$lv 2>&1
+panic: stack exhausted in c_deep|co: at the abort: 68242 bytes below, lowest 262144 below it|exit 134|
+
+base  O2 n1000    co: returned: 0 bytes below, lowest 0 below it|depth reached: 1000|exit 0|
+
+base  O2 n2500    co: returned: 0 bytes below, lowest 0 below it|depth reached: 2500|exit 0|
+
+base  O2 n3000    co: returned: 0 bytes below, lowest 0 below it|depth reached: 3000|exit 0|
+
+base  O2 n4000    co: returned: 0 bytes below, lowest 0 below it|depth reached: 4000|exit 0|
+
+base  O2 n6000    co: returned: 0 bytes below, lowest 0 below it|depth reached: 6000|exit 0|
+
+base  O2 n100000  /w/scr/lx/linux3.sh: line 20:   832 Aborted                 CO_N=$n timeout -k 5 20 dd/$v-$lv 2>&1
+panic: stack exhausted in c_deep|co: at the abort: 139200 bytes below, lowest 262132 below it|exit 134|
+
+c2    O0 n1000    co: returned: 0 bytes below, lowest 0 below it|depth reached: 1000|exit 0|
+
+c2    O0 n2500    co: returned: 0 bytes below, lowest 0 below it|depth reached: 2500|exit 0|
+
+c2    O0 n3000    co: returned: 8972 bytes below, lowest 26176 below it|depth reached: 3000|exit 0|
+
+c2    O0 n4000    co: returned: 41957 bytes below, lowest 122176 below it|depth reached: 4000|exit 0|
+
+c2    O0 n6000    /w/scr/lx/linux3.sh: line 20:   872 Aborted                 CO_N=$n timeout -k 5 20 dd/$v-$lv 2>&1
+panic: stack exhausted in c_deep|co: at the abort: 68219 bytes below, lowest 262144 below it|exit 134|
+
+c2    O0 n100000  /w/scr/lx/linux3.sh: line 20:   879 Aborted                 CO_N=$n timeout -k 5 20 dd/$v-$lv 2>&1
+panic: stack exhausted in c_deep|co: at the abort: 68219 bytes below, lowest 262144 below it|exit 134|
+
+c2    O2 n1000    co: returned: 0 bytes below, lowest 0 below it|depth reached: 1000|exit 0|
+
+c2    O2 n2500    co: returned: 0 bytes below, lowest 0 below it|depth reached: 2500|exit 0|
+
+c2    O2 n3000    co: returned: 0 bytes below, lowest 0 below it|depth reached: 3000|exit 0|
+
+c2    O2 n4000    co: returned: 0 bytes below, lowest 0 below it|depth reached: 4000|exit 0|
+
+c2    O2 n6000    co: returned: 0 bytes below, lowest 0 below it|depth reached: 6000|exit 0|
+
+c2    O2 n100000  /w/scr/lx/linux3.sh: line 20:   926 Aborted                 CO_N=$n timeout -k 5 20 dd/$v-$lv 2>&1
+panic: stack exhausted in c_deep|co: at the abort: 139200 bytes below, lowest 262132 below it|exit 134|
+
+b     O0 n1000    co: returned: 0 bytes below, lowest 0 below it|depth reached: 1000|exit 0|
+
+b     O0 n2500    co: returned: 0 bytes below, lowest 0 below it|depth reached: 2500|exit 0|
+
+b     O0 n3000    co: returned: 0 bytes below, lowest 0 below it|depth reached: 3000|exit 0|
+
+b     O0 n4000    co: returned: 0 bytes below, lowest 0 below it|depth reached: 4000|exit 0|
+
+b     O0 n6000    co: returned: 0 bytes below, lowest 0 below it|depth reached: 6000|exit 0|
+
+b     O0 n100000  /w/scr/lx/linux3.sh: line 20:   974 Aborted                 CO_N=$n timeout -k 5 20 dd/$v-$lv 2>&1
+panic: stack exhausted in c_deep|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+
+b     O2 n1000    co: returned: 0 bytes below, lowest 0 below it|depth reached: 1000|exit 0|
+
+b     O2 n2500    co: returned: 0 bytes below, lowest 0 below it|depth reached: 2500|exit 0|
+
+b     O2 n3000    co: returned: 0 bytes below, lowest 0 below it|depth reached: 3000|exit 0|
+
+b     O2 n4000    co: returned: 0 bytes below, lowest 0 below it|depth reached: 4000|exit 0|
+
+b     O2 n6000    co: returned: 0 bytes below, lowest 0 below it|depth reached: 6000|exit 0|
+
+b     O2 n100000  co: returned: 0 bytes below, lowest 0 below it|depth reached: 100000|exit 0|
+
+== costs, by the program's own clock (CLOCK_MONOTONIC), base / c2 / b each built by hb.sh from the stage 2 emission
+cost_cb-emit.c: 1 of 1 checked
+cost_qsort-emit.c: 1 of 1 checked
+cost_calls-emit.c: 2 of 2 checked
+cost_rec-emit.c: 2 of 2 checked
+ 11:12:23 up  4:36,  0 users,  load average: 2.96, 3.60, 3.70
+costrun cost_cb O2 base 1 389031917 sum 19999999
+costrun cost_cb O2 c2 1 485386834 sum 19999999
+costrun cost_cb O2 b 1 1069905209 sum 19999999
+costrun cost_cb O2 base 2 378640876 sum 19999999
+costrun cost_cb O2 c2 2 375704958 sum 19999999
+costrun cost_cb O2 b 2 1031322375 sum 19999999
+costrun cost_cb O2 base 3 342323166 sum 19999999
+costrun cost_cb O2 c2 3 355930000 sum 19999999
+costrun cost_cb O2 b 3 1039580500 sum 19999999
+costrun cost_cb O2 base 4 356346042 sum 19999999
+costrun cost_cb O2 c2 4 356840708 sum 19999999
+costrun cost_cb O2 b 4 1025341542 sum 19999999
+costrun cost_cb O2 base 5 359659292 sum 19999999
+costrun cost_cb O2 c2 5 368614292 sum 19999999
+costrun cost_cb O2 b 5 1005563292 sum 19999999
+costrun cost_cb O2 base 6 356858833 sum 19999999
+costrun cost_cb O2 c2 6 360260376 sum 19999999
+costrun cost_cb O2 b 6 1022375458 sum 19999999
+costrun cost_cb O0 base 1 1933048876 sum 19999999
+costrun cost_cb O0 c2 1 1926695085 sum 19999999
+costrun cost_cb O0 b 1 3337773126 sum 19999999
+costrun cost_cb O0 base 2 1740564084 sum 19999999
+costrun cost_cb O0 c2 2 1864607251 sum 19999999
+costrun cost_cb O0 b 2 3363747835 sum 19999999
+costrun cost_cb O0 base 3 1796810168 sum 19999999
+costrun cost_cb O0 c2 3 1847183918 sum 19999999
+costrun cost_cb O0 b 3 3546383710 sum 19999999
+costrun cost_cb O0 base 4 1922613585 sum 19999999
+costrun cost_cb O0 c2 4 1842248042 sum 19999999
+costrun cost_cb O0 b 4 3388590043 sum 19999999
+costrun cost_cb O0 base 5 1784012001 sum 19999999
+costrun cost_cb O0 c2 5 1807602375 sum 19999999
+costrun cost_cb O0 b 5 3403881877 sum 19999999
+costrun cost_cb O0 base 6 1901521042 sum 19999999
+costrun cost_cb O0 c2 6 1926477542 sum 19999999
+costrun cost_cb O0 b 6 3375573668 sum 19999999
+costrun cost_qsort O2 base 1 555164500 sorted 1499300862
+costrun cost_qsort O2 c2 1 603843833 sorted 1499300862
+costrun cost_qsort O2 b 1 1229547834 sorted 1499300862
+costrun cost_qsort O2 base 2 549932209 sorted 1499300862
+costrun cost_qsort O2 c2 2 550383126 sorted 1499300862
+costrun cost_qsort O2 b 2 1190039084 sorted 1499300862
+costrun cost_qsort O2 base 3 631709000 sorted 1499300862
+costrun cost_qsort O2 c2 3 567189542 sorted 1499300862
+costrun cost_qsort O2 b 3 1304872501 sorted 1499300862
+costrun cost_qsort O2 base 4 576084292 sorted 1499300862
+costrun cost_qsort O2 c2 4 576350000 sorted 1499300862
+costrun cost_qsort O2 b 4 1297113876 sorted 1499300862
+costrun cost_qsort O2 base 5 542107791 sorted 1499300862
+costrun cost_qsort O2 c2 5 572619292 sorted 1499300862
+costrun cost_qsort O2 b 5 1285767084 sorted 1499300862
+costrun cost_qsort O2 base 6 592266792 sorted 1499300862
+costrun cost_qsort O2 c2 6 597851750 sorted 1499300862
+costrun cost_qsort O2 b 6 1176561751 sorted 1499300862
+costrun cost_qsort O0 base 1 2217572918 sorted 1499300862
+costrun cost_qsort O0 c2 1 2255641334 sorted 1499300862
+costrun cost_qsort O0 b 1 3688674835 sorted 1499300862
+costrun cost_qsort O0 base 2 2341084542 sorted 1499300862
+costrun cost_qsort O0 c2 2 2185167293 sorted 1499300862
+costrun cost_qsort O0 b 2 3775278335 sorted 1499300862
+costrun cost_qsort O0 base 3 2380483210 sorted 1499300862
+costrun cost_qsort O0 c2 3 2328623460 sorted 1499300862
+costrun cost_qsort O0 b 3 3739182669 sorted 1499300862
+costrun cost_qsort O0 base 4 2385613417 sorted 1499300862
+costrun cost_qsort O0 c2 4 2435625543 sorted 1499300862
+costrun cost_qsort O0 b 4 3922007377 sorted 1499300862
+costrun cost_qsort O0 base 5 2247179293 sorted 1499300862
+costrun cost_qsort O0 c2 5 2177098668 sorted 1499300862
+costrun cost_qsort O0 b 5 3888629251 sorted 1499300862
+costrun cost_qsort O0 base 6 2398745918 sorted 1499300862
+costrun cost_qsort O0 c2 6 2290145168 sorted 1499300862
+costrun cost_qsort O0 b 6 3924529169 sorted 1499300862
+costrun cost_calls O2 base 1 33887208 sum 59999997
+costrun cost_calls O2 c2 1 27999833 sum 59999997
+costrun cost_calls O2 b 1 29735625 sum 59999997
+costrun cost_calls O2 base 2 39340125 sum 59999997
+costrun cost_calls O2 c2 2 36088000 sum 59999997
+costrun cost_calls O2 b 2 27977750 sum 59999997
+costrun cost_calls O2 base 3 32049791 sum 59999997
+costrun cost_calls O2 c2 3 29723667 sum 59999997
+costrun cost_calls O2 b 3 28477750 sum 59999997
+costrun cost_calls O2 base 4 31297041 sum 59999997
+costrun cost_calls O2 c2 4 30552958 sum 59999997
+costrun cost_calls O2 b 4 26870251 sum 59999997
+costrun cost_calls O2 base 5 30135583 sum 59999997
+costrun cost_calls O2 c2 5 29352833 sum 59999997
+costrun cost_calls O2 b 5 30660209 sum 59999997
+costrun cost_calls O2 base 6 29451000 sum 59999997
+costrun cost_calls O2 c2 6 25353917 sum 59999997
+costrun cost_calls O2 b 6 26976916 sum 59999997
+costrun cost_calls O0 base 1 227082542 sum 59999997
+costrun cost_calls O0 c2 1 275530334 sum 59999997
+costrun cost_calls O0 b 1 252062250 sum 59999997
+costrun cost_calls O0 base 2 250128625 sum 59999997
+costrun cost_calls O0 c2 2 267324458 sum 59999997
+costrun cost_calls O0 b 2 251428333 sum 59999997
+costrun cost_calls O0 base 3 245162833 sum 59999997
+costrun cost_calls O0 c2 3 260303334 sum 59999997
+costrun cost_calls O0 b 3 217887417 sum 59999997
+costrun cost_calls O0 base 4 264152250 sum 59999997
+costrun cost_calls O0 c2 4 330996000 sum 59999997
+costrun cost_calls O0 b 4 248398416 sum 59999997
+costrun cost_calls O0 base 5 246041542 sum 59999997
+costrun cost_calls O0 c2 5 239189417 sum 59999997
+costrun cost_calls O0 b 5 254757251 sum 59999997
+costrun cost_calls O0 base 6 238028250 sum 59999997
+costrun cost_calls O0 c2 6 255116834 sum 59999997
+costrun cost_calls O0 b 6 324724250 sum 59999997
+costrun cost_rec O2 base 1 114063375 sum 10000000
+costrun cost_rec O2 c2 1 96191583 sum 10000000
+costrun cost_rec O2 b 1 116263625 sum 10000000
+costrun cost_rec O2 base 2 104882375 sum 10000000
+costrun cost_rec O2 c2 2 103413375 sum 10000000
+costrun cost_rec O2 b 2 110564000 sum 10000000
+costrun cost_rec O2 base 3 110630125 sum 10000000
+costrun cost_rec O2 c2 3 96135875 sum 10000000
+costrun cost_rec O2 b 3 122261417 sum 10000000
+costrun cost_rec O2 base 4 108392709 sum 10000000
+costrun cost_rec O2 c2 4 97773708 sum 10000000
+costrun cost_rec O2 b 4 112367333 sum 10000000
+costrun cost_rec O2 base 5 130198958 sum 10000000
+costrun cost_rec O2 c2 5 108290208 sum 10000000
+costrun cost_rec O2 b 5 111047542 sum 10000000
+costrun cost_rec O2 base 6 108232584 sum 10000000
+costrun cost_rec O2 c2 6 104691750 sum 10000000
+costrun cost_rec O2 b 6 115247500 sum 10000000
+costrun cost_rec O0 base 1 225944167 sum 10000000
+costrun cost_rec O0 c2 1 235426917 sum 10000000
+costrun cost_rec O0 b 1 220719792 sum 10000000
+costrun cost_rec O0 base 2 225307709 sum 10000000
+costrun cost_rec O0 c2 2 225365584 sum 10000000
+costrun cost_rec O0 b 2 244394500 sum 10000000
+costrun cost_rec O0 base 3 284870166 sum 10000000
+costrun cost_rec O0 c2 3 228993625 sum 10000000
+costrun cost_rec O0 b 3 219053875 sum 10000000
+costrun cost_rec O0 base 4 226633667 sum 10000000
+costrun cost_rec O0 c2 4 234637042 sum 10000000
+costrun cost_rec O0 b 4 225042500 sum 10000000
+costrun cost_rec O0 base 5 228150834 sum 10000000
+costrun cost_rec O0 c2 5 217558541 sum 10000000
+costrun cost_rec O0 b 5 261341083 sum 10000000
+costrun cost_rec O0 base 6 276035875 sum 10000000
+costrun cost_rec O0 c2 6 260784875 sum 10000000
+costrun cost_rec O0 b 6 242215792 sum 10000000
+ 11:14:35 up  4:39,  0 users,  load average: 2.55, 3.26, 3.56
+== the check's code in Linux arm64, c2 cost_rec -O2 down
+0000000000009aa8 <h_costrec_down>:
+    9aa8:      	stp	x29, x30, [sp, #-0x20]!
+    9aac:      	str	x19, [sp, #0x10]
+    9ab0:      	mov	x29, sp
+    9ab4:      	movz	x8, #0x0, lsl #16
+    9ab8:      	movk	x8, #0x18
+    9abc:      	mrs	x9, TPIDR_EL0
+    9ac0:      	mov	x1, sp
+    9ac4:      	add	x8, x9, x8
+    9ac8:      	ldp	x9, x8, [x8]
+    9acc:      	sub	x9, x1, x9
+    9ad0:      	cmp	x9, x8
+    9ad4:      	b.hs	0x9afc <h_costrec_down+0x54>
+    9ad8:      	cbz	x0, 0x9af0 <h_costrec_down+0x48>
+    9adc:      	subs	x0, x0, #0x1
+    9ae0:      	b.vs	0x9b1c <h_costrec_down+0x74>
+    9ae4:      	bl	0x9aa8 <h_costrec_down>
+    9ae8:      	adds	x0, x0, #0x1
+    9aec:      	b.vs	0x9b38 <h_costrec_down+0x90>
+    9af0:      	ldr	x19, [sp, #0x10]
+    9af4:      	ldp	x29, x30, [sp], #0x20
+    9af8:      	ret
+    9afc:      	adrp	x8, 0x2a000 <hero_run_ended+0xfc>
+    9b00:      	add	x8, x8, #0xd34
+    9b04:      	mov	x19, x0
+0000000000009a68 <h_costrec_down>:
+    9a68:      	stp	x29, x30, [sp, #-0x10]!
+    9a6c:      	mov	x29, sp
+    9a70:      	cbz	x0, 0x9a88 <h_costrec_down+0x20>
+    9a74:      	subs	x0, x0, #0x1
+    9a78:      	b.vs	0x9a90 <h_costrec_down+0x28>
+    9a7c:      	bl	0x9a68 <h_costrec_down>
+    9a80:      	adds	x0, x0, #0x1
+    9a84:      	b.vs	0x9aac <h_costrec_down+0x44>
+    9a88:      	ldp	x29, x30, [sp], #0x10
+    9a8c:      	ret
+    9a90:      	adrp	x0, 0x2a000 <hero_run_ended+0x3d8>
+    9a94:      	add	x0, x0, #0xa54
+    9a98:      	adrp	x1, 0x2a000 <hero_run_ended+0x3d8>
+    9a9c:      	add	x1, x1, #0xa62
+docker exit 0

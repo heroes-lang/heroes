@@ -1,10 +1,10 @@
 # The explorer's main window, made of the system's own widgets through
 # `ui`: a toolbar with Back, Forward, Up, the path of the folder shown and
 # Go and Open; a search bar; three panes side by side, the tree of folders
-# and the bookmarks, the folder's entries under a header naming the
-# columns, and the preview; and the status line at the bottom. The window
-# keeps only the widgets' numbers here; what they show is set from the
-# explorer's state by `views/show`.
+# and the bookmarks, the folder's entries in a table of columns or a
+# search's results in their place, and the preview; and the status line at
+# the bottom. The window keeps only the widgets' numbers here; what they
+# show is set from the explorer's state by `views/show`.
 #
 # The layout is `ui`'s, computed the same on every system: the path field,
 # the search field and the entries' pane take the room the window has left,
@@ -12,6 +12,8 @@
 
 use <rebel>/image
 use <rebel>/ui
+
+use views/rows
 
 # The least width of the preview pane, in points: wide enough for the facts
 # of a file in most locales, so the window keeps its layout as the person
@@ -46,14 +48,14 @@ record Widgets
     search: ui.Widget
     # Puts the results away.
     clear: ui.Widget
-    # The tree of folders, one row each.
+    # The tree of folders, one item each.
     tree: ui.Widget
     # The bookmarks.
     places: ui.Widget
-    # The header naming the entries' columns.
-    header: ui.Widget
-    # The entries of the folder shown, or a search's results.
+    # The entries of the folder shown, a row each under the columns' headers.
     entries: ui.Widget
+    # A search's results, shown in the entries' place.
+    results: ui.Widget
     # The name of what the preview shows.
     title: ui.Widget
     # The facts of what the preview shows.
@@ -187,16 +189,18 @@ function make_window(@app: ui.App) -> Widgets?
     left = ui.column(@app, into: panes)?
     ui.set_fit(@app, widget: left, fit: filling())?
     _ = ui.label(@app, into: left, text: "Folders")?
-    tree = ui.list(@app, into: left, items: [], multiple: false)?
+    tree = ui.tree(@app, into: left)?
     ui.set_fit(@app, widget: tree, fit: at_least(width: 200, height: 200))?
     _ = ui.label(@app, into: left, text: "Bookmarks")?
     places = ui.list(@app, into: left, items: [], multiple: false)?
     ui.set_fit(@app, widget: places, fit: at_least(width: 200, height: 96))?
     middle = ui.column(@app, into: panes)?
     ui.set_fit(@app, widget: middle, fit: stretching())?
-    header = ui.label(@app, into: middle, text: "")?
-    entries = ui.list(@app, into: middle, items: [], multiple: true)?
+    entries = ui.table(@app, into: middle, columns: rows.titles())?
     ui.set_fit(@app, widget: entries, fit: at_least(width: 420, height: 320))?
+    results = ui.list(@app, into: middle, items: [], multiple: true)?
+    ui.set_fit(@app, widget: results, fit: at_least(width: 420, height: 320))?
+    ui.set_visible(@app, widget: results, on: false)?
     right = ui.column(@app, into: panes)?
     ui.set_fit(@app, widget: right, fit: at_least(width: PREVIEW_WIDTH, height: 0))?
     title = ui.label(@app, into: right, text: "")?
@@ -208,7 +212,7 @@ function make_window(@app: ui.App) -> Widgets?
     ui.set_enabled(@app, widget: text, on: false)?
     status = ui.label(@app, into: w, text: "")?
     return ok(
-        Widgets(window: w, back: back, forward: forward, up: up, location: location, go: go, open: open, query: query, scope: scope, regex: regex, search: search, clear: clear, tree: tree, places: places, header: header, entries: entries, title: title, facts: facts, picture: picture, text: text, status: status)
+        Widgets(window: w, back: back, forward: forward, up: up, location: location, go: go, open: open, query: query, scope: scope, regex: regex, search: search, clear: clear, tree: tree, places: places, entries: entries, results: results, title: title, facts: facts, picture: picture, text: text, status: status)
     )
 
 # A menu item of `menu` with the shortcut of `key`, the primary key held,

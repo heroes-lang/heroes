@@ -1,0 +1,223 @@
+diff -ru 263-compiler-engineer/selfhost/emit/body.hero 263-compiler-engineer-scratch/sh-c2/emit/body.hero
+--- 263-compiler-engineer/selfhost/emit/body.hero	2026-11-27 11:13:56
++++ 263-compiler-engineer-scratch/sh-c2/emit/body.hero	2026-11-27 11:35:21
+@@ -64,17 +64,17 @@
+ # that builds it, and the runtime's switch picks one (panel 195,
+ # `emit/static_constant.hero`); every other function once. `p` is the
+ # program held with its index, built once per program (defect 492).
+-function definition(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, guarded_decls: {i64: bool})
++function definition(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, guarded_decls: {i64: bool}, checked_decls: {i64: bool})
+     laid = static_constant.laid_for(p.program, c, names, s, decls, f: f)
+ 
+     if !laid.is_err()
+         static_constant.open(@w, c, names, s, decls, f: f, laid: laid.must())
+-    built(@w, p, c, names, s, decls, f: f, guarded_decls: guarded_decls)
++    built(@w, p, c, names, s, decls, f: f, guarded_decls: guarded_decls, checked_decls: checked_decls)
+ 
+     if !laid.is_err()
+         static_constant.close(@w)
+ 
+-function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, guarded_decls: {i64: bool})
++function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, guarded_decls: {i64: bool}, checked_decls: {i64: bool})
+     writer.blank(@w)
+ 
+     # A constant whose value a header holds has an accessor of its own
+@@ -124,7 +124,7 @@
+     # here: a header's deprecations are quiet over the whole unit after the
+     # groups' close (`emit/deprecation.hero`, panel 208).
+     statements: [str] @= []
+-    guard = callback_guard.entry(s, f, guarded_decls: guarded_decls)
++    guard = callback_guard.entry(s, f, guarded_decls: guarded_decls, checked_decls: checked_decls)
+ 
+     if guard != ""
+         statements @ statements.push(guard)
+@@ -253,7 +253,8 @@
+         s,
+         parsed.decls,
+         low.program.functions[0],
+-        guarded_decls: none
++        guarded_decls: none,
++        checked_decls: none
+     )
+     got = writer.finish(w)
+     assert strings.holds(text: got, needle: "int64_t h_t_add(int64_t h0_a, int64_t h1_b) {")
+@@ -284,7 +285,8 @@
+         s,
+         parsed.decls,
+         low.program.functions[0],
+-        guarded_decls: none
++        guarded_decls: none,
++        checked_decls: none
+     )
+     assert writer.finish(again) == got
+ 
+@@ -314,7 +316,8 @@
+         s,
+         parsed.decls,
+         low.program.functions[0],
+-        guarded_decls: none
++        guarded_decls: none,
++        checked_decls: none
+     )
+     got = writer.finish(w)
+ 
+diff -ru 263-compiler-engineer/selfhost/emit/callback_guard.hero 263-compiler-engineer-scratch/sh-c2/emit/callback_guard.hero
+--- 263-compiler-engineer/selfhost/emit/callback_guard.hero	2026-11-27 11:13:56
++++ 263-compiler-engineer-scratch/sh-c2/emit/callback_guard.hero	2026-11-27 11:35:21
+@@ -74,13 +74,17 @@
+     opened: bool
+     decls: {i64: bool}
+     functions: [i64]
++    # Every declaration a function C may call can reach by direct calls, the
++    # address-taken set closed under `.call` (panel 263's route (c2), the
++    # compiler-engineer's prototype): each gets a stack check at its entry.
++    checked: {i64: bool}
+ 
+ function callbacks_of(p: containers.Program, c: state.Checked, decls: [ast.Decl]) -> Callbacks
+     none: {i64: bool} = {}
+     held: [i64] @= []
+ 
+     if !takes_a_callback(p, c, decls)
+-        return Callbacks(opened: false, decls: none, functions: held)
++        return Callbacks(opened: false, decls: none, functions: held, checked: none)
+     taken = addresses_taken(p)
+     index: i64 @= 0
+ 
+@@ -89,8 +93,39 @@
+             held @ held.push(index)
+         index @ index + 1
+ 
+-    return Callbacks(opened: true, decls: taken, functions: held)
++    return Callbacks(opened: true, decls: taken, functions: held, checked: reached(p, taken: taken))
+ 
++# The address-taken set closed under direct calls. A call through a function
++# value needs no edge: its target's address was taken, so it is a root. Keyed
++# by declaration as `decls` is, so every instance of a generic is checked: the
++# safe direction. A pass over the program per level of the call tree.
++function reached(p: containers.Program, taken: {i64: bool}) -> {i64: bool}
++    out: {i64: bool} @= taken
++    grew: bool @= true
++
++    while grew
++        grew @ false
++
++        for f in p.functions
++            if out[f.decl].is_err()
++                continue
++
++            for blk in f.blocks
++                for one in blk.insts
++                    match one.op
++                        .call cl =>
++                            match cl.callee
++                                .heroes_fn hf =>
++                                    if out[hf.decl].is_err()
++                                        out[hf.decl] @ true
++                                        grew @ true
++                                .extern_fn | .builtin_fn | .indirect => continue
++                        .func_ref | .lit | .load | .store | .push_owned | .unary | .binary | .cast  => continue
++                        .field | .index | .map_get | .len_of | .tag_of | .payload | .construct      => continue
++                        .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
++
++    return out
++
+ # Every declaration whose address an instruction of the program takes.
+ function addresses_taken(p: containers.Program) -> {i64: bool}
+     out: {i64: bool} @= {}
+@@ -137,11 +172,18 @@
+ # sentence because it has only a symbol to work from. Here the compiler knows.
+ # Returned as a statement, "" for a function no thread can reach unguarded:
+ # the prologue's line carries it first (`emit/body.hero`, defect 472).
+-function entry(s: source.Source, f: containers.Function, guarded_decls: {i64: bool}) -> str
+-    if guarded_decls[f.decl].is_err()
+-        return ""
++function entry(s: source.Source, f: containers.Function, guarded_decls: {i64: bool}, checked_decls: {i64: bool}) -> str
+     who = source.component_at(s, f.span.start) + "." + f.name
+-    return "hero_thread_guard(\"" + who + "\");"
++    out: str @= ""
++
++    if !guarded_decls[f.decl].is_err()
++        out @ "hero_thread_guard(\"" + who + "\");"
++
++    if !checked_decls[f.decl].is_err()
++        if out != ""
++            out @ out + " "
++        out @ out + "hero_stack_check(\"" + who + "\");"
++    return out
+ 
+ ## Tests
+ 
+diff -ru 263-compiler-engineer/selfhost/emit/unit.hero 263-compiler-engineer-scratch/sh-c2/emit/unit.hero
+--- 263-compiler-engineer/selfhost/emit/unit.hero	2026-11-27 11:13:56
++++ 263-compiler-engineer-scratch/sh-c2/emit/unit.hero	2026-11-27 11:35:21
+@@ -103,6 +103,7 @@
+     # Asked once for the whole build and read here (defect 497); their
+     # signatures' types are in the plan's reach.
+     guarded_decls = whole.callbacks.decls
++    checked_decls = whole.callbacks.checked
+ 
+     # ONE set feeds all four sections, and that is the invariant rather
+     # than a tidiness. Every time a section got its own answer the TU
+@@ -219,10 +220,30 @@
+             # around an accessor the probe asks and no other line.
+             if body.is_extern_constant(decls, f) && cut[f.decl].is_err() && value_probe.judged(c, s, decls, f)
+                 writer.cut_close(@w)
+-                body.definition(@w, whole.callees, c, names, s, decls, f: f, guarded_decls: guarded_decls)
++                body.definition(
++                    @w,
++                    whole.callees,
++                    c,
++                    names,
++                    s,
++                    decls,
++                    f: f,
++                    guarded_decls: guarded_decls,
++                    checked_decls: checked_decls
++                )
+                 writer.cut_open(@w)
+             else
+-                body.definition(@w, whole.callees, c, names, s, decls, f: f, guarded_decls: guarded_decls)
++                body.definition(
++                    @w,
++                    whole.callees,
++                    c,
++                    names,
++                    s,
++                    decls,
++                    f: f,
++                    guarded_decls: guarded_decls,
++                    checked_decls: checked_decls
++                )
+ 
+             # A function of the library is reached as a value through its twin
+             # (panel 230's R1, `emit/signature.hero`), and so is one whose value
+diff -ru 263-compiler-engineer/selfhost/emit.hero 263-compiler-engineer-scratch/sh-c2/emit.hero
+--- 263-compiler-engineer/selfhost/emit.hero	2026-11-27 11:13:56
++++ 263-compiler-engineer-scratch/sh-c2/emit.hero	2026-11-27 11:35:22
+@@ -251,6 +251,7 @@
+     # (defect 497). Empty for every program that hands C no function.
+     callbacks = callback_guard.callbacks_of(p, c, decls)
+     guarded_decls = callbacks.decls
++    checked_decls = callbacks.checked
+     callees = instances.hold(p)
+ 
+     for at in shown
+@@ -269,7 +270,17 @@
+ 
+     for at in shown
+         if emit_decls.emitted(p.functions[at], target: target)
+-            body.definition(@w, callees, c, names, s, decls, f: p.functions[at], guarded_decls: guarded_decls)
++            body.definition(
++                @w,
++                callees,
++                c,
++                names,
++                s,
++                decls,
++                f: p.functions[at],
++                guarded_decls: guarded_decls,
++                checked_decls: checked_decls
++            )
+ 
+             if signature.has_twin(s, names, p.functions[at])
+                 signature.value_twin(@w, p.functions[at], c, names, s, decls)

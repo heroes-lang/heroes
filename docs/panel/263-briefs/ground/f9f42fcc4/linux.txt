@@ -1,0 +1,92 @@
+ 10:00:51 up  3:25,  0 users,  load average: 1.40, 1.67, 1.25
+seed build 30 s
+heroes 0.6.0
+sources 1e1eb23a1927d35b
+/w/copy/docs/panel/263-briefs/reproducer/run.sh: line 30:   313 Aborted                 timeout -k 5 "$T" "$OUT/$1" 2>&1
+malloc-O2                 1 exit 134  panic: stack exhausted in malloc.deep
+/w/copy/docs/panel/263-briefs/reproducer/run.sh: line 30:   322 Aborted                 timeout -k 5 "$T" "$OUT/$1" 2>&1
+malloc-O0                 1 exit 134  panic: stack exhausted in malloc.deep
+malloc-san-O2             1 exit 1    AddressSanitizer:DEADLYSIGNAL
+malloc-san-O0             1 exit 1    AddressSanitizer:DEADLYSIGNAL
+/w/copy/docs/panel/263-briefs/reproducer/run.sh: line 30:   351 Aborted                 timeout -k 5 "$T" "$OUT/$1" 2>&1
+guarded-O2                1 exit 134  panic: stack exhausted in guarded.deep
+/w/copy/docs/panel/263-briefs/reproducer/run.sh: line 30:   360 Aborted                 timeout -k 5 "$T" "$OUT/$1" 2>&1
+guarded-O0                1 exit 134  panic: stack exhausted in guarded.deep
+/w/copy/docs/panel/263-briefs/reproducer/run.sh: line 30:   369 Aborted                 timeout -k 5 "$T" "$OUT/$1" 2>&1
+bare-O2                   1 exit 134  panic: stack exhausted in bare.deep
+/w/copy/docs/panel/263-briefs/reproducer/run.sh: line 30:   378 Aborted                 timeout -k 5 "$T" "$OUT/$1" 2>&1
+bare-O0                   1 exit 134  panic: stack exhausted in bare.deep
+/w/copy/docs/panel/263-briefs/reproducer/run.sh: line 30:   387 Aborted                 timeout -k 5 "$T" "$OUT/$1" 2>&1
+thread-O2                 1 exit 134  panic: stack exhausted in thread.deep
+/w/copy/docs/panel/263-briefs/reproducer/run.sh: line 30:   396 Aborted                 timeout -k 5 "$T" "$OUT/$1" 2>&1
+thread-O0                 1 exit 134  panic: stack exhausted in thread.deep
+/w/copy/docs/panel/263-briefs/reproducer/run.sh: line 30:   405 Segmentation fault      timeout -k 5 "$T" "$OUT/$1" 2>&1
+static-O2                 1 exit 139  exit 139
+/w/copy/docs/panel/263-briefs/reproducer/run.sh: line 30:   414 Segmentation fault      timeout -k 5 "$T" "$OUT/$1" 2>&1
+static-O0                 1 exit 139  exit 139
+canary-O2-n7000           1 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+      1 co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-san-O2-n7000       1 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+      1 co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-O2-n9000           1 exit 0    co: 19453 bytes of the 262144 below the stack were written, the lowest 25936 bytes below it
+      1 co: 19453 bytes of the 262144 below the stack were written, the lowest 25936 bytes below it
+canary-san-O2-n9000       1 exit 0    co: 19469 bytes of the 262144 below the stack were written, the lowest 25968 bytes below it
+      1 co: 19469 bytes of the 262144 below the stack were written, the lowest 25968 bytes below it
+canary-O2-n10000          1 exit 0    co: 43441 bytes of the 262144 below the stack were written, the lowest 57936 bytes below it
+      1 co: 43441 bytes of the 262144 below the stack were written, the lowest 57936 bytes below it
+canary-san-O2-n10000      1 exit 0    co: 43465 bytes of the 262144 below the stack were written, the lowest 57968 bytes below it
+      1 co: 43465 bytes of the 262144 below the stack were written, the lowest 57968 bytes below it
+canary-O0-n1200           1 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+      1 co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-san-O0-n1200       1 exit 0    co: 39750 bytes of the 262144 below the stack were written, the lowest 45412 bytes below it
+      1 co: 39750 bytes of the 262144 below the stack were written, the lowest 45412 bytes below it
+canary-O0-n1500           1 exit 0    co: 23967 bytes of the 262144 below the stack were written, the lowest 26120 bytes below it
+      1 co: 23967 bytes of the 262144 below the stack were written, the lowest 26120 bytes below it
+canary-san-O0-n1500       1 exit 0    co: 107240 bytes of the 262144 below the stack were written, the lowest 122212 bytes below it
+      1 co: 107240 bytes of the 262144 below the stack were written, the lowest 122212 bytes below it
+canary-O0-n2000           1 exit 0    co: 112451 bytes of the 262144 below the stack were written, the lowest 122120 bytes below it
+      1 co: 112451 bytes of the 262144 below the stack were written, the lowest 122120 bytes below it
+canary-san-O0-n2000       1 exit 0    co: 219700 bytes of the 262144 below the stack were written, the lowest 250212 bytes below it
+      1 co: 219700 bytes of the 262144 below the stack were written, the lowest 250212 bytes below it
+run.sh 32 s
+== rs/malloc-O2
+co: kind 1 stack [0xffffaa8be010, 0xffffaa8fe010) tls 0xffffaab00750
+depth reached: 4
+exit 0
+== rs/static-O2
+co: kind 5 stack [0xaaaae772bd40, 0xaaaae776bd40) tls 0xffffbe593750
+depth reached: 4
+exit 0
+== maps/malloc-O2
+co: kind 1 stack [0xffffb8221010, 0xffffb8261010) tls 0xffffb82a3750
+maps: ffffb8221000-ffffb8262000 rw-p 00000000 00:00 0 
+maps: ffffb8263000-ffffb82b0000 rw-p 00000000 00:00 0 
+depth reached: 4
+exit 0
+== adj.c
+malloc   16384: first 0xaaaac368b2a0 second 0xaaaac368f2b0, second's end to first's start -32784 bytes
+malloc   65536: first 0xaaaac36942d0 second 0xaaaac36a42e0, second's end to first's start -131088 bytes
+malloc  262144: first 0xffff9f39f010 second 0xffff9f35e010, second's end to first's start 4096 bytes
+malloc 1048576: first 0xffff9f25d010 second 0xffff9f15c010, second's end to first's start 4096 bytes
+malloc 8388608: first 0xffff9e95b010 second 0xffff9e15a010, second's end to first's start 4096 bytes
+mmap 256 KiB: first 0xffff9e11a000 second 0xffff9e0da000, second's end to first's start 0 bytes
+static-O2 1: /w/scr/lx/linux.sh: line 15:   627 Segmentation fault      timeout -k 5 20 /w/scr/lx/rs/$b 2>&1
+exit 139|
+
+static-O0 1: /w/scr/lx/linux.sh: line 15:   631 Segmentation fault      timeout -k 5 20 /w/scr/lx/rs/$b 2>&1
+exit 139|
+
+static-O2 2: /w/scr/lx/linux.sh: line 15:   639 Segmentation fault      timeout -k 5 20 /w/scr/lx/rs/$b 2>&1
+exit 139|
+
+static-O0 2: /w/scr/lx/linux.sh: line 15:   644 Segmentation fault      timeout -k 5 20 /w/scr/lx/rs/$b 2>&1
+exit 139|
+
+static-O2 3: /w/scr/lx/linux.sh: line 15:   651 Segmentation fault      timeout -k 5 20 /w/scr/lx/rs/$b 2>&1
+exit 139|
+
+static-O0 3: /w/scr/lx/linux.sh: line 15:   657 Segmentation fault      timeout -k 5 20 /w/scr/lx/rs/$b 2>&1
+exit 139|
+
+ 10:01:55 up  3:26,  0 users,  load average: 1.49, 1.64, 1.27
+exit 0

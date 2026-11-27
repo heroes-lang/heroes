@@ -1,0 +1,250 @@
+# The tree of folders as the window's tree (`ui.tree`): one item a folder
+# `model/tree` shows, under the item of the folder it stands in and in the
+# rows' order, foldable where its folder holds a folder, unfolded where the
+# rows say so, and the folder shown chosen. The tree numbers its items
+# itself and never gives a number twice, so this module keeps which folder
+# each item shows, and an event naming an item is read through it.
+#
+# The items follow the rows by the least change. Under each item, the items
+# that show the rows' first folders in their order are kept; from the first
+# that does not, the items are taken out, each with the items under it, and
+# the rows' folders are added again at the end, since a tree adds an item
+# only at the end of the items under its parent, as the Bookmarks menu does
+# its items. Whether an item is foldable is fixed when it is added, so an
+# item whose folder came to hold a folder, or ceased to, is added again the
+# same way. The text of an item is its folder's name, the last part of its
+# path, so an item showing the same folder shows the same text. The items are
+# walked level by level with a list of their own, so a deep tree cannot run
+# the program out of stack.
+
+use <rebel>/ui
+
+use model/tree
+
+# An item of the tree and the folder it shows.
+record Item
+    # The folder's path.
+    folder: str
+    # The item's number in the tree.
+    number: i64
+    # The number of the item it stands under; 0 for the top.
+    under: i64
+    # Whether it was added foldable: its folder held a folder then.
+    foldable: bool
+
+# The items the tree holds.
+record Shown
+    # Every item, in the order added.
+    items: [Item]
+
+# A folder whose items are matched to the rows: its path and its item.
+record Level
+    # The folder's path; empty for the top of the tree.
+    folder: str
+    # Its item's number; 0 for the top.
+    number: i64
+
+# The items of a tree that holds none.
+function nothing_shown() -> Shown
+    none: [Item] = []
+    return Shown(items: none)
+
+# The number of the item that shows `folder`.
+#
+# - `s`: the items.
+# - `folder`: the folder's path.
+#
+# Fails `not_found` where no item shows it.
+function item_of(s: Shown, folder: str) -> i64?
+    for it in s.items
+        if it.folder == folder
+            return ok(it.number)
+
+    return fail(code: "not_found", msg: f"the tree shows no item of \"{folder}\"")
+
+# The folder item `number` shows.
+#
+# - `s`: the items.
+# - `number`: the item's number.
+#
+# Fails `not_found` where the tree holds no item `number`.
+function folder_of(s: Shown, number: i64) -> str?
+    at = at_of(s, number: number)
+
+    if at < 0
+        return fail(code: "not_found", msg: f"the tree holds no item {number}")
+
+    return ok(s.items[at].folder)
+
+# The index of item `number` among `s.items`; -1 where none is.
+#
+# - `s`: the items.
+# - `number`: the item's number.
+function at_of(s: Shown, number: i64) -> i64
+    for i in range(from: 0, to: s.items.len())
+        if s.items[i].number == number
+            return i
+
+    return -1
+
+# Makes the items of tree `widget` those of `rows`, and chooses the item of
+# `chosen`, or none where no item shows it.
+#
+# - `app`: the app.
+# - `s`: the items the tree holds; it follows the tree.
+# - `widget`: the tree.
+# - `rows`: the rows of `model/tree`, depth first.
+# - `chosen`: the folder shown.
+#
+# Fails as `ui`'s trees fail.
+function sync(@app: ui.App, @s: Shown, widget: ui.Widget, rows: [tree.Row], chosen: str) -> ()?
+    levels: [Level] @= [Level(folder: "", number: 0)]
+    at @= 0
+
+    while at < levels.len()
+        level = levels[at]
+        at @ at + 1
+        wanted = rows_under(rows, parent: level.folder)
+        have = ui.items_under(app, widget: widget, item: level.number)?
+        kept @= 0
+
+        while kept < have.len() && kept < wanted.len() && shows(s, number: have[kept], r: wanted[kept])
+            kept @ kept + 1
+
+        for number in have.slice(from: kept, to: have.len())
+            ui.remove_item(@app, widget: widget, item: number)?
+            dropped(@s, number: number)
+
+        numbers @= have.slice(from: 0, to: kept)
+
+        for r in wanted.slice(from: kept, to: wanted.len())
+            number = ui.add_item(@app, widget: widget, under: level.number, text: r.name, foldable: r.has_folders)?
+            s.items @ s.items.push(Item(folder: r.folder, number: number, under: level.number, foldable: r.has_folders))
+            numbers @ numbers.push(number)
+
+        for i in range(from: 0, to: wanted.len())
+            levels @ levels.push(Level(folder: wanted[i].folder, number: numbers[i]))
+
+    for r in rows
+        folded_as(@app, s: s, widget: widget, r: r)?
+
+    choice: [i64] @= []
+
+    match item_of(s, folder: chosen)
+        .ok number => choice @ [number]
+        .err _     => _ = 0
+
+    if ui.selection_of(app, widget: widget)? != choice
+        ui.set_selection(@app, widget: widget, indices: choice)?
+
+    return ok()
+
+# The rows standing right under `parent`, in their order.
+#
+# - `rows`: the rows.
+# - `parent`: the folder's path; empty for the top.
+function rows_under(rows: [tree.Row], parent: str) -> [tree.Row]
+    out: [tree.Row] @= []
+
+    for r in rows
+        if r.parent == parent
+            out @ out.push(r)
+
+    return out
+
+# Whether item `number` shows the folder of `r` as `r` asks: the same folder,
+# foldable the same way.
+#
+# - `s`: the items.
+# - `number`: the item's number.
+# - `r`: the row.
+function shows(s: Shown, number: i64, r: tree.Row) -> bool
+    at = at_of(s, number: number)
+    return at >= 0 && s.items[at].folder == r.folder && s.items[at].foldable == r.has_folders
+
+# Takes item `number` out of `s`, with every item under it, as the tree
+# takes them out.
+#
+# - `s`: the items.
+# - `number`: the item's number.
+function dropped(@s: Shown, number: i64)
+    gone: [i64] @= [number]
+    at @= 0
+
+    while at < gone.len()
+        for it in s.items
+            if it.under == gone[at]
+                gone @ gone.push(it.number)
+
+        at @ at + 1
+
+    kept: [Item] @= []
+
+    for it in s.items
+        if !holds(gone, value: it.number)
+            kept @ kept.push(it)
+
+    s.items @ kept
+
+# Unfolds or folds the item of `r` as `r` says, where it can be unfolded at
+# all: foldable, or holding items.
+#
+# - `app`: the app.
+# - `s`: the items.
+# - `widget`: the tree.
+# - `r`: the row.
+#
+# Fails as `ui`'s trees fail, and `not_found` where no item shows the row's
+# folder, which `sync` has just added.
+function folded_as(@app: ui.App, s: Shown, widget: ui.Widget, r: tree.Row) -> ()?
+    number = item_of(s, folder: r.folder)?
+    opens = s.items[at_of(s, number: number)].foldable || ui.items_under(app, widget: widget, item: number)?.len() > 0
+
+    if opens && ui.is_unfolded(app, widget: widget, item: number)? != r.unfolded
+        ui.set_unfolded(@app, widget: widget, item: number, on: r.unfolded)?
+
+    return ok()
+
+# Whether `values` holds `value`.
+#
+# - `values`: the values.
+# - `value`: the value.
+function holds(values: [i64], value: i64) -> bool
+    for v in values
+        if v == value
+            return true
+
+    return false
+
+test "sync: the rows added in their order and the folder shown chosen; a folder folded taken out with the items under it; a folder that came to hold a folder added again foldable, the items after it with it; a root elsewhere replacing the whole tree"
+    app @= ui.open(.headless).must()
+    w = ui.window(@app, title: "Folders", width: 240, height: 240).must()
+    t = ui.tree(@app, into: w).must()
+    s @= nothing_shown()
+    root = tree.Row(folder: "r", name: "r", parent: "", unfolded: true, has_folders: true)
+    a = tree.Row(folder: "r/a", name: "a", parent: "r", unfolded: true, has_folders: true)
+    a1 = tree.Row(folder: "r/a/1", name: "1", parent: "r/a", unfolded: false, has_folders: false)
+    b = tree.Row(folder: "r/b", name: "b", parent: "r", unfolded: false, has_folders: false)
+    c = tree.Row(folder: "r/c", name: "c", parent: "r", unfolded: false, has_folders: false)
+    sync(@app, @s, widget: t, rows: [root, a, a1, b, c], chosen: "r/a/1").must()
+    assert ui.items_under(app, widget: t, item: 0).must() == [1]
+    assert ui.items_under(app, widget: t, item: 1).must() == [2, 3, 4]
+    assert ui.items_under(app, widget: t, item: 2).must() == [5]
+    assert ui.is_unfolded(app, widget: t, item: 1).must() && ui.is_unfolded(app, widget: t, item: 2).must()
+    assert ui.selection_of(app, widget: t).must() == [5]
+    folded_a = tree.Row(folder: "r/a", name: "a", parent: "r", unfolded: false, has_folders: true)
+    sync(@app, @s, widget: t, rows: [root, folded_a, b, c], chosen: "r").must()
+    assert ui.items_under(app, widget: t, item: 2).must() == []
+    assert !ui.is_unfolded(app, widget: t, item: 2).must()
+    assert folder_of(s, number: 5).is_err() && ui.selection_of(app, widget: t).must() == [1]
+    grown_b = tree.Row(folder: "r/b", name: "b", parent: "r", unfolded: false, has_folders: true)
+    sync(@app, @s, widget: t, rows: [root, folded_a, grown_b, c], chosen: "r").must()
+    assert ui.items_under(app, widget: t, item: 1).must() == [2, 6, 7]
+    assert folder_of(s, number: 6).must() == "r/b" && folder_of(s, number: 7).must() == "r/c"
+    assert item_of(s, folder: "r/c").must() == 7 && item_of(s, folder: "r/a/1").is_err()
+    elsewhere = tree.Row(folder: "x", name: "x", parent: "", unfolded: true, has_folders: false)
+    sync(@app, @s, widget: t, rows: [elsewhere], chosen: "x").must()
+    assert ui.items_under(app, widget: t, item: 0).must() == [8]
+    assert s.items == [Item(folder: "x", number: 8, under: 0, foldable: false)]
+    assert ui.selection_of(app, widget: t).must() == [8]
+    ui.close(@app).must()

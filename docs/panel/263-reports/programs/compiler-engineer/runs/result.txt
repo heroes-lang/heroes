@@ -1,0 +1,57 @@
+selfhost/main.hero: DIFFERS, 7782 checks, 20 guards
+examples/adventure/main.hero: identical (  126997 bytes)
+examples/argv/main.hero: identical (   37541 bytes)
+examples/assembler/main.hero: identical (  210902 bytes)
+examples/binarytrees/main.hero: identical (   27698 bytes)
+examples/board/main.hero: identical (   51306 bytes)
+examples/calculator/main.hero: identical (  122704 bytes)
+examples/checksum/main.hero: identical (   96031 bytes)
+examples/collatz/main.hero: DIFFERS, 3 checks, 1 guards
+examples/csv/main.hero: identical (   38321 bytes)
+examples/ctime/main.hero: identical (   56673 bytes)
+examples/curl/main.hero: identical (   33889 bytes)
+examples/dates/main.hero: identical (   43897 bytes)
+examples/deck/main.hero: identical (   41264 bytes)
+examples/diff/main.hero: identical (   53403 bytes)
+examples/dotproduct/main.hero: DIFFERS, 4 checks, 1 guards
+examples/fannkuch/main.hero: identical (   30449 bytes)
+examples/firsthit/main.hero: DIFFERS, 4 checks, 1 guards
+examples/floats/main.hero: identical (   24497 bytes)
+examples/histogram/main.hero: DIFFERS, 3 checks, 1 guards
+examples/ini/main.hero: identical (   82204 bytes)
+examples/interpreter/main.hero: identical (  603113 bytes)
+examples/json/main.hero: identical (  204173 bytes)
+examples/ledger/main.hero: identical (  294714 bytes)
+examples/logs/main.hero: identical (  153417 bytes)
+examples/mandelbrot/main.hero: DIFFERS, 7 checks, 1 guards
+examples/markdown/main.hero: identical (  141481 bytes)
+examples/matmul/main.hero: DIFFERS, 6 checks, 1 guards
+examples/maze/main.hero: identical (  107796 bytes)
+examples/montecarlo/main.hero: DIFFERS, 4 checks, 1 guards
+examples/nbody/main.hero: identical (   47412 bytes)
+examples/nqueens/main.hero: DIFFERS, 4 checks, 1 guards
+examples/palette/main.hero: identical (   23073 bytes)
+examples/pipeline/main.hero: identical (   31885 bytes)
+examples/query/main.hero: identical (  318293 bytes)
+examples/raylib/main.hero: identical (   35391 bytes)
+examples/readings/main.hero: identical (   53289 bytes)
+examples/roman/main.hero: identical (   39410 bytes)
+examples/routes/main.hero: identical (   45356 bytes)
+examples/rpn/main.hero: identical (   69727 bytes)
+examples/sdl/main.hero: identical (   21166 bytes)
+examples/server/main.hero: DIFFERS, 50 checks, 5 guards
+examples/shapes/main.hero: identical (   22680 bytes)
+examples/sieve/main.hero: identical (   26779 bytes)
+examples/spectral/main.hero: identical (   33741 bytes)
+examples/spreadsheet/main.hero: identical (  202634 bytes)
+examples/sqlite/main.hero: identical (   53227 bytes)
+examples/tally/main.hero: identical (   39555 bytes)
+examples/template/main.hero: identical (   40598 bytes)
+examples/threads/main.hero: DIFFERS, 3 checks, 2 guards
+examples/todo/main.hero: identical (  120627 bytes)
+examples/tree/main.hero: identical (   46987 bytes)
+examples/widths/main.hero: identical (   36922 bytes)
+examples/wordbands/main.hero: DIFFERS, 5 checks, 1 guards
+examples/words/main.hero: identical (   33795 bytes)
+examples/wrap/main.hero: identical (   43312 bytes)
+done

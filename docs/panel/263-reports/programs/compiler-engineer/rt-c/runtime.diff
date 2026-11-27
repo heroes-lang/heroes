@@ -1,0 +1,42 @@
+--- ../263-compiler-engineer/runtime/heroes_runtime.h	2026-11-27 11:13:55
++++ rt-c/heroes_runtime.h	2026-11-27 11:18:16
+@@ -119,6 +119,29 @@
+  * compile error rather than a program that quietly runs unguarded. */
+ void hero_thread_guard(const char *what);
+ 
++/* PANEL 263, THE COMPILER-ENGINEER'S PROTOTYPE OF ROUTE (c), unlanded: a stack
++ * check at the entry of a function a callback reaches. The thread's window
++ * [base, base + span) is the stack it runs on, its lowest `reserve` bytes cut
++ * off; a stack pointer outside it, by a recursion past the reserve or by a
++ * switch to any other stack, takes the slow path, which re-derives the window
++ * from the ranges the runtime keeps and refuses inside the reserve. One load
++ * of a thread-local pair, a subtraction, a compare and a branch. */
++typedef struct { uintptr_t base; uintptr_t span; } HeroStackWindow;
++extern _Thread_local HeroStackWindow hero_stack_window;
++void hero_stack_check_miss(const char *what, uintptr_t sp);
++static inline __attribute__((__always_inline__)) void hero_stack_check(const char *what) {
++    uintptr_t sp;
++#if defined(__aarch64__)
++    __asm__ volatile("mov %0, sp" : "=r"(sp));
++#elif defined(__x86_64__)
++    __asm__ volatile("mov %%rsp, %0" : "=r"(sp));
++#else
++    sp = (uintptr_t)__builtin_frame_address(0);
++#endif
++    const HeroStackWindow *w = &hero_stack_window;
++    if (__builtin_expect(sp - w->base >= w->span, 0)) hero_stack_check_miss(what, sp);
++}
++
+ /* The first line of every function's thunk, the address C is handed, which
+  * stops the program by name where a signal's delivery called it, directly or
+  * through a handler of C's (panel 247's R1, defect 2494): `what` as above, then
+--- ../263-compiler-engineer/runtime/runtime.c	2026-11-27 11:13:55
++++ rt-c/runtime.c	2026-11-27 11:18:16
+@@ -232,6 +232,7 @@
+  * makes when C calls back from another one (panel 111 R9). Needs only panic.c;
+  * claimed once from hero_args_set, in os.c below, for stack.c's own reason. */
+ #include "parts/thread.c"
++#include "parts/stackcheck.c"
+ 
+ /* Starting a thread and waiting for it (design.md Part 7.13). Immediately
+  * after `thread.c` because it calls that file's `hero_thread_claim` on the

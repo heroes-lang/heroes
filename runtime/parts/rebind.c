@@ -62,8 +62,10 @@
  *    apart, each falling to route A alone.
  * 3. WHERE A FAMILY DOES NOT VERIFY, ROUTE A for it: its save points are
  *    rewritten and keep a record (panel 251's route J), whose fingerprint is
- *    read only of a buffer on this thread's stack, the alternate stack it runs
- *    on, or a writable segment of an image loaded before `main`. Rules 4 to 7
+ *    copied by the kernel wherever the buffer is mapped, so a buffer given
+ *    back since is an answer and never a fault (defects 2679 and 2867; until
+ *    2867 it was read only on this thread's stack, the alternate stack it runs
+ *    on, or a writable segment of an image loaded before `main`). Rules 4 to 7
  *    bind it too: a trusted record holds a frame just below the stack pointer
  *    its save wrote, judged as a decoded target is, and where contexts fall
  *    to it every range `makecontext` hands out is held (defect 2745).
@@ -88,10 +90,14 @@
  *    standing entry until its handler ends (the coroutine may resume the
  *    handler through `uc_link`); any other `setcontext` is a jump. A jump that
  *    leaves the alternate stack an entry was pushed on, for any other stack,
- *    leaves that entry. A jump that lands on the alternate stack from outside
- *    it re-enters a handler's frames, and stands as an entry of its own. A
- *    landing at or below a standing entry on its range is that handler
- *    running again: it releases the entry's suspension and hold.
+ *    leaves that entry; so does a jump made inside a handler's frames that
+ *    lands off their stack, a coroutine's, or from the thread's own onto a
+ *    coroutine's, where no save point was made inside them since the handler
+ *    began (defect 2872 and its mirror), and with one, it parks the handler,
+ *    which a refusal then names. A jump that lands on the alternate stack
+ *    from outside it re-enters a handler's frames, and stands as an entry of
+ *    its own. A landing at or below a standing entry on its range is that
+ *    handler running again: it releases the entry's suspension and hold.
  * 7. THE KNOWN STACKS are learned in `makecontext`'s slot, and nothing tells
  *    this route one has ended: a stale range is never asked about an entry,
  *    only about a target, where it costs a told refusal.
@@ -118,12 +124,13 @@
  * coroutine left by a switch these files never see that saves into another
  * context than the one it was switched to, leaving that one as it was, which
  * is judged ended (`rebind_entries.c`, the life of a range; defects
- * d-lane-d2745-1 and 2851); a
- * handler left by a jump and then landed in again from a coroutine on another
- * range (no range's bottom is recorded where the thread leaves it, so the
- * landing in the handler's dead frames reads as a coroutine resuming the
- * thread's own stack: panel 255's R3 residue `rr_2`, shared with the route
- * before it). */
+ * d-lane-d2745-1 and 2851). Panel 255's R3 residue `rr_2`, a handler left by
+ * a jump and then landed in again from a coroutine on another range, is
+ * reached since defect 2855 (step 199d): the frames a jump leaves are kept as
+ * a span, and a landing inside them is that handler re-entered
+ * (`rebind_entries.c`, the frames of a handler left by a jump), so this list
+ * named it as a residue after its rule had ended it until panel 262's landing
+ * (lane land262). */
 
 #if defined(__APPLE__)
 

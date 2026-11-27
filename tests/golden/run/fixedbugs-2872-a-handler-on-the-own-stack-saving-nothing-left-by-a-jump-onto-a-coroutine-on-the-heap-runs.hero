@@ -1,0 +1,24 @@
+# Fixed 2026-11-27, lane sig-family-3 (step 199r): ONSTACK's mirror of
+# defect 2872's `ck`. A handler on the thread's own stack that saved nothing
+# jumps (`siglongjmp`) into a coroutine on a heap stack, which calls the
+# program's function, then jumps home.
+# Symptom: before, refused in ONSTACK's words, *a stack a context switch had
+# entered ... where it cannot tell that jump from one onto frames the handler
+# itself switched to*, on this Mac and on Linux arm64.
+# Cause: a jump onto a coroutine's stack kept the handler standing whatever
+# was saved inside its frames, where `ck`'s jump off a coroutine's stack had
+# left it since step 199m wherever nothing was.
+# Fix: a jump made inside a handler's frames that lands on another stack
+# leaves the handler where no save point was made inside those frames since
+# it began, the thread's own stack and a coroutine's alike: nothing can switch
+# back into them but a landing their left span catches.
+# Correct: the handler is left for good. MUST RUN.
+extern "fixedbugs-2872-a-handler-on-the-own-stack-jumping-onto-a-coroutine.h"
+    function mo_run(save: i32, heap: i32, cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("mo_0_1: ", mo_run(save: 0, heap: 1, cb: answer))

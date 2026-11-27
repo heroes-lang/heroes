@@ -1,0 +1,32 @@
+(lldb) process attach --pid 24348
+warning: malloc-O2 was compiled with optimization - stepping may behave oddly; variables may not be available.
+Process 24348 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+       frame #0: 0x0000000100b758ec malloc-O2`hero_rebind_relived at rebind_entries.c:500:24 [opt] [inlined]
+   497 	static void hero_rebind_relived(HeroSignalStack *own, uintptr_t frame) {
+   498 	    if (own == NULL) return;
+   499 	    for (int k = own->left_n - 1; k >= 0; k -= 1) {
+-> 500 	        if (!(frame >= own->left_slo[k] && frame < own->left_shi[k]) || frame >= own->left_hi[k]) continue;
+    	                       ^
+   501 	        if (frame > own->left_lo[k]) {
+   502 	            own->left_hi[k] = frame;
+   503 	            continue;
+Target 0: (malloc-O2) stopped.
+Executable binary set to "/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/panel263-scratch/rs-f9f/malloc-O2".
+Architecture set to: arm64-apple-macosx-.
+(lldb) bt 8
+* thread #1, queue = 'com.apple.main-thread', stop reason = signal SIGSTOP
+   * frame #0: 0x0000000100b758ec malloc-O2`hero_rebind_relived at rebind_entries.c:500:24 [opt] [inlined]
+     frame #1: 0x0000000100b75848 malloc-O2`hero_rebind_tramp at rebind_entries.c:722:9 [opt]
+     frame #2: 0x0000000100b5a04c malloc-O2`hero_thread_guard at thread.c:147:5 [opt]
+     frame #3: 0x0000000100b5a04c malloc-O2`hero_thread_guard at thread.c:147:5 [opt]
+     frame #4: 0x0000000100b7a39c malloc-O2`h_malloc_deep at malloc.hero:8:39 [opt]
+     frame #5: 0x0000000100b7a3ac malloc-O2`h_malloc_deep at malloc.hero:11:150 [opt]
+     frame #6: 0x0000000100b7a3ac malloc-O2`h_malloc_deep at malloc.hero:11:150 [opt]
+     frame #7: 0x0000000100b7a3ac malloc-O2`h_malloc_deep at malloc.hero:11:150 [opt]
+(lldb) register read x0 x1 x2
+      x0 = 0x00000074d8800118
+      x1 = 0x000000000000001e
+      x2 = 0x000000000000000a
+(lldb) frame variable
+error: no variable information is available in debug info for this compile unit

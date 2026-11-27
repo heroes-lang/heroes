@@ -1,0 +1,16 @@
+(lldb) process attach --pid 22448
+warning: malloc-O2 was compiled with optimization - stepping may behave oddly; variables may not be available.
+Process 22448 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BAD_ACCESS (code=2, address=0x76617b2200)
+       frame #0: 0x00000001045f18ec malloc-O2`hero_rebind_relived at rebind_entries.c:500:24 [opt] [inlined]
+   497 	static void hero_rebind_relived(HeroSignalStack *own, uintptr_t frame) {
+   498 	    if (own == NULL) return;
+   499 	    for (int k = own->left_n - 1; k >= 0; k -= 1) {
+-> 500 	        if (!(frame >= own->left_slo[k] && frame < own->left_shi[k]) || frame >= own->left_hi[k]) continue;
+    	                       ^
+   501 	        if (frame > own->left_lo[k]) {
+   502 	            own->left_hi[k] = frame;
+   503 	            continue;
+Target 0: (malloc-O2) stopped.
+Executable binary set to "/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/panel263-scratch/rs-f9f/malloc-O2".
+Architecture set to: arm64-apple-macosx-.

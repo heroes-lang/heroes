@@ -1,0 +1,40 @@
+canary4-O2       n1000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+canary4-O2       n9000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 665854|exit 0|
+canary4-O2       n100000   co: returned: 0 bytes below, lowest 0 below it|depth reached: 969147|exit 0|
+canary4-O2       n300000   panic: stack exhausted in canary4.deep|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+canary4-O2       n10000000 panic: stack exhausted in canary4.deep|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+canary4-O0       n1000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+canary4-O0       n9000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 665854|exit 0|
+canary4-O0       n100000   panic: stack exhausted in canary4.deep|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+canary4-O0       n300000   panic: stack exhausted in canary4.deep|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+canary4-O0       n10000000 panic: stack exhausted in canary4.deep|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+canary6-O2       n1000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+canary6-O2       n9000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 665854|exit 0|
+canary6-O2       n100000   co: returned: 0 bytes below, lowest 0 below it|depth reached: 969147|exit 0|
+canary6-O2       n300000   panic: stack exhausted in canary6.deep|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+canary6-O2       n10000000 panic: stack exhausted in canary6.deep|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+canary6-O0       n1000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+canary6-O0       n9000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 665854|exit 0|
+canary6-O0       n100000   panic: stack exhausted in canary6.deep|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+canary6-O0       n300000   panic: stack exhausted in canary6.deep|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+canary6-O0       n10000000 panic: stack exhausted in canary6.deep|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+canary4-san-O2   n1000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+canary4-san-O2   n9000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 665854|exit 0|
+canary4-san-O2   n100000   co: returned: 0 bytes below, lowest 0 below it|depth reached: 969147|exit 0|
+canary4-san-O2   n300000   asan stack-overflow|co: at the stop: 0 bytes below, lowest 0 below it|exit 134|
+canary4-san-O2   n10000000 asan stack-overflow|co: at the stop: 0 bytes below, lowest 0 below it|exit 134|
+canary4-san-O0   n1000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+canary4-san-O0   n9000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 665854|exit 0|
+canary4-san-O0   n100000   asan stack-overflow|co: at the stop: 0 bytes below, lowest 0 below it|exit 134|
+canary4-san-O0   n300000   asan stack-overflow|co: at the stop: 0 bytes below, lowest 0 below it|exit 134|
+canary4-san-O0   n10000000 asan stack-overflow|co: at the stop: 0 bytes below, lowest 0 below it|exit 134|
+helper-O2        n1000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+helper-O2        n9000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 665854|exit 0|
+helper-O2        n100000   co: returned: 0 bytes below, lowest 0 below it|depth reached: 969147|exit 0|
+helper-O2        n300000   panic: stack exhausted in helper.walk|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+helper-O2        n10000000 panic: stack exhausted in helper.walk|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+helper-O0        n1000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+helper-O0        n9000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 665854|exit 0|
+helper-O0        n100000   panic: stack exhausted in helper.walk|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+helper-O0        n300000   panic: stack exhausted in helper.walk|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+helper-O0        n10000000 panic: stack exhausted in helper.walk|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|

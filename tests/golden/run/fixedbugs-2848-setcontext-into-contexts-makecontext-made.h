@@ -12,8 +12,10 @@
  *     the coroutine calls the program: MUST BE REFUSED.
  * sm_run shape 1: a coroutine started by `setcontext`, which saves a buffer
  *     and comes back by `setcontext` to a context the runner took; a handler
- *     then jumps into the coroutine, which calls the program: MUST BE
- *     REFUSED.
+ *     then jumps into the coroutine, which calls the program: MUST RUN, the
+ *     handler saving nothing inside its own frames, so the jump leaves it
+ *     (ONSTACK's mirror of defect 2872, lane sig-family-3, step 199r; until
+ *     then MUST BE REFUSED, in ONSTACK's words).
  * sm_run shape 2: no coroutine: `getcontext` and `setcontext` used as a jump
  *     within the runner, then a save point, a signal, and the handler's jump
  *     out to it; the program is called after the handler was left: correct,
@@ -50,7 +52,13 @@ static int sm_on(void (*h)(int)) {
     return sigaction(SIGUSR1, &sa, NULL);
 }
 
-static void sm_body(void) {
+/* The coroutine's own body is not instrumented by `--sanitize`: clang's
+ * AddressSanitizer asks ASan to clear the stack's shadow before its
+ * `siglongjmp`, and on a heap stack, which ASan was never told of, ASan writes
+ * a warning instead (defect 2896, the program's own C); the runtime's rewrite
+ * of the jump clears the coroutine's range itself (step 199l). It reached
+ * that jump once the handler's jump into it ran (step 199r). */
+__attribute__((no_sanitize("address"))) static void sm_body(void) {
     if (sm_shape == 1 && sigsetjmp(sm_kb, 0) == 0) setcontext(&sm_home);
     sm_got = sm_f(4);
     siglongjmp(sm_back, 1);

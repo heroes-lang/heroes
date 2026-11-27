@@ -1,0 +1,1 @@
+Where a signal handler of C's interrupted a `swapcontext` or `setcontext` before it loaded its target, a switch the handler makes naming either context of that one aborts the program before it switches, saying so, where this runtime saw both.

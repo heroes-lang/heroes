@@ -1,0 +1,178 @@
+c1     canary4-O0       KB256   n1000    exit 0    co: returned: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10417 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O0       KB256   n1200    exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10430 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O0       KB256   n1500    exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10441 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O0       KB256   n2000    exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10457 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O0       KB256   n3000    exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10470 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O0       KB256   n30000   exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10484 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-san-O0   KB256   n1000    exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10501 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-san-O0   KB256   n1200    exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10513 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-san-O0   KB256   n1500    exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10524 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-san-O0   KB256   n2000    exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10540 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-san-O0   KB256   n3000    exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10552 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-san-O0   KB256   n30000   exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+c1     canary4-O2       KB256   n7000    exit 0    co: returned: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10578 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O2       KB256   n9000    exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10592 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O2       KB256   n10000   exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10604 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O2       KB256   n14000   exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10615 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O2       KB256   n50000   exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+c1     canary4-san-O2   KB256   n7000    exit 0    co: returned: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10647 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-san-O2   KB256   n9000    exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10663 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-san-O2   KB256   n10000   exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10681 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-san-O2   KB256   n14000   exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10694 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-san-O2   KB256   n50000   exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+c1     canary6-O0       KB256   n1000    exit 0    co: returned: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10726 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-O0       KB256   n1200    exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10743 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-O0       KB256   n1500    exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10755 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-O0       KB256   n2000    exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10766 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-O0       KB256   n3000    exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10778 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-O0       KB256   n30000   exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10792 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-san-O0   KB256   n1000    exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10811 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-san-O0   KB256   n1200    exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10828 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-san-O0   KB256   n1500    exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10844 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-san-O0   KB256   n2000    exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10860 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-san-O0   KB256   n3000    exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10875 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-san-O0   KB256   n30000   exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+c1     canary6-O2       KB256   n7000    exit 0    co: returned: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10912 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-O2       KB256   n9000    exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10930 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-O2       KB256   n10000   exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10946 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-O2       KB256   n14000   exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 10968 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-O2       KB256   n50000   exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+c1     canary6-san-O2   KB256   n7000    exit 0    co: returned: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11002 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-san-O2   KB256   n9000    exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11016 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-san-O2   KB256   n10000   exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11033 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-san-O2   KB256   n14000   exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11049 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-san-O2   KB256   n50000   exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 262144 below the stack were written, the lowest 0 below it|
+c1     canary4-O2       KB16    n300     exit 0    co: returned: 0 bytes of the 16384 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11081 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O2       KB16    n500     exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 16384 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11095 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O2       KB16    n1000    exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 16384 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11110 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O2       KB16    n40000   exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 16384 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11126 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O2       KB16    n1000000 exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 16384 below the stack were written, the lowest 0 below it|
+c1     canary4-san-O2   KB16    n300     exit 0    co: returned: 0 bytes of the 16384 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11154 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-san-O2   KB16    n500     exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 16384 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11176 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-san-O2   KB16    n1000    exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 16384 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11196 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-san-O2   KB16    n40000   exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 16384 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11221 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-san-O2   KB16    n1000000 exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 16384 below the stack were written, the lowest 0 below it|
+c1     canary6-O2       KB16    n300     exit 0    co: returned: 0 bytes of the 16384 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11257 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-O2       KB16    n500     exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 16384 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11274 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-O2       KB16    n1000    exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 16384 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11289 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-O2       KB16    n40000   exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 16384 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11301 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-O2       KB16    n1000000 exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 16384 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11315 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O0       KB16    n300     exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 16384 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11329 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O0       KB16    n500     exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 16384 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11343 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O0       KB16    n1000    exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 16384 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11362 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O0       KB16    n40000   exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 16384 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11378 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O0       KB16    n1000000 exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 16384 below the stack were written, the lowest 0 below it|
+c1     canary4-O2       KB64    n300     exit 0    co: returned: 0 bytes of the 65536 below the stack were written, the lowest 0 below it|
+c1     canary4-O2       KB64    n500     exit 0    co: returned: 0 bytes of the 65536 below the stack were written, the lowest 0 below it|
+c1     canary4-O2       KB64    n1000    exit 0    co: returned: 0 bytes of the 65536 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11430 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O2       KB64    n40000   exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 65536 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11453 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O2       KB64    n1000000 exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 65536 below the stack were written, the lowest 0 below it|
+c1     canary4-san-O2   KB64    n300     exit 0    co: returned: 0 bytes of the 65536 below the stack were written, the lowest 0 below it|
+c1     canary4-san-O2   KB64    n500     exit 0    co: returned: 0 bytes of the 65536 below the stack were written, the lowest 0 below it|
+c1     canary4-san-O2   KB64    n1000    exit 0    co: returned: 0 bytes of the 65536 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11509 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-san-O2   KB64    n40000   exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 65536 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11524 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-san-O2   KB64    n1000000 exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 65536 below the stack were written, the lowest 0 below it|
+c1     canary6-O2       KB64    n300     exit 0    co: returned: 0 bytes of the 65536 below the stack were written, the lowest 0 below it|
+c1     canary6-O2       KB64    n500     exit 0    co: returned: 0 bytes of the 65536 below the stack were written, the lowest 0 below it|
+c1     canary6-O2       KB64    n1000    exit 0    co: returned: 0 bytes of the 65536 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11583 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-O2       KB64    n40000   exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 65536 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11605 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-O2       KB64    n1000000 exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 65536 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11621 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O0       KB64    n300     exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 65536 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11638 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O0       KB64    n500     exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 65536 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11655 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O0       KB64    n1000    exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 65536 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11676 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O0       KB64    n40000   exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 65536 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11694 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O0       KB64    n1000000 exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 65536 below the stack were written, the lowest 0 below it|
+c1     canary4-O2       KB1024  n300     exit 0    co: returned: 0 bytes of the 1048576 below the stack were written, the lowest 0 below it|
+c1     canary4-O2       KB1024  n500     exit 0    co: returned: 0 bytes of the 1048576 below the stack were written, the lowest 0 below it|
+c1     canary4-O2       KB1024  n1000    exit 0    co: returned: 0 bytes of the 1048576 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11764 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O2       KB1024  n40000   exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 1048576 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11783 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O2       KB1024  n1000000 exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 1048576 below the stack were written, the lowest 0 below it|
+c1     canary4-san-O2   KB1024  n300     exit 0    co: returned: 0 bytes of the 1048576 below the stack were written, the lowest 0 below it|
+c1     canary4-san-O2   KB1024  n500     exit 0    co: returned: 0 bytes of the 1048576 below the stack were written, the lowest 0 below it|
+c1     canary4-san-O2   KB1024  n1000    exit 0    co: returned: 0 bytes of the 1048576 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11842 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-san-O2   KB1024  n40000   exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 1048576 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11857 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-san-O2   KB1024  n1000000 exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 1048576 below the stack were written, the lowest 0 below it|
+c1     canary6-O2       KB1024  n300     exit 0    co: returned: 0 bytes of the 1048576 below the stack were written, the lowest 0 below it|
+c1     canary6-O2       KB1024  n500     exit 0    co: returned: 0 bytes of the 1048576 below the stack were written, the lowest 0 below it|
+c1     canary6-O2       KB1024  n1000    exit 0    co: returned: 0 bytes of the 1048576 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11908 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-O2       KB1024  n40000   exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 1048576 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11920 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary6-O2       KB1024  n1000000 exit 134  panic: stack exhausted in canary6.deep|co: at the stop: 0 bytes of the 1048576 below the stack were written, the lowest 0 below it|
+c1     canary4-O0       KB1024  n300     exit 0    co: returned: 0 bytes of the 1048576 below the stack were written, the lowest 0 below it|
+c1     canary4-O0       KB1024  n500     exit 0    co: returned: 0 bytes of the 1048576 below the stack were written, the lowest 0 below it|
+c1     canary4-O0       KB1024  n1000    exit 0    co: returned: 0 bytes of the 1048576 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11975 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O0       KB1024  n40000   exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 1048576 below the stack were written, the lowest 0 below it|
+./count.sh: line 5: 11991 Abort trap: 6           timeout -k 5 20 "$D/$1" 2>&1
+c1     canary4-O0       KB1024  n1000000 exit 134  panic: stack exhausted in canary4.deep|co: at the stop: 0 bytes of the 1048576 below the stack were written, the lowest 0 below it|

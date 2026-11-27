@@ -1,0 +1,616 @@
+ 10:45:33 up  4:10,  0 users,  load average: 2.16, 2.91, 2.29
+heroes 0.6.0
+sources 50e8403d5a885325
+== run.sh on Linux stage 2
+malloc-O2                 1 exit 134  panic: stack exhausted in malloc.deep
+malloc-O2                 2 exit 134  panic: stack exhausted in malloc.deep
+malloc-O2                 3 exit 134  panic: stack exhausted in malloc.deep
+malloc-O0                 1 exit 134  panic: stack exhausted in malloc.deep
+malloc-O0                 2 exit 134  panic: stack exhausted in malloc.deep
+malloc-O0                 3 exit 134  panic: stack exhausted in malloc.deep
+malloc-san-O2             1 exit 1    AddressSanitizer:DEADLYSIGNAL
+malloc-san-O2             2 exit 1    AddressSanitizer:DEADLYSIGNAL
+malloc-san-O2             3 exit 1    AddressSanitizer:DEADLYSIGNAL
+malloc-san-O0             1 exit 1    AddressSanitizer:DEADLYSIGNAL
+malloc-san-O0             2 exit 1    AddressSanitizer:DEADLYSIGNAL
+malloc-san-O0             3 exit 1    AddressSanitizer:DEADLYSIGNAL
+guarded-O2                1 exit 134  panic: stack exhausted in guarded.deep
+guarded-O2                2 exit 134  panic: stack exhausted in guarded.deep
+guarded-O2                3 exit 134  panic: stack exhausted in guarded.deep
+guarded-O0                1 exit 134  panic: stack exhausted in guarded.deep
+guarded-O0                2 exit 134  panic: stack exhausted in guarded.deep
+guarded-O0                3 exit 134  panic: stack exhausted in guarded.deep
+bare-O2                   1 exit 134  panic: stack exhausted in bare.deep
+bare-O2                   2 exit 134  panic: stack exhausted in bare.deep
+bare-O2                   3 exit 134  panic: stack exhausted in bare.deep
+bare-O0                   1 exit 134  panic: stack exhausted in bare.deep
+bare-O0                   2 exit 134  panic: stack exhausted in bare.deep
+bare-O0                   3 exit 134  panic: stack exhausted in bare.deep
+thread-O2                 1 exit 134  panic: stack exhausted in thread.deep
+thread-O2                 2 exit 134  panic: stack exhausted in thread.deep
+thread-O2                 3 exit 134  panic: stack exhausted in thread.deep
+thread-O0                 1 exit 134  panic: stack exhausted in thread.deep
+thread-O0                 2 exit 134  panic: stack exhausted in thread.deep
+thread-O0                 3 exit 134  panic: stack exhausted in thread.deep
+static-O2                 1 exit 139  exit 139
+static-O2                 2 exit 139  exit 139
+static-O2                 3 exit 139  exit 139
+static-O0                 1 exit 139  exit 139
+static-O0                 2 exit 139  exit 139
+static-O0                 3 exit 139  exit 139
+canary-O2-n7000           1 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-O2-n7000           2 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-O2-n7000           3 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+      3 co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-san-O2-n7000       1 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-san-O2-n7000       2 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-san-O2-n7000       3 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+      3 co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-O2-n9000           1 exit 0    co: 19453 bytes of the 262144 below the stack were written, the lowest 25936 bytes below it
+canary-O2-n9000           2 exit 0    co: 19453 bytes of the 262144 below the stack were written, the lowest 25936 bytes below it
+canary-O2-n9000           3 exit 0    co: 19453 bytes of the 262144 below the stack were written, the lowest 25936 bytes below it
+      3 co: 19453 bytes of the 262144 below the stack were written, the lowest 25936 bytes below it
+canary-san-O2-n9000       1 exit 0    co: 19469 bytes of the 262144 below the stack were written, the lowest 25968 bytes below it
+canary-san-O2-n9000       2 exit 0    co: 19469 bytes of the 262144 below the stack were written, the lowest 25968 bytes below it
+canary-san-O2-n9000       3 exit 0    co: 19469 bytes of the 262144 below the stack were written, the lowest 25968 bytes below it
+      3 co: 19469 bytes of the 262144 below the stack were written, the lowest 25968 bytes below it
+canary-O2-n10000          1 exit 0    co: 41630 bytes of the 262144 below the stack were written, the lowest 57936 bytes below it
+canary-O2-n10000          2 exit 0    co: 43441 bytes of the 262144 below the stack were written, the lowest 57936 bytes below it
+canary-O2-n10000          3 exit 0    co: 43441 bytes of the 262144 below the stack were written, the lowest 57936 bytes below it
+      1 co: 41630 bytes of the 262144 below the stack were written, the lowest 57936 bytes below it
+      2 co: 43441 bytes of the 262144 below the stack were written, the lowest 57936 bytes below it
+canary-san-O2-n10000      1 exit 0    co: 43465 bytes of the 262144 below the stack were written, the lowest 57968 bytes below it
+canary-san-O2-n10000      2 exit 0    co: 43465 bytes of the 262144 below the stack were written, the lowest 57968 bytes below it
+canary-san-O2-n10000      3 exit 0    co: 43465 bytes of the 262144 below the stack were written, the lowest 57968 bytes below it
+      3 co: 43465 bytes of the 262144 below the stack were written, the lowest 57968 bytes below it
+canary-O0-n1200           1 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-O0-n1200           2 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-O0-n1200           3 exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+      3 co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it
+canary-san-O0-n1200       1 exit 0    co: 39750 bytes of the 262144 below the stack were written, the lowest 45412 bytes below it
+canary-san-O0-n1200       2 exit 0    co: 39750 bytes of the 262144 below the stack were written, the lowest 45412 bytes below it
+canary-san-O0-n1200       3 exit 0    co: 39750 bytes of the 262144 below the stack were written, the lowest 45412 bytes below it
+      3 co: 39750 bytes of the 262144 below the stack were written, the lowest 45412 bytes below it
+canary-O0-n1500           1 exit 0    co: 23967 bytes of the 262144 below the stack were written, the lowest 26120 bytes below it
+canary-O0-n1500           2 exit 0    co: 23965 bytes of the 262144 below the stack were written, the lowest 26120 bytes below it
+canary-O0-n1500           3 exit 0    co: 23965 bytes of the 262144 below the stack were written, the lowest 26120 bytes below it
+      2 co: 23965 bytes of the 262144 below the stack were written, the lowest 26120 bytes below it
+      1 co: 23967 bytes of the 262144 below the stack were written, the lowest 26120 bytes below it
+canary-san-O0-n1500       1 exit 0    co: 107240 bytes of the 262144 below the stack were written, the lowest 122212 bytes below it
+canary-san-O0-n1500       2 exit 0    co: 107240 bytes of the 262144 below the stack were written, the lowest 122212 bytes below it
+canary-san-O0-n1500       3 exit 0    co: 107240 bytes of the 262144 below the stack were written, the lowest 122212 bytes below it
+      3 co: 107240 bytes of the 262144 below the stack were written, the lowest 122212 bytes below it
+canary-O0-n2000           1 exit 0    co: 112451 bytes of the 262144 below the stack were written, the lowest 122120 bytes below it
+canary-O0-n2000           2 exit 0    co: 112451 bytes of the 262144 below the stack were written, the lowest 122120 bytes below it
+canary-O0-n2000           3 exit 0    co: 112451 bytes of the 262144 below the stack were written, the lowest 122120 bytes below it
+      3 co: 112451 bytes of the 262144 below the stack were written, the lowest 122120 bytes below it
+canary-san-O0-n2000       1 exit 0    co: 219700 bytes of the 262144 below the stack were written, the lowest 250212 bytes below it
+canary-san-O0-n2000       2 exit 0    co: 219700 bytes of the 262144 below the stack were written, the lowest 250212 bytes below it
+canary-san-O0-n2000       3 exit 0    co: 219700 bytes of the 262144 below the stack were written, the lowest 250212 bytes below it
+      3 co: 219700 bytes of the 262144 below the stack were written, the lowest 250212 bytes below it
+== malloc by CO_N, base (stage 2)
+base malloc-O0 n1600: /w/scr/lx/linux2.sh: line 10:   993 Aborted                 CO_N=$n timeout -k 5 20 rs2/malloc-O0 2>&1
+panic: stack exhausted in malloc.deep|exit 134|
+
+base malloc-O0 n2000: /w/scr/lx/linux2.sh: line 10:   999 Aborted                 CO_N=$n timeout -k 5 20 rs2/malloc-O0 2>&1
+panic: stack exhausted in malloc.deep|exit 134|
+
+base malloc-O0 n3000: /w/scr/lx/linux2.sh: line 10:  1005 Aborted                 CO_N=$n timeout -k 5 20 rs2/malloc-O0 2>&1
+panic: stack exhausted in malloc.deep|exit 134|
+
+base malloc-O0 n10000: /w/scr/lx/linux2.sh: line 10:  1011 Aborted                 CO_N=$n timeout -k 5 20 rs2/malloc-O0 2>&1
+panic: stack exhausted in malloc.deep|exit 134|
+
+base malloc-O0 n20000: /w/scr/lx/linux2.sh: line 10:  1017 Aborted                 CO_N=$n timeout -k 5 20 rs2/malloc-O0 2>&1
+panic: stack exhausted in malloc.deep|exit 134|
+
+base malloc-O0 n30000: /w/scr/lx/linux2.sh: line 10:  1023 Aborted                 CO_N=$n timeout -k 5 20 rs2/malloc-O0 2>&1
+panic: stack exhausted in malloc.deep|exit 134|
+
+base malloc-O0 n50000: /w/scr/lx/linux2.sh: line 10:  1029 Aborted                 CO_N=$n timeout -k 5 20 rs2/malloc-O0 2>&1
+panic: stack exhausted in malloc.deep|exit 134|
+
+base malloc-O2 n9600: /w/scr/lx/linux2.sh: line 11:  1035 Aborted                 CO_N=$n timeout -k 5 20 rs2/malloc-O2 2>&1
+panic: stack exhausted in malloc.deep|exit 134|
+
+base malloc-O2 n9800: /w/scr/lx/linux2.sh: line 11:  1041 Aborted                 CO_N=$n timeout -k 5 20 rs2/malloc-O2 2>&1
+panic: stack exhausted in malloc.deep|exit 134|
+
+base malloc-O2 n10000: /w/scr/lx/linux2.sh: line 11:  1047 Aborted                 CO_N=$n timeout -k 5 20 rs2/malloc-O2 2>&1
+panic: stack exhausted in malloc.deep|exit 134|
+
+base malloc-O2 n14000: /w/scr/lx/linux2.sh: line 11:  1053 Aborted                 CO_N=$n timeout -k 5 20 rs2/malloc-O2 2>&1
+panic: stack exhausted in malloc.deep|exit 134|
+
+== route c1 builds and runs
+malloc: 1 checked lines
+canary: 1 checked lines
+static: 1 checked lines
+thread: 1 checked lines
+guarded: 1 checked lines
+bare: 1 checked lines
+malloc-O0 #1                 exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+malloc-O0 #2                 exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+malloc-O0 #3                 exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+malloc-O2 #1                 exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+malloc-O2 #2                 exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+malloc-O2 #3                 exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+guarded-O0 #1                exit 134  panic: stack exhausted in guarded.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+guarded-O0 #2                exit 134  panic: stack exhausted in guarded.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+guarded-O0 #3                exit 134  panic: stack exhausted in guarded.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+guarded-O2 #1                exit 134  panic: stack exhausted in guarded.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+guarded-O2 #2                exit 134  panic: stack exhausted in guarded.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+guarded-O2 #3                exit 134  panic: stack exhausted in guarded.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+bare-O0 #1                   exit 134  panic: stack exhausted in bare.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+bare-O0 #2                   exit 134  panic: stack exhausted in bare.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+bare-O0 #3                   exit 134  panic: stack exhausted in bare.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+bare-O2 #1                   exit 134  panic: stack exhausted in bare.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+bare-O2 #2                   exit 134  panic: stack exhausted in bare.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+bare-O2 #3                   exit 134  panic: stack exhausted in bare.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+thread-O0 #1                 exit 134  panic: stack exhausted in thread.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+thread-O0 #2                 exit 134  panic: stack exhausted in thread.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+thread-O0 #3                 exit 134  panic: stack exhausted in thread.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+thread-O2 #1                 exit 134  panic: stack exhausted in thread.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+thread-O2 #2                 exit 134  panic: stack exhausted in thread.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+thread-O2 #3                 exit 134  panic: stack exhausted in thread.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+static-O0 #1                 exit 134  panic: stack exhausted in static.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+static-O0 #2                 exit 134  panic: stack exhausted in static.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+static-O0 #3                 exit 134  panic: stack exhausted in static.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+static-O2 #1                 exit 134  panic: stack exhausted in static.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+static-O2 #2                 exit 134  panic: stack exhausted in static.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+static-O2 #3                 exit 134  panic: stack exhausted in static.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+malloc-san-O0 #1             exit 134  ==1690==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffd2d20000; bottom 0xffff84da0000; size: 0x00004df80
+static-san-O0 #1             exit 134  ==1699==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffd7a2c000; bottom 0xaaaad3717000; size: 0x555504315
+malloc-san-O0 #2             exit 134  ==1708==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffcc677000; bottom 0xffff871b0000; size: 0x0000454c7
+static-san-O0 #2             exit 134  ==1717==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffc1f5f000; bottom 0xaaaae2dc7000; size: 0x5554df198
+malloc-san-O0 #3             exit 134  ==1726==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffee2d9000; bottom 0xffffbd720000; size: 0x000030bb9
+static-san-O0 #3             exit 134  ==1735==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffc1f4e000; bottom 0xaaaac8ce7000; size: 0x5554f9267
+malloc-san-O2 #1             exit 134  ==1745==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffc87e9000; bottom 0xffff90b20000; size: 0x000037cc9
+static-san-O2 #1             exit 134  ==1754==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffc5dab000; bottom 0xaaaabbd15000; size: 0x55550a096
+malloc-san-O2 #2             exit 134  ==1763==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffd1982000; bottom 0xffff8bbc2000; size: 0x000045dc0
+static-san-O2 #2             exit 134  ==1772==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xfffffd440000; bottom 0xaaaab8035000; size: 0x55554540b
+malloc-san-O2 #3             exit 134  ==1781==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xfffff3dfb000; bottom 0xffffa2520000; size: 0x0000518db
+static-san-O2 #3             exit 134  ==1790==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffc66fb000; bottom 0xaaaaca425000; size: 0x5554fc2d6
+== canary, plain and sanitized, CO_N
+canary-O2 n7000 #1           exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it|depth reached: 544920|
+canary-O2 n7000 #2           exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it|depth reached: 544920|
+canary-O2 n7000 #3           exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it|depth reached: 544920|
+canary-san-O2 n7000 #1       exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it|depth reached: 544920|
+canary-san-O2 n7000 #2       exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it|depth reached: 544920|
+canary-san-O2 n7000 #3       exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it|depth reached: 544920|
+canary-O2 n9000 #1           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-O2 n9000 #2           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-O2 n9000 #3           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-san-O2 n9000 #1       exit 134  ==1890==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffd1076000; bottom 0xffff8c5c2000; size: 0x000044ab4
+canary-san-O2 n9000 #2       exit 134  ==1899==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffeeae2000; bottom 0xffffae180000; size: 0x000040962
+canary-san-O2 n9000 #3       exit 134  ==1908==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffefa09000; bottom 0xffffbbdb0000; size: 0x000033c59
+canary-O2 n10000 #1          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-O2 n10000 #2          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-O2 n10000 #3          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-san-O2 n10000 #1      exit 134  ==1946==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffc8723000; bottom 0xffff87fc2000; size: 0x000040761
+canary-san-O2 n10000 #2      exit 134  ==1955==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffecbb6000; bottom 0xffff989c2000; size: 0x0000541f4
+canary-san-O2 n10000 #3      exit 134  ==1964==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffd75dc000; bottom 0xffff873c2000; size: 0x00005021a
+canary-O2 n14000 #1          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-O2 n14000 #2          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-O2 n14000 #3          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-san-O2 n14000 #1      exit 134  ==2002==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffe06eb000; bottom 0xffff9b7c2000; size: 0x000044f29
+canary-san-O2 n14000 #2      exit 134  ==2011==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xfffff8c3d000; bottom 0xffffa17c2000; size: 0x00005747b
+canary-san-O2 n14000 #3      exit 134  ==2020==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffc83c6000; bottom 0xffff8ebc2000; size: 0x000039804
+canary-O2 n50000 #1          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-O2 n50000 #2          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-O2 n50000 #3          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-san-O2 n50000 #1      exit 134  ==2058==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffd2e86000; bottom 0xffff9d3c2000; size: 0x000035ac4
+canary-san-O2 n50000 #2      exit 134  ==2067==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffd14df000; bottom 0xffff85fc2000; size: 0x00004b51d
+canary-san-O2 n50000 #3      exit 134  ==2076==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffdc654000; bottom 0xffffbb3b0000; size: 0x0000212a4
+canary-O0 n1200 #1           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-O0 n1200 #2           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-O0 n1200 #3           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-san-O0 n1200 #1       exit 134  ==2114==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffd01e0000; bottom 0xffff83dc0000; size: 0x00004c420
+canary-san-O0 n1200 #2       exit 134  ==2123==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xfffff3e41000; bottom 0xffff915c2000; size: 0x00006287f
+canary-san-O0 n1200 #3       exit 134  ==2132==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffe8efb000; bottom 0xffff8dfc2000; size: 0x00005af39
+canary-O0 n1500 #1           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-O0 n1500 #2           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-O0 n1500 #3           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-san-O0 n1500 #1       exit 134  ==2170==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xfffffaf4c000; bottom 0xffffb53c2000; size: 0x000045b8a
+canary-san-O0 n1500 #2       exit 134  ==2179==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xfffff6b67000; bottom 0xffffa2d80000; size: 0x000053de7
+canary-san-O0 n1500 #3       exit 134  ==2188==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffc2cf9000; bottom 0xffffa8180000; size: 0x00001ab79
+canary-O0 n2000 #1           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-O0 n2000 #2           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-O0 n2000 #3           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-san-O0 n2000 #1       exit 134  ==2226==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffe3a3d000; bottom 0xffffa23c2000; size: 0x00004167b
+canary-san-O0 n2000 #2       exit 134  ==2235==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffc2b7a000; bottom 0xffffad5a0000; size: 0x0000155da
+canary-san-O0 n2000 #3       exit 134  ==2244==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffeaf01000; bottom 0xffffa6fc2000; size: 0x000043f3f
+canary-O0 n3000 #1           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-O0 n3000 #2           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-O0 n3000 #3           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-san-O0 n3000 #1       exit 134  ==2282==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffc8946000; bottom 0xffff7ffc0000; size: 0x000048986
+canary-san-O0 n3000 #2       exit 134  ==2291==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffec81f000; bottom 0xffffb59c2000; size: 0x000036e5d
+canary-san-O0 n3000 #3       exit 134  ==2300==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffc02eb000; bottom 0xffffa0fc2000; size: 0x00001f329
+canary-O0 n30000 #1          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-O0 n30000 #2          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-O0 n30000 #3          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+canary-san-O0 n30000 #1      exit 134  ==2338==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xfffff856b000; bottom 0xffffbb1c2000; size: 0x00003d3a9
+canary-san-O0 n30000 #2      exit 134  ==2347==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffd5223000; bottom 0xffff9f3c2000; size: 0x000035e61
+canary-san-O0 n30000 #3      exit 134  ==2356==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffd621c000; bottom 0xffff871c0000; size: 0x00004f05c
+== malloc by CO_N
+malloc-O0 n1600              exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+malloc-san-O0 n1600          exit 134  ==2374==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xfffff9135000; bottom 0xffff86110000; size: 0x000073025
+malloc-O0 n2000              exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+malloc-san-O0 n2000          exit 134  ==2392==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffcb720000; bottom 0xffffbb740000; size: 0x00000ffe0
+malloc-O0 n3000              exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+malloc-san-O0 n3000          exit 134  ==2410==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffe3455000; bottom 0xffff941a0000; size: 0x00004f2b5
+malloc-O0 n10000             exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+malloc-san-O0 n10000         exit 134  ==2428==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xfffff49d6000; bottom 0xffff84bc2000; size: 0x00006fe14
+malloc-O0 n20000             exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+malloc-san-O0 n20000         exit 134  ==2446==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffffa83000; bottom 0xffffa67c0000; size: 0x0000592c3
+malloc-O0 n30000             exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+malloc-san-O0 n30000         exit 134  ==2464==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xfffffb57f000; bottom 0xffffabbc2000; size: 0x00004f9bd
+malloc-O0 n50000             exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+malloc-san-O0 n50000         exit 134  ==2482==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffd08e2000; bottom 0xffff98160000; size: 0x000038782
+malloc-O2 n9600              exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+malloc-san-O2 n9600          exit 134  ==2500==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xfffff7f16000; bottom 0xffffa93c2000; size: 0x00004eb54
+malloc-O2 n9800              exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+malloc-san-O2 n9800          exit 134  ==2518==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffd252c000; bottom 0xffff83bb2000; size: 0x00004e97a
+malloc-O2 n10000             exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+malloc-san-O2 n10000         exit 134  ==2536==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffdb5c9000; bottom 0xffffaff80000; size: 0x00002b649
+malloc-O2 n14000             exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+malloc-san-O2 n14000         exit 134  ==2554==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffe7034000; bottom 0xffff96f80000; size: 0x0000500b4
+thread-O0 n1                 exit 0    depth reached: 4|
+static-O0 n1                 exit 0    depth reached: 4|
+static-O2 n1                 exit 0    depth reached: 4|
+thread-O0 n1300              exit 0    depth reached: 651509|
+static-O0 n1300              exit 134  panic: stack exhausted in static.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+static-O2 n1300              exit 0    depth reached: 651509|
+thread-O0 n9600              exit 0    depth reached: 480257|
+static-O0 n9600              exit 134  panic: stack exhausted in static.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+static-O2 n9600              exit 134  panic: stack exhausted in static.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+== counting canaries, base and c1
+canary4: 1 checked lines
+canary6: 1 checked lines
+canary4-O0 KB256 n1000             base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary4-O0 KB256 n1200             base: exit 0  w=0/0                      c1: exit 134  w=0/0
+canary4-O0 KB256 n1500             base: exit 0  w=24024/26184              c1: exit 134  w=0/0
+canary4-O0 KB256 n2000             base: exit 0  w=112508/122184            c1: exit 134  w=0/0
+canary4-O0 KB256 n3000             base: exit 134  w=99639/262144           c1: exit 134  w=0/0
+canary4-O0 KB256 n30000            base: exit 134  w=99635/262144           c1: exit 134  w=0/0
+canary4-san-O0 KB256 n1000         base: exit 0  w=0/0                      c1: exit 134  w=0/0
+canary4-san-O0 KB256 n1200         base: exit 0  w=39907/45588              c1: exit 134  w=0/0
+canary4-san-O0 KB256 n1500         base: exit 0  w=107395/122388            c1: exit 134  w=0/0
+canary4-san-O0 KB256 n2000         base: exit 0  w=219857/250388            c1: exit 134  w=0/0
+canary4-san-O0 KB256 n3000         base: #98 0xaaaad09e7d5c asan-overflow w=/ c1: exit 134  w=0/0
+canary4-san-O0 KB256 n30000        base: #98 0xaaaace867d5c asan-overflow w=/ c1: exit 134  w=0/0
+canary4-O2 KB256 n7000             base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary4-O2 KB256 n9000             base: exit 0  w=19453/25952              c1: exit 134  w=0/0
+canary4-O2 KB256 n10000            base: exit 0  w=43449/57952              c1: exit 134  w=0/0
+canary4-O2 KB256 n14000            base: exit 0  w=139417/185952            c1: exit 134  w=0/0
+canary4-O2 KB256 n50000            base: exit 134  w=196544/262144          c1: exit 134  w=0/0
+canary4-san-O2 KB256 n7000         base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary4-san-O2 KB256 n9000         base: exit 0  w=19501/26016              c1: exit 134  w=0/0
+canary4-san-O2 KB256 n10000        base: exit 0  w=43497/58016              c1: exit 134  w=0/0
+canary4-san-O2 KB256 n14000        base: exit 0  w=139465/186016            c1: exit 134  w=0/0
+canary4-san-O2 KB256 n50000        base: #98 0xaaaaea6089ec asan-overflow w=/ c1: exit 134  w=0/0
+canary6-O0 KB256 n1000             base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary6-O0 KB256 n1200             base: exit 0  w=0/0                      c1: exit 134  w=0/0
+canary6-O0 KB256 n1500             base: exit 0  w=24029/26192              c1: exit 134  w=0/0
+canary6-O0 KB256 n2000             base: exit 0  w=112515/122192            c1: exit 134  w=0/0
+canary6-O0 KB256 n3000             base: exit 139  w=/                      c1: exit 134  w=0/0
+canary6-O0 KB256 n30000            base: exit 139  w=/                      c1: exit 134  w=0/0
+canary6-san-O0 KB256 n1000         base: exit 0  w=0/0                      c1: exit 134  w=0/0
+canary6-san-O0 KB256 n1200         base: exit 0  w=39907/45588              c1: exit 134  w=0/0
+canary6-san-O0 KB256 n1500         base: exit 0  w=107397/122388            c1: exit 134  w=0/0
+canary6-san-O0 KB256 n2000         base: exit 0  w=219857/250388            c1: exit 134  w=0/0
+canary6-san-O0 KB256 n3000         base: exit 124  w=/                      c1: exit 134  w=0/0
+canary6-san-O0 KB256 n30000        base: exit 124  w=/                      c1: exit 134  w=0/0
+canary6-O2 KB256 n7000             base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary6-O2 KB256 n9000             base: exit 0  w=18650/25960              c1: exit 134  w=0/0
+canary6-O2 KB256 n10000            base: exit 0  w=43457/57960              c1: exit 134  w=0/0
+canary6-O2 KB256 n14000            base: exit 0  w=139425/185960            c1: exit 134  w=0/0
+canary6-O2 KB256 n50000            base: exit 139  w=/                      c1: exit 134  w=0/0
+canary6-san-O2 KB256 n7000         base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary6-san-O2 KB256 n9000         base: exit 0  w=19509/26016              c1: exit 134  w=0/0
+canary6-san-O2 KB256 n10000        base: exit 0  w=43505/58016              c1: exit 134  w=0/0
+canary6-san-O2 KB256 n14000        base: exit 0  w=139473/186016            c1: exit 134  w=0/0
+canary6-san-O2 KB256 n50000        base: exit 124  w=/                      c1: exit 134  w=0/0
+canary4-O2 KB16 n300               base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary4-O2 KB16 n500               base: exit 0  w=0/0                      c1: exit 134  w=0/0
+canary4-O2 KB16 n1000              base: exit 0  w=11782/15712              c1: exit 134  w=0/0
+canary4-O2 KB16 n40000             base: exit 134  w=12286/16384            c1: exit 134  w=0/0
+canary4-O2 KB16 n1000000           base: exit 134  w=12286/16384            c1: exit 134  w=0/0
+canary4-san-O2 KB16 n300           base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary4-san-O2 KB16 n500           base: exit 0  w=0/0                      c1: exit 134  w=0/0
+canary4-san-O2 KB16 n1000          base: exit 0  w=11830/15776              c1: exit 134  w=0/0
+canary4-san-O2 KB16 n40000         base: #98 0xaaaae9fc89ec asan-overflow w=/ c1: exit 134  w=0/0
+canary4-san-O2 KB16 n1000000       base: #98 0xaaaae30a89ec asan-overflow w=/ c1: exit 134  w=0/0
+canary6-O2 KB16 n300               base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary6-O2 KB16 n500               base: exit 0  w=0/0                      c1: exit 134  w=0/0
+canary6-O2 KB16 n1000              base: exit 0  w=11790/15720              c1: exit 134  w=0/0
+canary6-O2 KB16 n40000             base: exit 139  w=/                      c1: exit 134  w=0/0
+canary6-O2 KB16 n1000000           base: exit 139  w=/                      c1: exit 134  w=0/0
+canary4-O0 KB16 n300               base: exit 134  w=6226/16384             c1: exit 134  w=0/0
+canary4-O0 KB16 n500               base: exit 134  w=6230/16384             c1: exit 134  w=0/0
+canary4-O0 KB16 n1000              base: exit 134  w=6230/16384             c1: exit 134  w=0/0
+canary4-O0 KB16 n40000             base: exit 134  w=6223/16384             c1: exit 134  w=0/0
+canary4-O0 KB16 n1000000           base: exit 134  w=6226/16384             c1: exit 134  w=0/0
+canary4-O2 KB64 n300               base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary4-O2 KB64 n500               base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary4-O2 KB64 n1000              base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary4-O2 KB64 n40000             base: exit 134  w=49136/65536            c1: exit 134  w=0/0
+canary4-O2 KB64 n1000000           base: exit 134  w=49136/65536            c1: exit 134  w=0/0
+canary4-san-O2 KB64 n300           base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary4-san-O2 KB64 n500           base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary4-san-O2 KB64 n1000          base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary4-san-O2 KB64 n40000         base: #98 0xaaaae10589ec asan-overflow w=/ c1: exit 134  w=0/0
+canary4-san-O2 KB64 n1000000       base: #98 0xaaaab13f89ec asan-overflow w=/ c1: exit 134  w=0/0
+canary6-O2 KB64 n300               base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary6-O2 KB64 n500               base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary6-O2 KB64 n1000              base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary6-O2 KB64 n40000             base: exit 139  w=/                      c1: exit 134  w=0/0
+canary6-O2 KB64 n1000000           base: exit 139  w=/                      c1: exit 134  w=0/0
+canary4-O0 KB64 n300               base: exit 0  w=0/0                      c1: exit 134  w=0/0
+canary4-O0 KB64 n500               base: exit 0  w=28272/30792              c1: exit 134  w=0/0
+canary4-O0 KB64 n1000              base: exit 134  w=24912/65536            c1: exit 134  w=0/0
+canary4-O0 KB64 n40000             base: exit 134  w=24908/65536            c1: exit 134  w=0/0
+canary4-O0 KB64 n1000000           base: exit 134  w=24907/65536            c1: exit 134  w=0/0
+canary4-O2 KB1024 n300             base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary4-O2 KB1024 n500             base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary4-O2 KB1024 n1000            base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary4-O2 KB1024 n40000           base: exit 0  w=173580/231520            c1: exit 134  w=0/0
+canary4-O2 KB1024 n1000000         base: exit 134  w=785920/1048576         c1: exit 134  w=0/0
+canary4-san-O2 KB1024 n300         base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary4-san-O2 KB1024 n500         base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary4-san-O2 KB1024 n1000        base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary4-san-O2 KB1024 n40000       base: exit 0  w=173628/231584            c1: exit 134  w=0/0
+canary4-san-O2 KB1024 n1000000     base: #98 0xaaaace9289ec asan-overflow w=/ c1: exit 134  w=0/0
+canary6-O2 KB1024 n300             base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary6-O2 KB1024 n500             base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary6-O2 KB1024 n1000            base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary6-O2 KB1024 n40000           base: exit 0  w=173588/231528            c1: exit 134  w=0/0
+canary6-O2 KB1024 n1000000         base: exit 139  w=/                      c1: exit 134  w=0/0
+canary4-O0 KB1024 n300             base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary4-O0 KB1024 n500             base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary4-O0 KB1024 n1000            base: exit 0  w=0/0                      c1: exit 0  w=0/0
+canary4-O0 KB1024 n40000           base: exit 134  w=398547/1048576         c1: exit 134  w=0/0
+canary4-O0 KB1024 n1000000         base: exit 134  w=398547/1048576         c1: exit 134  w=0/0
+== helper: base, c1, c2, c3
+helper: 1 checked lines
+helper-base-O0       n1000   co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+
+helper-base-O0       n10000  /w/scr/lx/linux2.sh: line 28:  5502 Aborted                 CO_N=$n timeout -k 5 20 hp/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the abort: 99636 bytes below, lowest 262128 below it|exit 134|
+
+helper-base-O0       n30000  /w/scr/lx/linux2.sh: line 28:  5509 Aborted                 CO_N=$n timeout -k 5 20 hp/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the abort: 99636 bytes below, lowest 262128 below it|exit 134|
+
+helper-base-san-O0   n1000   co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+
+helper-base-san-O0   n10000  asan stack-overflow|
+
+helper-base-san-O0   n30000  asan stack-overflow|
+
+helper-O0            n1000   co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+
+helper-O0            n10000  /w/scr/lx/linux2.sh: line 28:  5553 Aborted                 CO_N=$n timeout -k 5 20 hp/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the abort: 99619 bytes below, lowest 262144 below it|exit 134|
+
+helper-O0            n30000  /w/scr/lx/linux2.sh: line 28:  5563 Aborted                 CO_N=$n timeout -k 5 20 hp/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the abort: 99619 bytes below, lowest 262144 below it|exit 134|
+
+helper-san-O0        n1000   co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+
+helper-san-O0        n10000  asan stack-overflow|
+
+helper-san-O0        n30000  asan stack-overflow|
+
+helper-c2-O0         n1000   co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+
+helper-c2-O0         n10000  /w/scr/lx/linux2.sh: line 28:  5608 Aborted                 CO_N=$n timeout -k 5 20 hp/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the stop: 0 bytes below, lowest 0 below it|exit 134|
+
+helper-c2-O0         n30000  /w/scr/lx/linux2.sh: line 28:  5613 Aborted                 CO_N=$n timeout -k 5 20 hp/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the stop: 0 bytes below, lowest 0 below it|exit 134|
+
+helper-c2-san-O0     n1000   /w/scr/lx/linux2.sh: line 28:  5621 Aborted                 CO_N=$n timeout -k 5 20 hp/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the stop: 0 bytes below, lowest 0 below it|exit 134|
+
+helper-c2-san-O0     n10000  /w/scr/lx/linux2.sh: line 28:  5631 Aborted                 CO_N=$n timeout -k 5 20 hp/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the stop: 0 bytes below, lowest 0 below it|exit 134|
+
+helper-c2-san-O0     n30000  /w/scr/lx/linux2.sh: line 28:  5640 Aborted                 CO_N=$n timeout -k 5 20 hp/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the stop: 0 bytes below, lowest 0 below it|exit 134|
+
+helper-c3-O0         n1000   co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+
+helper-c3-O0         n10000  /w/scr/lx/linux2.sh: line 28:  5656 Aborted                 CO_N=$n timeout -k 5 20 hp/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the stop: 0 bytes below, lowest 0 below it|exit 134|
+
+helper-c3-O0         n30000  /w/scr/lx/linux2.sh: line 28:  5664 Aborted                 CO_N=$n timeout -k 5 20 hp/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the stop: 0 bytes below, lowest 0 below it|exit 134|
+
+helper-base-O2       n1000   co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+
+helper-base-O2       n10000  co: returned: 43441 bytes below, lowest 57936 below it|depth reached: 742238|exit 0|
+
+helper-base-O2       n30000  /w/scr/lx/linux2.sh: line 28:  5686 Aborted                 CO_N=$n timeout -k 5 20 hp/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the abort: 196544 bytes below, lowest 262144 below it|exit 134|
+
+helper-base-san-O2   n1000   co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+
+helper-base-san-O2   n10000  co: returned: 43441 bytes below, lowest 57936 below it|depth reached: 742238|exit 0|
+
+helper-base-san-O2   n30000  asan stack-overflow|
+
+helper-O2            n1000   co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+
+helper-O2            n10000  co: returned: 43441 bytes below, lowest 57936 below it|depth reached: 742238|exit 0|
+
+helper-O2            n30000  /w/scr/lx/linux2.sh: line 28:  5741 Aborted                 CO_N=$n timeout -k 5 20 hp/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the abort: 196544 bytes below, lowest 262144 below it|exit 134|
+
+helper-san-O2        n1000   co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+
+helper-san-O2        n10000  co: returned: 43441 bytes below, lowest 57936 below it|depth reached: 742238|exit 0|
+
+helper-san-O2        n30000  asan stack-overflow|
+
+helper-c2-O2         n1000   co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+
+helper-c2-O2         n10000  /w/scr/lx/linux2.sh: line 28:  5785 Aborted                 CO_N=$n timeout -k 5 20 hp/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the stop: 0 bytes below, lowest 0 below it|exit 134|
+
+helper-c2-O2         n30000  /w/scr/lx/linux2.sh: line 28:  5794 Aborted                 CO_N=$n timeout -k 5 20 hp/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the stop: 0 bytes below, lowest 0 below it|exit 134|
+
+helper-c2-san-O2     n1000   co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+
+helper-c2-san-O2     n10000  /w/scr/lx/linux2.sh: line 28:  5811 Aborted                 CO_N=$n timeout -k 5 20 hp/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the stop: 0 bytes below, lowest 0 below it|exit 134|
+
+helper-c2-san-O2     n30000  panic: stack exhausted in helper.walk|co: at the stop: 0 bytes below, lowest 0 below it|exit 134|
+/w/scr/lx/linux2.sh: line 28:  5820 Aborted                 CO_N=$n timeout -k 5 20 hp/$b 2>&1
+
+helper-c3-O2         n1000   co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+
+helper-c3-O2         n10000  /w/scr/lx/linux2.sh: line 28:  5835 Aborted                 CO_N=$n timeout -k 5 20 hp/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the stop: 0 bytes below, lowest 0 below it|exit 134|
+
+helper-c3-O2         n30000  /w/scr/lx/linux2.sh: line 28:  5840 Aborted                 CO_N=$n timeout -k 5 20 hp/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the stop: 0 bytes below, lowest 0 below it|exit 134|
+
+== route b
+canary4-emit.c: 1 thunks switched
+canary6-emit.c: 1 thunks switched
+helper-emit.c: 1 thunks switched
+canary4-O2       n1000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+
+canary4-O2       n9000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 665854|exit 0|
+
+canary4-O2       n100000   co: returned: 0 bytes below, lowest 0 below it|depth reached: 969147|exit 0|
+
+canary4-O2       n300000   /w/scr/lx/linux2.sh: line 32:  6028 Aborted                 CO_N=$n timeout -k 5 30 bb/$b 2>&1
+panic: stack exhausted in canary4.deep|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+
+canary4-O2       n10000000 /w/scr/lx/linux2.sh: line 32:  6037 Aborted                 CO_N=$n timeout -k 5 30 bb/$b 2>&1
+panic: stack exhausted in canary4.deep|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+
+canary4-O0       n1000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+
+canary4-O0       n9000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 665854|exit 0|
+
+canary4-O0       n100000   /w/scr/lx/linux2.sh: line 32:  6061 Aborted                 CO_N=$n timeout -k 5 30 bb/$b 2>&1
+panic: stack exhausted in canary4.deep|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+
+canary4-O0       n300000   /w/scr/lx/linux2.sh: line 32:  6065 Aborted                 CO_N=$n timeout -k 5 30 bb/$b 2>&1
+panic: stack exhausted in canary4.deep|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+
+canary4-O0       n10000000 /w/scr/lx/linux2.sh: line 32:  6077 Aborted                 CO_N=$n timeout -k 5 30 bb/$b 2>&1
+panic: stack exhausted in canary4.deep|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+
+canary6-O2       n1000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+
+canary6-O2       n9000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 665854|exit 0|
+
+canary6-O2       n100000   co: returned: 0 bytes below, lowest 0 below it|depth reached: 969147|exit 0|
+
+canary6-O2       n300000   /w/scr/lx/linux2.sh: line 32:  6104 Aborted                 CO_N=$n timeout -k 5 30 bb/$b 2>&1
+panic: stack exhausted in canary6.deep|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+
+canary6-O2       n10000000 /w/scr/lx/linux2.sh: line 32:  6112 Aborted                 CO_N=$n timeout -k 5 30 bb/$b 2>&1
+panic: stack exhausted in canary6.deep|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+
+canary6-O0       n1000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+
+canary6-O0       n9000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 665854|exit 0|
+
+canary6-O0       n100000   /w/scr/lx/linux2.sh: line 32:  6141 Aborted                 CO_N=$n timeout -k 5 30 bb/$b 2>&1
+panic: stack exhausted in canary6.deep|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+
+canary6-O0       n300000   /w/scr/lx/linux2.sh: line 32:  6149 Aborted                 CO_N=$n timeout -k 5 30 bb/$b 2>&1
+panic: stack exhausted in canary6.deep|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+
+canary6-O0       n10000000 /w/scr/lx/linux2.sh: line 32:  6154 Aborted                 CO_N=$n timeout -k 5 30 bb/$b 2>&1
+panic: stack exhausted in canary6.deep|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+
+canary4-san-O2   n1000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+
+canary4-san-O2   n9000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 665854|exit 0|
+
+canary4-san-O2   n100000   co: returned: 0 bytes below, lowest 0 below it|depth reached: 969147|exit 0|
+
+canary4-san-O2   n300000   asan stack-overflow|
+
+canary4-san-O2   n10000000 asan stack-overflow|
+
+canary4-san-O0   n1000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+
+canary4-san-O0   n9000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 665854|exit 0|
+
+canary4-san-O0   n100000   asan stack-overflow|
+
+canary4-san-O0   n300000   asan stack-overflow|
+
+canary4-san-O0   n10000000 asan stack-overflow|
+
+helper-O2        n1000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+
+helper-O2        n9000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 665854|exit 0|
+
+helper-O2        n100000   co: returned: 0 bytes below, lowest 0 below it|depth reached: 969147|exit 0|
+
+helper-O2        n300000   /w/scr/lx/linux2.sh: line 32:  6284 Aborted                 CO_N=$n timeout -k 5 30 bb/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+
+helper-O2        n10000000 /w/scr/lx/linux2.sh: line 32:  6291 Aborted                 CO_N=$n timeout -k 5 30 bb/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+
+helper-O0        n1000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 253577|exit 0|
+
+helper-O0        n9000     co: returned: 0 bytes below, lowest 0 below it|depth reached: 665854|exit 0|
+
+helper-O0        n100000   panic: stack exhausted in helper.walk|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+
+helper-O0        n300000   /w/scr/lx/linux2.sh: line 32:  6313 Aborted                 CO_N=$n timeout -k 5 30 bb/$b 2>&1
+/w/scr/lx/linux2.sh: line 32:  6321 Aborted                 CO_N=$n timeout -k 5 30 bb/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+
+helper-O0        n10000000 /w/scr/lx/linux2.sh: line 32:  6332 Aborted                 CO_N=$n timeout -k 5 30 bb/$b 2>&1
+panic: stack exhausted in helper.walk|co: at the abort: 0 bytes below, lowest 0 below it|exit 134|
+
+== lv/base-O0: the smallest room with 0 bytes below: 448
+== lv/base-O2: the smallest room with 0 bytes below: 64
+== bb/canary4-O0: the smallest room with 0 bytes below: 448
+== bb/canary4-O2: the smallest room with 0 bytes below: 192
+== lv/base-san-O2: the smallest room with 0 bytes below: 384
+== bb/canary4-san-O2: the smallest room with 0 bytes below: 512
+== forced unwind across the switch
+linux: co 0 switch 0 cfi 0 stop by address: landed 1, 3 of 3 slots released (2 below the switch, 1 above), 8 stop calls, ended 0; the runtime's stack below C's
+  exit 0
+linux: co 0 switch 0 cfi 0 stop by frame: landed 1, 3 of 3 slots released (2 below the switch, 1 above), 8 stop calls, ended 0; the runtime's stack below C's
+  exit 0
+linux: co 0 switch 1 cfi 0 stop by address: landed 1, 2 of 3 slots released (2 below the switch, 1 above), 4 stop calls, ended 1; the runtime's stack below C's
+  exit 0
+linux: co 0 switch 1 cfi 0 stop by frame: landed 1, 2 of 3 slots released (2 below the switch, 1 above), 4 stop calls, ended 1; the runtime's stack below C's
+  exit 0
+linux: co 0 switch 1 cfi 1 stop by address: landed 1, 3 of 3 slots released (2 below the switch, 1 above), 9 stop calls, ended 0; the runtime's stack below C's
+  exit 0
+linux: co 0 switch 1 cfi 1 stop by frame: landed 1, 3 of 3 slots released (2 below the switch, 1 above), 9 stop calls, ended 0; the runtime's stack below C's
+  exit 0
+linux: co 1 switch 0 cfi 0 stop by address: landed 1, 3 of 3 slots released (2 below the switch, 1 above), 8 stop calls, ended 0; the runtime's stack above C's
+  exit 0
+linux: co 1 switch 0 cfi 0 stop by frame: landed 1, 3 of 3 slots released (2 below the switch, 1 above), 8 stop calls, ended 0; the runtime's stack above C's
+  exit 0
+linux: co 1 switch 1 cfi 0 stop by address: landed 1, 0 of 3 slots released (2 below the switch, 1 above), 1 stop calls, ended 0; the runtime's stack above C's
+  exit 0
+linux: co 1 switch 1 cfi 0 stop by frame: landed 1, 2 of 3 slots released (2 below the switch, 1 above), 4 stop calls, ended 1; the runtime's stack above C's
+  exit 0
+linux: co 1 switch 1 cfi 1 stop by address: landed 1, 0 of 3 slots released (2 below the switch, 1 above), 1 stop calls, ended 0; the runtime's stack above C's
+  exit 0
+linux: co 1 switch 1 cfi 1 stop by frame: landed 1, 3 of 3 slots released (2 below the switch, 1 above), 9 stop calls, ended 0; the runtime's stack above C's
+  exit 0
+ 10:57:55 up  4:22,  0 users,  load average: 4.53, 3.94, 3.20
+== 199j's cases and the switch family, Linux stage 2
+-- fixedbugs-2871
+exit 0 549 s
+  run (only fixedbugs-2871): 7 passed, 0 failed
+harness: 7 passed, 0 failed
+-- fixedbugs-27
+docker exit 137

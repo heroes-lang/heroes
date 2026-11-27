@@ -1,0 +1,12 @@
+settings set platform.plugin.darwin.ignored-exceptions EXC_BAD_ACCESS|EXC_BAD_INSTRUCTION|EXC_ARITHMETIC
+process handle SIGSEGV -s false -p true -n false
+process handle SIGBUS -s false -p true -n false
+breakpoint set -n hero_rebind_tramp -c '(int)$x2 != 16'
+run
+register read x2
+bt 8
+continue
+register read x2
+bt 5
+kill
+quit

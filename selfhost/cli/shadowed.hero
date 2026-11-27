@@ -71,6 +71,7 @@ use cli/process
 use cli/publish
 use cli/read_back
 use cli/response_file
+use cli/search_room
 use cli/settled
 use cli/shadowed_library
 use cli/shadowed_tree
@@ -104,18 +105,17 @@ function environment_stopped(t: toolchain.Toolchain, options: compile.Options, s
     _ = compile.leave(stop.must(), stage_name: "the environment's words")?
     return ok()
 
-# The words a build's units compile under, once nothing of a folder the
-# program, a package or the environment names stands in for a header of the
-# library or the runtime, the opening's or a group's; the build stopped, its
-# refusals told, otherwise. `cli/produce.hero` asks it where the site is
-# settled, before any probe compiles.
+# The words a build's units compile under, once each folder they search leaves
+# room for the names clang looks for in it (`cli/search_room.hero`, step 212i)
+# and nothing of a folder the program, a package or the environment names
+# stands in for a header of the library or the runtime, the opening's or a
+# group's; the build stopped, its refusals told, otherwise. `cli/produce.hero` asks it where the site is settled, before any probe compiles.
 function checked(t: toolchain.Toolchain, options: compile.Options, site: settled.Site, art: compile.Artifact, s: source.Source) -> compiling.Compiling?
-    under = settled.compiled_under(t, options, site)
     groups = order_trial.theirs(emit_externs.headers(art.program, s, art.decls))
+    under = search_room.left(t, under: settled.compiled_under(t, options, site), groups: groups, s)?
 
     # Before the first clang opens one (defect 2572, `cli/header_stands.hero`),
-    # and every file it reaches (defect d-lane-blocking-small-2,
-    # `cli/include_stands.hero`).
+    # and every file it reaches (defect d-lane-blocking-small-2, `cli/include_stands.hero`).
     header_stands.stopped(under, headers: groups, s, decls: art.decls, permissive: options.permissive)?
     include_stands.stopped(t, under: under, groups: groups, s, decls: art.decls, permissive: options.permissive, folders: options.library)?
     stop = compile.stage(

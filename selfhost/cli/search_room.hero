@@ -1,0 +1,267 @@
+# Whether each folder a build hands clang to search leaves room for the
+# names clang looks for inside it (design.md §1.12, §4.17, §4.19; defect
+# d-lane-win-paths-1, M-rebel-library step 212i).
+#
+# **Clang looks for every header the C includes inside each folder it
+# searches before the system's**, the program's own, each `--include`, a
+# package's and a `pkg-config` answer's (`compiling.search_words`), by joining
+# the folder and the name, and a path past what the system takes is no
+# absence to it: it stops, *cannot open file*, as at a file it cannot read.
+# So a folder that is read, holding a program that is read, made a build say
+# *internal error: compiling the generated C failed* at exit 2, the compiler
+# blamed for a folder the program chose: on this Mac a root in a folder of
+# 1,009 bytes, clang asking for `<folder>/__stddef_header_macro.h`, 1,033
+# (lane win-paths, 2026-11-27), and a `path` package's folder and an
+# `--include` folder alike, here and in the Linux arm64 image at 4,080 (this
+# step's shapes). A module reached by `use` is in no search, and builds.
+#
+# **Which names, only clang can say**, and `cli/room_measure.hero` asks it:
+# a folder of the same length stands at each such folder's place, holding the
+# files of it clang reads, and the longest that leaves room is found by
+# halving. Refused, the folder is told with who named it, the length the
+# compile asks for, the limit and the longest folder that would fit, at exit
+# 2, as a root the system will not open is (`cli/input.hero`): the program is
+# refused on this system, not wrong. Where clang cannot say, nothing is told,
+# and clang says what it says. A name in the folder longer than one name may
+# take is told without asking (`path_room.part_past`).
+#
+# **Asked only of a folder within one name of the limit**: a folder whose
+# length and a name of NAME_MAX's 255 bytes still fit leaves room for any
+# name clang looks for there, the premise this module's test holds of this
+# platform's own opening, so a build pays nothing here unless a folder takes
+# more than 767 bytes on this Mac or 3,839 on Linux. **Not asked on
+# Windows**: clang there widens a path past MAX_PATH into the `\\?\` form
+# itself, and the program's own folder fits the 247 a folder may take there
+# or the root is not read (`path_room`); unrun on the box, a question rather
+# than a premise.
+
+use cli/compiling
+use cli/input
+use cli/package_units
+use cli/path_room
+use cli/process
+use cli/room_measure
+use cli/shadowed_tree
+use cli/strings
+use cli/toolchain
+use library_source
+use modules
+use source
+
+# `under`, the program's words, where every folder its units search leaves
+# room for the names clang looks for inside it, `groups` its groups' headers
+# and every package's folder searched as well (`package_units.with_roots`);
+# the build stopped, each folder told, otherwise. `cli/shadowed.hero` asks it
+# before its own listing, the first clang to search those folders.
+function left(t: toolchain.Toolchain, under: compiling.Compiling, groups: [str], s: source.Source) -> compiling.Compiling?
+    refusals = told(t, under: under, groups: groups, s)
+
+    if refusals.len() == 0
+        return ok(under)
+    return fail(code: "search_room", msg: refusals.join("\nerror: "))
+
+# One sentence for each folder that leaves no room, in the search's order;
+# none on Windows, where every folder does, or where clang cannot say.
+function told(t: toolchain.Toolchain, under: compiling.Compiling, groups: [str], s: source.Source) -> [str]
+    out: [str] @= []
+
+    if process.exe_suffix() == ".exe"
+        return out
+    searched = package_units.with_roots(under, s)
+    risky: [str] @= []
+
+    for folder in folders(searched)
+        part = path_room.part_past(folder)
+
+        if part.len() > 0
+            out @ out.push(head(s, folder: folder, under: under) + ", and " + part + ": a shorter name would fit")
+        else if at_risk(folder)
+            risky @ risky.push(folder)
+
+    if risky.len() == 0
+        return out
+    base = t.build + "/room-" + process.pid().to_str()
+    room = room_measure.rooms(base: base, under: searched, risky: risky, text: shadowed_tree.text(groups))
+    _ = process.remove_tree(base).is_err()
+
+    for folder in risky
+        most = room[folder]
+
+        if !most.is_err()
+            out @ out.push(head(s, folder: folder, under: under) + ", " + said(folder: folder, most: most.must()))
+
+    return out
+
+# Whether `folder` and a name of the most one name may take would pass the
+# limit: the one folder clang is asked about.
+function at_risk(folder: str) -> bool
+    return room_measure.core(folder).len() + 1 + path_room.part_limit() > path_room.limit(folder: false)
+
+# Every folder `c` names for clang to search, but the runtime's, in its order
+# (`compiling.search_words`) and once each, as the words spell it.
+function folders(c: compiling.Compiling) -> [str]
+    out: [str] @= []
+
+    for one in c.search_include
+        out @ once(out, one: one)
+
+    for word in c.pkgconfig_flags
+        if word.len() > 2 && (strings.starts_with(text: word, prefix: "-I") || strings.starts_with(text: word, prefix: "-F"))
+            out @ once(out, one: word.slice(from: 2, to: word.len()))
+
+    if c.source_dir.len() > 0
+        out @ once(out, one: c.source_dir)
+    return out
+
+function once(list: [str], one: str) -> [str]
+    if room_measure.among(list, one: one)
+        return list
+    return list.push(one)
+
+# What the sentence opens with: the root, the folder and who named it.
+function head(s: source.Source, folder: str, under: compiling.Compiling) -> str
+    return "cannot compile `" + s.name + "` on this system: clang searches `" + room_measure.core(folder) + "`, " + origin(s, folder: folder, under: under) + ", for every header the C includes, by name"
+
+# Who named `folder`: the program, `--include`, a package by its alias, or a
+# `pkg-config` answer, the first that names it in the search's order.
+function origin(s: source.Source, folder: str, under: compiling.Compiling) -> str
+    for one in under.search_include
+        if one == folder
+            return "a folder `--include` names"
+
+    if folder == under.source_dir
+        return "the folder of the file you compile"
+
+    for p in s.reached.packages
+        if package_units.without_slash(p.opened) == folder
+            return "the folder of the package `" + p.alias + "`"
+
+    return "a folder a `pkg-config` answer names"
+
+# The clause after the head where `most` is the longest folder that leaves
+# room at `folder`'s place: the longest name clang looks for there, the path
+# it makes, the limit, and what would fit.
+function said(folder: str, most: i64) -> str
+    limit = path_room.limit(folder: false)
+    name = limit - 1 - most
+    bytes = room_measure.core(folder).len()
+    return "and the longest name it looks for there takes " + name.to_str() + " bytes, a path of " + (bytes + 1 + name).to_str() + ", past the " + limit.to_str() + " a path handed to this system may take (PATH_MAX, " + (limit + 1).to_str() + " with its closing NUL): that folder takes " + bytes.to_str() + " bytes, and one of at most " + most.to_str() + " would fit"
+
+## Tests
+
+# **The folder asked is one a name of the most one name may take would carry
+# past the limit**, and every folder the words name but the runtime's is
+# read, once each, as the words spell it.
+test "the folder asked is one a name of the most one name may take would carry past the limit, and each the words name is read (d-lane-win-paths-1)"
+    limit = path_room.limit(folder: false)
+    fits = "x".repeat(to_u64(limit - 1 - path_room.part_limit()).must())
+    assert !at_risk(fits) && !at_risk(fits + "/")
+    assert at_risk(fits + "y")
+    c = compiling.Compiling(
+        level: "-O0",
+        sanitize: false,
+        search_include: ["inc", "two/"],
+        pkgconfig_flags: ["-DX", "-Ipkg", "-Fframes", "-Iinc", "-Isrc/"],
+        runtime: "rt",
+        source_dir: "src/"
+    )
+    assert folders(c) == ["inc", "two/", "pkg", "frames", "src/"]
+
+# **The room is clang's own answer, and the premise `at_risk` rests on holds
+# here**: a root in a folder that leaves no room, the most a folder holding
+# `main.hero` may take, binding a header of its own beside it that includes
+# `<stdio.h>`, is told with the longest folder that would fit, and the
+# longest name clang looks for there takes no more than one name may, so a
+# folder that leaves room for such a name is never asked. And the answer is
+# the system's: clang itself reads the unit's opening and the group's header
+# under the real folder holding that header at that length, and refuses them
+# one byte longer, so a folder standing in its place with its files measures
+# what the folder does. In the Linux arm64 image the header's `<stdio.h>`
+# asks after a name two bytes longer than any the opening alone does,
+# `__stdarg___gnuc_va_list.h`, which an empty folder there did not see.
+test "a root whose folder leaves clang no room is told with the longest folder that would fit, as clang itself reads it (d-lane-win-paths-1)"
+    if process.exe_suffix() == ".exe"
+        return
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-search-room").must()
+    base = "build/selftest-search-room"
+    assert !process.remove_tree(base).is_err()
+    limit = path_room.limit(folder: false)
+    folder = room_measure.made(base: base, tag: "root", bytes: limit - "/main.hero".len()).must()
+    root = folder + "/main.hero"
+    header = "#include <stdio.h>\nstatic inline int mine_one(void) { return 1; }\n"
+    assert !write_file(path: folder + "/mine.h", text: header).is_err()
+    assert !write_file(path: root, text: "extern \"mine.h\"\n    function mine_one() -> i32\n\nfunction main()\n    print(mine_one())\n").is_err()
+    s = input.read_compilation(path: root, library: library_source.text()).must()
+    none: [str] = []
+    under = compiling.Compiling(
+        level: "-O0",
+        sanitize: false,
+        search_include: none,
+        pkgconfig_flags: none,
+        runtime: t.runtime,
+        source_dir: modules.open_directory(root)
+    )
+    told_now = told(t, under: under, groups: ["mine.h"], s)
+    assert told_now.len() == 1
+    room = room_measure.rooms(
+        base: base + "/asked",
+        under: under,
+        risky: [under.source_dir],
+        text: shadowed_tree.text(["mine.h"])
+    )
+    most = room[under.source_dir].must()
+    assert told_now[0] == head(s, folder: under.source_dir, under: under) + ", " + said(folder: under.source_dir, most: most)
+    assert strings.holds(text: told_now[0], needle: "`" + folder + "`, the folder of the file you compile")
+    assert limit - 1 - most <= path_room.part_limit()
+    assert left(t, under: under, groups: ["mine.h"], s).is_err()
+
+    # The real folder holding the header at the longest that fits, and one
+    # byte longer.
+    unit = base + "/opening.c"
+    assert !write_file(path: unit, text: shadowed_tree.text(["mine.h"])).is_err()
+
+    for pair in [[most, 0], [most + 1, 1]]
+        real = room_measure.made(base: base, tag: "real" + pair[1].to_str(), bytes: pair[0]).must()
+        assert !write_file(path: real + "/mine.h", text: header).is_err()
+        c = compiling.Compiling(
+            level: "-O0",
+            sanitize: false,
+            search_include: none,
+            pkgconfig_flags: none,
+            runtime: t.runtime,
+            source_dir: real
+        )
+        words = strings.with_all(list: ["clang"], more: compiling.probe_words(c))
+        ran = process.run(
+            program: "clang",
+            words: strings.with_all(list: words, more: ["-fsyntax-only", unit]),
+            out: process.discard(),
+            err: process.discard()
+        )
+        compiled = ran.code == 0
+        assert ran.started && compiled == (pair[1] == 0)
+
+    assert !process.remove_tree(base).is_err()
+
+# **A name in a searched folder past what one name may take is told without
+# asking clang**, whatever the folder's length: no path through it opens.
+test "an --include folder holding a name past what one name may take is told without asking (d-lane-win-paths-1)"
+    if process.exe_suffix() == ".exe"
+        return
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-search-room-part").must()
+    root = "build/selftest-search-room-part.hero"
+    assert !write_file(path: root, text: "function main()\n    print(1)\n").is_err()
+    s = input.read_compilation(path: root, library: library_source.text()).must()
+    none: [str] = []
+    long = "build/" + "n".repeat(256)
+    under = compiling.Compiling(
+        level: "-O0",
+        sanitize: false,
+        search_include: [long],
+        pkgconfig_flags: none,
+        runtime: t.runtime,
+        source_dir: "build/"
+    )
+    said_now = told(t, under: under, groups: none, s)
+    assert said_now == [head(s, folder: long, under: under) + ", and " + path_room.part_past(long) + ": a shorter name would fit"]
+    assert strings.holds(text: said_now[0], needle: "a folder `--include` names")

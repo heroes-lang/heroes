@@ -1,43 +1,59 @@
-# The text of each row the window's lists show. The window was written
-# before `ui` had a table of columns; `ui.table` holds one now (its ledger's
-# `ui/table`), and moving onto it changes what the demo prints, so it waits
-# for a transcript of its own. Until then an entry's row is one line of
-# padded columns: its name, a folder's ending in `/` and a link's in
-# `@` as `ls -F` marks them, its size, its type and when it was last
-# written, the numbers and dates in the person's locale. The header above
-# the list names the columns the same way and marks the one the entries are
-# ordered by.
-#
-# Columns are counted in characters, which lines them up in the headless
-# drawing and in a list drawn in a fixed-width font; a proportional font
-# lines up the names alone.
+# The rows the window's lists and its table show. An entry is a row of the
+# entries' table (`ui.table`), a cell a column: its name, a folder's ending
+# in `/` and a link's in `@` as `ls -F` marks them, its size, its type and
+# when it was last written, the numbers and dates in the person's locale.
+# The table shows the order of the entries by the arrow of its column, and a
+# click on a header asks them ordered by that column, which `order_at`
+# reads; the table lays its columns out itself, in every font.
 
 use <rebel>/fs
-use <rebel>/strings
 use <rebel>/time
+use <rebel>/ui
 
 use locale/formats
 use model/entry
 use model/sorting
 use store/bookmarks
 
-# The characters of the name column.
-constant NAME_WIDTH: i64
-    24
+# The table's columns, in the order they stand.
+function columns() -> [sorting.Column]
+    every: [sorting.Column] = [.name, .size, .type, .modified]
+    return every
 
-# The characters of the size column.
-constant SIZE_WIDTH: i64
-    10
+# The place of column `c` in the table, from 0, as `columns` orders them.
+#
+# - `c`: the column.
+function column_index(c: sorting.Column) -> i64
+    return match c
+        .name     => 0
+        .size     => 1
+        .type     => 2
+        .modified => 3
 
-# The characters of the type column.
-constant TYPE_WIDTH: i64
-    12
+# The headers' titles, in the order the columns stand.
+function titles() -> [str]
+    out: [str] @= []
 
-# The row of `e`.
+    for c in columns()
+        out @ out.push(title_of(c))
+
+    return out
+
+# A column's title.
+#
+# - `c`: the column.
+function title_of(c: sorting.Column) -> str
+    return match c
+        .name     => "Name"
+        .size     => "Size"
+        .type     => "Type"
+        .modified => "Modified"
+
+# The cells of `e`'s row, one a column.
 #
 # - `f`: the formats.
 # - `e`: the entry.
-function entry_row(f: formats.Formats, e: entry.Entry) -> str
+function entry_cells(f: formats.Formats, e: entry.Entry) -> [str]
     marked = match e.kind
         .directory     => e.name + "/"
         .link          => e.name + "@"
@@ -48,49 +64,28 @@ function entry_row(f: formats.Formats, e: entry.Entry) -> str
     else
         formats.size_text(f, size: e.size)
 
-    return f"{column(marked, width: NAME_WIDTH)}  {strings.pad_start(s: size, width: SIZE_WIDTH, pad: " ")}  {column(e.type_name, width: TYPE_WIDTH)}  {formats.date_text(f, t: e.modified)}"
+    return [marked, size, e.type_name, formats.date_text(f, t: e.modified)]
 
-# `s` padded with spaces to `width` characters, or cut to it with `…` at its
-# end.
-#
-# - `s`: the text.
-# - `width`: the characters, 2 or more.
-function column(s: str, width: i64) -> str
-    letters = s.chars()
-
-    if letters.len() > width
-        return letters.slice(from: 0, to: width - 1).join("") + "…"
-
-    return strings.pad_end(s: s, width: width, pad: " ")
-
-# The header over the entries, the column they are ordered by marked `▲`
-# ascending and `▼` descending.
+# How the table shows `order`: the arrow on its column, up where it is
+# ascending.
 #
 # - `order`: the order.
-function header(order: sorting.Order) -> str
-    name = column(title_of(.name, order: order), width: NAME_WIDTH)
-    size = strings.pad_start(s: title_of(.size, order: order), width: SIZE_WIDTH, pad: " ")
-    type_title = column(title_of(.type, order: order), width: TYPE_WIDTH)
-    return f"{name}  {size}  {type_title}  {title_of(.modified, order: order)}"
+function sort_of(order: sorting.Order) -> ui.Sort
+    return .by(column: column_index(order.column), ascending: !order.descending)
 
-# A column's title, marked where the entries are ordered by it.
+# The order a click on the header of column `column` asks for.
 #
-# - `c`: the column.
-# - `order`: the order.
-function title_of(c: sorting.Column, order: sorting.Order) -> str
-    title = match c
-        .name     => "Name"
-        .size     => "Size"
-        .type     => "Type"
-        .modified => "Modified"
+# - `column`: the column's place, from 0.
+# - `ascending`: whether the arrow the click left points up.
+#
+# Fails `invalid` where `column` is none of the table's.
+function order_at(column: i64, ascending: bool) -> sorting.Order?
+    every = columns()
 
-    if order.column != c
-        return title
+    if column < 0 || column >= every.len()
+        return fail(code: "invalid", msg: f"no column {column}: the table has {every.len()}")
 
-    if order.descending
-        return title + " ▼"
-
-    return title + " ▲"
+    return ok(sorting.Order(column: every[column], descending: !ascending))
 
 # A bookmark's row: its name, and `(missing)` where its folder is not there.
 #
@@ -101,17 +96,28 @@ function bookmark_row(b: bookmarks.Bookmark) -> str
 
     return b.name + " (missing)"
 
-test "column: a short text padded, a long one cut by characters with an ellipsis"
-    assert column("ab", width: 4) == "ab  "
-    assert column("crème brûlée", width: 6) == "crème…"
+test "columns: each at its own place, titled in order"
+    every = columns()
 
-test "header: the column in use marked by its direction"
-    up = header(sorting.by_name())
-    assert strings.has_prefix(s: up, prefix: "Name ▲ ")
-    down = header(sorting.Order(column: .size, descending: true))
-    assert strings.contains(s: down, substr: "Size ▼")
+    for i in range(from: 0, to: every.len())
+        assert column_index(every[i]) == i
 
-test "entry_row: a folder marked, its size a dash, the date in German"
+    assert titles() == ["Name", "Size", "Type", "Modified"]
+
+test "sort_of and order_at: an order shown and read back from the click, a column past them refused"
+    for c in columns()
+        for descending in [false, true]
+            order = sorting.Order(column: c, descending: descending)
+
+            read = match sort_of(order)
+                .by b     => order_at(column: b.column, ascending: b.ascending).must()
+                .unsorted => sorting.by_name()
+
+            assert read == order && sort_of(order) != .unsorted
+
+    assert order_at(column: 4, ascending: true).is_err() && order_at(column: -1, ascending: true).is_err()
+
+test "entry_cells: a folder marked, its size a dash, the date in German"
     f = formats.german()
     e = entry.Entry(name: "docs", kind: .directory, size: 0, modified: time.epoch(), type_name: "Folder", opens: true)
-    assert entry_row(f, e: e) == "docs/                             --  Folder        01.01.1970, 01:00"
+    assert entry_cells(f, e: e) == ["docs/", "--", "Folder", "01.01.1970, 01:00"]

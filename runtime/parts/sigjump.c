@@ -46,8 +46,9 @@
  * glibc whose layout moved, a build forced to it by
  * `HERO_JMP_FORCE_UNCALIBRATED`): the save points record which buffer they
  * filled and a frame just below the stack pointer they saved, and the
- * fingerprint that validates a record is read ONLY of a buffer the runtime
- * can prove lives (`sigjump_record.c`). A trusted record's frame is judged by
+ * fingerprint that validates a record is copied by the kernel, so a buffer
+ * given back since is an answer and never a fault (`sigjump_record.c`, defects
+ * 2679 and 2867). A trusted record's frame is judged by
  * `sigentries.c`'s rules 4 to 7 as route C's decoded target is (defect 2745);
  * a jump to a buffer with no trusted record keeps every entry: a told refusal
  * (R1), never Heroes code running inside a signal.
@@ -74,11 +75,15 @@
  * `_Unwind_*`), which keeps its entry and is told in words that name it; a
  * coroutine left by such a switch that saves into another context than the
  * one it was switched to, leaving that one as it was, which is judged ended
- * (`sigentries.c`, the life of a range; defects d-lane-d2745-1 and 2851); and
- * the one residue panel 255's R3 leaves by design, `rr_2`, a handler left by a
- * jump and landed in again from a coroutine on another range (no range's
- * bottom is recorded where the thread leaves it). A program library defining
- * one of these ten names is told `ffi_defined_elsewhere` (panel 239's member). */
+ * (`sigentries.c`, the life of a range; defects d-lane-d2745-1 and 2851).
+ * Panel 255's R3 residue `rr_2`, a handler left by a jump and landed in again
+ * from a coroutine on another range, is reached since defect 2855 (step
+ * 199d): the frames a jump leaves are kept as a span, and a landing inside
+ * them is that handler re-entered (`sigentries.c`, the frames of a handler
+ * left by a jump), so this list named it as a residue after its rule had
+ * ended it until panel 262's landing (lane land262). A program library
+ * defining one of these ten names is told `ffi_defined_elsewhere` (panel
+ * 239's member). */
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 

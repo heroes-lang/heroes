@@ -1,0 +1,1 @@
+A stack C hands `makecontext` is swapped for one of this runtime's own of its size, held until C frees that block where this runtime sees it and else until the program ends, counted against the same 1 GiB.

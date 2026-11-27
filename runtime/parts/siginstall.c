@@ -135,8 +135,8 @@ static void hero_sig_answer(int sig, struct sigaction *old) {
     }
 }
 
-/* `parts/sigjump_record.c`: under route A, the pending buffers read where
- * they provably live, at a handler's begin (`x_unseen0`: a refill by a save no
+/* `parts/sigjump_record.c`: under route A, the pending buffers read by the
+ * kernel, at a handler's begin (`x_unseen0`: a refill by a save no
  * slot sees, with no save or jump between, is told by its bytes). */
 static void hero_jmp_observe(HeroSignalStack *own);
 

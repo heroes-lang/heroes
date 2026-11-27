@@ -1,0 +1,6 @@
+malloc   16384: first 0x7602c04000 second 0x7603004000, second's end to first's start -4210688 bytes
+malloc   65536: first 0x7603400000 second 0x7603410000, second's end to first's start -131072 bytes
+malloc  262144: first 0x7603420000 second 0x7603460000, second's end to first's start -524288 bytes
+malloc 1048576: first 0x76034a0000 second 0x76035a0000, second's end to first's start -2097152 bytes
+malloc 8388608: first 0x720a400000 second 0x720ac00000, second's end to first's start -16777216 bytes
+mmap 256 KiB: first 0x100530000 second 0x100570000, second's end to first's start -524288 bytes

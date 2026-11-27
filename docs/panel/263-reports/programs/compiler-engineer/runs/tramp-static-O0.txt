@@ -1,0 +1,67 @@
+(lldb) target create "rs/static-O0"
+Current executable set to '/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/263-compiler-engineer-scratch/rs/static-O0' (arm64).
+(lldb) command source -s 0 'lldb/tramp2.txt'
+Executing commands in '/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/263-compiler-engineer-scratch/lldb/tramp2.txt'.
+(lldb) settings set platform.plugin.darwin.ignored-exceptions EXC_BAD_ACCESS|EXC_BAD_INSTRUCTION|EXC_ARITHMETIC
+(lldb) process handle SIGSEGV -s false -p true -n false
+NAME         PASS     STOP     NOTIFY
+===========  =======  =======  =======
+SIGSEGV      true     false    false  
+(lldb) process handle SIGBUS -s false -p true -n false
+NAME         PASS     STOP     NOTIFY
+===========  =======  =======  =======
+SIGBUS       true     false    false  
+(lldb) breakpoint set -n hero_rebind_tramp -c '(int)$x2 != 16'
+Breakpoint 1: where = static-O0`hero_rebind_tramp + 36 at rebind_entries.c:716:5, address = 0x0000000100025f94
+(lldb) run
+Process 82942 launched: '/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/263-compiler-engineer-scratch/rs/static-O0' (arm64)
+Process 82942 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1
+       frame #0: 0x0000000100025f94 static-O0`hero_rebind_tramp(catcher=(static-O0`hero_stack_handler at stack.c:1145), style=30, sig=10, info=0x0000000100157ba0, context=0x0000000100157c08, token=12979087539843547814) at rebind_entries.c:716:5
+   713 	                                                                                  int sig, siginfo_t *info,
+   714 	                                                                                  void *context, uintptr_t token) {
+   715 	    (void)style;
+-> 716 	    hero_rebind_settle();
+    	    ^
+   717 	    HeroSignalStack *own = hero_rebind_own();
+   718 	    uint64_t mine = 0;
+   719 	    bool lost = false;
+Target 0: (static-O0) stopped.
+(lldb) register read x2
+      x2 = 0x000000000000000a
+(lldb) bt 8
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1
+   * frame #0: 0x0000000100025f94 static-O0`hero_rebind_tramp(catcher=(static-O0`hero_stack_handler at stack.c:1145), style=30, sig=10, info=0x0000000100157ba0, context=0x0000000100157c08, token=12979087539843547814) at rebind_entries.c:716:5
+     frame #1: 0x000000010002fd6c static-O0`h_static_deep(h0_n=4295194229) at static.hero:12:150
+     frame #2: 0x000000010002fd6c static-O0`h_static_deep(h0_n=9996449) at static.hero:12:150
+     frame #3: 0x000000010002fd6c static-O0`h_static_deep(h0_n=9996450) at static.hero:12:150
+     frame #4: 0x000000010002fd6c static-O0`h_static_deep(h0_n=9996451) at static.hero:12:150
+     frame #5: 0x000000010002fd6c static-O0`h_static_deep(h0_n=9996452) at static.hero:12:150
+     frame #6: 0x000000010002fd6c static-O0`h_static_deep(h0_n=9996453) at static.hero:12:150
+     frame #7: 0x000000010002fd6c static-O0`h_static_deep(h0_n=9996454) at static.hero:12:150
+(lldb) continue
+Process 82942 resuming
+Process 82942 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1
+       frame #0: 0x0000000100025f94 static-O0`hero_rebind_tramp(catcher=(static-O0`hero_stack_handler at stack.c:1145), style=30, sig=11, info=0x00000001001576a0, context=0x0000000100157708, token=12979087539843549606) at rebind_entries.c:716:5
+   713 	                                                                                  int sig, siginfo_t *info,
+   714 	                                                                                  void *context, uintptr_t token) {
+   715 	    (void)style;
+-> 716 	    hero_rebind_settle();
+    	    ^
+   717 	    HeroSignalStack *own = hero_rebind_own();
+   718 	    uint64_t mine = 0;
+   719 	    bool lost = false;
+Target 0: (static-O0) stopped.
+(lldb) register read x2
+      x2 = 0x000000000000000b
+(lldb) bt 5
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1
+   * frame #0: 0x0000000100025f94 static-O0`hero_rebind_tramp(catcher=(static-O0`hero_stack_handler at stack.c:1145), style=30, sig=11, info=0x00000001001576a0, context=0x0000000100157708, token=12979087539843549606) at rebind_entries.c:716:5
+     frame #1: 0x0000000100025fc8 static-O0`hero_rebind_tramp(catcher=(static-O0`hero_stack_handler at stack.c:1145), style=30, sig=10, info=0x0000000100157ba0, context=0x0000000100157c08, token=12979087539843547814) at rebind_entries.c:722:9
+     frame #2: 0x000000010002fd6c static-O0`h_static_deep(h0_n=4295194229) at static.hero:12:150
+     frame #3: 0x000000010002fd6c static-O0`h_static_deep(h0_n=9996449) at static.hero:12:150
+     frame #4: 0x000000010002fd6c static-O0`h_static_deep(h0_n=9996450) at static.hero:12:150
+(lldb) kill
+(lldb) quit
+Process 82942 exited with status = 9 (0x00000009) killed
