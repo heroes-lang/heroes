@@ -592,9 +592,13 @@ test "open and open_read_only: a folder not there, a file not there, a zero byte
         .ok _  => assert false
         .err e => assert e.code == sql.INVALID
 
+    # SQLite's own code for a folder: 14 on POSIX, with the system's 21, and
+    # `SQLITE_CANTOPEN_ISDIR`, 526, on Windows (d-windows-ci-7-1).
     match open("build")
-        .ok _  => assert false
-        .err e => assert e.code == sql.FAILED && sql.database_code_of(e.msg).must() == "14"
+        .ok _ => assert false
+        .err e =>
+            code = sql.database_code_of(e.msg).must()
+            assert e.code == sql.FAILED && (code == "14" || code == "526")
 
 test "close: refused while a prepared statement is open, twice fails closed, and every call on a closed connection fails closed"
     db @= open_memory().must()
