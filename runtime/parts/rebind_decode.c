@@ -35,11 +35,20 @@ _Atomic(hero_rebind_make_fn) hero_rebind_real_makecontext = NULL;
 #define HERO_REBIND_LR_WORD 11
 #define HERO_REBIND_JMP_D8 0x70
 #define HERO_REBIND_CTX_X19 0xe8
+#define HERO_REBIND_CTX_X20 0xf0
+#define HERO_REBIND_CTX_X21 0xf8
 #define HERO_REBIND_CTX_FP 0x138
 #define HERO_REBIND_CTX_LR 0x140
 #define HERO_REBIND_CTX_SP 0x148
 #define HERO_REBIND_CTX_D8 0x1e8
 #define HERO_REBIND_CTX_SIZE_WORD 0x28
+/* Where the context's `uc_mcontext` lies, and where it points in a context
+ * the C library's own `makecontext` or `getcontext` wrote: the machine
+ * context inside it, 64 bytes in (measured on this Mac, a zeroed buffer
+ * `makecontext` made and a context `getcontext` saved, lane sig-family-3's
+ * `probe/mc`), which every offset above assumes. */
+#define HERO_REBIND_CTX_MCONTEXT_WORD 0x30
+#define HERO_REBIND_CTX_MCONTEXT 0x40
 
 /* Which families decode (rule 3): bit 1 the setjmp family, bit 2 contexts;
  * each set before `main`, once its calibration verified, never after. */
@@ -47,6 +56,11 @@ _Atomic(hero_rebind_make_fn) hero_rebind_real_makecontext = NULL;
 #define HERO_REBIND_CTX 2
 static _Atomic int hero_rebind_decodes = 0;
 static _Atomic uintptr_t hero_rebind_key_k = 0;
+/* `_ctx_start`, where a context `makecontext` made begins, and the token its
+ * function is munged by (defect 2868, `rebind_jump.c`): 0 where they were not
+ * taken. Written once, before `main`. */
+__attribute__((unused)) static _Atomic uintptr_t hero_rebind_ctx_start = 0;
+__attribute__((unused)) static _Atomic uintptr_t hero_rebind_ctx_token = 0;
 
 /* RULE 3'S ACCESSOR: which path stands, asked by a test (a `run` case through
  * an `extern` header, or the `runtime` suite): bit 1 the setjmp family
@@ -287,6 +301,46 @@ __attribute__((noinline, no_sanitize("address"))) static void hero_rebind_cal_de
     (void)pad[0];
 }
 
+/* `_ctx_start` and the token (defect 2868), read from a context the C
+ * library's own `makecontext` makes here, on a buffer of this file's, for a
+ * function of this file's: taken only where the context reads as that
+ * `makecontext` writes it, the context itself in x19, its stack pointer inside
+ * the buffer, and a link register's word; elsewhere 0, and no coroutine's end
+ * is ever seen. The context is made on a buffer of 1024 bytes, as the
+ * calibration's are: this file's `ucontext_t` is 56 bytes, no room for the
+ * machine context the C library writes after it (until the gate of defect
+ * 2868's repair, a `static ucontext_t` here had the registers written over
+ * the runtime's count of callbacks not returned, 72 bytes above it, which the
+ * room's abort then told as 5689715595449114512: lane sig-family-3,
+ * `run/fixedbugs-a-coroutine-left-for-good-holding-a-large-value-has-its-
+ * room-given-back-on-its-stack` at `-O0`, the size, the two addresses and the
+ * words written read in lldb). */
+static void hero_rebind_learn_fn(void) {}
+
+__attribute__((no_sanitize("address"))) static void hero_rebind_learn_start(void) {
+    static _Alignas(16) unsigned char stack[4096];
+    static _Alignas(16) unsigned char made[1024];
+    hero_rebind_make_fn make = atomic_load(&hero_rebind_real_makecontext);
+    if (make == NULL) return;
+    memset(made, 0, sizeof made);
+    ucontext_t *uc = (ucontext_t *)(void *)made;
+    uc->uc_stack.ss_sp = stack;
+    uc->uc_stack.ss_size = sizeof stack;
+    uc->uc_link = uc;
+    make(made, hero_rebind_learn_fn, 0);
+    const unsigned char *c = made;
+    uintptr_t lo = (uintptr_t)stack, hi = lo + sizeof stack;
+    uintptr_t sp = hero_rebind_strip_d(hero_rebind_word(c, HERO_REBIND_CTX_SP));
+    uintptr_t start = hero_rebind_strip_i(hero_rebind_word(c, HERO_REBIND_CTX_LR));
+    if (hero_rebind_word(c, HERO_REBIND_CTX_MCONTEXT_WORD) != (uintptr_t)made + HERO_REBIND_CTX_MCONTEXT ||
+        hero_rebind_word(c, HERO_REBIND_CTX_X19) != (uintptr_t)made || sp <= lo || sp > hi || start == 0) {
+        return;
+    }
+    atomic_store_explicit(&hero_rebind_ctx_token, hero_rebind_word(c, HERO_REBIND_CTX_X20) ^ (uintptr_t)hero_rebind_learn_fn,
+                          memory_order_relaxed);
+    atomic_store_explicit(&hero_rebind_ctx_start, start, memory_order_release);
+}
+
 /* `k` from one `_setjmp` at a known stack pointer, then every save checked at
  * this frame, 1 MiB deeper and on a second, `mmap`ed stack; a family that
  * fails any check, or that the build forces to fail, stays on route A. */
@@ -309,6 +363,7 @@ __attribute__((no_sanitize("address"))) static void hero_rebind_calibrate(void) 
     bad |= HERO_JMP_FORCE_UNCALIBRATED;
 #endif
     atomic_store_explicit(&hero_rebind_decodes, (HERO_REBIND_JMP | HERO_REBIND_CTX) & ~bad, memory_order_release);
+    if ((bad & HERO_REBIND_CTX) == 0) hero_rebind_learn_start();
 }
 #else
 /* Darwin x86-64: no decode is read here (no machine to calibrate it on), so

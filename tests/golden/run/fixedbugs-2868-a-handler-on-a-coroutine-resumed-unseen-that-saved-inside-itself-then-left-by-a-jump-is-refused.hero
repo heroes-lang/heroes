@@ -1,0 +1,33 @@
+# Fixed 2026-11-27, defect 2868, lane sig-family-3 (step 199s): the same
+# coroutine, yielding by the C library's own `swapcontext` into another heap
+# context, is resumed by the runner through that same switch and raises; the
+# handler, on the coroutine's stack, saves its own point and jumps to the
+# runner's save; the runner calls the program while the handler is parked,
+# then jumps back into the handler, which returns into the coroutine, which
+# jumps home.
+# Symptom: before, on Linux arm64, refused in STANDING's words, *C left the
+# handler in a way this runtime does not follow (an inline `__builtin_longjmp`,
+# a C++ exception, a jump inside a system library)*, three causes the program
+# has none of: its coroutine judged ended, the handler's frames were read as
+# the thread's own.
+# Cause: the end of a range's coroutine was judged where a swap into the
+# range returned with no switch made from the range meanwhile and the context
+# switched to not moved, which a yield by a switch the runtime never sees,
+# saving into another context than the one it was switched to, also leaves:
+# the coroutine was judged ended while alive, and its stack, carved from the
+# thread's own, the thread's own memory again.
+# Fix: the end is seen where the coroutine's function returns, never read from
+# what did not happen: at the first switch into a context `makecontext` made,
+# the C library's return is sent through `hero_ctx_end` (glibc) and
+# `_ctx_start`'s call through `hero_rebind_ctx_tramp` (Darwin), which tell the
+# range its coroutine ended.
+# MUST BE REFUSED, in PARKED's words (defect 2872).
+extern "fixedbugs-2868-a-coroutine-yielding-unseen-into-another-context.h"
+    function sf_run(shape: i32, how: i32, cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("sf_2_1: ", sf_run(shape: 2, how: 1, cb: answer))

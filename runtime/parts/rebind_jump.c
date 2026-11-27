@@ -68,36 +68,70 @@ static uintptr_t hero_rebind_ctx_sp(const void *uc) {
     return hero_rebind_strip_d(hero_rebind_word((const unsigned char *)uc, HERO_REBIND_CTX_SP));
 }
 
-/* The stack-pointer word of the context at `uc`, copied by the kernel wherever
- * it is mapped, so a context given back since is an answer and never a fault
- * (defect 2850); false where the kernel refuses the copy. */
-static bool hero_rebind_ctx_word(const void *uc, uintptr_t *word) {
-    const unsigned char *at = (const unsigned char *)uc + HERO_REBIND_CTX_SP;
-    uintptr_t got_word = 0;
-    mach_vm_size_t got = 0;
-    if (uc == NULL || mach_vm_read_overwrite(mach_task_self(), (mach_vm_address_t)(uintptr_t)at, sizeof got_word,
-                                             (mach_vm_address_t)(uintptr_t)&got_word, &got) != KERN_SUCCESS ||
-        got != sizeof got_word) {
-        return false;
-    }
-    *word = hero_rebind_strip_d(got_word);
-    return true;
+/* THE END OF A COROUTINE IS SEEN WHERE ITS FUNCTION RETURNS (defect 2868).
+ * Darwin's `makecontext` keeps the context in x19, the function munged by the
+ * process's pointer token in x20, and `_ctx_start` in the link register's slot:
+ * `_ctx_start` calls the function, then `_ctx_done`, which switches to the
+ * context's `uc_link` unseen. At the first switch this file sees into a
+ * context `makecontext` made, whose link register still names `_ctx_start`
+ * (`hero_rebind_watch_end`), the function moves to x21 and x20 names
+ * `hero_rebind_ctx_tramp`, munged by the same token: the trampoline calls the
+ * function with every argument as `_ctx_start` set it (the registers and the
+ * stack as it left them), then tells the range its coroutine ended, makes the
+ * same change to the context `_ctx_done` switches to next and enters the range
+ * that one lands on, and returns into `_ctx_start`, which goes on as it would
+ * have. `_ctx_start`'s address and the token are read before `main` from a
+ * context made there (`rebind_decode.c`); the context is written only at a
+ * switch into it, which the C library reads next, so it lives. Until then the
+ * end was judged by what the switches made from the range and the context
+ * switched to did not show, and a coroutine yielding by a switch the runtime
+ * never sees, saving into another context, was judged ended while alive. */
+__attribute__((used, visibility("hidden"))) void hero_rebind_ctx_ended(uintptr_t sp, const void *uc);
+
+#if defined(__aarch64__)
+__attribute__((naked)) static void hero_rebind_ctx_tramp(void) {
+    __asm__ volatile("mov x22, x30\n\t"
+                     "blr x21\n\t"
+                     "mov x0, sp\n\t"
+                     "mov x1, x19\n\t"
+                     "bl _hero_rebind_ctx_ended\n\t"
+                     "mov x30, x22\n\t"
+                     "ret");
 }
 
-/* Whether the coroutine a swap switched to may still be alive once the switch
- * has returned: its context naming another stack pointer than `entered`, one
- * witness of its life beside the switches made from its range (a yield
- * through a switch this route never sees still moves it), copied by the
- * kernel wherever the context is mapped, never loaded (defect d-lane-d2745-1:
- * the word was loaded wherever the context lay, and a coroutine that gave it
- * back crashed the program inside the runtime); a context that cannot be read
- * proves no end (defect 2851: until then one that did not provably live was
- * not read, and its coroutine was judged ended). */
-static bool hero_rebind_ctx_moved(const void *uc, uintptr_t entered) {
-    uintptr_t word = 0;
-    if (!hero_rebind_ctx_word(uc, &word)) return true;
-    return word != entered;
+static void hero_rebind_watch_end(const void *uc) {
+    uintptr_t start = atomic_load_explicit(&hero_rebind_ctx_start, memory_order_acquire);
+    uintptr_t lo = 0, hi = 0;
+    if (start == 0 || uc == NULL) return;
+    unsigned char *c = (unsigned char *)(uintptr_t)uc;
+    /* Written only where its registers lie inside it, as the C library's own
+     * `makecontext` puts them: a context whose machine context the program
+     * keeps elsewhere is left as it is, and its coroutine's end unseen. */
+    if (hero_rebind_word(c, HERO_REBIND_CTX_MCONTEXT_WORD) != (uintptr_t)uc + HERO_REBIND_CTX_MCONTEXT) return;
+    if (!hero_rebind_known_range(hero_rebind_ctx_sp(uc), &lo, &hi)) return;
+    if (hero_rebind_strip_i(hero_rebind_word(c, HERO_REBIND_CTX_LR)) != start) return;
+    uintptr_t token = atomic_load_explicit(&hero_rebind_ctx_token, memory_order_relaxed);
+    uintptr_t fn = hero_rebind_word(c, HERO_REBIND_CTX_X20) ^ token;
+    if (fn == (uintptr_t)hero_rebind_ctx_tramp) return;
+    uintptr_t tramp = (uintptr_t)hero_rebind_ctx_tramp ^ token;
+    memcpy(c + HERO_REBIND_CTX_X21, &fn, sizeof fn);
+    memcpy(c + HERO_REBIND_CTX_X20, &tramp, sizeof tramp);
 }
+
+void hero_rebind_ctx_ended(uintptr_t sp, const void *uc) {
+    hero_rebind_range_ended(sp);
+    const ucontext_t *link = uc != NULL ? ((const ucontext_t *)uc)->uc_link : NULL;
+    if (link == NULL) return;
+    hero_rebind_watch_end(link);
+    hero_rebind_range_entered(hero_rebind_ctx_sp(link));
+}
+#else
+static void hero_rebind_watch_end(const void *uc) { (void)uc; }
+void hero_rebind_ctx_ended(uintptr_t sp, const void *uc) {
+    (void)sp;
+    (void)uc;
+}
+#endif
 
 /* Whether `setcontext` would jump to `uc`: it refuses a context whose size
  * word is 0, and returns, and nothing must be judged left by a jump that does
@@ -145,13 +179,13 @@ static bool hero_rebind_switch_target(HeroSignalStack *own, const void *uc, int 
 /* The switch of contexts, of `call`, from `from` (none for `setcontext`) to
  * `to`, that the wrapper whose frame is `frame` begins: refused where the
  * handler the thread runs now interrupted a switch naming either, else noted
- * until it is seen to end, the one it is made inside of kept in `prev`
- * (defect 2871, `parts/sigguard.c`). */
+ * until it is seen to end, its note opened by the wrapper before anything
+ * else (defect 2871, panel 263's gap, `parts/sigguard.c`). */
 static void hero_rebind_switch_begins(HeroSignalStack *own, const char *call, uintptr_t frame, const void *from,
-                                      const void *to, HeroSigSwitch *prev) {
+                                      const void *to) {
     HeroSigSwitch next = {frame, 0, 0, (uintptr_t)from, (uintptr_t)to};
     if (!hero_rebind_target_range(own, frame, &next.lo, &next.hi)) next.lo = next.hi = 0;
-    hero_signal_switch_begin(own, call, &next, prev);
+    hero_signal_switch_begin(own, call, &next);
 }
 
 /* A jump of the setjmp family to `env`: its target decoded at every jump,
@@ -233,25 +267,26 @@ __attribute__((noinline)) static void hero_rebind_set(const void *uc) {
  * until this frame is resumed, so the wrapper is no tail call; its marks live
  * in its own frame, and only the entries it marked are released, by serial,
  * when the swap returns here (or fails). The target is judged only for a
- * landing in frames already left (rule 6). Once the switch has returned the
- * context switched to is copied by the kernel wherever it is mapped, never
- * loaded (defects d-lane-d2745-1 and 2851): the end of a range's coroutine is what the switches
- * made from it while this one waited say, with that word
- * (`hero_rebind_range_returned`). */
+ * landing in frames already left (rule 6). A context `makecontext` made, that
+ * nothing has run, has its function called through `hero_rebind_ctx_tramp`
+ * first, so its range's end is seen (defect 2868); nothing of the context
+ * switched to is read once the switch has returned (defect d-lane-d2745-1:
+ * the program may have given it back). */
 __attribute__((noinline, no_sanitize("address"))) static int hero_rebind_swapcontext(void *from, const void *to) {
     HeroSignalStack *own = hero_rebind_own();
+    HeroSigSwitch outer;
+    if (own != NULL) {
+        hero_signal_switch_open(own, (uintptr_t)__builtin_frame_address(0), (uintptr_t)from, (uintptr_t)to, &outer);
+    } else {
+        hero_signal_switch_none(&outer);
+    }
     uint64_t marks[HERO_SIG_DEPTH];
     unsigned gens[HERO_SIG_DEPTH];
     int n = 0;
     uintptr_t entered = 0;
-    int watched = -1;
-    unsigned seq = 0;
-    HeroSigSwitch outer;
-    hero_signal_switch_none(&outer);
     if (own != NULL) {
-        hero_rebind_switch_begins(own, "swapcontext", (uintptr_t)__builtin_frame_address(0), from, to, &outer);
+        hero_rebind_switch_begins(own, "swapcontext", (uintptr_t)__builtin_frame_address(0), from, to);
     }
-    hero_rebind_range_left((uintptr_t)__builtin_frame_address(0));
     hero_rebind_relived(own, (uintptr_t)__builtin_frame_address(0));
     hero_rebind_saved_at(own, (uintptr_t)__builtin_frame_address(0));
     if (own != NULL && from != NULL && hero_rebind_ctx_valid(to)) {
@@ -262,7 +297,6 @@ __attribute__((noinline, no_sanitize("address"))) static int hero_rebind_swapcon
         if (field) {
             entered = hero_rebind_ctx_sp(to);
             hero_rebind_range_entered(entered);
-            watched = hero_rebind_range_watch(entered, &seq);
             hero_rebind_landing(own, entered);
         } else {
             known = hero_rebind_switch_target(own, to, hero_rebind_range_switched(to), &t, &back);
@@ -290,16 +324,9 @@ __attribute__((noinline, no_sanitize("address"))) static int hero_rebind_swapcon
             }
         }
     }
+    if (hero_rebind_decoding(HERO_REBIND_CTX) && hero_rebind_ctx_valid(to)) hero_rebind_watch_end(to);
     int r = atomic_load_explicit(&hero_rebind_real_swapcontext, memory_order_relaxed)(from, to);
     if (own != NULL) hero_signal_switch_back(own, &outer, (uintptr_t)__builtin_frame_address(0));
-    /* Back in this frame: where no switch was made from the range entered
-     * and the context did not move, its coroutine returned through `uc_link`
-     * and the range holds no frames of it any more (defect 2706,
-     * `rebind_entries.c`). */
-    if (watched >= 0) {
-        bool moved = hero_rebind_ctx_moved(to, entered);
-        hero_rebind_range_returned(watched, seq, (uintptr_t)__builtin_frame_address(0), r == 0, moved);
-    }
     if (own != NULL) {
         for (int j = 0; j < n; j += 1) {
             for (int i = 0; i < own->depth; i += 1) {
@@ -393,20 +420,22 @@ __attribute__((noreturn, no_sanitize("address"))) static void hero_rebind__longj
     __builtin_unreachable();
 }
 
-/* A switch made from this frame leaves the range it lies on, if a swap into
- * that range waits to return (`rebind_entries.c`, the life of a range). The
- * C library's own is called, never reached by a tail call, so its frames link
+/* A context `makecontext` made, that nothing has run, has its function called
+ * through `hero_rebind_ctx_tramp` first, so its range's end is seen
+ * (`rebind_entries.c`, the life of a range). The C library's own is called, never reached by a tail call, so its frames link
  * to this one while it switches (defect 2871); it returns only where it
  * refused the context. */
 __attribute__((noinline, no_sanitize("address"))) static int hero_rebind_setcontext(const void *context) {
     HeroSignalStack *own = hero_rebind_own();
     HeroSigSwitch outer;
-    hero_signal_switch_none(&outer);
     if (own != NULL) {
-        hero_rebind_switch_begins(own, "setcontext", (uintptr_t)__builtin_frame_address(0), NULL, context, &outer);
+        hero_signal_switch_open(own, (uintptr_t)__builtin_frame_address(0), 0, (uintptr_t)context, &outer);
+        hero_rebind_switch_begins(own, "setcontext", (uintptr_t)__builtin_frame_address(0), NULL, context);
+    } else {
+        hero_signal_switch_none(&outer);
     }
-    hero_rebind_range_left(hero_rebind_below());
     hero_rebind_set(context);
+    if (hero_rebind_decoding(HERO_REBIND_CTX) && hero_rebind_ctx_valid(context)) hero_rebind_watch_end(context);
     hero_rebind_leaving();
     int r = atomic_load_explicit(&hero_rebind_real_setcontext, memory_order_relaxed)(context);
     if (own != NULL) hero_signal_switch_back(own, &outer, (uintptr_t)__builtin_frame_address(0));

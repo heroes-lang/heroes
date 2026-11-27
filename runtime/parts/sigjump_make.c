@@ -36,7 +36,28 @@
  * stopped, saying so, before anything is made: passing a part of them on
  * would start the coroutine with words the program never gave. It is the
  * one wrapper `HERO_JMP_MAKE_IN_C` builds on aarch64 too, so the path glibc's
- * other architectures take is run there (`sigjump.c`). */
+ * other architectures take is run there (`sigjump.c`).
+ *
+ * THE END OF A COROUTINE IS SEEN WHERE ITS FUNCTION RETURNS (defect 2868).
+ * glibc's start routine runs once the function has returned and switches to
+ * the context's `uc_link` or ends the thread, both unseen. Where contexts
+ * decode (aarch64 and x86-64), at the first switch this file sees into a
+ * context `makecontext` made and nothing has run (`hero_ctx_watch_end`), the
+ * function's end is made to pass through this file, in the layout the C
+ * library's own `makecontext` was read to write before `main`
+ * (`sigjump_decode.c`): where the function returns into the routine (the
+ * layout read on x86-64), its return names `hero_ctx_end`; where the routine
+ * calls the function from x20 (glibc 2.41 on aarch64, measured), x20 names
+ * `hero_ctx_call`, which calls the function, moved to x21, as the routine
+ * would. Either then tells the range its coroutine ended, makes the same
+ * change to the context the C library switches to next and enters the range
+ * that one lands on, and goes on into the C library's routine with every
+ * register it reads as it found it. The context is written only at a switch into it, which the C library
+ * reads next, so it lives; never by `makecontext`'s wrapper, which reaches the
+ * C library's own by a branch and so never runs after it. Until then the end
+ * was judged by what the switches made from the range and the context
+ * switched to did not show, and a coroutine yielding by a switch the runtime
+ * never sees, saving into another context, was judged ended while alive. */
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 
@@ -55,6 +76,102 @@ __attribute__((used, visibility("hidden"))) void hero_sig_made_context(const voi
     hero_sig_known_stack(context, hero_ctx_recording());
     if (hero_ctx_recording()) hero_jmp_forget(context);
 }
+
+/* The return of a context's function sent through `hero_ctx_end`. Called at
+ * a switch into `ucp`, which the C library reads next; where `ucp` is a
+ * context `makecontext` made that nothing has run (its return still the C
+ * library's start routine) on a range `makecontext` was handed, its return
+ * is rewritten, on aarch64 in the context's link-register slot and on x86-64
+ * in the word its stack pointer names, on that range. Loads and stores of
+ * the context alone: async-signal-safe. */
+static void hero_ctx_watch_end(const ucontext_t *ucp);
+
+/* `hero_ctx_end`'s own work, on the stack of the coroutine whose function
+ * returned (`sp`, its stack pointer then), before the C library switches to
+ * `link` (its `uc_link`, none for a thread's end). */
+__attribute__((used, visibility("hidden"))) void hero_ctx_ended(uintptr_t sp, const ucontext_t *link);
+
+#if defined(HERO_JMP_DECODES) && defined(__aarch64__)
+/* Entered by the function's `ret`, with glibc's `uc_link` in x19, which the
+ * start routine reads; x19 survives the call, as it survives the function. */
+__asm__(".text\n.p2align 2\n.globl hero_ctx_end\n.hidden hero_ctx_end\n.type hero_ctx_end, %function\n"
+        "hero_ctx_end:\n"
+        "  mov x0, sp\n"
+        "  mov x1, x19\n"
+        "  bl hero_ctx_ended\n"
+        "  adrp x16, hero_ctx_start_routine\n"
+        "  ldr x16, [x16, :lo12:hero_ctx_start_routine]\n"
+        "  br x16\n"
+        ".size hero_ctx_end, .-hero_ctx_end\n");
+/* Called by glibc's start routine (`blr x20`) in place of the function, which
+ * is in x21, with the arguments in x0 to x7 and on the stack as the routine
+ * left them, and `uc_link` in x19: the function called with all of them, then
+ * the end told, then a return into the routine, x19 kept. x21 and x22 survive
+ * both calls. */
+__asm__(".text\n.p2align 2\n.globl hero_ctx_call\n.hidden hero_ctx_call\n.type hero_ctx_call, %function\n"
+        "hero_ctx_call:\n"
+        "  hint #34\n"
+        "  mov x22, x30\n"
+        "  blr x21\n"
+        "  mov x0, sp\n"
+        "  mov x1, x19\n"
+        "  bl hero_ctx_ended\n"
+        "  mov x30, x22\n"
+        "  ret\n"
+        ".size hero_ctx_call, .-hero_ctx_call\n");
+#elif defined(HERO_JMP_DECODES) && defined(__x86_64__)
+/* Entered by the function's `ret`, `rsp` 16-aligned, with glibc's `rbx`
+ * naming the word that holds `uc_link`, which the start routine reads; `rbx`
+ * survives the call, as it survives the function. */
+__asm__(".text\n.globl hero_ctx_end\n.hidden hero_ctx_end\n.type hero_ctx_end, @function\n"
+        "hero_ctx_end:\n"
+        "  mov %rsp, %rdi\n"
+        "  mov (%rbx), %rsi\n"
+        "  call hero_ctx_ended\n"
+        "  jmp *hero_ctx_start_routine(%rip)\n"
+        ".size hero_ctx_end, .-hero_ctx_end\n");
+#endif
+
+#if defined(HERO_JMP_DECODES)
+void hero_ctx_end(void);
+#if defined(__aarch64__)
+void hero_ctx_call(void);
+#endif
+
+static void hero_ctx_watch_end(const ucontext_t *ucp) {
+    uintptr_t start = atomic_load_explicit(&hero_ctx_start_routine, memory_order_acquire);
+    uintptr_t lo = 0, hi = 0;
+    if (start == 0 || ucp == NULL || !hero_sig_known_range(hero_jmp_context_sp(ucp), &lo, &hi)) return;
+    ucontext_t *uc = (ucontext_t *)(uintptr_t)ucp;
+#if defined(__aarch64__)
+    if (atomic_load_explicit(&hero_ctx_start_layout, memory_order_relaxed) == HERO_CTX_CALLS_FROM) {
+        if ((uintptr_t)uc->uc_mcontext.pc != start || uc->uc_mcontext.regs[20] == (uintptr_t)hero_ctx_call) return;
+        uc->uc_mcontext.regs[21] = uc->uc_mcontext.regs[20];
+        uc->uc_mcontext.regs[20] = (uintptr_t)hero_ctx_call;
+    } else if ((uintptr_t)uc->uc_mcontext.regs[30] == start) {
+        uc->uc_mcontext.regs[30] = (uintptr_t)hero_ctx_end;
+    }
+#else
+    uintptr_t sp = (uintptr_t)uc->uc_mcontext.gregs[REG_RSP];
+    if (sp < lo || sp > hi - sizeof(uintptr_t)) return;
+    uintptr_t *ret = (uintptr_t *)sp;
+    if (*ret == start) *ret = (uintptr_t)hero_ctx_end;
+#endif
+}
+
+void hero_ctx_ended(uintptr_t sp, const ucontext_t *link) {
+    hero_sig_range_ended(sp);
+    if (link == NULL) return;
+    hero_ctx_watch_end(link);
+    hero_sig_range_entered(hero_jmp_context_sp(link));
+}
+#else
+static void hero_ctx_watch_end(const ucontext_t *ucp) { (void)ucp; }
+void hero_ctx_ended(uintptr_t sp, const ucontext_t *link) {
+    (void)sp;
+    (void)link;
+}
+#endif
 
 #if defined(HERO_JMP_MAKE_ASM) && defined(__aarch64__)
 __asm__(".text\n.p2align 2\n.globl makecontext\n.type makecontext, %function\n"
