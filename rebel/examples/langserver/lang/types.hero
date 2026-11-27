@@ -1,0 +1,155 @@
+# Kite's types and the names every source starts with. A value is an `Int`
+# (64 bits), a `Bool`, a `Str`, the one `Unit` a block with no value
+# answers, or a record; a function is no value, so its type is only ever
+# called. `unknown` is the type of what could not be read or checked: it
+# matches everything, so one mistake is told once and not again by every
+# expression that uses it.
+
+## Types
+
+# A type of Kite.
+variant Type
+    # A 64-bit integer.
+    int_type
+    # `true` or `false`.
+    bool_type
+    # A string.
+    str_type
+    # What a block with no value, or a function with no result, answers.
+    unit_type
+    # A record, by its name.
+    record_type
+        # The record's name.
+        name: str
+    # A function, by its name: its signature is the checker's.
+    function_type
+        # The function's name.
+        name: str
+    # What could not be read or checked; matches every type.
+    unknown
+
+# What a function takes and answers.
+record Signature
+    # Its parameters' names, in order.
+    names: [str]
+    # Its parameters' types, in order.
+    params: [Type]
+    # What it answers.
+    result: Type
+
+# One of the functions every source can call.
+record Builtin
+    # Its name.
+    name: str
+    # Its signature.
+    signature: Signature
+    # What it does.
+    doc: str
+
+# The names Kite's own types have.
+constant TYPE_NAMES: [str]
+    ["Int", "Bool", "Str", "Unit"]
+
+# `t` as a source writes it, `?` for `unknown`.
+#
+# - `t`: a type.
+function format_type(t: Type) -> str
+    return match t
+        .int_type        => "Int"
+        .bool_type       => "Bool"
+        .str_type        => "Str"
+        .unit_type       => "Unit"
+        .record_type r   => r.name
+        .function_type f => f"fn {f.name}"
+        .unknown         => "?"
+
+# The type Kite's own `name` is: `Int`, `Bool`, `Str` or `Unit`.
+#
+# - `name`: a type's name.
+#
+# Fails `not_found` where `name` is none of them.
+function own_type(name: str) -> Type?
+    if name == "Int"
+        return ok(.int_type)
+
+    if name == "Bool"
+        return ok(.bool_type)
+
+    if name == "Str"
+        return ok(.str_type)
+
+    if name == "Unit"
+        return ok(.unit_type)
+    return fail(code: "not_found", msg: f"`{name}` is none of Kite's own types")
+
+# What Kite's own type `name` holds, for a hover.
+#
+# - `name`: one of `TYPE_NAMES`.
+function own_type_doc(name: str) -> str
+    if name == "Int"
+        return "A whole number of 64 bits, from -9223372036854775808 to 9223372036854775807."
+
+    if name == "Bool"
+        return "`true` or `false`."
+
+    if name == "Str"
+        return "A string of characters, joined with `++`."
+    return "What a block with no value, or a function with no result, answers."
+
+# Whether a value of type `found` may stand where `wanted` is asked: the same
+# type, or either one unknown.
+#
+# - `wanted`: the type asked for.
+# - `found`: the type given.
+function fits(wanted: Type, found: Type) -> bool
+    return wanted == .unknown || found == .unknown || wanted == found
+
+# The functions every source can call.
+function builtins() -> [Builtin]
+    return [
+        Builtin(name: "len", signature: Signature(names: ["s"], params: [.str_type], result: .int_type), doc: "How many bytes `s` holds.")
+        Builtin(name: "show", signature: Signature(names: ["n"], params: [.int_type], result: .str_type), doc: "`n` written in decimal.")
+        Builtin(name: "abs", signature: Signature(names: ["n"], params: [.int_type], result: .int_type), doc: "`n` without its sign.")
+    ]
+
+# `name`'s signature as a source writes it: `fn dist2(a: Point, b: Point) ->
+# Int`.
+#
+# - `name`: the function's name.
+# - `s`: its signature.
+function format_signature(name: str, s: Signature) -> str
+    params: [str] @= []
+
+    for k in range(from: 0, to: s.params.len())
+        params @ params.push(f"{s.names[k]}: {format_type(s.params[k])}")
+
+    head = f"fn {name}({params.join(", ")})"
+
+    if s.result == .unit_type
+        return head
+    return f"{head} -> {format_type(s.result)}"
+
+## Tests
+
+test "format_type: every kind"
+    assert format_type(.int_type) == "Int"
+    assert format_type(.record_type(name: "Point")) == "Point"
+    assert format_type(.function_type(name: "f")) == "fn f"
+    assert format_type(.unknown) == "?"
+
+test "own_type: the four names, and another"
+    assert own_type("Str").must() == .str_type
+    assert own_type("Unit").must() == .unit_type
+    assert own_type("Point").is_err()
+
+test "fits: the same type, an unknown on either side, and two others"
+    assert fits(wanted: .int_type, found: .int_type)
+    assert fits(wanted: .unknown, found: .str_type)
+    assert fits(wanted: .bool_type, found: .unknown)
+    assert !fits(wanted: .int_type, found: .str_type)
+    assert !fits(wanted: .record_type(name: "A"), found: .record_type(name: "B"))
+
+test "format_signature: with a result, and without one"
+    s = Signature(names: ["a", "b"], params: [.record_type(name: "P"), .int_type], result: .bool_type)
+    assert format_signature("f", s: s) == "fn f(a: P, b: Int) -> Bool"
+    assert format_signature("g", s: Signature(names: [], params: [], result: .unit_type)) == "fn g()"

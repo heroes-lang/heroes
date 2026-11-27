@@ -1,0 +1,245 @@
+# The checker's state, and how a name is found: the parameters and bindings
+# in scope first, the innermost last declared winning, so a binding may
+# shadow another; then the source's functions and records, which every
+# part of it sees whatever their order; then Kite's own functions and types.
+# A name found is a reference to its symbol; a name not found is told, with
+# the nearest name in scope offered as its fix where one is near enough.
+
+use <rebel>/diff
+use <rebel>/lists
+
+use lang/diagnostics
+use lang/symbols
+use lang/syntax
+use lang/types
+
+# What the checker holds while it walks a source.
+record Checker
+    # The tree checked.
+    tree: syntax.Tree
+    # The symbols declared so far.
+    symbols: [symbols.Symbol]
+    # The references met so far.
+    refs: [symbols.Reference]
+    # Each node's type, by its index; `unknown` until it is checked.
+    types: [types.Type]
+    # Each function's signature, by name.
+    signatures: {str: types.Signature}
+    # The functions, records and built-ins, by name: an index of `symbols`.
+    globals: {str: i64}
+    # Each field, by `Record.field`: an index of `symbols`.
+    fields: {str: i64}
+    # The parameters and bindings in scope, innermost last: indexes of
+    # `symbols`.
+    scope: [i64]
+    # The function being checked: the owner of its parameters and bindings.
+    owner: str
+    # What was told.
+    told: [diagnostics.Diagnostic]
+
+# A checker of `tree` that knows Kite's own functions and types.
+#
+# - `tree`: the tree to check.
+# - `told`: what the lexer and the parser told already.
+function start(tree: syntax.Tree, told: [diagnostics.Diagnostic]) -> Checker
+    c @= Checker(
+        tree: tree,
+        symbols: [],
+        refs: [],
+        types: lists.resize([], size: tree.nodes.len(), fill: .unknown),
+        signatures: {},
+        globals: {},
+        fields: {},
+        scope: [],
+        owner: "",
+        told: told
+    )
+
+    for name in types.TYPE_NAMES
+        own = types.own_type(name).must()
+        _ = declare(
+            @c,
+            s: symbols.builtin(name: name, kind: .builtin_type, doc: types.own_type_doc(name), type_of: own)
+        )
+
+    for b in types.builtins()
+        _ = declare(
+            @c,
+            s: symbols.builtin(name: b.name, kind: .builtin_function, doc: b.doc, type_of: .function_type(name: b.name))
+        )
+        c.signatures[b.name] @ b.signature
+
+    return c
+
+## Symbols and references
+
+# Adds `s` to the symbols and answers its index; a function, a record or a
+# built-in is also known by its name from then on.
+#
+# - `c`: the checker.
+# - `s`: the symbol.
+function declare(@c: Checker, s: symbols.Symbol) -> i64
+    c.symbols @ c.symbols.push(s)
+    at = c.symbols.len() - 1
+
+    match s.kind
+        .function_symbol | .record_symbol | .builtin_function | .builtin_type => c.globals[s.name] @ at
+        .field_symbol                                                         => c.fields[f"{s.owner}.{s.name}"] @ at
+        .param_symbol | .local_symbol                                         => c.scope @ c.scope.push(at)
+
+    return at
+
+# Records that `span` reads the symbol `symbol`.
+#
+# - `c`: the checker.
+# - `symbol`: an index of `symbols`.
+# - `span`: where the name stands.
+function refer(@c: Checker, symbol: i64, span: syntax.Span)
+    c.refs @ c.refs.push(symbols.Reference(symbol: symbol, span: span))
+
+# Tells `d`.
+#
+# - `c`: the checker.
+# - `d`: the finding.
+function tell(@c: Checker, d: diagnostics.Diagnostic)
+    c.told @ c.told.push(d)
+
+# The symbol `name` reads where the checker stands: a parameter or binding
+# in scope, the innermost first, else a function, record or built-in.
+#
+# - `c`: the checker.
+# - `name`: the name.
+#
+# Fails `not_found` where nothing of that name is in scope.
+function lookup(c: Checker lent, name: str) -> i64?
+    k: i64 @= c.scope.len() - 1
+
+    while k >= 0
+        if c.symbols[c.scope[k]].name == name
+            return ok(c.scope[k])
+        k @ k - 1
+
+    return c.globals[name]
+
+# Tells that `name` names nothing here, offering the nearest of `candidates`
+# as its fix where one is near enough.
+#
+# - `c`: the checker.
+# - `span`: where the name stands.
+# - `name`: the name.
+# - `what`: what was looked for: "value", "type", "field of `Point`".
+# - `candidates`: the names that would be found here.
+function tell_unknown(@c: Checker, span: syntax.Span, name: str, what: str, candidates: [str])
+    code = if what == "type"
+        "unknown_type"
+    else
+        "unknown_name"
+
+    if candidates.len() > 0
+        near = diff.close_matches(name, possibilities: candidates, n: 1, cutoff: 0.6)
+
+        if near.len() == 1
+            tell(
+                @c,
+                diagnostics.fixable(span, code: code, message: f"no {what} named `{name}`; did you mean `{near[0]}`?", replacement: near[0])
+            )
+            return
+    tell(@c, diagnostics.error(span, code: code, message: f"no {what} named `{name}`"))
+
+# The names a value may be read by here: those in scope, the functions and
+# the built-in functions.
+#
+# - `c`: the checker.
+function value_names(c: Checker lent) -> [str]
+    names: [str] @= []
+
+    for k in c.scope
+        names @ names.push(c.symbols[k].name)
+
+    for name in keys(c.globals)
+        kind = c.symbols[c.globals[name].must()].kind
+
+        if kind == .function_symbol || kind == .builtin_function
+            names @ names.push(name)
+
+    return names
+
+# The names a type may be written with: Kite's own and the records.
+#
+# - `c`: the checker.
+function type_names(c: Checker lent) -> [str]
+    names: [str] @= []
+
+    for name in keys(c.globals)
+        kind = c.symbols[c.globals[name].must()].kind
+
+        if kind == .record_symbol || kind == .builtin_type
+            names @ names.push(name)
+
+    return names
+
+# The type `ref` writes, its name a reference to its symbol; `unknown`, told,
+# where it names no type, and silently where the parser found no name.
+#
+# - `c`: the checker.
+# - `ref`: the type as written.
+function resolve_type(@c: Checker, ref: syntax.TypeRef) -> types.Type
+    if ref.name == ""
+        return .unknown
+
+    match c.globals[ref.name]
+        .ok at =>
+            s = c.symbols[at]
+
+            if s.kind == .record_symbol || s.kind == .builtin_type
+                refer(@c, symbol: at, span: ref.span)
+                return s.type_of
+        .err _ => _ = 0
+
+    tell_unknown(@c, span: ref.span, name: ref.name, what: "type", candidates: type_names(c))
+    return .unknown
+
+# Leaves every parameter and binding declared since the scope held `depth`.
+#
+# - `c`: the checker.
+# - `depth`: what `c.scope.len()` was when the scope opened.
+function close_scope(@c: Checker, depth: i64)
+    c.scope @ lists.take(c.scope, n: depth)
+
+## Tests
+
+test "lookup: the innermost of two of one name, then a global, then nothing"
+    c @= start(syntax.Tree(decls: [], nodes: [], comments: 0, placed: 0), told: [])
+    nowhere = syntax.Span(start: 0, end: 0)
+    outer = declare(
+        @c,
+        s: symbols.Symbol(name: "x", kind: .local_symbol, span: nowhere, whole: nowhere, owner: "f", doc: "", visible: nowhere, type_of: .int_type)
+    )
+    inner = declare(
+        @c,
+        s: symbols.Symbol(name: "x", kind: .local_symbol, span: nowhere, whole: nowhere, owner: "f", doc: "", visible: nowhere, type_of: .str_type)
+    )
+    assert lookup(c, name: "x").must() == inner
+    close_scope(@c, depth: 1)
+    assert lookup(c, name: "x").must() == outer
+    assert c.symbols[lookup(c, name: "len").must()].kind == .builtin_function
+    assert lookup(c, name: "nothing").is_err()
+
+test "tell_unknown: a near name is offered as the fix, a far one is not"
+    c @= start(syntax.Tree(decls: [], nodes: [], comments: 0, placed: 0), told: [])
+    at = syntax.Span(start: 3, end: 7)
+    tell_unknown(@c, span: at, name: "dist", what: "value", candidates: ["dist2", "label"])
+    tell_unknown(@c, span: at, name: "zzz", what: "value", candidates: ["dist2"])
+    assert c.told[0].replacement.must() == "dist2"
+    assert c.told[0].message == "no value named `dist`; did you mean `dist2`?"
+    assert c.told[1].replacement.is_err()
+
+test "resolve_type: Kite's own, unknown with its fix, and none written"
+    c @= start(syntax.Tree(decls: [], nodes: [], comments: 0, placed: 0), told: [])
+    at = syntax.Span(start: 0, end: 3)
+    assert resolve_type(@c, ref: syntax.TypeRef(name: "Int", span: at)) == .int_type
+    assert c.refs.len() == 1
+    assert resolve_type(@c, ref: syntax.TypeRef(name: "Itn", span: at)) == .unknown
+    assert c.told[0].code == "unknown_type"
+    assert resolve_type(@c, ref: syntax.TypeRef(name: "", span: at)) == .unknown
+    assert c.told.len() == 1

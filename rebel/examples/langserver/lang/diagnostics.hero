@@ -1,0 +1,126 @@
+# What the analysis of a Kite source tells about it: each finding with its
+# place, how grave it is, a stable code, a sentence for a person, and where
+# one is known, the text that would put it right, which the server offers as
+# a quick fix. Lexer, parser, resolver and checker all add to one list.
+
+use lang/syntax
+
+## Findings
+
+# How grave a finding is, as the Language Server Protocol counts it.
+variant Severity
+    # The source is wrong: it would not run.
+    error
+    # The source runs, and something in it is likely a mistake.
+    warning
+    # Something worth knowing.
+    information
+    # A suggestion.
+    hint
+
+# One finding about a source.
+record Diagnostic
+    # Where it is.
+    span: syntax.Span
+    # How grave it is.
+    severity: Severity
+    # A stable snake_case name for its kind: `unknown_name`, `type_mismatch`.
+    code: str
+    # What is wrong, in a sentence a person can act on.
+    message: str
+    # Whether the code it names does nothing, an unused binding: an editor
+    # draws it faded.
+    unnecessary: bool
+    # The text that would put it right, written over `span`; absent where no
+    # one text would.
+    replacement: str?
+
+# An error at `span`.
+#
+# - `span`: where it is.
+# - `code`: its kind.
+# - `message`: what is wrong.
+function error(span: syntax.Span, code: str, message: str) -> Diagnostic
+    return Diagnostic(
+        span: span,
+        severity: .error,
+        code: code,
+        message: message,
+        unnecessary: false,
+        replacement: no_text()
+    )
+
+# An error at `span` that `replacement`, written over it, would put right.
+#
+# - `span`: where it is.
+# - `code`: its kind.
+# - `message`: what is wrong.
+# - `replacement`: the text that fixes it.
+function fixable(span: syntax.Span, code: str, message: str, replacement: str) -> Diagnostic
+    return Diagnostic(
+        span: span,
+        severity: .error,
+        code: code,
+        message: message,
+        unnecessary: false,
+        replacement: ok(replacement)
+    )
+
+# A warning at `span` about code that does nothing.
+#
+# - `span`: where it is.
+# - `code`: its kind.
+# - `message`: what is unused.
+function unused(span: syntax.Span, code: str, message: str) -> Diagnostic
+    return Diagnostic(
+        span: span,
+        severity: .warning,
+        code: code,
+        message: message,
+        unnecessary: true,
+        replacement: no_text()
+    )
+
+# No text: what a finding with no fix holds.
+function no_text() -> str?
+    return fail(code: "not_found", msg: "no text fixes this")
+
+# The number the Language Server Protocol gives `s`: 1 for an error to 4 for
+# a hint.
+#
+# - `s`: a severity.
+function severity_number(s: Severity) -> i64
+    return match s
+        .error       => 1
+        .warning     => 2
+        .information => 3
+        .hint        => 4
+
+# How many of `found` are errors.
+#
+# - `found`: the findings.
+function errors_in(found: [Diagnostic]) -> i64
+    count: i64 @= 0
+
+    for d in found
+        if d.severity == .error
+            count @ count + 1
+
+    return count
+
+## Tests
+
+test "error, fixable and unused: severity, the fix and the fading"
+    at = syntax.Span(start: 1, end: 2)
+    e = error(at, code: "c", message: "m")
+    assert e.severity == .error
+    assert e.replacement.is_err()
+    assert fixable(at, code: "c", message: "m", replacement: "x").replacement.must() == "x"
+    u = unused(at, code: "c", message: "m")
+    assert u.unnecessary
+    assert severity_number(u.severity) == 2
+
+test "errors_in: warnings are not counted, and none is zero"
+    at = syntax.Span(start: 0, end: 0)
+    assert errors_in([]) == 0
+    assert errors_in([error(at, code: "c", message: "m"), unused(at, code: "c", message: "m")]) == 1

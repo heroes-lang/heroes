@@ -1,0 +1,320 @@
+# The type of every expression, found by walking it once, children first,
+# each name read made a reference to its symbol. A mistake is told where it
+# stands, and the expression it spoils is `unknown` from there on, so the
+# expressions around it are not told again. The walk recurses over the tree,
+# whose depth the parser bounds (`cursor.MAX_DEPTH`).
+
+use lang/diagnostics
+use lang/scope
+use lang/symbols
+use lang/syntax
+use lang/types
+
+# The type of node `node`, recorded for it and answered.
+#
+# - `c`: the checker, which records the node's type, its references and its
+#   findings.
+# - `node`: an index of the tree's nodes.
+function infer(@c: scope.Checker, node: i64) -> types.Type
+    found = infer_kind(@c, node: node)
+    c.types[node] @ found
+    return found
+
+function infer_kind(@c: scope.Checker, node: i64) -> types.Type
+    span = c.tree.nodes[node].span
+
+    return match c.tree.nodes[node].kind
+        .int_lit _   => .int_type
+        .str_lit _   => .str_type
+        .bool_lit _  => .bool_type
+        .unit_lit    => .unit_type
+        .missing     => .unknown
+        .name n      => name_type(@c, name: n.text, span: span)
+        .unary u     => unary(@c, op: u.op, operand: u.operand)
+        .binary b    => binary(@c, op: b.op, left: b.left, right: b.right)
+        .call k      => call(@c, callee: k.callee, arguments: k.args, span: span)
+        .field f     => field(@c, target: f.target, name: f.name, name_span: f.name_span)
+        .construct k => construct(@c, ref: k.type_ref, inits: k.inits)
+        .if_else i   => if_else(@c, cond: i.cond, then: i.then, otherwise: i.otherwise)
+        .block b     => block(@c, lets: b.lets, value: b.value, span: span)
+
+# Tells that `found` stands where `wanted` is asked, unless it fits.
+#
+# - `c`: the checker.
+# - `span`: where the value stands.
+# - `wanted`: the type asked for.
+# - `found`: the type found.
+# - `where`: what asks it, for the message: "`+`", "the condition".
+function expect(@c: scope.Checker, span: syntax.Span, wanted: types.Type, found: types.Type, where: str)
+    if !types.fits(wanted: wanted, found: found)
+        scope.tell(
+            @c,
+            diagnostics.error(span, code: "type_mismatch", message: f"{where} takes {article(wanted)}, and this is {article(found)}")
+        )
+
+# `t` with its article, as a message writes it: "an `Int`", "a `Point`".
+#
+# - `t`: a type.
+function article(t: types.Type) -> str
+    name = types.format_type(t)
+
+    if name.len() > 0 && (name[0] == 'A' || name[0] == 'E' || name[0] == 'I' || name[0] == 'O' || name[0] == 'U')
+        return f"an `{name}`"
+    return f"a `{name}`"
+
+function name_type(@c: scope.Checker, name: str, span: syntax.Span) -> types.Type
+    match scope.lookup(c, name: name)
+        .ok at =>
+            s = c.symbols[at]
+
+            if s.kind == .record_symbol || s.kind == .builtin_type
+                scope.refer(@c, symbol: at, span: span)
+                scope.tell(
+                    @c,
+                    diagnostics.error(span, code: "type_as_value", message: f"`{name}` is a type, not a value; a record is built as `{name} {{ field: value }}`")
+                )
+                return .unknown
+            scope.refer(@c, symbol: at, span: span)
+            return s.type_of
+        .err _ =>
+            scope.tell_unknown(@c, span: span, name: name, what: "value", candidates: scope.value_names(c))
+            return .unknown
+
+function unary(@c: scope.Checker, op: str, operand: i64) -> types.Type
+    found = infer(@c, node: operand)
+
+    wanted: types.Type = if op == "!"
+        .bool_type
+    else
+        .int_type
+    expect(@c, span: c.tree.nodes[operand].span, wanted: wanted, found: found, where: f"`{op}`")
+    return wanted
+
+function binary(@c: scope.Checker, op: str, left: i64, right: i64) -> types.Type
+    l = infer(@c, node: left)
+    r = infer(@c, node: right)
+    l_span = c.tree.nodes[left].span
+    r_span = c.tree.nodes[right].span
+
+    if op == "==" || op == "!="
+        if (l == .unit_type || is_function(l)) && r != .unknown
+            expect(@c, span: l_span, wanted: .int_type, found: l, where: f"`{op}`")
+        else if !types.fits(wanted: l, found: r)
+            scope.tell(
+                @c,
+                diagnostics.error(r_span, code: "type_mismatch", message: f"`{op}` compares two values of one type, and these are {article(l)} and {article(r)}")
+            )
+        return .bool_type
+    operand: types.Type @= .int_type
+    answer: types.Type @= .int_type
+
+    if op == "&&" || op == "||"
+        operand @ .bool_type
+        answer @ .bool_type
+    else if op == "++"
+        operand @ .str_type
+        answer @ .str_type
+    else if op == "<" || op == "<=" || op == ">" || op == ">="
+        answer @ .bool_type
+
+    if op == "+" && l == .str_type && r == .str_type
+        scope.tell(
+            @c,
+            diagnostics.error(syntax.cover(first: l_span, last: r_span), code: "type_mismatch", message: "`+` adds two `Int`s; two `Str`s are joined with `++`")
+        )
+        return .str_type
+    expect(@c, span: l_span, wanted: operand, found: l, where: f"`{op}`")
+    expect(@c, span: r_span, wanted: operand, found: r, where: f"`{op}`")
+    return answer
+
+function is_function(t: types.Type) -> bool
+    return match t
+        .function_type _                                                            => true
+        .int_type | .bool_type | .str_type | .unit_type | .record_type _ | .unknown => false
+
+function call(@c: scope.Checker, callee: i64, arguments: [i64], span: syntax.Span) -> types.Type
+    target = infer(@c, node: callee)
+    given: [types.Type] @= []
+
+    for a in arguments
+        given @ given.push(infer(@c, node: a))
+
+    name = match target
+        .function_type f => f.name
+        .unknown         => return .unknown
+        .int_type | .bool_type | .str_type | .unit_type | .record_type _ =>
+            scope.tell(
+                @c,
+                diagnostics.error(c.tree.nodes[callee].span, code: "not_callable", message: f"this is {article(target)}, and only a function is called")
+            )
+            return .unknown
+
+    signature = c.signatures[name].must()
+
+    if arguments.len() != signature.params.len()
+        scope.tell(
+            @c,
+            diagnostics.error(span, code: "argument_count", message: f"`{name}` takes {count_of(signature.params.len())}, and this call gives {arguments.len()}")
+        )
+        return signature.result
+
+    for k in range(from: 0, to: arguments.len())
+        expect(
+            @c,
+            span: c.tree.nodes[arguments[k]].span,
+            wanted: signature.params[k],
+            found: given[k],
+            where: f"`{name}`'s `{signature.names[k]}`"
+        )
+
+    return signature.result
+
+# "1 argument", "2 arguments".
+#
+# - `n`: how many.
+function count_of(n: i64) -> str
+    if n == 1
+        return "1 argument"
+    return f"{n} arguments"
+
+function field(@c: scope.Checker, target: i64, name: str, name_span: syntax.Span) -> types.Type
+    found = infer(@c, node: target)
+
+    match found
+        .record_type r =>
+            if name == ""
+                return .unknown
+
+            match c.fields[f"{r.name}.{name}"]
+                .ok at =>
+                    scope.refer(@c, symbol: at, span: name_span)
+                    return c.symbols[at].type_of
+                .err _ =>
+                    scope.tell_unknown(
+                        @c,
+                        span: name_span,
+                        name: name,
+                        what: f"field of `{r.name}`",
+                        candidates: field_names(c, owner: r.name)
+                    )
+                    return .unknown
+        .unknown => return .unknown
+        .int_type | .bool_type | .str_type | .unit_type | .function_type _ =>
+            scope.tell(
+                @c,
+                diagnostics.error(c.tree.nodes[target].span, code: "no_fields", message: f"this is {article(found)}, which has no fields")
+            )
+            return .unknown
+
+# The fields of the record `owner`, in the order declared.
+#
+# - `c`: the checker.
+# - `owner`: the record's name.
+function field_names(c: scope.Checker lent, owner: str) -> [str]
+    names: [str] @= []
+
+    for s in c.symbols
+        if s.kind == .field_symbol && s.owner == owner
+            names @ names.push(s.name)
+
+    return names
+
+function construct(@c: scope.Checker, ref: syntax.TypeRef, inits: [syntax.FieldInit]) -> types.Type
+    made = scope.resolve_type(@c, ref: ref)
+
+    for one in inits
+        _ = infer(@c, node: one.value)
+
+    name = match made
+        .record_type r => r.name
+        .unknown       => return .unknown
+        .int_type | .bool_type | .str_type | .unit_type | .function_type _ =>
+            scope.tell(
+                @c,
+                diagnostics.error(ref.span, code: "not_a_record", message: f"`{ref.name}` is no record, so nothing builds it with fields")
+            )
+            return .unknown
+
+    given: {str: bool} @= {}
+
+    for one in inits
+        if given[one.name].default(false)
+            scope.tell(
+                @c,
+                diagnostics.error(one.span, code: "field_twice", message: f"the field `{one.name}` is given twice")
+            )
+        given[one.name] @ true
+
+        match c.fields[f"{name}.{one.name}"]
+            .ok at =>
+                scope.refer(@c, symbol: at, span: one.span)
+                expect(
+                    @c,
+                    span: c.tree.nodes[one.value].span,
+                    wanted: c.symbols[at].type_of,
+                    found: c.types[one.value],
+                    where: f"the field `{one.name}`"
+                )
+            .err _ =>
+                scope.tell_unknown(
+                    @c,
+                    span: one.span,
+                    name: one.name,
+                    what: f"field of `{name}`",
+                    candidates: field_names(c, owner: name)
+                )
+
+    absent: [str] @= []
+
+    for f in field_names(c, owner: name)
+        if !given[f].default(false)
+            absent @ absent.push(f"`{f}`")
+
+    if absent.len() > 0
+        scope.tell(
+            @c,
+            diagnostics.error(ref.span, code: "missing_field", message: f"`{name}` needs {absent.join(", ")} too")
+        )
+    return made
+
+function if_else(@c: scope.Checker, cond: i64, then: i64, otherwise: i64) -> types.Type
+    found = infer(@c, node: cond)
+    expect(@c, span: c.tree.nodes[cond].span, wanted: .bool_type, found: found, where: "an `if`'s condition")
+    first = infer(@c, node: then)
+    second = infer(@c, node: otherwise)
+
+    if !types.fits(wanted: first, found: second)
+        scope.tell(
+            @c,
+            diagnostics.error(c.tree.nodes[otherwise].span, code: "branch_mismatch", message: f"the `else` branch answers {article(second)}, and the first branch {article(first)}")
+        )
+        return .unknown
+
+    if first == .unknown
+        return second
+    return first
+
+function block(@c: scope.Checker, lets: [syntax.Let], value: i64, span: syntax.Span) -> types.Type
+    depth = c.scope.len()
+
+    for one in lets
+        found = infer(@c, node: one.value)
+        bound @= found
+
+        match one.declared
+            .ok ref =>
+                wanted = scope.resolve_type(@c, ref: ref)
+                expect(@c, span: c.tree.nodes[one.value].span, wanted: wanted, found: found, where: f"`{one.name}`")
+                bound @ wanted
+            .err _ => _ = 0
+
+        if one.name != ""
+            visible = syntax.Span(start: one.whole.end, end: span.end)
+            _ = scope.declare(
+                @c,
+                s: symbols.Symbol(name: one.name, kind: .local_symbol, span: one.span, whole: one.whole, owner: c.owner, doc: one.doc, visible: visible, type_of: bound)
+            )
+
+    answer = infer(@c, node: value)
+    scope.close_scope(@c, depth: depth)
+    return answer
