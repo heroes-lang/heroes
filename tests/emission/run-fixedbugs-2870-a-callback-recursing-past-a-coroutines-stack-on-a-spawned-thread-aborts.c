@@ -20,6 +20,7 @@
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
 #pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
 #pragma clang diagnostic ignored "-Winvalid-source-encoding"
+#pragma clang diagnostic ignored "-Wmissing-format-attribute"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -160,7 +161,7 @@ _Static_assert(HERO_RET_INT(HERO_STR_OK), "heroes-ffi-return HERO_STR_OK i64");
 _Static_assert(__builtin_constant_p(HERO_STR_OK), "heroes-ffi-const HERO_STR_OK");
 _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return hero_str_try_from_cstr str");
 
-#line 164 "fixedbugs2870acallbackrecursingpastacoroutinesstackonaspawnedthreadaborts.c"
+#line 165 "fixedbugs2870acallbackrecursingpastacoroutinesstackonaspawnedthreadaborts.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t hero_tag;
@@ -216,7 +217,7 @@ __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(i
 __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
 __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
-#line 220 "fixedbugs2870acallbackrecursingpastacoroutinesstackonaspawnedthreadaborts.c"
+#line 221 "fixedbugs2870acallbackrecursingpastacoroutinesstackonaspawnedthreadaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
@@ -255,7 +256,7 @@ int64_t h_fixedbugs2870acallbackrecursingpastacoroutinesstackonaspawnedthreadabo
     t9 = h1_r; t10 = ((__INT64_TYPE__)3); if (__builtin_mul_overflow(t9, t10, &t11)) hero_panic_overflow_at("fixedbugs-2870-a-callback-recursing-past-a-coroutines-stack-on-a-spawned-thread-aborts.hero", "fixedbugs-2870-a-callback-recursing-past-a-coroutines-stack-on-a-spawned-thread-aborts.deep", 29, 12); t12 = ((__INT64_TYPE__)1000003); if (t12 == 0) hero_panic_at("division by zero", "fixedbugs-2870-a-callback-recursing-past-a-coroutines-stack-on-a-spawned-thread-aborts.hero", "fixedbugs-2870-a-callback-recursing-past-a-coroutines-stack-on-a-spawned-thread-aborts.deep", 29, 12); if (t11 == (-__INT64_MAX__ - 1) && t12 == ((__INT64_TYPE__)-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "fixedbugs-2870-a-callback-recursing-past-a-coroutines-stack-on-a-spawned-thread-aborts.hero", "fixedbugs-2870-a-callback-recursing-past-a-coroutines-stack-on-a-spawned-thread-aborts.deep", 29, 12); t13 = t11 % t12; t14 = h0_n; t15 = ((__INT64_TYPE__)7); if (t15 == 0) hero_panic_at("division by zero", "fixedbugs-2870-a-callback-recursing-past-a-coroutines-stack-on-a-spawned-thread-aborts.hero", "fixedbugs-2870-a-callback-recursing-past-a-coroutines-stack-on-a-spawned-thread-aborts.deep", 29, 30); if (t14 == (-__INT64_MAX__ - 1) && t15 == ((__INT64_TYPE__)-1)) hero_panic_at("`%` by -1 at the smallest i64: the remainder is 0, but C reaches it through a quotient that has no int64", "fixedbugs-2870-a-callback-recursing-past-a-coroutines-stack-on-a-spawned-thread-aborts.hero", "fixedbugs-2870-a-callback-recursing-past-a-coroutines-stack-on-a-spawned-thread-aborts.deep", 29, 30); t16 = t14 % t15; if (__builtin_add_overflow(t13, t16, &t17)) hero_panic_overflow_at("fixedbugs-2870-a-callback-recursing-past-a-coroutines-stack-on-a-spawned-thread-aborts.hero", "fixedbugs-2870-a-callback-recursing-past-a-coroutines-stack-on-a-spawned-thread-aborts.deep", 29, 12); h2_ret0 = t17; goto hero_bb4; hero_bb2:
 #line 27
     t4 = ((__INT64_TYPE__)1); h2_ret0 = t4; goto hero_bb4; hero_bb3: goto hero_bb1; hero_bb4:
-#line 259 "fixedbugs2870acallbackrecursingpastacoroutinesstackonaspawnedthreadaborts.c"
+#line 260 "fixedbugs2870acallbackrecursingpastacoroutinesstackonaspawnedthreadaborts.c"
     t18 = h2_ret0;
     return t18;
 }
@@ -270,7 +271,7 @@ __attribute__((__noinline__)) int64_t h_0cb_fixedbugs2870acallbackrecursingpasta
 #line 31 "tests/golden/run/fixedbugs-2870-a-callback-recursing-past-a-coroutines-stack-on-a-spawned-thread-aborts.hero"
 int64_t h_fixedbugs2870acallbackrecursingpastacoroutinesstackonaspawnedthreadaborts_worker(int64_t h0_n) { hero_thread_guard("fixedbugs2870acallbackrecursingpastacoroutinesstackonaspawnedthreadaborts.worker"); HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2, t3; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h_fixedbugs2870acallbackrecursingpastacoroutinesstackonaspawnedthreadaborts_deep; t2 = h0_n; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2870-a-callback-recursing-past-a-coroutines-stack-on-a-spawned-thread-aborts.hero", "fixedbugs-2870-a-callback-recursing-past-a-coroutines-stack-on-a-spawned-thread-aborts.worker", 32, 12}; t3 = gs_run((h_0fn_48ac9712)hero_callback_of((void (*)(void))t1), t2); } return t3;
-#line 274 "fixedbugs2870acallbackrecursingpastacoroutinesstackonaspawnedthreadaborts.c"
+#line 275 "fixedbugs2870acallbackrecursingpastacoroutinesstackonaspawnedthreadaborts.c"
 }
 
 __attribute__((__noinline__)) int64_t h_0cb_fixedbugs2870acallbackrecursingpastacoroutinesstackonaspawnedthreadaborts_worker(int64_t h0_n) {
@@ -284,7 +285,7 @@ __attribute__((__noinline__)) int64_t h_0cb_fixedbugs2870acallbackrecursingpasta
 void h_fixedbugs2870acallbackrecursingpastacoroutinesstackonaspawnedthreadaborts_main(void) { int64_t h0_t; HERO_NODEBUG h_0fn_48ac9712 t1; HERO_NODEBUG int64_t t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h_fixedbugs2870acallbackrecursingpastacoroutinesstackonaspawnedthreadaborts_worker; t2 = ((__INT64_TYPE__)10000000); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2870-a-callback-recursing-past-a-coroutines-stack-on-a-spawned-thread-aborts.hero", "fixedbugs-2870-a-callback-recursing-past-a-coroutines-stack-on-a-spawned-thread-aborts.main", 35, 9}; t3 = hero_thread_spawn((h_0fn_48ac9712)hero_callback_of((void (*)(void))t1), t2); } h0_t = t3;
     t4 = h0_t; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2870-a-callback-recursing-past-a-coroutines-stack-on-a-spawned-thread-aborts.hero", "fixedbugs-2870-a-callback-recursing-past-a-coroutines-stack-on-a-spawned-thread-aborts.main", 36, 11}; t5 = hero_thread_join(t4); } hero_print_int(t5); hero_print_end(); return;
-#line 288 "fixedbugs2870acallbackrecursingpastacoroutinesstackonaspawnedthreadaborts.c"
+#line 289 "fixedbugs2870acallbackrecursingpastacoroutinesstackonaspawnedthreadaborts.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
     if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
@@ -383,7 +384,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("63322c636c417421", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0c87cdc62e3e818b", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2870acallbackrecursingpastacoroutinesstackonaspawnedthreadaborts\tfixedbugs-2870-a-callback-recursing-past-a-coroutines-stack-on-a-spawned-thread-aborts\n");

@@ -20,6 +20,7 @@
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
 #pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
 #pragma clang diagnostic ignored "-Winvalid-source-encoding"
+#pragma clang diagnostic ignored "-Wmissing-format-attribute"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -136,7 +137,7 @@ _Static_assert(HERO_RUNTIME_ABI == 32, "heroes_runtime.h is from another compile
 
 #line 19 "tests/golden/run/fixedbugs-2870-a-callback-whose-frames-are-larger-than-a-page-recursing-past-a-coroutines-stack-aborts.hero"
 _Static_assert(__builtin_classify_type(((struct gs_big *)0)->first) == 1 && sizeof(((struct gs_big *)0)->first) == sizeof(int64_t) && (_Generic(((struct gs_big *)0)->first, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, _Bool:1, char:((char)-1 > 0), signed char:0, short:0, int:0, long:0, long long:0, default:0) == 0), "heroes-ffi-field Big first");
-#line 140 "fixedbugs2870acallbackwhoseframesarelargerthanapagerecursingpastacoroutinesstackaborts.c"
+#line 141 "fixedbugs2870acallbackwhoseframesarelargerthanapagerecursingpastacoroutinesstackaborts.c"
 
 #define HERO_RET_INT(c) (HERO_C_INTEGER(c) && (HERO_C_UNSIGNED(c) ? sizeof(c) < 8 : sizeof(c) <= 8))
 #define HERO_C_INTEGER(c) _Generic((c), _Bool:1, char:1, signed char:1, short:1, int:1, long:1, long long:1, unsigned char:1, unsigned short:1, unsigned int:1, unsigned long:1, unsigned long long:1, default:0)
@@ -231,7 +232,7 @@ __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(i
 __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
 __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
-#line 235 "fixedbugs2870acallbackwhoseframesarelargerthanapagerecursingpastacoroutinesstackaborts.c"
+#line 236 "fixedbugs2870acallbackwhoseframesarelargerthanapagerecursingpastacoroutinesstackaborts.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL _Bool h_fixedbugs2870acallbackwhoseframesarelargerthanapagerecursingpastacoroutinesstackaborts_0Big_eq(const struct gs_big *hero_a, const struct gs_big *hero_b);
@@ -290,7 +291,7 @@ __attribute__((__noinline__)) int64_t h_fixedbugs2870acallbackwhoseframesarelarg
     t7 = h1_big; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2870-a-callback-whose-frames-are-larger-than-a-page-recursing-past-a-coroutines-stack-aborts.hero", "fixedbugs-2870-a-callback-whose-frames-are-larger-than-a-page-recursing-past-a-coroutines-stack-aborts.deep", 26, 12}; t8 = gs_big_first(t7); } t9 = h0_n; t10 = ((__INT64_TYPE__)1); if (__builtin_sub_overflow(t9, t10, &t11)) hero_panic_overflow_at("fixedbugs-2870-a-callback-whose-frames-are-larger-than-a-page-recursing-past-a-coroutines-stack-aborts.hero", "fixedbugs-2870-a-callback-whose-frames-are-larger-than-a-page-recursing-past-a-coroutines-stack-aborts.deep", 26, 40); t12 = h_fixedbugs2870acallbackwhoseframesarelargerthanapagerecursingpastacoroutinesstackaborts_deep(t11); if (__builtin_add_overflow(t8, t12, &t13)) hero_panic_overflow_at("fixedbugs-2870-a-callback-whose-frames-are-larger-than-a-page-recursing-past-a-coroutines-stack-aborts.hero", "fixedbugs-2870-a-callback-whose-frames-are-larger-than-a-page-recursing-past-a-coroutines-stack-aborts.deep", 26, 12); h2_ret0 = t13; goto hero_bb4; hero_bb2:
 #line 24
     t4 = ((__INT64_TYPE__)1); h2_ret0 = t4; goto hero_bb4; hero_bb3: goto hero_bb1; hero_bb4:
-#line 294 "fixedbugs2870acallbackwhoseframesarelargerthanapagerecursingpastacoroutinesstackaborts.c"
+#line 295 "fixedbugs2870acallbackwhoseframesarelargerthanapagerecursingpastacoroutinesstackaborts.c"
     t14 = h2_ret0;
     hero_frame_give(hero_big_t7);
     hero_frame_give(hero_big_t6);
@@ -311,7 +312,7 @@ __attribute__((__noinline__)) int64_t h_0cb_fixedbugs2870acallbackwhoseframesare
 #line 28 "tests/golden/run/fixedbugs-2870-a-callback-whose-frames-are-larger-than-a-page-recursing-past-a-coroutines-stack-aborts.hero"
 void h_fixedbugs2870acallbackwhoseframesarelargerthanapagerecursingpastacoroutinesstackaborts_main(void) { HERO_NODEBUG HeroStr t1; HERO_NODEBUG h_0fn_48ac9712 t2; HERO_NODEBUG int64_t t3, t4; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_31361e06); t2 = h_fixedbugs2870acallbackwhoseframesarelargerthanapagerecursingpastacoroutinesstackaborts_deep; t3 = ((__INT64_TYPE__)10000000); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2870-a-callback-whose-frames-are-larger-than-a-page-recursing-past-a-coroutines-stack-aborts.hero", "fixedbugs-2870-a-callback-whose-frames-are-larger-than-a-page-recursing-past-a-coroutines-stack-aborts.main", 29, 30}; t4 = gs_run((h_0fn_48ac9712)hero_callback_of((void (*)(void))t2), t3); } hero_print_str(t1); hero_print_int(t4); hero_print_end(); return;
-#line 315 "fixedbugs2870acallbackwhoseframesarelargerthanapagerecursingpastacoroutinesstackaborts.c"
+#line 316 "fixedbugs2870acallbackwhoseframesarelargerthanapagerecursingpastacoroutinesstackaborts.c"
 }
 HERO_TU_LOCAL _Bool h_fixedbugs2870acallbackwhoseframesarelargerthanapagerecursingpastacoroutinesstackaborts_0Big_eq(const struct gs_big *hero_a, const struct gs_big *hero_b) {
     hero_panic("h_fixedbugs2870acallbackwhoseframesarelargerthanapagerecursingpastacoroutinesstackaborts_0Big_eq: a partial record has no structural equality");
@@ -418,7 +419,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("261258c501ec77dc", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("4f67fa2743e98545", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2870acallbackwhoseframesarelargerthanapagerecursingpastacoroutinesstackaborts\tfixedbugs-2870-a-callback-whose-frames-are-larger-than-a-page-recursing-past-a-coroutines-stack-aborts\n");
