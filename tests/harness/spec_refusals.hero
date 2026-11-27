@@ -43,8 +43,8 @@ constant SENTENCE_OPENS: str
 constant EXEMPT: str
     "DELIVERED"
 
-# `hero_signal_refuse` has eight arms (a callback delivered as a handler, and
-# seven of a callback called after a jump or inside a handler); fewer read means
+# `hero_signal_refuse` has nine arms (a callback delivered as a handler, and
+# eight of a callback called after a jump or inside a handler); fewer read means
 # the extractor stopped reading the shape, and the check would pass without
 # looking.
 constant LEAST_ARMS: i64

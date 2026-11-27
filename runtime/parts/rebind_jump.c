@@ -234,6 +234,7 @@ __attribute__((noinline, no_sanitize("address"))) static int hero_rebind_swapcon
     unsigned seq = 0;
     hero_rebind_range_left((uintptr_t)__builtin_frame_address(0));
     hero_rebind_relived(own, (uintptr_t)__builtin_frame_address(0));
+    hero_rebind_saved_at(own, (uintptr_t)__builtin_frame_address(0));
     if (own != NULL && from != NULL && hero_rebind_ctx_valid(to)) {
         bool field = hero_rebind_decoding(HERO_REBIND_CTX);
         uintptr_t t = 0;
@@ -333,12 +334,14 @@ __attribute__((no_sanitize("address"))) static int hero_rebind_setcontext(const 
  * the C library's own by a tail call, so it saves this function's caller and
  * returns twice into it. */
 static void hero_rebind_saving(const void *buf, int family) {
+    HeroSignalStack *own = hero_rebind_own();
+    uintptr_t below = hero_rebind_below();
+    if (own != NULL && own->depth > 0) hero_rebind_saved_at(own, below);
     if (!hero_rebind_decoding(family)) {
-        hero_rebind_note(buf, hero_rebind_below());
+        hero_rebind_note(buf, below);
         return;
     }
-    HeroSignalStack *own = hero_rebind_own();
-    if (own != NULL && own->left_n > 0) hero_rebind_relived(own, hero_rebind_below());
+    if (own != NULL && own->left_n > 0) hero_rebind_relived(own, below);
 }
 
 static int hero_rebind_setjmp(int *env) {

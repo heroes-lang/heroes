@@ -1,0 +1,8 @@
+answer ran for 7
+siglongjmp to the runner (70 is right): 70
+answer ran for 7
+setcontext to the runner (70 is right): 70
+answer ran for 7
+siglongjmp into the coroutine (70 is right): 70
+answer ran for 7
+setcontext into the coroutine (70 is right): 70
