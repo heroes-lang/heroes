@@ -6,7 +6,10 @@
 # It also holds the two shapes of a program that serves, as a program writes
 # them: `app`, the one function of a program with no state, which `web.serve`
 # calls with the router; and `serve_conn`, the loop of a program with state,
-# which hands its `App` to its own `handle` by `@`. Their tests run them on
+# which hands each request to `web/chain.dispatch` with its `App` by `@`: a
+# step every route runs counts the requests, and each route was bound at its
+# `add` to the function that answers it, a writer or a reader, in the
+# program's own table. Their tests run them on
 # the loopback, and so does the test of a reverse proxy of `web/proxy`,
 # which passes a request to `app` served on a thread of its own and its
 # answer back; so `heroes test` on this file runs `web/proxy`'s tests too,
@@ -16,12 +19,20 @@ use <rebel>/http
 use <rebel>/io
 use <rebel>/net
 use <rebel>/web
+use <rebel>/web/chain
 use <rebel>/web/proxy
 
-# A program's state: its routes and a count it keeps between requests.
+# A program's state: its routes, its two tables, and the counts it keeps
+# between requests.
 record App
-    # The routes, made once by `routes`.
+    # The routes, each bound in `answers`, made once by `new_app`.
     router: web.Router
+    # The program's steps, by their names.
+    steps: {str: (function(@App, chain.Next, http.Request) -> http.Response?)}
+    # The function that answers each route, by the route's name.
+    answers: {str: (function(@App, web.Found, http.Request) -> http.Response?)}
+    # How many requests the step `count` has seen.
+    requests: i64
     # How many visits `POST /visits` has counted.
     visits: i64
 
@@ -51,18 +62,45 @@ function app(router: web.Router, r: http.Request) -> http.Response
                     message: "not written yet"
                 )
 
-# The program's own function, with its own state lent by `@`: a visit
-# counted, every other route answered as `app` answers it.
-function handle(@state: App, found: web.Found, r: http.Request) -> http.Response
-    match found.name
-        "visit" =>
-            state.visits @ state.visits + 1
-            return http.respond_text(http.STATUS_OK, text: to_str(state.visits))
-        _ => return app(state.router, r)
+# The state of a program with state: the routes of `routes`, each bound to
+# what answers it, and the step `count` every route runs.
+function new_app() -> App
+    made @= App(router: web.new_router(), steps: {}, answers: {}, requests: 0, visits: 0)
+    router @= made.router
+    chain.add_step(@router, @made.steps, name: "count", step: count).must()
+    chain.on(@router, @made.answers, method: http.METHOD_GET, pattern: "/", name: "home", answer: as_app).must()
+    chain.on(
+        @router,
+        @made.answers,
+        method: http.METHOD_GET,
+        pattern: "/users/:id",
+        name: "user",
+        answer: as_app
+    ).must()
+    chain.on(@router, @made.answers, method: http.METHOD_POST, pattern: "/visits", name: "visit", answer: visit).must()
+    made.router @ router
+    return made
+
+# Every route's step: the request counted, then the rest of its chain.
+function count(@state: App, n: chain.Next, r: http.Request) -> http.Response?
+    state.requests @ state.requests + 1
+    return chain.proceed(@state, steps: state.steps, answers: state.answers, n: n, r: r)
+
+# A visit counted, with the program's own state lent by `@`.
+function visit(@state: App, found: web.Found, r: http.Request) -> http.Response?
+    _ = found
+    _ = r
+    state.visits @ state.visits + 1
+    return ok(http.respond_text(http.STATUS_OK, text: to_str(state.visits)))
+
+# Every other route, answered as `app` answers it, the state only read.
+function as_app(state: App lent, found: web.Found, r: http.Request) -> http.Response?
+    _ = found
+    return ok(app(state.router, r))
 
 # The loop of a program with state over one connection's stream: each request
-# read, routed, answered by `handle` with `state`, until the connection ends;
-# answers how many were answered.
+# read, answered through its route's chain with `state`, until the connection
+# ends; answers how many were answered. A function that fails is answered 500.
 function serve_conn(@state: App, stream: io.Stream) -> i64
     reader @= io.reader(stream)
     answered: i64 @= 0
@@ -72,9 +110,13 @@ function serve_conn(@state: App, stream: io.Stream) -> i64
             .ok got => got
             .err _  => return answered
 
-        response = match web.route(state.router, r)
-            .ok found => handle(@state, found: found, r: r)
-            .err _    => web.not_routed(state.router, r)
+        response = match chain.dispatch(@state, router: state.router, steps: state.steps, answers: state.answers, r: r)
+            .ok got => got
+            .err _ => web.error_response(
+                state.router.errors,
+                status: http.STATUS_INTERNAL_SERVER_ERROR,
+                message: "Internal Server Error"
+            )
 
         match http.write_answer(reader.stream, r: r, response: response)
             .ok _  => answered @ answered + 1
@@ -117,8 +159,8 @@ test "serve_conn: a program's state counted across its requests"
         two.first.stream,
         text: "POST /visits HTTP/1.1\r\nHost: h\r\nContent-Length: 0\r\n\r\nPOST /visits HTTP/1.1\r\nHost: h\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
     ).must()
-    state @= App(router: routes(), visits: 0)
-    assert serve_conn(@state, stream: two.second.stream) == 2 && state.visits == 2
+    state @= new_app()
+    assert serve_conn(@state, stream: two.second.stream) == 2 && state.visits == 2 && state.requests == 2
     reader @= io.reader(two.first.stream)
     _ = http.read_response(@reader, method: "POST", limits: http.default_limits()).must()
     assert http.text_of(http.read_response(@reader, method: "POST", limits: http.default_limits()).must()).must() == "2"
@@ -132,7 +174,7 @@ test "serve_conn: a program's loop answers 100 Continue, and 431 for a head past
         two.first.stream,
         text: "POST /visits HTTP/1.1\r\nHost: h\r\nExpect: 100-continue\r\nContent-Length: 2\r\n\r\nhiGET / HTTP/1.1\r\nHost: h\r\nX-Long: " + long + "\r\n\r\n"
     ).must()
-    state @= App(router: routes(), visits: 0)
+    state @= new_app()
     assert serve_conn(@state, stream: two.second.stream) == 1 && state.visits == 1
     reader @= io.reader(two.first.stream)
     assert io.read_line(@reader).must() == "HTTP/1.1 100 Continue"
