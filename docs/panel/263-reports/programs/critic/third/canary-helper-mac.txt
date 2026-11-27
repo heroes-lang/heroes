@@ -1,0 +1,26 @@
+canary4-base-O2 CO_N=9000 | exit 0 | returned 25973 (lowest 25984); | depth reached: 665854  | 
+canary4-base-O2 CO_N=10000 | exit 0 | returned 57969 (lowest 57984); | depth reached: 742238  | 
+canary4-base-O2 CO_N=100000 | exit 134 | at the stop 253888 (lowest 262144); |  | panic: canary4.deep ran on a thread this program did not start: C called it back from a thread of its own, where this 
+canary4-base-O0 CO_N=1500 | exit 0 | returned 24022 (lowest 26184); | depth reached: 22407  | 
+canary4-base-O0 CO_N=2000 | exit 0 | returned 112508 (lowest 122184); | depth reached: 564721  | 
+helper-base-O2 CO_N=10000 | exit 0 | returned 57921 (lowest 57936); | depth reached: 742238  | 
+helper-base-O2 CO_N=30000 | exit 124 |  |  | 
+canary4-bpp-O2 CO_N=9000 | exit 134 | at the abort 0 (lowest 0); |  | panic: stack exhausted in canary4.deep
+canary4-bpp-O2 CO_N=10000 | exit 134 | at the abort 0 (lowest 0); |  | panic: stack exhausted in canary4.deep
+canary4-bpp-O2 CO_N=100000 | exit 134 | at the abort 0 (lowest 0); |  | panic: stack exhausted in canary4.deep
+canary4-bpp-O0 CO_N=1500 | exit 134 | at the abort 0 (lowest 0); |  | panic: stack exhausted in canary4.deep
+canary4-bpp-O0 CO_N=2000 | exit 134 | at the abort 0 (lowest 0); |  | panic: stack exhausted in canary4.deep
+helper-bpp-O2 CO_N=10000 | exit 134 | at the abort 0 (lowest 0); |  | panic: stack exhausted in helper.walk
+helper-bpp-O2 CO_N=30000 | exit 134 | at the abort 0 (lowest 0); |  | panic: stack exhausted in helper.walk
+canary4-base-sO2 CO_N=9000 | exit 0 | returned 26045 (lowest 26048); | depth reached: 665854  | 
+canary4-base-sO2 CO_N=2000 | exit 0 | returned 0 (lowest 0); | depth reached: 564721  | 
+canary4-base-sO0 CO_N=9000 | exit 137 | returned 232188 (lowest 262144); | depth reached: 665854  | 
+canary4-base-sO0 CO_N=2000 | exit 0 | returned 232206 (lowest 262144); | depth reached: 564721  | 
+canary6-base-O2 CO_N=10000 | exit 0 | returned 57977 (lowest 57992); | depth reached: 742238  | 
+canary6-base-O0 CO_N=10000 | exit 124 |  |  | 
+canary4-bpp-sO2 CO_N=9000 | exit 134 | at the stop 0 (lowest 0); |  | ==39076==ERROR: AddressSanitizer: stack-overflow on address 0x00010551bff0 (pc 0x000104741a04 bp 0x00010551c02
+canary4-bpp-sO2 CO_N=2000 | exit 0 | returned 0 (lowest 0); | depth reached: 564721  | 
+canary4-bpp-sO0 CO_N=9000 | exit 134 | at the stop 0 (lowest 0); |  | ==39152==ERROR: AddressSanitizer: stack-overflow on address 0x000103497f70 (pc 0x0001029b0090 bp 0x00010349803
+canary4-bpp-sO0 CO_N=2000 | exit 134 | at the stop 0 (lowest 0); |  | ==39219==ERROR: AddressSanitizer: stack-overflow on address 0x00010153bf70 (pc 0x0001008cc090 bp 0x00010153c03
+canary6-bpp-O2 CO_N=10000 | exit 134 | at the abort 0 (lowest 0); |  | panic: stack exhausted in canary6.deep
+canary6-bpp-O0 CO_N=10000 | exit 134 | at the abort 0 (lowest 0); |  | panic: stack exhausted in canary6.deep

@@ -1,0 +1,8 @@
+td-base-O0  | exit 0 |  | bytes 548  | td: the callback reached 548 bytes below C's sp at its first call, 548 at its second
+td-base-O2  | exit 0 |  | bytes 256  | td: the callback reached 256 bytes below C's sp at its first call, 256 at its second
+td-base-sO2  | exit 0 |  | bytes 400  | td: the callback reached 400 bytes below C's sp at its first call, 400 at its second
+td-base-sO0  | exit 0 |  | bytes 1544  | td: the callback reached 1544 bytes below C's sp at its first call, 1544 at its second
+td-bpp-O0  | exit 0 |  | bytes 520  | td: the callback reached 632 bytes below C's sp at its first call, 520 at its second
+td-bpp-O2  | exit 0 |  | bytes 440  | td: the callback reached 520 bytes below C's sp at its first call, 440 at its second
+td-bpp-sO2  | exit 0 |  | bytes 488  | td: the callback reached 904 bytes below C's sp at its first call, 488 at its second
+td-bpp-sO0  | exit 0 |  | bytes 3248  | td: the callback reached 4480 bytes below C's sp at its first call, 3248 at its second

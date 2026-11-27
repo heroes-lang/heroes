@@ -1,0 +1,40 @@
+Process 9816 exited with status = 9 (0x00000009) killed
+total 180
+    95 hero_callback_asked
+    18 __pthread_getspecific
+    14 h_0cb_costcb_step
+    14 hero_callback_step
+    12 hero_callback_entered
+     7 h_costcb_step
+     7 hero_thread_guard
+     4 pthread_getspecific
+     3 hero_sig_standing
+     2 hero_sig_inside
+     2 hero_sig_range_slot
+     2 hero_callback_left
+Process 9851 exited with status = 9 (0x00000009) killed
+total 457
+    95 hero_callback_asked
+    94 hero_cb_enter
+    56 __sysconf
+    36 __pthread_getspecific
+    29 hero_cb_on_r
+    17 hero_cbr_h_0cb_costcb_step
+    14 hero_callback_step
+    12 hero_cb_switch
+    12 hero_callback_entered
+    11 h_0cb_costcb_step
+    10 hero_cb_size_wanted
+    10 hero_cb_take
+     9 hero_cb_c_range
+     8 pthread_getspecific
+     8 hero_cb_give
+     7 h_costcb_step
+     7 hero_thread_guard
+     6 __getpagesize
+     5 hero_sig_range_slot
+     4 sysconf
+     3 hero_sig_standing
+     2 hero_sig_inside
+total 384
+total 396

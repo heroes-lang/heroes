@@ -556,3 +556,434 @@ annotations, CFI on the switch and panel 258's R2 stopping by frame, a bound on 
 critic and the synthesis judge it against every seat's veto, and the author ratifies the route. The secondary
 question's R1 (step 199j's sentence, `spec-w5`) stands provisional, as written. The decision issue opens with this
 reading.
+
+## Amendment of 2026-11-28: route (b'') as built and measured
+
+**Resolution adopted: provisional — author ratification pending.** **On the main question no route is adopted, again,
+and the reason is now a list of builds rather than a finding against every route.** Route (b''), built by lane bpp (steps
+217a to 217g on `lane-bpp`, `c1abdf30a` to `2dd6d086f`, unmerged) on the author's *1a* of 2026-11-27, **lifts the
+ffi-pragmatist's veto on its own ground as built** (`csh.hero` right on both arm64 platforms at both plain levels), and
+**every other veto, and that one's class, only with conditions**: two the completeness critic prototyped and measured,
+**P1** (the thunk's arguments and result in registers) and **P4** (the switch made before the decision), at the two plain
+levels only; the rest unbuilt (§ Each seat's veto, held to (b'')). CLAUDE.md § 4 and § Precedence bind this amendment as
+they bound the sitting: what lifts every seat's veto is adopted, or nothing is, and a veto lifted by a condition is lifted
+only with that condition built. **(b'') does not lift every veto today, so it is not adopted.** **It is ranked first**,
+above (b), carrying P1, P4, the § 9 sentence c1 and `spec-w1` (R10 to R12), and **R13 is the list a landing lane builds
+from**; when that lane's runs stand, the critic and the synthesis read every veto again on them, and the route goes to
+the author then. **The author's word of 2026-11-27 at about 23:50, given before this amendment existed and
+meant as: *yes to the ratification*, which the coordinator recorded as advance consent applied only if this amendment
+adopted a route lifting every seat's veto, is not applied**: nothing here is ratified by it. On the secondary question, **R1 now lands as *"may
+abort"***, the sitting's own fallback in R2, on a run that shows a window no runtime can see (§ Step 199j's sentence).
+
+Drafted 2026-11-28 from about 00:00 by the synthesis's drafter, from the coordinator's brief
+(`.claude/worktrees/rebel-scratch/coord/panel263-amend-brief.md`), having read whole the sitting above, lane bpp's report
+(`263-reports/bpp-build.md`, written by the coordinator from the lane's final message), the critic's third reading
+(`263-reports/critic-bpp.md`), the four seats' reports and the critic's second reading (`critic-reports.md`). No
+sub-agent, no paid run, no commit, push, merge or GitHub write, no credential printed, no download, nothing outside the
+repository's root, no `pkill`; no report, brief or the sitting's file was edited.
+
+### The ground
+
+- **What this amendment ran, and nothing else.** The seed's compiler of **`main` at `64d962bd7`** (`git archive main seed
+  runtime selfhost spec vendor tests/harness ROADMAP.md CLAUDE.md docs/measurements/010-spec-budget-ledger.md` into
+  `.claude/worktrees/panel263-scratch/amend/tree/`; `clang -I runtime seed/heroes.c runtime/runtime.c -o heroes`, `real
+  18.42 user 17.57`, `heroes 0.6.0`, **`sources 1e1eb23a1927d35b`**), then `heroes measure` of seven texts applied to
+  `main`'s spec by `amend/apply.py`, each anchor asserted to match exactly once, offline, no request (`amend/measure-*.txt`).
+  The copies `base`, `c1`, `c1-w1` and `c2` are byte-identical to the critic's (`shasum -a 256`: `736b534c…`,
+  `33e93c72…`, `d3910f88…`, `3b66e374…` on both sides). Load 9 to 12 on 8 cores (`uptime`, 00:04 and 00:09); nothing is
+  timed. **Every program outcome below is lane bpp's or the critic's, cited, never this amendment's.**
+- **`main` moved under both.** Lane bpp branched at `8e818cf9c`; `main` is now `64d962bd7` and holds **panel 258's R2
+  whole, steps 214a to 214d** (`eba5b297d`, merged at about 23:28 by the coordinator's log), and steps 199q and 199r;
+  `lane-bpp` has merged none of it. `git merge-base --is-ancestor` reads 214d (`64e15c644`) on `main`, and step 199t
+  (`551520f8c`, lane sig-family-3) not on it. **The spec did not move**: `main:spec/heroes-spec.md` is `736b534c…efd3`.
+  The critic built (b'')'s stage 2 at `2dd6d086f` (**`sources 185600f90a609b3c`**) and the base's at `8e818cf9c`
+  (**`692ac54673e38215`**), the same two in Linux arm64, and ran panel 258's R2 against (b'') on a tree merging `lane-bpp`
+  and `lane-unwinder` in its scratch (`sources 3e2c574b2046b392`), whose 214d is the one `main` now holds.
+- **What (b'') is, as built** (`runtime/parts/cbstack.c`'s head at `2dd6d086f`, read; its first words, *"A PROTOTYPE FOR
+  A JUDGMENT, NOT A LANDING"*): a callback's Heroes frames on a runtime stack with 64 KiB of no access below it and, since
+  217g, above it; every bound C call made from there through a door per extern, back on the stack C entered the callback
+  on; a nested callback continuing on its caller's runtime stack where that stack has C's room left, *nested* told by
+  frame records reaching an open door's switch record, never by an order of addresses; the spawn doors running in place;
+  a reserve on C's known range of 1 KiB, 4 KiB under the sanitizer. **AArch64 alone switches**: *"every other target runs
+  as before this route, the x86-64 and Windows switches unwritten"* (`#if defined(__aarch64__) && !defined(_WIN32)`). The
+  same head names two shapes it does not reach, read here and run by nobody: *"a call through a Heroes function value
+  whose target is a C function runs where its caller stands"*, and *"a callback suspended on one thread and resumed on
+  another is unsupported"*.
+
+### The sitting's predictions, scored on (b'')
+
+- **The synthesis's own** (*"`csh.hero` right 3 of 3 at each level on both platforms, and the alternation's C stack a
+  level at `-O2` within twice the base's 64 bytes; if either fails, (b) stays first and its veto stands"*): **held on
+  both counts.** `csh.hero` prints `both: 10022002` 3 of 3 at `-O0` and `-O2` on both platforms, its sanitized ends the
+  base's (lane bpp; the critic, §§ 1, 8); a level takes **80 bytes** at `-O2` (the thunk 32, the door's runner 16, C's
+  `c_again_` 32, by `otool -tV`; the critic, § 2). **It was too weak a test**: within *"twice"*, (b'') refuses correct
+  alternations the base runs (the band, below). So (b'') ranks above (b), and the band is what that rank still owes.
+- **(b) on the signal guard's cases, *"at least one red on its first run"***: (b) was never run on them; read on (b'')
+  instead, **4 red of 187 on each platform** (lane bpp: 187 distinct cases, not 175), **as many as predicted and not for
+  the cause predicted**: no rule of steps 199a to 199o asking which stack a frame is on, but the room's count of
+  callbacks not returned, which held runtime stacks now share (the critic, § 4).
+- **R2's, *"the gap reproduces on today's `main` ... and is repaired before R1 lands"***: **reproduced** (step 199t's
+  body: `gt.hero` mode 0 on `beecb6c30`, Linux arm64 `-O0`, 100 runs, 93 in the stop's words, 3 a null read inside the
+  runtime, 3 `exit 135` and 1 `exit 139` with nothing said), **repaired where a runtime can see it** (99 of 100 after
+  199t) **and not where none can** (§ Step 199j's sentence).
+
+### Each seat's veto, held to (b'')
+
+| seat, and the veto as cast | as built (217g) | with P1 and P4, the critic's prototypes | with a condition nobody has built | what stands |
+|---|---|---|---|---|
+| **ffi-pragmatist**: (b) as stated, on `csh.hero`; its class, a correct program refused; its condition, `csh.hero` and the unbounded alternation | **its ground lifted**: `csh.hero` right, both platforms, both plain levels; `hq`, `gt` unmoved; OpenSSL's default fibre better than the base (here 0 bytes, told past, where the base changed 276,369 at exit 0; in Linux right at n 200 and 1,200 where the base died 139 and 135 with nothing said) | **the band closed at `-O0` and `-O2`, both platforms**: the alternation's deepest right n **4,094 / 4,095** against the base's 4,093 / 4,094 at `-O2`, **1,259 / 1,364** against 908 / 961 at `-O0`; a single callback's smallest room **23 or under** against 103 / 23 or under (`-O2`, n 0) | P4 at the sanitized levels (**unrun on either platform**); P1 and P4 as a landing builds them | **its class, as built at every level** (3,262 against 4,093 at `-O2`; a callback with 1,047 bytes of a known range left refused where the base runs on 103), **and at the sanitized levels until P4 runs there** (2,014 / 2,302 against 3,270 / 3,272 at `--sanitize -O2`; 700 / 732 against 774 / 813 at `--sanitize -O0`) |
+| **compiler-engineer**: (c1), on `helper.hero`; its class, bytes below a stack in a shape the route claims; its approval of (b) on seven conditions, *"any one red turns me to (c2)"* | (c1)'s veto untouched (no checked set in (b'')); **the class lifted for bytes in every count but one build** (`helper.hero`, the canary's kinds 4 and 6, the alternation at n 1,000 to 100,000, the reproducers: 0 bytes, told); conditions (1), (4), (5), (6) built; (3) 183 of 187 | P4 takes the reserve's refusal off C's stack (unrun under the sanitizer); (7) met in prototype: **+243** with the page size read once, **+237** with P1 too, +255 with P4, under (b)'s +284 | the refusal making no call on C's stack; **(2) in purpose: panel 258's R2 taught to cross (b'')'s stacks**, judged by `uwx`'s live count; (3)'s four: the room's words and the cases re-pinned; (7) in the route | **Linux arm64 `--sanitize -O0`: 368 bytes below** at every n of the alternation (the critic, § 5); **(2)**: 11,000 blocks live at exit where 214d alone leaves 0 (this Mac; Linux unrun); **(7)**: +310 |
+| **spec-warden**: any route leaving a callback's stack unguarded with § 9 unmoved | **stands**: § 9 unmoved; shape D writes the base's bytes; on a stack no wrapper saw the entry checks no reserve, and the thunk with the decision puts 440 (`-O2`, warm) to 4,480 bytes (`--sanitize -O0`, first call) of the runtime's frames on C's block unchecked (`td`; the critic, §§ 1, 3) | **its letter answered by c1** (§ 9 moved); its condition on (b), *"the thunk ... write[s] on C's stack nothing but a bounded frame before the switch"*, met by P4 alone, which leaves the thunk's own frame and nothing of the runtime's | c1 written into § 9 and counted for real; **the x86-64 switches, Linux and Windows**, since § 9 names no platform; the door on a call through a function value; `frame.c`'s words naming the stacks (its third finding); the count of suspended callbacks a correct program reaches (its w1 condition) | **as built, everywhere**; with c1 and P4, on x86-64 and on a C call through a function value until those are built |
+| historian (advisory) | no veto; (b'') is the shape it verified for OCaml 5: C on the system stack, later callbacks on the current fibre (its § 6.7) | | | |
+
+**So every veto lifts, where it lifts, only with a condition, and at least one condition of each is unbuilt**: the band
+and the 368 bytes at the sanitized levels, where P4 has never run; the warden's ground on x86-64 and wherever the
+runtime's frames still stand before the switch. **No run here shows a veto that no named build could lift**, which the
+sitting found of every route before (b''); that is what changed, and it is why the answer is a landing list.
+
+**The ffi-pragmatist.** Its veto of (b) as stated named one program, `csh.hero`, and one condition, *"(b) rebuilt with
+every C call from a callback made on the C stack it was entered on, run on `csh.hero` and the unbounded alternation"*.
+(b'') is that build, and lldb counts it exercised: 2 entries through `hero_cb_switch` and 6 through
+`hero_cb_door_switch` in one right run (the critic, § 1). The alternation writes nothing below C's stack at any n, both
+platforms; **what stands is the seat's class**: as built, (b'') refuses, with 0 bytes and in words, correct programs the
+base runs, in two shapes the critic measured: the alternation between 3,263 and 4,093 levels at `-O2` here, and **any
+single callback entered with about a kilobyte or less of a known range left** (`CO_LEAVE` 103 to 1,047 here at `-O2`,
+23 or under to 1,095 in Linux), which nobody had measured before. **The cause is the decision run on C's stack before
+the switch, and the 1 KiB reserve that holds it**: the critic's `td.hero` reads (b'')'s entry 440 bytes below C's `sp`
+at `-O2` warm, where the base's whole callback reaches 256 or less, the probe's floor. P1 brings a level to 64 bytes
+(4,078 here); a smaller reserve cannot close the band while the decision stays on C's stack (256 bytes writes 40 below
+at the refusal); **P4 moves the
+decision off C's stack and closes both shapes at both plain levels on both platforms**, the reserve at 16 bytes. Under
+the sanitizer the band is widest and P4 is unrun; the runner's frame there is 48 bytes because it brackets the C call
+with the fibre annotations (the critic, § 2). Beside its class, four things the seat would want read, none a veto it
+cast: **the held-stack bound** refuses a correct program the base runs (lane bpp's `held.hero`: the 7,282nd suspended
+callback here, the 7,944th in Linux, where the base ran 9,000; 7,282 stacks of 144 KiB, a 64 KiB stack with one guard
+and a page, fill 1 GiB, so the run predates 217g's second guard, by arithmetic), the price w1 states and the seat
+accepted under w1 (its § 17); **a C function reached through a function value from a callback** runs on the runtime's
+stack (`cbstack.c`'s head, read), so `csh.hero`'s class has a shape nobody ran;
+**a conservative collector** scanning its thread's stack from a callback would not see the callback's Heroes frames, an
+inference, unrun, as the sitting said of (b); and **a callback resumed on another thread** is unsupported, its end
+unread.
+
+**The compiler-engineer.** Its one veto is of (c1), which (b'') does not touch. Its class, held to (b''), is lifted for
+bytes in every count but **one build: Linux arm64 `--sanitize -O0`, where the reserve's own stop writes 368 bytes below
+the stack** at every n of the alternation (lane bpp; the critic reproduced it at `2dd6d086f`). The critic found the
+writer with a hardware watchpoint: `hero_cb_reserve_refused` (`cbstack.c:535`), whose own head says it *"needs no call
+that could take C's stack"*, asks `sigaltstack(NULL, &alt)`, which ASan intercepts in Linux, and the interceptor's callee
+lands its frame record exactly at `lo − 1072`; Darwin does not intercept `sigaltstack`, and the same build here writes
+nothing. Of its seven conditions on (b): (1) the spawn doors run in place (the critic's `check` of a 13,000-term sum and
+a 14,000-term one: 0 and 134, as the base); (2) CFI on both switches is built (the unwinder crosses both to `main`, both
+platforms), **and panel 258's R2 does not cross them**: with `lane-bpp` and `lane-unwinder` merged, `uwx.hero`'s 1,000
+jumps over callbacks on the thread's own stack leave **11,000 blocks live at exit with (b'')'s switch and 0 with it
+off**, because 214d's three one-stack checks (`rebind_jump.c:326-337`, `unwind.c:742-758`, `unwind.c:509-531`, read by
+the critic at `eba5b297d`) answer *no unwind*, or stop, at a frame record outside the thread's own stack, which a
+runtime stack's records are, by the critic's reading, and the run agrees; no fault, and 214a's golden cannot see it (the
+critic, § 7.1). **That is a regression against `main` as it now stands**, met in its letter (CFI, a stop by
+identity) and not in its purpose; (3) 183 of 187 green, the four being the room's count (below); (4) and (5) built,
+the fibre annotations with 217e's unpoisoning on a jump; (6) the bound built, its words owed; (7) **+310 instructions a
+callback as built, over (b)'s +284**, and +243 / +237 with the critic's two savings. **And shape D**, the run its
+approval of (b) *"turns on"*: (b'') gives it back to (c2)'s count, the base's to the byte (81,424 here, 41,957 in Linux
+at `-O0` n 4,000, exit 0; the critic, § 3). That is no veto; it was the seat's ground for calling (c2) *"not the most
+robust route"*, and under c1 those writes are C's, as the warden read them under (b). Its false messages at larger n are
+the base's (the lend-record message here at `-O0` n 6,000, both sides), and stay the drafts `d-p263-guard-return-address`
+and `d-p263-static-hang`, with (l) and (q), whatever lands (the critic, § 3).
+
+**The spec-warden.** Its veto as cast: *"any route that leaves a callback's stack unguarded while § 9 stays unmoved"*.
+As built, § 9 is unmoved and shape D writes below at exit 0: it stands. **By its letter, c1 answers it**: § 9 moves.
+**By its ground**, *"the sentence promises what the defect's own program falsifies"*, c1 is true only where three things
+are built, and none is: **P4**, so that before the switch nothing of the runtime's stands on C's block (as built, on a
+stack no wrapper saw, `known` false in `hero_cb_enter`, 440 to 4,480 bytes of the runtime's frames stand there unchecked:
+bounded, which its condition on (b) asked, but the runtime's and not C's, and *"running out of stack aborts"* is false
+for them); **the door on every call whose target is C**, a function value's included, since c1 says *"C that a callback
+calls runs on the stack C called the callback on"*; and **the switch on every platform § 9 speaks for**, where (b'')
+compiles to the base on Linux x86-64 and Windows. The seat has not sat again and has not read c1; its acceptance is its
+own, and this amendment reads its letter and its ground, not its mind. Its own sentence under (b) is c1's content
+(*"What C's own frames do on a stack of C's is C's, as any C overrun is: § 13 promises an abort of C's reach only past a
+lend (`counted_by`)"*). Its w1 stands as priced (+6 vendored, **+10 real** counted on 2026-11-27), its condition on w1
+unmet: *"the seats' count of suspended callbacks a correct program reaches below 1 GiB ÷ S, or w1b instead"* (`held.hero`
+is the nearest run, above). Its third finding is now measured: the room's abort words name no stack while held stacks
+are 43.8% of the room in one signal case (below). **CLAUDE.md § Precedence, as the author amended it on 2026-11-22**,
+makes the warden's vetoes yield to the most robust route at the cost of the spec's size; this veto is on the spec's
+truth, not its size, so it binds, and c1's price decides nothing.
+
+### What this amendment adopts, and what it does not
+
+- **R9, no route for the main question, again**: (b'') does not lift every veto as built, and its prototypes lift what
+  they lift at the plain levels only. The defect `d-lane-sig-family-2-1` stays `blocking`, and by
+  `.claude/rules/verification.md` § Bounded discovery the milestone's tag waits for it.
+- **R10, (b'') ranked first**, with **P1**, **P4**, the § 9 sentence **c1** and **`spec-w1`**, **above (b)**, whose
+  veto stands on `csh.hero`, and whose 0 bytes below C's stack (b'') matches in every counted shape but shape D, which c1
+  assigns to C, and one build's 368 bytes, which R13's item 3 owes; then (c2) with (l), (q) and its sentence, the
+  conservative resolution, as the sitting set it out; (b') last. **Recommended to the author: a landing lane, a build
+  and not a ratification**, building R13 whole on `main` as it stands; at its gate the critic and
+  the synthesis read every veto on its runs, and the route is put for ratification only if every one lifts there.
+- **R11, the stack a callback is given, as built and now stated.** A runtime stack holds the room C's stack gave the
+  callback: **the thread's own stack's size** where C called from the thread's own stack; **the size of the range
+  `makecontext` was handed** where C called from one, **never under 64 KiB**; **8 MiB where no range is known**; with 64
+  KiB of no access below and above it and its record's page. **Why**: no callback has less room than the base gave it and
+  none more, so (b'') refuses no recursion the base ran within C's stack, and tells, with 0 bytes below, the ones the
+  base ran by writing below it; the canary at `-O2` n 9,000 to 100,000, which (b) and (b') returned right on 8 MiB, is
+  told, and OpenSSL's 32 KiB fibre gets 64 KiB (the critic, item 7); a stack of 8 MiB everywhere was refused at the
+  127th callback left suspended (lane bpp). **Counted against the room**: a held stack and a live one alike, as built
+  (w1's *"counted with the live ones"*), at the stack's usable size and its record's page; **the guards not**, this
+  amendment's choice: they are address space with no memory behind them; counted, they refused the 7,282nd suspended
+  callback here where the base ran 9,000 (`held.hero`, one guard a stack then); uncounted, 1 GiB holds about 13,107
+  stacks of the floor's size here and 15,420 in Linux (arithmetic, unrun), each a few mappings (its layout unread), far
+  under Linux's `vm.max_map_count` of 262,144 (arithmetic). The landing measures `held.hero` both ways, and each
+  golden's header states the rule.
+- **R12, the § 9 sentence the route carries: c1** (§ The § 9 sentence), and **c2 registered as the rival** for the
+  blind reading.
+- **R1 amended: *"may abort"***, R2 discharged by its own fallback, R3's price re-run (§ Step 199j's sentence).
+- **R13, what the landing owes** (§ What the landing owes).
+- **R4 to R8 stand**, R5's items folded into R13 where (b'') reaches them.
+
+### The § 9 sentence
+
+**c1**, the critic's, in § 9's last bullet (`spec/heroes-spec.md:340-341`), the warden's w2 family's place:
+
+> A source nested up to 2,000 deep compiles on every platform, and none is refused for its depth; running out of stack
+> aborts, and C that a callback calls runs on the stack C called the callback on, where running out is C's.
+
+**Counted** (ran: the seed's compiler of `64d962bd7`, `sources 1e1eb23a1927d35b`, offline, each text applied to `main`'s
+spec `736b534c…efd3`):
+
+| text | claude-legacy | cl100k_base | the critic's (`heroes-next`, `185600f90a609b3c`) |
+|---|---|---|---|
+| the base | 10,374 | 10,563 | the same |
+| **c1** | **10,397 (+23)** | **10,586 (+23)** | the same |
+| **c1 with `spec-w1`** | **10,403 (+29)** | **10,592 (+29)** | the same |
+| c2 | 10,411 (+37) | 10,600 (+37) | the same |
+| R1 with *"may abort"* (below) | 10,426 (+52) | 10,615 (+52) | not counted there |
+| **c1, `spec-w1` and R1 with *"may abort"*, the three texts a landing carries** | **10,455 (+81)** | **10,644 (+81)** | not counted there |
+
+**Real tokens: unmeasured** (one request, a landing's `--refresh`, not this amendment's); the vendored counts are a lower
+bound by the warden's own reading, w1's +6 vendored having been +10 real. The ceiling stands at 16,384 against a real
+13,849 (the pin of 2026-11-26) and 13,859 with w1 (counted 2026-11-27); every count here is re-taken at the landing,
+after panel 262's R1 on the same line 438 if it lands first.
+
+**Whether it answers the warden's veto by its letter**: yes. The letter is *"any route that leaves a callback's stack
+unguarded while § 9 stays unmoved"*, and c1 moves § 9. Whether it is true is the ground, and § Each seat's veto says
+where it is not yet (the runtime's pre-switch frames, a function value's call of C, x86-64).
+
+**Why c1 and not c2.** c2 (*"..., where C's own frames may run past it and write over what lies below, as C alone
+would"*) tells a reader shape D's run more exactly, and it writes into the spec that the program may write over memory
+it does not own: the sentence the sitting refused for every route (*"§ 9 then says either what is false ... or that a
+program may write over memory it does not own, which design.md §1.12 refuses"*), and the one the warden called *"a
+confession of §1.12"* in w3. c1 says of C what § 13 already says of it, that the runtime promises an abort of C's reach
+only past a lend, and under c1 a reader of shape D predicts no told end and no promise, which is the run (81,424 bytes
+below at exit 0, the base's to the byte, and the ffi-pragmatist's C-alone OpenSSL job the same in kind). Price is no part
+of the reason. **c2 joins the blind reading as the rival arm**, so a reader's prediction can overturn the choice.
+
+### Step 199j's sentence: R1 lands as *"may abort"*
+
+**R2's fallback applies, on a run.** The sitting's R2: *"If its repair is refused as a cost of what the runtime can see
+(a window inside libc's own switch, say: an inference), the sentence lands with "may abort" for "aborts", by a decision
+the author reads."* Step 199t (`551520f8c`, lane sig-family-3, not on `main`) notes a switch as its wrapper's first act,
+and took Linux arm64 from 92 to 99 of 100 runs in the stop's words at `-O0`, and from 46 to 50 of 50 at `-O2` and under
+`--sanitize` (this Mac: 300 of 300 before and after). Its body names two windows no runtime reaches, and they bear on
+R1 differently:
+
+- **Inside R1's letter**: *"a delivery before the note, in the wrapper's first instructions and the call that finds the
+  thread's record"*. The wrapper is the program's `swapcontext` as C sees it, so a handler's switch there is one R1
+  promises to abort in words, and the runtime has noted nothing to stop it by. **After 199t, 1 run of 100 at Linux
+  `-O0` still ended `exit 139` with nothing said**; where its signal landed is unread, so whether it is this window is a
+  question, and the window itself is 199t's own reading of its code.
+- **Outside R1's letter, inside a reader's prediction**: *"a delivery after the program chose the context it will switch
+  to and before it calls `swapcontext` at all"*, in the program's own code. With that window in `gt.h` widened by a loop
+  of 2,000 (lane sig-family-3's `gtw/gt.h`), Linux arm64 `-O0`, 20 runs each: **199t's runtime 20 `exit 139` with
+  nothing said** (*"step 199s's 19 and 1, the prototype of this step 18 and 2"*, the body's words). No handler there
+  interrupted a switch, so no *"aborts"* of R1's letter is falsified; but R1 was adopted on what a reader predicts of
+  `gt.hero` mode 0 (§ The secondary question), and under *"aborts"* that reader predicts the stop's words every time,
+  where the run dies silent as C alone does.
+
+So *"aborts ... saying so"* is a promise one window inside its letter may break and no runtime can mend, and a reader
+reads it wider than its letter: R2's fallback holds on both counts, the second measured. **The text R1 lands**:
+
+> Where a signal handler of C's interrupted a `swapcontext` or `setcontext` before it loaded its target, a switch the
+> handler makes naming either context of that one may abort the program before it switches, saying so, where this
+> runtime saw both.
+
+**Its price, re-run**: **+52 / +52 vendored** (10,426 / 10,615), the same as *"aborts"* in both tables, a lower bound,
+real unmeasured. **It lands once 199t is on `main`**, on its own clock, owing nothing to the main question; R3's
+instrument stands (a check pairing *"before it switches"* with `sigguard.c`'s *"so the program stops here, before the
+switch"*, the four refused 2871 goldens its cases), and so does R3's note that the push carrying it publishes the site.
+The warden's *"no sentence"* stays registered against it, as before.
+
+### What the landing owes (R13)
+
+Each item names what judges it; every one is run on Darwin arm64 and Linux arm64 at the run form's four builds unless it
+says otherwise, and the vetoes are read again on these runs and no others.
+
+**The route's two changes, as a landing builds them**
+
+1. **P1 for every signature**: no record on C's stack; the arguments in the registers the C ABI gives them (eight
+   integer, eight floating), a pointer to those C passed on its stack, the result back by its C type's own convention (a
+   register pair, a floating register, the memory `x8` names). Judged by the alternation's level (64 bytes at `-O2`, the
+   prototype's) and by the ffi-pragmatist's `cbs.c` `wide` signature (10 integers, 2 doubles, a 24-byte record each way).
+2. **P4 as a landing builds it**: a decision stack per thread, read from the thread pointer without a call
+   (`TPIDRRO_EL0` here, `TPIDR_EL0` in Linux), CFI on the stub's two switches, ASan's fibre annotations on them, a nested
+   decision (a handler's callback while one is being decided) made in place, the reserve at 16 bytes. **Judged by the
+   critic's `depth.sh` and `leave.sh` at all four builds on both platforms**, the alternation no shallower and a single
+   callback's smallest room no larger than the base's at the same build: **the sanitized levels measured under P4 for
+   the first time, which is the ffi-pragmatist's class's condition.** The runner's tail branch (P1c: 48 bytes a level,
+   5,438 here, 5,437 in Linux) is not needed to close the band and is the landing's to take or leave, measured.
+3. **The 368 bytes**: the reserve's refusal makes no call on C's stack before its switch (P4's refusal on the decision
+   stack, or the alternate stack's bounds read once a thread); judged by the critic's watchpoint command
+   (`out/lx-368-watch.txt`) and the alternation's count at Linux `--sanitize -O0`, n 1,000 to 100,000: 0 bytes.
+
+**Panel 258's R2 across the switch**
+
+4. **`main` merged first** (214a to 214d; the critic's three conflicts, `callback_thunk.hero`, `ctype.hero`,
+   `guarded_names.hero`, resolved by the lane, never copied from the critic's scratch; and the switch wrappers'
+   `rebind_jump.c` and `sigjump_save.c`, which 199s and 199t touch, if lane sig-family-3 lands first). **214d's three
+   one-stack checks taught (b'')'s stacks**: crossing a door's switch record and an entry's by their identity
+   (`HeroCbDoor.rec_at`, the entry's record), each frame bounded by the stack it stands on (`hero_cb_bounds_of`), never by
+   an order of addresses, the walk's `sp > walk->target` among them; the thunk's mark where that walk reads it. **Judged
+   by `uwx.hero`'s live count at exit, never by 214a's golden alone**: 0 on the thread's own stack with (b'')'s switch, as
+   214d alone reads, both platforms (Linux unrun so far), and what it reads on a static array's and a `malloc`'d block's
+   said in the case's header (11,000 under 214d alone, by its one-stack rule). Its price measured with the route's (214d's
+   own +43 instructions a callback over no R2, by its commit body, read).
+
+**The room, its words, its count**
+
+5. **`frame.c`'s abort words name the stacks** wherever any is counted (as built they say *"the room large values take
+   off the stack is full"* while stacks hold 0.8%, 0.1% and **43.8%** of the room in the four cases; `cbstack.c`'s own
+   words name them only where a stack's own mapping overflows): the warden's third finding, a §4.17 false cause,
+   `blocking` if it landed as built.
+6. **The four signal cases re-pinned under w1's rule**, the rule written in each header (here: 2,047 → 2,031, 963 → 956,
+   2,047 → 2,045, 2,046 → 1,149 at 217g with the guards counted; re-read under R11's rule), and **R11's rule stated in
+   `cbstack.c` and measured**: `held.hero` with the guards counted and uncounted, both platforms, at the landing's stack
+   layout; **the count of suspended callbacks a correct program reaches**, the warden's w1 condition, run or answered by
+   w1b.
+
+**The cost**
+
+7. **Toward (b')'s +133 a callback, or the measured reason it cannot get there.** As built +310 at `-O2` here (Linux +277
+   by lldb's count, +15.8 ns by its clock); the page size read once (`hero_cb_size_wanted` asks `sysconf` at every
+   callback: +243), P1 (+237), P4 (+255); **by arithmetic, unrun**: one decision for the entry and the question, and one
+   thread-local carried in the entry, about +130 to +150; the floor no prototype went under is `hero_cb_switch`'s 12
+   instructions and P4's stub's 27. If the landing stays above +150, lldb's count by function (`lldbp/count.py`) says
+   what stands. **Per C call**, +109 inside a callback and +9.7 outside every one, untouched by any prototype, measured
+   again. Panel 104's recursion at 0.0%, held.
+8. **The compiler is not slowed, measured**: it hands C a function (`hero_thread_spawn_sized`, the sitting's finding),
+   so under `callback_door.hero` every bound call of its own goes through a door (read; its emission under (b'') unread):
+   `tests/harness/latency.hero compare` of the compiler before and after (CLAUDE.md § Verification), and the eleven
+   examples that declare `hero_thread_spawn` timed beside it.
+
+**The spec and the records**
+
+9. **c1 and `spec-w1` in the spec**, with R1's *"may abort"* if it has not landed first: each applied by its anchor, line
+   438 holding panel 259's, panel 257's and, later, panel 262's R1; one `--refresh` for the real count of what lands (+81
+   vendored for the three); the four pins and the ledger's row; the `spec` suite, the net's own tests; **c1 lands only
+   with items 2, 12, 14 and 15**, since without them it is false for the runtime's frames before the switch, for a
+   function value's call of C, and on x86-64; the site's build, and the push asked of the author
+   (`spec/heroes-spec.md` is in `deploy-site.yml`'s `paths:`).
+10. **The stale notes R5 named**, rewritten to say what the route reaches: `callback_guard.hero:28-30` (the compiler and
+    eleven examples hand C a function), `stack.c`'s note of step 199i, `thread.c`'s guard; `cbstack.c`'s head, which
+    calls itself a prototype; design.md's Coroutines row (`:3642`) given the warden's dated line.
+
+**The goldens per shape**, `run` goldens `fixedbugs-<n>-*` annotated in their sources, judged by the counting canary's
+count, never by `--sanitize`'s silence
+
+11. **The canary**, kinds 4 (`malloc`) and 6 (a static array), the critic's sizes and levels: 0 bytes, told. **Shape
+    D**, as c1 states it: the bytes below compared, inside the program, with those the same C recursion writes when C
+    calls it directly, equal, and the program's answer right (its counts differ by platform: 81,424 here, 41,957 in
+    Linux). **The alternation and the band**: right with 0 bytes at the base's deepest n at each build, told with 0
+    bytes one past; a single callback entered with the base's smallest room, right. **`csh.hero`**: `both: 10022002` at
+    the plain levels, the sanitized ends the base's. **The static array**, told (the base dies 139 or 135 in Linux with
+    nothing said, and hangs here). **The defect's reproducers**, `malloc.hero` sized to return among them (R5), and
+    `guarded`, `bare`, `thread`. **`uwx`** (item 4). **`held.hero`**, told in the stacks' words.
+12. **The shapes beside them** (CLAUDE.md § RUN IT: a repair is attacked at the shapes next to the one that provoked it):
+    **`csh.hero` with `needstack` and the yield reached through a function value**, right with the door applied there or
+    refused in words; **a callback suspended on one thread and resumed on another**, right or told; each a golden.
+13. **The 187 signal-guard cases** (or their number at the landing) at the four builds, both platforms, on the landing's
+    runtime: 2871's seven among them, the four of item 6 re-pinned, none else moved. Lane bpp ran them at 217f here and
+    with 217g's runtime copied mid-run in Linux: neither is a run of one tree.
+
+**The platforms**
+
+14. **Linux x86-64**: the SysV switch and door switch (the same three `DW_CFA` expressions over `rbp`; the
+    compiler-engineer's estimate, about 25 lines), run in the emulated container or the CI's leg, every item above that
+    is a run. (b'') compiles to the base there today, and so does the defect.
+15. **Windows x86-64 owes the arm, not a qualifier.** The box answers `ssh` from this Mac again since about 00:00 (the
+    coordinator's log: Tailscale on, the box's timer to about 04:00, the box given to lane ci-windows), so a Windows
+    fact is runnable now and stays an inference until it is run. By reading, (b'') compiles to the base there, so the defect stands on
+    Windows wherever C switches by hand onto a block with nothing of no access below (a fibre from `CreateFiber` gets a
+    stack the system assigns, the historian's verified § 6.9; a guard below a fibre's stack: recalled). Windows owes: an
+    x86-64 switch and door switch for PE/COFF whose unwind data (`.pdata`/`.xdata`) describes them, so the system's
+    unwinder and a C jump over callbacks cross them; the thread information block's stack base and limit moved at each
+    switch and back at each door, so `__chkstk`'s probes and the system's overflow handling judge the stack the frames
+    stand on (recalled, not read: `__chkstk`, SEH's unwind data, whether the CRT's `longjmp` unwinds on x64; the
+    ffi-pragmatist's § 14, the compiler-engineer's § 16); the runtime stack's guards made by `VirtualAlloc` or
+    `VirtualProtect`, its run-out told by the runtime's guard there (how that guard finds a range: unread); a known range
+    read from the thread information block where a fibre's bounds stand in it. **Run on the box**: a hand-switched heap
+    block's canary (Windows has no `makecontext`: a model with its own switch, and a `CreateFiber` fibre beside it),
+    `csh.hero`'s model on that switch, the alternation and its band, `uwx`'s jump; then the CI's Windows leg after the
+    push. A § 9 qualifier instead would say a program may write over memory it does not own on one platform, which the
+    sitting refused under §1.12 on every platform.
+16. **The CI's four legs after the push**, and the census of emissions: a program that hands C no function emits the
+    same C but its sources line (`callback_door.hero`'s head says so; the critic's `gt.hero` read it so), the compiler
+    and the eleven spawn examples moving, named in the closing commit.
+
+**What waits on the landing, and what does not**
+
+17. **Panel 262's held sentence** (its R1, lane land262's step 215a, held at the coordinator's word of 15:47 for this
+    sitting's repair): it lands after this route's `malloc` goldens are judged by the canary's count, which is 262's
+    R2(a) for `so`'s `malloc` half; both texts on line 438 by anchor, never by a merge's hand; or R8's correction under
+    262's verdict, read by the author.
+18. **Panel 263's R1, *"may abort"***: after step 199t is on `main`, waiting for nothing else (§ Step 199j's sentence).
+19. **Decision 2902's `## Prior art`**: cgo and OCaml 5 as the historian verified them, written when a route is
+    ratified, after their pages are re-read (`.claude/rules/records.md` § And the record says whose idea it was); OCaml
+    5 is (b'')'s own shape (C on the system stack, later callbacks on the current fibre).
+
+### The blind reading, registered (nothing paid)
+
+§ 9 and § 13 now both move in the texts a landing carries, so the llm-ergonomist's blind reading stays registered for
+the author to authorise, with these arms: **`now`**, `main`'s spec at the landing; **`adopted`**, `now` with c1, w1 and
+R1's *"may abort"*; **`rival`**, `adopted` with c2 for c1. Programs: the sitting's (the seven 2871 cases, `gt.hero`
+modes 0 and 4, two controls), and shape D, the alternation, `csh.hero`, the canary and `held.hero` (w1's own row); five
+readers an arm and a verdict session, panel 262's runner and labels. **Its size, an inference from panel 262's run**
+(0.376 USD a session): about 31 sessions and 12 USD for three arms. The warden's registered predictions stand whole;
+its row *"w1's own row"* reads the same under (b'').
+
+### Predictions registered before the landing
+
+- **P4 at the sanitized levels**: the alternation's deepest right n no shallower than the base's at `--sanitize -O2`
+  and `--sanitize -O0` on both platforms (here 3,270 and 774; Linux 3,272 and 813), and a single callback's smallest
+  room no larger than the base's. If either fails at any build, the ffi-pragmatist's class stands there and the route
+  is not put for ratification.
+- **The 368 bytes**: 0 at every n under P4 at Linux `--sanitize -O0`.
+- **R2 across (b'')**: `uwx` reads 0 live blocks at exit on the thread's own stack with the switch, both platforms.
+- **The cost**: under +160 instructions a callback at `-O2` here with the merged decision; if not, lldb's count names
+  the function that holds the rest.
+- **`held.hero` with the guards uncounted**: at least the base's 9,000 suspended callbacks held before the told abort,
+  both platforms.
+- **The blind reading, if run**: under `adopted`, at least 7 of 10 readers predict shape D runs on without a told end;
+  under `rival`, at least 7 of 10 predict it may write below and run on; under `now`, at most 3 of 10 predict either.
+
+### What is open and unrun
+
+- **P4 at the sanitized levels**, and P1 and P4 beyond one integer argument, one decision stack and Darwin's and ELF's
+  syntax; the 368 bytes under P4; R2 across (b'')'s stacks, and its Linux run at all.
+- **Linux x86-64 and Windows**: unbuilt and unrun by everyone; an Intel Mac and musl, the same.
+- **The four signal cases as one tree in Linux**; `gt.hero` under (b'') in Linux; the 187 cases after P1 and P4.
+- **A real copy-stack library** (libco in shared-stack mode) and **a conservative collector** under (b''); **a C
+  function reached through a function value**; **a callback resumed on another thread**.
+- **The count of suspended callbacks a correct program reaches**; `held.hero` at 217g and with the guards uncounted.
+- **The compiler's speed under (b'')**, the eleven spawn examples' cost, and the cost with the merged decision.
+- **c1's, w1's and R1's real count**; the blind reading.
+
+### For the coordinator
+
+- **The advance consent is not applied**: no route is adopted; the author is owed the result in ten lines, and R1's
+  *"may abort"* is the one text this amendment adopts for them to read.
+- **Step 199t before R1**: R1 lands on `main` once lane sig-family-3's 199s and 199t are merged and judged.
+- **The landing lane, if the author asks for it**, starts from `main` and takes `lane-bpp`'s seven commits by merge, not
+  from the critic's merged scratch; the critic's prototypes are in `programs/critic/third/` (`alt-p1.c`, `alt-p4.c`,
+  `cb-p4.c`, `rt-p-cbstack.diff`) as measurements to reproduce, never as code to copy.
+- **`d-p263-unwind-address-order`** reads against `main` now: 214d stops by the frame's identity (*"Never `CFA >=
+  target`"*, `unwind.c:643-651`, the critic's reading), while its walk still reads `sp > walk->target` as passed (the
+  critic, § 7); the draft's stop half is answered, its walk half stands, and item 4 is where it is closed for (b'').
+- **Nothing of this amendment ran a program**: its one build is the seed's compiler, and its one instrument
+  `heroes measure`; the files are `.claude/worktrees/panel263-scratch/amend/` (`apply.py`, the seven `spec-*.md`,
+  `measure-variants.txt`, `seed-build.txt`).

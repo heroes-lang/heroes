@@ -1,0 +1,21 @@
+--- out/mrg-thunk_text.lane-bpp.hero	2026-11-27 23:57:59
++++ mrg/selfhost/emit/thunk_text.hero	2026-11-27 23:37:19
+@@ -13,6 +13,7 @@
+ use emit/ctype
+ use emit/mangle
+ use emit/signature
++use emit/unwound_frame
+ use emit/writer
+ use ir/containers
+ use source
+@@ -139,6 +140,10 @@
+             )
+     writer.line(@w, text: "}")
+     writer.line(@w, text: OWN_FRAME + BARE_FRAME + head + " {")
++    mark = unwound_frame.thunk_mark(names, thunk: tag)
++
++    if mark != ""
++        writer.line(@w, text: "   " + mark)
+     handed: str @= "0"
+ 
+     if carried

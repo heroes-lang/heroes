@@ -1,0 +1,314 @@
+--- ../263-critic3/runtime/parts/cbstack.c	2026-11-27 23:09:01
++++ rt-p/parts/cbstack.c	2026-11-27 23:52:46
+@@ -184,7 +184,9 @@
+  * entry's own while it decides, and a door's per C call) can cross the
+  * range's lowest byte: 1 KiB holds them at `-O0`, 4 KiB under the sanitizer,
+  * whose frames are wider (at 1 KiB, 672 bytes below at `--sanitize -O2`). */
+-#if defined(HERO_CB_ASAN)
++#if defined(HERO_CB_RESERVE_BYTES)
++#define HERO_CB_RESERVE ((uintptr_t)(HERO_CB_RESERVE_BYTES))
++#elif defined(HERO_CB_ASAN)
+ #define HERO_CB_RESERVE ((uintptr_t)4 << 10)
+ #else
+ #define HERO_CB_RESERVE ((uintptr_t)1 << 10)
+@@ -265,6 +267,14 @@
+ static _Atomic uintptr_t hero_cb_registry_hi[HERO_CB_REGISTRY];
+ static _Atomic int64_t hero_cb_stacks_made = 0;
+ static _Atomic int64_t hero_cb_stacks_mapped = 0;
++static _Atomic int64_t hero_cb_critic_bytes = 0;
++void hero_cb_critic_tell(void) {
++    char b[256];
++    int n = snprintf(b, sizeof b, "critic: runtime stacks mapped %lld, their bytes against the room %lld, this thread's spares %d, the room held %llu\n",
++                     (long long)atomic_load(&hero_cb_stacks_mapped), (long long)atomic_load(&hero_cb_critic_bytes),
++                     hero_cb_thread.spare_count, (unsigned long long)atomic_load(&hero_frame_held));
++    if (n > 0) (void)!write(2, b, (size_t)n);
++}
+ 
+ static _Noreturn void hero_cb_refuse(const char *why) {
+     const char *const said[] = {"panic: ", why};
+@@ -322,7 +332,16 @@
+         want = hi - lo;
+         if (want < HERO_CB_SIZE_FLOOR) want = HERO_CB_SIZE_FLOOR;
+     }
++#if defined(HERO_CB_FAST)
++    static _Atomic size_t cached = 0;
++    size_t page = atomic_load_explicit(&cached, memory_order_relaxed);
++    if (page == 0) {
++        page = (size_t)sysconf(_SC_PAGESIZE);
++        atomic_store_explicit(&cached, page, memory_order_relaxed);
++    }
++#else
+     size_t page = (size_t)sysconf(_SC_PAGESIZE);
++#endif
+     return (want + page - 1) & ~(page - 1);
+ }
+ 
+@@ -359,6 +378,7 @@
+     s->next_spare = NULL;
+     hero_cb_register(s);
+     t->held += 1;
++    atomic_fetch_add(&hero_cb_critic_bytes, (int64_t)whole);
+     atomic_fetch_add(&hero_cb_stacks_made, 1);
+     atomic_fetch_add(&hero_cb_stacks_mapped, 1);
+     return s;
+@@ -401,6 +421,7 @@
+         hero_cb_unregister(s);
+         munmap(s->map, whole);
+         hero_frame_room_free(whole);
++        atomic_fetch_sub(&hero_cb_critic_bytes, (int64_t)whole);
+         t->held -= 1;
+         atomic_fetch_sub(&hero_cb_stacks_mapped, 1);
+     }
+@@ -695,8 +716,252 @@
+     __sanitizer_start_switch_fiber(&e->fake_c, (const void *)s->lo, (size_t)((uintptr_t)e - s->lo));
+ #endif
+     __attribute__((musttail)) return hero_cb_switch((void *)e, (HeroCbRun)hero_cb_on_r, (void *)e);
++}
++
++/* PANEL 263 CRITIC'S PROTOTYPE P1 (not lane bpp's): the thunk hands its one integer argument in a register and
++ * keeps no record on C's stack; the runner returns its result in x0, which hero_cb_switch hands back untouched. */
++typedef int64_t (*HeroCbRun1)(int64_t, void *, void *);
++static void *hero_cb_on_r1(void *p, void *unused_ret, void *unused_frame) {
++    (void)unused_ret;
++    (void)unused_frame;
++    HeroCbEntry *e = (HeroCbEntry *)p;
++    e->c_sp = ((const uintptr_t *)e)[-2];
++    e->prev_current = hero_cb_current;
++    hero_cb_current = e;
++    if (e->under != NULL) e->under->occupant = e;
++    int64_t r = ((HeroCbRun1)(void *)e->run)((int64_t)(intptr_t)e->x, e->ret, e->frame);
++    hero_cb_current = e->prev_current;
++    if (e->under != NULL) {
++        if (e->under->occupant == e) e->under->occupant = NULL;
++    } else {
++        hero_cb_give(&hero_cb_thread, e->stack);
++    }
++    return (void *)(intptr_t)r;
+ }
+ 
++void *hero_cb_enter1(void *a0, void *run_p, void *who) {
++    HeroCbRun1 run1 = (HeroCbRun1)run_p;
++    void *frame = ((void *const *)__builtin_frame_address(0))[0];
++    void *ret = ((void *const *)frame)[1];
++    if (atomic_load_explicit(&hero_signal_keyed, memory_order_acquire) != 2 ||
++        pthread_getspecific(atomic_load_explicit(&hero_signal_key, memory_order_relaxed)) == NULL) {
++        return (void *)(intptr_t)run1((int64_t)(intptr_t)a0, ret, frame);
++    }
++    uintptr_t back = (uintptr_t)ret ^ HERO_SIGNAL_MASK;
++    uintptr_t plain = atomic_load_explicit(&hero_signal_returns[0], memory_order_acquire);
++    if (plain != 0 && (back == plain || back == atomic_load_explicit(&hero_signal_returns[1], memory_order_relaxed) ||
++                       back == atomic_load_explicit(&hero_signal_returns[2], memory_order_relaxed) ||
++                       back == atomic_load_explicit(&hero_signal_returns[3], memory_order_relaxed))) {
++        return (void *)(intptr_t)run1((int64_t)(intptr_t)a0, ret, frame);
++    }
++    HeroCbThread *t = &hero_cb_thread;
++    if (t->in_place || hero_cb_current != NULL) {
++        t->in_place = false;
++        return (void *)(intptr_t)run1((int64_t)(intptr_t)a0, ret, frame);
++    }
++    if (t->retired != NULL) hero_cb_unmap_retired(t);
++    uintptr_t here = (uintptr_t)__builtin_frame_address(0);
++    uintptr_t lo = 0, hi = 0;
++    bool known = hero_cb_c_range((uintptr_t)frame, &lo, &hi);
++    if (known && here - lo < HERO_CB_RESERVE) hero_cb_reserve_refused((const char *)who, here - lo);
++    if (!known && t->newest != NULL) {
++        HeroCbEntry *o = t->newest->owner;
++        if (o->c_lo != 0 && here < o->c_lo && o->c_lo - here <= HERO_STACK_WINDOW) {
++            hero_cb_reserve_refused((const char *)who, 0);
++        }
++    }
++    HeroCbDoor *under = known && t->newest != NULL ? hero_cb_reached_in(t, (uintptr_t)frame, lo, hi) : NULL;
++    if (under != NULL && under->occupant != NULL) under = NULL;
++    if (under != NULL && *under->rec_at - under->owner->stack->lo < here - lo) under = NULL;
++    HeroCbStack *s;
++    uintptr_t top;
++    if (under != NULL) {
++        s = under->owner->stack;
++        top = *under->rec_at;
++    } else {
++        s = hero_cb_take(t, hero_cb_size_wanted(known, lo, hi));
++        top = s->hi;
++    }
++    HeroCbEntry *e = (HeroCbEntry *)((top - sizeof(HeroCbEntry)) & ~(uintptr_t)15);
++    e->x = a0;
++    e->run = (HeroCbRun)(void *)run1;
++    e->ret = ret;
++    e->frame = frame;
++    e->under = under;
++    e->stack = s;
++    e->c_sp = 0;
++    e->c_lo = known ? lo : 0;
++    e->c_hi = known ? hi : 0;
++    __attribute__((musttail)) return ((void *(*)(void *, void *, void *))(void *)hero_cb_switch)((void *)e, (void *)hero_cb_on_r1, (void *)e);
++}
++
++#if defined(__aarch64__)
++/* PANEL 263 CRITIC'S PROTOTYPE P4 (not lane bpp's; Darwin arm64, ONE THREAD, plain builds only): THE SWITCH MADE
++ * BEFORE THE DECISION. The thunk calls `hero_cb_enter_s`, which writes nothing on C's stack: it moves to a decision
++ * stack at once, decides there (`hero_cb_decide4`, enter1's body without its switch), then switches from the decision
++ * stack to the chosen runtime stack, its frame record linking to the thunk's, so nothing of the runtime stands on C's
++ * stack but the thunk's own frame while the callback runs. One decision stack for the process: a prototype. */
++char hero_cb_p4_stack[(size_t)64 << 10] __attribute__((aligned(16)));
++uintptr_t hero_cb_p4_top = (uintptr_t)0;
++static int64_t hero_cb_p4_inplace(int64_t a0, void *run_p, void *ret, void *frame);
++void *hero_cb_decide4(void *a0, void *run_p, void *who, uintptr_t c_sp, void *frame) {
++    HeroCbRun1 run1 = (HeroCbRun1)run_p;
++    void *ret = ((void *const *)frame)[1];
++    (void)run1;
++    if (atomic_load_explicit(&hero_signal_keyed, memory_order_acquire) != 2 ||
++        pthread_getspecific(atomic_load_explicit(&hero_signal_key, memory_order_relaxed)) == NULL) {
++        return NULL;
++    }
++    uintptr_t back = (uintptr_t)ret ^ HERO_SIGNAL_MASK;
++    uintptr_t plain = atomic_load_explicit(&hero_signal_returns[0], memory_order_acquire);
++    if (plain != 0 && (back == plain || back == atomic_load_explicit(&hero_signal_returns[1], memory_order_relaxed) ||
++                       back == atomic_load_explicit(&hero_signal_returns[2], memory_order_relaxed) ||
++                       back == atomic_load_explicit(&hero_signal_returns[3], memory_order_relaxed))) {
++        return NULL;
++    }
++    HeroCbThread *t = &hero_cb_thread;
++    if (t->in_place || hero_cb_current != NULL) {
++        t->in_place = false;
++        return NULL;
++    }
++    if (t->retired != NULL) hero_cb_unmap_retired(t);
++    uintptr_t here = c_sp;
++    uintptr_t lo = 0, hi = 0;
++    bool known = hero_cb_c_range((uintptr_t)frame, &lo, &hi);
++    if (known && here - lo < HERO_CB_RESERVE) hero_cb_reserve_refused((const char *)who, here - lo);
++    if (!known && t->newest != NULL) {
++        HeroCbEntry *o = t->newest->owner;
++        if (o->c_lo != 0 && here < o->c_lo && o->c_lo - here <= HERO_STACK_WINDOW) {
++            hero_cb_reserve_refused((const char *)who, 0);
++        }
++    }
++    HeroCbDoor *under = known && t->newest != NULL ? hero_cb_reached_in(t, (uintptr_t)frame, lo, hi) : NULL;
++    if (under != NULL && under->occupant != NULL) under = NULL;
++    if (under != NULL && *under->rec_at - under->owner->stack->lo < here - lo) under = NULL;
++    HeroCbStack *s;
++    uintptr_t top;
++    if (under != NULL) {
++        s = under->owner->stack;
++        top = *under->rec_at;
++    } else {
++        s = hero_cb_take(t, hero_cb_size_wanted(known, lo, hi));
++        top = s->hi;
++    }
++    HeroCbEntry *e = (HeroCbEntry *)((top - sizeof(HeroCbEntry)) & ~(uintptr_t)15);
++    e->x = a0;
++    e->run = (HeroCbRun)run_p;
++    e->ret = ret;
++    e->frame = frame;
++    e->under = under;
++    e->stack = s;
++    e->c_sp = 0;
++    e->c_lo = known ? lo : 0;
++    e->c_hi = known ? hi : 0;
++    return e;
++}
++static int64_t hero_cb_p4_inplace(int64_t a0, void *run_p, void *ret, void *frame) {
++    return ((HeroCbRun1)run_p)(a0, ret, frame);
++}
++#if defined(__APPLE__)
++void *hero_cb_enter_s(void *a0, void *run_p, void *who);
++__asm__(".text\n.p2align 2\n.globl _hero_cb_enter_s\n_hero_cb_enter_s:\n"
++        "mov x9, sp\n"
++        "mov x10, x29\n"
++        "mov x11, x30\n"
++        "adrp x12, _hero_cb_p4_top@PAGE\n"
++        "ldr x12, [x12, _hero_cb_p4_top@PAGEOFF]\n"
++        "cbnz x12, 1f\n"
++        "adrp x12, _hero_cb_p4_stack@PAGE\n"
++        "add x12, x12, _hero_cb_p4_stack@PAGEOFF\n"
++        "add x12, x12, #16, lsl #12\n"
++        "adrp x13, _hero_cb_p4_top@PAGE\n"
++        "str x12, [x13, _hero_cb_p4_top@PAGEOFF]\n"
++        "1:\n"
++        "mov sp, x12\n"
++        "stp x10, x11, [sp, #-48]!\n"
++        "str x9, [sp, #16]\n"
++        "stp x0, x1, [sp, #32]\n"
++        "mov x29, sp\n"
++        "mov x3, x9\n"
++        "mov x4, x10\n"
++        "bl _hero_cb_decide4\n"
++        "cbz x0, 2f\n"
++        /* to the runtime stack: a record linking to the thunk's frame, C's sp kept at e - 16 */
++        "ldr x9, [x29, #16]\n"
++        "ldp x10, x11, [x29]\n"
++        "sub x2, x0, #32\n"
++        "stp x10, x11, [x2]\n"
++        "str x9, [x2, #16]\n"
++        "mov x29, x2\n"
++        "mov sp, x2\n"
++        "bl _hero_cb_p4_on_r\n"
++        "ldr x9, [sp, #16]\n"
++        "ldp x29, x30, [sp]\n"
++        "mov sp, x9\n"
++        "ret\n"
++        "2:\n"
++        /* in place, on C's stack: a tail call of the runner as the thunk's own callee */
++        "ldp x0, x16, [x29, #32]\n"
++        "ldr x9, [x29, #16]\n"
++        "ldp x10, x11, [x29]\n"
++        "mov sp, x9\n"
++        "mov x29, x10\n"
++        "mov x30, x11\n"
++        "ldr x1, [x10, #8]\n"
++        "mov x2, x10\n"
++        "br x16\n");
++#else
++void *hero_cb_enter_s(void *a0, void *run_p, void *who);
++__asm__(".text\n.p2align 2\n.globl hero_cb_enter_s\n.type hero_cb_enter_s, %function\nhero_cb_enter_s:\n"
++        "mov x9, sp\n"
++        "mov x10, x29\n"
++        "mov x11, x30\n"
++        "adrp x12, hero_cb_p4_top\n"
++        "ldr x12, [x12, :lo12:hero_cb_p4_top]\n"
++        "cbnz x12, 1f\n"
++        "adrp x12, hero_cb_p4_stack\n"
++        "add x12, x12, :lo12:hero_cb_p4_stack\n"
++        "add x12, x12, #16, lsl #12\n"
++        "adrp x13, hero_cb_p4_top\n"
++        "str x12, [x13, :lo12:hero_cb_p4_top]\n"
++        "1:\n"
++        "mov sp, x12\n"
++        "stp x10, x11, [sp, #-48]!\n"
++        "str x9, [sp, #16]\n"
++        "stp x0, x1, [sp, #32]\n"
++        "mov x29, sp\n"
++        "mov x3, x9\n"
++        "mov x4, x10\n"
++        "bl hero_cb_decide4\n"
++        "cbz x0, 2f\n"
++        /* to the runtime stack: a record linking to the thunk's frame, C's sp kept at e - 16 */
++        "ldr x9, [x29, #16]\n"
++        "ldp x10, x11, [x29]\n"
++        "sub x2, x0, #32\n"
++        "stp x10, x11, [x2]\n"
++        "str x9, [x2, #16]\n"
++        "mov x29, x2\n"
++        "mov sp, x2\n"
++        "bl hero_cb_p4_on_r\n"
++        "ldr x9, [sp, #16]\n"
++        "ldp x29, x30, [sp]\n"
++        "mov sp, x9\n"
++        "ret\n"
++        "2:\n"
++        /* in place, on C's stack: a tail call of the runner as the thunk's own callee */
++        "ldp x0, x16, [x29, #32]\n"
++        "ldr x9, [x29, #16]\n"
++        "ldp x10, x11, [x29]\n"
++        "mov sp, x9\n"
++        "mov x29, x10\n"
++        "mov x30, x11\n"
++        "ldr x1, [x10, #8]\n"
++        "mov x2, x10\n"
++        "br x16\n");
++#endif
++void *hero_cb_p4_on_r(void *p) { return hero_cb_on_r1(p, NULL, NULL); }
++#endif
++
+ /* THE DOOR, opened from a runtime stack (`heroes_runtime.h`'s door per
+  * extern): the C call is made by `hero_cb_door_switch` at the address this
+  * returns, just below the thunk's frame on the stack C entered the callback

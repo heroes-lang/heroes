@@ -1,0 +1,16 @@
+uwx-nosw-O0 UW_KIND=0: C jumped over the callbacks 1000 times live at exit: 0 EXIT=0 
+uwx-nosw-O0 UW_KIND=1: C jumped over the callbacks 1000 times live at exit: 11000 EXIT=0 
+uwx-nosw-O0 UW_KIND=2: C jumped over the callbacks 1000 times live at exit: 11000 EXIT=0 
+ujump-nosw-O0: C jumped over the callbacks 1000 times EXIT=0 
+uwx-sw-O0 UW_KIND=0: C jumped over the callbacks 1000 times live at exit: 11000 EXIT=0 
+uwx-sw-O0 UW_KIND=1: C jumped over the callbacks 1000 times live at exit: 11000 EXIT=0 
+uwx-sw-O0 UW_KIND=2: C jumped over the callbacks 1000 times live at exit: 11000 EXIT=0 
+ujump-sw-O0: C jumped over the callbacks 1000 times EXIT=0 
+uwx-nosw-O2 UW_KIND=0: C jumped over the callbacks 1000 times live at exit: 0 EXIT=0 
+uwx-nosw-O2 UW_KIND=1: C jumped over the callbacks 1000 times live at exit: 11000 EXIT=0 
+uwx-nosw-O2 UW_KIND=2: C jumped over the callbacks 1000 times live at exit: 11000 EXIT=0 
+ujump-nosw-O2: C jumped over the callbacks 1000 times EXIT=0 
+uwx-sw-O2 UW_KIND=0: C jumped over the callbacks 1000 times live at exit: 11000 EXIT=0 
+uwx-sw-O2 UW_KIND=1: C jumped over the callbacks 1000 times live at exit: 11000 EXIT=0 
+uwx-sw-O2 UW_KIND=2: C jumped over the callbacks 1000 times live at exit: 11000 EXIT=0 
+ujump-sw-O2: C jumped over the callbacks 1000 times EXIT=0 

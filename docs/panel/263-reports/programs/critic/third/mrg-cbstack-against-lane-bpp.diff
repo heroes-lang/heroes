@@ -1,0 +1,11 @@
+--- ../263-critic3/runtime/parts/cbstack.c	2026-11-27 23:09:01
++++ mrg/runtime/parts/cbstack.c	2026-11-27 23:39:50
+@@ -70,7 +70,7 @@
+  * unsupported; AArch64 alone switches (every other target runs as before this
+  * route, the x86-64 and Windows switches unwritten). */
+ 
+-#if defined(__aarch64__) && !defined(_WIN32)
++#if defined(__aarch64__) && !defined(_WIN32) && !defined(HERO_CB_NO_SWITCH)
+ #define HERO_CB_SWITCHES 1
+ #endif
+ 

@@ -1,0 +1,8 @@
+alt-base-O2 CO_KB=256: deepest right with 0 bytes below n=4093 (64 bytes of C's stack a level)
+alt-base-O0 CO_KB=256: deepest right with 0 bytes below n=908 (288 bytes of C's stack a level)
+alt-base-sO2 CO_KB=256: deepest right with 0 bytes below n=3270 (80 bytes of C's stack a level)
+alt-base-sO0 CO_KB=256: deepest right with 0 bytes below n=774 (338 bytes of C's stack a level)
+alt-bpp-O2 CO_KB=256: deepest right with 0 bytes below n=3262 (80 bytes of C's stack a level)
+alt-bpp-O0 CO_KB=256: deepest right with 0 bytes below n=1165 (225 bytes of C's stack a level)
+alt-bpp-sO2 CO_KB=256: deepest right with 0 bytes below n=2014 (130 bytes of C's stack a level)
+alt-bpp-sO0 CO_KB=256: deepest right with 0 bytes below n=700 (374 bytes of C's stack a level)

@@ -1,0 +1,48 @@
+mode 0 base O0: exit  | panic: a signal handler called `swapcontext` naming a context that the code the signal interrupted was itself switching from or to, inside a `swapcont
+mode 0 base O0: exit  | panic: a signal handler called `swapcontext` naming a context that the code the signal interrupted was itself switching from or to, inside a `swapcont
+mode 0 base O0: exit  | panic: a signal handler called `swapcontext` naming a context that the code the signal interrupted was itself switching from or to, inside a `swapcont
+mode 0 base O2: exit  | panic: a signal handler called `swapcontext` naming a context that the code the signal interrupted was itself switching from or to, inside a `swapcont
+mode 0 base O2: exit  | panic: a signal handler called `swapcontext` naming a context that the code the signal interrupted was itself switching from or to, inside a `swapcont
+mode 0 base O2: exit  | panic: a signal handler called `swapcontext` naming a context that the code the signal interrupted was itself switching from or to, inside a `swapcont
+mode 0 bpp O0: exit  | panic: a signal handler called `swapcontext` naming a context that the code the signal interrupted was itself switching from or to, inside a `swapcont
+mode 0 bpp O0: exit  | panic: a signal handler called `swapcontext` naming a context that the code the signal interrupted was itself switching from or to, inside a `swapcont
+mode 0 bpp O0: exit  | panic: a signal handler called `swapcontext` naming a context that the code the signal interrupted was itself switching from or to, inside a `swapcont
+mode 0 bpp O2: exit  | panic: a signal handler called `swapcontext` naming a context that the code the signal interrupted was itself switching from or to, inside a `swapcont
+mode 0 bpp O2: exit  | panic: a signal handler called `swapcontext` naming a context that the code the signal interrupted was itself switching from or to, inside a `swapcont
+mode 0 bpp O2: exit  | panic: a signal handler called `swapcontext` naming a context that the code the signal interrupted was itself switching from or to, inside a `swapcont
+mode 1 base O0: exit  | gt mode 1: counts 295561 295670 295554, signals 39192, switched from the handler 39192, checks failed 0 checks failed 0 
+mode 1 base O0: exit  | gt mode 1: counts 255854 256212 256107, signals 39597, switched from the handler 39597, checks failed 0 checks failed 0 
+mode 1 base O0: exit  | gt mode 1: counts 246994 247278 247299, signals 39586, switched from the handler 39586, checks failed 0 checks failed 0 
+mode 1 base O2: exit  | gt mode 1: counts 397284 397378 397349, signals 39950, switched from the handler 39950, checks failed 0 checks failed 0 
+mode 1 base O2: exit  | gt mode 1: counts 390908 390983 391121, signals 39969, switched from the handler 39969, checks failed 0 checks failed 0 
+mode 1 base O2: exit  | gt mode 1: counts 390993 391247 391003, signals 39887, switched from the handler 39887, checks failed 0 checks failed 0 
+mode 1 bpp O0: exit  | gt mode 1: counts 257825 258269 258043, signals 39629, switched from the handler 39629, checks failed 0 checks failed 0 
+mode 1 bpp O0: exit  | gt mode 1: counts 276367 276368 276642, signals 39852, switched from the handler 39852, checks failed 0 checks failed 0 
+mode 1 bpp O0: exit  | gt mode 1: counts 277148 277471 277642, signals 39839, switched from the handler 39839, checks failed 0 checks failed 0 
+mode 1 bpp O2: exit  | gt mode 1: counts 389166 389113 389072, signals 39914, switched from the handler 39914, checks failed 0 checks failed 0 
+mode 1 bpp O2: exit  | gt mode 1: counts 384511 384381 384204, signals 39966, switched from the handler 39966, checks failed 0 checks failed 0 
+mode 1 bpp O2: exit  | gt mode 1: counts 366529 366382 366374, signals 39194, switched from the handler 39194, checks failed 0 checks failed 0 
+mode 3 base O0: exit  | gt mode 3: counts 302040 302040 302040, signals 1, switched from the handler 0, checks failed 0 checks failed 0 
+mode 3 base O0: exit  | gt mode 3: counts 313783 313782 313782, signals 1, switched from the handler 0, checks failed 0 checks failed 0 
+mode 3 base O0: exit  | gt mode 3: counts 295045 295045 295045, signals 1, switched from the handler 0, checks failed 0 checks failed 0 
+mode 3 base O2: exit  | gt mode 3: counts 401013 401012 401012, signals 1, switched from the handler 0, checks failed 0 checks failed 0 
+mode 3 base O2: exit  | gt mode 3: counts 397568 397568 397567, signals 1, switched from the handler 0, checks failed 0 checks failed 0 
+mode 3 base O2: exit  | gt mode 3: counts 392512 392511 392511, signals 1, switched from the handler 0, checks failed 0 checks failed 0 
+mode 3 bpp O0: exit  | gt mode 3: counts 278367 278367 278366, signals 1, switched from the handler 0, checks failed 0 checks failed 0 
+mode 3 bpp O0: exit  | gt mode 3: counts 282009 282009 282008, signals 1, switched from the handler 0, checks failed 0 checks failed 0 
+mode 3 bpp O0: exit  | gt mode 3: counts 284202 284201 284201, signals 1, switched from the handler 0, checks failed 0 checks failed 0 
+mode 3 bpp O2: exit  | gt mode 3: counts 469299 469299 469298, signals 1, switched from the handler 0, checks failed 0 checks failed 0 
+mode 3 bpp O2: exit  | gt mode 3: counts 457457 457457 457456, signals 2, switched from the handler 0, checks failed 0 checks failed 0 
+mode 3 bpp O2: exit  | gt mode 3: counts 458251 458251 458251, signals 1, switched from the handler 0, checks failed 0 checks failed 0 
+mode 4 base O0: exit  | gt mode 4: counts 308921 309384 308903, signals 39989, switched from the handler 39989, checks failed 0 checks failed 0 
+mode 4 base O0: exit  | gt mode 4: counts 312299 312227 312040, signals 39988, switched from the handler 39988, checks failed 0 checks failed 0 
+mode 4 base O0: exit  | gt mode 4: counts 310056 309970 309726, signals 39988, switched from the handler 39988, checks failed 0 checks failed 0 
+mode 4 base O2: exit  | gt mode 4: counts 431532 431760 431591, signals 39981, switched from the handler 39981, checks failed 0 checks failed 0 
+mode 4 base O2: exit  | gt mode 4: counts 436624 436773 436697, signals 39994, switched from the handler 39994, checks failed 0 checks failed 0 
+mode 4 base O2: exit  | gt mode 4: counts 434092 434305 434256, signals 39983, switched from the handler 39983, checks failed 0 checks failed 0 
+mode 4 bpp O0: exit  | gt mode 4: counts 309115 309619 309438, signals 39998, switched from the handler 39997, checks failed 0 checks failed 0 
+mode 4 bpp O0: exit  | gt mode 4: counts 310758 310987 310878, signals 39992, switched from the handler 39992, checks failed 0 checks failed 0 
+mode 4 bpp O0: exit  | gt mode 4: counts 310718 310953 310933, signals 39986, switched from the handler 39986, checks failed 0 checks failed 0 
+mode 4 bpp O2: exit  | gt mode 4: counts 434970 434578 434538, signals 39994, switched from the handler 39994, checks failed 0 checks failed 0 
+mode 4 bpp O2: exit  | gt mode 4: counts 426048 426218 426140, signals 39511, switched from the handler 39511, checks failed 0 checks failed 0 
+mode 4 bpp O2: exit  | gt mode 4: counts 423486 423813 423598, signals 39976, switched from the handler 39976, checks failed 0 checks failed 0 

@@ -1,0 +1,18 @@
+alt-p4-r16-O2 CO_KB=256: deepest right with 0 bytes below n=4094 (64 bytes of C's stack a level)
+alt-p4-r16-O2 CO_N=0: smallest room right with 0 bytes below about 23 (wrong or refused at 16): co: returned: 0 bytes
+alt-p4-r16-O2 CO_N=1: smallest room right with 0 bytes below about 71 (wrong or refused at 63): co: at the stop: 0 bytes
+alt-p4-r64-O2 CO_KB=256: deepest right with 0 bytes below n=4094 (64 bytes of C's stack a level)
+alt-p4-r64-O2 CO_N=0: smallest room right with 0 bytes below about 55 (wrong or refused at 47): panic: stack exhausted: C called back alt.step with 48 bytes
+alt-p4-r64-O2 CO_N=1: smallest room right with 0 bytes below about 119 (wrong or refused at 111): panic: stack exhausted: C called back alt.step with 48 bytes
+alt-p4c-r16-O2 CO_KB=256: deepest right with 0 bytes below n=5459 (48 bytes of C's stack a level)
+alt-p4c-r16-O2 CO_N=0: smallest room right with 0 bytes below about 23 (wrong or refused at 16): co: returned: 0 bytes
+alt-p4c-r16-O2 CO_N=1: smallest room right with 0 bytes below about 55 (wrong or refused at 47): co: at the stop: 0 bytes
+alt-p4c-r64-O2 CO_KB=256: deepest right with 0 bytes below n=5458 (48 bytes of C's stack a level)
+alt-p4c-r64-O2 CO_N=0: smallest room right with 0 bytes below about 55 (wrong or refused at 47): panic: stack exhausted: C called back alt.step with 48 bytes
+alt-p4c-r64-O2 CO_N=1: smallest room right with 0 bytes below about 103 (wrong or refused at 95): panic: stack exhausted: C called back alt.step with 48 bytes
+alt-p4-r16-O0 CO_KB=256: deepest right with 0 bytes below n=1259 (208 bytes of C's stack a level)
+alt-p4-r16-O0 CO_N=0: smallest room right with 0 bytes below about 55 (wrong or refused at 47): co: at the stop: 0 bytes
+alt-p4-r16-O0 CO_N=1: smallest room right with 0 bytes below about 263 (wrong or refused at 255): co: at the stop: 0 bytes
+alt-p4c-r16-O0 CO_KB=256: deepest right with 0 bytes below n=1819 (144 bytes of C's stack a level)
+alt-p4c-r16-O0 CO_N=0: smallest room right with 0 bytes below about 55 (wrong or refused at 47): co: at the stop: 0 bytes
+alt-p4c-r16-O0 CO_N=1: smallest room right with 0 bytes below about 199 (wrong or refused at 191): co: at the stop: 0 bytes

@@ -1,0 +1,18 @@
+--- out/mrg-guarded_names.lane-bpp.hero	2026-11-27 23:57:59
++++ mrg/selfhost/emit/guarded_names.hero	2026-11-27 23:37:08
+@@ -135,6 +135,7 @@
+         "typedef uint16_t uint32_t uint64_t uint8_t uint_fast16_t uint_fast32_t uint_fast64_t"
+         "uint_fast8_t uint_least16_t uint_least32_t uint_least64_t uint_least8_t uintmax_t uintptr_t"
+         "union unsigned v val vals value vd void want wchar_t what where why within_ms word"
++        "hero_release hero_size hero_unwind_array hero_unwind_failure hero_unwind_frame hero_unwind_framed hero_unwind_handed hero_unwind_held hero_unwind_kept hero_unwind_kept_array hero_unwind_kept_failure hero_unwind_kept_mail hero_unwind_kept_map hero_unwind_kept_str hero_unwind_mail hero_unwind_map hero_unwind_residue hero_unwind_returned hero_unwind_running hero_unwind_slot hero_unwind_str hero_unwind_thunk hero_unwind_unwound hero_v inline"
+     ]
+ 
+ # The macros of `<stdint.h>` and `<math.h>` the unit's own C never writes,
+@@ -238,6 +239,7 @@
+         "__used__ auto break case char const continue default do double else enum extern float for goto"
+         "if inline int long register restrict return short signed sizeof static struct switch typedef"
+         "union unsigned void volatile while"
++        "__ATOMIC_RELAXED __atomic_load_n __builtin_expect"
+     ]
+ 
+ # The line that saves the reserved names, and the one that gives them back.

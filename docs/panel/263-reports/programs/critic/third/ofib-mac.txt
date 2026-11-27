@@ -1,0 +1,20 @@
+ofib-base-O0 n 10: ofib: 0 of the 524288 readable bytes below the stack changed, the lowest 0 below it answer 103050 
+ofib-base-O0 n 200: ofib: 1379 of the 524288 readable bytes below the stack changed, the lowest 5976 below it answer 435110 
+ofib-base-O0 n 1200: ofib: 54487 of the 524288 readable bytes below the stack changed, the lowest 197976 below it answer 280890 
+ofib-base-O0 n 20000: ofib: 150791 of the 524288 readable bytes below the stack changed, the lowest 524288 below it answer 532635 
+ofib-base-O0 guarded n 20000: panic: stack exhausted in ofib.deep 
+ofib-base-O2 n 10: ofib: 0 of the 16384 readable bytes below the stack changed, the lowest 0 below it answer 103050 
+ofib-base-O2 n 200: ofib: 0 of the 16384 readable bytes below the stack changed, the lowest 0 below it answer 435110 
+ofib-base-O2 n 1200: ofib: 2938 of the 16384 readable bytes below the stack changed, the lowest 5872 below it answer 280890 
+ofib-base-O2 n 20000: ofib: 276369 of the 524288 readable bytes below the stack changed, the lowest 524288 below it answer 532635 
+ofib-base-O2 guarded n 20000: panic: stack exhausted in ofib.deep 
+ofib-bpp-O0 n 10: ofib: 0 of the 524288 readable bytes below the stack changed, the lowest 0 below it answer 103050 
+ofib-bpp-O0 n 200: ofib: 0 of the 524288 readable bytes below the stack changed, the lowest 0 below it answer 435110 
+ofib-bpp-O0 n 1200: panic: stack exhausted in ofib.deep 
+ofib-bpp-O0 n 20000: panic: stack exhausted in ofib.deep 
+ofib-bpp-O0 guarded n 20000: panic: stack exhausted in ofib.deep 
+ofib-bpp-O2 n 10: ofib: 0 of the 524288 readable bytes below the stack changed, the lowest 0 below it answer 103050 
+ofib-bpp-O2 n 200: ofib: 0 of the 524288 readable bytes below the stack changed, the lowest 0 below it answer 435110 
+ofib-bpp-O2 n 1200: ofib: 0 of the 524288 readable bytes below the stack changed, the lowest 0 below it answer 280890 
+ofib-bpp-O2 n 20000: panic: stack exhausted in ofib.deep 
+ofib-bpp-O2 guarded n 20000: panic: stack exhausted in ofib.deep 

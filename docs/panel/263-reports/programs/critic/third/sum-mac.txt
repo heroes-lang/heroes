@@ -1,0 +1,8 @@
+base check sum600: EXIT=0 
+base check sum2000: EXIT=0 
+base check sum13000: EXIT=0 
+base check sum14000: EXIT=134 panic: stack exhausted in walk.expr
+bpp check sum600: EXIT=0 
+bpp check sum2000: EXIT=0 
+bpp check sum13000: EXIT=0 
+bpp check sum14000: EXIT=134 panic: stack exhausted in walk.expr

@@ -1,0 +1,7 @@
+wrote heroes-next
+real 234.04
+user 171.92
+sys 40.69
+EXIT=0
+heroes 0.6.0
+sources 3e2c574b2046b392

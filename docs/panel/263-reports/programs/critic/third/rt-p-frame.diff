@@ -1,0 +1,13 @@
+--- ../263-critic3/runtime/parts/frame.c	2026-11-27 23:09:01
++++ rt-p/parts/frame.c	2026-11-27 23:28:03
+@@ -107,7 +107,10 @@
+  * callbacks out of the number); and the words name no cause of it, since a
+  * jump, an exception and a coroutine nobody resumes each leave one. Where
+  * none is unreturned, the room's words alone. */
++/* PANEL 263 CRITIC'S INSTRUMENT (not lane bpp's): what the runtime stacks of route (b'') hold of the room. */
++void hero_cb_critic_tell(void);
+ static _Noreturn void hero_frame_exhausted(void *caller) {
++    hero_cb_critic_tell();
+     int64_t left = hero_callbacks_unfinished();
+     char tail[128];
+     if (left > 0) {

@@ -1,0 +1,6 @@
+dshape-base-O2 n 100000: EXIT=124  
+dshape-base-O2 n 100000: EXIT=134 co: at the abort: 139200 bytes panic: stack exhausted in c_deep
+dshape-base-O2 n 100000: EXIT=124  
+dshape-bpp-O2 n 100000: EXIT=124  
+dshape-bpp-O2 n 100000: EXIT=124  
+dshape-bpp-O2 n 100000: EXIT=124  

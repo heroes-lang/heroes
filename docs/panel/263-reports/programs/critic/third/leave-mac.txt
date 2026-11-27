@@ -1,0 +1,14 @@
+alt-base-O2 CO_N=0: smallest room right with 0 bytes below about 103 (wrong or refused at 95): co: returned: 16 bytes
+alt-base-O2 CO_N=1: smallest room right with 0 bytes below about 167 (wrong or refused at 159): co: returned: 16 bytes
+alt-bpp-O2 CO_N=0: smallest room right with 0 bytes below about 1047 (wrong or refused at 1039): panic: stack exhausted: C called back alt.step with 1008 bytes
+alt-bpp-O2 CO_N=1: smallest room right with 0 bytes below about 1127 (wrong or refused at 1119): panic: stack exhausted: C called back alt.step with 1008 bytes
+alt-p1-O2 CO_N=0: smallest room right with 0 bytes below about 1031 (wrong or refused at 1023): panic: stack exhausted: C called back alt.step with 1008 bytes
+alt-p1-O2 CO_N=1: smallest room right with 0 bytes below about 1095 (wrong or refused at 1087): panic: stack exhausted: C called back alt.step with 1008 bytes
+alt-p1c-O2 CO_N=0: smallest room right with 0 bytes below about 1031 (wrong or refused at 1023): panic: stack exhausted: C called back alt.step with 1008 bytes
+alt-p1c-O2 CO_N=1: smallest room right with 0 bytes below about 1079 (wrong or refused at 1071): panic: stack exhausted: C called back alt.step with 1008 bytes
+alt-p1r512-O2 CO_N=0: smallest room right with 0 bytes below about 519 (wrong or refused at 511): panic: stack exhausted: C called back alt.step with 496 bytes
+alt-p1r512-O2 CO_N=1: smallest room right with 0 bytes below about 583 (wrong or refused at 575): panic: stack exhausted: C called back alt.step with 496 bytes
+alt-base-O0 CO_N=0: smallest room right with 0 bytes below about 471 (wrong or refused at 463): co: returned: 8 bytes
+alt-base-O0 CO_N=1: smallest room right with 0 bytes below about 759 (wrong or refused at 751): co: returned: 8 bytes
+alt-bpp-O0 CO_N=0: smallest room right with 0 bytes below about 1095 (wrong or refused at 1087): panic: stack exhausted: C called back alt.step with 1008 bytes
+alt-bpp-O0 CO_N=1: smallest room right with 0 bytes below about 1319 (wrong or refused at 1311): panic: stack exhausted: C called back alt.step with 1008 bytes

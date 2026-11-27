@@ -224,6 +224,7 @@ the signal (the runtime's own probe is signal 16, `hero_signal_learn`): **`SIGBU
 catcher `hero_stack_handler` (`stack.c:1145`)**; inside it, `hero_rebind_relived` (`rebind_entries.c:722`) faults
 again, **`SIGSEGV` (11)**, whose delivery enters the trampoline nested (`-O0`, read with variables,
 `lldb/tramp-static-O0.txt`); at `-O2` lldb's `continue` never returned (exit 124, `lldb/tramp-static-O2.txt`).
+**Added 2026-11-27 by the coordinator**: that timeout left lldb's debuggee behind, stopped (state `T`, pid 79351), found at the end of the sitting by `ps` and stopped by its id.
 
 ## 5. Step 199j's stop (ran)
 

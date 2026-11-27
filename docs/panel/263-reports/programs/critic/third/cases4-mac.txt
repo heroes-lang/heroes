@@ -1,0 +1,32 @@
+== c1 base-O0
+panic: stack exhausted in fixedbugs-2752-nested-callbacks-holding-room-jumped-to-either-level-give-it-back.e5: the room large values take off the stack is full, 1 GiB for the whole program, while 2047 callbacks C called have not r
+== c1 bppi-O0
+critic: runtime stacks mapped 1, their bytes against the room 8519680, this thread's spares 0, the room held 1073676288
+panic: stack exhausted in fixedbugs-2752-nested-callbacks-holding-room-jumped-to-either-level-give-it-back.e5: the room large values take off the stack is full, 1 GiB for the whole program, while 2031 callbacks C called have not r
+== c1 bppi-O2
+critic: runtime stacks mapped 1, their bytes against the room 8519680, this thread's spares 0, the room held 1073676288
+panic: stack exhausted in fixedbugs-2752-nested-callbacks-holding-room-jumped-to-either-level-give-it-back.e5: the room large values take off the stack is full, 1 GiB for the whole program, while 2031 callbacks C called have not r
+== c2 base-O0
+panic: stack exhausted in fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.e5: the room large values take off the stack is full, 1 GiB for the whole program, while 963 callbacks C
+== c2 bppi-O0
+critic: runtime stacks mapped 1, their bytes against the room 8519680, this thread's spares 0, the room held 1073741824
+panic: stack exhausted in fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.e5: the room large values take off the stack is full, 1 GiB for the whole program, while 956 callbacks C
+== c2 bppi-O2
+critic: runtime stacks mapped 1, their bytes against the room 8519680, this thread's spares 0, the room held 1073741824
+panic: stack exhausted in fixedbugs-2752-the-room-taken-at-three-depths-under-a-callback-jumped-over-3000-times-is-given-back.e5: the room large values take off the stack is full, 1 GiB for the whole program, while 956 callbacks C
+== c3 base-O0
+panic: stack exhausted in fixedbugs-a-c-longjmp-over-a-callback-inside-a-coroutine-gives-its-room-back.e5: the room large values take off the stack is full, 1 GiB for the whole program, while 2047 callbacks C called have not retur
+== c3 bppi-O0
+critic: runtime stacks mapped 3, their bytes against the room 1228800, this thread's spares 0, the room held 1073725440
+panic: stack exhausted in fixedbugs-a-c-longjmp-over-a-callback-inside-a-coroutine-gives-its-room-back.e5: the room large values take off the stack is full, 1 GiB for the whole program, while 2045 callbacks C called have not retur
+== c3 bppi-O2
+critic: runtime stacks mapped 3, their bytes against the room 1228800, this thread's spares 0, the room held 1073725440
+panic: stack exhausted in fixedbugs-a-c-longjmp-over-a-callback-inside-a-coroutine-gives-its-room-back.e5: the room large values take off the stack is full, 1 GiB for the whole program, while 2045 callbacks C called have not retur
+== c4 base-O0
+panic: stack exhausted in fixedbugs-a-coroutine-left-for-good-holding-a-large-value-has-its-room-given-back-on-its-stack.e5: the room large values take off the stack is full, 1 GiB for the whole program, while 2046 callbacks C cal
+== c4 bppi-O0
+critic: runtime stacks mapped 1149, their bytes against the room 470630400, this thread's spares 0, the room held 1073725440
+panic: stack exhausted in fixedbugs-a-coroutine-left-for-good-holding-a-large-value-has-its-room-given-back-on-its-stack.e5: the room large values take off the stack is full, 1 GiB for the whole program, while 1149 callbacks C cal
+== c4 bppi-O2
+critic: runtime stacks mapped 1149, their bytes against the room 470630400, this thread's spares 0, the room held 1073725440
+panic: stack exhausted in fixedbugs-a-coroutine-left-for-good-holding-a-large-value-has-its-room-given-back-on-its-stack.e5: the room large values take off the stack is full, 1 GiB for the whole program, while 1149 callbacks C cal

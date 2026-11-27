@@ -1,0 +1,27 @@
+== bpp seed 22:34:05
+
+real	0m30.089s
+user	0m28.204s
+sys	0m0.948s
+== bpp stage 2 22:34:35
+wrote heroes-next
+
+real	4m50.307s
+user	3m19.925s
+sys	0m59.369s
+heroes 0.6.0
+sources 185600f90a609b3c
+== base seed 22:39:26
+
+real	0m27.623s
+user	0m25.827s
+sys	0m0.951s
+== base stage 2 22:39:53
+wrote heroes-next
+
+real	4m49.671s
+user	3m19.381s
+sys	0m58.633s
+heroes 0.6.0
+sources 692ac54673e38215
+LX-BUILT

@@ -1,0 +1,99 @@
+LX-PROGRAMS-BUILT
+csh-base-O0  | exit 0 |  | both: 10022002  | 
+csh-base-O0  | exit 0 |  | both: 10022002  | 
+csh-base-O0  | exit 0 |  | both: 10022002  | 
+csh-base-O2  | exit 0 |  | both: 10022002  | 
+csh-base-O2  | exit 0 |  | both: 10022002  | 
+csh-base-O2  | exit 0 |  | both: 10022002  | 
+csh-base-sO2  | exit 0 |  | both: 10022002  | 
+csh-base-sO2  | exit 0 |  | both: 10022002  | 
+csh-base-sO2  | exit 0 |  | both: 10022002  | 
+csh-base-sO0  | exit 134 |  |  | task stack overflow
+csh-base-sO0  | exit 134 |  |  | task stack overflow
+csh-base-sO0  | exit 134 |  |  | task stack overflow
+csh-bpp-O0  | exit 0 |  | both: 10022002  | 
+csh-bpp-O0  | exit 0 |  | both: 10022002  | 
+csh-bpp-O0  | exit 0 |  | both: 10022002  | 
+csh-bpp-O2  | exit 0 |  | both: 10022002  | 
+csh-bpp-O2  | exit 0 |  | both: 10022002  | 
+csh-bpp-O2  | exit 0 |  | both: 10022002  | 
+csh-bpp-sO2  | exit 0 |  | both: 10022002  | 
+csh-bpp-sO2  | exit 0 |  | both: 10022002  | 
+csh-bpp-sO2  | exit 0 |  | both: 10022002  | 
+csh-bpp-sO0  | exit 134 |  |  | task stack overflow
+csh-bpp-sO0  | exit 134 |  |  | task stack overflow
+csh-bpp-sO0  | exit 134 |  |  | task stack overflow
+alt-base-O2 CO_KB=256: deepest right with 0 bytes below n=4094 (64 bytes of C's stack a level)
+alt-base-O0 CO_KB=256: deepest right with 0 bytes below n=961 (272 bytes of C's stack a level)
+alt-base-sO2 CO_KB=256: deepest right with 0 bytes below n=3272 (80 bytes of C's stack a level)
+alt-base-sO0 CO_KB=256: deepest right with 0 bytes below n=813 (322 bytes of C's stack a level)
+alt-bpp-O2 CO_KB=256: deepest right with 0 bytes below n=3262 (80 bytes of C's stack a level)
+alt-bpp-O0 CO_KB=256: deepest right with 0 bytes below n=1254 (209 bytes of C's stack a level)
+alt-bpp-sO2 CO_KB=256: deepest right with 0 bytes below n=2302 (113 bytes of C's stack a level)
+alt-bpp-sO0 CO_KB=256: deepest right with 0 bytes below n=732 (358 bytes of C's stack a level)
+alt-base-O2 CO_N=0: smallest room right with 0 bytes below about 23 (wrong or refused at 16): co: returned: 0 bytes
+alt-base-O2 CO_N=1: smallest room right with 0 bytes below about 87 (wrong or refused at 79): co: returned: 16 bytes
+alt-base-O0 CO_N=0: smallest room right with 0 bytes below about 423 (wrong or refused at 415): co: returned: 12 bytes
+alt-base-O0 CO_N=1: smallest room right with 0 bytes below about 695 (wrong or refused at 687): co: returned: 12 bytes
+alt-bpp-O2 CO_N=0: smallest room right with 0 bytes below about 1095 (wrong or refused at 1087): panic: stack exhausted: C called back alt.step with 1008 bytes
+alt-bpp-O2 CO_N=1: smallest room right with 0 bytes below about 1175 (wrong or refused at 1167): panic: stack exhausted: C called back alt.step with 1008 bytes
+alt-bpp-O0 CO_N=0: smallest room right with 0 bytes below about 1095 (wrong or refused at 1087): panic: stack exhausted: C called back alt.step with 1008 bytes
+alt-bpp-O0 CO_N=1: smallest room right with 0 bytes below about 1303 (wrong or refused at 1295): panic: stack exhausted: C called back alt.step with 1008 bytes
+alt-base-sO0 CO_N=1000 | exit 0 | returned 57717 (lowest 59584); | depth reached: 1000  | 
+alt-base-sO0 CO_N=2000 | exit 1 |  |  | ==5855==ERROR: AddressSanitizer: stack-overflow on address 0xffffbab6bf90 (pc 0xaaaad61601f4 bp 0xffffbab6c200 sp 0xffffbab6bf00 T0)
+alt-base-sO0 CO_N=3000 | exit 1 |  |  | ==5881==ERROR: AddressSanitizer: stack-overflow on address 0xffffb697bf90 (pc 0xaaaabef101f4 bp 0xffffb697c200 sp 0xffffb697bf00 T0)
+alt-base-sO0 CO_N=100000 | exit 1 |  |  | ==5907==ERROR: AddressSanitizer: stack-overflow on address 0xffff8c73bf90 (pc 0xaaaac73a01f4 bp 0xffff8c73c200 sp 0xffff8c73bf00 T0)
+alt-bpp-sO0 CO_N=1000 | exit 134 | at the stop 368 (lowest 1072); |  | panic: stack exhausted: C called back alt.step with 3840 bytes left of the stack C was running on (a coroutine's stack, `makecontext`'s, or the thread's own), less than the 4096 this runtime keeps the
+alt-bpp-sO0 CO_N=2000 | exit 134 | at the stop 368 (lowest 1072); |  | panic: stack exhausted: C called back alt.step with 3840 bytes left of the stack C was running on (a coroutine's stack, `makecontext`'s, or the thread's own), less than the 4096 this runtime keeps the
+alt-bpp-sO0 CO_N=3000 | exit 134 | at the stop 368 (lowest 1072); |  | panic: stack exhausted: C called back alt.step with 3840 bytes left of the stack C was running on (a coroutine's stack, `makecontext`'s, or the thread's own), less than the 4096 this runtime keeps the
+alt-bpp-sO0 CO_N=100000 | exit 134 | at the stop 368 (lowest 1072); |  | panic: stack exhausted: C called back alt.step with 3840 bytes left of the stack C was running on (a coroutine's stack, `makecontext`'s, or the thread's own), less than the 4096 this runtime keeps the
+dshape-base-O0 CO_N=2500 | exit 0 | returned 0 (lowest 0); | depth reached: 2500  | 
+dshape-base-O0 CO_N=4000 | exit 0 | returned 41957 (lowest 122144); | depth reached: 4000  | 
+dshape-base-O0 CO_N=6000 | exit 134 | at the abort 68242 (lowest 262144); |  | panic: stack exhausted in c_deep
+dshape-base-O2 CO_N=100000 | exit 134 | at the abort 139200 (lowest 262132); |  | panic: stack exhausted in c_deep
+dshape-base-O2 CO_N=100000 | exit 134 | at the abort 139200 (lowest 262132); |  | panic: stack exhausted in c_deep
+dshape-base-O2 CO_N=100000 | exit 134 | at the abort 139200 (lowest 262132); |  | panic: stack exhausted in c_deep
+dshape-bpp-O0 CO_N=2500 | exit 0 | returned 0 (lowest 0); | depth reached: 2500  | 
+dshape-bpp-O0 CO_N=4000 | exit 0 | returned 41957 (lowest 122144); | depth reached: 4000  | 
+dshape-bpp-O0 CO_N=6000 | exit 134 | at the abort 68242 (lowest 262144); |  | panic: stack exhausted in c_deep
+dshape-bpp-O2 CO_N=100000 | exit 134 | at the abort 139200 (lowest 262144); |  | panic: stack exhausted in c_deep
+dshape-bpp-O2 CO_N=100000 | exit 134 | at the abort 139200 (lowest 262144); |  | panic: stack exhausted in c_deep
+dshape-bpp-O2 CO_N=100000 | exit 134 | at the abort 139200 (lowest 262144); |  | panic: stack exhausted in c_deep
+canary4-base-O2 CO_N=9000 | exit 0 | returned 19461 (lowest 25952); | depth reached: 665854  | 
+canary6-base-O2 CO_N=9000 | exit 0 | returned 19461 (lowest 25960); | depth reached: 665854  | 
+canary4-base-O2 CO_N=10000 | exit 0 | returned 43449 (lowest 57952); | depth reached: 742238  | 
+canary6-base-O2 CO_N=10000 | exit 0 | returned 43457 (lowest 57960); | depth reached: 742238  | 
+canary4-base-O2 CO_N=100000 | exit 134 | at the abort 196544 (lowest 262144); |  | panic: stack exhausted in canary4.deep
+canary6-base-O2 CO_N=100000 | exit 135 |  |  | 
+canary4-base-O0 CO_N=1500 | exit 0 | returned 24021 (lowest 26184); | depth reached: 22407  | 
+canary4-base-O0 CO_N=2000 | exit 0 | returned 112508 (lowest 122184); | depth reached: 564721  | 
+helper-base-O2 CO_N=10000 | exit 0 | returned 43441 (lowest 57936); | depth reached: 742238  | 
+helper-base-O2 CO_N=30000 | exit 134 | at the abort 196544 (lowest 262144); |  | panic: stack exhausted in helper.walk
+td-base-O2  | exit 0 |  | bytes 256  | td: the callback reached 256 bytes below C's sp at its first call, 256 at its second
+td-base-O0  | exit 0 |  | bytes 548  | td: the callback reached 548 bytes below C's sp at its first call, 548 at its second
+td-base-sO2  | exit 0 |  | bytes 304  | td: the callback reached 304 bytes below C's sp at its first call, 304 at its second
+td-base-sO0  | exit 0 |  | bytes 1536  | td: the callback reached 1536 bytes below C's sp at its first call, 1536 at its second
+canary4-bpp-O2 CO_N=9000 | exit 134 | at the abort 0 (lowest 0); |  | panic: stack exhausted in canary4.deep
+canary6-bpp-O2 CO_N=9000 | exit 134 | at the abort 0 (lowest 0); |  | panic: stack exhausted in canary6.deep
+canary4-bpp-O2 CO_N=10000 | exit 134 | at the abort 0 (lowest 0); |  | panic: stack exhausted in canary4.deep
+canary6-bpp-O2 CO_N=10000 | exit 134 | at the abort 0 (lowest 0); |  | panic: stack exhausted in canary6.deep
+canary4-bpp-O2 CO_N=100000 | exit 134 | at the abort 0 (lowest 0); |  | panic: stack exhausted in canary4.deep
+canary6-bpp-O2 CO_N=100000 | exit 134 | at the abort 0 (lowest 0); |  | panic: stack exhausted in canary6.deep
+canary4-bpp-O0 CO_N=1500 | exit 134 | at the abort 0 (lowest 0); |  | panic: stack exhausted in canary4.deep
+canary4-bpp-O0 CO_N=2000 | exit 134 | at the abort 0 (lowest 0); |  | panic: stack exhausted in canary4.deep
+helper-bpp-O2 CO_N=10000 | exit 134 | at the abort 0 (lowest 0); |  | panic: stack exhausted in helper.walk
+helper-bpp-O2 CO_N=30000 | exit 134 | at the abort 0 (lowest 0); |  | panic: stack exhausted in helper.walk
+td-bpp-O2  | exit 0 |  | bytes 328  | td: the callback reached 392 bytes below C's sp at its first call, 328 at its second
+td-bpp-O0  | exit 0 |  | bytes 420  | td: the callback reached 552 bytes below C's sp at its first call, 420 at its second
+td-bpp-sO2  | exit 0 |  | bytes 336  | td: the callback reached 800 bytes below C's sp at its first call, 336 at its second
+td-bpp-sO0  | exit 0 |  | bytes 3112  | td: the callback reached 4336 bytes below C's sp at its first call, 3112 at its second
+alt-bpp-O2 CO_KB=256: deepest right with 0 bytes below n=3262 (80 bytes of C's stack a level)
+alt-bpp-O2 CO_N=0: smallest room right with 0 bytes below about 1095 (wrong or refused at 1087): panic: stack exhausted: C called back alt.step with 1008 bytes
+alt-bpp-O2 CO_N=1: smallest room right with 0 bytes below about 1175 (wrong or refused at 1167): panic: stack exhausted: C called back alt.step with 1008 bytes
+alt-p1-O2 CO_KB=256: deepest right with 0 bytes below n=4077 (64 bytes of C's stack a level)
+alt-p1-O2 CO_N=0: smallest room right with 0 bytes below about 1079 (wrong or refused at 1071): panic: stack exhausted: C called back alt.step with 1008 bytes
+alt-p1-O2 CO_N=1: smallest room right with 0 bytes below about 1143 (wrong or refused at 1135): panic: stack exhausted: C called back alt.step with 1008 bytes
+alt-p1c-O2 CO_KB=256: deepest right with 0 bytes below n=5437 (48 bytes of C's stack a level)
+alt-p1c-O2 CO_N=0: smallest room right with 0 bytes below about 1079 (wrong or refused at 1071): panic: stack exhausted: C called back alt.step with 1008 bytes
+alt-p1c-O2 CO_N=1: smallest room right with 0 bytes below about 1127 (wrong or refused at 1119): panic: stack exhausted: C called back alt.step with 1008 bytes
+LX-RUN-DONE

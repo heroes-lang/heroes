@@ -1,0 +1,2 @@
+alt-bpp-sO0 CO_N=1000 | exit 134 | at the stop 368 (lowest 1072); |  | panic: stack exhausted: C called back alt.step with 3840 bytes left of the stack C was running on (a coroutine's stack, `makecontext`'s, or the thread's own), less than the 4096 this runtime keeps the
+no address read

@@ -1,0 +1,16 @@
+alt-p4r-O2 CO_N=10 | exit 0 | returned 0 (lowest 0); | depth reached: 10  | 
+alt-p4r-O2 CO_KB=256: deepest right with 0 bytes below n=4095 (64 bytes of C's stack a level)
+alt-p4r-O2 CO_N=0: smallest room right with 0 bytes below about 23 (wrong or refused at 16): co: returned: 0 bytes
+alt-p4r-O2 CO_N=1: smallest room right with 0 bytes below about 23 (wrong or refused at 16): co: returned: 0 bytes
+alt-p4-O2 CO_N=10 | exit 0 | returned 0 (lowest 0); | depth reached: 10  | 
+alt-p4-O2 CO_KB=256: deepest right with 0 bytes below n=5460 (48 bytes of C's stack a level)
+alt-p4-O2 CO_N=0: smallest room right with 0 bytes below about 23 (wrong or refused at 16): co: returned: 0 bytes
+alt-p4-O2 CO_N=1: smallest room right with 0 bytes below about 23 (wrong or refused at 16): co: returned: 0 bytes
+alt-p4r-O0 CO_N=10 | exit 0 | returned 0 (lowest 0); | depth reached: 10  | 
+alt-p4r-O0 CO_KB=256: deepest right with 0 bytes below n=1364 (192 bytes of C's stack a level)
+alt-p4r-O0 CO_N=0: smallest room right with 0 bytes below about 55 (wrong or refused at 47): co: at the stop: 0 bytes
+alt-p4r-O0 CO_N=1: smallest room right with 0 bytes below about 247 (wrong or refused at 239): co: at the stop: 0 bytes
+alt-p4-O0 CO_N=10 | exit 0 | returned 0 (lowest 0); | depth reached: 10  | 
+alt-p4-O0 CO_KB=256: deepest right with 0 bytes below n=2047 (128 bytes of C's stack a level)
+alt-p4-O0 CO_N=0: smallest room right with 0 bytes below about 55 (wrong or refused at 47): co: at the stop: 0 bytes
+alt-p4-O0 CO_N=1: smallest room right with 0 bytes below about 183 (wrong or refused at 175): co: at the stop: 0 bytes

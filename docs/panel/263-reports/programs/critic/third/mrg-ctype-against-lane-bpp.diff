@@ -1,0 +1,31 @@
+--- out/mrg-ctype.lane-bpp.hero	2026-11-27 23:57:59
++++ mrg/selfhost/emit/ctype.hero	2026-11-27 23:37:08
+@@ -106,6 +106,10 @@
+     # (b''), lane bpp's prototype, `emit/callback_door.hero`): set where the
+     # program hands C a function, and only there.
+     doors: bool
++    # The declarations whose counted slots a C jump's unwind collects (panel
++    # 258's R2, `emit/unwind_scope.hero`), empty where the program hands no C
++    # library's group a function.
++    unwound: {i64: bool}
+ 
+ # What separates a name the EMITTER invents from a name an author could
+ # write: a leading digit.
+@@ -198,6 +202,7 @@
+     empty_funcs: {i64: str} = {}
+     no_units: {str: str} = {}
+     none_large: {i64: bool} = {}
++    none_unwound: {i64: bool} = {}
+     return Names(
+         aggregates: aggregates,
+         satellites: satellites,
+@@ -211,7 +216,8 @@
+         large: none_large,
+         called: call_spelling.learned(struct_tags),
+         variants: callback_variant.learned(struct_tags),
+-        doors: false
++        doors: false,
++        unwound: none_unwound
+     )
+ 
+ # Assigns a C name to every T? the program interned. Walked over the

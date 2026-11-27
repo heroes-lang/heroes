@@ -1,0 +1,16 @@
+ofib-base-O0 n 10: ofib: 198 of the 16384 readable bytes below the stack changed, the lowest 9976 below it answer 103050 EXIT=0 
+ofib-base-O0 n 200: EXIT=139 
+ofib-base-O0 n 1200: panic: stack exhausted in ofib.deep EXIT=134 
+ofib-base-O0 n 20000: panic: stack exhausted in ofib.deep EXIT=134 
+ofib-base-O2 n 10: ofib: 200 of the 16384 readable bytes below the stack changed, the lowest 9976 below it answer 103050 EXIT=0 
+ofib-base-O2 n 200: ofib: 198 of the 16384 readable bytes below the stack changed, the lowest 9976 below it answer 435110 EXIT=0 
+ofib-base-O2 n 1200: EXIT=135 
+ofib-base-O2 n 20000: panic: stack exhausted in ofib.deep EXIT=134 
+ofib-bpp-O0 n 10: ofib: 200 of the 16384 readable bytes below the stack changed, the lowest 9976 below it answer 103050 EXIT=0 
+ofib-bpp-O0 n 200: ofib: 200 of the 16384 readable bytes below the stack changed, the lowest 9976 below it answer 435110 EXIT=0 
+ofib-bpp-O0 n 1200: panic: stack exhausted in ofib.deep EXIT=134 
+ofib-bpp-O0 n 20000: panic: stack exhausted in ofib.deep EXIT=134 
+ofib-bpp-O2 n 10: ofib: 200 of the 16384 readable bytes below the stack changed, the lowest 9976 below it answer 103050 EXIT=0 
+ofib-bpp-O2 n 200: ofib: 200 of the 16384 readable bytes below the stack changed, the lowest 9976 below it answer 435110 EXIT=0 
+ofib-bpp-O2 n 1200: ofib: 200 of the 16384 readable bytes below the stack changed, the lowest 9976 below it answer 280890 EXIT=0 
+ofib-bpp-O2 n 20000: panic: stack exhausted in ofib.deep EXIT=134 

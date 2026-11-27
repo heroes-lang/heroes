@@ -1,0 +1,38 @@
+Transcribed from this session's terminal (the container c263c, 2026-11-27 about 23:52; the command's output was read
+there and not redirected to a file; the lines below are its own, cut to the watchpoint's hit and backtrace):
+
+docker exec c263c bash -c 'cd /s/ox/w368 && CO_N=1000 timeout -k 5 200 lldb --batch -o "settings set target.disable-aslr false" -o "process handle SIGURG SIGUSR1 SIGUSR2 SIGALRM SIGSEGV SIGBUS -s false -p true -n false" -o "br set -n co_entry" -o run -o "expr -- (void*)co_block" -o "watchpoint set expression -w write -s 8 -- (char *)co_block + 262144 - 1072" -o "br delete 1" -o continue -o "bt 30" -o "register read sp" -o "expr -- (void*)((char *)co_block + 262144)" -o continue -o "bt 12" /s/ox/alt/alt-bpp-sO0'
+
+(lldb) expr -- (void*)co_block
+(void *) $0 = 0x0000ffff80d7f800
+(lldb) watchpoint set expression -w write -s 8 -- (char *)co_block + 262144 - 1072
+Watchpoint created: Watchpoint 1: addr = 0xffff80dbf3d0 size = 8 state = enabled type = w
+(lldb) continue
+==3296==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffddf69000; bottom 0xffff80dbe000; size: 0x00005d1ab000 (1562030080)
+False positive error reports may follow
+For details see https://github.com/google/sanitizers/issues/189
+Watchpoint 1 hit:
+old value: 0xa5a5a5a5a5a5a5a5
+new value: 0x005eaaaadbf42c88
+* thread #1, name = 'alt-bpp-sO0', stop reason = watchpoint 1
+    frame #0: 0x0000aaaadbf7c890 alt-bpp-sO0`__asan::TryAsanInitFromRtl() + 8
+(lldb) bt 30
+  * frame #0: 0x0000aaaadbf7c890 alt-bpp-sO0`__asan::TryAsanInitFromRtl() + 8
+    frame #1: 0x0000aaaadbf42c88 alt-bpp-sO0`___interceptor_sigaltstack + 40
+    frame #2: 0x0000aaaadbff51a8 alt-bpp-sO0`hero_cb_reserve_refused(who="alt.step", left=3840) at cbstack.c:535:9
+    frame #3: 0x0000aaaadbff2c28 alt-bpp-sO0`hero_cb_enter(x=0x0000ffff80dc0738, run=(alt-bpp-sO0`hero_cbr_h_0cb_alt_step at alt.c:252), who=0x0000aaaadc0be300) at cbstack.c:659:47
+    frame #4: 0x0000aaaadc098208 alt-bpp-sO0`h_0cb_alt_step(h0_n=267) at alt.c:260:5
+    frame #5: 0x0000aaaadc098898 alt-bpp-sO0`c_again_(n=268) at co.h:82:106
+    frame #6: 0x0000aaaadc09776c alt-bpp-sO0`c_again(n=268) at co.h:83:51
+    frame #7: 0x0000aaaadc098c48 alt-bpp-sO0`hero_ccr_h_alt_c_again(hero_p=0x0000fbff06e30090) at alt.c:199:22
+    frame #8: 0x0000aaaadbfb3d9c alt-bpp-sO0`hero_cb_door_switch + 32
+    frame #9: 0x0000aaaadc09811c alt-bpp-sO0`hero_ccd_h_alt_c_again(hero_a0=268) at alt.c:211:22
+    frame #10: 0x0000aaaadc097ebc alt-bpp-sO0`h_alt_step(h0_n=268) at alt.hero:12:133
+    frame #11: 0x0000aaaadc098328 alt-bpp-sO0`hero_cbr_h_0cb_alt_step(...) at alt.c:255:27
+    frame #12: 0x0000aaaadbff6f40 alt-bpp-sO0`hero_cb_on_r(...) at cbstack.c:609:5
+    frame #13: 0x0000aaaadbfb3d6c alt-bpp-sO0`hero_cb_switch + 32
+    ...
+(lldb) register read sp
+      sp = 0x0000ffff80dbf3d0
+(lldb) expr -- (void*)((char *)co_block + 262144)
+(void *) $2 = 0x0000ffff80dbf800
