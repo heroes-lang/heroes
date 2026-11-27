@@ -714,6 +714,63 @@ test "canvas: on the native side a drawing replayed by the system, read back pix
     assert marked(ui.snapshot(@app, widget: area).must(), x: 0, y: 0, width: 80, height: 60) == 0
     ui.close(@app).must()
 
+# Whether `e` is a crossing or a move of the pointer that none of `given`
+# is: the person's own pointer resting over the window, which the arm tells
+# as an entry, a move or an exit at its place, as it should (defect 2789:
+# under openbox on Xvfb the window opens under the pointer, at the screen's
+# centre). The case's own acts are told at the points it gave them.
+function stray(e: ui.Event, given: [ui.Event]) -> bool
+    crossing = match e
+        .pointer p            => p.phase == .enter || p.phase == .move || p.phase == .exit
+        .clicked _            => false
+        .text_changed _       => false
+        .selection_changed _  => false
+        .toggled _            => false
+        .value_changed _      => false
+        .menu_chosen _        => false
+        .close_asked _        => false
+        .timer_fired _        => false
+        .resized _            => false
+        .moved _              => false
+        .state_changed _      => false
+        .screen_changed _     => false
+        .activated _          => false
+        .sort_asked _         => false
+        .unfolded _           => false
+        .submitted _          => false
+        .message _            => false
+        .dialog_answered _    => false
+        .files_chosen _       => false
+        .print_chosen _       => false
+        .ready _              => false
+        .appearance_changed _ => false
+        .quit_asked _         => false
+        .files_dropped _      => false
+        .handed _             => false
+        .key _                => false
+        .part_acted _         => false
+
+    if !crossing
+        return false
+
+    for g in given
+        if g == e
+            return false
+
+    return true
+
+# The next event of `app` that is not `stray` of `given`, each waited for up
+# to two seconds; after sixteen strays in a row, the next event whatever it
+# is, so the case's assertion names it.
+function next_given(@app: ui.App, given: [ui.Event]) -> ui.Event
+    for _ in range(from: 0, to: 16)
+        e = ui.wait(@app, within: time.seconds(2)).must()
+
+        if !stray(e, given: given)
+            return e
+
+    return ui.wait(@app, within: time.seconds(2)).must()
+
 test "point and press_key: on the native side a press, a drag and a release sent through the window's own events, a move, an entry and an exit, and keys pressed with the area holding them, told with the point, the button, the clicks, the keys held and what each types (catalogue DR02, DR03)"
     if hero_ui.native_here() == 0
         skip_test(
@@ -741,6 +798,16 @@ test "point and press_key: on the native side a press, a drag and a release sent
         .point(widget: area, phase: .move, x: 5.5, y: 6.5, button: still, clicks: 0, primary: true, shift: false, alt: false)
         .point(widget: area, phase: .exit, x: -4.0, y: 6.5, button: still, clicks: 0, primary: false, shift: false, alt: false)
     ]
+    expected: [ui.Event] = [
+        .pointer(widget: area, phase: .down, x: 12.5, y: 7.25, button: left, clicks: 1, primary: false, shift: true, alt: false)
+        .pointer(widget: area, phase: .drag, x: 40.0, y: 30.0, button: left, clicks: 0, primary: false, shift: false, alt: false)
+        .pointer(widget: area, phase: .up, x: 40.0, y: 30.0, button: left, clicks: 1, primary: false, shift: false, alt: false)
+        .pointer(widget: area, phase: .down, x: 20.0, y: 20.0, button: .right, clicks: 2, primary: false, shift: false, alt: false)
+        .pointer(widget: area, phase: .up, x: 20.0, y: 20.0, button: .right, clicks: 1, primary: false, shift: false, alt: false)
+        .pointer(widget: area, phase: .enter, x: 1.0, y: 2.0, button: still, clicks: 0, primary: false, shift: false, alt: false)
+        .pointer(widget: area, phase: .move, x: 5.5, y: 6.5, button: still, clicks: 0, primary: true, shift: false, alt: false)
+        .pointer(widget: area, phase: .exit, x: -4.0, y: 6.5, button: still, clicks: 0, primary: false, shift: false, alt: false)
+    ]
     told: [ui.Event] @= []
 
     for step in steps
@@ -751,16 +818,10 @@ test "point and press_key: on the native side a press, a drag and a release sent
                 ui.close(@app).must()
                 skip_test(reason: e.msg)
 
-        told @ told.push(ui.wait(@app, within: time.seconds(2)).must())
+        told @ told.push(next_given(@app, given: expected))
 
-    assert told[0] == .pointer(widget: area, phase: .down, x: 12.5, y: 7.25, button: left, clicks: 1, primary: false, shift: true, alt: false)
-    assert told[1] == .pointer(widget: area, phase: .drag, x: 40.0, y: 30.0, button: left, clicks: 0, primary: false, shift: false, alt: false)
-    assert told[2] == .pointer(widget: area, phase: .up, x: 40.0, y: 30.0, button: left, clicks: 1, primary: false, shift: false, alt: false)
-    assert told[3] == .pointer(widget: area, phase: .down, x: 20.0, y: 20.0, button: .right, clicks: 2, primary: false, shift: false, alt: false)
-    assert told[4] == .pointer(widget: area, phase: .up, x: 20.0, y: 20.0, button: .right, clicks: 1, primary: false, shift: false, alt: false)
-    assert told[5] == .pointer(widget: area, phase: .enter, x: 1.0, y: 2.0, button: still, clicks: 0, primary: false, shift: false, alt: false)
-    assert told[6] == .pointer(widget: area, phase: .move, x: 5.5, y: 6.5, button: still, clicks: 0, primary: true, shift: false, alt: false)
-    assert told[7] == .pointer(widget: area, phase: .exit, x: -4.0, y: 6.5, button: still, clicks: 0, primary: false, shift: false, alt: false)
+    for i in range(from: 0, to: expected.len())
+        assert told[i] == expected[i]
 
     # A press in the area gave it the keys, which `press_key` then presses.
     ui.set_focus(@app, widget: area).must()
@@ -780,7 +841,7 @@ test "point and press_key: on the native side a press, a drag and a release sent
     # The release of a key pressed with Command held is a keyUp AppKit gives
     # no view, so five events come and not six.
     for _ in range(from: 0, to: 5)
-        pressed @ pressed.push(ui.wait(@app, within: time.seconds(2)).must())
+        pressed @ pressed.push(next_given(@app, given: []))
 
     assert pressed[0] == .key(widget: area, phase: .pressed, shortcut: ui.Shortcut(key: "a", primary: false, shift: true, alt: false), typed: "A")
     assert pressed[1] == .key(widget: area, phase: .released, shortcut: ui.Shortcut(key: "a", primary: false, shift: true, alt: false), typed: "A")

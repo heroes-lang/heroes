@@ -644,6 +644,22 @@ function floor_event(handle: hero_ui.App) -> [i64]
     none: [i64] = []
     return none
 
+# The next event of `handle` that is no move of window `window`, as
+# `floor_event` answers it. A window manager may move a window as it takes a
+# new size, a move the person's resize brought about and the arm tells: on the
+# CI's Linux legs, under openbox on Xvfb, the event after the resize of window
+# 1 to 400 by 300 was `[10, 1, 430, 347]`, a move (2026-11-27); with no
+# window manager, and on macOS and Windows, none came.
+function floor_event_past_moves(handle: hero_ui.App, window: i64) -> [i64]
+    for _ in range(from: 0, to: 8)
+        seen = floor_event(handle)
+
+        if seen.len() != 4 || seen[0] != hero_ui.HERO_UI_EVENT_MOVE || seen[1] != window
+            return seen
+
+    none: [i64] = []
+    return none
+
 test "native: every kind the layer draws made, set and read back, each act a person gives told once, and every refusal a value"
     if hero_ui.native_here() == 0
         skip_test(reason: NO_NATIVE)
@@ -796,9 +812,9 @@ test "native: every kind the layer draws made, set and read back, each act a per
     assert floor_act(app, kind: hero_ui.HERO_UI_EVENT_MENU, id: 15, value: 0, second: 0, text: "") == 0
     assert floor_event(app).slice(from: 0, to: 2) == [hero_ui.HERO_UI_EVENT_MENU, 15]
     assert floor_act(app, kind: hero_ui.HERO_UI_EVENT_RESIZE, id: 1, value: 400, second: 300, text: "") == 0
-    assert floor_event(app) == [hero_ui.HERO_UI_EVENT_RESIZE, 1, 400, 300]
+    assert floor_event_past_moves(app, window: 1) == [hero_ui.HERO_UI_EVENT_RESIZE, 1, 400, 300]
     assert floor_act(app, kind: hero_ui.HERO_UI_EVENT_CLOSE, id: 1, value: 0, second: 0, text: "") == 0
-    assert floor_event(app).slice(from: 0, to: 2) == [hero_ui.HERO_UI_EVENT_CLOSE, 1]
+    assert floor_event_past_moves(app, window: 1).slice(from: 0, to: 2) == [hero_ui.HERO_UI_EVENT_CLOSE, 1]
 
     # What a person cannot do makes no event: a button greyed out.
     assert hero_ui.set_enabled(app, id: 3, on: 0) == 0
