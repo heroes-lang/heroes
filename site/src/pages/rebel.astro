@@ -6,6 +6,6 @@ import { renderRebelPage } from '../lib/rebel-page.ts';
 // rebel/examples/README.md § A1, each opening its reference (`rebel-page.ts`).
 const page = await renderRebelPage('en');
 ---
-<BaseLayout url={page.url} title={page.title} description={page.description}>
+<BaseLayout url={page.url} title={page.title} description={page.description} current="rebel">
 <Fragment set:html={page.html} />
 </BaseLayout>
