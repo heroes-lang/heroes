@@ -45,10 +45,29 @@ static bool hero_jmp_switch_target(HeroSignalStack *own, const ucontext_t *ucp, 
     return true;
 }
 
-static _Noreturn void hero_jmp_go(hero_jmp_jump_fn real, struct __jmp_buf_tag *env, int val) {
+/* Under AddressSanitizer, the shadow of the frames a jump or a `setcontext`
+ * leaves, cleared where it can be and never by asking ASan on a stack it does
+ * not know (`parts/rebind_jump.c`'s `hero_rebind_leaving`, the reason): on
+ * the thread's own stack and the alternate stack `__asan_handle_no_return`;
+ * on a range `makecontext` was handed, from here to the range's top, by this
+ * runtime; elsewhere nothing. Until defect d-lane-sig-family-8 every jump
+ * asked ASan, and on a coroutine's stack ASan wrote its warning into a correct
+ * program's stderr. */
+__attribute__((noinline)) static void hero_jmp_leaving(void) {
 #if defined(HERO_JMP_ASAN)
-    __asan_handle_no_return();
+    uintptr_t here = (uintptr_t)__builtin_frame_address(0), lo = 0, hi = 0, al = 0, ah = 0;
+    HeroSignalStack *own = hero_sig_own();
+    bool thread = own != NULL && here >= own->lo && here < own->hi;
+    if (!thread && hero_sig_known_range(here, &lo, &hi)) {
+        __asan_unpoison_memory_region((const void *)here, (size_t)(hi - here));
+    } else if (own == NULL || thread || (hero_sig_alt_now(&al, &ah) && here >= al && here < ah)) {
+        __asan_handle_no_return();
+    }
 #endif
+}
+
+static _Noreturn void hero_jmp_go(hero_jmp_jump_fn real, struct __jmp_buf_tag *env, int val) {
+    hero_jmp_leaving();
     real(env, val);
     __builtin_unreachable();
 }
@@ -207,13 +226,15 @@ void __longjmp_chk(struct __jmp_buf_tag env[1], int val) {
 }
 
 /* A switch made from this frame leaves the range it lies on, if a swap into
- * that range waits to return (`sigentries.c`, the life of a range). */
-/* No redzones in this frame (defect 2853, `parts/rebind_jump.c`'s reason):
- * what it judges runs in `hero_jmp_set`'s, which returns before the switch. */
+ * that range waits to return (`sigentries.c`, the life of a range). No
+ * redzones in this frame (defect 2853, `parts/rebind_jump.c`'s reason): what
+ * it judges runs in `hero_jmp_set`'s, which returns before the switch, and
+ * what the switch leaves is cleared as a jump's is (`hero_jmp_leaving`). */
 __attribute__((no_sanitize("address"))) int(setcontext)(const ucontext_t *ucp) {
     hero_jmp_find();
     hero_sig_range_left(hero_jmp_below());
     hero_jmp_set(ucp);
+    hero_jmp_leaving();
     return atomic_load_explicit(&hero_ctx_real_set, memory_order_relaxed)(ucp);
 }
 

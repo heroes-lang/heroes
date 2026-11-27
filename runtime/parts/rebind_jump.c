@@ -23,11 +23,41 @@
  * on this Mac). So `setcontext`, the three jumps and the swap (whose context
  * may be abandoned) are `no_sanitize("address")`, and what they judge runs in
  * frames of its own (`hero_rebind_set`, `hero_rebind_jump`, never inlined)
- * that return, clearing theirs, before the switch. Step 199e called
- * `__asan_handle_no_return` there instead, and ASan wrote its warning that it
- * ignored the call on a stack it does not know, a coroutine's, into the
- * stderr of a correct program (`fixedbugs-2702-a-handler-left-by-setcontext-
- * to-its-coroutine-runs`, the CI's Darwin `--sanitize` leg on 77eb38534). */
+ * that return, clearing theirs, before the switch.
+ *
+ * AND THE SHADOW OF THE FRAMES THE SWITCH LEAVES IS CLEARED WHERE IT CAN BE,
+ * NEVER BY ASKING ASAN ON A STACK IT DOES NOT KNOW (`hero_rebind_leaving`):
+ * on the thread's own stack and the alternate stack, which ASan knows,
+ * `__asan_handle_no_return` clears from the leaving frame to the stack's top,
+ * as ASan's own interceptors do; on a range `makecontext` was handed, which
+ * ASan was never told of, this runtime clears from the leaving frame to the
+ * range's top itself; on a stack neither knows, nothing is cleared, as ASan
+ * would clear nothing there. Asked on a coroutine's stack, ASan clears nothing
+ * and writes `WARNING: ASan is ignoring requested __asan_handle_no_return`
+ * into a correct program's stderr: from step 199e's call in `setcontext`
+ * (defect d-lane-sig-family-7, the CI's Darwin `--sanitize` leg on 77eb38534)
+ * and from ASan's interceptor of each jump (d-lane-sig-family-8), which is
+ * why the jumps are the C library's own (`rebind_image.c`). */
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define HERO_REBIND_ASAN 1
+void __asan_handle_no_return(void);
+void __asan_unpoison_memory_region(void const volatile *addr, size_t size);
+#endif
+#endif
+
+__attribute__((noinline)) static void hero_rebind_leaving(void) {
+#if defined(HERO_REBIND_ASAN)
+    uintptr_t here = (uintptr_t)__builtin_frame_address(0), lo = 0, hi = 0, al = 0, ah = 0;
+    HeroSignalStack *own = hero_rebind_own();
+    bool thread = own != NULL && here >= own->lo && here < own->hi;
+    if (!thread && hero_rebind_known_range(here, &lo, &hi)) {
+        __asan_unpoison_memory_region((const void *)here, (size_t)(hi - here));
+    } else if (own == NULL || thread || (hero_rebind_alt_now(&al, &ah) && here >= al && here < ah)) {
+        __asan_handle_no_return();
+    }
+#endif
+}
 
 static uintptr_t hero_rebind_jmp_sp(const void *env) {
     return hero_rebind_strip_d(hero_rebind_word((const unsigned char *)env, HERO_REBIND_SP_WORD * 8) ^
@@ -269,18 +299,21 @@ __attribute__((noinline, no_sanitize("address"))) static int hero_rebind_swapcon
 
 __attribute__((noreturn, no_sanitize("address"))) static void hero_rebind_siglongjmp(int *env, int value) {
     hero_rebind_jump(env);
+    hero_rebind_leaving();
     atomic_load_explicit(&hero_rebind_real_siglongjmp, memory_order_relaxed)(env, value);
     __builtin_unreachable();
 }
 
 __attribute__((noreturn, no_sanitize("address"))) static void hero_rebind_longjmp(int *env, int value) {
     hero_rebind_jump(env);
+    hero_rebind_leaving();
     atomic_load_explicit(&hero_rebind_real_longjmp, memory_order_relaxed)(env, value);
     __builtin_unreachable();
 }
 
 __attribute__((noreturn, no_sanitize("address"))) static void hero_rebind__longjmp(int *env, int value) {
     hero_rebind_jump(env);
+    hero_rebind_leaving();
     atomic_load_explicit(&hero_rebind_real__longjmp, memory_order_relaxed)(env, value);
     __builtin_unreachable();
 }
@@ -290,6 +323,7 @@ __attribute__((noreturn, no_sanitize("address"))) static void hero_rebind__longj
 __attribute__((no_sanitize("address"))) static int hero_rebind_setcontext(const void *context) {
     hero_rebind_range_left(hero_rebind_below());
     hero_rebind_set(context);
+    hero_rebind_leaving();
     return atomic_load_explicit(&hero_rebind_real_setcontext, memory_order_relaxed)(context);
 }
 

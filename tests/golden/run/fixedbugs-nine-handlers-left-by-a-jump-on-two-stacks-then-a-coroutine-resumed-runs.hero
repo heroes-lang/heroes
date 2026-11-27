@@ -1,0 +1,24 @@
+# Fixed 2026-11-27, defect d-lane-sig-family-4, lane sig-family (step 199h):
+# panel 262's compiler-engineer's `wide`. A coroutine on an `mmap`'d stack
+# runs the callback and yields; C then leaves handlers by `siglongjmp`, one
+# on a static alternate stack and eight on the thread's own, nine spans of
+# left frames;
+# then C resumes the coroutine at the save point it made before any handler
+# ran, and it calls the callback. No handler's frames are jumped back into.
+# Symptom: before, with nine spans or more, exit 134, `panic: wide.answer was
+# called after C jumped into stack frames the thread had already left`,
+# 6 of 6, plain and `--sanitize`, this Mac and Linux arm64.
+# Cause: a full record of left frames widened its first span to the hull of
+# two stacks, and a landing on a stack mapped between them read as inside.
+# Fix: a full record merges spans of one stack alone, nearest first, and
+# holds sixteen; where every span lies on a stack of its own, a landing below
+# the jumping frame on its stack reads as a re-entry, as before step 199d.
+extern "fixedbugs-handlers-left-by-a-jump-past-the-record-of-left-frames.h"
+    function wi_run(n: i32, cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n
+
+function main()
+    print("result (102 is right): ", wi_run(n: 8, cb: answer))

@@ -253,10 +253,40 @@ static void hero_rebind_image(const struct mach_header *header, intptr_t slide) 
 
 /* Priority 0, before every constructor of the program's own: the key made,
  * the C library's own taken (by `RTLD_DEFAULT`, so under an interposer its
- * wrapper, which reaches the C library), the images loaded now measured for
+ * wrapper, which reaches the C library; under AddressSanitizer the three jumps
+ * the C library's own behind ASan's wrappers, `hero_rebind_uninterposed`), the
+ * images loaded now measured for
  * route A, the decode calibrated (which decides which save points the table
  * rewrites), every image rewritten now and every one dyld loads later, and
  * every handler already installed trampolined. */
+#if defined(HERO_REBIND_ASAN)
+/* The C library's own function behind an interposer's wrapper `f`, or `f`
+ * where no loaded image interposes it. dyld binds every other image's slot for
+ * a name an interposing image replaces to the replacement, and `dlsym`
+ * answers the same, whatever handle it is asked with; the interposer's own
+ * `__interpose` tuples, {replacement, replaced}, are bound to the original
+ * (measured on this Mac, 2026-11-27: ASan's `wrap__longjmp`, `wrap_longjmp`
+ * and `wrap_siglongjmp`, in its `__DATA`, each beside libsystem_platform's
+ * own). A jump through ASan's wrapper asks `__asan_handle_no_return` on every
+ * stack, a coroutine's included, where ASan clears nothing and writes its
+ * warning into the program's stderr (defect d-lane-sig-family-8); this
+ * runtime clears what the jump leaves itself (`hero_rebind_leaving`). */
+static void *hero_rebind_uninterposed(void *f) {
+    static const char *const segments[2] = {"__DATA", "__DATA_CONST"};
+    for (uint32_t i = 0; f != NULL && i < _dyld_image_count(); i += 1) {
+        const struct mach_header_64 *h = (const struct mach_header_64 *)_dyld_get_image_header(i);
+        for (int s = 0; s < 2; s += 1) {
+            unsigned long size = 0;
+            void *const *t = (void *const *)getsectiondata(h, segments[s], "__interpose", &size);
+            for (unsigned long k = 0; t != NULL && k + 1 < size / sizeof(void *); k += 2) {
+                if (t[k] == f && t[k + 1] != NULL) return t[k + 1];
+            }
+        }
+    }
+    return f;
+}
+#endif
+
 __attribute__((constructor(0))) static void hero_rebind_start(void) {
     pthread_key_t key;
     if (pthread_key_create(&key, NULL) == 0) {
@@ -273,6 +303,14 @@ __attribute__((constructor(0))) static void hero_rebind_start(void) {
     atomic_store(&hero_rebind_real_siglongjmp, (hero_rebind_jump_fn)dlsym(RTLD_DEFAULT, "siglongjmp"));
     atomic_store(&hero_rebind_real_longjmp, (hero_rebind_jump_fn)dlsym(RTLD_DEFAULT, "longjmp"));
     atomic_store(&hero_rebind_real__longjmp, (hero_rebind_jump_fn)dlsym(RTLD_DEFAULT, "_longjmp"));
+#if defined(HERO_REBIND_ASAN)
+    atomic_store(&hero_rebind_real_siglongjmp,
+                 (hero_rebind_jump_fn)hero_rebind_uninterposed((void *)atomic_load(&hero_rebind_real_siglongjmp)));
+    atomic_store(&hero_rebind_real_longjmp,
+                 (hero_rebind_jump_fn)hero_rebind_uninterposed((void *)atomic_load(&hero_rebind_real_longjmp)));
+    atomic_store(&hero_rebind_real__longjmp,
+                 (hero_rebind_jump_fn)hero_rebind_uninterposed((void *)atomic_load(&hero_rebind_real__longjmp)));
+#endif
     atomic_store(&hero_rebind_real_setjmp, (hero_rebind_save_fn)dlsym(RTLD_DEFAULT, "setjmp"));
     atomic_store(&hero_rebind_real__setjmp, (hero_rebind_save_fn)dlsym(RTLD_DEFAULT, "_setjmp"));
     atomic_store(&hero_rebind_real_sigsetjmp, (hero_rebind_sigsave_fn)dlsym(RTLD_DEFAULT, "sigsetjmp"));
