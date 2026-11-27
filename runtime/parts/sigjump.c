@@ -46,8 +46,9 @@
  * glibc whose layout moved, a build forced to it by
  * `HERO_JMP_FORCE_UNCALIBRATED`): the save points record which buffer they
  * filled and a frame just below the stack pointer they saved, and the
- * fingerprint that validates a record is read ONLY of a buffer the runtime
- * can prove lives (`sigjump_record.c`). A trusted record's frame is judged by
+ * fingerprint that validates a record is copied by the kernel, so a buffer
+ * given back since is an answer and never a fault (`sigjump_record.c`, defects
+ * 2679 and 2867). A trusted record's frame is judged by
  * `sigentries.c`'s rules 4 to 7 as route C's decoded target is (defect 2745);
  * a jump to a buffer with no trusted record keeps every entry: a told refusal
  * (R1), never Heroes code running inside a signal.

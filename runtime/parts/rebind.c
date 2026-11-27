@@ -62,8 +62,10 @@
  *    apart, each falling to route A alone.
  * 3. WHERE A FAMILY DOES NOT VERIFY, ROUTE A for it: its save points are
  *    rewritten and keep a record (panel 251's route J), whose fingerprint is
- *    read only of a buffer on this thread's stack, the alternate stack it runs
- *    on, or a writable segment of an image loaded before `main`. Rules 4 to 7
+ *    copied by the kernel wherever the buffer is mapped, so a buffer given
+ *    back since is an answer and never a fault (defects 2679 and 2867; until
+ *    2867 it was read only on this thread's stack, the alternate stack it runs
+ *    on, or a writable segment of an image loaded before `main`). Rules 4 to 7
  *    bind it too: a trusted record holds a frame just below the stack pointer
  *    its save wrote, judged as a decoded target is, and where contexts fall
  *    to it every range `makecontext` hands out is held (defect 2745).

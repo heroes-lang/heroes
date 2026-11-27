@@ -17,14 +17,20 @@
  * the save (0 for none), and a frame just below the stack pointer the save
  * wrote (`hero_jmp_below`: the frame of a function the save point calls,
  * which lies on the same stack as its caller and below it). A record is
- * VALIDATED by a fingerprint of the buffer's bytes, and the fingerprint is
- * read ONLY of a buffer the runtime can prove lives: on the thread's own
- * stack, its current alternate stack, or a writable segment of an image
- * loaded before any library's constructor ran (read at `.preinit_array`, so
- * none of them can be unloaded). A pair whose buffer may have been given back
- * is never read and never trusted (defect 2679), and a jump to a buffer with
- * no trusted record keeps every entry and marks them `unsure`: the told
- * refusal.
+ * VALIDATED by a fingerprint of the buffer's bytes, copied by the kernel
+ * wherever the buffer is mapped and never loaded by this thread, so a buffer
+ * the program has given back since (freed, unmapped, its library closed) is
+ * an answer and never a fault or a read of freed memory (defect 2679): a
+ * copy the kernel refuses is UNREAD, and a buffer given back and filled again
+ * by anything but the save its record names reads another fingerprint. A jump
+ * to a buffer with no trusted record keeps every entry and marks them
+ * `unsure`: the told refusal. Until defect 2867 the fingerprint was read only
+ * of a buffer the runtime could prove lives (the thread's own stack, its
+ * alternate stack, an image loaded before any constructor), the rule of the
+ * days its bytes were loaded, so a context or a `jmp_buf` on the heap was
+ * never trusted, and a correct program leaving its handler by a
+ * `setcontext` to its runner's heap context (`b_0`, `cs_0`) was refused in
+ * words naming a copy, a refill or a full table, causes it had none of.
  *
  * WHERE THE RECORD IS TRUSTED the jump lands where the save left it, so its
  * frame is judged by `sigentries.c`'s rules 4 to 7 as route C judges a
@@ -46,62 +52,6 @@
  * the stack pointer the jump itself will install, by `sigentries.c`'s rules. */
 
 #if !defined(_WIN32) && !defined(__APPLE__)
-
-
-/* The writable segments of the images loaded before any library's
- * constructor ran: the executable, its libraries and what `LD_PRELOAD` names.
- * None of them is ever unloaded. Written once at `.preinit_array`, before
- * any thread, and only read after. */
-#define HERO_JMP_IMAGES 64
-static _Atomic uintptr_t hero_jmp_image_lo[HERO_JMP_IMAGES];
-static _Atomic uintptr_t hero_jmp_image_hi[HERO_JMP_IMAGES];
-static _Atomic int hero_jmp_images = 0;
-
-static int hero_jmp_image(struct dl_phdr_info *info, size_t size, void *data) {
-    (void)size;
-    (void)data;
-    for (int i = 0; i < info->dlpi_phnum; i += 1) {
-        const ElfW(Phdr) *ph = &info->dlpi_phdr[i];
-        if (ph->p_type != PT_LOAD || (ph->p_flags & PF_W) == 0) continue;
-        int n = atomic_load_explicit(&hero_jmp_images, memory_order_relaxed);
-        if (n == HERO_JMP_IMAGES) return 1;
-        uintptr_t lo = (uintptr_t)info->dlpi_addr + (uintptr_t)ph->p_vaddr;
-        atomic_store_explicit(&hero_jmp_image_lo[n], lo, memory_order_relaxed);
-        atomic_store_explicit(&hero_jmp_image_hi[n], lo + (uintptr_t)ph->p_memsz, memory_order_relaxed);
-        atomic_store_explicit(&hero_jmp_images, n + 1, memory_order_release);
-    }
-    return 0;
-}
-
-static void hero_jmp_images_read(void) {
-#if defined(HERO_JMP_ASAN)
-    __asan_init();
-#endif
-    dl_iterate_phdr(hero_jmp_image, NULL);
-}
-__attribute__((section(".preinit_array"), used)) static void (*hero_jmp_images_early)(void) = hero_jmp_images_read;
-
-/* Whether `size` bytes at `at` lie wholly inside memory this thread cannot
- * have given back: its own stack, its current alternate stack, or an image
- * loaded before any constructor. */
-static bool hero_jmp_lives(const HeroSignalStack *own, uintptr_t at, uint32_t size) {
-    uintptr_t end = at + size;
-    if (end < at) return false;
-    if (at >= own->lo && end <= own->hi) return true;
-    int n = atomic_load_explicit(&hero_jmp_images, memory_order_acquire);
-    for (int i = 0; i < n; i += 1) {
-        if (at >= atomic_load_explicit(&hero_jmp_image_lo[i], memory_order_relaxed) &&
-            end <= atomic_load_explicit(&hero_jmp_image_hi[i], memory_order_relaxed)) {
-            return true;
-        }
-    }
-    stack_t alt;
-    if (sigaltstack(NULL, &alt) == 0 && (alt.ss_flags & SS_DISABLE) == 0) {
-        uintptr_t lo = (uintptr_t)alt.ss_sp;
-        if (at >= lo && end <= lo + alt.ss_size) return true;
-    }
-    return false;
-}
 
 /* The stack-pointer word of the context at `context`, copied by the kernel
  * wherever it is mapped, so a context given back since is an answer and never
@@ -141,12 +91,14 @@ static bool hero_jmp_context_moved(HeroSignalStack *own, const ucontext_t *ucp, 
 /* FNV-1a over the buffer's bytes, odd, so 0 can mean not yet read and
  * `HERO_JMP_UNREAD` a buffer that could not be read. The bytes are copied by
  * the kernel (`process_vm_readv` of this process), never loaded by this
- * thread: memory that provably lives may still have been made unreadable by
- * the program since the save (a static page `mprotect`ed to none, or the
- * registered alternate stack unmapped: a SIGSEGV here at the next save point,
- * measured on Linux arm64 with `HERO_JMP_FORCE_UNCALIBRATED` 3, defect
- * d-lane-d2745-1's class), and a copy the kernel refuses is an answer,
- * UNREAD, never a fault.
+ * thread: the buffer may have been given back or made unreadable by the
+ * program since the save (a heap block freed, a page unmapped or `mprotect`ed
+ * to none, the registered alternate stack unmapped: a SIGSEGV or a
+ * heap-use-after-free here at the next save point when the bytes were loaded,
+ * measured on Linux arm64 with `HERO_JMP_FORCE_UNCALIBRATED` 3, defects 2679
+ * and d-lane-d2745-1), and a copy the kernel refuses is an answer, UNREAD,
+ * never a fault. Nor is it the program's access, so AddressSanitizer does not
+ * see it.
  * A system refusing the call itself (a seccomp filter) reads every buffer as
  * UNREAD: a told refusal at its jump. */
 #define HERO_JMP_UNREAD 2
@@ -162,9 +114,9 @@ static uint64_t hero_jmp_fingerprint(uintptr_t buf, uint32_t size) {
     return h | 1;
 }
 
-/* Every pair not yet read, but `except`'s: read now where its buffer
- * provably lives, its save having returned; marked unread where it may not,
- * its bytes never touched, so that no jump trusts it and its handler serial
+/* Every pair not yet read, but `except`'s: read now, its save having
+ * returned, by the kernel wherever its buffer is mapped; one the kernel
+ * refuses is marked unread, so that no jump trusts it and its handler serial
  * still tells a jump back into a handler left since (as Darwin's record does,
  * `parts/rebind_record.c`; defect 2745: dropped, a context the handler saved
  * on the heap was forgotten, and the jump back into the handler from its
@@ -174,11 +126,7 @@ static void hero_jmp_read_pending(HeroSignalStack *own, uintptr_t except) {
     for (int i = 0; i < HERO_SIG_JUMPS; i += 1) {
         uintptr_t b = own->jump_buf[i];
         if (b == 0 || b == except || own->jump_print[i] != 0) continue;
-        if (hero_jmp_lives(own, b, own->jump_size[i])) {
-            own->jump_print[i] = hero_jmp_fingerprint(b, own->jump_size[i]);
-        } else {
-            own->jump_print[i] = HERO_JMP_UNREAD;
-        }
+        own->jump_print[i] = hero_jmp_fingerprint(b, own->jump_size[i]);
     }
 }
 
@@ -232,7 +180,7 @@ static void hero_jmp_forget(const void *buf) {
 }
 
 /* Under route A at a handler's begin (`parts/siginstall.c`'s wrapper): every
- * pending buffer read where it provably lives, so a refill inside the handler
+ * pending buffer read by the kernel, so a refill inside the handler
  * by a save this file never saw, with no save or jump between, is told by its
  * bytes (`x_unseen0` ran inside the signal under panel 255's R1 and A). */
 static void hero_jmp_observe(HeroSignalStack *own) {
