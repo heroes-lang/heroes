@@ -1,0 +1,153 @@
+# The C of the callbacks a refused round learned the header's integer words
+# of (design.md §4.19; spec § 13; lane p261-beside, 2026-11-26;
+# `emit/callback_variant.hero` says why): each function's VARIANT THUNK,
+# beside its thunk, and the table each crossing goes through, beside the
+# thunks' own.
+#
+# **A variant is its thunk with the header's words**: the same body
+# (`callback_thunk.written`), its signature the header's, and each argument
+# and the result handed across with a cast between the two integers, which
+# C converts exactly where they have one width and one sign, as the probe
+# asks of C at the binding's line. Written only for a function whose thunk
+# spells the callback's type as the variant's own: every position by value,
+# each the type the function type's typedef spells. A program that learned
+# nothing writes none of this, so its C is what it was.
+
+use ast
+use check/state
+use emit/callback_guard
+use emit/callback_thunk
+use emit/callback_variant
+use emit/ctype
+use emit/large_value
+use emit/signature
+use emit/writer
+use ir/containers
+use source
+
+# The function's result and parameters as its thunk spells them, where each
+# crosses by value: none for a function with an `@` or `lent` parameter or a
+# value kept off the frame, which no variant serves.
+function own_base(names: ctype.Names, c: state.Checked, f: containers.Function) -> [str]?
+    if names.large[f.result].default(false)
+        return fail(code: "none", msg: "a result kept off the frame")
+    out: [str] @= [ctype.c_result(names, c: c, ty: f.result)]
+
+    for slot_id in f.params
+        declared = f.slots[slot_id]
+
+        if callback_thunk.is_mutable(declared) || names.large[declared.ty].default(false)
+            return fail(code: "none", msg: "a parameter that is a place")
+        one = ctype.c_type(names, c: c, ty: declared.ty)?
+        out @ out.push(one)
+
+    return ok(out)
+
+# The variants the rounds learned, each once, by their tag's order.
+function distinct(names: ctype.Names) -> [callback_variant.Variant]
+    by_tag: {str: callback_variant.Variant} @= {}
+
+    # ORDER: by the site's key, as `sort` orders a `str`, so the variant each
+    # tag keeps is a function of the table.
+    for at in sort(keys(names.variants))
+        v = names.variants[at].must()
+        tag = callback_variant.tag(v)
+
+        if by_tag[tag].is_err()
+            by_tag[tag] @ v
+
+    out: [callback_variant.Variant] @= []
+
+    # ORDER: by the tag, as `sort` orders a `str`, so two emissions of one
+    # program write the variants in one order.
+    for tag in sort(keys(by_tag))
+        out @ out.push(by_tag[tag].must())
+
+    return out
+
+# Whether `f`'s thunk spells the variant's own callback type.
+function serves(names: ctype.Names, c: state.Checked, f: containers.Function, v: callback_variant.Variant) -> bool
+    base = own_base(names, c, f)
+    return !base.is_err() && base.must() == v.base
+
+# Each variant thunk of `f`, beside its thunk (`emit/body.hero`).
+function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, guarded_decls: {i64: bool})
+    if guarded_decls[f.decl].is_err() || !large_value.crosses(names, f)
+        return
+    real = signature.as_value(f, c, names, s, decls)
+
+    for v in distinct(names)
+        if serves(names, c, f, v: v)
+            callback_thunk.written(
+                @w,
+                c,
+                names,
+                s,
+                decls,
+                f,
+                head: head(f, v: v, real: real),
+                casts: casts(v),
+                back: back(v)
+            )
+
+# The variant thunk's signature, its parameters named as the thunk's.
+function head(f: containers.Function, v: callback_variant.Variant, real: str) -> str
+    named: [str] @= []
+
+    for slot_id in f.params
+        named @ named.push(callback_thunk.forwarded_name(f, slot_id: slot_id))
+
+    return callback_variant.header_of(v, thunk: callback_thunk.thunk_name(real), names: named)
+
+# The cast before each argument the variant hands the function: to the
+# function's own integer where the header's word differs, none elsewhere.
+function casts(v: callback_variant.Variant) -> [str]
+    out: [str] @= []
+
+    for i in range(from: 1, to: v.words.len())
+        if v.words[i] != v.base[i]
+            out @ out.push("(" + v.base[i] + ")")
+        else
+            out @ out.push("")
+
+    return out
+
+function back(v: callback_variant.Variant) -> str
+    if v.words[0] != v.base[0]
+        return "(" + v.words[0] + ")"
+    return ""
+
+# Each variant's prototypes and table, once per unit that can hand C a
+# function, after the thunks' own (`callback_thunk.lookup_table`).
+function tables(@w: writer.Writer, p: containers.Program, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], callbacks: callback_guard.Callbacks)
+    if !callbacks.opened
+        return
+
+    for v in distinct(names)
+        served: [str] @= []
+        thunks: [str] @= []
+
+        for at in callbacks.functions
+            f = p.functions[at]
+
+            if callback_thunk.is_ordinary(f) && large_value.crosses(names, f) && serves(names, c, f, v: v)
+                real = signature.as_value(f, c, names, s, decls)
+                writer.line(@w, text: head(f, v: v, real: real) + ";")
+                served @ served.push(real)
+                thunks @ thunks.push(callback_variant.thunk_of(v, thunk: callback_thunk.thunk_name(real)))
+
+        writer.line(
+            @w,
+            text: "__attribute__((__unused__)) static void (*" + callback_variant.table_of(v) + "(void (*hero_f)(void)))(void) {"
+        )
+        writer.line(@w, text: "    hero_signal_learn();")
+
+        for i in range(from: 0, to: served.len())
+            writer.line(
+                @w,
+                text: "    if (hero_f == (void (*)(void))" + served[i] + ") return (void (*)(void))" + thunks[i] + ";"
+            )
+
+        writer.line(@w, text: "    return hero_f;")
+        writer.line(@w, text: "}")
+        writer.blank(@w)

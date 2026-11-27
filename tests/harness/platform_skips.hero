@@ -470,6 +470,13 @@ constant CALLED_PAST_DARWINS_MACROS: str
 constant LIBRARY_WORDS_ARE_DARWINS: str
     "its emission saves around `heroes_standard.h` the words of its header that the C library read after the groups reads, asked of that library: 37 on this Mac, Darwin's `_mbstateL`, the `_opaque_pthread_*` tags, `exception`, `arg1`, `retval`, `availability`, `macos` and `ios` among them, where glibc's, in the Linux arm64 image (Debian clang 22.1.8, glibc 2.41, 2026-11-26), are 44, `dremf`, `isinff`, `j0f`, `significandl` and `sincos` among them and none of Darwin's own; blessed on Darwin and compared there, its program built, run and emitted twice on every platform"
 
+# **And an emission that hands C a callback in the header's integer words**
+# (lane p261-beside, 2026-11-26): a round that clang refuses learns a
+# callback's integer words where the header writes them otherwise than the
+# platform's `int64_t` and `uint64_t`, so each platform learns its own.
+constant CALLBACK_WORDS_ARE_THE_PLATFORMS: str
+    "its emission hands C each callback through a thunk of the header's own integer words where they are not the platform's `int64_t` and `uint64_t`, and those are the platform's: on this Mac `size_t` is `unsigned long` where `uint64_t` is `unsigned long long`, so its callback crosses through a variant and the others plainly, and in the Linux arm64 image `long long` and `unsigned long long` are not `int64_t` and `uint64_t`, which are `long` and `unsigned long` there, so three callbacks cross through variants and `size_t`'s plainly (lane p261-beside, 2026-11-26); blessed on Darwin and compared there, its program built, run and emitted twice on every platform"
+
 # **A padding table names no bit-field's byte since defect 2383**: C finds the
 # bytes each named bit-field reaches before `main`, so a case whose table
 # covers bit-fields is one text on every target and compared everywhere.
@@ -491,6 +498,7 @@ function darwin_emissions() -> [Skip]
         Skip(name: "examples/ctime/main", why: MEMBERS_ARE_DARWINS)
         Skip(name: "run/fixedbugs-2511-the-signal-set-functions-are-called-past-darwins-macros", why: CALLED_PAST_DARWINS_MACROS)
         Skip(name: "run/fixedbugs-a-header-s-macro-over-a-word-of-c-s-library-builds-where-the-program-binds-none", why: LIBRARY_WORDS_ARE_DARWINS)
+        Skip(name: "run/ffi-a-callback-takes-the-headers-own-integer-words", why: CALLBACK_WORDS_ARE_THE_PLATFORMS)
     ]
 
 # Why the emission labelled `label` is not compared on this machine: one of
@@ -710,7 +718,9 @@ test "every emission compared on Darwin alone names a blessed file and a case th
         else
             assert shell.exists("tests/golden/" + one.name + ".hero")
 
-    assert darwin_emissions().len() == 10
+    # 10 -> 11 on 2026-11-26, lane p261-beside: a callback handed C in the
+    # header's integer words, which each platform learns as its own.
+    assert darwin_emissions().len() == 11
 
     # No case is compared on Darwin alone for where a bit-field lies (defect
     # 2383): the emission of panel 223's case names no byte of one.

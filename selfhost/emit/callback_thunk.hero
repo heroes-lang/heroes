@@ -49,6 +49,7 @@ use check/table
 use checker
 use cli/strings
 use emit/callback_guard
+use emit/callback_variant
 use emit/ctype
 use emit/large_value
 use emit/mangle
@@ -97,16 +98,43 @@ function definition(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: 
     if guarded_decls[f.decl].is_err() || !large_value.crosses(names, f)
         return
     real = signature.as_value(f, c, names, s, decls)
+    written(@w, c, names, s, decls, f, head: header(f, c, names, s, decls), casts: [], back: "")
+
+    # **THE THUNK IS CHECKED AGAINST ITS VALUE** where the two could differ
+    # (panel 233's ffi-pragmatist, veto (a); panel 236): C calls the thunk by
+    # the function type's typedef, which the probe checks against the header,
+    # and the value is assigned to that typedef where its address is taken,
+    # which clang checks; what nothing checked is the thunk itself, reached
+    # through `hero_callback_of`'s casts. A thunk written by the function's own
+    # convention passes clang in silence and C writes the result through an
+    # integer argument (that seat's R7c, exit 134). One line closes the chain.
+    if large_value.converts(names, f)
+        writer.line(
+            @w,
+            text: "_Static_assert(__builtin_types_compatible_p(__typeof__(&" + thunk_name(real) + "), __typeof__(&" + real + ")), \"heroes-callback " + source.component_at(s, f.span.start) + "." + f.name + ": the thunk C is handed has its value's type\");"
+        )
+
+# One thunk's text under `head`, its signature: each argument handed on with
+# its cast in `casts` before it, none where the list holds none, and the
+# result returned with `back` before it, a variant's casts between two
+# integers of one width (`emit/callback_variant.hero`) and nothing for the
+# thunk itself.
+function written(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, head: str, casts: [str], back: str)
+    real = signature.as_value(f, c, names, s, decls)
     result = ctype.c_result(names, c: c, ty: f.result)
     who = source.component_at(s, f.span.start) + "." + f.name
     forwarded: [str] @= []
 
     for slot_id in f.params
-        forwarded @ forwarded.push(forwarded_name(f, slot_id: slot_id))
+        cast: str @= ""
+
+        if forwarded.len() < casts.len()
+            cast @ casts[forwarded.len()]
+        forwarded @ forwarded.push(cast + forwarded_name(f, slot_id: slot_id))
 
     writer.blank(@w)
     writer.at_generated(@w)
-    writer.line(@w, text: OWN_FRAME + header(f, c, names, s, decls) + " {")
+    writer.line(@w, text: OWN_FRAME + head + " {")
     writer.line(@w, text: "    " + in_signal(who))
 
     for slot_id in f.params
@@ -142,22 +170,8 @@ function definition(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: 
                 text: "    hero_handle_alive(hero_result" + suffix + ", \"the result of the callback `" + who + "`" + inside + "\");"
             )
 
-        writer.line(@w, text: "    return hero_result;")
+        writer.line(@w, text: "    return " + back + "hero_result;")
     writer.line(@w, text: "}")
-
-    # **THE THUNK IS CHECKED AGAINST ITS VALUE** where the two could differ
-    # (panel 233's ffi-pragmatist, veto (a); panel 236): C calls the thunk by
-    # the function type's typedef, which the probe checks against the header,
-    # and the value is assigned to that typedef where its address is taken,
-    # which clang checks; what nothing checked is the thunk itself, reached
-    # through `hero_callback_of`'s casts. A thunk written by the function's own
-    # convention passes clang in silence and C writes the result through an
-    # integer argument (that seat's R7c, exit 134). One line closes the chain.
-    if large_value.converts(names, f)
-        writer.line(
-            @w,
-            text: "_Static_assert(__builtin_types_compatible_p(__typeof__(&" + thunk_name(real) + "), __typeof__(&" + real + ")), \"heroes-callback " + source.component_at(s, f.span.start) + "." + f.name + ": the thunk C is handed has its value's type\");"
-        )
 
 # THE THUNK'S FIRST LINE ASKS WHETHER A SIGNAL CALLED IT (panel 247's R1,
 # defect 2494): no Heroes code runs inside a signal handler (panel 246's R4),
@@ -284,7 +298,14 @@ function crossings(p: instances.Held, c: state.Checked, names: ctype.Names, decl
         if index < callee.params.len()
             ty = callee.slots[callee.params[index]].ty
 
-            if table.is_function_ty(c.types, ty)
+            taught = names.variants[callback_variant.site(name: callee.name, index: index)]
+
+            # A callback whose header writes its integers with other words
+            # crosses through its variant's table, cast to the header's own
+            # type (`emit/callback_variant.hero`).
+            if table.is_function_ty(c.types, ty) && !taught.is_err()
+                wrapped @ callback_variant.crossed(taught.must(), argument: argument)
+            else if table.is_function_ty(c.types, ty)
                 wrapped @ "(" + ctype.func_of(names, ty: ty) + ")hero_callback_of((void (*)(void))" + argument + ")"
         out @ out.push(wrapped)
         index @ index + 1
