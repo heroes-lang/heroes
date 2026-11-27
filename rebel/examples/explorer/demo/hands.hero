@@ -1,8 +1,11 @@
 # The demo's hands: what a person does to the window, given through `ui`'s
-# `inject` on the headless side, so each click, choice, word typed and menu
-# item reaches the explorer as the same event a person's would, through
-# `events.step`. An input on a widget greyed out gives no event, as a
-# person's click on one does nothing.
+# `inject` on the headless side, so each click, choice, word typed, menu
+# item, header clicked, row opened and folder unfolded reaches the explorer
+# as the same events a person's would, through `events.handle`. An input on
+# a widget greyed out gives no event, as a person's click on one does
+# nothing; an input the system answers with two events, a row opened that
+# was not chosen or a fold over the item chosen, has both handled before the
+# next input, as a person's next click comes after both.
 #
 # The headless clock moves only when a step waits, so an operation runs one
 # tick at a time when `run_job` waits a tick; and the watch is waited on
@@ -16,7 +19,7 @@ use app/controller
 use app/events
 use model/explorer
 use model/listing
-use model/tree
+use views/folders
 
 # The most ticks an operation of the demo may take before the demo stops,
 # far more than any of them needs.
@@ -28,7 +31,8 @@ constant MOST_TICKS: i64
 constant WATCH_TENTHS: i64
     150
 
-# Gives `input` and handles what it causes.
+# Gives `input` and handles every event it causes, waiting for none: the
+# headless clock does not move, so no tick of the timer comes between.
 #
 # - `c`: the controller.
 # - `input`: what the person does.
@@ -36,7 +40,13 @@ constant WATCH_TENTHS: i64
 # Fails as `ui.inject` fails.
 function give(@c: controller.Controller, input: ui.Input) -> ()?
     ui.inject(@c.app, input: input)?
-    _ = events.step(@c, within: time.nanoseconds(0))
+    waiting @= true
+
+    while waiting
+        match ui.wait(@c.app, within: time.nanoseconds(0))
+            .ok e  => events.handle(@c, e: e)
+            .err _ => waiting @ false
+
     return ok()
 
 # Presses the button `widget`.
@@ -102,16 +112,49 @@ function choose_named(@c: controller.Controller, names: [str]) -> ()?
 
     return choose(@c, widget: c.w.entries, indices: rows)
 
-# Chooses the tree's row of `folder`.
+# Chooses the tree's item of `folder`.
 #
 # - `c`: the controller.
 # - `folder`: the folder's path.
 #
-# Fails `not_found` where the tree shows no row of it, and as `give` fails.
+# Fails `not_found` where the tree shows no item of it, and as `give` fails.
 function choose_folder(@c: controller.Controller, folder: str) -> ()?
-    rows = tree.rows(c.ex.tree, f: c.ex.formats, show_hidden: c.ex.settings.show_hidden)
-    at = tree.index_of(rows, folder: folder)?
-    return choose(@c, widget: c.w.tree, indices: [at])
+    item = folders.item_of(c.folders, folder: folder)?
+    return choose(@c, widget: c.w.tree, indices: [item])
+
+# Unfolds or folds the tree's item of `folder` by its triangle.
+#
+# - `c`: the controller.
+# - `folder`: the folder's path.
+# - `open`: true to unfold it, false to fold it.
+#
+# Fails `not_found` where the tree shows no item of it, and as `give` fails.
+function unfold_folder(@c: controller.Controller, folder: str, open: bool) -> ()?
+    item = folders.item_of(c.folders, folder: folder)?
+    return give(@c, input: .unfold(widget: c.w.tree, item: item, open: open))
+
+# Clicks the header of the entries' column `column`, asking the order
+# `ascending` says, as the arrow the click leaves shows it.
+#
+# - `c`: the controller.
+# - `column`: the column's place, from 0.
+# - `ascending`: whether the arrow points up.
+#
+# Fails as `give` fails.
+function click_header(@c: controller.Controller, column: i64, ascending: bool) -> ()?
+    return give(@c, input: .sort(widget: c.w.entries, column: column, ascending: ascending))
+
+# Opens the entry named `name` in the list of the folder shown, by a double
+# click on its row.
+#
+# - `c`: the controller.
+# - `name`: the name.
+#
+# Fails `not_found` where the folder holds no entry `name`, and as `give`
+# fails.
+function open_named(@c: controller.Controller, name: str) -> ()?
+    row = listing.row_of(c.ex.listing, name: name)?
+    return give(@c, input: .activate(widget: c.w.entries, index: row))
 
 # Lets the window's timer tick `n` times, each tick moving the operation
 # running by a step.

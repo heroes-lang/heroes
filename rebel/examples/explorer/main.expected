@@ -61,12 +61,26 @@ window #1 "Explorer: root" 1080x600
   row #15 at 12,72 1056x494
     column #16 at 12,72 200x494
       label #17 "Folders" at 12,72 56x16
-      list #18 ["▾ root", "    docs", "    photos"] chosen [0] at 12,94 200x200
+      tree #18 3 items chosen [1] at 12,94 200x200
+        item 1 "root" unfolded chosen
+          item 2 "docs"
+          item 3 "photos"
       label #19 "Bookmarks" at 12,300 72x16
       list #20 ["Documents"] chosen [] at 12,322 200x96
     column #21 at 218,72 484x494
-      label #22 "Name ▲                          Size  Type          Modified" at 218,72 480x16
-      list #23 multiple ["docs/                             --  Folder        06.03.2026, 15:00", "photos/                           --  Folder        06.03.2026, 16:00", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 11 rows chosen [] sorted by 0 ascending at 218,72 484x320
+        row 0 ["docs/", "--", "Folder", "06.03.2026, 15:00"]
+        row 1 ["photos/", "--", "Folder", "06.03.2026, 16:00"]
+        row 2 ["Äpfel.txt", "18 bytes", "Text", "03.03.2026, 17:00"]
+        row 3 ["apricot.txt", "9 bytes", "Text", "04.03.2026, 00:00"]
+        row 4 ["backup.tar.gz", "205 bytes", "Tar archive", "05.03.2026, 11:00"]
+        row 5 ["evil.zip", "289 bytes", "ZIP archive", "06.03.2026, 01:00"]
+        row 6 ["readme.txt.gz", "47 bytes", "Gzip file", "05.03.2026, 18:00"]
+        row 7 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 8 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 9 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 10 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
+      list #23 multiple [] chosen [] hidden
     column #24 at 708,72 360x494
       label #25 "" at 708,72 0x16
       label #26 "Nothing chosen" at 708,94 112x16
@@ -86,23 +100,70 @@ window #1 "Explorer: root" 1080x600
     menu_item #51 "Cut" primary+x
     menu_item #52 "Copy" primary+c
     button #8 "Open" at 1012,12 56x24
-      list #23 multiple ["docs/                             --  Folder        06.03.2026, 15:00", "photos/                           --  Folder        06.03.2026, 16:00", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [2] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 11 rows chosen [2] sorted by 0 ascending at 218,72 484x320
       label #25 "Äpfel.txt" at 708,72 72x16
       label #26 "Text\nUTF-8, detected, 35% sure\n1 line, line breaks LF\n18 bytes\nModified 03.03.2026, 17:00 (letzte Woche)" at 708,94 328x80
       text_area #28 "Äpfel und Birnen" disabled at 708,180 360x160
   label #29 "11 items, 1,5 MB; 1 chosen" at 12,572 208x16
 
 == View, By Size: the smallest file first, folders first still ==
-      label #22 "Name                          Size ▲  Type          Modified" at 218,72 480x16
-      list #23 multiple ["docs/                             --  Folder        06.03.2026, 15:00", "photos/                           --  Folder        06.03.2026, 16:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00"] chosen [4] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 11 rows chosen [4] sorted by 1 ascending at 218,72 484x320
+        row 2 ["apricot.txt", "9 bytes", "Text", "04.03.2026, 00:00"]
+        row 3 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
+        row 4 ["Äpfel.txt", "18 bytes", "Text", "03.03.2026, 17:00"]
+        row 5 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 7 ["backup.tar.gz", "205 bytes", "Tar archive", "05.03.2026, 11:00"]
+        row 8 ["evil.zip", "289 bytes", "ZIP archive", "06.03.2026, 01:00"]
+        row 9 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 10 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
 
 == View, By Size again: the order turned over, the largest first ==
-      label #22 "Name                          Size ▼  Type          Modified" at 218,72 480x16
-      list #23 multiple ["photos/                           --  Folder        06.03.2026, 16:00", "docs/                             --  Folder        06.03.2026, 15:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00"] chosen [8] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 11 rows chosen [8] sorted by 1 descending at 218,72 484x320
+        row 0 ["photos/", "--", "Folder", "06.03.2026, 16:00"]
+        row 1 ["docs/", "--", "Folder", "06.03.2026, 15:00"]
+        row 2 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 3 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 4 ["evil.zip", "289 bytes", "ZIP archive", "06.03.2026, 01:00"]
+        row 5 ["backup.tar.gz", "205 bytes", "Tar archive", "05.03.2026, 11:00"]
+        row 7 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 8 ["Äpfel.txt", "18 bytes", "Text", "03.03.2026, 17:00"]
+        row 9 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
+        row 10 ["apricot.txt", "9 bytes", "Text", "04.03.2026, 00:00"]
 
 == View, By Name: the locale's collation, so Äpfel stands beside apricot ==
-      label #22 "Name ▲                          Size  Type          Modified" at 218,72 480x16
-      list #23 multiple ["docs/                             --  Folder        06.03.2026, 15:00", "photos/                           --  Folder        06.03.2026, 16:00", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [2] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 11 rows chosen [2] sorted by 0 ascending at 218,72 484x320
+        row 0 ["docs/", "--", "Folder", "06.03.2026, 15:00"]
+        row 1 ["photos/", "--", "Folder", "06.03.2026, 16:00"]
+        row 2 ["Äpfel.txt", "18 bytes", "Text", "03.03.2026, 17:00"]
+        row 3 ["apricot.txt", "9 bytes", "Text", "04.03.2026, 00:00"]
+        row 4 ["backup.tar.gz", "205 bytes", "Tar archive", "05.03.2026, 11:00"]
+        row 5 ["evil.zip", "289 bytes", "ZIP archive", "06.03.2026, 01:00"]
+        row 7 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 8 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 9 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 10 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
+
+== The Size header clicked: the smallest file first, as View, By Size ==
+      table #22 ["Name", "Size", "Type", "Modified"] 11 rows chosen [4] sorted by 1 ascending at 218,72 484x320
+        row 2 ["apricot.txt", "9 bytes", "Text", "04.03.2026, 00:00"]
+        row 3 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
+        row 4 ["Äpfel.txt", "18 bytes", "Text", "03.03.2026, 17:00"]
+        row 5 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 7 ["backup.tar.gz", "205 bytes", "Tar archive", "05.03.2026, 11:00"]
+        row 8 ["evil.zip", "289 bytes", "ZIP archive", "06.03.2026, 01:00"]
+        row 9 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 10 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+
+== The Name header clicked: by name again ==
+      table #22 ["Name", "Size", "Type", "Modified"] 11 rows chosen [2] sorted by 0 ascending at 218,72 484x320
+        row 2 ["Äpfel.txt", "18 bytes", "Text", "03.03.2026, 17:00"]
+        row 3 ["apricot.txt", "9 bytes", "Text", "04.03.2026, 00:00"]
+        row 4 ["backup.tar.gz", "205 bytes", "Tar archive", "05.03.2026, 11:00"]
+        row 5 ["evil.zip", "289 bytes", "ZIP archive", "06.03.2026, 01:00"]
+        row 7 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 8 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 9 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 10 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
 
 == The tree's row docs chosen: the folder opens and unfolds ==
 window #1 "Explorer: docs" 1080x600
@@ -122,9 +183,15 @@ window #1 "Explorer: docs" 1080x600
     button #3 "Back" at 12,12 56x24
     text_field #6 "build/explorer/root/docs" at 206,12 754x24
     button #8 "Open" disabled at 1012,12 56x24
-      list #18 ["▾ root", "  ▾ docs", "    photos"] chosen [1] at 12,94 200x200
+      tree #18 3 items chosen [2] at 12,94 200x200
+        item 1 "root" unfolded
+          item 2 "docs" chosen
       list #20 ["Documents"] chosen [0] at 12,322 200x96
-      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes.txt                   78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 4 rows chosen [] sorted by 0 ascending at 218,72 484x320
+        row 0 ["greeting.txt", "30 bytes", "Text", "02.03.2026, 06:00"]
+        row 1 ["japanese.txt", "40 bytes", "Text", "01.03.2026, 23:00"]
+        row 2 ["notes.txt", "78 bytes", "Text", "01.03.2026, 09:00"]
+        row 3 ["prices.txt", "57 bytes", "Text", "01.03.2026, 16:00"]
       label #25 "" at 708,72 0x16
       label #26 "Nothing chosen" at 708,94 112x16
       text_area #28 "" disabled hidden
@@ -142,23 +209,30 @@ window #1 "Explorer: docs" 1080x600
     menu_item #51 "Cut" primary+x
     menu_item #52 "Copy" primary+c
     button #8 "Open" at 1012,12 56x24
-      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes.txt                   78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [3] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 4 rows chosen [3] sorted by 0 ascending at 218,72 484x320
       label #25 "prices.txt" at 708,72 80x16
       label #26 "Text\nwindows-1252, detected, 30% sure\n3 lines, line breaks CRLF\n57 bytes\nModified 01.03.2026, 16:00 (letzte Woche)" at 708,94 328x80
       text_area #28 "Prix du jour\nCrème brûlée: 12 €\nTarte aux pommes: 9 €" disabled at 708,180 360x160
   label #29 "4 items, 205 bytes; 1 chosen" at 12,572 224x16
 
 == greeting.txt: UTF-16LE by its byte order mark ==
-      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes.txt                   78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [0] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 4 rows chosen [0] sorted by 0 ascending at 218,72 484x320
       label #25 "greeting.txt" at 708,72 96x16
       label #26 "Text\nUTF-16LE, byte order mark\n2 lines, line breaks CRLF\n30 bytes\nModified 02.03.2026, 06:00 (letzte Woche)" at 708,94 328x80
       text_area #28 "Hello\nWorld" disabled at 708,180 360x160
 
 == japanese.txt: Shift_JIS detected ==
-      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes.txt                   78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [1] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 4 rows chosen [1] sorted by 0 ascending at 218,72 484x320
       label #25 "japanese.txt" at 708,72 96x16
       label #26 "Text\nShift_JIS, detected, 89% sure\n2 lines, line breaks LF\n40 bytes\nModified 01.03.2026, 23:00 (letzte Woche)" at 708,94 328x80
       text_area #28 "日本語のメモです。\n東京で会いましょう。" disabled at 708,180 360x160
+
+== notes.txt opened by a double click: chosen and previewed, and no application on the headless side ==
+      table #22 ["Name", "Size", "Type", "Modified"] 4 rows chosen [2] sorted by 0 ascending at 218,72 484x320
+      label #25 "notes.txt" at 708,72 72x16
+      label #26 "Text\nUTF-8, detected, 28% sure\n4 lines, line breaks LF\n78 bytes\nModified 01.03.2026, 09:00 (letzte Woche)" at 708,94 328x80
+      text_area #28 "Shopping list\ncrème brûlée for four\nÄpfel, 2 kg\nfile9 comes before file10" disabled at 708,180 360x160
+  label #29 "notes.txt is shown in the preview; the headless side opens no application" at 12,572 584x16
 
 == Back: the root again ==
 window #1 "Explorer: root" 1080x600
@@ -180,9 +254,22 @@ window #1 "Explorer: root" 1080x600
     button #4 "Forward" at 74,12 80x24
     text_field #6 "build/explorer/root" at 206,12 754x24
     button #8 "Open" disabled at 1012,12 56x24
-      list #18 ["▾ root", "  ▾ docs", "    photos"] chosen [0] at 12,94 200x200
+      tree #18 3 items chosen [1] at 12,94 200x200
+        item 1 "root" unfolded chosen
+          item 2 "docs"
       list #20 ["Documents"] chosen [] at 12,322 200x96
-      list #23 multiple ["docs/                             --  Folder        06.03.2026, 15:00", "photos/                           --  Folder        06.03.2026, 16:00", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 11 rows chosen [] sorted by 0 ascending at 218,72 484x320
+        row 0 ["docs/", "--", "Folder", "06.03.2026, 15:00"]
+        row 1 ["photos/", "--", "Folder", "06.03.2026, 16:00"]
+        row 2 ["Äpfel.txt", "18 bytes", "Text", "03.03.2026, 17:00"]
+        row 3 ["apricot.txt", "9 bytes", "Text", "04.03.2026, 00:00"]
+        row 4 ["backup.tar.gz", "205 bytes", "Tar archive", "05.03.2026, 11:00"]
+        row 5 ["evil.zip", "289 bytes", "ZIP archive", "06.03.2026, 01:00"]
+        row 6 ["readme.txt.gz", "47 bytes", "Gzip file", "05.03.2026, 18:00"]
+        row 7 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 8 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 9 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 10 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
       label #25 "" at 708,72 0x16
       label #26 "Nothing chosen" at 708,94 112x16
       text_area #28 "" disabled hidden
@@ -197,9 +284,15 @@ window #1 "Explorer: docs" 1080x600
     button #3 "Back" at 12,12 56x24
     button #4 "Forward" disabled at 74,12 80x24
     text_field #6 "build/explorer/root/docs" at 206,12 754x24
-      list #18 ["▾ root", "  ▾ docs", "    photos"] chosen [1] at 12,94 200x200
+      tree #18 3 items chosen [2] at 12,94 200x200
+        item 1 "root" unfolded
+          item 2 "docs" chosen
       list #20 ["Documents"] chosen [0] at 12,322 200x96
-      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes.txt                   78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 4 rows chosen [] sorted by 0 ascending at 218,72 484x320
+        row 0 ["greeting.txt", "30 bytes", "Text", "02.03.2026, 06:00"]
+        row 1 ["japanese.txt", "40 bytes", "Text", "01.03.2026, 23:00"]
+        row 2 ["notes.txt", "78 bytes", "Text", "01.03.2026, 09:00"]
+        row 3 ["prices.txt", "57 bytes", "Text", "01.03.2026, 16:00"]
   label #29 "4 items, 205 bytes" at 12,572 144x16
 
 == Up: the root, with docs chosen ==
@@ -218,9 +311,22 @@ window #1 "Explorer: root" 1080x600
     menu_item #71 "Remove Bookmark" disabled
     text_field #6 "build/explorer/root" at 206,12 754x24
     button #8 "Open" at 1012,12 56x24
-      list #18 ["▾ root", "  ▾ docs", "    photos"] chosen [0] at 12,94 200x200
+      tree #18 3 items chosen [1] at 12,94 200x200
+        item 1 "root" unfolded chosen
+          item 2 "docs"
       list #20 ["Documents"] chosen [] at 12,322 200x96
-      list #23 multiple ["docs/                             --  Folder        06.03.2026, 15:00", "photos/                           --  Folder        06.03.2026, 16:00", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [0] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 11 rows chosen [0] sorted by 0 ascending at 218,72 484x320
+        row 0 ["docs/", "--", "Folder", "06.03.2026, 15:00"]
+        row 1 ["photos/", "--", "Folder", "06.03.2026, 16:00"]
+        row 2 ["Äpfel.txt", "18 bytes", "Text", "03.03.2026, 17:00"]
+        row 3 ["apricot.txt", "9 bytes", "Text", "04.03.2026, 00:00"]
+        row 4 ["backup.tar.gz", "205 bytes", "Tar archive", "05.03.2026, 11:00"]
+        row 5 ["evil.zip", "289 bytes", "ZIP archive", "06.03.2026, 01:00"]
+        row 6 ["readme.txt.gz", "47 bytes", "Gzip file", "05.03.2026, 18:00"]
+        row 7 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 8 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 9 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 10 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
       label #25 "docs" at 708,72 32x16
       label #26 "Folder\n4 items\nModified 06.03.2026, 15:00 (letzte Woche)" at 708,94 328x48
   label #29 "11 items, 1,5 MB; 1 chosen" at 12,572 208x16
@@ -239,8 +345,14 @@ window #1 "Explorer: photos" 1080x600
     menu_item #52 "Copy" primary+c disabled
     text_field #6 "build/explorer/root/photos" at 206,12 754x24
     button #8 "Open" disabled at 1012,12 56x24
-      list #18 ["▾ root", "  ▾ docs", "  ▾ photos"] chosen [2] at 12,94 200x200
-      list #23 multiple ["IMG_9.png                   82 bytes  PNG image     03.03.2026, 03:00", "IMG_10.png                  82 bytes  PNG image     03.03.2026, 10:00", "portrait.jpg                  1,2 kB  JPEG image    02.03.2026, 20:00", "sunset.png                    1,1 kB  PNG image     02.03.2026, 13:00"] chosen [] at 218,94 484x320
+      tree #18 3 items chosen [3] at 12,94 200x200
+        item 1 "root" unfolded
+          item 3 "photos" chosen
+      table #22 ["Name", "Size", "Type", "Modified"] 4 rows chosen [] sorted by 0 ascending at 218,72 484x320
+        row 0 ["IMG_9.png", "82 bytes", "PNG image", "03.03.2026, 03:00"]
+        row 1 ["IMG_10.png", "82 bytes", "PNG image", "03.03.2026, 10:00"]
+        row 2 ["portrait.jpg", "1,2 kB", "JPEG image", "02.03.2026, 20:00"]
+        row 3 ["sunset.png", "1,1 kB", "PNG image", "02.03.2026, 13:00"]
       label #25 "" at 708,72 0x16
       label #26 "Nothing chosen" at 708,94 112x16
   label #29 "4 items, 2,5 kB" at 12,572 120x16
@@ -257,14 +369,14 @@ window #1 "Explorer: photos" 1080x600
     menu_item #51 "Cut" primary+x
     menu_item #52 "Copy" primary+c
     button #8 "Open" at 1012,12 56x24
-      list #23 multiple ["IMG_9.png                   82 bytes  PNG image     03.03.2026, 03:00", "IMG_10.png                  82 bytes  PNG image     03.03.2026, 10:00", "portrait.jpg                  1,2 kB  JPEG image    02.03.2026, 20:00", "sunset.png                    1,1 kB  PNG image     02.03.2026, 13:00"] chosen [3] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 4 rows chosen [3] sorted by 0 ascending at 218,72 484x320
       label #25 "sunset.png" at 708,72 80x16
       label #26 "PNG image\n320 × 180 pixels\nRGB, 8 bits a sample\n1,1 kB\nModified 02.03.2026, 13:00 (letzte Woche)" at 708,94 328x80
       picture #27 at 708,180 160x90
   label #29 "4 items, 2,5 kB; 1 chosen" at 12,572 200x16
 
 == portrait.jpg decoded ==
-      list #23 multiple ["IMG_9.png                   82 bytes  PNG image     03.03.2026, 03:00", "IMG_10.png                  82 bytes  PNG image     03.03.2026, 10:00", "portrait.jpg                  1,2 kB  JPEG image    02.03.2026, 20:00", "sunset.png                    1,1 kB  PNG image     02.03.2026, 13:00"] chosen [2] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 4 rows chosen [2] sorted by 0 ascending at 218,72 484x320
       label #25 "portrait.jpg" at 708,72 96x16
       label #26 "JPEG image\n90 × 120 pixels\nRGB\n1,2 kB\nModified 02.03.2026, 20:00 (letzte Woche)" at 708,94 328x80
       picture #27 at 708,180 90x120
@@ -292,8 +404,21 @@ window #1 "Explorer: root" 1080x600
     text_field #10 "crème" at 12,42 728x24
     combo #11 ["Names", "Contents"] chosen [1] at 746,42 104x24
     button #13 "Search" disabled at 926,42 72x24
-      list #18 ["▾ root", "  ▾ docs", "  ▾ photos"] chosen [0] at 12,94 200x200
-      list #23 multiple ["docs/                             --  Folder        06.03.2026, 15:00", "photos/                           --  Folder        06.03.2026, 16:00", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [1] at 218,94 484x320
+      tree #18 3 items chosen [1] at 12,94 200x200
+        item 1 "root" unfolded chosen
+          item 3 "photos"
+      table #22 ["Name", "Size", "Type", "Modified"] 11 rows chosen [1] sorted by 0 ascending at 218,72 484x320
+        row 0 ["docs/", "--", "Folder", "06.03.2026, 15:00"]
+        row 1 ["photos/", "--", "Folder", "06.03.2026, 16:00"]
+        row 2 ["Äpfel.txt", "18 bytes", "Text", "03.03.2026, 17:00"]
+        row 3 ["apricot.txt", "9 bytes", "Text", "04.03.2026, 00:00"]
+        row 4 ["backup.tar.gz", "205 bytes", "Tar archive", "05.03.2026, 11:00"]
+        row 5 ["evil.zip", "289 bytes", "ZIP archive", "06.03.2026, 01:00"]
+        row 6 ["readme.txt.gz", "47 bytes", "Gzip file", "05.03.2026, 18:00"]
+        row 7 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 8 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 9 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 10 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
       label #25 "photos" at 708,72 48x16
       label #26 "Folder\n4 items\nModified 06.03.2026, 16:00 (letzte Woche)" at 708,94 328x48
       picture #27 hidden
@@ -311,8 +436,8 @@ window #75 "Searching for \"crème\"" 360x100 fixed
     button #5 "Up" at 160,12 40x24
     button #13 "Search" at 926,42 72x24
     button #14 "Clear" at 1004,42 64x24
-      label #22 "Results under build/explorer/root" at 218,72 264x16
-      list #23 multiple ["docs/notes.txt:2: crème brûlée for four", "docs/prices.txt:2: Crème brûlée: 12 €"] chosen [] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 11 rows chosen [] sorted by 0 ascending hidden
+      list #23 multiple ["docs/notes.txt:2: crème brûlée for four", "docs/prices.txt:2: Crème brûlée: 12 €"] chosen [] at 218,72 484x320
       label #25 "" at 708,72 0x16
       label #26 "Nothing chosen" at 708,94 112x16
   label #29 "Found 2 matches for \"crème\", 9 files passed over" at 12,572 384x16
@@ -328,7 +453,7 @@ gone: button #78 "Cancel" at 12,56 72x24
     menu_item #51 "Cut" primary+x
     menu_item #52 "Copy" primary+c
     button #8 "Open" at 1012,12 56x24
-      list #23 multiple ["docs/notes.txt:2: crème brûlée for four", "docs/prices.txt:2: Crème brûlée: 12 €"] chosen [1] at 218,94 484x320
+      list #23 multiple ["docs/notes.txt:2: crème brûlée for four", "docs/prices.txt:2: Crème brûlée: 12 €"] chosen [1] at 218,72 484x320
       label #25 "prices.txt" at 708,72 80x16
       label #26 "Text\nwindows-1252, detected, 30% sure\n3 lines, line breaks CRLF\n57 bytes\nModified 01.03.2026, 16:00 (letzte Woche)" at 708,94 328x80
       text_area #28 "Prix du jour\nCrème brûlée: 12 €\nTarte aux pommes: 9 €" disabled at 708,180 360x160
@@ -346,10 +471,16 @@ window #1 "Explorer: docs" 1080x600
     menu_item #71 "Remove Bookmark"
     text_field #6 "build/explorer/root/docs" at 206,12 754x24
     button #14 "Clear" disabled at 1004,42 64x24
-      list #18 ["▾ root", "  ▾ docs", "  ▾ photos"] chosen [1] at 12,94 200x200
+      tree #18 3 items chosen [2] at 12,94 200x200
+        item 1 "root" unfolded
+          item 2 "docs" chosen
       list #20 ["Documents"] chosen [0] at 12,322 200x96
-      label #22 "Name ▲                          Size  Type          Modified" at 218,72 480x16
-      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes.txt                   78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [3] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 4 rows chosen [3] sorted by 0 ascending at 218,72 484x320
+        row 0 ["greeting.txt", "30 bytes", "Text", "02.03.2026, 06:00"]
+        row 1 ["japanese.txt", "40 bytes", "Text", "01.03.2026, 23:00"]
+        row 2 ["notes.txt", "78 bytes", "Text", "01.03.2026, 09:00"]
+        row 3 ["prices.txt", "57 bytes", "Text", "01.03.2026, 16:00"]
+      list #23 multiple [] chosen [] hidden
   label #29 "4 items, 205 bytes; 1 chosen" at 12,572 224x16
 
 == Searching the names for *.png ==
@@ -372,10 +503,12 @@ window #1 "Explorer: root" 1080x600
     text_field #10 "*.png" at 12,42 728x24
     combo #11 ["Names", "Contents"] chosen [0] at 746,42 104x24
     button #14 "Clear" at 1004,42 64x24
-      list #18 ["▾ root", "  ▾ docs", "  ▾ photos"] chosen [0] at 12,94 200x200
+      tree #18 3 items chosen [1] at 12,94 200x200
+        item 1 "root" unfolded chosen
+          item 2 "docs"
       list #20 ["Documents"] chosen [] at 12,322 200x96
-      label #22 "Results under build/explorer/root" at 218,72 264x16
-      list #23 multiple ["photos/IMG_10.png", "photos/IMG_9.png", "photos/sunset.png"] chosen [] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 11 rows chosen [] sorted by 0 ascending hidden
+      list #23 multiple ["photos/IMG_10.png", "photos/IMG_9.png", "photos/sunset.png"] chosen [] at 218,72 484x320
       label #25 "" at 708,72 0x16
       label #26 "Nothing chosen" at 708,94 112x16
       text_area #28 "" disabled hidden
@@ -384,8 +517,19 @@ window #1 "Explorer: root" 1080x600
 == Clear: the folder's entries again ==
     menu_item #32 "New Folder" primary+shift+n
     button #14 "Clear" disabled at 1004,42 64x24
-      label #22 "Name ▲                          Size  Type          Modified" at 218,72 480x16
-      list #23 multiple ["docs/                             --  Folder        06.03.2026, 15:00", "photos/                           --  Folder        06.03.2026, 16:00", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 11 rows chosen [] sorted by 0 ascending at 218,72 484x320
+        row 0 ["docs/", "--", "Folder", "06.03.2026, 15:00"]
+        row 1 ["photos/", "--", "Folder", "06.03.2026, 16:00"]
+        row 2 ["Äpfel.txt", "18 bytes", "Text", "03.03.2026, 17:00"]
+        row 3 ["apricot.txt", "9 bytes", "Text", "04.03.2026, 00:00"]
+        row 4 ["backup.tar.gz", "205 bytes", "Tar archive", "05.03.2026, 11:00"]
+        row 5 ["evil.zip", "289 bytes", "ZIP archive", "06.03.2026, 01:00"]
+        row 6 ["readme.txt.gz", "47 bytes", "Gzip file", "05.03.2026, 18:00"]
+        row 7 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 8 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 9 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 10 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
+      list #23 multiple [] chosen [] hidden
   label #29 "11 items, 1,5 MB" at 12,572 128x16
 
 == File, Rename: a window asks for the new name ==
@@ -404,9 +548,15 @@ window #1 "Explorer: docs" 1080x600
     menu_item #71 "Remove Bookmark"
     text_field #6 "build/explorer/root/docs" at 206,12 754x24
     button #8 "Open" at 1012,12 56x24
-      list #18 ["▾ root", "  ▾ docs", "  ▾ photos"] chosen [1] at 12,94 200x200
+      tree #18 3 items chosen [2] at 12,94 200x200
+        item 1 "root" unfolded
+          item 2 "docs" chosen
       list #20 ["Documents"] chosen [0] at 12,322 200x96
-      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes.txt                   78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [2] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 4 rows chosen [2] sorted by 0 ascending at 218,72 484x320
+        row 0 ["greeting.txt", "30 bytes", "Text", "02.03.2026, 06:00"]
+        row 1 ["japanese.txt", "40 bytes", "Text", "01.03.2026, 23:00"]
+        row 2 ["notes.txt", "78 bytes", "Text", "01.03.2026, 09:00"]
+        row 3 ["prices.txt", "57 bytes", "Text", "01.03.2026, 16:00"]
       label #25 "notes.txt" at 708,72 72x16
       label #26 "Text\nUTF-8, detected, 28% sure\n4 lines, line breaks LF\n78 bytes\nModified 01.03.2026, 09:00 (letzte Woche)" at 708,94 328x80
       text_area #28 "Shopping list\ncrème brûlée for four\nÄpfel, 2 kg\nfile9 comes before file10" disabled at 708,180 360x160
@@ -425,7 +575,8 @@ window #83 "Rename" 360x120 fixed
 
 == OK: renamed, and Undo names it ==
     menu_item #48 "Undo Rename" primary+z
-      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes 2026.txt              78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [2] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 4 rows chosen [2] sorted by 0 ascending at 218,72 484x320
+        row 2 ["notes 2026.txt", "78 bytes", "Text", "01.03.2026, 09:00"]
       label #25 "notes 2026.txt" at 708,72 112x16
   label #29 "Renamed \"notes.txt\" to \"notes 2026.txt\"" at 12,572 312x16
 gone: window #83 "Rename" 360x120 fixed
@@ -450,7 +601,8 @@ gone: button #89 "OK" at 90,42 40x24
     menu_item #51 "Cut" primary+x disabled
     menu_item #52 "Copy" primary+c disabled
     button #8 "Open" disabled at 1012,12 56x24
-      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes.txt                   78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 4 rows chosen [] sorted by 0 ascending at 218,72 484x320
+        row 2 ["notes.txt", "78 bytes", "Text", "01.03.2026, 09:00"]
       label #25 "" at 708,72 0x16
       label #26 "Nothing chosen" at 708,94 112x16
       text_area #28 "" disabled hidden
@@ -459,13 +611,15 @@ gone: button #89 "OK" at 90,42 40x24
 == Edit, Redo Rename ==
     menu_item #48 "Undo Rename" primary+z
     menu_item #49 "Redo" primary+shift+z disabled
-      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes 2026.txt              78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 4 rows chosen [] sorted by 0 ascending at 218,72 484x320
+        row 2 ["notes 2026.txt", "78 bytes", "Text", "01.03.2026, 09:00"]
   label #29 "Redid Rename" at 12,572 96x16
 
 == Edit, Undo Rename again ==
     menu_item #48 "Undo" primary+z disabled
     menu_item #49 "Redo Rename" primary+shift+z
-      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes.txt                   78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 4 rows chosen [] sorted by 0 ascending at 218,72 484x320
+        row 2 ["notes.txt", "78 bytes", "Text", "01.03.2026, 09:00"]
   label #29 "Undid Rename" at 12,572 96x16
 
 == File, Rename with Pattern: IMG_(digits) becomes photo-(digits) ==
@@ -479,9 +633,16 @@ window #1 "Explorer: photos" 1080x600
     menu_item #70 "Add Bookmark…" primary+d
     menu_item #71 "Remove Bookmark" disabled
     text_field #6 "build/explorer/root/photos" at 206,12 754x24
-      list #18 ["▾ root", "  ▾ docs", "  ▾ photos"] chosen [2] at 12,94 200x200
+      tree #18 3 items chosen [3] at 12,94 200x200
+        item 1 "root" unfolded
+          item 2 "docs"
+          item 3 "photos" chosen
       list #20 ["Documents"] chosen [] at 12,322 200x96
-      list #23 multiple ["IMG_9.png                   82 bytes  PNG image     03.03.2026, 03:00", "IMG_10.png                  82 bytes  PNG image     03.03.2026, 10:00", "portrait.jpg                  1,2 kB  JPEG image    02.03.2026, 20:00", "sunset.png                    1,1 kB  PNG image     02.03.2026, 13:00"] chosen [0, 1] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 4 rows chosen [0, 1] sorted by 0 ascending at 218,72 484x320
+        row 0 ["IMG_9.png", "82 bytes", "PNG image", "03.03.2026, 03:00"]
+        row 1 ["IMG_10.png", "82 bytes", "PNG image", "03.03.2026, 10:00"]
+        row 2 ["portrait.jpg", "1,2 kB", "JPEG image", "02.03.2026, 20:00"]
+        row 3 ["sunset.png", "1,1 kB", "PNG image", "02.03.2026, 13:00"]
       label #25 "2 items chosen" at 708,72 112x16
       label #26 "164 bytes" at 708,94 72x16
   label #29 "4 items, 2,5 kB; 2 chosen" at 12,572 200x16
@@ -498,7 +659,9 @@ window #90 "Rename with Pattern" 360x120 fixed
 == OK: both renamed at once ==
     menu_item #48 "Undo Rename" primary+z
     menu_item #49 "Redo" primary+shift+z disabled
-      list #23 multiple ["photo-9.png                 82 bytes  PNG image     03.03.2026, 03:00", "photo-10.png                82 bytes  PNG image     03.03.2026, 10:00", "portrait.jpg                  1,2 kB  JPEG image    02.03.2026, 20:00", "sunset.png                    1,1 kB  PNG image     02.03.2026, 13:00"] chosen [0, 1] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 4 rows chosen [0, 1] sorted by 0 ascending at 218,72 484x320
+        row 0 ["photo-9.png", "82 bytes", "PNG image", "03.03.2026, 03:00"]
+        row 1 ["photo-10.png", "82 bytes", "PNG image", "03.03.2026, 10:00"]
   label #29 "Renamed 2 items" at 12,572 120x16
 gone: window #90 "Rename with Pattern" 360x120 fixed
 gone: grid #91 2 columns at 12,12 222x54
@@ -519,7 +682,9 @@ gone: button #98 "OK" at 90,72 40x24
     menu_item #49 "Redo Rename" primary+shift+z
     menu_item #51 "Cut" primary+x disabled
     menu_item #52 "Copy" primary+c disabled
-      list #23 multiple ["IMG_9.png                   82 bytes  PNG image     03.03.2026, 03:00", "IMG_10.png                  82 bytes  PNG image     03.03.2026, 10:00", "portrait.jpg                  1,2 kB  JPEG image    02.03.2026, 20:00", "sunset.png                    1,1 kB  PNG image     02.03.2026, 13:00"] chosen [] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 4 rows chosen [] sorted by 0 ascending at 218,72 484x320
+        row 0 ["IMG_9.png", "82 bytes", "PNG image", "03.03.2026, 03:00"]
+        row 1 ["IMG_10.png", "82 bytes", "PNG image", "03.03.2026, 10:00"]
       label #25 "" at 708,72 0x16
       label #26 "Nothing chosen" at 708,94 112x16
   label #29 "Undid Rename" at 12,572 96x16
@@ -540,11 +705,27 @@ window #1 "Explorer: root" 1080x600
     menu_item #52 "Copy" primary+c
     text_field #6 "build/explorer/root" at 206,12 754x24
     button #8 "Open" at 1012,12 56x24
-      list #18 ["▾ root", "  ▾ docs", "    Drafts", "  ▾ photos"] chosen [0] at 12,94 200x200
-      list #23 multiple ["docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:38", "photos/                           --  Folder        14.03.2026, 10:37", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [1] at 218,94 484x320
+      tree #18 4 items chosen [1] at 12,94 200x200
+        item 1 "root" unfolded chosen
+          item 4 "Drafts"
+          item 5 "photos"
+      table #22 ["Name", "Size", "Type", "Modified"] 12 rows chosen [1] sorted by 0 ascending at 218,72 484x320
+        row 0 ["docs/", "--", "Folder", "14.03.2026, 10:36"]
+        row 1 ["Drafts/", "--", "Folder", "14.03.2026, 10:38"]
+        row 2 ["photos/", "--", "Folder", "14.03.2026, 10:37"]
+        row 3 ["Äpfel.txt", "18 bytes", "Text", "03.03.2026, 17:00"]
+        row 4 ["apricot.txt", "9 bytes", "Text", "04.03.2026, 00:00"]
+        row 5 ["backup.tar.gz", "205 bytes", "Tar archive", "05.03.2026, 11:00"]
+        row 6 ["evil.zip", "289 bytes", "ZIP archive", "06.03.2026, 01:00"]
+        row 7 ["readme.txt.gz", "47 bytes", "Gzip file", "05.03.2026, 18:00"]
+        row 8 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 9 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 10 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 11 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
       label #25 "Drafts" at 708,72 48x16
       label #26 "Folder\n0 items\nModified 14.03.2026, 10:38 (jetzt)" at 708,94 272x48
   label #29 "Made the folder \"Drafts\"" at 12,572 192x16
+gone: item 3 "photos" chosen
 
 == Edit, Copy on video.bin, then Paste in Drafts: the progress after one tick ==
 window #1 "Explorer: Drafts" 1080x600
@@ -568,8 +749,10 @@ window #1 "Explorer: Drafts" 1080x600
     text_field #6 "build/explorer/root/Drafts" at 206,12 754x24
     button #8 "Open" disabled at 1012,12 56x24
     button #13 "Search" disabled at 926,42 72x24
-      list #18 ["▾ root", "  ▾ docs", "  ▾ Drafts", "  ▾ photos"] chosen [2] at 12,94 200x200
-      list #23 multiple [] chosen [] at 218,94 484x320
+      tree #18 4 items chosen [4] at 12,94 200x200
+        item 1 "root" unfolded
+          item 4 "Drafts" chosen
+      table #22 ["Name", "Size", "Type", "Modified"] 0 rows chosen [] sorted by 0 ascending at 218,72 484x320
       label #25 "" at 708,72 0x16
       label #26 "Nothing chosen" at 708,94 112x16
   label #29 "Copying 1 item…" at 12,572 120x16
@@ -599,7 +782,8 @@ window #106 "Copying 1 item" 360x100 fixed
     button #5 "Up" at 160,12 40x24
     button #8 "Open" at 1012,12 56x24
     button #13 "Search" at 926,42 72x24
-      list #23 multiple ["video.bin                     1,5 MB  BIN file      04.03.2026, 21:00"] chosen [0] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 1 rows chosen [0] sorted by 0 ascending at 218,72 484x320
+        row 0 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
       label #25 "video.bin" at 708,72 72x16
       label #26 "BIN file\n1,5 MB\nModified 04.03.2026, 21:00 (letzte Woche)\ndata, not text" at 708,94 328x64
       text_area #28 "00000000  00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  |................|\n00000010  10 11 12 13 14 15 16 17  18 19 1a 1b 1c 1d 1e 1f  |................|\n00000020  20 21 22 23 24 25 26 27  28 29 2a 2b 2c 2d 2e 2f  | !\"#$%&'()*+,-./|\n00000030  30 31 32 33 34 35 36 37  38 39 3a 3b 3c 3d 3e 3f  |0123456789:;<=>?|\n00000040  40 41 42 43 44 45 46 47  48 49 4a 4b 4c 4d 4e 4f  |@ABCDEFGHIJKLMNO|\n00000050  50 51 52 53 54 55 56 57  58 59 5a 5b 5c 5d 5e 5f  |PQRSTUVWXYZ[\\]^_|\n00000060  60 61 62 63 64 65 66 67  68 69 6a 6b 6c 6d 6e 6f  |`abcdefghijklmno|\n00000070  70 71 72 73 74 75 76 77  78 79 7a 7b 7c 7d 7e 7f  |pqrstuvwxyz{|}~.|" disabled at 708,164 360x160
@@ -615,7 +799,8 @@ gone: button #109 "Cancel" at 12,56 72x24
 == Edit, Cut on zoo.md, then Paste in Drafts: moved ==
     menu_item #48 "Undo Move" primary+z
     menu_item #53 "Paste" primary+v disabled
-      list #23 multiple ["video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [1] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 2 rows chosen [1] sorted by 0 ascending at 218,72 484x320
+        row 1 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
       label #25 "zoo.md" at 708,72 48x16
       label #26 "Markdown\nUTF-8, detected, 100% sure\n3 lines, line breaks LF\n16 bytes\nModified 04.03.2026, 14:00 (letzte Woche)" at 708,94 328x80
       text_area #28 "# Zoo\n\nAnimals." disabled at 708,180 360x160
@@ -635,7 +820,7 @@ gone: button #109 "Cancel" at 12,56 72x24
     menu_item #51 "Cut" primary+x disabled
     menu_item #52 "Copy" primary+c disabled
     button #8 "Open" disabled at 1012,12 56x24
-      list #23 multiple ["video.bin                     1,5 MB  BIN file      04.03.2026, 21:00"] chosen [] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 1 rows chosen [] sorted by 0 ascending at 218,72 484x320
       label #25 "" at 708,72 0x16
       label #26 "Nothing chosen" at 708,94 112x16
       text_area #28 "" disabled hidden
@@ -657,8 +842,21 @@ window #1 "Explorer: root" 1080x600
     menu_item #52 "Copy" primary+c
     text_field #6 "build/explorer/root" at 206,12 754x24
     button #8 "Open" at 1012,12 56x24
-      list #18 ["▾ root", "  ▾ docs", "  ▾ Drafts", "  ▾ photos"] chosen [0] at 12,94 200x200
-      list #23 multiple ["docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [10] at 218,94 484x320
+      tree #18 4 items chosen [1] at 12,94 200x200
+        item 1 "root" unfolded chosen
+          item 4 "Drafts"
+      table #22 ["Name", "Size", "Type", "Modified"] 11 rows chosen [10] sorted by 0 ascending at 218,72 484x320
+        row 0 ["docs/", "--", "Folder", "14.03.2026, 10:36"]
+        row 1 ["Drafts/", "--", "Folder", "14.03.2026, 10:39"]
+        row 2 ["photos/", "--", "Folder", "14.03.2026, 10:37"]
+        row 3 ["Äpfel.txt", "18 bytes", "Text", "03.03.2026, 17:00"]
+        row 4 ["apricot.txt", "9 bytes", "Text", "04.03.2026, 00:00"]
+        row 5 ["backup.tar.gz", "205 bytes", "Tar archive", "05.03.2026, 11:00"]
+        row 6 ["evil.zip", "289 bytes", "ZIP archive", "06.03.2026, 01:00"]
+        row 7 ["readme.txt.gz", "47 bytes", "Gzip file", "05.03.2026, 18:00"]
+        row 8 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 9 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 10 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
       label #25 "zoo.md" at 708,72 48x16
       label #26 "Markdown\nUTF-8, detected, 100% sure\n3 lines, line breaks LF\n16 bytes\nModified 04.03.2026, 14:00 (letzte Woche)" at 708,94 328x80
       text_area #28 "# Zoo\n\nAnimals." disabled at 708,180 360x160
@@ -678,16 +876,22 @@ window #1 "Explorer: files" 1080x600
     menu_item #52 "Copy" primary+c disabled
     text_field #6 "build/explorer/state/trash/files" at 206,12 754x24
     button #8 "Open" disabled at 1012,12 56x24
-      list #18 ["▾ files"] chosen [0] at 12,94 200x200
-      list #23 multiple ["Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00"] chosen [] at 218,94 484x320
+      tree #18 1 items chosen [6] at 12,94 200x200
+        item 6 "files" chosen
+      table #22 ["Name", "Size", "Type", "Modified"] 1 rows chosen [] sorted by 0 ascending at 218,72 484x320
+        row 0 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
       label #25 "" at 708,72 0x16
       label #26 "Nothing chosen" at 708,94 112x16
       text_area #28 "" disabled hidden
   label #29 "1 item, 18 bytes" at 12,572 128x16
+gone: item 1 "root" unfolded chosen
+gone: item 2 "docs"
+gone: item 4 "Drafts"
+gone: item 5 "photos"
 
 == File, Put Back ==
     menu_item #48 "Undo Put Back" primary+z
-      list #23 multiple [] chosen [] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 0 rows chosen [] sorted by 0 ascending at 218,72 484x320
   label #29 "Put back 1 item" at 12,572 120x16
 
 == Back: Zebra.md in the root again ==
@@ -695,9 +899,26 @@ window #1 "Explorer: root" 1080x600
     menu_item #57 "Forward" primary+Right
     button #4 "Forward" at 74,12 80x24
     text_field #6 "build/explorer/root" at 206,12 754x24
-      list #18 ["▾ root", "    docs", "    Drafts", "    photos"] chosen [0] at 12,94 200x200
-      list #23 multiple ["docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [] at 218,94 484x320
+      tree #18 4 items chosen [7] at 12,94 200x200
+        item 7 "root" unfolded chosen
+          item 8 "docs"
+          item 9 "Drafts"
+          item 10 "photos"
+      table #22 ["Name", "Size", "Type", "Modified"] 12 rows chosen [] sorted by 0 ascending at 218,72 484x320
+        row 0 ["docs/", "--", "Folder", "14.03.2026, 10:36"]
+        row 1 ["Drafts/", "--", "Folder", "14.03.2026, 10:39"]
+        row 2 ["photos/", "--", "Folder", "14.03.2026, 10:37"]
+        row 3 ["Äpfel.txt", "18 bytes", "Text", "03.03.2026, 17:00"]
+        row 4 ["apricot.txt", "9 bytes", "Text", "04.03.2026, 00:00"]
+        row 5 ["backup.tar.gz", "205 bytes", "Tar archive", "05.03.2026, 11:00"]
+        row 6 ["evil.zip", "289 bytes", "ZIP archive", "06.03.2026, 01:00"]
+        row 7 ["readme.txt.gz", "47 bytes", "Gzip file", "05.03.2026, 18:00"]
+        row 8 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 9 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 10 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 11 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
   label #29 "12 items, 1,5 MB" at 12,572 128x16
+gone: item 6 "files" chosen
 
 == File, Compress to ZIP on docs and photos: Archive.zip, its members listed ==
     menu_item #31 "Open" primary+Down
@@ -712,21 +933,36 @@ window #1 "Explorer: root" 1080x600
     menu_item #51 "Cut" primary+x
     menu_item #52 "Copy" primary+c
     button #8 "Open" at 1012,12 56x24
-      list #23 multiple ["docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [5] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 13 rows chosen [5] sorted by 0 ascending at 218,72 484x320
+        row 5 ["Archive.zip", "3,6 kB", "ZIP archive", "14.03.2026, 10:41"]
+        row 6 ["backup.tar.gz", "205 bytes", "Tar archive", "05.03.2026, 11:00"]
+        row 7 ["evil.zip", "289 bytes", "ZIP archive", "06.03.2026, 01:00"]
+        row 8 ["readme.txt.gz", "47 bytes", "Gzip file", "05.03.2026, 18:00"]
+        row 9 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 10 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 11 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 12 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
       label #25 "Archive.zip" at 708,72 88x16
       label #26 "ZIP archive\n10 members, 2,7 kB unpacked, 2,2 kB packed\n3,6 kB\nModified 14.03.2026, 10:41 (jetzt)" at 708,94 336x64
       text_area #28 "docs  (folder)\ndocs/greeting.txt  (30 bytes)\ndocs/japanese.txt  (40 bytes)\ndocs/notes.txt  (78 bytes)\ndocs/prices.txt  (57 bytes)\nphotos  (folder)\nphotos/IMG_10.png  (82 bytes)\nphotos/IMG_9.png  (82 bytes)\nphotos/portrait.jpg  (1,2 kB)\nphotos/sunset.png  (1,1 kB)" disabled at 708,164 360x160
   label #29 "Compressed 10 entries into Archive.zip" at 12,572 304x16
 
 == File, Compress to tar.gz on docs: docs.tar.gz ==
-      list #23 multiple ["docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [7] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 14 rows chosen [7] sorted by 0 ascending at 218,72 484x320
+        row 7 ["docs.tar.gz", "424 bytes", "Tar archive", "14.03.2026, 10:41"]
+        row 8 ["evil.zip", "289 bytes", "ZIP archive", "06.03.2026, 01:00"]
+        row 9 ["readme.txt.gz", "47 bytes", "Gzip file", "05.03.2026, 18:00"]
+        row 10 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 11 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 12 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 13 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
       label #25 "docs.tar.gz" at 708,72 88x16
       label #26 "Tar archive, gzip\n5 members, 205 bytes unpacked\n424 bytes\nModified 14.03.2026, 10:41 (jetzt)" at 708,94 272x64
       text_area #28 "docs  (folder)\ndocs/greeting.txt  (30 bytes)\ndocs/japanese.txt  (40 bytes)\ndocs/notes.txt  (78 bytes)\ndocs/prices.txt  (57 bytes)" disabled at 708,164 360x160
   label #29 "Compressed 5 entries into docs.tar.gz" at 12,572 296x16
 
 == site.zip chosen: what it holds ==
-      list #23 multiple ["docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [10] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 14 rows chosen [10] sorted by 0 ascending at 218,72 484x320
       label #25 "site.zip" at 708,72 64x16
       label #26 "ZIP archive\n3 members, 87 bytes unpacked, 84 bytes packed\n456 bytes\nModified 05.03.2026, 04:00 (letzte Woche)" at 708,94 360x64
       text_area #28 "site  (folder)\nsite/index.html  (58 bytes)\nsite/style.css  (29 bytes)" disabled at 708,164 360x160
@@ -734,57 +970,136 @@ window #1 "Explorer: root" 1080x600
 
 == File, Extract on site.zip ==
     menu_item #48 "Undo Extract" primary+z
-      list #18 ["▾ root", "    docs", "    Drafts", "    photos", "  ▸ site"] chosen [0] at 12,94 200x200
-      list #23 multiple ["docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [3] at 218,94 484x320
+      tree #18 5 items chosen [7] at 12,94 200x200
+        item 7 "root" unfolded chosen
+          item 12 "site" folded
+      table #22 ["Name", "Size", "Type", "Modified"] 15 rows chosen [3] sorted by 0 ascending at 218,72 484x320
+        row 3 ["site/", "--", "Folder", "14.03.2026, 10:42"]
+        row 4 ["Äpfel.txt", "18 bytes", "Text", "03.03.2026, 17:00"]
+        row 5 ["apricot.txt", "9 bytes", "Text", "04.03.2026, 00:00"]
+        row 6 ["Archive.zip", "3,6 kB", "ZIP archive", "14.03.2026, 10:41"]
+        row 7 ["backup.tar.gz", "205 bytes", "Tar archive", "05.03.2026, 11:00"]
+        row 8 ["docs.tar.gz", "424 bytes", "Tar archive", "14.03.2026, 10:41"]
+        row 9 ["evil.zip", "289 bytes", "ZIP archive", "06.03.2026, 01:00"]
+        row 10 ["readme.txt.gz", "47 bytes", "Gzip file", "05.03.2026, 18:00"]
+        row 11 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 12 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 13 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 14 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
       label #25 "site" at 708,72 32x16
       label #26 "Folder\n1 item\nModified 14.03.2026, 10:42 (jetzt)" at 708,94 272x48
       text_area #28 "" disabled hidden
   label #29 "Extracted 3 entries into site" at 12,572 232x16
 
 == backup.tar.gz chosen: what it holds ==
-      list #23 multiple ["docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [7] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 15 rows chosen [7] sorted by 0 ascending at 218,72 484x320
       label #25 "backup.tar.gz" at 708,72 104x16
       label #26 "Tar archive, gzip\n3 members, 45 bytes unpacked\n205 bytes\nModified 05.03.2026, 11:00 (letzte Woche)" at 708,94 328x64
       text_area #28 "backup  (folder)\nbackup/monday.txt  (24 bytes)\nbackup/tuesday.txt  (21 bytes)" disabled at 708,164 360x160
   label #29 "15 items, 1,5 MB; 1 chosen" at 12,572 208x16
 
 == File, Extract on backup.tar.gz ==
-      list #18 ["▾ root", "  ▸ backup", "    docs", "    Drafts", "    photos", "  ▸ site"] chosen [0] at 12,94 200x200
-      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [0] at 218,94 484x320
+      tree #18 6 items chosen [7] at 12,94 200x200
+        item 7 "root" unfolded chosen
+          item 18 "backup" folded
+          item 19 "docs"
+          item 20 "Drafts"
+          item 21 "photos"
+          item 22 "site" folded
+      table #22 ["Name", "Size", "Type", "Modified"] 16 rows chosen [0] sorted by 0 ascending at 218,72 484x320
+        row 0 ["backup/", "--", "Folder", "14.03.2026, 10:42"]
+        row 1 ["docs/", "--", "Folder", "14.03.2026, 10:36"]
+        row 2 ["Drafts/", "--", "Folder", "14.03.2026, 10:39"]
+        row 3 ["photos/", "--", "Folder", "14.03.2026, 10:37"]
+        row 4 ["site/", "--", "Folder", "14.03.2026, 10:42"]
+        row 5 ["Äpfel.txt", "18 bytes", "Text", "03.03.2026, 17:00"]
+        row 6 ["apricot.txt", "9 bytes", "Text", "04.03.2026, 00:00"]
+        row 7 ["Archive.zip", "3,6 kB", "ZIP archive", "14.03.2026, 10:41"]
+        row 8 ["backup.tar.gz", "205 bytes", "Tar archive", "05.03.2026, 11:00"]
+        row 9 ["docs.tar.gz", "424 bytes", "Tar archive", "14.03.2026, 10:41"]
+        row 10 ["evil.zip", "289 bytes", "ZIP archive", "06.03.2026, 01:00"]
+        row 11 ["readme.txt.gz", "47 bytes", "Gzip file", "05.03.2026, 18:00"]
+        row 12 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 13 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 14 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 15 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
       label #25 "backup" at 708,72 48x16
       label #26 "Folder\n1 item\nModified 14.03.2026, 10:42 (jetzt)" at 708,94 272x48
       text_area #28 "" disabled hidden
   label #29 "Extracted 3 entries into backup" at 12,572 248x16
+gone: item 8 "docs"
+gone: item 9 "Drafts"
+gone: item 10 "photos"
+gone: item 12 "site" folded
 
 == readme.txt.gz chosen: what it holds ==
-      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [11] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 16 rows chosen [11] sorted by 0 ascending at 218,72 484x320
       label #25 "readme.txt.gz" at 708,72 104x16
       label #26 "Gzip file\nholds text, UTF-8\n47 bytes\nModified 05.03.2026, 18:00 (letzte Woche)" at 708,94 328x64
       text_area #28 "Read me first.\nThen the rest." disabled at 708,164 360x160
   label #29 "16 items, 1,5 MB; 1 chosen" at 12,572 208x16
 
 == File, Extract on readme.txt.gz ==
-      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt                  30 bytes  Text          05.03.2026, 18:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [11] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 17 rows chosen [11] sorted by 0 ascending at 218,72 484x320
+        row 11 ["readme.txt", "30 bytes", "Text", "05.03.2026, 18:00"]
+        row 12 ["readme.txt.gz", "47 bytes", "Gzip file", "05.03.2026, 18:00"]
+        row 13 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 14 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 15 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 16 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
       label #25 "readme.txt" at 708,72 80x16
       label #26 "Text\nUTF-8, detected, 100% sure\n2 lines, line breaks LF\n30 bytes\nModified 05.03.2026, 18:00 (letzte Woche)" at 708,94 328x80
       text_area #28 "Read me first.\nThen the rest." disabled at 708,180 360x160
   label #29 "Extracted 1 entry into readme.txt" at 12,572 264x16
 
 == evil.zip chosen: what it holds ==
-      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt                  30 bytes  Text          05.03.2026, 18:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [10] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 17 rows chosen [10] sorted by 0 ascending at 218,72 484x320
       label #25 "evil.zip" at 708,72 64x16
       label #26 "ZIP archive\n2 members, 35 bytes unpacked, 39 bytes packed\n289 bytes\nModified 06.03.2026, 01:00 (letzte Woche)" at 708,94 360x64
       text_area #28 "ok.txt  (9 bytes)\n../escaped.txt  (26 bytes)" disabled at 708,164 360x160
   label #29 "17 items, 1,5 MB; 1 chosen" at 12,572 208x16
 
 == File, Extract on evil.zip ==
-      list #18 ["▾ root", "  ▸ backup", "    docs", "    Drafts", "    evil", "    photos", "  ▸ site"] chosen [0] at 12,94 200x200
-      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "evil/                             --  Folder        14.03.2026, 10:42", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt                  30 bytes  Text          05.03.2026, 18:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [3] at 218,94 484x320
+      tree #18 7 items chosen [7] at 12,94 200x200
+        item 7 "root" unfolded chosen
+          item 23 "evil"
+          item 24 "photos"
+          item 25 "site" folded
+      table #22 ["Name", "Size", "Type", "Modified"] 18 rows chosen [3] sorted by 0 ascending at 218,72 484x320
+        row 3 ["evil/", "--", "Folder", "14.03.2026, 10:42"]
+        row 4 ["photos/", "--", "Folder", "14.03.2026, 10:37"]
+        row 5 ["site/", "--", "Folder", "14.03.2026, 10:42"]
+        row 6 ["Äpfel.txt", "18 bytes", "Text", "03.03.2026, 17:00"]
+        row 7 ["apricot.txt", "9 bytes", "Text", "04.03.2026, 00:00"]
+        row 8 ["Archive.zip", "3,6 kB", "ZIP archive", "14.03.2026, 10:41"]
+        row 9 ["backup.tar.gz", "205 bytes", "Tar archive", "05.03.2026, 11:00"]
+        row 10 ["docs.tar.gz", "424 bytes", "Tar archive", "14.03.2026, 10:41"]
+        row 11 ["evil.zip", "289 bytes", "ZIP archive", "06.03.2026, 01:00"]
+        row 12 ["readme.txt", "30 bytes", "Text", "05.03.2026, 18:00"]
+        row 13 ["readme.txt.gz", "47 bytes", "Gzip file", "05.03.2026, 18:00"]
+        row 14 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 15 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 16 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 17 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
       label #25 "evil" at 708,72 32x16
       label #26 "Folder\n1 item\nModified 14.03.2026, 10:42 (jetzt)" at 708,94 272x48
       text_area #28 "" disabled hidden
   label #29 "Extracted 1 entry into evil; passed over ../escaped.txt: its name leads outside the folder" at 12,572 720x16
+gone: item 21 "photos"
+gone: item 22 "site" folded
 a member named outside its folder landed there: false
+
+== The triangle of site in the tree: its folders under it, root still shown ==
+      tree #18 8 items chosen [7] at 12,94 200x200
+        item 7 "root" unfolded chosen
+          item 25 "site" unfolded
+            item 26 "site"
+
+== The triangle again: site folded ==
+      tree #18 7 items chosen [7] at 12,94 200x200
+        item 7 "root" unfolded chosen
+          item 25 "site" folded
+gone: item 26 "site"
 
 == File, Checksums on video.bin: a megabyte a tick ==
     menu_item #31 "Open" primary+Down disabled
@@ -808,7 +1123,7 @@ a member named outside its folder landed there: false
     button #5 "Up" disabled at 160,12 40x24
     button #8 "Open" disabled at 1012,12 56x24
     button #13 "Search" disabled at 926,42 72x24
-      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "evil/                             --  Folder        14.03.2026, 10:42", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt                  30 bytes  Text          05.03.2026, 18:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [15] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 18 rows chosen [15] sorted by 0 ascending at 218,72 484x320
       label #25 "video.bin" at 708,72 72x16
       label #26 "BIN file\n1,5 MB\nModified 04.03.2026, 21:00 (letzte Woche)\ndata, not text" at 708,94 328x64
       text_area #28 "00000000  00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  |................|\n00000010  10 11 12 13 14 15 16 17  18 19 1a 1b 1c 1d 1e 1f  |................|\n00000020  20 21 22 23 24 25 26 27  28 29 2a 2b 2c 2d 2e 2f  | !\"#$%&'()*+,-./|\n00000030  30 31 32 33 34 35 36 37  38 39 3a 3b 3c 3d 3e 3f  |0123456789:;<=>?|\n00000040  40 41 42 43 44 45 46 47  48 49 4a 4b 4c 4d 4e 4f  |@ABCDEFGHIJKLMNO|\n00000050  50 51 52 53 54 55 56 57  58 59 5a 5b 5c 5d 5e 5f  |PQRSTUVWXYZ[\\]^_|\n00000060  60 61 62 63 64 65 66 67  68 69 6a 6b 6c 6d 6e 6f  |`abcdefghijklmno|\n00000070  70 71 72 73 74 75 76 77  78 79 7a 7b 7c 7d 7e 7f  |pqrstuvwxyz{|}~.|" disabled at 708,164 360x160
@@ -888,9 +1203,15 @@ window #1 "Explorer: photos" 1080x600
     button #4 "Forward" disabled at 74,12 80x24
     text_field #6 "build/explorer/root/photos" at 206,12 754x24
     button #8 "Open" disabled at 1012,12 56x24
-      list #18 ["▾ root", "  ▸ backup", "    docs", "    Drafts", "    evil", "  ▾ photos", "  ▸ site"] chosen [5] at 12,94 200x200
+      tree #18 7 items chosen [24] at 12,94 200x200
+        item 7 "root" unfolded
+          item 24 "photos" chosen
       list #20 ["Documents", "Holiday photos"] chosen [1] at 12,322 200x96
-      list #23 multiple ["IMG_9.png                   82 bytes  PNG image     03.03.2026, 03:00", "IMG_10.png                  82 bytes  PNG image     03.03.2026, 10:00", "portrait.jpg                  1,2 kB  JPEG image    02.03.2026, 20:00", "sunset.png                    1,1 kB  PNG image     02.03.2026, 13:00"] chosen [] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 4 rows chosen [] sorted by 0 ascending at 218,72 484x320
+        row 0 ["IMG_9.png", "82 bytes", "PNG image", "03.03.2026, 03:00"]
+        row 1 ["IMG_10.png", "82 bytes", "PNG image", "03.03.2026, 10:00"]
+        row 2 ["portrait.jpg", "1,2 kB", "JPEG image", "02.03.2026, 20:00"]
+        row 3 ["sunset.png", "1,1 kB", "PNG image", "02.03.2026, 13:00"]
       label #25 "" at 708,72 0x16
       label #26 "Nothing chosen" at 708,94 112x16
       text_area #28 "" disabled hidden
@@ -902,9 +1223,16 @@ window #1 "Explorer: photos" 1080x600
 == Bookmarks, Documents: docs ==
 window #1 "Explorer: docs" 1080x600
     text_field #6 "build/explorer/root/docs" at 206,12 754x24
-      list #18 ["▾ root", "  ▸ backup", "  ▾ docs", "    Drafts", "    evil", "  ▾ photos", "  ▸ site"] chosen [2] at 12,94 200x200
+      tree #18 7 items chosen [19] at 12,94 200x200
+        item 7 "root" unfolded
+          item 19 "docs" chosen
+          item 24 "photos"
       list #20 ["Documents", "Holiday photos"] chosen [0] at 12,322 200x96
-      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes.txt                   78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 4 rows chosen [] sorted by 0 ascending at 218,72 484x320
+        row 0 ["greeting.txt", "30 bytes", "Text", "02.03.2026, 06:00"]
+        row 1 ["japanese.txt", "40 bytes", "Text", "01.03.2026, 23:00"]
+        row 2 ["notes.txt", "78 bytes", "Text", "01.03.2026, 09:00"]
+        row 3 ["prices.txt", "57 bytes", "Text", "01.03.2026, 16:00"]
   label #29 "4 items, 205 bytes" at 12,572 144x16
 
 == Bookmarks, Remove Bookmark on photos ==
@@ -912,9 +1240,16 @@ window #1 "Explorer: photos" 1080x600
     menu_item #70 "Add Bookmark…" primary+d
     menu_item #71 "Remove Bookmark" disabled
     text_field #6 "build/explorer/root/photos" at 206,12 754x24
-      list #18 ["▾ root", "  ▸ backup", "  ▾ docs", "    Drafts", "    evil", "  ▾ photos", "  ▸ site"] chosen [5] at 12,94 200x200
+      tree #18 7 items chosen [24] at 12,94 200x200
+        item 7 "root" unfolded
+          item 19 "docs"
+          item 24 "photos" chosen
       list #20 ["Documents"] chosen [] at 12,322 200x96
-      list #23 multiple ["IMG_9.png                   82 bytes  PNG image     03.03.2026, 03:00", "IMG_10.png                  82 bytes  PNG image     03.03.2026, 10:00", "portrait.jpg                  1,2 kB  JPEG image    02.03.2026, 20:00", "sunset.png                    1,1 kB  PNG image     02.03.2026, 13:00"] chosen [] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 4 rows chosen [] sorted by 0 ascending at 218,72 484x320
+        row 0 ["IMG_9.png", "82 bytes", "PNG image", "03.03.2026, 03:00"]
+        row 1 ["IMG_10.png", "82 bytes", "PNG image", "03.03.2026, 10:00"]
+        row 2 ["portrait.jpg", "1,2 kB", "JPEG image", "02.03.2026, 20:00"]
+        row 3 ["sunset.png", "1,1 kB", "PNG image", "02.03.2026, 13:00"]
   label #29 "Removed the bookmark \"Holiday photos\"" at 12,572 296x16
 gone: menu_item #167 "Holiday photos"
 the bookmarks file now:
@@ -938,29 +1273,83 @@ window #1 "Explorer: root" 1080x600
     menu_item #68 "Hide Hidden Files" primary+shift+h
     text_field #6 "build/explorer/root" at 206,12 754x24
     button #8 "Open" at 1012,12 56x24
-      list #18 ["▾ root", "  ▸ backup", "  ▾ docs", "    Drafts", "    evil", "  ▾ photos", "  ▸ site"] chosen [0] at 12,94 200x200
-      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "evil/                             --  Folder        14.03.2026, 10:42", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", ".hidden                     22 bytes  Document      06.03.2026, 08:00", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt                  30 bytes  Text          05.03.2026, 18:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [4] at 218,94 484x320
+      tree #18 7 items chosen [7] at 12,94 200x200
+        item 7 "root" unfolded chosen
+          item 24 "photos"
+      table #22 ["Name", "Size", "Type", "Modified"] 19 rows chosen [4] sorted by 0 ascending at 218,72 484x320
+        row 0 ["backup/", "--", "Folder", "14.03.2026, 10:42"]
+        row 1 ["docs/", "--", "Folder", "14.03.2026, 10:36"]
+        row 2 ["Drafts/", "--", "Folder", "14.03.2026, 10:39"]
+        row 3 ["evil/", "--", "Folder", "14.03.2026, 10:42"]
+        row 4 ["photos/", "--", "Folder", "14.03.2026, 10:37"]
+        row 5 ["site/", "--", "Folder", "14.03.2026, 10:42"]
+        row 6 [".hidden", "22 bytes", "Document", "06.03.2026, 08:00"]
+        row 7 ["Äpfel.txt", "18 bytes", "Text", "03.03.2026, 17:00"]
+        row 8 ["apricot.txt", "9 bytes", "Text", "04.03.2026, 00:00"]
+        row 9 ["Archive.zip", "3,6 kB", "ZIP archive", "14.03.2026, 10:41"]
+        row 10 ["backup.tar.gz", "205 bytes", "Tar archive", "05.03.2026, 11:00"]
+        row 11 ["docs.tar.gz", "424 bytes", "Tar archive", "14.03.2026, 10:41"]
+        row 12 ["evil.zip", "289 bytes", "ZIP archive", "06.03.2026, 01:00"]
+        row 13 ["readme.txt", "30 bytes", "Text", "05.03.2026, 18:00"]
+        row 14 ["readme.txt.gz", "47 bytes", "Gzip file", "05.03.2026, 18:00"]
+        row 15 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 16 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 17 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 18 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
       label #25 "photos" at 708,72 48x16
       label #26 "Folder\n4 items\nModified 14.03.2026, 10:37 (vor 8 Minuten)" at 708,94 336x48
   label #29 "19 items, 1,5 MB; 1 chosen" at 12,572 208x16
 
 == View, Hide Hidden Files ==
     menu_item #68 "Show Hidden Files" primary+shift+h
-      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "evil/                             --  Folder        14.03.2026, 10:42", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt                  30 bytes  Text          05.03.2026, 18:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [4] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 18 rows chosen [4] sorted by 0 ascending at 218,72 484x320
+        row 6 ["Äpfel.txt", "18 bytes", "Text", "03.03.2026, 17:00"]
+        row 7 ["apricot.txt", "9 bytes", "Text", "04.03.2026, 00:00"]
+        row 8 ["Archive.zip", "3,6 kB", "ZIP archive", "14.03.2026, 10:41"]
+        row 9 ["backup.tar.gz", "205 bytes", "Tar archive", "05.03.2026, 11:00"]
+        row 10 ["docs.tar.gz", "424 bytes", "Tar archive", "14.03.2026, 10:41"]
+        row 11 ["evil.zip", "289 bytes", "ZIP archive", "06.03.2026, 01:00"]
+        row 12 ["readme.txt", "30 bytes", "Text", "05.03.2026, 18:00"]
+        row 13 ["readme.txt.gz", "47 bytes", "Gzip file", "05.03.2026, 18:00"]
+        row 14 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 15 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 16 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 17 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
   label #29 "18 items, 1,5 MB; 1 chosen" at 12,572 208x16
 
 == Another program writes from-outside.txt: the watch tells, the list follows ==
-      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "evil/                             --  Folder        14.03.2026, 10:42", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "from-outside.txt             3 bytes  Text          13.03.2026, 21:00", "readme.txt                  30 bytes  Text          05.03.2026, 18:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [4] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 19 rows chosen [4] sorted by 0 ascending at 218,72 484x320
+        row 12 ["from-outside.txt", "3 bytes", "Text", "13.03.2026, 21:00"]
+        row 13 ["readme.txt", "30 bytes", "Text", "05.03.2026, 18:00"]
+        row 14 ["readme.txt.gz", "47 bytes", "Gzip file", "05.03.2026, 18:00"]
+        row 15 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 16 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 17 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 18 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
       label #26 "Folder\n4 items\nModified 14.03.2026, 10:37 (vor 9 Minuten)" at 708,94 336x48
   label #29 "The folder changed on disk: from-outside.txt came" at 12,572 392x16
 
 == It removes the file: gone from the list ==
-      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "evil/                             --  Folder        14.03.2026, 10:42", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt                  30 bytes  Text          05.03.2026, 18:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [4] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 18 rows chosen [4] sorted by 0 ascending at 218,72 484x320
+        row 12 ["readme.txt", "30 bytes", "Text", "05.03.2026, 18:00"]
+        row 13 ["readme.txt.gz", "47 bytes", "Gzip file", "05.03.2026, 18:00"]
+        row 14 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 15 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 16 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 17 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
   label #29 "The folder changed on disk: from-outside.txt went" at 12,572 392x16
 
 == File, Move to Trash on the two archives ==
     menu_item #48 "Undo Move to Trash" primary+z
-      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "evil/                             --  Folder        14.03.2026, 10:42", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt                  30 bytes  Text          05.03.2026, 18:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [9] at 218,94 484x320
+      table #22 ["Name", "Size", "Type", "Modified"] 16 rows chosen [9] sorted by 0 ascending at 218,72 484x320
+        row 8 ["backup.tar.gz", "205 bytes", "Tar archive", "05.03.2026, 11:00"]
+        row 9 ["evil.zip", "289 bytes", "ZIP archive", "06.03.2026, 01:00"]
+        row 10 ["readme.txt", "30 bytes", "Text", "05.03.2026, 18:00"]
+        row 11 ["readme.txt.gz", "47 bytes", "Gzip file", "05.03.2026, 18:00"]
+        row 12 ["site.zip", "456 bytes", "ZIP archive", "05.03.2026, 04:00"]
+        row 13 ["video.bin", "1,5 MB", "BIN file", "04.03.2026, 21:00"]
+        row 14 ["Zebra.md", "18 bytes", "Markdown", "04.03.2026, 07:00"]
+        row 15 ["zoo.md", "16 bytes", "Markdown", "04.03.2026, 14:00"]
       label #25 "evil.zip" at 708,72 64x16
       label #26 "ZIP archive\n2 members, 35 bytes unpacked, 39 bytes packed\n289 bytes\nModified 06.03.2026, 01:00 (letzte Woche)" at 708,94 360x64
       text_area #28 "ok.txt  (9 bytes)\n../escaped.txt  (26 bytes)" disabled at 708,164 360x160
