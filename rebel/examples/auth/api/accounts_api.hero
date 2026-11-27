@@ -12,6 +12,7 @@
 use <rebel>/http
 use <rebel>/mail
 use <rebel>/uuid
+use <rebel>/web
 
 use accounts/accounts
 use accounts/passwords
@@ -33,15 +34,6 @@ constant SESSION_SECONDS: i64
 constant VERIFY_SECONDS: i64
     86_400
 
-# The person a request's session cookie names.
-record Current
-    # The cookie's value.
-    token: str
-    # The session.
-    session: grants.Session
-    # The account.
-    user: accounts.User
-
 # The person `r`'s session cookie names.
 #
 # - `st`: the server.
@@ -49,14 +41,14 @@ record Current
 #
 # Fails `invalid_grant` where it names no live session, or its account is
 # disabled.
-function current(st: state.State, r: http.Request) -> Current?
+function current(st: state.State lent, r: http.Request) -> state.Visitor?
     token = answers.cookie(r, name: answers.SESSION_COOKIE)
     s = grants.session_of(st.grants, token: token, now: state.now(st))?
     u = accounts.by_id(st.directory, id: s.user_id)?
 
     if u.disabled
         return fail(code: grants.INVALID_GRANT, msg: "the account is disabled")
-    return ok(Current(token: token, session: s, user: u))
+    return ok(state.Visitor(token: token, session: s, user: u))
 
 # The answer to a request that needs a session and has none.
 function login_required() -> http.Response
@@ -69,7 +61,7 @@ function login_required() -> http.Response
 # - `r`: the request.
 #
 # Fails where the data file cannot be written.
-function register(@st: state.State, r: http.Request) -> http.Response?
+function register(@st: state.State, _: web.Found, r: http.Request) -> http.Response?
     f = answers.form(r)
     username = answers.field(f, key: "username")
     password = answers.field(f, key: "password")
@@ -147,7 +139,7 @@ function send_verification(@st: state.State, u: accounts.User, link_token: str) 
 # - `r`: the request.
 #
 # Fails where the data file cannot be written.
-function verify(@st: state.State, r: http.Request) -> http.Response?
+function verify(@st: state.State, _: web.Found, r: http.Request) -> http.Response?
     token = answers.field(answers.query(r), key: "token")
 
     if token == ""
@@ -178,7 +170,7 @@ function verify(@st: state.State, r: http.Request) -> http.Response?
 # - `r`: the request.
 #
 # Fails where the data file cannot be written.
-function login(@st: state.State, r: http.Request) -> http.Response?
+function login(@st: state.State, _: web.Found, r: http.Request) -> http.Response?
     f = answers.form(r)
     refused = answers.oauth_error(
         401,
@@ -255,19 +247,19 @@ function opened(@st: state.State, u: accounts.User, methods: [str], return_to: s
 #
 # - `st`: the server, which forgets the session.
 # - `r`: the request.
-function logout(@st: state.State, r: http.Request) -> http.Response
+function logout(@st: state.State, _: web.Found, r: http.Request) -> http.Response?
     grants.close_session(@st.grants, token: answers.cookie(r, name: answers.SESSION_COOKIE))
     answer = answers.json_answer(200, members: {"logged_out": .boolean(v: true)})
-    return answers.with_cookie(answer, name: answers.SESSION_COOKIE, value: "", seconds: 0, secure: false)
+    return ok(answers.with_cookie(answer, name: answers.SESSION_COOKIE, value: "", seconds: 0, secure: false))
 
 # `GET /login`: the form a browser shows, posting to `POST /login` with the
 # authorization request to return to.
 #
 # - `r`: the request.
-function login_page(r: http.Request) -> http.Response
+function login_page(_: state.State lent, _: web.Found, r: http.Request) -> http.Response?
     back = escape_html(answers.field(answers.query(r), key: "return_to"))
     page = f"<!doctype html><title>Log in</title><form method=post action=/login><input name=username autocomplete=username><input name=password type=password autocomplete=current-password><input name=code inputmode=numeric autocomplete=one-time-code><input type=hidden name=return_to value=\"{back}\"><button>Log in</button></form>"
-    return http.respond_text(200, text: page)
+    return ok(http.respond_text(200, text: page))
 
 # `s` with the five characters HTML gives a meaning escaped.
 #

@@ -17,6 +17,7 @@ use index/links
 use query/answer
 use query/ranker
 use server/params
+use server/state
 
 # The content security policy of every page: nothing loaded, no script,
 # the page's own inline style, forms sent only to this server.
@@ -29,8 +30,9 @@ constant STYLE: str
 
 # `GET /`: the search box and every page of the site in its order of titles.
 #
-# - `e`: the engine.
-function home(e: engine.Engine lent) -> http.Response
+# - `s`: the service, its engine read.
+function home(s: state.Service lent, _: web.Found, _: http.Request) -> http.Response?
+    e = s.engine
     items: [str] @= []
 
     for id in e.title_order
@@ -45,26 +47,25 @@ function home(e: engine.Engine lent) -> http.Response
         "<ul class=\"titles\">" + items.join("") + "</ul>"
     ]
 
-    return shown(200, title: "searchd", body: body.join("\n"))
+    return ok(shown(200, title: "searchd", body: body.join("\n")))
 
 # `GET /search?q=&mode=`: the results of a query, as a page.
 #
-# - `e`: the engine.
-# - `r`: the request.
-function results(e: engine.Engine lent, r: http.Request) -> http.Response
+# - `s`: the service, its engine read.
+function results(s: state.Service lent, _: web.Found, r: http.Request) -> http.Response?
+    e = s.engine
+
     pairs = match params.pairs_of(r)
         .ok got => got
-        .err x  => return shown(400, title: "searchd: a query that does not read", body: notice(x.msg))
+        .err x  => return ok(shown(400, title: "searchd: a query that does not read", body: notice(x.msg)))
 
     typed = params.text_of(pairs, key: "q", fallback: "")
     mode = ranker.mode_named(params.text_of(pairs, key: "mode", fallback: "hybrid")).default(.hybrid)
 
     a = match answer.answer(e, text: typed, mode: mode, limit: 10)
         .ok got => got
-        .err x => return shown(
-            400,
-            title: "searchd: a query that does not read",
-            body: search_form(typed, mode: mode) + notice(x.msg)
+        .err x => return ok(
+            shown(400, title: "searchd: a query that does not read", body: search_form(typed, mode: mode) + notice(x.msg))
         )
 
     parts: [str] @= [search_form(typed, mode: mode)]
@@ -88,11 +89,11 @@ function results(e: engine.Engine lent, r: http.Request) -> http.Response
 
         parts @ parts.push("<ol class=\"results\">" + items.join("\n") + "</ol>")
 
-    return shown(200, title: "searchd: " + typed, body: parts.join("\n"))
+    return ok(shown(200, title: "searchd: " + typed, body: parts.join("\n")))
 
 # One result of a results page.
 #
-# - `e`: the engine.
+# - `s`: the service, its engine read.
 # - `hit`: the result.
 # - `a`: the answer it belongs to.
 function result_item(e: engine.Engine lent, hit: answer.Hit, a: answer.Answer lent) -> str
@@ -117,12 +118,14 @@ function result_item(e: engine.Engine lent, hit: answer.Hit, a: answer.Answer le
 
 # `GET /pages/:id`: what the engine knows of a page.
 #
-# - `e`: the engine.
-# - `id`: the parameter as the path writes it.
-function page_view(e: engine.Engine lent, id: str) -> http.Response
+# - `s`: the service, its engine read.
+function page_view(s: state.Service lent, found: web.Found, _: http.Request) -> http.Response?
+    e = s.engine
+    id = web.param_of(found, name: "id")
+
     number = match params.number_in(text: id, name: "page", lowest: 0, highest: e.docs.len() - 1)
         .ok got => got
-        .err x  => return shown(404, title: "searchd: no such page", body: notice(x.msg))
+        .err x  => return ok(shown(404, title: "searchd: no such page", body: notice(x.msg)))
 
     d = e.docs[number]
     route: [str] @= []
@@ -143,7 +146,7 @@ function page_view(e: engine.Engine lent, id: str) -> http.Response
         "<p><a href=\"/\">Search again</a></p>"
     ]
 
-    return shown(200, title: "searchd: " + d.title, body: body.join("\n"))
+    return ok(shown(200, title: "searchd: " + d.title, body: body.join("\n")))
 
 # The search box, holding `typed` and `mode`.
 #

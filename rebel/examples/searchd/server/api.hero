@@ -21,6 +21,7 @@ use query/answer
 use query/ranker
 use query/suggest
 use server/params
+use server/state
 
 # The most results one query is answered with.
 constant MOST_RESULTS: i64
@@ -29,30 +30,31 @@ constant MOST_RESULTS: i64
 # `GET /api/search?q=&mode=&limit=`: the query `q` answered in `mode`
 # (`hybrid` where left out) with at most `limit` results (10).
 #
-# - `e`: the engine.
-# - `r`: the request.
-function search(e: engine.Engine lent, r: http.Request) -> http.Response
+# - `s`: the service, its engine read.
+function search(s: state.Service lent, _: web.Found, r: http.Request) -> http.Response?
+    e = s.engine
+
     pairs = match params.pairs_of(r)
         .ok got => got
-        .err x  => return refused(x.msg)
+        .err x  => return ok(refused(x.msg))
 
     mode = match ranker.mode_named(params.text_of(pairs, key: "mode", fallback: "hybrid"))
         .ok got => got
-        .err x  => return refused(x.msg)
+        .err x  => return ok(refused(x.msg))
 
     limit = match params.int_of(pairs, key: "limit", fallback: 10, lowest: 1, highest: MOST_RESULTS)
         .ok got => got
-        .err x  => return refused(x.msg)
+        .err x  => return ok(refused(x.msg))
 
     a = match answer.answer(e, text: params.text_of(pairs, key: "q", fallback: ""), mode: mode, limit: limit)
         .ok got => got
-        .err x  => return refused(x.msg)
+        .err x  => return ok(refused(x.msg))
 
-    return answered(answer_json(e, a: a))
+    return ok(answered(answer_json(e, a: a)))
 
 # The JSON of the answer `a`.
 #
-# - `e`: the engine.
+# - `s`: the service, its engine read.
 # - `a`: the answer.
 function answer_json(e: engine.Engine lent, a: answer.Answer) -> json.Value
     changes: [json.Value] @= []
@@ -88,30 +90,32 @@ function answer_json(e: engine.Engine lent, a: answer.Answer) -> json.Value
 # `GET /api/suggest?q=&limit=`: what `q`, being typed, may become, at most
 # `limit` (5).
 #
-# - `e`: the engine.
-# - `r`: the request.
-function suggestions(e: engine.Engine lent, r: http.Request) -> http.Response
+# - `s`: the service, its engine read.
+function suggestions(s: state.Service lent, _: web.Found, r: http.Request) -> http.Response?
+    e = s.engine
+
     pairs = match params.pairs_of(r)
         .ok got => got
-        .err x  => return refused(x.msg)
+        .err x  => return ok(refused(x.msg))
 
     most = match params.int_of(pairs, key: "limit", fallback: 5, lowest: 1, highest: 20)
         .ok got => got
-        .err x  => return refused(x.msg)
+        .err x  => return ok(refused(x.msg))
 
     found: [json.Value] @= []
 
-    for s in suggest.suggestions(e, typed: params.text_of(pairs, key: "q", fallback: ""), most: most)
-        members: {str: json.Value} = {"text": .text(v: s.text), "pages": store.number(s.pages)}
+    for each in suggest.suggestions(e, typed: params.text_of(pairs, key: "q", fallback: ""), most: most)
+        members: {str: json.Value} = {"text": .text(v: each.text), "pages": store.number(each.pages)}
         found @ found.push(.object(members: members))
 
     members: {str: json.Value} = {"suggestions": .list(items: found)}
-    return answered(.object(members: members))
+    return ok(answered(.object(members: members)))
 
 # `GET /api/pages`: every indexed page, by its title in the site's order.
 #
-# - `e`: the engine.
-function pages(e: engine.Engine lent) -> http.Response
+# - `s`: the service, its engine read.
+function pages(s: state.Service lent, _: web.Found, _: http.Request) -> http.Response?
+    e = s.engine
     found: [json.Value] @= []
 
     for id in e.title_order
@@ -120,22 +124,24 @@ function pages(e: engine.Engine lent) -> http.Response
         found @ found.push(.object(members: members))
 
     members: {str: json.Value} = {"language": .text(v: e.language), "pages": .list(items: found)}
-    return answered(.object(members: members))
+    return ok(answered(.object(members: members)))
 
 # `GET /api/pages/:id`: the page numbered `id`: its title, rank, depth, the
 # links to and from it, its click path from the start and its
 # near-duplicates.
 #
-# - `e`: the engine.
-# - `id`: the parameter as the path writes it.
-function page(e: engine.Engine lent, id: str) -> http.Response
+# - `s`: the service, its engine read.
+function page(s: state.Service lent, found: web.Found, _: http.Request) -> http.Response?
+    e = s.engine
+    id = web.param_of(found, name: "id")
+
     number = match params.number_in(text: id, name: "page", lowest: 0, highest: e.docs.len() - 1)
         .ok got => got
-        .err _  => return web.error_response(.json, status: 404, message: f"no page numbered \"{id}\"")
+        .err _  => return ok(web.error_response(.json, status: 404, message: f"no page numbered \"{id}\""))
 
     d = match engine.doc_of(e, id: number)
         .ok got => got
-        .err x  => return web.error_response(.json, status: 404, message: x.msg)
+        .err x  => return ok(web.error_response(.json, status: 404, message: x.msg))
 
     route = links.path_to(engine.graph_of(e), start: e.start, to: d.id)
     twins: [i64] @= []
@@ -159,13 +165,14 @@ function page(e: engine.Engine lent, id: str) -> http.Response
         "duplicates": .list(items: paths_of(e, ids: twins))
     }
 
-    return answered(.object(members: members))
+    return ok(answered(.object(members: members)))
 
 # `GET /api/duplicates`: every group of near-duplicates of more than one
 # page, each its pages' paths in the order of their numbers.
 #
-# - `e`: the engine.
-function duplicate_groups(e: engine.Engine lent) -> http.Response
+# - `s`: the service, its engine read.
+function duplicate_groups(s: state.Service lent, _: web.Found, _: http.Request) -> http.Response?
+    e = s.engine
     labels: [i64] @= []
 
     for d in e.docs
@@ -177,13 +184,14 @@ function duplicate_groups(e: engine.Engine lent) -> http.Response
         groups @ groups.push(.list(items: paths_of(e, ids: g)))
 
     members: {str: json.Value} = {"groups": .list(items: groups)}
-    return answered(.object(members: members))
+    return ok(answered(.object(members: members)))
 
 # `GET /api/stats`: how many pages the engine knows and indexes, its terms
 # and vectors, the PageRank rounds, and the three pages ranked highest.
 #
-# - `e`: the engine.
-function stats(e: engine.Engine lent) -> http.Response
+# - `s`: the service, its engine read.
+function stats(s: state.Service lent, _: web.Found, _: http.Request) -> http.Response?
+    e = s.engine
     top: [json.Value] @= []
 
     for id in engine.ranked_highest(e, most: 3)
@@ -206,11 +214,11 @@ function stats(e: engine.Engine lent) -> http.Response
         "top": .list(items: top)
     }
 
-    return answered(.object(members: members))
+    return ok(answered(.object(members: members)))
 
 # The paths of the pages `ids`, in their order.
 #
-# - `e`: the engine.
+# - `s`: the service, its engine read.
 # - `ids`: page numbers the engine holds.
 function paths_of(e: engine.Engine lent, ids: [i64]) -> [json.Value]
     found: [json.Value] @= []

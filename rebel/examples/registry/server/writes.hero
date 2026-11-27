@@ -1,6 +1,7 @@
-# The API's writes, each made by a publisher whose token `api` has checked:
-# a version published, a version yanked and its yank taken back, a signing
-# key added.
+# The API's writes, each made by a publisher whose token the route's own
+# step `api.authorize` has checked, its grant held in the state's `grant`
+# while the handler runs: a version published, a version yanked and its yank
+# taken back, a signing key added.
 #
 # A publication is `PUT /api/v1/packages/<name>/<version>` with a
 # `multipart/form-data` body of two parts, `archive` (the archive's bytes)
@@ -12,6 +13,7 @@ use <rebel>/bytes
 use <rebel>/http
 use <rebel>/json
 use <rebel>/time
+use <rebel>/web
 
 use server/answers
 use server/publish
@@ -36,17 +38,20 @@ constant PERMISSION: str
 # 201 with the version where it is new, 200 where the same bytes were
 # published already.
 #
-# - `state`: the server's state, which the publication changes.
+# - `state`: the server's state, which the publication changes; its `grant`
+#   is what the request's token grants.
+# - `found`: the route, its parameters `name` and `version`.
 # - `r`: the request, its body a form of the parts `archive` and
 #   `signature`.
-# - `grant`: what its token grants.
-# - `name`: the package's name, from the URL.
-# - `version`: the version, from the URL.
-# - `now`: the moment it is published.
 #
-# Fails `invalid` where the body is no such form, and as `publish.publish`
+# Published at the wall clock's time. Fails `invalid` where the body is no
+# such form, `not_found` where no grant is held, and as `publish.publish`
 # fails.
-function publish_version(@state: serving.State, r: http.Request, grant: database.Grant, name: str, version: str, now: time.Instant) -> http.Response?
+function publish_version(@state: serving.State, found: web.Found, r: http.Request) -> http.Response?
+    grant = state.grant?
+    name = web.param_of(found, name: "name")
+    version = web.param_of(found, name: "version")
+    now = time.now().default(time.epoch())
     limits @= http.default_part_limits()
     limits.part_bytes @ state.settings.upload_bytes
     limits.body_bytes @ state.settings.upload_bytes + 65_536
@@ -72,6 +77,36 @@ function publish_version(@state: serving.State, r: http.Request, grant: database
         http.STATUS_OK
     return ok(answers.with_json(status, v: answers.release_json(done.release, base_url: state.base_url)))
 
+# `PUT .../yank`: the route's version yanked, for its owner.
+#
+# - `state`: the server's state; its `grant` is what the token grants.
+# - `found`: the route, its parameters `name` and `version`.
+#
+# Fails as `set_yanked` does, and `not_found` where no grant is held.
+function yank(@state: serving.State, found: web.Found, _: http.Request) -> http.Response?
+    return set_yanked(
+        @state,
+        grant: state.grant?,
+        name: web.param_of(found, name: "name"),
+        version: web.param_of(found, name: "version"),
+        yanked: true
+    )
+
+# `DELETE .../yank`: the route's version's yank taken back, for its owner.
+#
+# - `state`: the server's state; its `grant` is what the token grants.
+# - `found`: the route, its parameters `name` and `version`.
+#
+# Fails as `set_yanked` does, and `not_found` where no grant is held.
+function unyank(@state: serving.State, found: web.Found, _: http.Request) -> http.Response?
+    return set_yanked(
+        @state,
+        grant: state.grant?,
+        name: web.param_of(found, name: "name"),
+        version: web.param_of(found, name: "version"),
+        yanked: false
+    )
+
 # Yanks `name` at `version`, or takes its yank back, for its owner.
 #
 # - `state`: the server's state.
@@ -95,14 +130,15 @@ function set_yanked(@state: serving.State, grant: database.Grant, name: str, ver
 # Adds the Ed25519 key of the `PUBLIC KEY` block `r`'s body holds to the
 # grant's publisher: 201 with its id, or 200 where it was added already.
 #
-# - `state`: the server's state.
+# - `state`: the server's state; its `grant` is what the token grants.
 # - `r`: the request, its body the block.
-# - `grant`: what its token grants.
-# - `now`: the moment it is added.
 #
-# Fails `invalid` where the body is no Ed25519 public key, `exists` where the
-# key is another publisher's.
-function add_key(@state: serving.State, r: http.Request, grant: database.Grant, now: time.Instant) -> http.Response?
+# Added at the wall clock's time. Fails `invalid` where the body is no
+# Ed25519 public key, `exists` where the key is another publisher's,
+# `not_found` where no grant is held.
+function add_key(@state: serving.State, _: web.Found, r: http.Request) -> http.Response?
+    grant = state.grant?
+    now = time.now().default(time.epoch())
     text = bytes.to_text(r.body)?
     der = signers.read_public(text)?
     is_new = database.key_of(@state.db, id: signers.id_of(der)).is_err()

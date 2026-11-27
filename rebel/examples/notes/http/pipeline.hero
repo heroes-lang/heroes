@@ -1,16 +1,15 @@
 # One request, from the bytes read to the response written: the steps
 # before the handler, in their order, then the handler, then the steps
-# after it. A step that needs the server's state (the rate limit's buckets,
-# the session's key, the API's token key) is called here by name with that
-# state, since a step `web.before` calls is a function of the request alone
-# and the language has no closure to hand it the state with.
+# after it. The steps before the route is found are called here in order;
+# a page's route then runs its own steps through `web/chain`, each lent the
+# state by `@`, as `bind` binds them: the CSRF token of a page's form, the
+# admin group's guard, the media types a route can answer.
 #
-# Before: a request id kept or made; the method a form's `_method` or
-# `X-HTTP-Method-Override` names read; the
-# client's rate limit; the route; who is asking (the session or the bearer
-# token); the CSRF token of a page's form; the admin group's guard; the
-# media types a route can answer. After: the session's cookie written back,
-# a 500 for a handler's failure, the request id copied, an entity tag and its
+# Before the route: a request id kept or made; the method a form's
+# `_method` or `X-HTTP-Method-Override` names read, which the route is found
+# by; the client's rate limit; then the route, and who is asking (the
+# session or the bearer token). After: the session's cookie written back, a
+# 500 for a handler's failure, the request id copied, an entity tag and its
 # 304, the security headers, gzip, the counters and the log line.
 
 use <rebel>/errors
@@ -20,6 +19,7 @@ use <rebel>/openapi
 use <rebel>/strings
 use <rebel>/time
 use <rebel>/web
+use <rebel>/web/chain
 
 use api/accounts_api
 use api/api_doc
@@ -140,14 +140,16 @@ function answer(@app: state.App, r: http.Request, now: time.Instant) -> Outcome?
             return ok(.respond(response: a.response))
         .go_on _ => _ = 0
 
-    found = match web.route(app.router, r: request)
-        .ok f  => f
-        .err _ => return ok(.respond(response: web.not_routed(app.router, r: request)))
+    n = chain.start(app.router, r: request)
+
+    found = match n.target
+        .route t    => t.found
+        .unrouted u => return ok(.respond(response: u.response))
 
     if routes.is_api_route(found)
         return api(@app, r: request, found: found, now: now)
 
-    return page(@app, r: request, found: found, now: now)
+    return page(@app, r: request, n: n, found: found, now: now)
 
 # The answer of an API route: the token checked, then the request against
 # the document, then the operation.
@@ -200,14 +202,16 @@ function api(@app: state.App, r: http.Request, found: web.Found, now: time.Insta
 
     return ok(.respond(response: reply.response))
 
-# The answer of a page's route: the session, the CSRF token of a form, the
-# admin group's guard, the media types offered, then the handler.
+# The answer of a page's route: the session read into its visit, then the
+# route's steps and its answer through `web/chain`, the visit held in the
+# state while they run.
 #
 # - `app`: the state.
 # - `r`: the request.
+# - `n`: where the request stands in its route's chain.
 # - `found`: the route.
 # - `now`: the business clock's reading.
-function page(@app: state.App, r: http.Request, found: web.Found, now: time.Instant) -> Outcome?
+function page(@app: state.App, r: http.Request, n: chain.Next, found: web.Found, now: time.Instant) -> Outcome?
     session = visit.session_of(app, r: r, now: now)
     user = visit.user_of_session(@app, session: session)
 
@@ -221,31 +225,102 @@ function page(@app: state.App, r: http.Request, found: web.Found, now: time.Inst
 
     if found.name == routes.SOCKET
         return socket(@app, r: r, v: v, now: now)
+    app.visit @ ok(v)
+    got = go_on(@app, n, r)
+    app.visit @ fail(code: visit.NOT_FOUND, msg: "no page request is being answered")
+    return ok(.respond(response: got?))
 
+## A page's route, through `web/chain`
+
+# Binds every page's route of `app`'s router to `answer_page`, with its own
+# steps in their order: `csrf` on every one, `admin` on the admin group's,
+# `negotiate` on those that answer HTML and JSON. The API's routes and the
+# live channel's are answered apart.
+#
+# - `app`: the state, whose router and tables gain them.
+#
+# Fails as `web/chain.add_route_step` fails, a broken route table.
+function bind(@app: state.App) -> ()?
+    rt @= app.router
+    listed = rt.routes
+
+    for each in listed
+        if routes.is_page_route(each) && app.answers[each.name].is_err()
+            app.answers[each.name] @ answer_page
+            chain.add_route_step(@rt, @app.steps, route: each.name, name: "csrf", step: csrf)?
+
+            if routes.is_admin_route(each)
+                chain.add_route_step(@rt, @app.steps, route: each.name, name: "admin", step: admin)?
+
+            if dispatch.is_negotiated(each.name)
+                chain.add_route_step(@rt, @app.steps, route: each.name, name: "negotiate", step: negotiate)?
+
+    app.router @ rt
+    return ok()
+
+# The rest of `n`'s chain: the server's one line that goes on.
+#
+# - `app`: the state.
+# - `n`: where the request stands.
+# - `r`: the request.
+function go_on(@app: state.App, n: chain.Next, r: http.Request) -> http.Response?
+    return chain.proceed(@app, steps: app.steps, answers: app.answers, n: n, r: r)
+
+# A page's step: a request that changes something refused 403 unless its
+# form carries the session's CSRF token.
+#
+# - `app`: the state, its visit read.
+# - `n`: where the request stands.
+# - `r`: the request.
+function csrf(@app: state.App, n: chain.Next, r: http.Request) -> http.Response?
     if is_unsafe(r.method)
-        secret = session.values[web.CSRF_KEY].default("")
+        v = app.visit?
+        secret = v.session.values[web.CSRF_KEY].default("")
 
         match web.check_csrf(r, secret: secret)
-            .answer a => return ok(.respond(response: a.response))
+            .answer a => return ok(a.response)
             .go_on _  => _ = 0
 
-    if web.is_in_group(found, name: routes.ADMIN_GROUP)
-        is_admin = match user
-            .ok u  => u.role == .admin
-            .err _ => false
+    return go_on(@app, n, r)
 
-        if !is_admin
-            return ok(
-                .respond(response: replies.api_error(http.STATUS_FORBIDDEN, message: "only an admin may administer"))
-            )
+# The admin group's step: 403 unless the visit's account is an admin.
+#
+# - `app`: the state, its visit read.
+# - `n`: where the request stands.
+# - `r`: the request.
+function admin(@app: state.App, n: chain.Next, r: http.Request) -> http.Response?
+    v = app.visit?
 
-    if dispatch.is_negotiated(found.name)
-        match web.require_acceptable(r, offered: ["text/html", "application/json"])
-            .answer a => return ok(.respond(response: a.response))
-            .go_on _  => _ = 0
+    is_admin = match v.user
+        .ok u  => u.role == .admin
+        .err _ => false
 
+    if !is_admin
+        return ok(replies.api_error(http.STATUS_FORBIDDEN, message: "only an admin may administer"))
+    return go_on(@app, n, r)
+
+# The step of a route that answers HTML and JSON: 406 where the request
+# accepts neither.
+#
+# - `app`: the state.
+# - `n`: where the request stands.
+# - `r`: the request.
+function negotiate(@app: state.App, n: chain.Next, r: http.Request) -> http.Response?
+    match web.require_acceptable(r, offered: ["text/html", "application/json"])
+        .answer a => return ok(a.response)
+        .go_on _  => return go_on(@app, n, r)
+
+# The answer every page's route is bound to: the page's own function, which
+# `dispatch.pages` binds to its name, with the visit, and the session it
+# leaves written into the response's cookie.
+#
+# - `app`: the state, its visit read.
+# - `found`: the route.
+# - `r`: the request.
+function answer_page(@app: state.App, found: web.Found, r: http.Request) -> http.Response?
+    v = app.visit?
     reply = dispatch.page(@app, v: v, found: found, r: r)?
-    return ok(.respond(response: with_session(app, reply: reply, now: now)))
+    return ok(with_session(app, reply: reply, now: v.now))
 
 # Whether `method` changes something, so a form's CSRF token is asked.
 #
