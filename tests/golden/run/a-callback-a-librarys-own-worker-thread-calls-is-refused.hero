@@ -1,0 +1,18 @@
+# Panel 262's R5 (lane land262, step 215b): spec § 13's thread clause, a
+# callback C calls on a thread of its own aborts, saying it ran on a thread
+# this program did not start, for a thread a library made rather than one
+# the program's C started (defect 2492's case is that one): libdispatch's
+# worker on Darwin, the system pool's on Windows, glibc's `SIGEV_THREAD`
+# helper elsewhere, as panel 262's ffi-pragmatist measured with libuv,
+# `dispatch_async_f` and three `SIGEV_THREAD` sources.
+# MUST BE REFUSED: `answer` never runs.
+extern "a-callback-a-librarys-own-worker-thread-calls.h"
+    function lib_hand(body: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("handing the library the function")
+    print("result ", lib_hand(body: answer))
