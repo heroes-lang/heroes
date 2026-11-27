@@ -1,0 +1,18 @@
+# Fixed 2026-11-27, lane sig-family-3 (step 199r): ONSTACK's mirror of
+# defect 2872's `ck` with a save point the handler makes inside its own frames
+# (`sigsetjmp`) before it jumps into a coroutine on an array of the runner's
+# live frame; the coroutine calls the program's function, then jumps back into
+# the handler, which returns. The function is called while the handler is
+# parked.
+# Symptom: none; this case pins that the mirror's widening keeps the refusal
+# where a save made inside the handler can switch back into it.
+# MUST BE REFUSED, in ONSTACK's words, before and after.
+extern "fixedbugs-2872-a-handler-on-the-own-stack-jumping-onto-a-coroutine.h"
+    function mo_run(save: i32, heap: i32, cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("mo_1_0: ", mo_run(save: 1, heap: 0, cb: answer))

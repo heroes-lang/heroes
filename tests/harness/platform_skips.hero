@@ -259,7 +259,7 @@ function unbuildable_on_windows() -> [Skip]
         Skip(name: "tests/golden/run/fixedbugs-2702-a-handler-on-the-alternate-stack-left-by-setcontext-to-its-coroutine-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2702-a-stale-coroutine-range-swapped-into-once-and-a-jump-out-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2702-a-coroutine-stack-unmapped-and-mapped-again-as-the-alternate-stack-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
-        Skip(name: "tests/golden/run/fixedbugs-2702-a-handler-jumps-into-a-coroutine-on-the-own-stack-which-calls-the-function-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2702-a-handler-jumps-into-a-coroutine-on-the-own-stack-which-calls-the-function-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2702-a-handler-jumps-into-a-coroutine-that-resumes-it-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2702-a-handler-left-by-setcontext-to-the-runner-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2704-a-handler-that-siglongjmps-out-of-the-function-the-program-gave-c-ends-the-program-quietly.hero", why: SIGACTION_ON_WINDOWS)
@@ -269,7 +269,7 @@ function unbuildable_on_windows() -> [Skip]
         Skip(name: "tests/golden/run/fixedbugs-2707-a-setcontext-out-of-a-handler-on-an-alternate-stack-into-a-coroutine-mapped-after-it-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2706-a-siglongjmp-out-of-a-handler-onto-the-frames-that-reuse-an-ended-coroutines-stack-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2706-a-siglongjmp-out-of-a-handler-onto-the-frames-that-reuse-a-stack-given-to-makecontext-and-never-switched-to-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
-        Skip(name: "tests/golden/run/fixedbugs-2705-a-siglongjmp-out-of-a-handler-into-a-live-coroutine-is-refused-in-words-that-name-the-jump.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2705-a-siglongjmp-out-of-a-handler-into-a-live-coroutine-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2522-a-buffer-a-handler-refills-by-memcpy-and-jumps-to-is-refused.hero", why: SIGJMP_BUF_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2522-a-callback-after-a-longjmp-out-of-a-handler-on-an-alternate-stack-deep-first-runs.hero", why: SIGJMP_BUF_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2522-a-callback-after-a-longjmp-out-of-a-handler-on-an-alternate-stack-shallow-first-runs.hero", why: SIGJMP_BUF_ON_WINDOWS)
@@ -334,8 +334,8 @@ function unbuildable_on_windows() -> [Skip]
         Skip(name: "tests/golden/run/fixedbugs-a-coroutine-that-makes-the-context-it-was-switched-to-unreadable-and-yields-by-saving-into-another-runs.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-a-coroutine-that-unmaps-the-context-it-was-switched-to-and-ends-through-uc-link-runs.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-a-coroutine-that-frees-the-context-it-was-switched-to-and-ends-through-uc-link-runs.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
-        Skip(name: "tests/golden/run/fixedbugs-a-coroutine-that-yields-by-saving-into-another-context-on-the-own-stack-is-refused-in-words-that-name-the-jump.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
-        Skip(name: "tests/golden/run/fixedbugs-a-coroutine-that-yields-by-saving-into-another-context-on-the-heap-is-refused-in-words-that-name-the-jump.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-a-coroutine-that-yields-by-saving-into-another-context-on-the-own-stack-runs.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-a-coroutine-that-yields-by-saving-into-another-context-on-the-heap-runs.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-a-jmp-buf-in-a-static-page-made-unreadable-before-the-next-save-runs.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-a-context-in-a-static-page-made-unreadable-before-the-next-save-runs.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-a-jmp-buf-in-an-alternate-stack-unmapped-while-registered-before-the-next-save-runs.hero", why: POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS)
@@ -357,17 +357,17 @@ function unbuildable_on_windows() -> [Skip]
         Skip(name: "tests/golden/run/fixedbugs-coroutines-copied-out-and-in-of-one-heap-region-over-makecontext-each-keep-their-large-values.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2848-a-handler-setcontexts-into-a-context-makecontext-made-on-the-runners-frame-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2848-a-handler-setcontexts-into-a-context-makecontext-made-on-the-heap-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
-        Skip(name: "tests/golden/run/fixedbugs-2848-a-handler-jumps-into-a-coroutine-setcontext-started-on-the-runners-frame-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
-        Skip(name: "tests/golden/run/fixedbugs-2848-a-handler-jumps-into-a-coroutine-setcontext-started-on-the-heap-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2848-a-handler-jumps-into-a-coroutine-setcontext-started-on-the-runners-frame-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2848-a-handler-jumps-into-a-coroutine-setcontext-started-on-the-heap-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2848-getcontext-and-setcontext-as-a-jump-on-the-own-stack-then-a-jump-out-of-a-handler-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2848-a-coroutine-makecontext-hands-twelve-arguments-reads-all-twelve-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
-        Skip(name: "tests/golden/run/fixedbugs-2850-a-handler-jumps-into-a-coroutine-a-uc-link-started-on-the-heap-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
-        Skip(name: "tests/golden/run/fixedbugs-2850-a-handler-jumps-into-a-coroutine-a-uc-link-started-on-the-runners-frame-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
-        Skip(name: "tests/golden/run/fixedbugs-2850-a-handler-jumps-into-a-coroutine-made-after-the-uc-link-naming-it-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
-        Skip(name: "tests/golden/run/fixedbugs-2850-a-handler-jumps-into-the-third-coroutine-of-a-chain-of-uc-links-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2850-a-handler-jumps-into-a-coroutine-a-uc-link-started-on-the-heap-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2850-a-handler-jumps-into-a-coroutine-a-uc-link-started-on-the-runners-frame-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2850-a-handler-jumps-into-a-coroutine-made-after-the-uc-link-naming-it-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2850-a-handler-jumps-into-the-third-coroutine-of-a-chain-of-uc-links-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2850-a-siglongjmp-out-of-a-handler-onto-frames-that-reuse-a-uc-link-started-coroutines-ended-stack-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
-        Skip(name: "tests/golden/run/fixedbugs-2851-a-handler-jumps-into-a-coroutine-that-yielded-unseen-saving-into-its-heap-context-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
-        Skip(name: "tests/golden/run/fixedbugs-2851-a-handler-jumps-into-a-coroutine-that-yielded-unseen-saving-into-its-static-context-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2851-a-handler-jumps-into-a-coroutine-that-yielded-unseen-saving-into-its-heap-context-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2851-a-handler-jumps-into-a-coroutine-that-yielded-unseen-saving-into-its-static-context-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2851-a-siglongjmp-out-of-a-handler-onto-frames-that-reuse-a-heap-context-coroutines-ended-stack-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2855-a-coroutine-on-a-carved-stack-leaving-for-good-after-a-handler-was-left-by-a-jump-runs.hero", why: SYSV_SWITCH_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2855-a-coroutine-on-a-carved-stack-leaving-for-good-by-a-longjmp-to-its-host-runs.hero", why: SYSV_SWITCH_ON_WINDOWS)
@@ -383,6 +383,9 @@ function unbuildable_on_windows() -> [Skip]
         Skip(name: "tests/golden/run/fixedbugs-2872-a-handler-on-a-coroutines-stack-left-by-a-jump-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2872-a-handler-on-a-coroutines-stack-that-saved-inside-itself-then-left-by-a-jump-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-2873-a-watchdog-jumping-out-of-the-allocator-is-stopped-in-words-naming-the-jump.hero", why: RAW_SYSCALL_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2872-a-handler-on-the-own-stack-saving-nothing-left-by-a-jump-onto-a-coroutine-on-the-heap-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2872-a-handler-on-the-own-stack-that-saved-inside-itself-then-jumped-onto-a-coroutine-on-the-runners-frame-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2872-a-handler-on-the-own-stack-that-saved-inside-itself-then-jumped-onto-a-coroutine-on-the-heap-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
     ]
 
 # Why the program at `source` is not built on this machine: one of
@@ -705,7 +708,12 @@ test "every program Windows cannot build is a file that exists, skipped there al
     # Then the 1 of defect 2873, its header including defect 2522's raw
     # install, refused at `sys/syscall.h` not found by `zig cc` 0.15.2 for
     # Windows x86-64 on 2026-11-27 (`RAW_SYSCALL_ON_WINDOWS`).
-    assert unbuildable_on_windows().len() == 194
+    # Then the 3 of ONSTACK's mirror of defect 2872 (lane sig-family-3, step
+    # 199r), their one header refused at `ucontext.h` not found by `zig cc`
+    # 0.15.2 for Windows x86-64 on 2026-11-27
+    # (`POSIX_CONTEXT_SHAPES_ON_WINDOWS`). The twelve cases step 199r renamed
+    # from `...-is-refused` to `...-runs` keep their rows under the new names.
+    assert unbuildable_on_windows().len() == 197
 
     for one in unbuildable_on_windows()
         assert strings.has_prefix(s: one.name, prefix: "tests/golden/run/")

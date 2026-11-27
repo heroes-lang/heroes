@@ -90,10 +90,14 @@
  *    standing entry until its handler ends (the coroutine may resume the
  *    handler through `uc_link`); any other `setcontext` is a jump. A jump that
  *    leaves the alternate stack an entry was pushed on, for any other stack,
- *    leaves that entry. A jump that lands on the alternate stack from outside
- *    it re-enters a handler's frames, and stands as an entry of its own. A
- *    landing at or below a standing entry on its range is that handler
- *    running again: it releases the entry's suspension and hold.
+ *    leaves that entry; so does a jump made inside a handler's frames that
+ *    lands off their stack, a coroutine's, or from the thread's own onto a
+ *    coroutine's, where no save point was made inside them since the handler
+ *    began (defect 2872 and its mirror), and with one, it parks the handler,
+ *    which a refusal then names. A jump that lands on the alternate stack
+ *    from outside it re-enters a handler's frames, and stands as an entry of
+ *    its own. A landing at or below a standing entry on its range is that
+ *    handler running again: it releases the entry's suspension and hold.
  * 7. THE KNOWN STACKS are learned in `makecontext`'s slot, and nothing tells
  *    this route one has ended: a stale range is never asked about an entry,
  *    only about a target, where it costs a told refusal.

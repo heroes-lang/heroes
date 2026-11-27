@@ -40,11 +40,15 @@
  *    standing entry until its handler ends (the coroutine may resume the
  *    handler through `uc_link`), whether or not a save was seen; any other
  *    `setcontext` is a jump. A jump that leaves the alternate stack an entry
- *    was pushed on leaves it. A jump that lands on the alternate stack from
- *    outside it, or inside the frames of a handler a jump left that the
- *    thread has not run in since (defect 2855), re-enters a handler's frames
- *    and stands as an entry of its own. A landing at or below a standing
- *    entry on its range is that handler running again.
+ *    was pushed on leaves it; so does a jump made inside a handler's frames
+ *    that lands off their stack, a coroutine's, or from the thread's own onto
+ *    a coroutine's, where no save point was made inside them since the
+ *    handler began (defect 2872 and its mirror), and with one, it parks the
+ *    handler, which a refusal then names. A jump that lands on the alternate
+ *    stack from outside it, or inside the frames of a handler a jump left
+ *    that the thread has not run in since (defect 2855), re-enters a
+ *    handler's frames and stands as an entry of its own. A landing at or
+ *    below a standing entry on its range is that handler running again.
  * 7. The known stacks are learned where `makecontext` is called (a wrapper in
  *    `sigjump_make.c` on every architecture, since defect d-lane-ctx-after-1:
  *    the C library reads `uc_stack` nowhere else), and nothing tells this
@@ -665,17 +669,29 @@ static void hero_sig_saved_at(HeroSignalStack *own, uintptr_t frame) {
     }
 }
 
-/* Whether a jump from `here` to `t` leaves the handler of `e`, which runs on a
- * coroutine's stack, by leaving that stack (defect 2872): 1 where the jump is
- * made inside the handler's frames there and lands off that stack, no save
- * point having been made inside those frames since the handler began, so
- * nothing can switch back into them but a landing its left span catches
- * (rule 6); 2 where one was, which can; 0 otherwise, the handler on the
- * thread's own stack or an alternate one among them. */
-static int hero_sig_off_coroutine(const HeroSigEntry *e, uintptr_t here, uintptr_t t) {
-    uintptr_t lo = 0, hi = 0;
-    if (e->alt_hi > e->alt_lo || !hero_sig_live_range(e->at, &lo, &hi)) return 0;
-    if (here < lo || here >= e->at || (t - 1 >= lo && t - 1 < hi)) return 0;
+/* Whether a jump from `here` to `t` leaves the handler of `e` by leaving the
+ * stack its frames lie on: 1 where the jump is made inside the handler's
+ * frames and lands on another stack, no save point having been made inside
+ * those frames since the handler began, so nothing can switch back into them
+ * but a landing its left span catches (rule 6); 2 where one was, which can;
+ * 0 otherwise. Two shapes, one case: a handler on a coroutine's stack landing
+ * off it (defect 2872, `ck`), and its mirror, a handler on the thread's own
+ * stack landing on a coroutine's (lane sig-family-3: `as_0`, panel 257's cost,
+ * was refused in ONSTACK's words though its handler saved nothing a switch
+ * could come back through). A handler on an alternate stack is rule 6's: a
+ * jump leaving that stack leaves it. */
+static int hero_sig_off_stack(const HeroSignalStack *own, const HeroSigEntry *e, uintptr_t here, uintptr_t t) {
+    uintptr_t lo = 0, hi = 0, clo = 0, chi = 0;
+    if (e->alt_hi > e->alt_lo) return 0;
+    if (hero_sig_live_range(e->at, &lo, &hi)) {
+        if (t - 1 >= lo && t - 1 < hi) return 0;
+    } else if (hero_sig_holds(own->lo, own->hi, e->at) && hero_sig_live_range(t, &clo, &chi)) {
+        lo = own->lo;
+        hi = own->hi;
+    } else {
+        return 0;
+    }
+    if (here < lo || here >= e->at) return 0;
     return e->saved ? 2 : 1;
 }
 
@@ -694,7 +710,7 @@ static void hero_sig_prune_to(HeroSignalStack *own, uintptr_t t, bool by_jump) {
         if (e->dead || hero_sig_pinned(e)) continue;
         bool above = ranged && e->at >= lo && e->at < hi && e->at <= t;
         bool left_alt = by_jump && e->alt_hi > e->alt_lo && !hero_sig_holds(e->alt_lo, e->alt_hi, t);
-        int off = by_jump ? hero_sig_off_coroutine(e, here, t) : 0;
+        int off = by_jump ? hero_sig_off_stack(own, e, here, t) : 0;
         if (above || left_alt || off == 1) {
             hero_sig_left_by_jump(own, e, here);
             hero_sig_drop(own, i);
