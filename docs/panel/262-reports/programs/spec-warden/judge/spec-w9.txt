@@ -1,0 +1,15 @@
+  spec: 34 passed, 2 failed
+FAIL spec/spendable
+  `measure spec/heroes-spec.md` does not say "is 13499 and the check goes red at 16384".
+  The two instruments have drifted: this file goes red at REAL_TOKENS + FFI_FLOOR
+  >= CEILING, and what `measure` prints is what a session reads BEFORE amending
+  the spec. Whichever of the two moved, the other has to move with it — the
+  number is one number in two places, one printed and one checked (defect 017).
+FAIL spec/real
+  `measure spec/heroes-spec.md` does not print "13439   claude-opus-5, 2026-11-26".
+  The record is in two places, this file and `selfhost/measure/pinned.hero`, for
+  the reason CEILING is: one printed and one checked. Whichever moved, the
+  other moves with it (defect 017's class), and the model id and the date
+  travel WITH the number because a count without them is not a measurement.
+harness: 34 passed, 2 failed
+exit 1

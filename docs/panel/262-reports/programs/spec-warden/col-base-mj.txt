@@ -1,0 +1,2 @@
+mj_carved plain: exit 0, 1 distinct of 3: body holds 7|body holds 7|
+mj_carved sanitize: exit 134, 1 distinct of 3: panic: mjcarved.run was called from inside a signal handler: C called it while handling a signal, where neither this runtime's memory nor the C librar|exit 134|

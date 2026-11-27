@@ -1,0 +1,4 @@
+wrote heroes-next
+stage2 exit 0
+heroes 0.6.0
+sources 24c248d27fa1f712

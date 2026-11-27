@@ -1,0 +1,6 @@
+==3446==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffde878000; bottom 0xffffb73fe000; size: 0x00002747a000 (659005440)
+False positive error reports may follow
+For details see https://github.com/google/sanitizers/issues/189
+escaped: -1 then 42
+carved: 42
+exit 0

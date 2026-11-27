@@ -1,0 +1,3 @@
+answer ran for 7
+result (70 is right): 70
+exit 0

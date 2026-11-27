@@ -1,0 +1,1 @@
+A callback is a **parameter**, never a result or a signal handler, nor called by one;

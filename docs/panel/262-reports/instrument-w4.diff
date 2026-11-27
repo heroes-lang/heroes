@@ -1,0 +1,34 @@
+--- a/tests/harness/spec_refusals.hero
++++ b/tests/harness/spec_refusals.hero
+@@ -1,9 +1,10 @@
+ # The words a refusal prints, held to what spec § 13's sentence says they say
+ # (panel 257's R1 and R3, ratified 2026-11-23, design.md §1.12 and §4.17).
+ #
+-# Spec § 13 tells a reader that a callback called after C left a handler of
+-# C's by one of five exits may abort, *saying the handler was not seen to end,
+-# or that C called it from inside one*. The runtime's words are in
++# Spec § 13 tells a reader when a callback called on the thread of a signal
++# handler of C's may abort, *saying the handler was not seen to end, or that C
++# called it from inside one* (panel 257's R1, re-worded by panel 262).
++# The runtime's words are in
+ # `runtime/parts/sigguard.c`, `hero_signal_refuse`, one arm for each way the
+ # runtime came to refuse, and nothing held the two together: `grep -F 'seen to
+ # end'` found the C and the goldens and no test of the spec's side, and the
+@@ -37,7 +38,7 @@
+ 
+ # Where the sentence opens in spec § 13; it ends at the first full stop.
+ constant SENTENCE_OPENS: str
+-    "A callback called after C left a handler of C's"
++    "A callback called on the thread of a signal handler of C's"
+ 
+ # The one arm the sentence does not cover, above.
+ constant EXEMPT: str
+@@ -186,7 +187,7 @@
+     assert refusals("int main(void) { return 0; }\n").len() == 0
+ 
+ test "a refusal that keeps neither claim, a sentence that loses one and an extractor that reads nothing are each told"
+-    spec = "text A callback called after C left a handler of C's by a jump, may abort, saying the handler was not seen to end, or that C called it from inside one. No function. more\n"
++    spec = "text " + SENTENCE_OPENS + " by a jump, may abort, saying the handler was not seen to end, or that C called it from inside one. No function. more\n"
+     arm = "static _Noreturn void hero_signal_refuse(const char *what, int how) {\n    const char *const said[] = {\n        how == HERO_SIGNAL_DELIVERED\n            ? \" ran as a handler. \"\n        : how == HERO_SIGNAL_STANDING\n            ? \" had not been seen to end. \"\n        : how == HERO_SIGNAL_REENTERED\n            ? \" was called after a jump back. \"\n            : \" was called from inside a handler. \",\n        HERO_SIGNAL_REMEDY,\n    };\n}\n"
+     told = verdict(spec: spec, c: arm)
+ 

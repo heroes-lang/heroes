@@ -1,0 +1,9 @@
+docs/panel/262-reports/programs/spec-warden/spec-main-c2b7574bf.md
+  claude-legacy     10318   (64995 ranks)
+  cl100k_base       10507   (100256 ranks)
+  maximum           10507   a lower bound, not the reader's tokeniser
+  spread              189   between the two vendored tables (1%) — the gap between two REAL tokeniser generations was 967
+
+No ceiling judges `docs/panel/262-reports/programs/spec-warden/spec-main-c2b7574bf.md` (panel 123 R5), so this is a count
+and not a verdict.
+The two documents that are judged are `spec/heroes-spec.md` and `CLAUDE.md`.

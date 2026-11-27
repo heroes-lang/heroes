@@ -1,0 +1,8 @@
+w2: spec spec: 32 passed, 4 failed; failing: spec/budget spec/ledger spec/real spec/spendable ; instrument tests: 14 tests, all passed exit 0 
+restored: 3df14254998f68eb4a95ffe6f4c52b6772e2b0298a88ed82eee4b436fd12d93f  spec/heroes-spec.md
+f9fc613e4a3544f8470bdb57dc8b2305c21c6725d322d0f10bec414e8be686cf  tests/harness/spec_refusals.hero
+docs/panel/262-reports/programs/spec-warden/judge-net.sh: line 13: 94966 Terminated: 15          ./heroes-next test tests/harness/main.hero > "$OUT/net-own-tests-w2.txt" 2>&1
+net's own tests, w2: ok   "a root's package use is followed into the tree its catalogue placed, and a use the count cannot read is a failure (feature 2425)" ok   "the issue program's own tests run with the net's own, every block its modules hold and all passed (defect 2064)" exit 143 
+restored: 3df14254998f68eb4a95ffe6f4c52b6772e2b0298a88ed82eee4b436fd12d93f  spec/heroes-spec.md
+f9fc613e4a3544f8470bdb57dc8b2305c21c6725d322d0f10bec414e8be686cf  tests/harness/spec_refusals.hero
+exit 0

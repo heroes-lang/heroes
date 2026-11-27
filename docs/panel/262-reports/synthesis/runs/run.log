@@ -1,0 +1,54 @@
+Thu Nov 26 23:52:32 CET 2026
+wide7-plain: RUNS, exit 0, 1 distinct of 3
+../run.sh: line 33:  4995 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+../run.sh: line 33:  5003 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+../run.sh: line 33:  5013 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+wide8-plain: REENTERED, exit 134, 1 distinct of 3
+../run.sh: line 33:  5203 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+../run.sh: line 33:  5225 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+../run.sh: line 33:  5237 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+ck-on0-how0-to0: STANDING, exit 134, 1 distinct of 3
+../run.sh: line 33:  5274 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+../run.sh: line 33:  5280 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+../run.sh: line 33:  5290 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+ck-on0-how1-to0: STANDING, exit 134, 1 distinct of 3
+ck-on0-how0-to1: RUNS, exit 0, 1 distinct of 3
+ck-on1-how0-to0: RUNS, exit 0, 1 distinct of 3
+../run.sh: line 33:  5400 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+../run.sh: line 33:  5412 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+../run.sh: line 33:  5428 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+ck-on1-how1-to1: SWITCHED, exit 134, 1 distinct of 3
+../run.sh: line 33:  5591 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+../run.sh: line 33:  5605 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+../run.sh: line 33:  5614 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+fixedbugs-2702-a-handler-on-the-alternate-stack-left-by-setcontext-to-its-coroutine-is-refused: SWITCHED, exit 134, 1 distinct of 3
+  .expected's class: SWITCHED
+../run.sh: line 33:  5788 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+../run.sh: line 33:  5805 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+../run.sh: line 33:  5812 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+fixedbugs-2707-a-setcontext-out-of-a-handler-on-an-alternate-stack-into-a-coroutine-mapped-after-it-is-refused: SWITCHED, exit 134, 1 distinct of 3
+  .expected's class: SWITCHED
+../run.sh: line 33:  5960 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+../run.sh: line 33:  6009 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+../run.sh: line 33:  6030 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+fixedbugs-2707-a-setcontext-out-of-a-handler-on-an-alternate-stack-into-a-coroutine-mapped-before-it-is-refused: SWITCHED, exit 134, 1 distinct of 3
+  .expected's class: SWITCHED
+fixedbugs-2702-a-handler-left-by-setcontext-to-its-coroutine-runs: RUNS, exit 0, 1 distinct of 3
+  .expected's class: RUNS
+Thu Nov 26 23:52:50 CET 2026
+../run.sh: line 33:  6669 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+../run.sh: line 33:  6688 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+../run.sh: line 33:  6701 Abort trap: 6           env "$@" timeout 60 "$b" > "$o" 2>&1
+fmtop-san: CALLED, exit 134, 1 distinct of 3
+fmzero-san: RUNS, exit 0, 1 distinct of 3
+Thu Nov 26 23:52:58 CET 2026
+../run.sh: line 71:  7128 Abort trap: 6           WD_US=$us timeout 60 "$O/bin-wdr-plain" > "$o" 2>&1
+../run.sh: line 71:  7205 Abort trap: 6           WD_US=$us timeout 60 "$O/bin-wdr-plain" > "$o" 2>&1
+../run.sh: line 71:  7224 Abort trap: 6           WD_US=$us timeout 60 "$O/bin-wdr-plain" > "$o" 2>&1
+../run.sh: line 71:  7325 Abort trap: 6           WD_US=$us timeout 60 "$O/bin-wdr-plain" > "$o" 2>&1
+../run.sh: line 71:  7346 Abort trap: 6           WD_US=$us timeout 60 "$O/bin-wdr-plain" > "$o" 2>&1
+../run.sh: line 71:  7367 Abort trap: 6           WD_US=$us timeout 60 "$O/bin-wdr-plain" > "$o" 2>&1
+../run.sh: line 71:  7465 Abort trap: 6           WD_US=$us timeout 60 "$O/bin-wdr-plain" > "$o" 2>&1
+wdr plain, 34 runs:    7 GUARD-D;  27 RUNS;
+Thu Nov 26 23:53:03 CET 2026
+done

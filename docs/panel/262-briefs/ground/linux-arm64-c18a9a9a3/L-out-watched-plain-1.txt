@@ -1,0 +1,5 @@
+watch 0
+answer ran for 7
+result 70
+counted 1
+exit 0

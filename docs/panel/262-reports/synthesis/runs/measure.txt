@@ -1,0 +1,51 @@
+== spec/heroes-spec.md
+spec/heroes-spec.md
+  claude-legacy     10318   (64995 ranks)
+  cl100k_base       10507   (100256 ranks)
+  maximum           10507   a lower bound, not the reader's tokeniser
+  spread              189   between the two vendored tables (1%) — the gap between two REAL tokeniser generations was 967
+
+STALE: the recorded count is for 24de425e6c28e69b and this file is 056888b8540b9126.
+Run `heroes measure spec/heroes-spec.md --refresh` and paste what it prints.
+No verdict is given against a stale count: that is the sentence that
+spent 998 tokens nobody had (docs/measurements/023).
+== docs/panel/262-reports/synthesis/spec-adopted.md
+docs/panel/262-reports/synthesis/spec-adopted.md
+  claude-legacy     10521   (64995 ranks)
+  cl100k_base       10710   (100256 ranks)
+  maximum           10710   a lower bound, not the reader's tokeniser
+  spread              189   between the two vendored tables (1%) — the gap between two REAL tokeniser generations was 967
+
+No ceiling judges `docs/panel/262-reports/synthesis/spec-adopted.md` (panel 123 R5), so this is a count
+and not a verdict.
+The two documents that are judged are `spec/heroes-spec.md` and `CLAUDE.md`.
+== docs/panel/262-reports/synthesis/spec-rival.md
+docs/panel/262-reports/synthesis/spec-rival.md
+  claude-legacy     10381   (64995 ranks)
+  cl100k_base       10571   (100256 ranks)
+  maximum           10571   a lower bound, not the reader's tokeniser
+  spread              190   between the two vendored tables (1%) — the gap between two REAL tokeniser generations was 967
+
+No ceiling judges `docs/panel/262-reports/synthesis/spec-rival.md` (panel 123 R5), so this is a count
+and not a verdict.
+The two documents that are judged are `spec/heroes-spec.md` and `CLAUDE.md`.
+== docs/panel/262-reports/synthesis/spec-adopted.txt
+docs/panel/262-reports/synthesis/spec-adopted.txt
+  claude-legacy       291   (64995 ranks)
+  cl100k_base         291   (100256 ranks)
+  maximum             291   a lower bound, not the reader's tokeniser
+  spread                0   between the two vendored tables (0%) — the gap between two REAL tokeniser generations was 967
+
+No ceiling judges `docs/panel/262-reports/synthesis/spec-adopted.txt` (panel 123 R5), so this is a count
+and not a verdict.
+The two documents that are judged are `spec/heroes-spec.md` and `CLAUDE.md`.
+== docs/panel/262-reports/synthesis/spec-rival.txt
+docs/panel/262-reports/synthesis/spec-rival.txt
+  claude-legacy       151   (64995 ranks)
+  cl100k_base         152   (100256 ranks)
+  maximum             152   a lower bound, not the reader's tokeniser
+  spread                1   between the two vendored tables (0%) — the gap between two REAL tokeniser generations was 967
+
+No ceiling judges `docs/panel/262-reports/synthesis/spec-rival.txt` (panel 123 R5), so this is a count
+and not a verdict.
+The two documents that are judged are `spec/heroes-spec.md` and `CLAUDE.md`.

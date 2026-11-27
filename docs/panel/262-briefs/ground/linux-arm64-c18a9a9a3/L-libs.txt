@@ -1,0 +1,31 @@
+## headers
+boost/version.hpp: absent
+openssl/async.h: /usr/include/openssl/async.h
+openssl/opensslv.h: /usr/include/openssl/opensslv.h
+uv.h: absent
+curl/curl.h: /usr/include/aarch64-linux-gnu/curl/curl.h
+pth.h: absent
+coro.h: absent
+libucontext/libucontext.h: absent
+# define OPENSSL_FULL_VERSION_STR "3.5.7"
+# define OPENSSL_VERSION_TEXT "OpenSSL 3.5.7 9 Jun 2026"
+#define LIBCURL_VERSION "8.14.1"
+## shared objects
+libboost_context: absent
+libboost_coroutine: absent
+libboost_fiber: absent
+libcrypto: /usr/lib/aarch64-linux-gnu/libcrypto.so.3 /usr/lib/aarch64-linux-gnu/libcrypto.so 
+libuv: /usr/lib/aarch64-linux-gnu/libuv.so.1.0.0 /usr/lib/aarch64-linux-gnu/libuv.so.1 
+libcurl: /usr/lib/aarch64-linux-gnu/libcurl.so.4 /usr/lib/aarch64-linux-gnu/libcurl.so.4.8.0 
+libpth: /usr/lib/aarch64-linux-gnu/libpthread.so.0 
+libnpth: /usr/lib/aarch64-linux-gnu/libnpth.so.0.3.0 /usr/lib/aarch64-linux-gnu/libnpth.so.0 
+## dpkg
+libcurl3t64-gnutls:arm64 8.14.1-2+deb13u5
+libcurl4-openssl-dev:arm64 8.14.1-2+deb13u5
+libcurl4t64:arm64 8.14.1-2+deb13u5
+libnpth0t64:arm64 1.8-3
+libssl-dev:arm64 3.5.7-1~deb13u2
+libssl3t64:arm64 3.5.7-1~deb13u2
+libuv1t64:arm64 1.50.0-2
+## time
+ls: cannot access '/usr/bin/time': No such file or directory

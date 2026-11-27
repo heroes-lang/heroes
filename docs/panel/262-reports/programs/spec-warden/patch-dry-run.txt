@@ -1,0 +1,9 @@
+w1: main-diff on base refuses; base-diff on base applies; main-diff on main applies
+w2: main-diff on base refuses; base-diff on base applies; main-diff on main applies
+w3: main-diff on base refuses; base-diff on base applies; main-diff on main applies
+w4: main-diff on base refuses; base-diff on base applies; main-diff on main applies
+w5: main-diff on base refuses; base-diff on base applies; main-diff on main applies
+w6: main-diff on base refuses; base-diff on base applies; main-diff on main applies
+w7: main-diff on base refuses; base-diff on base applies; main-diff on main applies
+w8: main-diff on base refuses; base-diff on base applies; main-diff on main applies
+w9: main-diff on base refuses; base-diff on base applies; main-diff on main applies

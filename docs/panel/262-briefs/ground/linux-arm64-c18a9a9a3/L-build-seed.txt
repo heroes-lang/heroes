@@ -1,0 +1,3 @@
+seed exit 0
+heroes 0.6.0
+sources 05186f2b38e77a97

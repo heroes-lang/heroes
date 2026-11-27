@@ -1,0 +1,81 @@
+  spec: 14 passed, 14 failed
+FAIL spec/budget
+  the spec measures 10710 and the record says 10507 — a delta of 203.
+  If the change is intended, write the new number into SPEC_TOKENS in the SAME
+  commit, and put the delta plus its payment in the commit body: either a named
+  removal, or a registered falsifiable prediction naming BOTH the instrument that
+  will score it and the milestone it is scored at — and the instrument has to
+  exist today (panel 012, as amended by panel 046). A prediction naming an
+  instrument nobody has built is an observation, not a payment.
+  If it is not intended, the spec grew by accident, which is the case this
+  check exists for.
+FAIL spec/contract
+  cannot measure CLAUDE.md — `measure CLAUDE.md` exited 2, so no verdict was given and there is no binding number to read: error: no file is named `CLAUDE.md`
+
+FAIL spec/spendable
+  `measure spec/heroes-spec.md` does not say "is 13836 and the check goes red at 16384".
+  The two instruments have drifted: this file goes red at REAL_TOKENS + FFI_FLOOR
+  >= CEILING, and what `measure` prints is what a session reads BEFORE amending
+  the spec. Whichever of the two moved, the other has to move with it — the
+  number is one number in two places, one printed and one checked (defect 017).
+FAIL spec/real
+  `measure spec/heroes-spec.md` does not print "13776   claude-opus-5, 2026-11-26".
+  The record is in two places, this file and `selfhost/measure/pinned.hero`, for
+  the reason CEILING is: one printed and one checked. Whichever moved, the
+  other moves with it (defect 017's class), and the model id and the date
+  travel WITH the number because a count without them is not a measurement.
+FAIL spec/ledger
+  cannot read docs/measurements/010-spec-budget-ledger.md — the ledger is the record of every spec amendment, and panel 086 R1 put it there
+FAIL spec/design-copy
+  cannot read docs/design.md
+FAIL spec/anchors
+  these cite a section of the spec that does not exist:
+    tests/harness/cards.hero:651 cites § The chain, each to wheth
+    tests/harness/cards.hero:696 cites § Where we
+    tests/harness/cards.hero:875 cites § Where we are rows, which
+    tests/harness/cases.hero:160 cites § Verification; `.claude/r
+    tests/harness/issue_draft.hero:70 cites § The chain to whether
+    tests/harness/issue_draft.hero:245 cites § The chain, an open featu
+    tests/harness/issues.hero:142 cites § The chain to whether its
+    tests/harness/md_links.hero:7 cites § The chain linked `journa
+    tests/harness/records_github.hero:301 cites § The chain (`chain`, each
+    tests/harness/records_github.hero:347 cites § The chain and closed on 
+    tests/harness/records_github.hero:364 cites § The chain, or "" where t
+    tests/harness/records_github.hero:369 cites § The chain"
+    tests/harness/records_github.hero:755 cites § Verification), so each d
+    tests/harness/records_github.hero:1372 cites § The chain, and GitHub nu
+    tests/harness/records_github.hero:1384 cites § The chain", told(ahead.i
+    tests/harness/records_github.hero:1384 cites § The chain"]
+    tests/harness/records_github.hero:1394 cites § The chain, and GitHub nu
+    tests/harness/suite_layout.hero:1233 cites § Commands nor `/step`'s c
+    tests/harness/suite_records.hero:814 cites § Where we are. A threshol
+    tests/harness/suite_records.hero:2833 cites § Where the rest lives. Wh
+    tests/harness/suite_records.hero:4319 cites § The chain written `journ
+    tests/harness/suite_records.hero:5007 cites § Where we are holds " + g
+    tests/harness/suite_records.hero:5016 cites § Where we are is " + got.
+    tests/harness/suite_records.hero:5057 cites § The
+    tests/harness/suite_records.hero:5109 cites § The chain")
+    tests/harness/suite_records.hero:5112 cites § The chain"
+    tests/harness/suite_records.hero:5116 cites § The chain, and a page th
+    tests/harness/suite_records.hero:5135 cites § The chain:\n" + offender
+  A citation is `spec § N` or `spec § <title>`, with N and the title from
+  `.claude/rules/spec-shape.md`; a title never changes and a number never moves.
+FAIL spec/colouring
+  cannot read editors/vscode/syntaxes/heroes.tmLanguage.json
+FAIL spec/colouring
+  cannot read editors/vscode/syntaxes/heroes.tmLanguage.json
+FAIL spec/colouring
+  cannot read editors/vscode/syntaxes/heroes.tmLanguage.json
+FAIL spec/colouring
+  cannot read editors/vscode/syntaxes/heroes.tmLanguage.json
+FAIL spec/colouring
+  cannot read editors/vscode/syntaxes/heroes.tmLanguage.json
+FAIL spec/colouring
+  cannot read editors/vscode/syntaxes/heroes.tmLanguage.json
+FAIL spec/colouring
+  cannot read editors/vscode/package.json, editors/vsix/extension.vsixmanifest or selfhost/main.hero
+harness: 14 passed, 14 failed
+real 242.66
+user 80.78
+sys 7.43
+exit 1

@@ -1,0 +1,34 @@
+h1 plain: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h1 sanitize: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h10 plain: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h10 sanitize: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h11 plain: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h11 sanitize: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h12 plain: exit 134, 1 distinct of 3: panic: h12.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that h|Aborted|
+h12 sanitize: exit 134, 1 distinct of 3: ==1474==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffe4d1e000; bottom 0xffff847fe000; size: 0x000060520|False positive error reports may follow|
+h13 plain: exit 0, 1 distinct of 3: watch 0|answer ran for 7|
+h13 sanitize: exit 0, 1 distinct of 3: watch 0|answer ran for 7|
+h2 plain: exit 134, 1 distinct of 3: panic: h2.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that ha|Aborted|
+h2 sanitize: exit 134, 1 distinct of 3: panic: h2.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that ha|Aborted|
+h3 plain: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h3 sanitize: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h4 plain: exit 134, 1 distinct of 3: panic: h4.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that ha|Aborted|
+h4 sanitize: exit 134, 1 distinct of 3: panic: h4.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that ha|Aborted|
+h5 plain: exit 134, 1 distinct of 3: panic: h5.answer was called while a signal handler of C's that this runtime saw begin had switched to another context (`swapcontext`, or `setcontext` |Aborted|
+h5 sanitize: exit 134, 1 distinct of 3: panic: h5.answer was called while a signal handler of C's that this runtime saw begin had switched to another context (`swapcontext`, or `setcontext` |Aborted|
+h6 plain: exit 134, 1 distinct of 3: panic: h6.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that ha|Aborted|
+h6 sanitize: exit 134, 1 distinct of 3: panic: h6.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that ha|Aborted|
+h7 plain: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h7 sanitize: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h8 plain: exit 134, 1 distinct of 3: panic: h8.answer was called after C, inside a signal handler, jumped (`longjmp`, `siglongjmp` or `_longjmp`) onto a stack a context switch had entered|Aborted|
+h8 sanitize: exit 134, 1 distinct of 3: ==2594==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffce5e6000; bottom 0xffff9255c000; size: 0x00003c08a|False positive error reports may follow|
+h9 plain: exit 0, 1 distinct of 3: left on the thread: 1|answer ran for 7|
+h9 sanitize: exit 0, 1 distinct of 3: left on the thread: 1|answer ran for 7|
+n1 plain: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+n1 sanitize: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+n2 plain: exit 0, 1 distinct of 3: left: -1|answer ran for 7|
+n2 sanitize: exit 0, 1 distinct of 3: ==2891==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffd5ea3000; bottom 0xffff8dffe000; size: 0x000047ea5|False positive error reports may follow|
+n3 plain: exit 0, 1 distinct of 3: left: -1|answer ran for 7|
+n3 sanitize: exit 0, 1 distinct of 3: left: -1|answer ran for 7|
+n4 plain: exit 134, 1 distinct of 3: panic: n4.answer ran on a thread this program did not start: C called it back from a thread of its own, where this runtime's values are not safe. To r|Aborted|
+n4 sanitize: exit 134, 1 distinct of 3: panic: n4.answer ran on a thread this program did not start: C called it back from a thread of its own, where this runtime's values are not safe. To r|Aborted|

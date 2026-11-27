@@ -1,0 +1,79 @@
+Fri Nov 27 02:10:07 CET 2026
+h1 plain: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h1 sanitize: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h10 plain: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h10 sanitize: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h11 plain: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h11 sanitize: exit 0, 1 distinct of 3: ==50590==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016d530000; bottom 0x000102bb4000; size: 0x00006a97|False positive error reports may follow|
+../key.sh: line 22: 50737 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 50744 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 50750 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+h12 plain: exit 134, 1 distinct of 3: panic: h12.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that h|exit 134|
+../key.sh: line 22: 50832 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 50846 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 50849 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+h12 sanitize: exit 134, 1 distinct of 3: ==50833==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016d7b8000; bottom 0x000102e8c000; size: 0x00006a92|False positive error reports may follow|
+h13 plain: exit 0, 1 distinct of 3: watch 0|answer ran for 7|
+h13 sanitize: exit 0, 1 distinct of 3: watch 0|answer ran for 7|
+../key.sh: line 22: 52116 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 52123 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 52128 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+h2 plain: exit 134, 1 distinct of 3: panic: h2.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that ha|exit 134|
+../key.sh: line 22: 52218 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 52239 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 52245 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+h2 sanitize: exit 134, 1 distinct of 3: panic: h2.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that ha|exit 134|
+h3 plain: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h3 sanitize: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+../key.sh: line 22: 52545 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 52554 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 52558 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+h4 plain: exit 134, 1 distinct of 3: panic: h4.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that ha|exit 134|
+../key.sh: line 22: 52721 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 52753 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 52762 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+h4 sanitize: exit 134, 1 distinct of 3: panic: h4.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that ha|exit 134|
+../key.sh: line 22: 52869 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 52876 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 52882 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+h5 plain: exit 134, 1 distinct of 3: panic: h5.answer was called while a signal handler of C's that this runtime saw begin had switched to another context (`swapcontext`, or `setcontext` |exit 134|
+../key.sh: line 22: 52984 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 52992 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 52997 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+h5 sanitize: exit 134, 1 distinct of 3: panic: h5.answer was called while a signal handler of C's that this runtime saw begin had switched to another context (`swapcontext`, or `setcontext` |exit 134|
+../key.sh: line 22: 53160 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 53181 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 53186 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+h6 plain: exit 134, 1 distinct of 3: panic: h6.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that ha|exit 134|
+../key.sh: line 22: 53274 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 53280 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 53284 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+h6 sanitize: exit 134, 1 distinct of 3: panic: h6.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that ha|exit 134|
+h7 plain: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h7 sanitize: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+../key.sh: line 22: 53562 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 53570 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 53578 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+h8 plain: exit 134, 1 distinct of 3: panic: h8.answer was called after C, inside a signal handler, jumped (`longjmp`, `siglongjmp` or `_longjmp`) onto a stack a context switch had entered|exit 134|
+../key.sh: line 22: 53779 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 53797 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 53808 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+h8 sanitize: exit 134, 1 distinct of 3: ==53780==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016fb00000; bottom 0x000100a48000; size: 0x00006f0b|False positive error reports may follow|
+h9 plain: exit 0, 1 distinct of 3: left on the thread: 1|answer ran for 7|
+h9 sanitize: exit 0, 1 distinct of 3: left on the thread: 1|answer ran for 7|
+n1 plain: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+n1 sanitize: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+n2 plain: exit 0, 1 distinct of 3: left: -1|answer ran for 7|
+n2 sanitize: exit 0, 1 distinct of 3: ==54645==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016fd30000; bottom 0x0001007f8000; size: 0x00006f53|False positive error reports may follow|
+n3 plain: exit 0, 1 distinct of 3: left: -1|answer ran for 7|
+n3 sanitize: exit 0, 1 distinct of 3: left: -1|answer ran for 7|
+../key.sh: line 22: 55262 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 55281 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 55294 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+n4 plain: exit 134, 1 distinct of 3: panic: n4.answer ran on a thread this program did not start: C called it back from a thread of its own, where this runtime's values are not safe. To r|exit 134|
+../key.sh: line 22: 55529 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 55545 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+../key.sh: line 22: 55551 Abort trap: 6           timeout 60 "$OUT/bin-$n-$mode" > "$OUT/out-$n-$mode-$i.txt" 2>&1
+n4 sanitize: exit 134, 1 distinct of 3: panic: n4.answer ran on a thread this program did not start: C called it back from a thread of its own, where this runtime's values are not safe. To r|exit 134|
+Fri Nov 27 02:11:24 CET 2026
+done

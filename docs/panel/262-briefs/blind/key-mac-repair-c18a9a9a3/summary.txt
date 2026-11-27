@@ -1,0 +1,35 @@
+h1 plain: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h1 sanitize: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h3 plain: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h3 sanitize: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h4 plain: exit 134, 1 distinct of 3: panic: h4.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that ha|exit 134|
+h4 sanitize: exit 134, 1 distinct of 3: panic: h4.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that ha|exit 134|
+h5 plain: exit 134, 1 distinct of 3: panic: h5.answer was called while a signal handler of C's that this runtime saw begin had switched to another context (`swapcontext`, or `setcontext` |exit 134|
+h5 sanitize: exit 134, 1 distinct of 3: panic: h5.answer was called while a signal handler of C's that this runtime saw begin had switched to another context (`swapcontext`, or `setcontext` |exit 134|
+h6 plain: exit 134, 1 distinct of 3: panic: h6.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that ha|exit 134|
+h6 sanitize: exit 134, 1 distinct of 3: panic: h6.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that ha|exit 134|
+h7 plain: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h7 sanitize: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h8 plain: exit 134, 1 distinct of 3: panic: h8.answer was called after C, inside a signal handler, jumped (`longjmp`, `siglongjmp` or `_longjmp`) onto a stack a context switch had entered|exit 134|
+h8 sanitize: exit 134, 1 distinct of 3: ==82305==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016d3cc000; bottom 0x000102e10000; size: 0x00006a5b|False positive error reports may follow|
+n1 plain: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+n1 sanitize: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+n2 plain: exit 0, 1 distinct of 3: left: -1|answer ran for 7|
+n2 sanitize: exit 0, 1 distinct of 3: ==83144==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016b090000; bottom 0x00010548c000; size: 0x000065c0|False positive error reports may follow|
+n3 plain: exit 134, 1 distinct of 3: left: -1|panic: n3.answer was called after C jumped into stack frames the thread had already left (a handler left by a jump and jumped back into, or frames onl|
+n3 sanitize: exit 134, 1 distinct of 3: left: -1|panic: n3.answer was called after C jumped into stack frames the thread had already left (a handler left by a jump and jumped back into, or frames onl|
+n4 plain: exit 134, 1 distinct of 3: panic: n4.answer ran on a thread this program did not start: C called it back from a thread of its own, where this runtime's values are not safe. To r|exit 134|
+n4 sanitize: exit 134, 1 distinct of 3: panic: n4.answer ran on a thread this program did not start: C called it back from a thread of its own, where this runtime's values are not safe. To r|exit 134|
+h2 plain: exit 134, 1 distinct of 3: panic: h2.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that ha|exit 134|
+h2 sanitize: exit 134, 1 distinct of 3: panic: h2.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that ha|exit 134|
+h9 plain: exit 0, 1 distinct of 3: left on the thread: 1|answer ran for 7|
+h9 sanitize: exit 0, 1 distinct of 3: left on the thread: 1|answer ran for 7|
+h10 plain: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h10 sanitize: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h11 plain: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h11 sanitize: exit 0, 1 distinct of 3: answer ran for 7|result 70|
+h12 plain: exit 134, 1 distinct of 3: panic: h12.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that h|exit 134|
+h12 sanitize: exit 134, 1 distinct of 3: panic: h12.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that h|exit 134|
+h13 plain: exit 0, 1 distinct of 3: watch 0|answer ran for 7|
+h13 sanitize: exit 0, 1 distinct of 3: watch 0|answer ran for 7|
+the repair's stage 2 at c18a9a9a3, sources 24c248d27fa1f712: h1, h3 to h8 and n1 to n4 by key.sh, 15:56 to 15:57; h2 (its new first line) and h9 to h13 by key-new.sh and the same loop by hand for h13, after 16:05

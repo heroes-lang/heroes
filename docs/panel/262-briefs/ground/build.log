@@ -1,0 +1,14 @@
+start 2026-11-26 14:14:05 load: 11.23 11.59 13.22
+real 20.14
+user 18.13
+sys 0.58
+seed done 14:14:25 load: 11.50 11.63 13.20
+heroes 0.6.0
+sources 05186f2b38e77a97
+wrote heroes-next
+real 345.35
+user 221.93
+sys 67.25
+stage2 done 14:20:11 load: 15.08 22.14 18.38
+heroes 0.6.0
+sources 7205f5b93a1fc8f1

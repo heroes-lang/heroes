@@ -1,0 +1,4 @@
+answer ran for 1
+answer ran for 2
+result (102 is right): 102
+exit 0
