@@ -1,6 +1,6 @@
 # registry
 
-registry: the site that serves Heroes packages, and its client.
+registry: a Heroes package index in small, and its client.
 
 A publisher packs a package's folder into a reproducible archive (a tar of
 one folder `<name>-<version>`, compressed by Zstandard, xz or gzip), signs

@@ -1,8 +1,8 @@
 # kvd: a small key-value server in Redis's manner, and its client. It
-# speaks RESP2 over TCP, so `redis-cli` and every Redis client library talk
-# to it, and it serves strings, lists, hashes, sets and sorted sets, keys
-# that expire, transactions with `WATCH`, publish and subscribe, `SCAN`,
-# `INFO`, and keeps its data in a snapshot and an append-only file.
+# speaks RESP2, Redis's protocol, over TCP, and it serves strings, lists,
+# hashes, sets and sorted sets, keys that expire, transactions with
+# `WATCH`, publish and subscribe, `SCAN`, `INFO`, and keeps its data in a
+# snapshot and an append-only file.
 #
 # Run for real:
 #
