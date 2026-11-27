@@ -1,0 +1,32 @@
+# Panel 258's R2, step 214c: panel 262's probe escape_heap (the
+# compiler-engineer's `escape.h` of panel 259, over the program's own switch
+# on stacks from `malloc`). A coroutine leaves for good by a `longjmp` to its
+# host's save point; the callback called after must run.
+# Symptom: with step 214a, under `--sanitize`, ASan's SEGV inside
+# `libunwind::UnwindCursor::step`, 34 runs of 34 on this Mac; with 214a
+# reverted, 34 of 34 exit 0.
+# Cause and fix: those of `unwind-a-coroutine-on-the-heap-left-for-good-by-a-jump-to-its-host-is-not-unwound`.
+extern "unwind-escape.h"
+    function ow_start(k: i64, f: (function(i64) -> i64))
+    function ow_yield()
+    function es_resume(k: i64) -> i64
+    function es_escape()
+    function es_call(f: (function(i64) -> i64), n: i64) -> i64
+
+function run(k: i64) -> i64
+    ow_yield()
+    es_escape()
+    return k
+
+function twice(n: i64) -> i64
+    return n * 2
+
+function body(n: i64) -> i64
+    ow_start(k: 0, f: run)
+    a = es_resume(k: 0)
+    b = es_call(f: twice, n: n)
+    print("escaped: ", a, " then ", b)
+    return b
+
+function main()
+    print("on the heap: ", body(21))

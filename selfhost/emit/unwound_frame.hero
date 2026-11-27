@@ -1,0 +1,75 @@
+# A frame a C jump's unwind collects from holds no byte AddressSanitizer
+# poisons (panel 258's R2; design.md §1.12; `emit/unwind_scope.hero` decides
+# which frames, `runtime/parts/unwind.c` is the mechanism).
+#
+# **WHY.** Before R2 no Heroes frame held a local whose address is taken: a
+# value of 4 KiB or more lives in the room off the frame and every other one
+# in a slot clang may keep in a register, so ASan gave a Heroes frame no
+# redzone, and a C library that copies a coroutine's stack out to the heap
+# and back read every byte of one under `--sanitize` (panel 259's
+# `run/fixedbugs-coroutines-copied-out-and-in-of-one-carved-region-each-keep-their-large-values`).
+# R2's slots and marks are declared with a cleanup, which takes their address,
+# so ASan put redzones around them, and that program's header, copying the
+# region with `memcpy`, was stopped by ASan at `--sanitize -O0`
+# (stack-buffer-underflow, 3 runs of 3, this lane, 2026-11-27), a correct
+# program refused by the instrument. A cleanup that only reads its slot's
+# value does not help: at `-O0` clang inlines nothing, even an
+# `always_inline` cleanup's pointer is stored in a slot of its own, and the
+# slot stays instrumented (read in clang's IR that day).
+#
+# **WHICH FUNCTIONS.** A function whose prologue writes the unwind's mark,
+# which every frame with a collected slot or a residue carries
+# (`unwind_scope.frame_mark`), and every thunk of a program that unwinds,
+# which carries its own mark (`unwind_scope.thunk_mark`). Their definitions
+# open with `__no_sanitize__("address")`, so no redzone exists in such a
+# frame, as none did before R2.
+#
+# **WHAT IT COSTS.** The checks ASan adds to such a function's own loads and
+# stores, in a program that hands a function to a C library's group and only
+# under `--sanitize`. The runtime's functions, the headers' and every other
+# function of the program keep theirs, and a use after free of a value C reads
+# at its catch is still told in the C that reads it. The word is spelled as C
+# reserves it, so no group's header can define it as a macro
+# (`emit/guarded_names.hero`'s list holds `__no_sanitize__`).
+
+use emit/ctype
+use emit/unwind_scope
+
+# Spelled as C reserves it.
+constant UNSANITIZED: str
+    "__attribute__((__no_sanitize__(\"address\"))) "
+
+# The words a definition opens with: the attribute where the frame carries a
+# mark, nothing elsewhere.
+function words(marked: bool) -> str
+    if marked
+        return UNSANITIZED
+    return ""
+
+# The words a thunk's definition opens with: the attribute in a program that
+# unwinds, where every thunk carries the mark below.
+function thunk_words(names: ctype.Names) -> str
+    return words(marked: unwind_scope.unwinds(names))
+
+# What a thunk's first line carries after its entry in a program that
+# unwinds, "" in any other: a mark whose cleanup ends the callback's count as
+# one unwound where an unwind leaves the thunk, and does nothing on its return,
+# initialised by the call that opens the program to the runtime's hook, which
+# walks no other program's stack (`hero_unwind_handed`). The mark holds the
+# number the runtime gives this activation of the thunk, and the runtime
+# learns, from the mark's address, its frame's and the thunk's own (`thunk`,
+# its C name), where the mark lies in every activation of that code: a group
+# tells the frames below a thunk by that number, so a C library that copies
+# two coroutines' stacks in turn through one region, the frames of both at
+# the same addresses, no longer has the one's return release what the
+# other's catch still reads (`runtime/parts/unwind.c`, `hero_unwind_same`;
+# this lane's probe, 2026-11-27: ASan's heap use after free, 3 runs of 3).
+function thunk_mark(names: ctype.Names, thunk: str) -> str
+    if !unwind_scope.unwinds(names)
+        return ""
+    handed = "hero_unwind_handed(&hero_unwound, __builtin_frame_address(0), (void (*)(void))" + thunk + ");"
+    return " HERO_NODEBUG uint64_t hero_unwound " + unwind_scope.CLEANUP + "hero_unwind_thunk))) = " + handed
+
+test "a frame with a mark is left uninstrumented, any other is written as it was"
+    assert words(marked: true) == "__attribute__((__no_sanitize__(\"address\"))) "
+    assert words(marked: false) == ""

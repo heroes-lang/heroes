@@ -345,22 +345,76 @@ __attribute__((noinline, no_sanitize("address"))) static int hero_rebind_swapcon
     return r;
 }
 
+/* THE FRAMES A JUMP ABANDONS ARE UNWOUND FIRST (panel 258's R2,
+ * `parts/unwind.c`), where the jump is made outside every handler, by no
+ * standing entry, and its target is decoded: the stack pointer it will
+ * install, read before `hero_rebind_jump` judges the handlers, or 0 where the
+ * unwind is not asked. */
+static uintptr_t hero_rebind_unwinds(const void *env, uintptr_t *lo, uintptr_t *hi) {
+    HeroSignalStack *own = hero_rebind_own();
+    if (own == NULL || env == NULL || hero_rebind_standing(own) || !hero_rebind_decoding(HERO_REBIND_JMP)) return 0;
+    /* And only from the thread's own stack to a target on it, never from a
+     * stack `makecontext` was handed or one the runtime does not know (a
+     * coroutine's, leaving for good or switching by a jump). */
+    uintptr_t here = (uintptr_t)__builtin_frame_address(0), t = hero_rebind_jmp_sp(env), rl = 0, rh = 0;
+    if (here < own->lo || here >= own->hi || t <= here || t >= own->hi) return 0;
+    if (hero_rebind_known_range(here, &rl, &rh)) return 0;
+    *lo = own->lo;
+    *hi = own->hi;
+    return t;
+}
+
+/* `parts/unwind.c`'s reads of frames and code, by the kernel, as this route
+ * reads a context's word (`hero_rebind_ctx_word`). */
+static bool hero_unwind_peek(uintptr_t at, void *into, size_t size) {
+    mach_vm_size_t got = 0;
+    return mach_vm_read_overwrite(mach_task_self(), (mach_vm_address_t)at, size, (mach_vm_address_t)(uintptr_t)into,
+                                  &got) == KERN_SUCCESS &&
+           got == size;
+}
+
+/* The shadow `parts/unwind.c` clears before its unwind, as a jump's is. */
+static void hero_unwind_clear(void) { hero_rebind_leaving(); }
+
+/* The jump `parts/unwind.c`'s stop makes: the C library's own, after the
+ * shadow of what it leaves is cleared, as every wrapper below does. */
+__attribute__((no_sanitize("address"))) static _Noreturn void hero_unwind_go(int kind, void *env, int value) {
+    hero_rebind_leaving();
+    if (kind == HERO_UNWIND_SIGLONGJMP) {
+        atomic_load_explicit(&hero_rebind_real_siglongjmp, memory_order_relaxed)((int *)env, value);
+    } else if (kind == HERO_UNWIND__LONGJMP) {
+        atomic_load_explicit(&hero_rebind_real__longjmp, memory_order_relaxed)((int *)env, value);
+    } else {
+        atomic_load_explicit(&hero_rebind_real_longjmp, memory_order_relaxed)((int *)env, value);
+    }
+    __builtin_unreachable();
+}
+
 __attribute__((noreturn, no_sanitize("address"))) static void hero_rebind_siglongjmp(int *env, int value) {
+    uintptr_t lo = 0, hi = 0;
+    uintptr_t unwinds = hero_rebind_unwinds(env, &lo, &hi);
     hero_rebind_jump(env);
+    if (unwinds != 0) hero_unwind_jump(env, value, HERO_UNWIND_SIGLONGJMP, unwinds, lo, hi);
     hero_rebind_leaving();
     atomic_load_explicit(&hero_rebind_real_siglongjmp, memory_order_relaxed)(env, value);
     __builtin_unreachable();
 }
 
 __attribute__((noreturn, no_sanitize("address"))) static void hero_rebind_longjmp(int *env, int value) {
+    uintptr_t lo = 0, hi = 0;
+    uintptr_t unwinds = hero_rebind_unwinds(env, &lo, &hi);
     hero_rebind_jump(env);
+    if (unwinds != 0) hero_unwind_jump(env, value, HERO_UNWIND_LONGJMP, unwinds, lo, hi);
     hero_rebind_leaving();
     atomic_load_explicit(&hero_rebind_real_longjmp, memory_order_relaxed)(env, value);
     __builtin_unreachable();
 }
 
 __attribute__((noreturn, no_sanitize("address"))) static void hero_rebind__longjmp(int *env, int value) {
+    uintptr_t lo = 0, hi = 0;
+    uintptr_t unwinds = hero_rebind_unwinds(env, &lo, &hi);
     hero_rebind_jump(env);
+    if (unwinds != 0) hero_unwind_jump(env, value, HERO_UNWIND__LONGJMP, unwinds, lo, hi);
     hero_rebind_leaving();
     atomic_load_explicit(&hero_rebind_real__longjmp, memory_order_relaxed)(env, value);
     __builtin_unreachable();

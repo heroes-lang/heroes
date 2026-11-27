@@ -42,6 +42,7 @@ use emit/sides
 use emit/signature
 use emit/synth
 use emit/typeorder
+use emit/unwind_scope
 use emit/writer
 use ir/containers
 use ir/instances
@@ -182,6 +183,7 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
     names @ ctype.with_functions(names, c: c, s: s, decls: decls, p: p)
     names.lend_units @ lend_local.with_flows(lend_units, p, c)
     names.large @ large_size.large_types(c, decls)
+    names.unwound @ unwind_scope.unwound_of(p, c, s, decls)
 
     # Every type's flags, found once for the loops over the arena below
     # (defect 229): a type is no longer walked again for each of them.
@@ -216,6 +218,7 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
     # containment order, then every per-type prototype, then the
     # descriptors — an array literal names its element's descriptor,
     # so the object must exist before a function body mentions it.
+    unwind_scope.unit_mark(@w, names)
     typeorder.definitions(@w, c, names, s, decls, want: synth.everything(), kinds: kinds)
 
     # A probe's parameters are the DECLARED types, so it is "anything

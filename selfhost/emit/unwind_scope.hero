@@ -1,0 +1,361 @@
+# Which functions' frames a C jump's unwind collects from, and what each of
+# their slots is collected by (panel 258's R2, ratified 2026-11-27; design.md
+# §1.11, §1.12; `runtime/parts/unwind.c` holds the mechanism).
+#
+# THE SCOPE, asked of the program in hand. A program that hands a function to
+# a C library's own group (an `extern` with a function-typed parameter whose
+# header is none of the language's, `hero_os.h` and `hero_compiler.h`, and
+# which says no `layer`) can be jumped over by that library: libpng's
+# `png_error`, Lua's `luaL_error`, a binding's own save point. Its frames that
+# can stand between the callback's thunk and the jump are the functions C may
+# call back (`callback_guard.addresses_taken`, every function whose address is
+# taken, the safe direction) and every function they reach by a call, an
+# instance of a generic reaching all of its declaration's. Those carry the
+# cleanups below and their units are built `-fexceptions`. A program that
+# hands no such group a function (the compiler, which hands
+# `hero_thread_spawn_sized` one, and every shipped program) has an empty scope
+# and its C is what it was, byte for byte.
+#
+# WHAT A SLOT IS COLLECTED BY. A counted slot on the frame is declared with a
+# cleanup that moves its value onto the unwind's list: the runtime's for a
+# `str`, an array, a map, a failure and a mailbox, a type's own `_unwound`
+# for the program's records, cases and options (`emit/perfn.hero`). What the
+# unwind does NOT release, by spec § 13's sentence of panel 259 (a value in
+# the room off the frame, a local lent whole), and a reference a call holds
+# for its duration (`ir/held.hero`), which lives in a temporary, makes the
+# function carry `hero_unwind_residue` instead: an unwind over it keeps the
+# exit audit forgiving, as it was before R2.
+#
+# THE FALSIFIABLE CLAIM this rests on, beside `callback_guard.hero`'s: *every
+# Heroes frame between a thunk and a C jump over it is a function the thunk's
+# function reaches by `heroes_fn` calls or by a function value*. A Heroes
+# function the runtime called by a route of its own, not through an address
+# the program took, would stand there uncollected while its thunk counted as
+# unwound, and the exit audit would read its values as a missing decref; the
+# test `a_function_reached_only_through_a_call_is_in_scope` fires the day the
+# walk below stops following calls.
+
+use ast
+use check/state
+use check/table
+use checker
+use cli/strings
+use emit/callback_guard
+use emit/ctype
+use emit/externs as emit_externs
+use emit/writer
+use ir/containers
+use ir/layout
+use ir/lower
+use ir/mono
+use ir/own
+use ir/place_store
+use parse
+use resolve
+use source
+
+# The headers of the language's own groups, which never jump over a callback.
+constant LANGUAGES: [str]
+    ["hero_os.h", "hero_compiler.h"]
+
+# The words a declaration of a cleanup opens with.
+constant CLEANUP: str
+    "__attribute__((__cleanup__("
+
+# The line a unit of a program that unwinds holds, after its prelude, which
+# `cli/flags.hero`'s `unwind_words` reads to build the unit `-fexceptions`. A
+# line of its own, so no text of a program's can write it: a C string the
+# emitter writes keeps its newlines escaped on one line, and the compiler's
+# own unit holding `CLEANUP` as a string was built `-fexceptions` while the
+# words were asked of the text (this lane's first build, 2026-11-27).
+constant UNIT_MARK: str
+    "/* heroes: a C jump's unwind collects this unit's frames (panel 258's R2) */"
+
+# What a unit of a program that unwinds compiles with besides: `-fexceptions`,
+# so a C jump's unwind runs the cleanups of the frames it leaves
+# (`runtime/parts/unwind.c`). Asked of the unit's own text by the line above,
+# so every other unit's words, and its key, are what they were; the words
+# reach the key through the list `cli/units.hero`'s `tu_object` builds its
+# line from.
+function words(text: str) -> [str]
+    if strings.holds(text: text, needle: "\n" + UNIT_MARK + "\n")
+        return ["-fexceptions"]
+    none: [str] = []
+    return none
+
+# That line, in a unit of a program that unwinds, and nothing in any other.
+function unit_mark(@w: writer.Writer, names: ctype.Names)
+    if !unwinds(names)
+        return
+    writer.at_generated(@w)
+    writer.line(@w, text: UNIT_MARK)
+
+# Whether `f` is a function of a C library's own group: an extern, its header
+# none of the language's, its group saying no `layer`.
+function foreign(s: source.Source, decls: [ast.Decl], f: containers.Function) -> bool
+    match decls[f.decl].kind
+        .function_decl fd =>
+            if fd.value.header.is_err() || !fd.value.layer.is_err()
+                return false
+            header = emit_externs.unquoted(s, fd.value.header.must())
+
+            for one in LANGUAGES
+                if header == one
+                    return false
+
+            return true
+        .constant_decl | .record_decl | .variant_decl | .test_decl => return false
+
+    return false
+
+# Whether the program hands a C library's own group a function: one of its
+# externs declares a function-typed parameter.
+function hands_c(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> bool
+    for f in p.functions
+        if !foreign(s, decls, f)
+            continue
+
+        for slot in f.params
+            if table.is_function_ty(c.types, f.slots[slot].ty)
+                return true
+
+    return false
+
+# The declarations in scope, empty where the program hands no C library's
+# group a function: every function whose address is taken, and every
+# function their bodies call, to the closure.
+function unwound_of(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl]) -> {i64: bool}
+    none: {i64: bool} = {}
+
+    if !hands_c(p, c, s, decls)
+        return none
+    out: {i64: bool} @= callback_guard.addresses_taken(p)
+    grew: bool @= out.len() > 0
+
+    while grew
+        grew @ false
+
+        for f in p.functions
+            if out[f.decl].is_err()
+                continue
+
+            for blk in f.blocks
+                for one in blk.insts
+                    match one.op
+                        .call call =>
+                            match call.callee
+                                .heroes_fn hf =>
+                                    if out[hf.decl].is_err()
+                                        out[hf.decl] @ true
+                                        grew @ true
+                                .extern_fn | .builtin_fn | .indirect => continue
+                        .func_ref | .lit | .load | .store | .push_owned | .unary | .binary | .cast  => continue
+                        .field | .index | .map_get | .len_of | .tag_of | .payload | .construct      => continue
+                        .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => continue
+
+    return out
+
+# Whether the program's C unwinds at all: some function is in scope.
+function unwinds(names: ctype.Names) -> bool
+    return names.unwound.len() > 0
+
+# The prototypes of a counted type's collector and of the release it hands
+# the list, beside its `_release`'s, in a program that unwinds.
+function collector_prototypes(@w: writer.Writer, names: ctype.Names, prefix: str)
+    if !unwinds(names)
+        return
+    writer.line(@w, text: "HERO_TU_LOCAL void " + prefix + "_unwound(void *hero_v);")
+    writer.line(@w, text: "HERO_TU_LOCAL void " + prefix + "_unwound_release(void *hero_v);")
+
+# Their bodies: the release of a value the list owns, and the collector,
+# which hands the slot's bytes and that release to the runtime while an
+# unwind runs and reads one word otherwise (`heroes_runtime.h`).
+function collector_bodies(@w: writer.Writer, prefix: str, c_type: str)
+    writer.at_generated(@w)
+    writer.line(@w, text: "HERO_TU_LOCAL void " + prefix + "_unwound_release(void *hero_v) {")
+    writer.line(@w, text: "    " + prefix + "_release((" + c_type + " *)hero_v);")
+    writer.line(@w, text: "}")
+    writer.line(@w, text: "HERO_TU_LOCAL void " + prefix + "_unwound(void *hero_v) {")
+    writer.line(@w, text: "    hero_unwind_slot(hero_v, sizeof(" + c_type + "), " + prefix + "_unwound_release);")
+    writer.line(@w, text: "}")
+
+# Whether `f`'s frame is collected from.
+function collects(names: ctype.Names, f: containers.Function) -> bool
+    return !names.unwound[f.decl].is_err()
+
+# The cleanup a counted slot of type `ty` on the frame of `f` is declared
+# with, `" __attribute__((__cleanup__(<collector>)))"`, or "" where `f` is out
+# of scope, the slot holds nothing counted, or no collector exists for its
+# type (which `residue` then says).
+function attribute(c: state.Checked, names: ctype.Names, f: containers.Function, ty: i64) -> str
+    if !collects(names, f) || !layout.is_refcounted(c, ty)
+        return ""
+    found = collector(c, names, ty: ty)
+
+    if found.is_err()
+        return ""
+    return " " + CLEANUP + found.must() + ")))"
+
+# The collector of a counted type: the runtime's for its own types, the
+# type's own `_unwound` for one this unit generates functions for.
+function collector(c: state.Checked, names: ctype.Names, ty: i64) -> str?
+    match table.get(c.types, ty)
+        .str        => return ok("hero_unwind_str")
+        .array      => return ok("hero_unwind_array")
+        .map        => return ok("hero_unwind_map")
+        .failure    => return ok("hero_unwind_failure")
+        .mailbox_ty => return ok("hero_unwind_mail")
+        .named | .case_ty | .fallible =>
+            found = ctype.satellite_name(names, c, ty: ty)
+
+            if found.is_err()
+                return fail(code: "none", msg: "no generated functions")
+            return ok(found.must() + "_unwound")
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit | .thread_ty => return fail(code: "none", msg: "not counted")
+        .fixed | .function_ty | .generic | .error                       => return fail(code: "none", msg: "not a slot")
+
+    return fail(code: "none", msg: "unreached")
+
+# Whether an unwind over `f`'s frame leaves something it does not release:
+# a counted value off the frame or lent whole (`off_frame`, the prologue's
+# answer for each slot), a counted slot no collector reaches, or a reference
+# a call holds for its duration.
+function residue(c: state.Checked, names: ctype.Names, f: containers.Function, off_frame: bool) -> bool
+    if !collects(names, f)
+        return false
+
+    if off_frame || holds(f)
+        return true
+
+    for slot in f.slots
+        if layout.is_refcounted(c, slot.ty) && collector(c, names, ty: slot.ty).is_err()
+            return true
+
+    return false
+
+# The mark a collected frame carries, `""` where `f` declares no cleanup: an
+# unwind that leaves the frame runs it with the frame's other cleanups, which
+# is how the runtime counts the frames it collected against the frames with
+# cleanups it walked (`runtime/parts/unwind.c`): a frame whose call into C
+# had no landing pad, a call clang compiled as one that cannot unwind because
+# C's header declares its callee `nothrow` (glibc's `longjmp`, say), runs
+# none, and the audit then forgives as before. A frame with a residue says
+# that instead.
+function frame_mark(c: state.Checked, names: ctype.Names, f: containers.Function, off_frame: bool) -> str
+    if !collects(names, f)
+        return ""
+
+    if residue(c, names, f, off_frame: off_frame)
+        return "HERO_NODEBUG char hero_unwind_mark " + CLEANUP + "hero_unwind_residue))) = 0;"
+
+    for slot in f.slots
+        if layout.is_refcounted(c, slot.ty)
+            return "HERO_NODEBUG char hero_unwind_mark " + CLEANUP + "hero_unwind_frame))) = 0;"
+
+    return ""
+
+# The line written after a call of a C library's group in a program that
+# unwinds: the values an unwind collected wait for the return of the call
+# holding the jump's target, and a frame of the target's or above it is past
+# that return (`runtime/parts/unwind.c`).
+function after_call(@w: writer.Writer, s: source.Source, decls: [ast.Decl], names: ctype.Names, callee: containers.Function)
+    if unwinds(names) && foreign(s, decls, callee)
+        writer.line(@w, text: "    hero_unwind_returned(__builtin_frame_address(0));")
+
+# Whether a call of `f` holds a reference for its duration (`ir/held.hero`):
+# a release of one of its arguments right after it.
+function holds(f: containers.Function) -> bool
+    for blk in f.blocks
+        at: i64 @= 1
+
+        while at < blk.insts.len()
+            match blk.insts[at].op
+                .decref d =>
+                    match blk.insts[at - 1].op
+                        .call call =>
+                            for arg in containers.args_of(f, run: call.arguments)
+                                match arg
+                                    .value_arg va =>
+                                        if va.value == d.value
+                                            return true
+                                    .inout_arg => continue
+                        .func_ref | .lit | .load | .store | .push_owned | .unary | .binary | .cast  => at @ at
+                        .field | .index | .map_get | .len_of | .tag_of | .payload | .construct      => at @ at
+                        .copy_out | .abort_op | .incref | .decref | .decref_slot | .hole | .missing => at @ at
+                .call | .func_ref | .lit | .load | .store | .push_owned | .unary | .binary | .cast => at @ at
+                .field | .index | .map_get | .len_of | .tag_of | .payload | .construct             => at @ at
+                .copy_out | .abort_op | .incref | .decref_slot | .hole | .missing                  => at @ at
+
+            at @ at + 1
+
+    return false
+
+## Tests
+
+function program_of(text: str) -> containers.Program
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checked = checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(p.tree, out, c, s, p.decls)
+    return low.program
+
+function scope_of(text: str) -> {i64: bool}
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checked = checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(p.tree, out, c, s, p.decls)
+    return unwound_of(low.program, c, s, p.decls)
+
+constant FOREIGN: str
+    "extern \"png_shim.h\"\n    function guard(cb: (function(i64) -> i64)) -> i64\n\nfunction inner(n: i64) -> i64\n    return n + 1\n\nfunction body(n: i64) -> i64\n    return inner(n)\n\nfunction alone(n: i64) -> i64\n    return n * 2\n\nfunction main()\n    print(guard(cb: body), alone(3))\n"
+
+# The compiler's own shape: the language's header hands C a function, and
+# nothing is in scope.
+constant LANGUAGE: str
+    "extern \"hero_os.h\"\n    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64\n\nfunction body(n: i64) -> i64\n    return n + 1\n\nfunction main()\n    print(hero_thread_spawn(body: body, arg: 1))\n"
+
+test "a program that hands only the language's own header a function unwinds nothing"
+    assert scope_of(LANGUAGE).len() == 0
+
+# The premise above, as a test that fires when it dies (CLAUDE.md § 11).
+test "a function reached only through a call is in scope"
+    scope = scope_of(FOREIGN)
+    p = program_of(FOREIGN)
+    named: {str: bool} @= {}
+
+    for f in p.functions
+        if !scope[f.decl].is_err()
+            named[f.name] @ true
+
+    assert !named["body"].is_err()
+    assert !named["inner"].is_err()
+    assert named["alone"].is_err()
+    assert named["main"].is_err()
+
+test "a function holding a reference across a call is told, one that does not is not"
+    text = "record Box\n    items: [i64]\n\nfunction grow(@b: Box, items: [i64])\n    b.items @ items.push(1)\n\nfunction main()\n    b: Box @= Box(items: [1])\n    grow(@b, b.items)\n    print(b.items.len())\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(parsed.tree, s, parsed.decls, parsed.uses)
+    c: state.Checked = checker.check(parsed.tree, out, s, parsed.decls)
+    assert c.diagnostics.len() == 0
+    low = lower.lower(parsed.tree, out, c, s, parsed.decls)
+
+    # The passes a build runs before it emits (`cli/compile.hero`): the
+    # ownership pass is what writes the hold (`ir/held.hero`).
+    p: containers.Program @= low.program
+    cc: state.Checked @= c
+    assert mono.run(@p, @cc, s, parsed.decls).len() == 0
+    place_store.run(@p)
+    own.run(@p, cc)
+    told: {str: bool} @= {}
+
+    for f in p.functions
+        told[f.name] @ holds(f)
+
+    assert told["main"].must()
+    assert !told["grow"].must()

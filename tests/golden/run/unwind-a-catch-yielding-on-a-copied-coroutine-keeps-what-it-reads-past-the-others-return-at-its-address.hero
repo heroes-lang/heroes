@@ -1,0 +1,41 @@
+# Panel 258's R2, step 214d: two coroutines whose frames a library copies in
+# and out of one region of the thread's own stack, so both stand at the same
+# addresses in turn. Coroutine 1's callback lends C a message and C jumps
+# over it to its catch, which yields; coroutine 0 then runs at the same
+# addresses and its call of the same catch returns; coroutine 1, resumed,
+# reads the message at its catch.
+# Symptom: with step 214c, `coroutine 1 heard 0 bytes`, and under
+# `--sanitize` ASan's heap use after free in the catch's `strlen`, 3 runs of
+# 3 on this Mac; without R2, 79 bytes at exit 0, the message never released.
+# Cause: the group of values the jump collected was told by frame pointers,
+# and coroutine 0's `jumper`, returning from its call at the address
+# coroutine 1's stood at, released it while coroutine 1's catch still read it.
+# Fix: each thunk's activation holds a number of its own, and a frame is the
+# group's only where its nearest thunk above it still holds the number it
+# held at the jump (`runtime/parts/unwind.c`, `hero_unwind_same`).
+extern "unwind-copied-catch.h"
+    function cp_start(k: i64, f: (function(i64) -> i64))
+    function cp_resume(k: i64) -> i64
+    function cp_host(body: (function(i64) -> i64), n: i64) -> i64
+    function cc_try(cb: (function(i64) -> i64), k: i64) -> i64
+    function cc_fail(k: i64, msg: cstr lent)
+
+function step(k: i64) -> i64
+    said = f"coroutine {k} refused the stream at byte 4096, a message long enough for the heap"
+
+    if k == 1
+        cc_fail(k: k, msg: said.cstr())
+    return said.len()
+
+function jumper(k: i64) -> i64
+    return cc_try(cb: step, k: k)
+
+function body(n: i64) -> i64
+    cp_start(k: 1, f: jumper)
+    cp_start(k: 0, f: jumper)
+    a = cp_resume(k: 1)
+    print("coroutine 1 heard ", a, " bytes (", n + 79, " is right)")
+    return a
+
+function main()
+    print("copied: ", cp_host(body: body, n: 0))

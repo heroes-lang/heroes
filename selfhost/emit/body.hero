@@ -38,6 +38,7 @@ use emit/signature
 use emit/static_constant
 use emit/term
 use emit/unread
+use emit/unwound_frame
 use emit/writer
 use ir/containers
 use ir/instances
@@ -103,7 +104,8 @@ function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ct
     # makes on it, is kept out of line, so a bound it meets names it at every
     # level (`emit/out_of_line.hero`, defect 2339).
     apart = out_of_line.attribute(f, names, takes_room: entry.off_frame.len() > 0)
-    writer.line(@w, text: apart + signature.signature(f, c, names, s, decls) + " {")
+    unwound = unwound_frame.words(marked: entry.marked)
+    writer.line(@w, text: unwound + apart + signature.signature(f, c, names, s, decls) + " {")
 
     for one in entry.defines
         writer.line(@w, text: one)
