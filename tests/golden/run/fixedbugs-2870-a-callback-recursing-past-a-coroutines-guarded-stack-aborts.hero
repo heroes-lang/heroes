@@ -1,0 +1,25 @@
+# Fixed 2026-11-27, defect 2870, lane sig-family-2 (panel 262's
+# compiler-engineer, `so`): a function of the program C calls back on a
+# coroutine `makecontext` started recurses past the coroutine's stack, 256 KiB
+# C mapped with a page of no access below it.
+# Symptom: the program died by the fault with nothing said, Bus error, exit
+# 138, on this Mac and Segmentation fault, exit 139, on Linux arm64, where the
+# same recursion on the thread's own stack says `panic: stack exhausted`.
+# Cause: the stack guard's handler (`runtime/parts/stack.c`) asked a fault of
+# the thread's own stack alone, and a coroutine's stack is no stack it
+# measured, so the fault went on to the default.
+# Fix: where the thread's own stack does not explain a fault, the stack
+# `makecontext` was handed whose lowest address lies nearest above it is asked
+# the same two witnesses, and the walk that names the function is bounded by
+# that stack.
+extern "fixedbugs-2870-a-coroutines-guarded-stack.h"
+    function gs_run(cb: (function(i64) -> i64), n: i64) -> i64
+
+function deep(n: i64) -> i64
+    if n == 0
+        return 1
+    r = deep(n - 1)
+    return r * 3 % 1000003 + n % 7
+
+function main()
+    print("depth reached: ", gs_run(cb: deep, n: 10000000))
