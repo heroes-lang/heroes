@@ -29,7 +29,6 @@ use ast
 use check/state
 use check/table
 use checker
-use emit/callback_guard
 use emit/ctype
 use emit/extern_probe
 use emit/externs as emit_externs
@@ -93,8 +92,18 @@ function adapters(@w: writer.Writer, p: containers.Program, c: state.Checked, na
     writer.at_generated(@w)
 
     # The thunks' table is written after these, by `emit/callback_thunk.hero`,
-    # in every unit of a program an `extern` of which takes a callback.
-    if callback_guard.takes_a_callback(p, c, decls)
+    # in every unit of a program an `extern` of which takes a callback; its
+    # prototype is written only where an adapter here hands a function argument
+    # through it, so a unit whose adapters take none keeps its bytes.
+    through: bool @= false
+
+    for name in keys(named)
+        bound = declared(p, s, decls, name: name)
+
+        if !bound.is_err() && takes_a_callback(c, decls, decl: bound.must().decl)
+            through @ true
+
+    if through
         writer.line(@w, text: "static void (*hero_callback_of(void (*hero_f)(void)))(void);")
 
     # ORDER: by name, as `sort` orders a `str`.
