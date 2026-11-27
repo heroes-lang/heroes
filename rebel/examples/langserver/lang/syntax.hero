@@ -241,6 +241,7 @@ function children_of(kind: NodeKind) -> [i64]
         .if_else i => [i.cond, i.then, i.otherwise]
         .block b => lets_values(b.lets).push(b.value)
 
+# The nodes of the values a record's construction gives, in order.
 function inits_values(inits: [FieldInit]) -> [i64]
     out: [i64] @= []
 
@@ -249,6 +250,7 @@ function inits_values(inits: [FieldInit]) -> [i64]
 
     return out
 
+# The nodes of the values a block's bindings take, in order.
 function lets_values(lets: [Let]) -> [i64]
     out: [i64] @= []
 

@@ -168,6 +168,7 @@ function handle(@s: Server, table: Table lent, m: jsonrpc.Message) -> jsonrpc.Me
             return fail(code: "not_found", msg: "a notification has no answer")
         .response _ => return fail(code: "not_found", msg: "this server asks nothing, so a response answers nothing")
 
+# The answer to the request `method`: refused as the lifecycle asks, else its handler's answer.
 function request(@s: Server, table: Table lent, id: jsonrpc.Id, method: str, params: json.Value) -> jsonrpc.Message
     if s.phase == .waiting && method != "initialize"
         return jsonrpc.answer_error(id, code: SERVER_NOT_INITIALIZED, message: f"`{method}` before `initialize`")
@@ -188,6 +189,8 @@ function request(@s: Server, table: Table lent, id: jsonrpc.Id, method: str, par
                         return jsonrpc.answer_error(id, code: jsonrpc.INVALID_PARAMS, message: e.msg)
                     return jsonrpc.answer_error(id, code: REQUEST_FAILED, message: e.msg)
 
+# Takes the notification `method`: `exit` ends the server; another is dropped
+# before `initialize`, else handed to its handler, a failure logged.
 function notification(@s: Server, table: Table lent, method: str, params: json.Value)
     if method == "exit"
         s.exit_code @ if s.phase == .closing

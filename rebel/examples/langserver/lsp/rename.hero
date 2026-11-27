@@ -126,11 +126,13 @@ function meets(a: symbols.Analysis lent, mine: symbols.Symbol, symbol: i64, othe
 
     return false
 
+# Whether a symbol of `kind` is known everywhere in the source.
 function is_global(kind: symbols.SymbolKind) -> bool
     return match kind
         .function_symbol | .record_symbol | .builtin_function | .builtin_type => true
         .field_symbol | .param_symbol | .local_symbol                         => false
 
+# Whether two scopes share a byte.
 function overlaps(a: syntax.Span, b: syntax.Span) -> bool
     return a.start < b.end && b.start < a.end
 

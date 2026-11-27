@@ -79,6 +79,7 @@ function doc_lines(doc: str, indent: i64) -> str
 
     return lines.join("")
 
+# A record in the layout: one field a line, each ending with a comma.
 function record_text(r: syntax.RecordDecl) -> str
     head = doc_lines(r.doc, indent: 0) + f"record {r.name} {{"
 
@@ -92,6 +93,7 @@ function record_text(r: syntax.RecordDecl) -> str
     lines @ lines.push("}")
     return lines.join("\n")
 
+# A function in the layout: its signature on one line, its body below.
 function function_text(t: syntax.Tree lent, f: syntax.FunctionDecl) -> str
     params: [str] @= []
 
@@ -154,6 +156,7 @@ function binding_of(t: syntax.Tree lent, node: i64) -> i64
         .unary _  => 5
         .int_lit _ | .str_lit _ | .bool_lit _ | .unit_lit | .name _ | .call _ | .field _ | .construct _ | .if_else _ | .block _ | .missing => 6
 
+# The level of `op` in `expressions.LEVELS`.
 function level_of(op: str) -> i64
     for k in range(from: 0, to: expressions.LEVELS.len())
         for one in expressions.LEVELS[k]
@@ -204,6 +207,7 @@ function expr_text(t: syntax.Tree lent, node: i64, indent: i64) -> str
         .if_else i   => if_text(t, cond: i.cond, then: i.then, otherwise: i.otherwise, indent: indent)
         .block _     => block_text(t, node: node, indent: indent, open: false)
 
+# A call in the layout: `f(a, b)`.
 function call_text(t: syntax.Tree lent, callee: i64, arguments: [i64], indent: i64) -> str
     written: [str] @= []
 
@@ -212,6 +216,7 @@ function call_text(t: syntax.Tree lent, callee: i64, arguments: [i64], indent: i
 
     return operand_text(t, node: callee, indent: indent, at: 6) + "(" + written.join(", ") + ")"
 
+# A record built in the layout: `Point { x: 1, y: 2 }`, or `Point {}`.
 function construct_text(t: syntax.Tree lent, name: str, inits: [syntax.FieldInit], indent: i64) -> str
     if inits.len() == 0
         return name + " {}"
@@ -222,6 +227,7 @@ function construct_text(t: syntax.Tree lent, name: str, inits: [syntax.FieldInit
 
     return name + " { " + written.join(", ") + " }"
 
+# An `if` in the layout, its branches on lines of their own where one holds a binding.
 function if_text(t: syntax.Tree lent, cond: i64, then: i64, otherwise: i64, indent: i64) -> str
     long = has_lets(t, node: then) || has_lets(t, node: otherwise)
     head = "if " + expr_text(t, node: cond, indent: indent) + " " + block_text(t, node: then, indent: indent, open: long)

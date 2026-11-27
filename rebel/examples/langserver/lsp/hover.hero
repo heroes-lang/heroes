@@ -36,6 +36,7 @@ function hover(s: server.Server lent, params: json.Value) -> json.Value?
                     return ok(answer(doc, text: shown, place: a.tree.nodes[node].span, s: s))
                 .err _ => return ok(wire.nothing())
 
+# A `Hover`: `text` as Markdown, over the range of `place`.
 function answer(doc: document.Document lent, text: str, place: syntax.Span, s: server.Server lent) -> json.Value
     contents = wire.object({"kind": wire.text("markdown"), "value": wire.text(text)})
     return wire.object(

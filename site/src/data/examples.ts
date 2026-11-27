@@ -155,6 +155,7 @@ export const groups: Group[] = [
       'rebel/vcs',
       'rebel/shell',
       'rebel/editor',
+      'rebel/langserver',
       'rebel/explorer',
       'rebel/kanban',
       'rebel/backup',

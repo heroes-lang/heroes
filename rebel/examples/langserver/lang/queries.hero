@@ -36,6 +36,7 @@ function symbol_at(a: symbols.Analysis lent, at: i64) -> i64?
 
     return touching
 
+# No symbol: what a search that found none answers.
 function fail_none() -> i64?
     return fail(code: "not_found", msg: "no name stands there")
 
@@ -57,6 +58,7 @@ function places_of(a: symbols.Analysis lent, symbol: i64, declaration: bool) -> 
 
     return lists.sort_by(found, less: starts_before)
 
+# Whether `a` begins before `b`: the order of places in a source.
 function starts_before(a: syntax.Span, b: syntax.Span) -> bool
     return a.start < b.start
 
@@ -166,6 +168,7 @@ function in_type_position(source: str, at: i64) -> bool
         return true
     return k > 1 && source[k - 1] == '>' && source[k - 2] == '-'
 
+# Whether `b` may stand in a Kite name.
 function is_name_byte(b: u8) -> bool
     return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_'
 

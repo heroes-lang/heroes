@@ -78,6 +78,7 @@ function complete(s: server.Server lent, params: json.Value) -> json.Value?
 
     return ok(wire.object({"isIncomplete": wire.boolean(false), "items": wire.array(written)}))
 
+# Whether `a`'s label comes before `b`'s, by bytes.
 function label_before(a: Item, b: Item) -> bool
     return strings.compare(a: a.label, b: b.label) < 0
 

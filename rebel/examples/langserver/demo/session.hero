@@ -93,6 +93,7 @@ function listing(text: str)
         print(f"{strings.pad_start(s: f"{n}", width: 3, pad: " ")} | {line}")
         n @ n + 1
 
+# Prints a step's heading and the sentence that says what to watch in it.
 function heading(title: str, why: str)
     print("")
     print("== " + title)
@@ -251,6 +252,7 @@ function changes_of(edits_json: [json.Value]) -> [edits.Change]?
 function edits_in(edit: json.Value, uri: str) -> [json.Value]?
     return json.items_of(json.member(wire.member_of(edit, key: "changes")?, key: uri)?)
 
+# Step 5: the quick fix the server offers for `dist`, taken and sent as a change.
 function quick_fix(@p: peer.Peer, @doc: Copy) -> ()?
     heading(
         title: "5. The quick fix for `dist`",
@@ -269,6 +271,7 @@ function quick_fix(@p: peer.Peer, @doc: Copy) -> ()?
     fixes = edits_in(wire.member_of(actions[0], key: "edit")?, uri: doc.uri)?
     return change(@p, doc: @doc, changes: changes_of(fixes)?)
 
+# Steps 7 to 9: hover, definition and references, none of which changes the document.
 function questions(@p: peer.Peer, doc: Copy) -> ()?
     heading(
         title: "7. Hover",
@@ -289,6 +292,7 @@ function questions(@p: peer.Peer, doc: Copy) -> ()?
     _ = peer.request(@p, method: "textDocument/references", params: params)?
     return ok()
 
+# Steps 10 and 11: a rename taken and sent as one change, then two refused.
 function renames(@p: peer.Peer, @doc: Copy) -> ()?
     heading(
         title: "10. Rename `dx` to `delta_x`",
@@ -305,11 +309,13 @@ function renames(@p: peer.Peer, @doc: Copy) -> ()?
     _ = peer.request(@p, method: "textDocument/rename", params: with_name(asked(doc, needle: "area", into: 0)?, name: "let"))?
     return ok()
 
+# `params` with `newName` added, as a rename asks it.
 function with_name(params: json.Value, name: str) -> json.Value
     members @= json.members_of(params).default({})
     members["newName"] @ wire.text(name)
     return wire.object(members)
 
+# Step 12: a `.` typed, the fields offered after it, the typing undone.
 function completion(@p: peer.Peer, @doc: Copy) -> ()?
     heading(
         title: "12. Completion after a `.`",
@@ -320,6 +326,7 @@ function completion(@p: peer.Peer, @doc: Copy) -> ()?
     typed(@p, doc: @doc, needle: " + b.corner.", into: 0, gone: 12, text: "")?
     return ok()
 
+# Steps 14 and 15: `messy.kite` opened and formatted, the edits made in the client's copy.
 function formatting(@p: peer.Peer, messy: str) -> ()?
     heading(
         title: "14. The client opens messy.kite",
@@ -339,6 +346,7 @@ function formatting(@p: peer.Peer, messy: str) -> ()?
     listing(edits.apply_all(messy, changes: changes_of(json.items_of(answer)?)?, e: .utf16))
     return ok()
 
+# `params` with the formatting options an editor sends, which the server does not read.
 function with_options(params: json.Value) -> json.Value
     members @= json.members_of(params).default({})
     members["options"] @ wire.object({"tabSize": wire.number(4), "insertSpaces": wire.boolean(true)})

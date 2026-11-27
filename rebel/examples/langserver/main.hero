@@ -59,6 +59,7 @@ use lsp/transport
 constant USAGE: i64
     2
 
+# Reads the command line and does what it asks; a line it cannot read ends with status 2.
 function main()
     match command_line.read(args())
         .ok job => exit(code: perform(job))

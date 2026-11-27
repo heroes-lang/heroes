@@ -20,6 +20,7 @@ function infer(@c: scope.Checker, node: i64) -> types.Type
     c.types[node] @ found
     return found
 
+# The type of node `node`, by its kind; `infer` records it.
 function infer_kind(@c: scope.Checker, node: i64) -> types.Type
     span = c.tree.nodes[node].span
 
@@ -62,6 +63,7 @@ function article(t: types.Type) -> str
         return f"an `{name}`"
     return f"a `{name}`"
 
+# The type a name read has: its symbol's, a reference to it recorded; a type's name read as a value is told.
 function name_type(@c: scope.Checker, name: str, span: syntax.Span) -> types.Type
     match scope.lookup(c, name: name)
         .ok at =>
@@ -80,6 +82,7 @@ function name_type(@c: scope.Checker, name: str, span: syntax.Span) -> types.Typ
             scope.tell_unknown(@c, span: span, name: name, what: "value", candidates: scope.value_names(c))
             return .unknown
 
+# `-x` takes and answers an `Int`, `!x` a `Bool`.
 function unary(@c: scope.Checker, op: str, operand: i64) -> types.Type
     found = infer(@c, node: operand)
 
@@ -90,6 +93,7 @@ function unary(@c: scope.Checker, op: str, operand: i64) -> types.Type
     expect(@c, span: c.tree.nodes[operand].span, wanted: wanted, found: found, where: f"`{op}`")
     return wanted
 
+# The type a binary operator answers, each operand held to the type it takes: `==` and `!=` two of one type.
 function binary(@c: scope.Checker, op: str, left: i64, right: i64) -> types.Type
     l = infer(@c, node: left)
     r = infer(@c, node: right)
@@ -127,11 +131,13 @@ function binary(@c: scope.Checker, op: str, left: i64, right: i64) -> types.Type
     expect(@c, span: r_span, wanted: operand, found: r, where: f"`{op}`")
     return answer
 
+# Whether `t` is a function's type, which no comparison takes.
 function is_function(t: types.Type) -> bool
     return match t
         .function_type _                                                            => true
         .int_type | .bool_type | .str_type | .unit_type | .record_type _ | .unknown => false
 
+# A call's result, its arguments counted and each held to its parameter's type.
 function call(@c: scope.Checker, callee: i64, arguments: [i64], span: syntax.Span) -> types.Type
     target = infer(@c, node: callee)
     given: [types.Type] @= []
@@ -177,6 +183,7 @@ function count_of(n: i64) -> str
         return "1 argument"
     return f"{n} arguments"
 
+# A field read's type, by the type of the expression before its dot, a reference to the field recorded.
 function field(@c: scope.Checker, target: i64, name: str, name_span: syntax.Span) -> types.Type
     found = infer(@c, node: target)
 
@@ -219,6 +226,7 @@ function field_names(c: scope.Checker lent, owner: str) -> [str]
 
     return names
 
+# A record built: each field given once, known and of its type, and none missing.
 function construct(@c: scope.Checker, ref: syntax.TypeRef, inits: [syntax.FieldInit]) -> types.Type
     made = scope.resolve_type(@c, ref: ref)
 
@@ -277,6 +285,7 @@ function construct(@c: scope.Checker, ref: syntax.TypeRef, inits: [syntax.FieldI
         )
     return made
 
+# An `if`: a `Bool` condition, two branches of one type, which it answers.
 function if_else(@c: scope.Checker, cond: i64, then: i64, otherwise: i64) -> types.Type
     found = infer(@c, node: cond)
     expect(@c, span: c.tree.nodes[cond].span, wanted: .bool_type, found: found, where: "an `if`'s condition")
@@ -294,6 +303,7 @@ function if_else(@c: scope.Checker, cond: i64, then: i64, otherwise: i64) -> typ
         return second
     return first
 
+# A block: each binding declared in scope from the end of its `let` to the block's end, then its value's type.
 function block(@c: scope.Checker, lets: [syntax.Let], value: i64, span: syntax.Span) -> types.Type
     depth = c.scope.len()
 
