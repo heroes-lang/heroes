@@ -1,4 +1,4 @@
-<p class="tagline">An API gateway like Envoy and Kong, in small: one front door that routes, caches, limits and translates requests for the services behind it.</p>
+<p class="tagline">An API gateway in the manner of Envoy and Kong, in small: one front door that routes, caches, limits and translates requests for the services behind it.</p>
 
 <p>It accepts clients over TLS, the encryption HTTPS uses, speaking HTTP/1.1 or HTTP/2, routes each request by its host and path, and finds the service behind the route through DNS records. It forwards plain HTTP through a cache, relays gRPC calls, turns a plain request into a gRPC call answered as JSON, and answers GraphQL from one schema built from two services, gRPC and GraphQL being two common ways services call each other. Every client has a rate limit per route, a failed call is tried on the next instance, an instance that keeps failing is skipped for a while, and the gateway serves its own metrics for Prometheus.</p>
 

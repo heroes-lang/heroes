@@ -30,7 +30,7 @@ Programs somebody would use, each doing one job through many packages; its demo 
 - [monitor](monitor/README.md): a system monitor with alerts and a terminal dashboard, in the family of htop, Netdata and supervisord in small.
 - [notes](notes/README.md): a multi-user publishing service, a small blog and notes server written on Rebel's `web`.
 - [raftkv](raftkv/README.md): Raft consensus and a replicated key-value store, run under a deterministic simulated network.
-- [registry](registry/README.md): the site that serves Heroes packages, and its client.
+- [registry](registry/README.md): a Heroes package index in small, and its client.
 - [rv32](rv32/README.md): a RISC-V RV32IM emulator, with the two-pass assembler that makes its programs, a disassembler and a debugger.
 - [searchd](searchd/README.md): a search engine for one website, in the family of a small Meilisearch or Elasticsearch.
 - [shell](shell/README.md): a POSIX-flavoured command shell.

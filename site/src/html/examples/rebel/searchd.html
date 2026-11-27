@@ -1,4 +1,4 @@
-<p class="tagline">A search engine for one website, in the family of a small Meilisearch: it crawls the site, indexes it, and serves a search page and an API.</p>
+<p class="tagline">A search engine for one website, in the family of a small Meilisearch or Elasticsearch: it crawls the site, indexes it, and serves a search page and an API.</p>
 
 <p>It crawls the site from a start address as a polite crawler does, asking <code>robots.txt</code> and leaving other sites alone, and reads each page&rsquo;s text as a reader reads it, folded so that accents, case and ligatures never keep a query from a page. It indexes the pages for full-text search ranked by BM25, a standard formula for how well a page matches the words of a query, and as vectors for the queries whose words the pages write otherwise. It ranks pages by the site&rsquo;s own links with PageRank, folds near-duplicate pages into one result, corrects misspelt words, completes a query as it is typed, and serves a web page and a JSON API.</p>
 

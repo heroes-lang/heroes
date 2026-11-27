@@ -12,8 +12,8 @@
 # the index and any commit; `log` draws the commit graph; `merge`
 # fast-forwards, or merges three ways and writes conflicts between markers
 # for the person to resolve; `fsck` recomputes every object's hash. The
-# repository is the folder `.vcs`, laid out as `.git` is, so git itself
-# reads it with `git --git-dir=.vcs`.
+# repository is the folder `.vcs`, laid out as `.git` is; the demo asks git
+# only to name objects, never to read the repository.
 #
 # Run for real, in the folder of a project:
 #
