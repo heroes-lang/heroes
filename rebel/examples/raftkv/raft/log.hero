@@ -1,0 +1,207 @@
+# The replicated log of one node, with the part a snapshot replaced cut
+# away: what is left is the snapshot's last index and term (its base) and
+# the entries after it. Indices are the log's own, from 1, never positions
+# in the list: an index at or below the base has been compacted, and asking
+# its entry is a question the caller answers by sending a snapshot instead
+# (the Raft paper's section 7).
+
+use raft/entry
+use support/grow
+
+## The log
+
+# The log: a base and the entries after it.
+record Log
+    # The index of the last entry a snapshot replaced, 0 where none did.
+    base_index: i64
+    # That entry's term, 0 where none.
+    base_term: i64
+    # The entries after the base, in order: `entries[k]` has the index
+    # `base_index + 1 + k`.
+    entries: [entry.Entry]
+
+# A log with no entry and no snapshot.
+function empty() -> Log
+    return Log(base_index: 0, base_term: 0, entries: [])
+
+# The index of the last entry, the base where there is none after it.
+#
+# - `l`: the log.
+function last_index(l: Log lent) -> i64
+    return l.base_index + l.entries.len()
+
+# The term of the last entry, the base's where there is none after it.
+#
+# - `l`: the log.
+function last_term(l: Log lent) -> i64
+    if l.entries.len() == 0
+        return l.base_term
+    return l.entries[l.entries.len() - 1].term
+
+# The term of the entry at `index`: 0 at index 0, the base's at the base.
+#
+# - `l`: the log.
+# - `index`: the index asked, any number.
+#
+# Fails `not_found` where `index` lies below the base (compacted) or past
+# the last entry.
+function term_at(l: Log lent, index: i64) -> i64?
+    if index == l.base_index
+        return ok(l.base_term)
+
+    if index < l.base_index || index > last_index(l)
+        return fail(code: "not_found", msg: f"no entry {index}: the log holds {l.base_index + 1} to {last_index(l)}")
+    return ok(l.entries[index - l.base_index - 1].term)
+
+# Whether the log holds an entry at `index` of the term `term`, the
+# question AppendEntries asks before it appends (the log matching rule).
+#
+# - `l`: the log.
+# - `index`: the index.
+# - `term`: the term it must have.
+function holds(l: Log lent, index: i64, term: i64) -> bool
+    return match term_at(l, index: index)
+        .ok t  => t == term
+        .err _ => false
+
+# The entry at `index`.
+#
+# - `l`: the log.
+# - `index`: an index above the base and at most the last.
+#
+# Aborts outside them: the caller asks `term_at` first.
+function entry_at(l: Log lent, index: i64) -> entry.Entry
+    return l.entries[index - l.base_index - 1]
+
+# The entries from `index` on, at most `most` of them.
+#
+# - `l`: the log.
+# - `index`: the first index, above the base; past the last, none.
+# - `most`: the most entries answered, 1 or more.
+function entries_from(l: Log lent, index: i64, most: i64) -> [entry.Entry]
+    first = index - l.base_index - 1
+
+    if first >= l.entries.len()
+        return []
+    end = first + most
+
+    if end > l.entries.len()
+        return l.entries.slice(from: first, to: l.entries.len())
+    return l.entries.slice(from: first, to: end)
+
+## Changes
+
+# Appends `e`, whose index is the next one.
+#
+# - `l`: the log, changed in place.
+# - `e`: the entry; an index other than the next aborts.
+function append(@l: Log, e: entry.Entry)
+    assert e.index == last_index(l) + 1
+    grow.grow(@l.entries, value: e)
+
+# Removes the entry at `index` and every one after it: a follower's entries
+# that conflict with the leader's.
+#
+# - `l`: the log, changed in place.
+# - `index`: the first index removed, above the base.
+function cut_from(@l: Log, index: i64)
+    assert index > l.base_index
+    l.entries @ l.entries.slice(from: 0, to: index - l.base_index - 1)
+
+# Forgets every entry up to `index`, which a snapshot now holds; the base
+# becomes it.
+#
+# - `l`: the log, changed in place.
+# - `index`: the snapshot's last index, between the base and the last entry.
+# - `term`: that entry's term.
+function compact_to(@l: Log, index: i64, term: i64)
+    assert index >= l.base_index && index <= last_index(l)
+    l.entries @ l.entries.slice(from: index - l.base_index, to: l.entries.len())
+    l.base_index @ index
+    l.base_term @ term
+
+# Replaces the whole log by a snapshot's base: what a follower does with a
+# snapshot its log does not reach, or contradicts.
+#
+# - `l`: the log, changed in place.
+# - `index`: the snapshot's last index.
+# - `term`: its term.
+function reset_to(@l: Log, index: i64, term: i64)
+    l.entries @ []
+    l.base_index @ index
+    l.base_term @ term
+
+# Whether a log ending at `candidate_index` of `candidate_term` is behind
+# `l`: an earlier last term, or the same term and a shorter log (the Raft
+# paper's section 5.4.1, the vote's restriction, read from the voter's
+# side).
+#
+# - `l`: the voter's log.
+# - `candidate_index`: the candidate's last index.
+# - `candidate_term`: the candidate's last term.
+function is_behind(l: Log lent, candidate_index: i64, candidate_term: i64) -> bool
+    mine = last_term(l)
+
+    if candidate_term != mine
+        return candidate_term < mine
+    return candidate_index < last_index(l)
+
+## Tests
+
+# A log of `count` entries, every one a noop of term `term`.
+function sample(count: i64, term: i64) -> Log
+    l @= empty()
+
+    for k in range(from: 1, to: count + 1)
+        append(@l, entry.Entry(index: k, term: term, payload: .noop))
+
+    return l
+
+test "term_at: index 0, the base, an entry, and below and past them"
+    l @= sample(count: 5, term: 2)
+    assert term_at(l, index: 0).must() == 0
+    assert term_at(l, index: 5).must() == 2
+    assert term_at(l, index: 6).is_err()
+    compact_to(@l, index: 3, term: 2)
+    assert term_at(l, index: 3).must() == 2
+    assert term_at(l, index: 2).is_err()
+    assert term_at(l, index: 4).must() == 2
+    assert last_index(l) == 5
+    assert entry_at(l, index: 4).index == 4
+
+test "holds: the matching question, on a compacted index too"
+    l @= sample(count: 3, term: 1)
+    assert holds(l, index: 0, term: 0)
+    assert holds(l, index: 3, term: 1)
+    assert !holds(l, index: 3, term: 2)
+    assert !holds(l, index: 4, term: 1)
+    compact_to(@l, index: 3, term: 1)
+    assert holds(l, index: 3, term: 1)
+    assert !holds(l, index: 1, term: 1)
+
+test "entries_from: at most, past the end, and after a compaction"
+    l @= sample(count: 5, term: 1)
+    assert entries_from(l, index: 4, most: 10).len() == 2
+    assert entries_from(l, index: 2, most: 2).len() == 2
+    assert entries_from(l, index: 6, most: 3).len() == 0
+    compact_to(@l, index: 2, term: 1)
+    assert entries_from(l, index: 3, most: 1)[0].index == 3
+
+test "cut_from and reset_to: a conflict removed, a snapshot taken whole"
+    l @= sample(count: 5, term: 1)
+    cut_from(@l, index: 3)
+    assert last_index(l) == 2
+    append(@l, entry.Entry(index: 3, term: 4, payload: .noop))
+    assert last_term(l) == 4
+    reset_to(@l, index: 10, term: 5)
+    assert last_index(l) == 10
+    assert last_term(l) == 5
+    assert entries_from(l, index: 11, most: 1).len() == 0
+
+test "is_behind: a later term wins, then a longer log"
+    l = sample(count: 4, term: 2)
+    assert is_behind(l, candidate_index: 9, candidate_term: 1)
+    assert !is_behind(l, candidate_index: 1, candidate_term: 3)
+    assert is_behind(l, candidate_index: 3, candidate_term: 2)
+    assert !is_behind(l, candidate_index: 4, candidate_term: 2)
+    assert !is_behind(empty(), candidate_index: 0, candidate_term: 0)

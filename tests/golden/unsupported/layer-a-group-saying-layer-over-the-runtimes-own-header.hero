@@ -1,0 +1,25 @@
+# Panel 260's amendment after its blind reading (provisional, the author's
+# reading pending): `hero_os.h` and the compiler's `hero_compiler.h` are the
+# runtime's own interfaces and none of the platform layer's, and include none
+# of its files, so a group over either that says `layer`, its library calling
+# none of the layer, binds nothing of it: refused at the word, told at
+# `build` as a group over any header that reaches none of the layer is, and
+# named as the runtime's own. Until this case a group over `hero_os.h`, which
+# every unit's opening reads before the groups' headers, was never judged:
+# `extern "hero_os.h" layer` built and ran on this Mac and in Linux arm64,
+# the group every reader of the sitting's blind reading wrote. The fix takes
+# the word out.
+
+extern "hero_os.h" layer  #~ ffi_layer_unreached
+    function hero_os_pid() -> i64
+
+extern "hero_compiler.h" layer  #~ ffi_layer_unreached
+    function hero_frame_probes_asked() -> i64
+
+extern "./hero_os.h" layer  #~ ffi_layer_unreached
+    function hero_word_bits() -> i64
+
+function main()
+    print(hero_os_pid() > 0)
+    print(hero_frame_probes_asked() >= 0)
+    print(hero_word_bits() == 64)

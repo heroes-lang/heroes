@@ -1,0 +1,50 @@
+# `raftkv inspect`: a node's folder read as its next start would read it,
+# and written out for a person: the term and the vote, the snapshot's
+# index, members and store, the log's entries after it, and a record a
+# crash cut short. It reads and never writes, so the torn record is
+# reported and left where it is.
+
+use disk/storage
+use kv/image
+use kv/store
+use raft/entry
+
+## Inspecting
+
+# The lines that describe the node folder `folder`, the last `most` of its
+# log's entries written out.
+#
+# - `folder`: the folder.
+# - `most`: the most entries written out, 0 or more.
+#
+# Fails as `storage.load` does, and `invalid` where the snapshot's image
+# cannot be read.
+function describe(folder: str, most: i64) -> [str]?
+    rec = storage.load(storage.Disk(folder: folder), repair: false)?
+    lines: [str] @= []
+
+    voted = match rec.vote
+        .ok v  => f"voted for {v}"
+        .err _ => "no vote"
+
+    lines @ lines.push(f"state: term {rec.term}, {voted}")
+    s = rec.snapshot
+
+    if s.data.len() > 0
+        held = image.decode_image(s.data)?
+        lines @ lines.push(
+            f"snapshot: index {s.last_index} of term {s.last_term}, members {entry.format_members(s.members)}, {s.data.len()} bytes"
+        )
+        lines @ lines.push("  store: " + store.format_store(held.machine))
+    else
+        lines @ lines.push(f"snapshot: none taken, members {entry.format_members(s.members)}")
+    lines @ lines.push(f"log: {rec.entries.len()} entries after the snapshot")
+    first = rec.entries.len() - most
+
+    for k in range(from: 0, to: rec.entries.len())
+        if k >= first
+            lines @ lines.push("  " + entry.format_entry(rec.entries[k]))
+
+    if rec.torn > 0
+        lines @ lines.push(f"  and {rec.torn} bytes of a record cut short, which the next start cuts off")
+    return ok(lines)

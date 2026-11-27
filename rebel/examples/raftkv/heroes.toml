@@ -1,0 +1,21 @@
+[dependencies.rebel]
+path = "../../library/0.1.0/files"
+packages = [
+    "bytes",
+    "containers/heap",
+    "errors",
+    "flags",
+    "fs",
+    "hash",
+    "io",
+    "json",
+    "lists",
+    "maps",
+    "math",
+    "numbers",
+    "path",
+    "random",
+    "strings",
+    "time",
+    "toml",
+]

@@ -1,0 +1,57 @@
+# The steps of 2-stale-candidate.toml, run by nodes with a planted bug:
+# they vote without asking whether the candidate's log is behind their
+# own. The stale node is elected and leads without the entries the
+# cluster committed: the checker names the broken property and stops.
+name = "the same steps with a planted bug: votes given without the up-to-date check"
+nodes = 5
+seed = 3
+
+[settings]
+bug = "votes-ignore-logs"
+
+[[step]]
+do = "leader"
+
+[[step]]
+do = "op"
+op = "put a 1"
+
+[[step]]
+do = "partition"
+groups = [[5], [1, 2, 3, 4]]
+
+[[step]]
+do = "op"
+op = "put b 2"
+
+[[step]]
+do = "op"
+op = "put c 3"
+
+[[step]]
+do = "run"
+for = "700ms"
+
+[[step]]
+do = "heal"
+
+[[step]]
+do = "run"
+for = "200ms"
+
+[[step]]
+do = "campaign"
+node = 5
+
+[[step]]
+do = "leader"
+
+[[step]]
+do = "op"
+op = "get c"
+
+[[step]]
+do = "show"
+
+[[step]]
+do = "check"

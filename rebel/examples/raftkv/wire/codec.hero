@@ -1,0 +1,386 @@
+# The wire form of the program's values: a message, an entry, an operation
+# and an answer, each a kind byte and then its fields (`wire/fields`). The
+# network carries a message as these bytes in a frame (`wire/frame`), and the
+# disk an entry; both read them back here, so every decoder answers `T?`
+# and none trusts a byte it has not checked.
+
+use kv/op
+use kv/store
+use raft/entry
+use raft/message
+use wire/fields
+
+# The most entries one message or one record carries.
+constant MOST_ENTRIES: i64
+    4096
+
+# The most members a configuration names.
+constant MOST_MEMBERS: i64
+    64
+
+## Messages
+
+# The bytes of `m`.
+#
+# - `m`: the message.
+function encode_envelope(m: message.Envelope) -> [u8]
+    out: [u8] @= []
+    fields.put_int(@out, m.from)
+    fields.put_int(@out, m.to)
+    fields.put_int(@out, m.term)
+    put_body(@out, m.body)
+    return out
+
+# The message `data` holds, every byte of it.
+#
+# - `data`: the bytes, from outside.
+#
+# Fails `invalid` where they are no message or bytes are left after it,
+# `not_text` where a text in it is not UTF-8.
+function decode_envelope(data: [u8]) -> message.Envelope?
+    r @= fields.reader(data)
+    from = fields.take_int(@r)?
+    to = fields.take_int(@r)?
+    term = fields.take_int(@r)?
+    body = take_body(@r)?
+
+    if !fields.is_done(r)
+        return fail(code: "invalid", msg: f"{data.len() - r.at} bytes after the message")
+    return ok(message.Envelope(from: from, to: to, term: term, body: body))
+
+function put_body(@out: [u8], b: message.Body)
+    match b
+        .vote_request v =>
+            out @ out.push(1)
+            fields.put_int(@out, v.last_index)
+            fields.put_int(@out, v.last_term)
+        .vote_reply v =>
+            out @ out.push(2)
+            fields.put_flag(@out, v.granted)
+        .append_request a =>
+            out @ out.push(3)
+            fields.put_int(@out, a.prev_index)
+            fields.put_int(@out, a.prev_term)
+            fields.put_int(@out, a.entries.len())
+
+            for e in a.entries
+                put_entry(@out, e)
+
+            fields.put_int(@out, a.commit)
+            fields.put_int(@out, a.round)
+        .append_reply a =>
+            out @ out.push(4)
+            fields.put_flag(@out, a.success)
+            fields.put_int(@out, a.index)
+            fields.put_int(@out, a.round)
+        .snapshot_request s =>
+            out @ out.push(5)
+            fields.put_int(@out, s.last_index)
+            fields.put_int(@out, s.last_term)
+            fields.put_int(@out, s.offset)
+            fields.put_blob(out: @out, data: s.data)
+            fields.put_flag(@out, s.done)
+        .snapshot_reply s =>
+            out @ out.push(6)
+            fields.put_int(@out, s.last_index)
+            fields.put_int(@out, s.offset)
+            fields.put_flag(@out, s.done)
+        .client_request c =>
+            out @ out.push(7)
+            fields.put_int(@out, c.seq)
+            put_op(@out, c.operation)
+        .client_reply c =>
+            out @ out.push(8)
+            fields.put_int(@out, c.seq)
+            put_outcome(@out, c.outcome)
+
+function take_body(@r: fields.Reader) -> message.Body?
+    kind = fields.take_byte(@r)?
+
+    if kind == 1
+        last_index = fields.take_int(@r)?
+        return ok(.vote_request(last_index: last_index, last_term: fields.take_int(@r)?))
+
+    if kind == 2
+        return ok(.vote_reply(granted: fields.take_flag(@r)?))
+
+    if kind == 3
+        prev_index = fields.take_int(@r)?
+        prev_term = fields.take_int(@r)?
+        count = fields.take_count(@r, most: MOST_ENTRIES)?
+        entries: [entry.Entry] @= []
+
+        while entries.len() < count
+            entries @ entries.push(take_entry(@r)?)
+
+        commit = fields.take_int(@r)?
+        round = fields.take_int(@r)?
+        return ok(
+            .append_request(prev_index: prev_index, prev_term: prev_term, entries: entries, commit: commit, round: round)
+        )
+
+    if kind == 4
+        success = fields.take_flag(@r)?
+        index = fields.take_int(@r)?
+        return ok(.append_reply(success: success, index: index, round: fields.take_int(@r)?))
+
+    if kind == 5
+        last_index = fields.take_int(@r)?
+        last_term = fields.take_int(@r)?
+        offset = fields.take_int(@r)?
+        data = fields.take_blob(@r)?
+        done = fields.take_flag(@r)?
+        return ok(
+            .snapshot_request(last_index: last_index, last_term: last_term, offset: offset, data: data, done: done)
+        )
+
+    if kind == 6
+        last_index = fields.take_int(@r)?
+        offset = fields.take_int(@r)?
+        return ok(.snapshot_reply(last_index: last_index, offset: offset, done: fields.take_flag(@r)?))
+
+    if kind == 7
+        seq = fields.take_int(@r)?
+        return ok(.client_request(seq: seq, operation: take_op(@r)?))
+
+    if kind == 8
+        seq = fields.take_int(@r)?
+        return ok(.client_reply(seq: seq, outcome: take_outcome(@r)?))
+    return fail(code: "invalid", msg: f"a message of kind {kind}, where 1 to 8 are known")
+
+## Entries
+
+# Adds `e` to `out`.
+#
+# - `out`: the bytes written so far.
+# - `e`: the entry.
+function put_entry(@out: [u8], e: entry.Entry)
+    fields.put_int(@out, e.index)
+    fields.put_int(@out, e.term)
+
+    match e.payload
+        .noop =>
+            out @ out.push(0)
+        .command c =>
+            out @ out.push(1)
+            fields.put_int(@out, c.client)
+            fields.put_int(@out, c.seq)
+            put_op(@out, c.operation)
+        .config c =>
+            out @ out.push(2)
+            put_members(@out, c.members)
+
+# The entry that stands next.
+#
+# - `r`: the reader, advanced past it.
+#
+# Fails `invalid` where the bytes are no entry.
+function take_entry(@r: fields.Reader) -> entry.Entry?
+    index = fields.take_int(@r)?
+    term = fields.take_int(@r)?
+    kind = fields.take_byte(@r)?
+
+    if kind == 0
+        return ok(entry.Entry(index: index, term: term, payload: .noop))
+
+    if kind == 1
+        client = fields.take_int(@r)?
+        seq = fields.take_int(@r)?
+        command: entry.Payload = .command(client: client, seq: seq, operation: take_op(@r)?)
+        return ok(entry.Entry(index: index, term: term, payload: command))
+
+    if kind == 2
+        config: entry.Payload = .config(members: take_members(@r)?)
+        return ok(entry.Entry(index: index, term: term, payload: config))
+    return fail(code: "invalid", msg: f"an entry of kind {kind}, where 0 to 2 are known")
+
+# Adds `members` to `out`: their count, then each.
+#
+# - `out`: the bytes written so far.
+# - `members`: the members' numbers.
+function put_members(@out: [u8], members: [i64])
+    fields.put_int(@out, members.len())
+
+    for m in members
+        fields.put_int(@out, m)
+
+# The members that stand next.
+#
+# - `r`: the reader, advanced past them.
+#
+# Fails `invalid` where they are more than `MOST_MEMBERS` or cut.
+function take_members(@r: fields.Reader) -> [i64]?
+    count = fields.take_count(@r, most: MOST_MEMBERS)?
+    members: [i64] @= []
+
+    while members.len() < count
+        members @ members.push(fields.take_int(@r)?)
+
+    return ok(members)
+
+## Operations and answers
+
+function put_op(@out: [u8], o: op.Op)
+    match o
+        .put p =>
+            out @ out.push(1)
+            fields.put_text(@out, p.key)
+            fields.put_text(@out, p.value)
+        .delete d =>
+            out @ out.push(2)
+            fields.put_text(@out, d.key)
+        .append a =>
+            out @ out.push(3)
+            fields.put_text(@out, a.key)
+            fields.put_text(@out, a.value)
+        .swap w =>
+            out @ out.push(4)
+            fields.put_text(@out, w.key)
+            fields.put_text(@out, w.expected)
+            fields.put_text(@out, w.value)
+        .get g =>
+            out @ out.push(5)
+            fields.put_text(@out, g.key)
+
+function take_op(@r: fields.Reader) -> op.Op?
+    kind = fields.take_byte(@r)?
+    key = fields.take_text(@r)?
+
+    if kind == 1
+        return ok(.put(key: key, value: fields.take_text(@r)?))
+
+    if kind == 2
+        return ok(.delete(key: key))
+
+    if kind == 3
+        return ok(.append(key: key, value: fields.take_text(@r)?))
+
+    if kind == 4
+        expected = fields.take_text(@r)?
+        return ok(.swap(key: key, expected: expected, value: fields.take_text(@r)?))
+
+    if kind == 5
+        return ok(.get(key: key))
+    return fail(code: "invalid", msg: f"an operation of kind {kind}, where 1 to 5 are known")
+
+function put_outcome(@out: [u8], o: message.Outcome)
+    match o
+        .answered a =>
+            out @ out.push(1)
+            put_answer(@out, a.answer)
+            fields.put_int(@out, a.index)
+        .redirect d =>
+            out @ out.push(2)
+            fields.put_int(@out, d.leader)
+        .no_leader =>
+            out @ out.push(3)
+        .unavailable u =>
+            out @ out.push(4)
+            fields.put_text(@out, u.why)
+
+function take_outcome(@r: fields.Reader) -> message.Outcome?
+    kind = fields.take_byte(@r)?
+
+    if kind == 1
+        answer = take_answer(@r)?
+        return ok(.answered(answer: answer, index: fields.take_int(@r)?))
+
+    if kind == 2
+        return ok(.redirect(leader: fields.take_int(@r)?))
+
+    if kind == 3
+        return ok(.no_leader)
+
+    if kind == 4
+        return ok(.unavailable(why: fields.take_text(@r)?))
+    return fail(code: "invalid", msg: f"an outcome of kind {kind}, where 1 to 4 are known")
+
+# Adds `a` to `out`.
+#
+# - `out`: the bytes written so far.
+# - `a`: the answer.
+function put_answer(@out: [u8], a: store.Answer)
+    match a
+        .done =>
+            out @ out.push(1)
+        .value v =>
+            out @ out.push(2)
+            fields.put_text(@out, v.v)
+        .missing =>
+            out @ out.push(3)
+        .refused f =>
+            out @ out.push(4)
+            fields.put_text(@out, f.held)
+        .stale =>
+            out @ out.push(5)
+
+# The answer that stands next.
+#
+# - `r`: the reader, advanced past it.
+#
+# Fails `invalid` where the bytes are no answer.
+function take_answer(@r: fields.Reader) -> store.Answer?
+    kind = fields.take_byte(@r)?
+
+    if kind == 1
+        return ok(.done)
+
+    if kind == 2
+        return ok(.value(v: fields.take_text(@r)?))
+
+    if kind == 3
+        return ok(.missing)
+
+    if kind == 4
+        return ok(.refused(held: fields.take_text(@r)?))
+
+    if kind == 5
+        return ok(.stale)
+    return fail(code: "invalid", msg: f"an answer of kind {kind}, where 1 to 5 are known")
+
+## Tests
+
+# One message of every kind.
+function every_kind() -> [message.Envelope]
+    put = entry.Entry(
+        index: 4,
+        term: 2,
+        payload: .command(client: 101, seq: 3, operation: .swap(key: "k", expected: "", value: "v"))
+    )
+    members = entry.Entry(index: 5, term: 2, payload: .config(members: [1, 2, 3]))
+    bodies: [message.Body] = [
+        .vote_request(last_index: 9, last_term: 3)
+        .vote_reply(granted: true)
+        .append_request(prev_index: 3, prev_term: 2, entries: [put, members], commit: 3, round: 7)
+        .append_reply(success: false, index: 2, round: 7)
+        .snapshot_request(last_index: 40, last_term: 3, offset: 64, data: [1, 2, 3], done: false)
+        .snapshot_reply(last_index: 40, offset: 67, done: true)
+        .client_request(seq: 1, operation: .append(key: "log", value: "é"))
+        .client_reply(seq: 1, outcome: .answered(answer: .refused(held: "x"), index: 12))
+        .client_reply(seq: 2, outcome: .unavailable(why: "no quorum"))
+    ]
+    out: [message.Envelope] @= []
+
+    for b in bodies
+        out @ out.push(message.Envelope(from: 1, to: -2, term: 3, body: b))
+
+    return out
+
+test "decode_envelope: every kind read back as it was written"
+    for m in every_kind()
+        assert decode_envelope(encode_envelope(m)).must() == m
+
+test "decode_envelope: every message cut short at every byte fails, and none aborts"
+    for m in every_kind()
+        data = encode_envelope(m)
+
+        for cut in range(from: 0, to: data.len())
+            assert decode_envelope(data.slice(from: 0, to: cut)).is_err()
+
+        longer @= data
+        longer @ longer.push(0)
+        assert decode_envelope(longer).is_err()
+
+test "decode_envelope: an unknown kind and a hostile count"
+    assert decode_envelope([2, 2, 2, 9]).is_err()
+    assert decode_envelope([2, 2, 2, 3, 0, 0, 0xfe, 0xff, 0xff, 0x0f]).is_err()

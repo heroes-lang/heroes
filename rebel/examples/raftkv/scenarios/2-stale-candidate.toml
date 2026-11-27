@@ -1,0 +1,54 @@
+# A node cut off for long campaigns in vain, its term climbing; healed, its
+# term ends the leader's, but its log is behind, so no vote goes to it and
+# a node holding every committed entry leads instead (the Raft paper's
+# section 5.4.1, the vote's restriction).
+name = "a stale candidate loses"
+nodes = 5
+seed = 3
+
+[[step]]
+do = "leader"
+
+[[step]]
+do = "op"
+op = "put a 1"
+
+[[step]]
+do = "partition"
+groups = [[5], [1, 2, 3, 4]]
+
+[[step]]
+do = "op"
+op = "put b 2"
+
+[[step]]
+do = "op"
+op = "put c 3"
+
+[[step]]
+do = "run"
+for = "700ms"
+
+[[step]]
+do = "heal"
+
+[[step]]
+do = "run"
+for = "200ms"
+
+[[step]]
+do = "campaign"
+node = 5
+
+[[step]]
+do = "leader"
+
+[[step]]
+do = "op"
+op = "get c"
+
+[[step]]
+do = "show"
+
+[[step]]
+do = "check"

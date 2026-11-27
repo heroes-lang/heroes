@@ -1,0 +1,145 @@
+# The messages nodes and clients send each other: Raft's two RPCs and
+# InstallSnapshot, each request with its reply (the Raft paper's figures 2
+# and 13), and a client's request with its answer. Every message travels in
+# an envelope naming who sent it, to whom, and the sender's term; a client's
+# term is 0, and a node never reads it.
+
+use kv/op
+use kv/store
+use raft/entry
+
+## The envelope
+
+# A message on its way.
+record Envelope
+    # The sender: a node's number, or a client's.
+    from: i64
+    # The receiver.
+    to: i64
+    # The sender's current term; 0 from a client.
+    term: i64
+    # What it says.
+    body: Body
+
+# What a message says.
+variant Body
+    # RequestVote: a candidate asks for a vote.
+    vote_request
+        # The candidate's last index.
+        last_index: i64
+        # The candidate's last term.
+        last_term: i64
+    # The vote's answer.
+    vote_reply
+        # Whether the vote was given.
+        granted: bool
+    # AppendEntries: the leader's entries, or none as a heartbeat.
+    append_request
+        # The index of the entry just before `entries`.
+        prev_index: i64
+        # Its term.
+        prev_term: i64
+        # The entries, in order; none in a heartbeat.
+        entries: [entry.Entry]
+        # The leader's commit index.
+        commit: i64
+        # The leader's latest round of read confirmation (`raft/reads`),
+        # which the reply carries back.
+        round: i64
+    # AppendEntries' answer.
+    append_reply
+        # Whether the entries matched and were appended.
+        success: bool
+        # On success the last index known to match the leader's; on failure
+        # where the leader should try next: just past the follower's log, or
+        # the first index of the conflicting term.
+        index: i64
+        # The round of the request answered.
+        round: i64
+    # InstallSnapshot: a part of the leader's snapshot.
+    snapshot_request
+        # The snapshot's last index.
+        last_index: i64
+        # Its term.
+        last_term: i64
+        # The byte of the snapshot's data this part begins at.
+        offset: i64
+        # The part's bytes.
+        data: [u8]
+        # Whether this part is the last.
+        done: bool
+    # InstallSnapshot's answer: the next byte wanted, or the whole taken.
+    snapshot_reply
+        # The snapshot's last index.
+        last_index: i64
+        # The next byte wanted; the whole length once it is taken.
+        offset: i64
+        # Whether the snapshot is installed.
+        done: bool
+    # A client's operation, sent to the node it takes for the leader.
+    client_request
+        # The operation's sequence number in the client's session.
+        seq: i64
+        # The operation.
+        operation: op.Op
+    # A node's answer to a client.
+    client_reply
+        # The sequence number answered.
+        seq: i64
+        # What happened.
+        outcome: Outcome
+
+# What a node answers a client.
+variant Outcome
+    # The operation was applied, or read at a confirmed commit index.
+    answered
+        # The store's answer.
+        answer: store.Answer
+        # The index it was applied at, or read at.
+        index: i64
+    # This node is not the leader; `leader` is the one it follows.
+    redirect
+        # The leader's number.
+        leader: i64
+    # This node is not the leader and knows of none.
+    no_leader
+    # The leader could not confirm it still leads before the read's time ran
+    # out, or lost its leadership with the operation in flight.
+    unavailable
+        # Why, in words.
+        why: str
+
+## Words
+
+# The name of `b`'s kind, as the transcript and the counters write it.
+#
+# - `b`: the body.
+function kind_name(b: Body) -> str
+    return match b
+        .vote_request _     => "RequestVote"
+        .vote_reply _       => "RequestVote reply"
+        .append_request _   => "AppendEntries"
+        .append_reply _     => "AppendEntries reply"
+        .snapshot_request _ => "InstallSnapshot"
+        .snapshot_reply _   => "InstallSnapshot reply"
+        .client_request _   => "client request"
+        .client_reply _     => "client reply"
+
+# `o` as the transcript writes it.
+#
+# - `o`: the outcome.
+function format_outcome(o: Outcome) -> str
+    return match o
+        .answered a    => store.format_answer(a.answer) + f" (index {a.index})"
+        .redirect r    => f"not the leader, ask {r.leader}"
+        .no_leader     => "no leader known"
+        .unavailable u => "unavailable: " + u.why
+
+## Tests
+
+test "kind_name and format_outcome: a few of each"
+    assert kind_name(.vote_reply(granted: true)) == "RequestVote reply"
+    assert kind_name(.client_request(seq: 1, operation: .get(key: "a"))) == "client request"
+    assert format_outcome(.answered(answer: .done, index: 7)) == "OK (index 7)"
+    assert format_outcome(.redirect(leader: 3)) == "not the leader, ask 3"
+    assert format_outcome(.unavailable(why: "no quorum")) == "unavailable: no quorum"
