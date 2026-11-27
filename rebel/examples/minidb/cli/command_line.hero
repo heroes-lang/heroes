@@ -1,0 +1,140 @@
+# The command line, declared with Rebel's `flags`: `shell` reads statements
+# from the standard input, `exec` runs the statements of one argument, and
+# `demo` plays the scripted session on a fresh database. What the person
+# typed is read into a `Job`, so the rest of the program never sees a word
+# of it again.
+
+use <rebel>/flags
+
+use storage/header
+
+## The declaration
+
+# The program's command line.
+function declaration() -> flags.Command
+    root @= flags.command(
+        name: "minidb",
+        about: "A small SQL database engine: B-trees, a write-ahead log, transactions."
+    )
+    shell @= with_storage(
+        flags.command(name: "shell", about: "Runs the statements and dot-commands of the standard input.")
+    )
+    flags.add(@shell, flags.positional(name: "DATABASE", help: "the database file, made where it is not there"))
+    flags.add(@shell, flags.flag(long: "echo", short: "", help: "write each statement before its answer"))
+    flags.add_command(c: @root, sub: shell)
+    exec @= with_storage(flags.command(name: "exec", about: "Runs the statements of SQL, separated by semicolons."))
+    flags.add(@exec, flags.positional(name: "DATABASE", help: "the database file, made where it is not there"))
+    flags.add(@exec, flags.positional(name: "SQL", help: "the statements"))
+    flags.add_command(c: @root, sub: exec)
+    demo @= flags.command(
+        name: "demo",
+        about: "Plays the demo's script, read from the standard input, on a fresh database."
+    )
+    flags.add(
+        @demo,
+        flags.with_default(flags.option(long: "work", short: "", value_name: "DIR", help: "the folder its database is made in"), "build/minidb-demo")
+    )
+    flags.add_command(c: @root, sub: demo)
+    return root
+
+# `c` with the options of a database's storage.
+function with_storage(c: flags.Command) -> flags.Command
+    taken @= c
+    flags.add(
+        @taken,
+        flags.with_default(flags.option(long: "page-size", short: "", value_name: "BYTES", help: "the page size of a database made, 512 to 65536"), "4096")
+    )
+    flags.add(
+        @taken,
+        flags.with_default(flags.option(long: "cache", short: "", value_name: "PAGES", help: "the pages the cache holds"), "256")
+    )
+    return taken
+
+## The request
+
+# The storage a command asks for.
+record Storage
+    # The page size of a database made.
+    page_size: i64
+    # The pages the cache holds.
+    cache_pages: i64
+
+# What the command line asks.
+variant Job
+    # The shell over the standard input.
+    shell
+        # The database's path.
+        database: str
+        # The storage.
+        storage: Storage
+        # Whether statements are echoed.
+        echo: bool
+    # The statements of one argument.
+    exec
+        # The database's path.
+        database: str
+        # The storage.
+        storage: Storage
+        # The statements.
+        statements: str
+    # The demo, its database made in `work`.
+    demo
+        # The work folder.
+        work: str
+    # Help was asked; `text` is it.
+    help
+        # The help.
+        text: str
+
+# The job `arguments` ask for.
+#
+# - `arguments`: the words after the program's name.
+#
+# Fails `invalid` where they are not a command line of this program, the
+# message saying why.
+function read(arguments: [str]) -> Job?
+    found = flags.parse(declaration(), arguments)?
+
+    if flags.is_help(found)
+        return ok(.help(text: flags.help_text(found)))
+    sub = flags.subcommand(found)?
+    verb = flags.name_of(sub)
+
+    if verb == "demo"
+        return ok(.demo(work: flags.value_of(sub, "work")?))
+    page_size = flags.int_of(sub, "page-size")?
+    cache_pages = flags.int_of(sub, "cache")?
+
+    if !header.is_page_size(page_size)
+        return fail(code: "invalid", msg: f"--page-size {page_size} is no power of two from 512 to 65536")
+
+    if cache_pages < 1 || cache_pages > 1_000_000
+        return fail(code: "invalid", msg: f"--cache {cache_pages} is outside 1 to 1000000 pages")
+    storage = Storage(page_size: page_size, cache_pages: cache_pages)
+    database = flags.value_of(sub, "DATABASE")?
+
+    if verb == "exec"
+        return ok(.exec(database: database, storage: storage, statements: flags.value_of(sub, "SQL")?))
+    return ok(.shell(database: database, storage: storage, echo: flags.is_on(sub, "echo")))
+
+## Tests
+
+test "read: the three commands, their defaults, and a page size refused"
+    match read(["shell", "a.db", "--echo"]).must()
+        .shell s =>
+            assert s.database == "a.db"
+            assert s.echo
+            assert s.storage == Storage(page_size: 4096, cache_pages: 256)
+        .exec _ | .demo _ | .help _ => assert false
+
+    match read(["demo"]).must()
+        .demo d                      => assert d.work == "build/minidb-demo"
+        .shell _ | .exec _ | .help _ => assert false
+
+    match read(["exec", "a.db", "SELECT 1", "--page-size", "1024"]).must()
+        .exec e                      => assert e.statements == "SELECT 1" && e.storage.page_size == 1024
+        .shell _ | .demo _ | .help _ => assert false
+
+    assert read(["shell", "a.db", "--page-size", "1000"]).is_err()
+    assert read(["shell", "a.db", "--cache", "0"]).is_err()
+    assert read(["nothing"]).is_err()

@@ -1,0 +1,136 @@
+# minidb: a small SQL database engine, not a client. Its SQL is read by a
+# lexer on Rebel's `scanner` and a recursive-descent parser: `CREATE TABLE`,
+# `CREATE [UNIQUE] INDEX`, `DROP`, `INSERT` of values or of a query,
+# `UPDATE`, `DELETE`, and `SELECT` with inner and left joins, `WHERE`,
+# `GROUP BY`, `HAVING`, `ORDER BY`, `LIMIT`, `OFFSET`, `DISTINCT`, the
+# aggregates, `CASE`, `IN`, `BETWEEN`, `LIKE`, and `NULL` by SQL's
+# three-valued logic. Types are strict, as PostgreSQL's are; an integer
+# overflow, a division by zero and a type mismatch are errors, never a
+# wrapped or a guessed value.
+#
+# Its storage is SQLite's design in miniature: a file of fixed-size pages
+# read through a page cache; a B+tree for every table, keyed by rowid, and
+# for every index; a catalogue kept in its own tree, the `CREATE` statements
+# parsed again at every open; a write-ahead log where a transaction's pages
+# are appended, each frame checksummed and chained to the one before, and
+# recovered after a crash, the frames of a transaction that never committed
+# cut off; a checkpoint that copies the log into the database file. One
+# connection writes at a time, under a lock on a file beside the database;
+# the others read their snapshot and never wait. A planner chooses a search
+# of the rowid or of an index over a scan of the whole table, and `EXPLAIN`
+# shows its choice in SQLite's words. A connection answers the contract of
+# Rebel's `sql` drivers, `exec`, `query`, `begin`, `commit` and the rest.
+#
+# Run for real:
+#
+#     minidb shell shop.db                 # statements and dot-commands on stdin
+#     minidb shell shop.db --echo < a.sql  # a script, each statement echoed
+#     minidb exec shop.db "SELECT 1 + 1;"  # the statements of one argument
+#
+# `minidb demo` plays the script of the standard input on a fresh
+# `build/minidb-demo/shop.db` with small pages: a shop's tables, a few
+# hundred orders made by a join, the trees they make, joins, groups and
+# three-valued logic, `EXPLAIN`, broken constraints, a transaction rolled
+# back, a second connection kept out by the writer's lock, a crash after a
+# commit and a crash in the middle of a transaction, each followed by the
+# recovery of its log, an integrity check and a checkpoint.
+#
+# The packages of Rebel it uses, and what for:
+#
+# - `scanner`, `regex`: the lexer, SQL's quotes read by patterns;
+# - `sql`: its values, rows and results, and the drivers' contract;
+# - `bytes`, `hash`: the pages, the rows and the keys as bytes, and the
+#   log's CRC-32;
+# - `containers/cache`: the page cache, which forgets the page used least
+#   recently;
+# - `fs`, `io`, `path`: the files, read and written by place, synced and
+#   locked;
+# - `math`, `numbers`, `strings`, `lists`: arithmetic that refuses an
+#   overflow, numbers read and written, text, sorting by `ORDER BY`;
+# - `csv`, `json`: the shell's `.mode csv` and `.mode json`;
+# - `flags`, `errors`: the command line, and failures told.
+
+use <rebel>/errors
+use <rebel>/io
+
+use cli/command_line
+use demo/demo
+use shell/shell
+use storage/pager
+
+# The exit status of a command line the program does not read.
+constant USAGE: i64
+    2
+
+function main()
+    request = command_line.read(args())
+
+    if request.is_err()
+        complain(errors.format_line(request))
+        exit(code: USAGE)
+    exit(code: perform(request.must()))
+
+# Does what `job` asks; answers the exit status.
+function perform(job: command_line.Job) -> i64
+    return match job
+        .help h =>
+            print(h.text)
+            0
+        .demo d =>
+            match demo.run(d.work, script: io.stdin())
+                .ok _ => 0
+                .err e =>
+                    complain(e.msg)
+                    1
+        .shell s => shell_status(s.database, options: options_of(s.storage), echo: s.echo)
+        .exec e  => exec_status(path: e.database, options: options_of(e.storage), statements: e.statements)
+
+function options_of(storage: command_line.Storage) -> pager.Options
+    return pager.Options(
+        page_size: storage.page_size,
+        cache_pages: storage.cache_pages,
+        spill_limit: storage.cache_pages
+    )
+
+# The shell over the standard input; 1 where a statement failed.
+function shell_status(path: str, options: pager.Options, echo: bool) -> i64
+    settings @= shell.plain_settings()
+    settings.echo @ echo
+
+    match io.read_all_text(io.stdin())
+        .ok text =>
+            match shell.open(path, options: options, settings: settings)
+                .ok opened =>
+                    sh @= opened
+                    failures = shell.run(@sh, input: text)
+                    errors.ignore(shell.close(@sh))
+
+                    if failures > 0
+                        return 1
+                    return 0
+                .err e =>
+                    complain(e.msg)
+                    return 1
+        .err e =>
+            complain(e.msg)
+            return 1
+
+function exec_status(path: str, options: pager.Options, statements: str) -> i64
+    settings = shell.plain_settings()
+
+    match shell.open(path, options: options, settings: settings)
+        .ok opened =>
+            sh @= opened
+            failures = shell.run(@sh, input: statements)
+            errors.ignore(shell.close(@sh))
+
+            if failures > 0
+                return 1
+            return 0
+        .err e =>
+            complain(e.msg)
+            return 1
+
+# Writes `message` on the standard error, after the program's name.
+function complain(message: str)
+    errors.ignore(io.write_line(io.stderr(), line: "minidb: " + message))

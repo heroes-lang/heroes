@@ -15,6 +15,7 @@
 # takes exclusively, so no page a snapshot reads is copied under it.
 
 use <rebel>/containers/cache
+use <rebel>/errors
 use <rebel>/fs
 use <rebel>/io
 use <rebel>/sql
@@ -114,20 +115,38 @@ function open(path: str, options: Options) -> Opened?
             data @ data.push(b)
 
         fs.write_bytes(path, data: data)?
+
+    # Every stream opened is kept in `opened` until the pager holds it, so a
+    # failure after it closes it: a handle no path gives back is a leak the
+    # runtime tells when `main` returns.
+    opened: [io.Stream] @= []
+    made = opened_on(path, options: options, created: created, @opened)
+
+    if made.is_err()
+        for k in range(from: 0, to: opened.len())
+            errors.ignore(io.close(@opened[k]))
+    return made
+
+function opened_on(path: str, options: Options, created: bool, @opened: [io.Stream]) -> Opened?
     file = fs.open_with(path, access: .read_write, permission: 0o644)?
-    head = io.read(file, n: header.SIZE)?
-    found_header = header.decode(head)?
+    opened @ opened.push(file)
+    found_header = header.decode(io.read(file, n: header.SIZE)?)?
     writer = lock_file(path + "-lock")?
+    opened @ opened.push(writer)
     readers = lock_file(path + "-read")?
+    opened @ opened.push(readers)
 
     # Recovery cuts a dead transaction's frames off only where no other
     # connection is writing: a live one's frames are its own.
     alone = fs.try_lock(writer, exclusive: true)?
-    opened = wal.open(path + "-wal", page_size: found_header.page_size)?
-    fs.unlock(writer)?
+    log = wal.open(path + "-wal", page_size: found_header.page_size, cut: alone)?
+    opened @ opened.push(log.log.stream)
+
+    if alone
+        fs.unlock(writer)?
     p @= Pager(
         file: file,
-        log: opened.log,
+        log: log.log,
         writer: writer,
         readers: readers,
         page_size: found_header.page_size,
@@ -144,11 +163,8 @@ function open(path: str, options: Options) -> Opened?
         reads: 0,
         hits: 0
     )
-
-    if !alone
-        _ = 0
     p.page_count @ read_header(@p)?.page_count
-    return ok(Opened(pager: p, recovery: opened.recovery, created: created))
+    return ok(Opened(pager: p, recovery: log.recovery, created: created))
 
 function lock_file(path: str) -> io.Stream?
     if !fs.exists(path)?
@@ -189,7 +205,7 @@ record Cut
 #
 # Fails where a file cannot be written or closed.
 function crash(@p: Pager) -> Cut?
-    cut @= Cut(frames: p.spilled.len(), torn: false)
+    cut @= Cut(frames: p.log.frames - p.log.committed, torn: false)
 
     if p.writing && p.dirty.len() > 0
         pages = sort(keys(p.dirty))
@@ -201,7 +217,7 @@ function crash(@p: Pager) -> Cut?
         torn = p.dirty[pages[last]]?
         _ = io.seek(p.log.stream, offset: wal.offset_of(p.log, frame: p.log.frames), from: .start)?
         io.write(p.log.stream, data: torn.slice(from: 0, to: torn.len() / 2))?
-        cut @ Cut(frames: p.spilled.len() + last, torn: true)
+        cut @ Cut(frames: p.log.frames - p.log.committed, torn: true)
     a = io.close(@p.file)
     b = io.close(@p.log.stream)
     c = io.close(@p.writer)
@@ -529,3 +545,119 @@ function copy_log(@p: Pager) -> i64?
     io.sync(p.file)?
     wal.reset(@p.log)?
     return ok(pages.len())
+
+## Tests
+
+function test_file(name: str) -> str
+    folder = "build/minidb-tests"
+    fs.make_dir_all(folder).must()
+    file = folder + "/" + name
+
+    for suffix in ["", "-wal", "-lock", "-read"]
+        if fs.exists(file + suffix).must()
+            fs.remove(file + suffix).must()
+
+    return file
+
+function small() -> Options
+    return Options(page_size: 512, cache_pages: 4, spill_limit: 3)
+
+function filled(byte: u8) -> [u8]
+    out: [u8] @= []
+
+    for _ in range(from: 0, to: 512)
+        out @ out.push(byte)
+
+    return out
+
+test "commit: pages read back through the log, then from the file once checkpointed"
+    file = test_file("pager-commit.db")
+    p @= open(file, options: small()).must().pager
+    begin_write(@p).must()
+    page = allocate(@p).must()
+    write(@p, page: page, data: filled(7)).must()
+    assert commit(@p).must().frames == 2
+    errors.ignore(close(@p))
+    again = open(file, options: small()).must()
+    assert again.recovery.committed == 2
+    assert again.recovery.transactions == 1
+    q @= again.pager
+    begin_read(@q).must()
+    assert read(@q, page: page).must() == filled(7)
+    end_read(@q)
+    assert checkpoint(@q).must() == 2
+    assert q.log.frames == 0
+    begin_read(@q).must()
+    assert read(@q, page: page).must() == filled(7)
+    end_read(@q)
+    errors.ignore(close(@q))
+
+test "rollback: the changed pages forgotten, the spilled frames cut off the log"
+    file = test_file("pager-rollback.db")
+    p @= open(file, options: small()).must().pager
+    begin_write(@p).must()
+
+    for _ in range(from: 0, to: 6)
+        page = allocate(@p).must()
+        write(@p, page: page, data: filled(1)).must()
+
+    assert p.log.frames > 0
+    rollback(@p).must()
+    assert p.log.frames == 0
+    assert p.page_count == 2
+    errors.ignore(close(@p))
+
+test "crash: a transaction's spilled frames and its torn last frame cut off at the next open"
+    file = test_file("pager-crash.db")
+    p @= open(file, options: small()).must().pager
+    begin_write(@p).must()
+    kept = allocate(@p).must()
+    write(@p, page: kept, data: filled(5)).must()
+    _ = commit(@p).must()
+    begin_write(@p).must()
+
+    for _ in range(from: 0, to: 6)
+        page = allocate(@p).must()
+        write(@p, page: page, data: filled(9)).must()
+
+    write(@p, page: kept, data: filled(6)).must()
+    cut = crash(@p).must()
+    assert cut.torn
+    assert cut.frames > 3
+    again = open(file, options: small()).must()
+    assert again.recovery.committed == 2
+    assert again.recovery.discarded == cut.frames
+    assert again.recovery.torn
+    q @= again.pager
+    begin_read(@q).must()
+    assert read(@q, page: kept).must() == filled(5)
+    assert q.page_count == 3
+    end_read(@q)
+    errors.ignore(close(@q))
+
+test "begin_write: one writer at a time, and a reader keeps its snapshot until it ends"
+    file = test_file("pager-two.db")
+    a @= open(file, options: small()).must().pager
+    b @= open(file, options: small()).must().pager
+    begin_write(@a).must()
+    page = allocate(@a).must()
+    write(@a, page: page, data: filled(3)).must()
+    begin_read(@b).must()
+    assert begin_write(@b).is_err()
+    _ = commit(@a).must()
+    assert b.page_count == 2
+    assert checkpoint(@a).is_err()
+    end_read(@b)
+    begin_read(@b).must()
+    assert b.page_count == 3
+    assert read(@b, page: page).must() == filled(3)
+    end_read(@b)
+    errors.ignore(close(@a))
+    errors.ignore(close(@b))
+
+test "open: a file that is no database refused, a page size minidb does not write refused"
+    file = test_file("pager-other.db")
+    write_file(path: file, text: "SQLite format 3").must()
+    assert open(file, options: small()).is_err()
+    other = test_file("pager-size.db")
+    assert open(other, options: Options(page_size: 1000, cache_pages: 4, spill_limit: 3)).is_err()

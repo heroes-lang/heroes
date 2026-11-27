@@ -1,0 +1,199 @@
+# The tables a statement reads, bound to the catalogue: where each one's
+# columns stand in a joined row, and which column a name names. A joined row
+# is every table's values one after another, each table's rowid after its
+# columns, so `rowid` is a column too wherever a table declares none of that
+# name, as SQLite has it.
+
+use <rebel>/sql
+
+use catalog/schema
+use sql/ast
+
+## Scopes
+
+# A table of a `FROM`, bound.
+record Bound
+    # The name the statement calls it by.
+    alias: str
+    # The table.
+    table: schema.Table
+    # The place of its first column in a joined row.
+    offset: i64
+    # How it joins the tables before it.
+    join: ast.Join
+
+# The tables a statement reads.
+record Scope
+    # The tables, in the statement's order.
+    sources: [Bound]
+    # The values of a joined row.
+    width: i64
+
+# A column of a joined row, named.
+record Named
+    # The column's name.
+    name: str
+    # Its place in a joined row.
+    at: i64
+
+# The SQLSTATE of a name two tables share.
+constant AMBIGUOUS: str
+    "42702"
+
+# No table: a `SELECT` of expressions alone.
+function empty() -> Scope
+    return Scope(sources: [], width: 0)
+
+# The tables of a `FROM`, bound to `cat`.
+#
+# - `cat`: the catalogue.
+# - `sources`: the `FROM`'s tables.
+#
+# Fails `not_found` for a table the catalogue lacks, `invalid` for a name
+# two of them are called by.
+function bind(cat: schema.Catalog lent, sources: [ast.Source]) -> Scope?
+    found: [Bound] @= []
+    width @= 0
+
+    for s in sources
+        t = schema.table_named(cat, name: s.table)?
+
+        for b in found
+            if b.alias == s.alias
+                return fail(
+                    code: sql.INVALID,
+                    msg: sql.failure_message(database_code: "42712", message: f"the table name {s.alias} is given twice")
+                )
+
+        found @ found.push(Bound(alias: s.alias, table: t, offset: width, join: s.join))
+        width @ width + t.columns.len() + 1
+
+    return ok(Scope(sources: found, width: width))
+
+# One table, as an `UPDATE` or a `DELETE` reads it.
+#
+# - `t`: the table.
+function single(t: schema.Table) -> Scope
+    return Scope(sources: [Bound(alias: t.name, table: t, offset: 0, join: .first)], width: t.columns.len() + 1)
+
+# The place in a joined row of the column `name`, of the table `table`
+# where one is written.
+#
+# - `scope`: the tables.
+# - `table`: the table's name or alias, "" where none is written.
+# - `name`: the column's name.
+#
+# Fails `not_found` where no table has the column, and `invalid` where two
+# have it and no table is written.
+function resolve(scope: Scope lent, table: str, name: str) -> i64?
+    found @= -1
+    count @= 0
+
+    for b in scope.sources
+        if table == "" || table == b.alias
+            at = column_at(b, name: name)
+
+            if at >= 0
+                found @ at
+                count @ count + 1
+
+    if count == 1
+        return ok(found)
+    shown = qualified(table: table, name: name)
+
+    if count > 1
+        return fail(
+            code: sql.INVALID,
+            msg: sql.failure_message(database_code: AMBIGUOUS, message: f"the column name {shown} is ambiguous")
+        )
+    return fail(
+        code: sql.NOT_FOUND,
+        msg: sql.failure_message(database_code: schema.NO_COLUMN, message: f"no such column: {shown}")
+    )
+
+function qualified(table: str, name: str) -> str
+    if table == ""
+        return name
+    return table + "." + name
+
+# Where `name` stands in a joined row for the table `b`, -1 where `b` has
+# no such column.
+function column_at(b: Bound, name: str) -> i64
+    for k in range(from: 0, to: b.table.columns.len())
+        if b.table.columns[k].name == name
+            return b.offset + k
+
+    if name == "rowid"
+        return b.offset + b.table.columns.len()
+    return -1
+
+# The columns a `*`, or a `t.*`, stands for.
+#
+# - `scope`: the tables.
+# - `table`: the table a `t.*` names, "" for `*`.
+#
+# Fails `not_found` where `table` names no table of the scope.
+function star(scope: Scope lent, table: str) -> [Named]?
+    found: [Named] @= []
+    matched @= false
+
+    for b in scope.sources
+        if table == "" || table == b.alias
+            matched @ true
+
+            for k in range(from: 0, to: b.table.columns.len())
+                found @ found.push(Named(name: b.table.columns[k].name, at: b.offset + k))
+
+    if !matched
+        return fail(
+            code: sql.NOT_FOUND,
+            msg: sql.failure_message(database_code: schema.NO_TABLE, message: f"no such table: {table}")
+        )
+
+    if found.len() == 0
+        return fail(
+            code: sql.INVALID,
+            msg: sql.failure_message(database_code: "42601", message: "SELECT * with no table")
+        )
+    return ok(found)
+
+# The table of the scope whose values hold place `at`.
+#
+# - `scope`: the tables.
+# - `at`: a place in a joined row.
+function source_of(scope: Scope lent, at: i64) -> i64
+    for k in range(from: 0, to: scope.sources.len())
+        b = scope.sources[k]
+
+        if at >= b.offset && at <= b.offset + b.table.columns.len()
+            return k
+
+    return -1
+
+# A joined row of `NULL`s.
+#
+# - `scope`: the tables.
+function nulls(scope: Scope lent) -> [sql.Value]
+    found: [sql.Value] @= []
+
+    for _ in range(from: 0, to: scope.width)
+        found @ found.push(.null_value)
+
+    return found
+
+# The joined row with table `k`'s values and rowid put in place.
+#
+# - `joined`: the row so far.
+# - `scope`: the tables.
+# - `k`: the table's place in the scope.
+# - `values`: the table's row.
+# - `rowid`: its rowid.
+function with_table(joined: [sql.Value], scope: Scope lent, k: i64, values: [sql.Value], rowid: i64) -> [sql.Value]
+    out @= joined
+    b = scope.sources[k]
+
+    for c in range(from: 0, to: values.len())
+        out[b.offset + c] @ values[c]
+
+    out[b.offset + values.len()] @ .integer(v: rowid)
+    return out

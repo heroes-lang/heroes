@@ -1,0 +1,113 @@
+# A table's rows read the way the planner chose: its whole tree scanned,
+# its tree searched by rowid, or an index searched for a value or a range
+# and each entry's row then read from the table by its rowid. A bound that
+# is `NULL` reads nothing, since no comparison with `NULL` is true; a bound
+# of another type than the column's is refused, as the comparison it stands
+# for would be.
+
+use <rebel>/sql
+
+use catalog/schema
+use engine/eval
+use engine/planner
+use sql/ast
+use storage/btree
+use storage/pager
+use values/row
+use values/sortkey
+use values/value
+
+## Rows
+
+# A row of a table and its rowid.
+record Fetched
+    # The rowid.
+    rowid: i64
+    # The values, in the table's columns' order.
+    values: [sql.Value]
+
+# The rows of `t` the access `a` reads, in its key's order.
+#
+# - `p`: the pager, holding a snapshot.
+# - `cat`: the catalogue, for the index.
+# - `t`: the table.
+# - `a`: how it is read.
+# - `env`: what the access's bounds are evaluated against: the row of the
+#   tables before this one.
+#
+# Fails where a bound cannot be evaluated or is of the wrong type, and where
+# a page or a row is damaged.
+function rows_of(@p: pager.Pager, cat: schema.Catalog lent, t: schema.Table, a: planner.Access, env: eval.Env lent) -> [Fetched]?
+    if planner.is_full(a)
+        return decoded(btree.scan(@p, root: t.root, span: btree.whole())?)
+
+    if a.index == ""
+        span = span_of(a, env: env, type_name: "INTEGER", column: "rowid")?
+        return decoded(btree.scan(@p, root: t.root, span: span)?)
+    i = cat.indexes[a.index]?
+    lead = t.columns[i.columns[0]]
+    span = span_of(a, env: env, type_name: lead.type_name, column: lead.name)?
+    found: [Fetched] @= []
+
+    for entry in btree.scan(@p, root: i.root, span: span)?
+        rowid = sortkey.rowid_of(entry.key)?
+        data = btree.get(@p, root: t.root, key: sortkey.of_rowid(rowid))?
+        found @ found.push(Fetched(rowid: rowid, values: row.decode(data)?))
+
+    return ok(found)
+
+function decoded(entries: [btree.Entry]) -> [Fetched]?
+    found: [Fetched] @= []
+
+    for entry in entries
+        found @ found.push(Fetched(rowid: sortkey.rowid_of(entry.key)?, values: row.decode(entry.value)?))
+
+    return ok(found)
+
+# The keys an access reads. A key of the table's tree is the rowid's alone;
+# one of an index begins with the column's value, so the span of a value is
+# every key that begins with it.
+function span_of(a: planner.Access, env: eval.Env lent, type_name: str, column: str) -> btree.Span?
+    nothing = btree.Span(low: [1], high: [1], to_end: false)
+
+    if a.equal.len() == 1
+        v = bound(a.equal[0], env: env, type_name: type_name, column: column)?
+
+        if v == .null_value
+            return ok(nothing)
+        prefix = sortkey.of([v])
+        return ok(btree.Span(low: prefix, high: sortkey.after_prefix(prefix), to_end: false))
+    s @= btree.whole()
+
+    if a.low.len() == 1
+        v = bound(a.low[0], env: env, type_name: type_name, column: column)?
+
+        if v == .null_value
+            return ok(nothing)
+        prefix = sortkey.of([v])
+        s.low @ prefix
+
+        if !a.low_inclusive
+            s.low @ sortkey.after_prefix(prefix)
+
+    if a.high.len() == 1
+        v = bound(a.high[0], env: env, type_name: type_name, column: column)?
+
+        if v == .null_value
+            return ok(nothing)
+        prefix = sortkey.of([v])
+        s.to_end @ false
+        s.high @ prefix
+
+        if a.high_inclusive
+            s.high @ sortkey.after_prefix(prefix)
+    return ok(s)
+
+# A bound evaluated and made the column's type: an integer for a `REAL`
+# column becomes a float, so its key is the float's.
+function bound(e: ast.Expr, env: eval.Env lent, type_name: str, column: str) -> sql.Value?
+    v = eval.eval(e, env: env)?
+
+    if v == .null_value
+        return ok(v)
+    return value.fit(v, type_name: type_name, column: column)

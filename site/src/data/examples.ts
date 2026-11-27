@@ -148,6 +148,7 @@ export const groups: Group[] = [
     slugs: [
       'rebel/jq',
       'rebel/datakit',
+      'rebel/minidb',
       'rebel/lab',
       'rebel/build',
       'rebel/rv32',

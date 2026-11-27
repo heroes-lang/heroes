@@ -14,11 +14,15 @@
 # ancestor as its child is refused, never followed for ever.
 
 use <rebel>/bytes
+use <rebel>/errors
+use <rebel>/fs
 use <rebel>/lists
+use <rebel>/math
 use <rebel>/sql
 
 use storage/node
 use storage/pager
+use values/sortkey
 
 ## Trees
 
@@ -365,14 +369,9 @@ function remove_at(@p: pager.Pager, page: i64, key: [u8], depth: i64) -> bool?
     if emptied && n.children.len() > 1
         pager.release(@p, page: n.children[c])?
         n.children @ lists.remove_at(n.children, at: c)
-        n.keys @ lists.remove_at(n.keys, at: max_of(a: c - 1, b: 0))
+        n.keys @ lists.remove_at(n.keys, at: math.max_i64(a: c - 1, b: 0))
         store(@p, page: page, n: n)?
     return ok(false)
-
-function max_of(a: i64, b: i64) -> i64
-    if a > b
-        return a
-    return b
 
 ## The whole tree
 
@@ -525,3 +524,103 @@ function bound_above(n: node.Node, c: i64, high: [u8]) -> [u8]
     if c == n.keys.len()
         return high
     return n.keys[c]
+
+## Tests
+
+# A pager on a fresh file of `build/minidb-tests/`, pages of 512 bytes, its
+# transaction open.
+function fresh(name: str) -> pager.Pager
+    folder = "build/minidb-tests"
+    fs.make_dir_all(folder).must()
+    file = folder + "/" + name
+
+    for suffix in ["", "-wal", "-lock", "-read"]
+        if fs.exists(file + suffix).must()
+            fs.remove(file + suffix).must()
+
+    p @= pager.open(file, options: pager.Options(page_size: 512, cache_pages: 8, spill_limit: 16)).must().pager
+    pager.begin_write(@p).must()
+    return p
+
+function key_of(n: i64) -> [u8]
+    return sortkey.of_rowid(n)
+
+test "insert, get, scan: 600 keys in a scattered order, a tree of three levels, sound"
+    p @= fresh("btree-insert.db")
+    root = create(@p, table: true).must()
+
+    for k in range(from: 0, to: 600)
+        n = k * 7919 % 600
+        insert(
+            @p,
+            root: root,
+            key: key_of(n),
+            value: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
+            replace: false
+        ).must()
+
+    every = scan(@p, root: root, span: whole()).must()
+    assert every.len() == 600
+
+    for k in range(from: 0, to: 600)
+        assert sortkey.rowid_of(every[k].key).must() == k
+
+    assert get(@p, root: root, key: key_of(599)).must().len() == 16
+    assert get(@p, root: root, key: key_of(600)).is_err()
+    assert shape_of(@p, root: root).must().depth == 3
+    assert problems_of(@p, root: root, table: true, name: "t").must().len() == 0
+    assert last_key(@p, root: root).must() == key_of(599)
+    errors.ignore(pager.close(@p))
+
+test "insert: a key there refused unless replaced; a cell past a quarter page refused"
+    p @= fresh("btree-replace.db")
+    root = create(@p, table: true).must()
+    insert(@p, root: root, key: key_of(1), value: [1], replace: false).must()
+    assert insert(@p, root: root, key: key_of(1), value: [2], replace: false).is_err()
+    insert(@p, root: root, key: key_of(1), value: [2], replace: true).must()
+    assert get(@p, root: root, key: key_of(1)).must() == [2]
+    big: [u8] @= []
+
+    for _ in range(from: 0, to: 200)
+        big @ big.push(7)
+
+    assert insert(@p, root: root, key: key_of(2), value: big, replace: false).is_err()
+    errors.ignore(pager.close(@p))
+
+test "remove: every key taken out in another order, the emptied pages freed, the root a leaf again"
+    p @= fresh("btree-remove.db")
+    root = create(@p, table: true).must()
+
+    for n in range(from: 0, to: 400)
+        insert(@p, root: root, key: key_of(n), value: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], replace: false).must()
+
+    for k in range(from: 0, to: 400)
+        remove(@p, root: root, key: key_of(k * 13 % 400)).must()
+
+        if k == 200
+            assert problems_of(@p, root: root, table: true, name: "t").must().len() == 0
+            assert scan(@p, root: root, span: whole()).must().len() == 199
+
+    assert scan(@p, root: root, span: whole()).must().len() == 0
+    assert remove(@p, root: root, key: key_of(1)).is_err()
+    assert pages_of(@p, root: root).must() == [root]
+
+    # Every page but the header, the schema's root and this tree's root is
+    # free again.
+    assert pager.read_header(@p).must().free_count == p.page_count - 3
+    assert last_key(@p, root: root).is_err()
+    errors.ignore(pager.close(@p))
+
+test "scan: a span's low bound taken, its high one not, and nothing for an empty span"
+    p @= fresh("btree-span.db")
+    root = create(@p, table: true).must()
+
+    for n in range(from: 0, to: 300)
+        insert(@p, root: root, key: key_of(n), value: [9, 9, 9, 9, 9, 9, 9, 9], replace: false).must()
+
+    found = scan(@p, root: root, span: Span(low: key_of(100), high: key_of(150), to_end: false)).must()
+    assert found.len() == 50
+    assert found[0].key == key_of(100)
+    assert scan(@p, root: root, span: Span(low: key_of(5), high: key_of(5), to_end: false)).must().len() == 0
+    assert scan(@p, root: root, span: Span(low: key_of(290), high: [], to_end: true)).must().len() == 10
+    errors.ignore(pager.close(@p))

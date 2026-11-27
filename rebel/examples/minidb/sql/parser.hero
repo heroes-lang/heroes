@@ -395,3 +395,64 @@ function drop(@c: cursor.Cursor) -> ast.Statement?
     if index
         return ok(.drop_index(index: cursor.name(@c, what: "an index's name")?, if_exists: if_exists))
     return ok(.drop_table(table: cursor.name(@c, what: "a table's name")?, if_exists: if_exists))
+
+## Tests
+
+function first_of(source_text: str) -> ast.Statement
+    return parse_one(source_text).must()
+
+test "parse: every kind of statement, each with the text it was read from"
+    found = parse(
+        "CREATE TABLE t (id INTEGER PRIMARY KEY, n TEXT NOT NULL UNIQUE); CREATE UNIQUE INDEX IF NOT EXISTS i ON t (n); INSERT INTO t (n) VALUES ('a'), ('b'); UPDATE t SET n = 'c' WHERE id = 1; DELETE FROM t; SELECT * FROM t; EXPLAIN QUERY PLAN SELECT 1; BEGIN TRANSACTION; COMMIT; ROLLBACK; DROP INDEX i; DROP TABLE IF EXISTS t; PRAGMA integrity_check"
+    ).must()
+    assert found.len() == 13
+    assert found[2].text == "INSERT INTO t (n) VALUES ('a'), ('b')"
+    assert found[12].statement == .check
+
+test "parse: SELECT's parts, an alias with and without AS, joins and their ON"
+    match first_of("SELECT DISTINCT c.name AS who, o.qty n, t.* FROM customers c LEFT JOIN orders o ON o.cid = c.id, t WHERE o.qty > 1 GROUP BY c.name HAVING COUNT(*) > 2 ORDER BY 1 DESC, who LIMIT 5 OFFSET 2")
+        .query q =>
+            s = q.select
+            assert s.distinct
+            assert s.items.len() == 3
+            assert s.items[0].alias == "who"
+            assert s.items[1].alias == "n"
+            assert s.items[2].star && s.items[2].star_table == "t"
+            assert s.sources.len() == 3
+            assert s.sources[1].join == .left && s.sources[1].alias == "o" && !s.sources[1].on.is_err()
+            assert s.sources[2].join == .inner
+            assert s.order_by.len() == 2 && s.order_by[0].descending
+            assert !s.limit.is_err() && !s.offset.is_err()
+        .create_table _ | .create_index _ | .drop_table _ | .drop_index _ | .insert _ | .update _ | .delete _ | .explain _ | .begin | .commit | .rollback | .check =>
+            assert false
+
+test "parse: a syntax error names its place and what was expected"
+    match parse("SELECT a\nFORM t")
+        .ok _  => assert false
+        .err e => assert e.msg == "[42601] syntax error at line 2, column 6, near \"t\": expected \";\""
+
+    match parse("CREATE TABLE t (id NUMBER)")
+        .ok _  => assert false
+        .err e => assert e.msg == "[42601] syntax error at line 1, column 20, near \"NUMBER\": expected INTEGER, REAL, TEXT, BLOB or BOOLEAN"
+
+    assert parse("INSERT INTO t VALUES (1").is_err()
+    assert parse("EXPLAIN BEGIN").is_err()
+    assert parse("SELECT 9223372036854775808").is_err()
+    assert parse("").must().len() == 0
+    assert parse(";;").must().len() == 0
+
+test "parse: the smallest integer read whole; ?N and ? numbered"
+    match first_of("SELECT -9223372036854775808, ?, ?3, ?")
+        .query q =>
+            assert q.select.items[0].expr == .literal(value: .integer(v: -9_223_372_036_854_775_807 - 1))
+            assert q.select.items[1].expr == .parameter(number: 1)
+            assert q.select.items[2].expr == .parameter(number: 3)
+            assert q.select.items[3].expr == .parameter(number: 2)
+        .create_table _ | .create_index _ | .drop_table _ | .drop_index _ | .insert _ | .update _ | .delete _ | .explain _ | .begin | .commit | .rollback | .check =>
+            assert false
+
+test "parse: brackets nested past the limit and a chain of 20,000 operators refused, never a crash"
+    assert parse("SELECT " + repeat("(", 5000) + "1" + repeat(")", 5000)).is_err()
+    assert parse("SELECT NOT " + repeat("NOT ", 5000) + "TRUE").is_err()
+    assert parse("SELECT 1" + repeat(" + 1", 20000)).is_err()
+    assert !parse("SELECT 1" + repeat(" + 1", 150)).is_err()

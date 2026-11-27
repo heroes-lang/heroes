@@ -1,0 +1,328 @@
+# The planner: for each table a statement reads, the cheapest way the
+# conditions on it allow, and the plan `EXPLAIN` prints in SQLite's words.
+# A condition is usable where it compares a column of the table with an
+# expression of the tables before it, or of none: `id = ?1`, `o.customer_id
+# = c.id`, `price BETWEEN 10 AND 20`. In order of preference: the rowid
+# equal to a value, a unique index's first column equal to one, another
+# index's, a range of rowids, a range of an index's first column, and else a
+# scan of the whole table. Every condition is still checked on every row the
+# way reads, so a plan changes how many pages are read, never the answer.
+
+use <rebel>/lists
+
+use catalog/schema
+use engine/scope
+use sql/ast
+use sql/expressions
+
+## Access paths
+
+# How one table is read.
+record Access
+    # The index read; "" for the table's own tree.
+    index: str
+    # Whether the table's own tree is searched by rowid; with no index and
+    # no rowid it is scanned whole.
+    by_rowid: bool
+    # The key's leading column, as `EXPLAIN` names it.
+    column: str
+    # The value the leading column equals, none or one.
+    equal: [ast.Expr]
+    # The low bound of a range, none or one, and whether it is taken.
+    low: [ast.Expr]
+    low_inclusive: bool
+    # The high bound of a range, none or one, and whether it is taken.
+    high: [ast.Expr]
+    high_inclusive: bool
+
+# A scan of the whole table.
+function full() -> Access
+    return Access(
+        index: "",
+        by_rowid: false,
+        column: "",
+        equal: [],
+        low: [],
+        low_inclusive: false,
+        high: [],
+        high_inclusive: false
+    )
+
+# Whether `a` reads the whole table.
+#
+# - `a`: the access.
+function is_full(a: Access) -> bool
+    return a.index == "" && !a.by_rowid
+
+## Conditions
+
+# A condition cut at its top-level `AND`s.
+#
+# - `e`: the condition.
+function conjuncts(e: ast.Expr) -> [ast.Expr]
+    match e
+        .binary b =>
+            if b.op == .both
+                return lists.concat(xs: conjuncts(b.args[0]), then: conjuncts(b.args[1]))
+            return [e]
+        .literal _ | .column _ | .parameter _ | .negate _ | .negation _ | .is_null _ | .in_list _ | .between _ | .like _ | .choice _ | .call _ =>
+            return [e]
+
+# The places of the scope's tables an expression reads, each once.
+#
+# - `e`: the expression.
+# - `sc`: the tables.
+#
+# Fails where a column names nothing, or two tables' columns.
+function tables_read(e: ast.Expr, sc: scope.Scope lent) -> [i64]?
+    found: [i64] @= []
+    pending @= [e]
+
+    while pending.len() > 0
+        next_expr = pending[pending.len() - 1]
+        pending @ pending.slice(from: 0, to: pending.len() - 1)
+
+        match next_expr
+            .column c =>
+                k = scope.source_of(sc, at: scope.resolve(sc, table: c.table, name: c.name)?)
+
+                if !has(found, k: k)
+                    found @ found.push(k)
+            .literal _ | .parameter _ | .negate _ | .negation _ | .binary _ | .is_null _ | .in_list _ | .between _ | .like _ | .choice _ | .call _ =>
+                for child in expressions.children_of(next_expr)
+                    pending @ pending.push(child)
+
+    return ok(found)
+
+function has(xs: [i64], k: i64) -> bool
+    for x in xs
+        if x == k
+            return true
+
+    return false
+
+# A usable comparison: a column of the table, how it compares, and what.
+record Bounded
+    # The column's place in its table; its column count for the rowid.
+    column: i64
+    # "=", "<", "<=", ">" or ">=", the column on the left.
+    op: str
+    # The other side.
+    other: ast.Expr
+
+# The usable comparisons of `conditions` for table `k`.
+function bounded_of(conditions: [ast.Expr], sc: scope.Scope lent, k: i64) -> [Bounded]?
+    found: [Bounded] @= []
+
+    for c in conditions
+        match c
+            .binary b =>
+                op = comparison_text(b.op)
+
+                if op != ""
+                    found @ lists.concat(
+                        xs: found,
+                        then: usable(side: b.args[0], other: b.args[1], op: op, sc: sc, k: k)?
+                    )
+                    found @ lists.concat(
+                        xs: found,
+                        then: usable(side: b.args[1], other: b.args[0], op: flipped(op), sc: sc, k: k)?
+                    )
+            .between b =>
+                if !b.negated
+                    found @ lists.concat(
+                        xs: found,
+                        then: usable(side: b.args[0], other: b.args[1], op: ">=", sc: sc, k: k)?
+                    )
+                    found @ lists.concat(
+                        xs: found,
+                        then: usable(side: b.args[0], other: b.args[2], op: "<=", sc: sc, k: k)?
+                    )
+            .literal _ | .column _ | .parameter _ | .negate _ | .negation _ | .is_null _ | .in_list _ | .like _ | .choice _ | .call _ =>
+                _ = 0
+
+    return ok(found)
+
+# `[Bounded(...)]` where `side` is a column of table `k` and `other` reads
+# only tables before it; else none.
+function usable(side: ast.Expr, other: ast.Expr, op: str, sc: scope.Scope lent, k: i64) -> [Bounded]?
+    match side
+        .column c =>
+            at = scope.resolve(sc, table: c.table, name: c.name)?
+
+            if scope.source_of(sc, at: at) != k
+                return ok([])
+
+            for t in tables_read(other, sc: sc)?
+                if t >= k
+                    return ok([])
+
+            return ok([Bounded(column: at - sc.sources[k].offset, op: op, other: other)])
+        .literal _ | .parameter _ | .negate _ | .negation _ | .binary _ | .is_null _ | .in_list _ | .between _ | .like _ | .choice _ | .call _ =>
+            return ok([])
+
+function comparison_text(op: ast.Binary) -> str
+    return match op
+        .equal                                                                                       => "="
+        .less                                                                                        => "<"
+        .less_equal                                                                                  => "<="
+        .greater                                                                                     => ">"
+        .greater_equal                                                                               => ">="
+        .add | .subtract | .multiply | .divide | .remainder | .concat | .not_equal | .both | .either => ""
+
+function flipped(op: str) -> str
+    return match op
+        "<"  => ">"
+        "<=" => ">="
+        ">"  => "<"
+        ">=" => "<="
+        _    => op
+
+## Choosing
+
+# The access for table `k` of `sc`, given the conditions it may use.
+#
+# - `cat`: the catalogue, for the table's indexes.
+# - `sc`: the tables.
+# - `k`: the table's place.
+# - `conditions`: the conditions whose truth the table's rows must have.
+#
+# Fails where a condition names a column no table has.
+function choose(cat: schema.Catalog lent, sc: scope.Scope lent, k: i64, conditions: [ast.Expr]) -> Access?
+    b = sc.sources[k]
+    t = b.table
+    usable_here = bounded_of(conditions, sc: sc, k: k)?
+    rowid = rowid_place(t)
+    best @= full()
+    rank @= 9
+
+    for u in usable_here
+        if u.op == "=" && u.column == rowid
+            return ok(
+                Access(index: "", by_rowid: true, column: "rowid", equal: [u.other], low: [], low_inclusive: false, high: [], high_inclusive: false)
+            )
+
+    for i in schema.indexes_of(cat, table: t.name)
+        lead = i.columns[0]
+
+        for u in usable_here
+            if u.op == "=" && u.column == lead
+                index_rank = if_unique(i.unique)
+
+                if index_rank < rank
+                    rank @ index_rank
+                    best @ Access(
+                        index: i.name,
+                        by_rowid: false,
+                        column: t.columns[lead].name,
+                        equal: [u.other],
+                        low: [],
+                        low_inclusive: false,
+                        high: [],
+                        high_inclusive: false
+                    )
+
+    if rank < 9
+        return ok(best)
+    ranged = ranged_on(usable_here, column: rowid)
+
+    if has_range(ranged)
+        return ok(
+            Access(index: "", by_rowid: true, column: "rowid", equal: [], low: ranged.low, low_inclusive: ranged.low_inclusive, high: ranged.high, high_inclusive: ranged.high_inclusive)
+        )
+
+    for i in schema.indexes_of(cat, table: t.name)
+        on_index = ranged_on(usable_here, column: i.columns[0])
+
+        if has_range(on_index)
+            return ok(
+                Access(index: i.name, by_rowid: false, column: t.columns[i.columns[0]].name, equal: [], low: on_index.low, low_inclusive: on_index.low_inclusive, high: on_index.high, high_inclusive: on_index.high_inclusive)
+            )
+
+    return ok(full())
+
+function if_unique(unique: bool) -> i64
+    if unique
+        return 2
+    return 3
+
+# The place the rowid takes among a table's columns: its `INTEGER PRIMARY
+# KEY`'s, else the hidden one after them.
+#
+# - `t`: the table.
+function rowid_place(t: schema.Table) -> i64
+    if t.rowid_column >= 0
+        return t.rowid_column
+    return t.columns.len()
+
+# The range the comparisons give one column, as an access's bounds; none
+# where they give none. The first bound of each side is taken.
+function ranged_on(bounds: [Bounded], column: i64) -> Access
+    a @= full()
+
+    for u in bounds
+        if u.column == column
+            if (u.op == ">" || u.op == ">=") && a.low.len() == 0
+                a.low @ [u.other]
+                a.low_inclusive @ u.op == ">="
+            else if (u.op == "<" || u.op == "<=") && a.high.len() == 0
+                a.high @ [u.other]
+                a.high_inclusive @ u.op == "<="
+
+    return a
+
+# Whether `a` bounds its key on either side.
+function has_range(a: Access) -> bool
+    return a.low.len() > 0 || a.high.len() > 0
+
+## EXPLAIN
+
+# The plan's line for one table, in SQLite's words: `SCAN t`,
+# `SEARCH t USING INDEX i (c=?)`, `SEARCH t USING INTEGER PRIMARY KEY
+# (rowid>? AND rowid<?)`.
+#
+# - `b`: the table, bound.
+# - `a`: how it is read.
+function describe(b: scope.Bound, a: Access) -> str
+    named @= b.table.name
+
+    if b.alias != b.table.name
+        named @ named + " AS " + b.alias
+
+    if is_full(a)
+        return "SCAN " + named
+
+    if a.index == ""
+        return "SEARCH " + named + " USING INTEGER PRIMARY KEY (" + detail(a) + ")"
+    return "SEARCH " + named + " USING INDEX " + a.index + " (" + detail(a) + ")"
+
+function detail(a: Access) -> str
+    if a.equal.len() == 1
+        return a.column + "=?"
+    parts: [str] @= []
+
+    if a.low.len() == 1
+        parts @ parts.push(a.column + bound_text(">", inclusive: a.low_inclusive))
+
+    if a.high.len() == 1
+        parts @ parts.push(a.column + bound_text("<", inclusive: a.high_inclusive))
+    return parts.join(" AND ")
+
+function bound_text(op: str, inclusive: bool) -> str
+    if inclusive
+        return op + "=?"
+    return op + "?"
+
+# A plan's lines drawn as SQLite's shell draws them, under `QUERY PLAN`.
+#
+# - `steps`: the plan's steps, in order.
+function drawn(steps: [str]) -> [str]
+    out @= ["QUERY PLAN"]
+
+    for k in range(from: 0, to: steps.len())
+        if k == steps.len() - 1
+            out @ out.push("`--" + steps[k])
+        else
+            out @ out.push("|--" + steps[k])
+
+    return out

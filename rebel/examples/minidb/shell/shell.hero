@@ -1,0 +1,363 @@
+# The shell, in the manner of SQLite's `sqlite3`: statements read a line at
+# a time and run once a `;` ends them, and dot-commands on lines of their
+# own. Its connections are numbered, `.connection 1` opening a second one
+# on the same file, so one session shows a writer holding the lock while
+# another reads its snapshot. `.crash` ends a connection as a power cut
+# would, and `.open` opens the database again, its log recovered and what
+# recovery found told. Every error is written and the session goes on.
+
+use <rebel>/numbers
+use <rebel>/sql
+use <rebel>/strings
+
+use db/database
+use shell/output
+use sql/lexer
+use sql/parser
+use storage/pager
+use storage/wal
+
+## The shell
+
+# How the shell writes what it is told and answers.
+record Settings
+    # The output mode: "column", "csv", "json" or "line".
+    mode: str
+    # Whether a query's column names are written.
+    headers: bool
+    # Whether each statement and dot-command is written before its answer.
+    echo: bool
+    # Whether the rows a statement changed are counted after it.
+    changes: bool
+    # Whether the pages a statement read are counted after it.
+    stats: bool
+
+# A session.
+record Shell
+    # The database's path.
+    path: str
+    # How a database is opened.
+    options: pager.Options
+    # The connections, by number; a closed one stays in its place.
+    connections: [database.Db]
+    # The connection statements go to.
+    current: i64
+    # How it writes.
+    settings: Settings
+
+# A shell on the database at `path`, its first connection opened.
+#
+# - `path`: the database file's path.
+# - `options`: how it is opened.
+# - `settings`: how the shell writes.
+#
+# Fails where the database cannot be opened.
+function open(path: str, options: pager.Options, settings: Settings) -> Shell?
+    opened = database.open(path, options: options)?
+    sh = Shell(path: path, options: options, connections: [opened.db], current: 0, settings: settings)
+    return ok(sh)
+
+# The plain settings: columns with their names, nothing echoed or counted.
+function plain_settings() -> Settings
+    return Settings(mode: "column", headers: true, echo: false, changes: false, stats: false)
+
+# Closes every connection still open.
+#
+# - `sh`: the shell.
+#
+# Fails where a file cannot be closed; every connection is closed all the
+# same.
+function close(@sh: Shell) -> ()?
+    failed: [str] @= []
+
+    for k in range(from: 0, to: sh.connections.len())
+        match database.close(@sh.connections[k])
+            .ok _  => _ = 0
+            .err e => failed @ failed.push(e.msg)
+
+    if failed.len() > 0
+        return fail(code: sql.FAILED, msg: failed.join("; "))
+    return ok()
+
+## Reading input
+
+# Runs every statement and dot-command of `input`; answers how many errors
+# were written.
+#
+# - `sh`: the shell.
+# - `input`: the text the session reads, lines ended by `\n` or `\r\n`.
+function run(@sh: Shell, input: str) -> i64
+    errors @= 0
+    pending: [str] @= []
+
+    for line in strings.lines(input)
+        trimmed = strings.trim(line)
+
+        if pending.len() == 0
+            if strings.has_prefix(s: trimmed, prefix: ".")
+                echo(sh, line: line)
+                errors @ errors + told(dot_command(@sh, line: trimmed))
+                continue
+
+            if is_blank(trimmed)
+                echo(sh, line: line)
+                continue
+        pending @ pending.push(line)
+        text = pending.join("\n")
+
+        if is_complete(text)
+            for l in pending
+                echo(sh, line: l)
+
+            errors @ errors + statements(@sh, text: text)
+            pending @ []
+
+    if pending.len() > 0
+        for l in pending
+            echo(sh, line: l)
+
+        errors @ errors + statements(@sh, text: pending.join("\n"))
+    return errors
+
+# Whether a line holds no statement: nothing, or a comment alone.
+function is_blank(line: str) -> bool
+    match lexer.tokens(line)
+        .ok found => return found.len() == 1
+        .err _    => return false
+
+# Whether `text` ends with a `;` outside a string or a comment; a string
+# still open reads on.
+function is_complete(text: str) -> bool
+    match lexer.tokens(text)
+        .ok found => return found.len() >= 2 && lexer.is_symbol(found[found.len() - 2], symbol: ";")
+        .err _    => return false
+
+function echo(sh: Shell lent, line: str)
+    if sh.settings.echo
+        print(strings.trim_end(line))
+
+# 1 after writing a failure, 0 for none.
+function told(r: ()?) -> i64
+    match r
+        .ok _ => return 0
+        .err e =>
+            print("Error: " + e.msg)
+            return 1
+
+## Statements
+
+function statements(@sh: Shell, text: str) -> i64
+    match parser.parse(text)
+        .ok found =>
+            errors @= 0
+
+            for s in found
+                errors @ errors + told(statement(@sh, s: s))
+
+            return errors
+        .err e =>
+            print("Error: " + e.msg)
+            return 1
+
+function statement(@sh: Shell, s: parser.Parsed) -> ()?
+    k = sh.current
+
+    if database.is_closed(sh.connections[k])
+        return fail(code: sql.CLOSED, msg: f"connection {k} is closed: .open opens it again")
+    reads_before = sh.connections[k].p.reads
+    hits_before = sh.connections[k].p.hits
+    answer = database.run(@sh.connections[k], s: s, params: [])
+
+    if sh.settings.stats
+        reads = sh.connections[k].p.reads - reads_before
+        visited = reads + sh.connections[k].p.hits - hits_before
+        print(f"-- pages: {visited} visited, {reads} of them read from the files")
+
+    match answer?
+        .rows r =>
+            for line in output.lines_of(r.answer, mode: sh.settings.mode, headers: sh.settings.headers)?
+                print(line)
+        .changed c =>
+            if sh.settings.changes
+                print(f"changes: {c.result.rows_affected}")
+        .lines l =>
+            for line in l.text
+                print(line)
+        .done => _ = 0
+
+    return ok()
+
+## Dot-commands
+
+function dot_command(@sh: Shell, line: str) -> ()?
+    words = strings.words(line)
+    verb = words[0]
+    rest = words.slice(from: 1, to: words.len())
+
+    return match verb
+        ".open"       => reopen(@sh, rest: rest)
+        ".crash"      => crashed(@sh)
+        ".connection" => connection(@sh, rest: rest)
+        ".tables"     => tables(@sh)
+        ".schema"     => schema_lines(@sh, rest: rest)
+        ".btree"      => tree(@sh, rest: rest)
+        ".checkpoint" => checkpoint(@sh)
+        ".mode"       => mode(@sh, rest: rest)
+        ".headers"    => switch_of(@sh, verb: verb, rest: rest)
+        ".echo"       => switch_of(@sh, verb: verb, rest: rest)
+        ".changes"    => switch_of(@sh, verb: verb, rest: rest)
+        ".stats"      => switch_of(@sh, verb: verb, rest: rest)
+        ".help"       => help()
+        _             => fail(code: sql.INVALID, msg: f"no dot-command {verb}: .help lists them")
+
+function help() -> ()?
+    for line in HELP
+        print(line)
+
+    return ok()
+
+constant HELP: [str]
+    [
+        ".btree NAME          the shape of a table's or an index's B-tree"
+        ".changes on|off      count the rows each statement changes"
+        ".checkpoint          copy the log into the database file"
+        ".connection [N]      list the connections, or use connection N"
+        ".crash               end this connection as a power cut would"
+        ".echo on|off         write each statement before its answer"
+        ".headers on|off      write the column names of a query"
+        ".mode MODE           column, csv, json or line"
+        ".open [FILE]         open FILE, or this database again"
+        ".schema [TABLE]      the CREATE statements"
+        ".stats on|off        count the pages each statement reads"
+        ".tables              the tables"
+    ]
+
+# `.open [FILE]`: the current connection closed and opened again, on FILE
+# where one is named; what recovery found in the log told.
+function reopen(@sh: Shell, rest: [str]) -> ()?
+    k = sh.current
+    database.close(@sh.connections[k])?
+
+    if rest.len() > 0
+        sh.path @ rest[0]
+    opened = database.open(sh.path, options: sh.options)?
+    sh.connections[k] @ opened.db
+    told_recovery(opened.recovery)
+    return ok()
+
+function told_recovery(r: wal.Recovery)
+    if r.frames == 0 && !r.torn
+        return
+    print(f"recovery: the log holds {r.frames} whole frames")
+
+    if r.committed > 0
+        print(f"recovery: {r.committed} frames of {r.transactions} committed transactions kept")
+
+    if r.discarded > 0
+        print(f"recovery: {r.discarded} frames of a transaction that never committed cut off")
+
+    if r.torn
+        print("recovery: a torn frame after them cut off")
+
+function crashed(@sh: Shell) -> ()?
+    cut = database.crash(@sh.connections[sh.current])?
+
+    if cut.frames == 0 && !cut.torn
+        print("crash: the connection is gone; its log holds nothing uncommitted")
+        return ok()
+    torn_text @= ""
+
+    if cut.torn
+        torn_text @ ", the last one torn"
+    print(f"crash: the connection is gone mid-transaction: {cut.frames} uncommitted frames reached the log{torn_text}")
+    return ok()
+
+function connection(@sh: Shell, rest: [str]) -> ()?
+    if rest.len() == 0
+        for k in range(from: 0, to: sh.connections.len())
+            state @= "open"
+
+            if database.is_closed(sh.connections[k])
+                state @ "closed"
+
+            if k == sh.current
+                state @ state + ", current"
+            print(f"{k}: {state}")
+
+        return ok()
+    n = numbers.parse_int(rest[0])?
+
+    if n < 0 || n > sh.connections.len() || n > 9
+        return fail(code: sql.INVALID, msg: f"no connection {n}: the next is {sh.connections.len()}")
+
+    if n == sh.connections.len()
+        sh.connections @ sh.connections.push(database.open(sh.path, options: sh.options)?.db)
+    sh.current @ n
+    return ok()
+
+function tables(@sh: Shell) -> ()?
+    cat = database.catalog(@sh.connections[sh.current])?
+    print(sort(keys(cat.tables)).join("  "))
+    return ok()
+
+function schema_lines(@sh: Shell, rest: [str]) -> ()?
+    cat = database.catalog(@sh.connections[sh.current])?
+
+    for name in sort(keys(cat.tables))
+        if rest.len() == 0 || rest[0] == name
+            print(cat.tables[name]?.text + ";")
+
+            for index_name in sort(keys(cat.indexes))
+                i = cat.indexes[index_name]?
+
+                if i.table == name && !i.automatic
+                    print(i.text + ";")
+
+    return ok()
+
+function tree(@sh: Shell, rest: [str]) -> ()?
+    if rest.len() != 1
+        return fail(code: sql.INVALID, msg: ".btree takes a table's or an index's name")
+    s = database.shape(@sh.connections[sh.current], name: rest[0])?
+    print(
+        f"{rest[0]}: {counted(s.depth, word: "level")}, {counted(s.interiors, word: "interior page")}, {counted(s.leaves, word: "leaf")}, {counted(s.entries, word: "entry")}"
+    )
+    return ok()
+
+# `n` and its word, in the plural where `n` is not 1.
+function counted(n: i64, word: str) -> str
+    if n == 1
+        return f"1 {word}"
+
+    if strings.has_suffix(s: word, suffix: "f")
+        return f"{n} {word.slice(from: 0, to: word.len() - 1)}ves"
+
+    if strings.has_suffix(s: word, suffix: "y")
+        return f"{n} {word.slice(from: 0, to: word.len() - 1)}ies"
+    return f"{n} {word}s"
+
+function checkpoint(@sh: Shell) -> ()?
+    copied = database.checkpoint(@sh.connections[sh.current])?
+    print(f"checkpoint: {copied} pages copied into the database file, the log emptied")
+    return ok()
+
+function mode(@sh: Shell, rest: [str]) -> ()?
+    if rest.len() != 1 || !output.is_mode(rest[0])
+        return fail(code: sql.INVALID, msg: ".mode takes column, csv, json or line")
+    sh.settings.mode @ rest[0]
+    return ok()
+
+function switch_of(@sh: Shell, verb: str, rest: [str]) -> ()?
+    if rest.len() != 1 || rest[0] != "on" && rest[0] != "off"
+        return fail(code: sql.INVALID, msg: f"{verb} takes on or off")
+    on = rest[0] == "on"
+
+    if verb == ".headers"
+        sh.settings.headers @ on
+    else if verb == ".echo"
+        sh.settings.echo @ on
+    else if verb == ".changes"
+        sh.settings.changes @ on
+    else
+        sh.settings.stats @ on
+    return ok()
