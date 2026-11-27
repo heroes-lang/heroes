@@ -29,6 +29,7 @@ use ast
 use check/state
 use check/table
 use checker
+use emit/callback_variant
 use emit/ctype
 use emit/extern_probe
 use emit/externs as emit_externs
@@ -106,6 +107,11 @@ function adapters(@w: writer.Writer, p: containers.Program, c: state.Checked, na
     if through
         writer.line(@w, text: "static void (*hero_callback_of(void (*hero_f)(void)))(void);")
 
+        # And each learned variant's table, which an adapter's callback may
+        # cross through (`emit/callback_variant.hero`).
+        for line in callback_variant.table_prototypes(names.variants)
+            writer.line(@w, text: line)
+
     # ORDER: by name, as `sort` orders a `str`.
     for name in sort(keys(named))
         bound = declared(p, s, decls, name: name)
@@ -156,9 +162,15 @@ function definition(f: containers.Function, c: state.Checked, names: ctype.Names
     arguments: [str] @= []
     at: i64 @= 0
 
-    # A function argument crosses through its thunk, as at a call by name.
+    # A function argument crosses through its thunk, as at a call by name, and
+    # through its variant where a round learned the header's integer words for
+    # it (`emit/callback_variant.hero`).
     for slot_id in f.params
-        if table.is_function_ty(c.types, f.slots[slot_id].ty)
+        taught = names.variants[callback_variant.site(name: f.name, index: at)]
+
+        if table.is_function_ty(c.types, f.slots[slot_id].ty) && !taught.is_err()
+            arguments @ arguments.push(callback_variant.crossed(taught.must(), argument: "(" + handed[at] + ")"))
+        else if table.is_function_ty(c.types, f.slots[slot_id].ty)
             spelled = ctype.c_type(names, c: c, ty: f.slots[slot_id].ty).default("void *")
             arguments @ arguments.push("(" + spelled + ")hero_callback_of((void (*)(void))(" + handed[at] + "))")
         else

@@ -19,6 +19,7 @@
 
 use <rebel>/errors
 use <rebel>/http
+use <rebel>/web
 
 use server/api
 use server/serving
@@ -66,15 +67,27 @@ record Ended
 
 ## The owner
 
+# The state of `start`'s settings, every route of the API bound in it.
+#
+# - `start`: the settings and the URL.
+#
+# Fails as `serving.open` and `api.bind` fail, the state closed then.
+function bound(start: Start) -> serving.State?
+    state @= serving.open(start.settings, base_url: start.base_url, router: web.new_router())?
+
+    match api.bind(@state)
+        .ok _ => return ok(state)
+        .err e =>
+            errors.ignore(serving.close(@state))
+            return fail(code: e.code, msg: e.msg)
+
 # The owner's thread: the state opened and `begun` told, every request
 # answered until it is told to stop or the program's stop finds none
 # waiting, then the state closed.
 #
 # - `start`: the settings, the URL and the two mailboxes.
 function own(start: Start) -> Ended
-    opened: serving.State? = match api.router()
-        .ok router => serving.open(start.settings, base_url: start.base_url, router: router)
-        .err e     => fail(code: e.code, msg: e.msg)
+    opened = bound(start)
 
     match opened
         .err e =>

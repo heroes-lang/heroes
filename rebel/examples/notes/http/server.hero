@@ -72,16 +72,18 @@ record Served
     # control mailbox (`control` where it was closed).
     by: str
 
-# Serves every connection `l` accepts, until the stop.
+# Serves every connection `l` accepts, until the stop, the page routes'
+# steps and answers bound first (`pipeline.bind`).
 #
-# - `app`: the state.
+# - `app`: the state, whose tables gain the page routes' bindings.
 # - `l`: the listener; its owner closes it after.
 # - `control`: this server's control mailbox: a reason sent to it, or its
 #   close, stops this server and no other wait of the process.
 #
-# Fails `failed` where the system's wait fails, and as `poll.make` fails;
-# every worker started is waited for first.
+# Fails `failed` where the system's wait fails, and as `poll.make` and
+# `pipeline.bind` fail; every worker started is waited for first.
 function run(@app: state.App, l: net.Listener, control: (mailbox str)) -> Served?
+    pipeline.bind(@app)?
     set @= poll.make(MOST_ENTRIES)?
     asks: (mailbox workers.Ask) = mailbox()
     conns: (mailbox net.Conn) = mailbox()

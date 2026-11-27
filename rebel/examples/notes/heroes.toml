@@ -36,6 +36,7 @@ packages = [
     "url",
     "uuid",
     "web",
+    "web/chain",
     "websocket",
     "xml",
 ]

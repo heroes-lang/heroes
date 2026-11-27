@@ -34,6 +34,7 @@ use check/state
 use check/table
 use checker
 use emit/call_spelling
+use emit/callback_variant
 use emit/mangle
 use emit/synth
 use handles
@@ -98,6 +99,9 @@ record Names
     # The bound functions a refused round learned to call by name in
     # parentheses, past a header's macro (`emit/call_spelling.hero`).
     called: {str: bool}
+    # The callback parameters a refused round learned the header's integer
+    # words of, by `<C name> <position>` (`emit/callback_variant.hero`).
+    variants: {str: callback_variant.Variant}
 
 # What separates a name the EMITTER invents from a name an author could
 # write: a leading digit.
@@ -201,7 +205,8 @@ function new_names_qualified(s: source.Source, decls: [ast.Decl], struct_tags: {
         funcs: empty_funcs,
         lend_units: no_units,
         large: none_large,
-        called: call_spelling.learned(struct_tags)
+        called: call_spelling.learned(struct_tags),
+        variants: callback_variant.learned(struct_tags)
     )
 
 # Assigns a C name to every T? the program interned. Walked over the

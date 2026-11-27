@@ -60,7 +60,8 @@ function forbidden(reason: str) -> replies.Reply
 
 ## The operations
 
-# Answers the operation `name` for `user`.
+# Answers the operation `name` for `user`: the function `operations` binds
+# to its name.
 #
 # - `app`: the state.
 # - `v`: the visit.
@@ -71,36 +72,28 @@ function forbidden(reason: str) -> replies.Reply
 # Fails as the database fails; a name this module does not answer is
 # answered 404, since the dispatcher sends only its own.
 function answer(@app: state.App, v: visit.Visit, user: model.User, name: str, values: openapi.Values) -> replies.Reply?
-    if name == api_doc.LIST_NOTES
-        return list_notes(@app, values: values)
+    return match operations()[name]
+        .ok operation => operation(@app, v, user, values)
+        .err _        => ok(missing(f"no operation {name} here"))
 
-    if name == api_doc.CREATE_NOTE
-        return create_note(@app, v: v, user: user, values: values)
-
-    if name == api_doc.READ_NOTE
-        return read_note(@app, values: values)
-
-    if name == api_doc.UPDATE_NOTE
-        return update_note(@app, v: v, user: user, values: values)
-
-    if name == api_doc.DELETE_NOTE
-        return delete_note(@app, user: user, values: values)
-
-    if name == api_doc.LIST_COMMENTS
-        return list_comments(@app, values: values)
-
-    if name == api_doc.CREATE_COMMENT
-        return create_comment(@app, v: v, user: user, values: values)
-
-    if name == api_doc.SEARCH_NOTES
-        return search_notes(@app, values: values)
-    return ok(missing(f"no operation {name} here"))
+# The function that answers each operation of this module, by its name.
+function operations() -> {str: (function(@state.App, visit.Visit, model.User, openapi.Values) -> replies.Reply?)}
+    return {
+        api_doc.LIST_NOTES: list_notes
+        api_doc.CREATE_NOTE: create_note
+        api_doc.READ_NOTE: read_note
+        api_doc.UPDATE_NOTE: update_note
+        api_doc.DELETE_NOTE: delete_note
+        api_doc.LIST_COMMENTS: list_comments
+        api_doc.CREATE_COMMENT: create_comment
+        api_doc.SEARCH_NOTES: search_notes
+    }
 
 # `GET /api/notes`: a page of notes, of a tag where `tag` is given.
 #
 # - `app`: the state.
 # - `values`: `page`, a whole number from 1 the schema checked, and `tag`.
-function list_notes(@app: state.App, values: openapi.Values) -> replies.Reply?
+function list_notes(@app: state.App, _: visit.Visit, _: model.User, values: openapi.Values) -> replies.Reply?
     tag = text_in(values.query, key: "tag")
 
     requested = match values.query["page"]
@@ -141,7 +134,7 @@ function created(value: json.Value, location: str) -> http.Response
 #
 # - `app`: the state.
 # - `values`: the path's `slug`.
-function read_note(@app: state.App, values: openapi.Values) -> replies.Reply?
+function read_note(@app: state.App, _: visit.Visit, _: model.User, values: openapi.Values) -> replies.Reply?
     return match note_of(@app, values: values)
         .ok n  => ok(replies.plain(replies.json_response(http.STATUS_OK, value: api_view.note_json(n))))
         .err e => ok(missing(e.msg))
@@ -176,7 +169,7 @@ function update_note(@app: state.App, v: visit.Visit, user: model.User, values: 
 # - `app`: the state.
 # - `user`: the account asking.
 # - `values`: the path's `slug`.
-function delete_note(@app: state.App, user: model.User, values: openapi.Values) -> replies.Reply?
+function delete_note(@app: state.App, _: visit.Visit, user: model.User, values: openapi.Values) -> replies.Reply?
     n = match note_of(@app, values: values)
         .ok got => got
         .err e  => return ok(missing(e.msg))
@@ -189,7 +182,7 @@ function delete_note(@app: state.App, user: model.User, values: openapi.Values) 
 #
 # - `app`: the state.
 # - `values`: the path's `slug`.
-function list_comments(@app: state.App, values: openapi.Values) -> replies.Reply?
+function list_comments(@app: state.App, _: visit.Visit, _: model.User, values: openapi.Values) -> replies.Reply?
     n = match note_of(@app, values: values)
         .ok got => got
         .err e  => return ok(missing(e.msg))
@@ -226,7 +219,7 @@ function create_comment(@app: state.App, v: visit.Visit, user: model.User, value
 #
 # - `app`: the state.
 # - `values`: the query's `q`.
-function search_notes(@app: state.App, values: openapi.Values) -> replies.Reply?
+function search_notes(@app: state.App, _: visit.Visit, _: model.User, values: openapi.Values) -> replies.Reply?
     return match service.search_notes(@app, query: text_in(values.query, key: "q"))
         .ok found => ok(
             replies.plain(replies.json_response(http.STATUS_OK, value: jsonv.object({"notes": api_view.notes_json(found)})))

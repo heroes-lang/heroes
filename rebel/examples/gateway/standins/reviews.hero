@@ -1,8 +1,8 @@
 # The reviews service, the demo's GraphQL upstream: one schema, `Query {
 # reviews(sku) }`, executed by `graphql` with the service resolving each
 # field from the reviews it holds, served as GraphQL over HTTP (`POST
-# /graphql` with a JSON body) on HTTP/1.1 in plain text. It runs on a
-# thread of its own, tells its port on a mailbox its supervisor waits on,
+# /graphql` with a JSON body) on HTTP/1.1 in plain text, its one route
+# `web`'s, bound to its answer by `web/chain`. It runs on a thread of its own, tells its port on a mailbox its supervisor waits on,
 # and serves one connection after another until the program is asked to
 # stop.
 
@@ -12,6 +12,8 @@ use <rebel>/http
 use <rebel>/io
 use <rebel>/json
 use <rebel>/net
+use <rebel>/web
+use <rebel>/web/chain
 
 use demo/notify
 
@@ -52,6 +54,44 @@ function resolve(reviews: json.Value, field: graphql.Field) -> json.Value?
 
 ## Serving
 
+# What the service serves with: its route, bound to its answer, and the
+# schema its answer executes against.
+record Reviews
+    # The route `/graphql`, for `GET` and `POST`.
+    router: web.Router
+    # The steps the route runs, by their names: none.
+    steps: {str: (function(@Reviews, chain.Next, http.Request) -> http.Response?)}
+    # The function that answers the route, by its name.
+    answers: {str: (function(@Reviews, web.Found, http.Request) -> http.Response?)}
+    # The service's schema.
+    schema: graphql.Schema
+
+# The service of `schema`: `/graphql` bound to `graphql_over_http` for `GET`
+# and `POST`.
+#
+# - `schema`: the service's schema.
+function new_service(schema: graphql.Schema) -> Reviews
+    made @= Reviews(router: web.new_router(), steps: {}, answers: {}, schema: schema)
+    rt @= made.router
+    chain.on(
+        @rt,
+        @made.answers,
+        method: http.METHOD_GET,
+        pattern: "/graphql",
+        name: "graphql",
+        answer: graphql_over_http
+    ).must()
+    chain.on(
+        @rt,
+        @made.answers,
+        method: http.METHOD_POST,
+        pattern: "/graphql",
+        name: "graphql",
+        answer: graphql_over_http
+    ).must()
+    made.router @ rt
+    return made
+
 # The service's thread: listens on a port the system chooses, tells the
 # supervisor on the mailbox it is handed, and serves until stopped.
 # Answers how many requests it answered, as a line.
@@ -73,7 +113,7 @@ function run(told: (mailbox notify.Ready)) -> str
 #
 # Fails as `graphql.parse_schema`, `net.listen` and `notify.ready` fail.
 function served(told: (mailbox notify.Ready)) -> i64?
-    schema = graphql.parse_schema(SCHEMA, limits: graphql.default_limits())?
+    service = new_service(graphql.parse_schema(SCHEMA, limits: graphql.default_limits())?)
     listener @= net.listen(host: "127.0.0.1", port: 0)?
 
     match notify.ready(told, service: NAME, port: listener.address.port)
@@ -89,7 +129,7 @@ function served(told: (mailbox notify.Ready)) -> i64?
             .err _ => break
             .ok made =>
                 conn @= made
-                answered @ answered + conversation(schema, conn: conn)
+                answered @ answered + conversation(service, conn: conn)
                 errors.ignore(io.close(@conn.stream))
 
     errors.ignore(net.close_listener(@listener))
@@ -97,9 +137,9 @@ function served(told: (mailbox notify.Ready)) -> i64?
 
 # The requests of one connection answered until the client closes it.
 #
-# - `schema`: the service's schema.
+# - `service`: the service.
 # - `conn`: the connection; its owner closes it.
-function conversation(schema: graphql.Schema, conn: net.Conn) -> i64
+function conversation(service: Reviews, conn: net.Conn) -> i64
     reader @= io.reader(conn.stream)
     count @= 0
 
@@ -107,7 +147,7 @@ function conversation(schema: graphql.Schema, conn: net.Conn) -> i64
         match http.next_request(@reader, limits: http.default_limits())
             .err _ => break
             .ok r =>
-                response = answer(schema, r: r)
+                response = answer(service, r: r)
                 count @ count + 1
 
                 if http.write_answer(conn.stream, r: r, response: response).is_err() || r.closing
@@ -115,36 +155,42 @@ function conversation(schema: graphql.Schema, conn: net.Conn) -> i64
 
     return count
 
-# The answer to one HTTP request: GraphQL at `/graphql`, 404 elsewhere.
+# The answer to one HTTP request: GraphQL at `/graphql`, and elsewhere what
+# `web.not_routed` answers, 404 or 405.
 #
-# - `schema`: the service's schema.
+# - `service`: the service.
 # - `r`: the request.
-function answer(schema: graphql.Schema, r: http.Request) -> http.Response
-    if r.url.path != "/graphql"
-        return http.respond_not_found(r)
-    return graphql.serve_http(
-        r,
-        schema: schema,
-        root: .null_value,
-        limits: graphql.default_limits(),
-        state: held(),
-        resolver: resolve
+function answer(service: Reviews, r: http.Request) -> http.Response
+    lent_out @= service
+
+    return match chain.dispatch(@lent_out, router: service.router, steps: service.steps, answers: service.answers, r: r)
+        .ok response => response
+        .err _       => http.respond_status(500)
+
+# `/graphql`: the request executed as GraphQL over HTTP against the schema,
+# each field resolved from the reviews held.
+#
+# - `service`: the service, its schema read.
+# - `r`: the request.
+function graphql_over_http(service: Reviews lent, _: web.Found, r: http.Request) -> http.Response?
+    return ok(
+        graphql.serve_http(r, schema: service.schema, root: .null_value, limits: graphql.default_limits(), state: held(), resolver: resolve)
     )
 
 test "answer: a query for one item's reviews"
-    schema = graphql.parse_schema(SCHEMA, limits: graphql.default_limits()).must()
+    service = new_service(graphql.parse_schema(SCHEMA, limits: graphql.default_limits()).must())
     r = http.with_text(
         http.request(method: "POST", target: "/graphql").must(),
         text: "{\"query\": \"{ reviews(sku: \\\"B-200\\\") { author stars } }\"}"
     )
     asked = http.with_header(r.headers, name: "Content-Type", value: "application/json")
     got = answer(
-        schema,
+        service,
         r: http.Request(method: r.method, url: r.url, headers: asked, body: r.body, closing: false, remote: "")
     )
     assert got.status == 200
     assert http.text_of(got).must() == "{\"data\":{\"reviews\":[{\"author\":\"alan\",\"stars\":3}]}}"
 
 test "answer: another path is not found"
-    schema = graphql.parse_schema(SCHEMA, limits: graphql.default_limits()).must()
-    assert answer(schema, r: http.request(method: "GET", target: "/").must()).status == 404
+    service = new_service(graphql.parse_schema(SCHEMA, limits: graphql.default_limits()).must())
+    assert answer(service, r: http.request(method: "GET", target: "/").must()).status == 404

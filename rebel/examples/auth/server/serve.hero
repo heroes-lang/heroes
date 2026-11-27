@@ -1,20 +1,21 @@
 # The serving loop: one connection accepted at a time, each request on it
 # read by `http.next_request` within `http.default_limits`, answered by
-# `routes.answer` with the state lent, and written by `http.write_answer`,
+# `routes.answer` through its route's steps and endpoint with the state lent,
+# and written by `http.write_answer`,
 # until the program is asked to stop (Ctrl-C, SIGTERM, or `os.ask_stop`),
 # which ends the waiting accept with `stopped`.
 #
 # Between connections the loop keeps the directory import's schedule: the
 # accept waits no longer than until the next run, and a run that falls due
 # is made before the next connection is taken. A served instance logs one
-# line a request to its standard output; the demonstration logs nothing, so
+# line a request to its standard output, by a step every route runs
+# (`routes.log`); the demonstration logs nothing, so
 # its transcript holds only what its own client prints.
 
 use <rebel>/http
 use <rebel>/io
 use <rebel>/net
 use <rebel>/time
-use <rebel>/web
 
 use api/service_api
 use core/clock
@@ -46,9 +47,9 @@ record Mode
 # - `mode`: whether the loop keeps the schedule and logs.
 #
 # Fails as `net.accept` fails for any reason but the stop and a deadline,
-# and where the routes cannot be made.
+# and where the routes cannot be bound.
 function serve(@st: state.State, l: net.Listener, mode: Mode) -> ()?
-    rt = routes.router()?
+    routes.bind(@st, logged: mode.logged)?
     due: i64 @= next_import(st, mode: mode)
 
     while true
@@ -64,7 +65,7 @@ function serve(@st: state.State, l: net.Listener, mode: Mode) -> ()?
             net.set_accept_deadline(l, deadline_ms: ms)?
 
         match net.accept(l, deadline_ms: CONNECTION_MS)
-            .ok conn => connection(@st, rt: rt, conn: conn, mode: mode)
+            .ok conn => connection(@st, conn: conn)
             .err e =>
                 if e.code == net.STOPPED
                     return ok()
@@ -79,10 +80,8 @@ function serve(@st: state.State, l: net.Listener, mode: Mode) -> ()?
 # Every request of `conn`, answered, then the connection closed.
 #
 # - `st`: the server.
-# - `rt`: the routes.
 # - `conn`: the connection, closed at the end.
-# - `mode`: whether to log.
-function connection(@st: state.State, rt: web.Router, conn: net.Conn, mode: Mode)
+function connection(@st: state.State, conn: net.Conn)
     reader @= io.reader(conn.stream)
 
     while true
@@ -90,11 +89,7 @@ function connection(@st: state.State, rt: web.Router, conn: net.Conn, mode: Mode
             .ok got => got
             .err _  => break
 
-        response = routes.answer(@st, rt: rt, r: r)
-
-        if mode.logged
-            stamp = time.format(clock.now(st.clock), layout: .rfc3339_seconds)
-            print(f"{stamp} {r.method} {r.url.path} {response.status}")
+        response = routes.answer(@st, r: r)
 
         match http.write_answer(reader.stream, r: r, response: response)
             .ok _  => _ = 0

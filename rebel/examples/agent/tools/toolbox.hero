@@ -86,31 +86,71 @@ function spec(name: str, title: str, description: str, schema: str, read_only: b
         read_only: read_only
     )
 
-# What the tool `name` answers to the arguments `input`.
+# What the tool `name` answers to the arguments `input`: the function
+# `answers` binds to its name, with the toolbox lent.
 #
 # - `box`: the toolbox.
 # - `name`: one of `specs(box)`'s names; another is refused as an outcome.
 # - `input`: the call's arguments, an object.
 function run(box: Toolbox lent, name: str, input: json.Value) -> outcomes.Outcome
-    if name == "search_documents"
-        return search(box, input: input)
+    match answers(box)[name]
+        .ok answer => return answer(box, input)
+        .err _     => return outcomes.refused(f"there is no tool named {name}")
 
-    if name == "read_file"
-        return reading.read_lines_of(root: box.root, input: input)
+# The function that answers each tool `box` offers, by the tool's name, each
+# reading the toolbox in place: `run_command` only where some command is
+# allowed, as `specs` says.
+#
+# - `box`: the toolbox.
+function answers(box: Toolbox lent) -> {str: (function(Toolbox lent, json.Value) -> outcomes.Outcome)}
+    out: {str: (function(Toolbox lent, json.Value) -> outcomes.Outcome)} @= {
+        "search_documents": search
+        "read_file": read_lines
+        "list_files": list_files
+        "count_tokens": count_tokens
+        "query_json": query_json
+    }
 
-    if name == "list_files"
-        return reading.list_files(box.root)
+    if box.allowed.len() > 0
+        out["run_command"] @ run_command
+    return out
 
-    if name == "count_tokens"
-        return computing.count_tokens(root: box.root, input: input, default_model: box.model)
+# `read_file`: the lines the arguments name, of a file under the root.
+#
+# - `box`: the toolbox, its root read.
+# - `input`: the call's arguments.
+function read_lines(box: Toolbox lent, input: json.Value) -> outcomes.Outcome
+    return reading.read_lines_of(root: box.root, input: input)
 
-    if name == "query_json"
-        return computing.query_json(root: box.root, input: input)
+# `list_files`: the files under the root.
+#
+# - `box`: the toolbox, its root read.
+# - `input`: the call's arguments, none read.
+function list_files(box: Toolbox lent, input: json.Value) -> outcomes.Outcome
+    _ = input
+    return reading.list_files(box.root)
 
-    if name == "run_command" && box.allowed.len() > 0
-        return running.run_command(root: box.root, allowed: box.allowed, input: input, limit: box.command_limit)
+# `count_tokens`: the tokens of a text or a file, for a model.
+#
+# - `box`: the toolbox, its root and its model read.
+# - `input`: the call's arguments.
+function count_tokens(box: Toolbox lent, input: json.Value) -> outcomes.Outcome
+    return computing.count_tokens(root: box.root, input: input, default_model: box.model)
 
-    return outcomes.refused(f"there is no tool named {name}")
+# `query_json`: a jq query run over a JSON file under the root.
+#
+# - `box`: the toolbox, its root read.
+# - `input`: the call's arguments.
+function query_json(box: Toolbox lent, input: json.Value) -> outcomes.Outcome
+    return computing.query_json(root: box.root, input: input)
+
+# `run_command`: an allowed command run in the root, within the toolbox's
+# limit.
+#
+# - `box`: the toolbox, its root, its commands and its limit read.
+# - `input`: the call's arguments.
+function run_command(box: Toolbox lent, input: json.Value) -> outcomes.Outcome
+    return running.run_command(root: box.root, allowed: box.allowed, input: input, limit: box.command_limit)
 
 # The passages nearest to the query `input` gives, as `search_documents`
 # answers them.

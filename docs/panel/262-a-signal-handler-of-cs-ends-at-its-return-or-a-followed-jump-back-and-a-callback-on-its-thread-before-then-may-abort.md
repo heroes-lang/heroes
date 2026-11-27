@@ -504,6 +504,78 @@ w2 being no arm. **The synthesis's own**, registered here before any session:
 under `adopted` (the positive clause does not cure W, so its cost buys nothing), or a repair of `fm_top` or `wide`
 refused as a design cost with the author choosing the conservative text over a sentence without that clause.
 
+## The blind reading, run 2026-11-27
+
+Added 2026-11-27, after this sitting's commit (`542b8b732`): the registered reading ran on the author's authorisation
+(*ok a 25 dollars*), its report `262-reports/llm-ergonomist-blind.md`, the sessions' answers
+`262-reports/llm-ergonomist-blind-answers.tar.xz` (each session's `result.md` and `run.json`, never a key or a spec),
+the two readers' labels `262-reports/blind-readers/`, and the runner as adapted, every change a `diff -u` against panel
+261's, `262-briefs/blind/registration-runner.md`, written before any session. **The registration was amended before any
+session by the coordinator** (its last section): `main` had moved the spec at `750d2540d` (step 208b, one line of § 13's
+first paragraph; the handler sentence untouched), so **`now` is `main`'s spec pinned at `9b88d3e84`**
+(`736b534c...efd3`) and `adopted` and `rival` are the synthesis's two diffs applied to it (`d66dfd30...7b17`,
+`ecfb9931...4d7c`); and step 208a (`b626d4c05`) refuses `extern "hero_os.h" layer`, so the registered `h13.hero` no
+longer built, and **it lost the word `layer` and nothing else**, the certain fix the compiler names; `claude --version`
+read `2.1.326`, where the registration carried `2.1.323`. A process choice inside the author's authorisation, recorded
+for the author to turn. **The key, re-run under `9b88d3e84`'s stage 2 (`sources 7c7c978a4dfeddf3`) on this Mac and in
+Linux arm64, did not move**: 102 of 102 Mac outputs equal the registered key, every Linux first run equal to the Mac's,
+no program split between the platforms or between the plain and `--sanitize` builds; `h13` runs. **31 sessions, all
+counted, 11.66 USD of the 25.00** (11.657696 by the 31 sessions' own JSON; the most expensive the verdict, 1.33), each
+`success`, `is_error` false, `completed`, none voided; every one offered `Read` alone, as the registration assumed, so
+each report is its `result.md`. The run (03:40 to 04:30) went on while the session that started it was paused by the
+account's five-hour limit; nothing was cut or started twice.
+
+**By the registration's own rules the resolution stands as adopted.** `adopted`'s fifteen readers are wrong on **none**
+of their 85 answers: **D1 holds** (`h1`, `h3`, `h13`, `n1`, `n2`, `n3`: 5 of 5 `RUNS` each, 0 `NOT PROMISED`), so the
+text no longer reads as covering switches it does not name; **D2 holds** (`h7`, `h9`, `h10`, `h11`: 0 `ABORTS` each), so
+no *may* is read as *aborts*; **D3 holds** (`h2`, `h5`, `h6`, `h8`: 5 of 5 `NOT PROMISED` each, text-right), the four
+read as left open; **D5 holds** (`h12`: 0 `RUNS`, 5 `NOT PROMISED`), so the list no longer reads as closed; **D4**:
+`h4` 5 of 5 `NOT PROMISED`, text-right under *"from inside it"*, and `n4` 5 of 5 `ABORTS` in the thread's words, with
+nothing printed before. **`now`, reported**, is wrong on 21 of 85: `n2` and `n3` 5 of 5 `NOT PROMISED` each and `n1` 1
+(the widening 259 found, at its most), `h12` 5 of 5 `RUNS` (the list read as exhaustive) and `n4` 5 of 5 `RUNS`; its
+`h4` 5 of 5 `ABORTS` with the words. **`rival` (`spec-w1`) also holds D1, D2, D3 and D5** (5 of 5 on the D1 set, 0
+`ABORTS` on the D2 set, 5 right on each of the D3 set, 0 `RUNS` on `h12`) and is wrong on 6: **`n4` 5 of 5 `RUNS`**
+(D4: its text says nothing of a thread C made, the key aborting) and `h4` once (`NOT PROMISED`, where `rival` has no
+text-right). Every `ABORTS` of the run, 18, names the key's cause. Neither D1 nor D2 fails for `adopted`, so the rule
+that would move the resolution to `rival` does not fire.
+
+**The predictions.** The spec-warden's `spec-w1` column, read for `rival`, predicted D2 failing (60 %, 1 to 2 `ABORTS`
+on each of `h7`, `h10`, `h11`); **`rival` passed D2 on all four, 0 `ABORTS` of 20**, the result the warden registered
+as falsifying its own recommendation of w2 over w1 (*"w1 passing D2 on all four (then the list's may does not invite
+N, and w1, 119 vendored tokens cheaper, is the better text)"*). Its `now` column held D2's, D3's and `h4`'s ranges and
+missed `n2`, `n3` (0 `RUNS` each against 1 to 5), `h12` (5 `RUNS` against 1 to 4), `n4` (0 `ABORTS` against 1 to 3)
+and most label counts (H 11, L 10, and no N, T, I, R or S); its spend, 14.5 USD (12 to 18), was above the measured
+11.66. `adopted` was unpredicted by the warden. **This sitting's own**, registered above: under `adopted` D1, D2, D3,
+D5 and `n4` 4 or 5 of 5 `ABORTS` all held, and **`h1` was not at risk** (5 of 5 `RUNS`, no reader citing the stated
+exception: no P anywhere); under `rival` D1 on `n1` to `n3` held and **D2 did not fail**, as predicted it would.
+
+**The `context` question**: 31 of 31 answers say no instruction, rule, contract, memory or document outside their folder
+reached them; seven name the working directory's path, a path and not a rule; the scan flagged the verdict session
+once, every hit a reader's own *"No CLAUDE.md ... reached me"* read back from a report. **The verdict session approves**
+the change to `adopted` and says a model predicts these programs better from it than from `rival` (`rival`'s clause
+*"onto a stack once given to `makecontext` or into a coroutine the signal did not interrupt"* read two ways, its silence
+on `n4`, its split on `h4` and `h6`); it told the reports' versions apart by their quotations, so the labels' blinding
+did not hold for it, and the scorer read the key before grading.
+
+**The labels**: two fresh readers, started by the coordinator after the run with packets that named no arm, labelled the
+27 wrong units apart and **agree on every one** (the registered `agree.py`: same set 27 of 27; W 11, L 15, H 11 and O 1
+for each, kappa 1.00 on each; N, T, I, P, R and S given by neither, so their agreement stays unmeasured). Mapped back to
+the arms: **`now` t1 `h12` L 5; `now` t2 `n1`, `n2`, `n3` W and H 11, `n4` L 5; `rival` t1 `h4` O 1** (a prohibition
+read as having no promised run-time result, which no label names); **`rival` t2 `n4` L 5; `adopted` none.** So `now`'s
+wrong answers are the two misreadings the sitting was convened on, the widening (W with H, on every coroutine program
+with no signal handler) and the closed list (L), and `rival`'s are the silence on a thread C made (L) and one `h4`.
+
+**What it means for R1** (provisional, the author's to ratify): the run gives the registered reasons to keep R1 as
+adopted and none to move or amend it; `adopted` is the one text whose readers predicted every one of the 17 programs
+as the key or the text allows, and the one that names `n4`'s abort (5 of 5 against `rival`'s 0 of 5). Beside the
+rules, the run also measured that **`rival` cures the widening and the closed list as well**, at +64 vendored tokens
+against R1's +203 (`cl100k_base`, the registration's § What the synthesis added, counted over `77eb38534`'s spec; over
+the pinned spec, unrun), and the warden's own falsifier of w2 over w1 is met;
+`rival`'s price is `n4` and one `h4`. Whether that turns the choice between the two texts is the author's, with R2's
+landing and its falsifiers still owed as before. **Unrun**: the x86-64 legs and route A (no key here says anything of
+them), the S reading (no seat has run a callback recursing past a `malloc` stack), and the labels N, T, I, P, R and S,
+which no wrong answer of this run carried.
+
 ## Author's verdict
 
 **Pending.** The decision's draft is `docs/panel/262-reports/decision-draft.md`, filed with this sitting as

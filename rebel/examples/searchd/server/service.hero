@@ -1,79 +1,92 @@
-# searchd's server: its routes, and the handler `http.serve_until_stopped`
-# calls with the service for every request.
+# searchd's server: its routes, each bound to the page's or the API's
+# function that answers it, and the handler `http.serve_until_stopped` calls
+# with the service for every request.
 #
 # The engine is only read while the server runs (a query changes nothing),
 # so the service is one value handed to every request, as `http`'s serving
 # with state hands one, and needs no loop of the program's own. The router
-# finds the route and the handler calls the page's or the API's function by
-# its name, as `web` asks of a program; a request no route takes is
-# answered by `web.not_routed` (404, or 405 with `Allow`), and every 200 to
-# a `GET` carries an entity tag, so a client asking again for a page it
-# holds is answered 304 with no body.
+# finds the route and `web/chain` calls the function bound to its name, with
+# the service lent; a request no route takes is answered by `web.not_routed`
+# (404, or 405 with `Allow`), and every request runs the step `etag`, so
+# every 200 to a `GET` carries an entity tag and a client asking again for a
+# page it holds is answered 304 with no body.
 
 use <rebel>/http
 use <rebel>/web
+use <rebel>/web/chain
 
 use index/engine
 use server/api
+use server/state
 use server/ui
 
-# What the server serves with.
-record Service
-    # The routes.
-    router: web.Router
-    # The engine queries are answered from.
-    engine: engine.Engine
-
-# The routes, each named for the function that answers it.
+# Every route, each bound in `answers` to the function that answers it, and
+# the step `etag` every route runs, bound in `steps`.
+#
+# - `steps`: the service's table of its steps, which gains `etag`.
+# - `answers`: the service's table of its answers, which gains every route's.
 #
 # Fails `invalid` or `exists` as `web.add` does, which the routes written
 # here never meet; their test makes them.
-function routes() -> web.Router?
+function routes(@steps: {str: (function(@state.Service, chain.Next, http.Request) -> http.Response?)}, @answers: {str: (function(@state.Service, web.Found, http.Request) -> http.Response?)}) -> web.Router?
     rt @= web.new_router()
     rt.errors @ .json
-    web.add(@rt, method: http.METHOD_GET, pattern: "/", name: "home")?
-    web.add(@rt, method: http.METHOD_GET, pattern: "/search", name: "results")?
-    web.add(@rt, method: http.METHOD_GET, pattern: "/pages/:id", name: "page_view")?
-    web.add(@rt, method: http.METHOD_GET, pattern: "/api/search", name: "api_search")?
-    web.add(@rt, method: http.METHOD_GET, pattern: "/api/suggest", name: "api_suggest")?
-    web.add(@rt, method: http.METHOD_GET, pattern: "/api/pages", name: "api_pages")?
-    web.add(@rt, method: http.METHOD_GET, pattern: "/api/pages/:id", name: "api_page")?
-    web.add(@rt, method: http.METHOD_GET, pattern: "/api/duplicates", name: "api_duplicates")?
-    web.add(@rt, method: http.METHOD_GET, pattern: "/api/stats", name: "api_stats")?
-    web.add(@rt, method: http.METHOD_GET, pattern: "/healthz", name: "health")?
+    chain.add_step(@rt, @steps, name: "etag", step: etag)?
+    get = http.METHOD_GET
+    chain.on(@rt, @answers, method: get, pattern: "/", name: "home", answer: ui.home)?
+    chain.on(@rt, @answers, method: get, pattern: "/search", name: "results", answer: ui.results)?
+    chain.on(@rt, @answers, method: get, pattern: "/pages/:id", name: "page_view", answer: ui.page_view)?
+    chain.on(@rt, @answers, method: get, pattern: "/api/search", name: "api_search", answer: api.search)?
+    chain.on(@rt, @answers, method: get, pattern: "/api/suggest", name: "api_suggest", answer: api.suggestions)?
+    chain.on(@rt, @answers, method: get, pattern: "/api/pages", name: "api_pages", answer: api.pages)?
+    chain.on(@rt, @answers, method: get, pattern: "/api/pages/:id", name: "api_page", answer: api.page)?
+    chain.on(@rt, @answers, method: get, pattern: "/api/duplicates", name: "api_duplicates", answer: api.duplicate_groups)?
+    chain.on(@rt, @answers, method: get, pattern: "/api/stats", name: "api_stats", answer: api.stats)?
+    chain.on(@rt, @answers, method: get, pattern: "/healthz", name: "health", answer: health)?
     return ok(rt)
 
-# The service of the engine `e`.
+# The service of the engine `e`, its routes bound.
 #
 # - `e`: the engine.
 #
 # Fails as `routes` does.
-function service(e: engine.Engine) -> Service?
-    return ok(Service(router: routes()?, engine: e))
+function service(e: engine.Engine) -> state.Service?
+    s @= state.Service(router: web.new_router(), steps: {}, answers: {}, engine: e)
+    s.router @ routes(@s.steps, @s.answers)?
+    return ok(s)
 
-# The answer to `r`: the handler `http.serve_until_stopped` calls.
+# The answer to `r`: the handler `http.serve_until_stopped` calls, which
+# lends its copy of the service to the route's chain.
 #
 # - `s`: the service.
 # - `r`: the request.
-function answer(s: Service, r: http.Request) -> http.Response
-    found = match web.route(s.router, r)
-        .ok got => got
-        .err _  => return web.not_routed(s.router, r)
+function answer(s: state.Service, r: http.Request) -> http.Response
+    held @= s
 
-    response = match found.name
-        "home"           => ui.home(s.engine)
-        "results"        => ui.results(s.engine, r: r)
-        "page_view"      => ui.page_view(s.engine, id: web.param_of(found, name: "id"))
-        "api_search"     => api.search(s.engine, r: r)
-        "api_suggest"    => api.suggestions(s.engine, r: r)
-        "api_pages"      => api.pages(s.engine)
-        "api_page"       => api.page(s.engine, id: web.param_of(found, name: "id"))
-        "api_duplicates" => api.duplicate_groups(s.engine)
-        "api_stats"      => api.stats(s.engine)
-        "health"         => web.health_response(r, checks: health_checks(s.engine), detail: true)
-        _                => web.not_routed(s.router, r)
+    return match chain.dispatch(@held, router: s.router, steps: s.steps, answers: s.answers, r: r)
+        .ok response => response
+        .err e => web.error_response(
+            s.router.errors,
+            status: http.STATUS_INTERNAL_SERVER_ERROR,
+            message: f"{e.code}: {e.msg}"
+        )
 
-    return web.with_etag(r, response: response)
+# Every route's step: the answer given an entity tag, and answered 304 where
+# the client holds it.
+#
+# - `s`: the service.
+# - `n`: where the request stands.
+# - `r`: the request.
+function etag(@s: state.Service, n: chain.Next, r: http.Request) -> http.Response?
+    got = chain.proceed(@s, steps: s.steps, answers: s.answers, n: n, r: r)?
+    return ok(web.with_etag(r, response: got))
+
+# `GET /healthz`: the engine's health, in detail.
+#
+# - `s`: the service, its engine read.
+# - `r`: the request.
+function health(s: state.Service lent, _: web.Found, r: http.Request) -> http.Response?
+    return ok(web.health_response(r, checks: health_checks(s.engine), detail: true))
 
 # The server's health: the index holds pages, and every page it holds has
 # its vector or holds no text.
@@ -91,8 +104,10 @@ function health_checks(e: engine.Engine lent) -> [web.Check]
         fail(code: "failed", msg: "the vector index holds more pages than the full-text index")
     return [web.Check(name: "index", outcome: held), web.Check(name: "vectors", outcome: vectors)]
 
-test "routes: every route made, and a route found by its path"
-    rt = routes().must()
-    assert rt.routes.len() == 10
+test "routes: every route made and bound, and a route found by its path"
+    steps: {str: (function(@state.Service, chain.Next, http.Request) -> http.Response?)} @= {}
+    answers: {str: (function(@state.Service, web.Found, http.Request) -> http.Response?)} @= {}
+    rt = routes(@steps, @answers).must()
+    assert rt.routes.len() == 10 && answers.len() == 10 && steps.len() == 1
     found = web.route(rt, http.request(method: "GET", target: "/api/pages/3").must()).must()
     assert found.name == "api_page" && web.param_of(found, name: "id") == "3"

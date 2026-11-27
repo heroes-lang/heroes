@@ -8,9 +8,11 @@
 # and handed back rather than taken as an `@` parameter: the evaluator and the
 # statement runner need each other (a statement holds expressions, and an
 # expression can call a function whose body is statements), one of them takes
-# the other as a **function value**, and a function value takes no `@`
-# parameter (spec § 9), so the state crosses that boundary by value. Handing a
-# `Frame` down copies nothing until something writes to it.
+# the other as a **function value**, and the state crosses that boundary by
+# value. It was written so when a function value could take no `@`
+# parameter; one may now, its type saying so, `(function(@Frame, ...) ->
+# ...)`, and this evaluator keeps its shape because it costs nothing: handing
+# a `Frame` down copies nothing until something writes to it.
 #
 # WHAT A FRAME HOLDS, and why each field is here rather than in a global:
 # there are no mutable globals in Heroes (spec § 4), so

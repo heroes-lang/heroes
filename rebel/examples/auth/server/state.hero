@@ -1,11 +1,15 @@
 # Everything one running server holds: its configuration, its clock and
 # generator, its secrets, its accounts and the grants it handed out. The
 # language has no mutable global, so the serving loop owns one `State` and
-# lends it with `@` to the handler of each request; nothing else holds it,
-# which is also why the server answers one request at a time.
+# lends it with `@` to the steps and the endpoint of each request, which its
+# own tables bind by name (`server/routes`); nothing else holds it, which is
+# also why the server answers one request at a time.
 
+use <rebel>/http
 use <rebel>/random
 use <rebel>/strings
+use <rebel>/web
+use <rebel>/web/chain
 use <rebel>/webauthn
 use <rebel>/x509
 
@@ -46,11 +50,30 @@ record State
     roots: [x509.Certificate]
     # How many requests were answered.
     answered: i64
+    # Every route, each bound in `answers` by `routes.bind`.
+    router: web.Router
+    # The steps the routes run, by their names.
+    steps: {str: (function(@State, chain.Next, http.Request) -> http.Response?)}
+    # The endpoint that answers each route, by the route's name.
+    answers: {str: (function(@State, web.Found, http.Request) -> http.Response?)}
+    # The person the session of the request being answered names, which the
+    # step `signed_in` reads before the routes that need one and empties
+    # after them; `not_found` between requests.
+    visitor: Visitor?
     # How many messages were submitted to the mail server.
     mailed: i64
     # Whether every change is written to the data file; false only while a
     # test holds a state of its own.
     persistent: bool
+
+# The person a request's session cookie names.
+record Visitor
+    # The cookie's value.
+    token: str
+    # The session.
+    session: grants.Session
+    # The account.
+    user: accounts.User
 
 # A server of `s`, its accounts read from the data file, its signing key and
 # its secrets from `v`, its roots from the configured file.
@@ -71,7 +94,7 @@ function open(s: settings.Settings, issuer: str, c: clock.Clock, g: random.ChaCh
         roots @ attestation.roots_of(read_file(s.passkeys.trusted_roots)?)?
 
     return ok(
-        State(settings: s, issuer: issuer, clock: c, rng: g, vault: kept, directory: storage.load(s.data_file)?, keys: signing_keys, grants: grants.none(), ceremonies: {}, exchanges: {}, roots: roots, answered: 0, mailed: 0, persistent: true)
+        State(settings: s, issuer: issuer, clock: c, rng: g, vault: kept, directory: storage.load(s.data_file)?, keys: signing_keys, grants: grants.none(), ceremonies: {}, exchanges: {}, roots: roots, answered: 0, router: web.new_router(), steps: {}, answers: {}, visitor: fail(code: "not_found", msg: "no request is being answered"), mailed: 0, persistent: true)
     )
 
 # The server's time, seconds since 1970.

@@ -121,6 +121,7 @@ typedef __typeof__(&(swapcontext)) hero_ctx_swap_fn;
 #if __has_feature(address_sanitizer)
 #define HERO_JMP_ASAN 1
 void __asan_handle_no_return(void);
+void __asan_unpoison_memory_region(void const volatile *addr, size_t size);
 void __asan_init(void);
 #endif
 #endif
