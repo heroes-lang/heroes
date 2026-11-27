@@ -14,27 +14,20 @@
 
 #if defined(__APPLE__)
 
-/* UNDER ADDRESSSANITIZER A REWRITE THAT DOES NOT RETURN CLEARS THE STACK'S
- * SHADOW FIRST (defect 2853), as ASan's own interceptors do before a jump: its
- * frame is instrumented, with redzones around its locals that only its return
- * would clear, and a jump or a `setcontext` leaves them in the shadow of the
- * thread's stack, where the next frames read as overflowing a local of a frame
- * that is gone (`stack-buffer-overflow ... in frame #0 hero_rebind_setcontext`,
- * a correct fiber program under `--sanitize` on this Mac). A swap may never
- * return either, its context abandoned, so its frame carries no redzones at
- * all, as `parts/sigjump_save.c`'s does. */
-#if defined(__has_feature)
-#if __has_feature(address_sanitizer)
-#define HERO_REBIND_ASAN 1
-void __asan_handle_no_return(void);
-#endif
-#endif
-
-static void hero_rebind_no_return(void) {
-#if defined(HERO_REBIND_ASAN)
-    __asan_handle_no_return();
-#endif
-}
+/* UNDER ADDRESSSANITIZER A REWRITE THAT DOES NOT RETURN HAS NO REDZONES IN
+ * ITS FRAME (defect 2853): instrumented, its frame kept redzones around its
+ * locals that only its return would clear, and a jump or a `setcontext` left
+ * them in the shadow of the thread's stack, where the next frames read as
+ * overflowing a local of a frame that is gone (`stack-buffer-overflow ... in
+ * frame #0 hero_rebind_setcontext`, a correct fibre program under `--sanitize`
+ * on this Mac). So `setcontext`, the three jumps and the swap (whose context
+ * may be abandoned) are `no_sanitize("address")`, and what they judge runs in
+ * frames of its own (`hero_rebind_set`, `hero_rebind_jump`, never inlined)
+ * that return, clearing theirs, before the switch. Step 199e called
+ * `__asan_handle_no_return` there instead, and ASan wrote its warning that it
+ * ignored the call on a stack it does not know, a coroutine's, into the
+ * stderr of a correct program (`fixedbugs-2702-a-handler-left-by-setcontext-
+ * to-its-coroutine-runs`, the CI's Darwin `--sanitize` leg on 77eb38534). */
 
 static uintptr_t hero_rebind_jmp_sp(const void *env) {
     return hero_rebind_strip_d(hero_rebind_word((const unsigned char *)env, HERO_REBIND_SP_WORD * 8) ^
@@ -126,7 +119,7 @@ static bool hero_rebind_switch_target(HeroSignalStack *own, const void *uc, int 
  * the same way (defect 2745). A jump that leaves every handler the thread
  * stood in is asked whether it abandons this runtime's allocator
  * (`parts/sigguard.c`, panel 258's R1). */
-static void hero_rebind_jump(const void *env) {
+__attribute__((noinline)) static void hero_rebind_jump(const void *env) {
     HeroSignalStack *own = hero_rebind_own();
     if (own == NULL || env == NULL) return;
     hero_rebind_relived(own, (uintptr_t)__builtin_frame_address(0));
@@ -153,7 +146,7 @@ static void hero_rebind_jump(const void *env) {
 /* Rule 6 for `setcontext` to `uc`: a target on a coroutine's stack (a known
  * range) leaves the entries on that range above it and holds every other
  * until its handler ends; any other target is a jump. */
-static void hero_rebind_set(const void *uc) {
+__attribute__((noinline)) static void hero_rebind_set(const void *uc) {
     HeroSignalStack *own = hero_rebind_own();
     if (own == NULL || !hero_rebind_ctx_valid(uc)) return;
     hero_rebind_relived(own, (uintptr_t)__builtin_frame_address(0));
@@ -274,33 +267,29 @@ __attribute__((noinline, no_sanitize("address"))) static int hero_rebind_swapcon
     return r;
 }
 
-__attribute__((noreturn)) static void hero_rebind_siglongjmp(int *env, int value) {
+__attribute__((noreturn, no_sanitize("address"))) static void hero_rebind_siglongjmp(int *env, int value) {
     hero_rebind_jump(env);
-    hero_rebind_no_return();
     atomic_load_explicit(&hero_rebind_real_siglongjmp, memory_order_relaxed)(env, value);
     __builtin_unreachable();
 }
 
-__attribute__((noreturn)) static void hero_rebind_longjmp(int *env, int value) {
+__attribute__((noreturn, no_sanitize("address"))) static void hero_rebind_longjmp(int *env, int value) {
     hero_rebind_jump(env);
-    hero_rebind_no_return();
     atomic_load_explicit(&hero_rebind_real_longjmp, memory_order_relaxed)(env, value);
     __builtin_unreachable();
 }
 
-__attribute__((noreturn)) static void hero_rebind__longjmp(int *env, int value) {
+__attribute__((noreturn, no_sanitize("address"))) static void hero_rebind__longjmp(int *env, int value) {
     hero_rebind_jump(env);
-    hero_rebind_no_return();
     atomic_load_explicit(&hero_rebind_real__longjmp, memory_order_relaxed)(env, value);
     __builtin_unreachable();
 }
 
 /* A switch made from this frame leaves the range it lies on, if a swap into
  * that range waits to return (`rebind_entries.c`, the life of a range). */
-static int hero_rebind_setcontext(const void *context) {
+__attribute__((no_sanitize("address"))) static int hero_rebind_setcontext(const void *context) {
     hero_rebind_range_left(hero_rebind_below());
     hero_rebind_set(context);
-    hero_rebind_no_return();
     return atomic_load_explicit(&hero_rebind_real_setcontext, memory_order_relaxed)(context);
 }
 

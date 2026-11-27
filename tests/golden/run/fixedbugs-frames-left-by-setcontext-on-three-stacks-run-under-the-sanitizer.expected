@@ -1,0 +1,6 @@
+answer ran for 2
+the thread's stack (470 is right): 470
+answer ran for 4
+a coroutine's heap stack (490 is right): 490
+answer ran for 6
+an alternate stack, three deliveries (560 is right): 560

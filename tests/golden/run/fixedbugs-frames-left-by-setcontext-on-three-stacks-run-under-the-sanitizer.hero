@@ -1,0 +1,27 @@
+# Fixed 2026-11-27, draft d-lane-sig-family-7, lane sig-family (step 199k).
+# Frames holding arrays are left by `setcontext`, and frames of another
+# layout then run where they stood: on the thread's stack, on a coroutine's
+# heap stack, and on an alternate signal stack whose handler leaves by
+# `setcontext`, three times.
+# Symptom: before, the `run` form's `--sanitize` legs on this Mac wrote
+# AddressSanitizer's `WARNING: ASan is ignoring requested
+# __asan_handle_no_return: stack type: default` on stderr, at the coroutine's
+# `setcontext` (the CI's Darwin red on `fixedbugs-2702-a-handler-left-by-
+# setcontext-to-its-coroutine-runs`, the same words); right plain.
+# Cause: step 199e had every rewrite that does not return call
+# `__asan_handle_no_return`, and ASan, asked on a stack it does not know,
+# writes its warning instead of clearing anything.
+# Fix: the rewrites that do not return carry no redzones in their own frames
+# (`no_sanitize("address")`), what they judge runs in frames that return
+# before the switch, and no call to `__asan_handle_no_return` is made.
+extern "fixedbugs-frames-left-by-setcontext-on-three-stacks.h"
+    function kp_run(which: i32, cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("the thread's stack (470 is right): ", kp_run(which: 2, cb: answer))
+    print("a coroutine's heap stack (490 is right): ", kp_run(which: 4, cb: answer))
+    print("an alternate stack, three deliveries (560 is right): ", kp_run(which: 6, cb: answer))

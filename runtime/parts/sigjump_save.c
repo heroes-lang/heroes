@@ -90,7 +90,7 @@ static void hero_jmp_jump(const void *env) {
  * range) leaves the entries on that range above it and holds every other
  * until its handler ends, whether or not a context was saved inside it that
  * the runtime saw; any other target is a jump. */
-static void hero_jmp_set(const ucontext_t *ucp) {
+__attribute__((noinline)) static void hero_jmp_set(const ucontext_t *ucp) {
     HeroSignalStack *own = hero_sig_own();
     if (own == NULL || ucp == NULL) return;
     hero_sig_relived(own, (uintptr_t)__builtin_frame_address(0));
@@ -208,16 +208,12 @@ void __longjmp_chk(struct __jmp_buf_tag env[1], int val) {
 
 /* A switch made from this frame leaves the range it lies on, if a swap into
  * that range waits to return (`sigentries.c`, the life of a range). */
-int(setcontext)(const ucontext_t *ucp) {
+/* No redzones in this frame (defect 2853, `parts/rebind_jump.c`'s reason):
+ * what it judges runs in `hero_jmp_set`'s, which returns before the switch. */
+__attribute__((no_sanitize("address"))) int(setcontext)(const ucontext_t *ucp) {
     hero_jmp_find();
     hero_sig_range_left(hero_jmp_below());
     hero_jmp_set(ucp);
-#if defined(HERO_JMP_ASAN)
-    /* As a jump does (`hero_jmp_go`): `setcontext` does not return, and the
-     * redzones of this frame and the ones it called would stay in the shadow
-     * of the stack it leaves (defect 2853, measured on Darwin's twin). */
-    __asan_handle_no_return();
-#endif
     return atomic_load_explicit(&hero_ctx_real_set, memory_order_relaxed)(ucp);
 }
 
