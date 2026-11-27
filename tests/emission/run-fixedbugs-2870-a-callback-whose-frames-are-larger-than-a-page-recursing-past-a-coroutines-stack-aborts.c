@@ -418,7 +418,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("36e3be68662953c5", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("261258c501ec77dc", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2870acallbackwhoseframesarelargerthanapagerecursingpastacoroutinesstackaborts\tfixedbugs-2870-a-callback-whose-frames-are-larger-than-a-page-recursing-past-a-coroutines-stack-aborts\n");

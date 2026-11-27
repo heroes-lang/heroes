@@ -1,0 +1,26 @@
+# Fixed 2026-11-27, defect 2871, lane sig-family-2 (panel 262's
+# ffi-pragmatist, `gtc`): the interrupted switch is a `swapcontext`, and the
+# handler swaps to another coroutine and back, naming no context of the
+# interrupted switch, which the C library finishes when the handler returns.
+# Symptom: none on this Mac or Linux arm64, 3 runs of 3 each; this case pins
+# that a handler's switch naming other contexts is not refused.
+# Cause: a switch loads the target's signal mask before its registers, so a
+# signal pending while blocked runs its handler inside the switch, on the
+# stack being left; a handler that then saves into or loads a context the
+# interrupted switch has yet to finish makes it resume frames that have
+# returned, a call POSIX leaves undefined, neither `swapcontext` nor
+# `setcontext` being async-signal-safe.
+# Fix: each wrapper of `swapcontext` and `setcontext` notes the switch it
+# begins (`runtime/parts/sigguard.c`), a delivery whose frame records reach
+# that wrapper's frame keeps the switch's two contexts, and a switch its
+# handler makes naming either stops the program before it switches, saying
+# why; a handler's switch naming other contexts runs.
+extern "fixedbugs-2871-a-handler-switching-contexts-inside-a-switch.h"
+    function sw_run(shape: i32, cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("sw_5: ", sw_run(shape: 5, cb: answer))

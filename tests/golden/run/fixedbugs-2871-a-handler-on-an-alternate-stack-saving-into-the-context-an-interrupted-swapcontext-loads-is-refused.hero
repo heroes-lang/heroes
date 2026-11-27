@@ -1,0 +1,28 @@
+# Fixed 2026-11-27, defect 2871, lane sig-family-2 (panel 262's
+# ffi-pragmatist, `gtc`): the handler of the first refused case run on an
+# alternate signal stack the program gives (`SA_ONSTACK`), so the frame
+# records the runtime reads are those of the interrupted stack, not the
+# handler's.
+# Symptom: Bus error, exit 138, once, and a false `panic: stack exhausted`,
+# exit 134, twice, in 3 runs on this Mac; Segmentation fault, exit 139, 3 of 3
+# in Linux arm64.
+# Cause: a switch loads the target's signal mask before its registers, so a
+# signal pending while blocked runs its handler inside the switch, on the
+# stack being left; a handler that then saves into or loads a context the
+# interrupted switch has yet to finish makes it resume frames that have
+# returned, a call POSIX leaves undefined, neither `swapcontext` nor
+# `setcontext` being async-signal-safe.
+# Fix: each wrapper of `swapcontext` and `setcontext` notes the switch it
+# begins (`runtime/parts/sigguard.c`), a delivery whose frame records reach
+# that wrapper's frame keeps the switch's two contexts, and a switch its
+# handler makes naming either stops the program before it switches, saying
+# why; a handler's switch naming other contexts runs.
+extern "fixedbugs-2871-a-handler-switching-contexts-inside-a-switch.h"
+    function sw_run(shape: i32, cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("sw_6: ", sw_run(shape: 6, cb: answer))

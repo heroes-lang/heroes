@@ -538,6 +538,8 @@ static bool hero_rebind_push(HeroSignalStack *own, uintptr_t at, uintptr_t alt_l
     e->unsure = unsure;
     e->saved = 0;
     e->dead = 0;
+    e->cut_from = 0;
+    e->cut_to = 0;
     atomic_signal_fence(memory_order_seq_cst);
     own->depth = i + 1;
     atomic_signal_fence(memory_order_seq_cst);
@@ -718,12 +720,14 @@ __attribute__((no_sanitize("function", "address"))) static void hero_rebind_tram
     if (own != NULL) {
         uintptr_t me = (uintptr_t)__builtin_frame_address(0);
         hero_rebind_relived(own, me);
+        bool cut = hero_signal_in_switch(own, context);
         uintptr_t al = 0, ah = 0;
         if (!hero_rebind_alt_now(&al, &ah) || me < al || me >= ah) al = ah = 0;
         if (!hero_rebind_push(own, me, al, ah, 0, &mine)) {
             own->lost += 1;
             lost = true;
         }
+        hero_signal_mark_cut(own, mine, cut);
     }
     catcher(sig, info, context);
     if (own != NULL) {
