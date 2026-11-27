@@ -100,10 +100,14 @@ function error_of(status: i64, message: str) -> http.Response
 function answer(@srv: state.Server, found: web.Found, r: http.Request) -> http.Response
     srv.requests @ srv.requests + 1
 
-    return match found.name
-        "history" => history(@srv, found: found, r: r)
-        "health"  => health(srv)
-        _         => error_of(http.STATUS_NOT_FOUND, message: f"no handler for the route {found.name}")
+    return match answers()[found.name]
+        .ok answered => answered(@srv, found, r)
+        .err _       => error_of(http.STATUS_NOT_FOUND, message: f"no handler for the route {found.name}")
+
+# The function that answers each route `answer` answers at once, by the
+# route's name: a writer and a reader in one table, each lent the server.
+function answers() -> {str: (function(@state.Server, web.Found, http.Request) -> http.Response)}
+    return {"history": history, "health": health}
 
 # The user's name and password of a body `{"user": ..., "password": ...}`.
 record Credentials
@@ -313,7 +317,7 @@ function to_limit(text: str) -> i64
 # answers.
 #
 # - `srv`: the server.
-function health(srv: state.Server lent) -> http.Response
+function health(srv: state.Server lent, _: web.Found, _: http.Request) -> http.Response
     v: json.Value = .object(
         members: {"status": objects.text("ok"), "online": objects.number(hub.online_of(srv.routing).len())}
     )
