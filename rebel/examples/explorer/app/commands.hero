@@ -21,6 +21,8 @@ use model/tree
 use ops/jobs
 use ops/trash
 use views/dialogs
+use views/folders
+use views/rows
 use views/show
 
 # Runs the command of the menu item `item`.
@@ -241,21 +243,39 @@ function told(@c: controller.Controller, done: ()?)
         .ok _  => _ = 0
         .err x => c.ex.status @ x.msg
 
-# Shows the folder of the tree's row at `index`; the row of the folder shown
-# folds or unfolds instead.
+# Shows the folder of the tree's item `item`, unfolded down to it. The item
+# of the folder shown changes nothing, and so does an item the tree no
+# longer holds, which a choice told late may name.
 #
 # - `c`: the controller.
-# - `index`: the row.
-function chose_tree_row(@c: controller.Controller, index: i64)
-    rows = tree.rows(c.ex.tree, f: c.ex.formats, show_hidden: c.ex.settings.show_hidden)
+# - `item`: the item's number.
+function chose_folder_item(@c: controller.Controller, item: i64)
+    folder = match folders.folder_of(c.folders, number: item)
+        .ok f  => f
+        .err _ => return
 
-    if index < 0 || index >= rows.len()
-        return
+    if folder != c.ex.folder
+        told(@c, done: explorer.go_to(@c.ex, folder: folder))
 
-    folder = rows[index].folder
+# Unfolds or folds the folder of the tree's item `item`, as the person did
+# with its triangle; folded, its unfolded folders fold with it. An item the
+# tree no longer holds changes nothing.
+#
+# - `c`: the controller.
+# - `item`: the item's number.
+# - `open`: true where it was unfolded.
+function unfolded_item(@c: controller.Controller, item: i64, open: bool)
+    match folders.folder_of(c.folders, number: item)
+        .ok folder => tree.set_unfolded(@c.ex.tree, folder: folder, on: open)
+        .err _     => _ = 0
 
-    if folder == c.ex.folder
-        tree.toggle(@c.ex.tree, folder: folder)
-        return
-
-    told(@c, done: explorer.go_to(@c.ex, folder: folder))
+# Orders the entries as a click on the header of the table's column
+# `column` asks, the arrow it left pointing up where `ascending`.
+#
+# - `c`: the controller.
+# - `column`: the column's place, from 0.
+# - `ascending`: the order asked.
+function sorted(@c: controller.Controller, column: i64, ascending: bool)
+    match rows.order_at(column: column, ascending: ascending)
+        .ok order => explorer.set_order(@c.ex, order: order)
+        .err x    => c.ex.status @ x.msg

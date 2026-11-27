@@ -1,9 +1,10 @@
 # What each thing the person does to the window means: a button pressed, a
-# row chosen in a list, a box ticked, a menu item chosen, a window's close
-# button, and the timer's tick. `step` waits for the next one and hands it
-# to `handle`, which runs its command and draws the window again; the
-# native session and the demo both go through `step`, so the demo's clicks
-# are handled as a person's are.
+# row chosen in a list or the table, a row opened, a header clicked, a
+# folder chosen, unfolded or folded in the tree, a box ticked, a menu item
+# chosen, a window's close button, and the timer's tick. `step` waits for
+# the next one and hands it to `handle`, which runs its command and draws
+# the window again; the native session and the demo both go through
+# `handle`, so the demo's clicks are handled as a person's are.
 #
 # Typing in a field changes nothing until the person presses the button
 # that reads it (Go, Search, OK), as a path bar and a search field do; the
@@ -43,6 +44,14 @@ function handle(@c: controller.Controller, e: ui.Event)
         .clicked b           => clicked(@c, widget: b.widget)
         .text_changed _      => return
         .selection_changed s => chose(@c, widget: s.widget, indices: s.indices)
+        .activated a         => opened(@c, widget: a.widget, index: a.index)
+        .sort_asked s =>
+            if s.widget == c.w.entries
+                c.ex.status @ ""
+                commands.sorted(@c, column: s.column, ascending: s.ascending)
+        .unfolded u =>
+            if u.widget == c.w.tree
+                commands.unfolded_item(@c, item: u.item, open: u.open)
         .toggled t =>
             if t.widget == c.w.regex
                 c.regex_on @ t.checked
@@ -59,7 +68,7 @@ function handle(@c: controller.Controller, e: ui.Event)
         # A drawing area's pointer, keys and parts: the explorer makes no
         # drawing area, so none of them comes.
         .pointer _ | .key _ | .part_acted _ => _ = 0
-        .value_changed _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .files_chosen _ | .print_chosen _ | .ready _ | .appearance_changed _ | .files_dropped _ | .handed _ => _ = 0
+        .value_changed _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .submitted _ | .files_chosen _ | .print_chosen _ | .ready _ | .appearance_changed _ | .files_dropped _ | .handed _ => _ = 0
 
     controller.redraw(@c)
 
@@ -124,25 +133,55 @@ function cancel_running(@c: controller.Controller)
     c.ex.running @ [j]
     controller.finish_job(@c)
 
-# Handles a row chosen in a list, or an item in the combo box.
+# Handles rows chosen in the entries' table or the results' list, the one
+# shown, an item chosen in the tree, a row in the bookmarks' list, or an item
+# in the combo box. The tree letting go of its choice, as a fold over the
+# item chosen does, leaves the folder shown as it is.
 #
 # - `c`: the controller.
-# - `widget`: the list or the combo box.
-# - `indices`: what is chosen now.
+# - `widget`: the table, a list, the tree or the combo box.
+# - `indices`: what is chosen now: rows, or the tree's item by its number.
 function chose(@c: controller.Controller, widget: ui.Widget, indices: [i64])
     w = c.w
 
-    if widget == w.entries
+    if shows_rows(c, widget: widget)
         c.ex.status @ ""
         explorer.choose_rows(@c.ex, indices: indices)
     else if widget == w.tree && indices.len() == 1
         c.ex.status @ ""
-        commands.chose_tree_row(@c, index: indices[0])
+        commands.chose_folder_item(@c, item: indices[0])
     else if widget == w.places && indices.len() == 1
         c.ex.status @ ""
         commands.told(@c, done: actions.go_to_bookmark(@c.ex, index: indices[0]))
     else if widget == w.scope && indices.len() == 1
         c.scope @ scope_at(indices[0])
+
+# Handles a row opened by a double click or Return in the entries' table or
+# the results' list, the one shown: that row alone is chosen and opened, as
+# Open opens it. An item of the tree opened is chosen already, and its
+# choice showed its folder.
+#
+# - `c`: the controller.
+# - `widget`: the table or the list.
+# - `index`: the row.
+function opened(@c: controller.Controller, widget: ui.Widget, index: i64)
+    if !shows_rows(c, widget: widget)
+        return
+
+    c.ex.status @ ""
+    explorer.choose_rows(@c.ex, indices: [index])
+    commands.open_chosen(@c)
+
+# Whether `widget` is the one of the entries' table and the results' list
+# that is shown now, so a row it names is a row of what the person sees.
+#
+# - `c`: the controller.
+# - `widget`: a widget.
+function shows_rows(c: controller.Controller lent, widget: ui.Widget) -> bool
+    if c.ex.showing_results
+        return widget == c.w.results
+
+    return widget == c.w.entries
 
 # The scope the search bar's combo box shows at `index`: names first, then
 # contents.

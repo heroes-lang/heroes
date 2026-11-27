@@ -1,9 +1,11 @@
 # Sets the main window's widgets from the explorer's state, all of them each
 # time: the title and the path, the tree and the bookmarks with the folder
-# shown chosen in each, the header and the rows with what is chosen, the
-# preview, the status line, and which buttons and menu items can be used
-# now. Setting a widget gives no event (`ui`'s rule), so drawing the state
-# never feeds back into it.
+# shown chosen in each, the entries' table with its order and what is
+# chosen, or a search's results in its place, the preview, the status line,
+# and which buttons and menu items can be used now. Setting a widget gives
+# no event (`ui`'s rule), so drawing the state never feeds back into it; and
+# the tree and the table are given only what changed, so a redraw leaves the
+# person's place in them where it was.
 #
 # Nothing here decides anything: whether Rename can be used is a question
 # about the state (`can_rename`), asked here and asked again by the command
@@ -22,6 +24,7 @@ use ops/trash
 use ops/undo
 use search/finder
 use store/bookmarks
+use views/folders
 use views/rows
 use views/window
 
@@ -30,15 +33,16 @@ use views/window
 # - `app`: the app.
 # - `menus`: the menus; the Bookmarks menu's items are made again where the
 #   bookmarks changed.
+# - `shown`: the folders the tree's items show; it follows the tree.
 # - `w`: the window's widgets.
 # - `ex`: the explorer.
 #
 # Fails as `ui`'s setters fail.
-function sync(@app: ui.App, @menus: window.Menus, w: window.Widgets, ex: explorer.Explorer lent) -> ()?
+function sync(@app: ui.App, @menus: window.Menus, @shown: folders.Shown, w: window.Widgets, ex: explorer.Explorer lent) -> ()?
     name = paths.name(ex.folder).default(ex.folder)
     ui.set_text(@app, widget: w.window, text: f"Explorer: {name}")?
     ui.set_text(@app, widget: w.location, text: ex.folder)?
-    folder_rows(@app, w: w, ex: ex)?
+    folder_rows(@app, @shown, w: w, ex: ex)?
     entry_rows(@app, w: w, ex: ex)?
     preview_panes(@app, w: w, ex: ex)?
     ui.set_text(@app, widget: w.status, text: explorer.status_line(ex))?
@@ -47,26 +51,17 @@ function sync(@app: ui.App, @menus: window.Menus, w: window.Widgets, ex: explore
     bookmark_items(@app, menus: @menus, ex: ex)?
     return ok()
 
-# The tree's rows and the bookmarks' rows, the folder shown chosen in each.
+# The tree's items and the bookmarks' rows, the folder shown chosen in each.
 #
 # - `app`: the app.
+# - `shown`: the folders the tree's items show.
 # - `w`: the widgets.
 # - `ex`: the explorer.
 #
 # Fails as `ui`'s setters fail.
-function folder_rows(@app: ui.App, w: window.Widgets, ex: explorer.Explorer lent) -> ()?
-    shown = tree.rows(ex.tree, f: ex.formats, show_hidden: ex.settings.show_hidden)
-    labels: [str] @= []
-
-    for r in shown
-        labels @ labels.push(tree.label_of(r))
-
-    ui.set_items(@app, widget: w.tree, items: labels)?
-
-    match tree.index_of(shown, folder: ex.folder)
-        .ok at => ui.set_selection(@app, widget: w.tree, indices: [at])?
-        .err _ => _ = 0
-
+function folder_rows(@app: ui.App, @shown: folders.Shown, w: window.Widgets, ex: explorer.Explorer lent) -> ()?
+    rows_shown = tree.rows(ex.tree, f: ex.formats, show_hidden: ex.settings.show_hidden)
+    folders.sync(@app, @shown, widget: w.tree, rows: rows_shown, chosen: ex.folder)?
     marks: [str] @= []
 
     for b in ex.bookmarks.items
@@ -80,8 +75,10 @@ function folder_rows(@app: ui.App, w: window.Widgets, ex: explorer.Explorer lent
 
     return ok()
 
-# The header and the rows of the entries, or of a search's results, with
-# what is chosen.
+# The entries' table, its rows, its order and what is chosen in it, and
+# the results' list, one of the two shown: the results while a search's are
+# shown, the folder's entries otherwise. The table keeps the folder's
+# entries while the results stand in its place.
 #
 # - `app`: the app.
 # - `w`: the widgets.
@@ -89,21 +86,50 @@ function folder_rows(@app: ui.App, w: window.Widgets, ex: explorer.Explorer lent
 #
 # Fails as `ui`'s setters fail.
 function entry_rows(@app: ui.App, w: window.Widgets, ex: explorer.Explorer lent) -> ()?
-    lines: [str] @= []
+    cells: [[str]] @= []
+
+    for e in listing.rows(ex.listing)
+        cells @ cells.push(rows.entry_cells(ex.formats, e: e))
+
+    if ui.rows_of(app, widget: w.entries)? != cells
+        ui.set_rows(@app, widget: w.entries, rows: cells)?
+
+    order = rows.sort_of(ex.settings.order)
+
+    if ui.sort_of(app, widget: w.entries)? != order
+        ui.set_sort(@app, widget: w.entries, order: order)?
+
+    hits: [str] @= []
 
     if ex.showing_results
-        ui.set_text(@app, widget: w.header, text: f"Results under {ex.results_root}")?
-
         for h in ex.results
-            lines @ lines.push(finder.hit_text(h))
+            hits @ hits.push(finder.hit_text(h))
+
+    ui.set_items(@app, widget: w.results, items: hits)?
+    chosen = explorer.chosen_rows(ex)
+    nothing: [i64] = []
+
+    if ex.showing_results
+        chosen_in(@app, widget: w.entries, indices: nothing)?
+        ui.set_selection(@app, widget: w.results, indices: chosen)?
     else
-        ui.set_text(@app, widget: w.header, text: rows.header(ex.settings.order))?
+        chosen_in(@app, widget: w.entries, indices: chosen)?
 
-        for e in listing.rows(ex.listing)
-            lines @ lines.push(rows.entry_row(ex.formats, e: e))
+    ui.set_visible(@app, widget: w.entries, on: !ex.showing_results)?
+    ui.set_visible(@app, widget: w.results, on: ex.showing_results)?
+    return ok()
 
-    ui.set_items(@app, widget: w.entries, items: lines)?
-    ui.set_selection(@app, widget: w.entries, indices: explorer.chosen_rows(ex))?
+# Chooses the rows `indices` of table `widget` where it has others chosen.
+#
+# - `app`: the app.
+# - `widget`: the table.
+# - `indices`: the rows, ascending.
+#
+# Fails as `ui.selection_of` and `ui.set_selection` fail.
+function chosen_in(@app: ui.App, widget: ui.Widget, indices: [i64]) -> ()?
+    if ui.selection_of(app, widget: widget)? != indices
+        ui.set_selection(@app, widget: widget, indices: indices)?
+
     return ok()
 
 # The preview pane: the title, the facts, the picture where there is one
