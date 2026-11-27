@@ -50,6 +50,7 @@ __attribute__((noinline)) static void rs_descend(int64_t k) {
 __attribute__((noinline)) static int64_t rs_deep(int64_t depth, int64_t down, int64_t (*cb)(int64_t)) {
     volatile char pad[2048];
     pad[0] = 1;
+    __asm__ volatile("" ::"r"(pad) : "memory"); /* kept whole at -O2 (step 199p) */
     if (depth > 0) {
         int64_t r = rs_deep(depth - 1, down, cb);
         return r + (int64_t)(pad[0] * 0);

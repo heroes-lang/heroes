@@ -246,7 +246,8 @@ __attribute__((noinline, no_sanitize("address"))) static int hero_rebind_swapcon
     uintptr_t entered = 0;
     int watched = -1;
     unsigned seq = 0;
-    HeroSigSwitch outer = {0, 0, 0, 0, 0};
+    HeroSigSwitch outer;
+    hero_signal_switch_none(&outer);
     if (own != NULL) {
         hero_rebind_switch_begins(own, "swapcontext", (uintptr_t)__builtin_frame_address(0), from, to, &outer);
     }
@@ -345,7 +346,8 @@ __attribute__((noreturn, no_sanitize("address"))) static void hero_rebind__longj
  * refused the context. */
 __attribute__((noinline, no_sanitize("address"))) static int hero_rebind_setcontext(const void *context) {
     HeroSignalStack *own = hero_rebind_own();
-    HeroSigSwitch outer = {0, 0, 0, 0, 0};
+    HeroSigSwitch outer;
+    hero_signal_switch_none(&outer);
     if (own != NULL) {
         hero_rebind_switch_begins(own, "setcontext", (uintptr_t)__builtin_frame_address(0), NULL, context, &outer);
     }
