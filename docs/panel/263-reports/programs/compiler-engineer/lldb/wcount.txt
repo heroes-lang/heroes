@@ -1,0 +1,11 @@
+breakpoint set -n main
+run
+watchpoint set expression -w write -s 8 -- (char *)$sp - 64
+watchpoint set expression -w write -s 8 -- (char *)$sp - 128
+watchpoint set expression -w write -s 8 -- (char *)$sp - 192
+watchpoint set expression -w write -s 8 -- (char *)$sp - 256
+watchpoint set expression -w write -s 8 -- (char *)$sp - 320
+watchpoint set expression -w write -s 8 -- (char *)$sp - 384
+watchpoint list -b
+kill
+quit

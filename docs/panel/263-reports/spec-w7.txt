@@ -1,0 +1,1 @@
+C calls a callback on a stack of this runtime's own, so C that reads its stack inside one (to copy or scan it, say) reads that stack.

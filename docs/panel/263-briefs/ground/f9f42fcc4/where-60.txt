@@ -1,0 +1,8 @@
+Panel 263, the coordinator's repair, 2026-11-27 about 11:01, this Mac, the seed's compiler at f9f42fcc4
+(sources 1e1eb23a1927d35b), builds of reproducer/run.sh in .claude/worktrees/panel263-scratch/rs-f9f/.
+Command, per build: for i in $(seq 1 30); do CO_SAY=1 CO_N=1 timeout -k 5 10 ./<build> | grep '^co:'; done, the
+co: lines read by a python one-liner into (lo - tls, lo % 4 MiB).
+malloc-O2 [(('lo-tls=0xc000', 'lo%4MiB=0xc000'), 30)]
+malloc-O0 [(('lo-tls=0xc000', 'lo%4MiB=0xc000'), 30)]
+So 60 of 60 at lo - 0xC000 in these builds; the critic's first reading counted 58 of 60 in its stage 2 builds, 2 with
+the stack at a 4 MiB boundary (critic-briefs.md section 2.3).

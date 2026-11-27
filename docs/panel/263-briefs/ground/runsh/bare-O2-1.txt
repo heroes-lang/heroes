@@ -1,0 +1,2 @@
+panic: stack exhausted in bare.deep
+exit 134

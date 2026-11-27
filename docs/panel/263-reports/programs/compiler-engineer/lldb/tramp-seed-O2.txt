@@ -1,0 +1,71 @@
+(lldb) target create "lldb/malloc-seed-O2"
+Current executable set to '/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/263-compiler-engineer-scratch/lldb/malloc-seed-O2' (arm64).
+(lldb) command source -s 0 'lldb/tramp.txt'
+Executing commands in '/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/263-compiler-engineer-scratch/lldb/tramp.txt'.
+(lldb) settings set platform.plugin.darwin.ignored-exceptions EXC_BAD_ACCESS|EXC_BAD_INSTRUCTION|EXC_ARITHMETIC
+(lldb) process handle SIGSEGV -s false -p true -n false
+NAME         PASS     STOP     NOTIFY
+===========  =======  =======  =======
+SIGSEGV      true     false    false  
+(lldb) process handle SIGBUS -s false -p true -n false
+NAME         PASS     STOP     NOTIFY
+===========  =======  =======  =======
+SIGBUS       true     false    false  
+(lldb) breakpoint set -n hero_rebind_tramp
+Breakpoint 1: where = malloc-seed-O2`hero_rebind_tramp + 52 at rebind_entries.c:716:5, address = 0x000000010001d7a0
+(lldb) run
+Process 78815 launched: '/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/263-compiler-engineer-scratch/lldb/malloc-seed-O2' (arm64)
+Process 78815 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1
+       frame #0: 0x000000010001d7a0 malloc-seed-O2`hero_rebind_tramp at rebind_entries.c:716:5 [opt]
+   713 	                                                                                  int sig, siginfo_t *info,
+   714 	                                                                                  void *context, uintptr_t token) {
+   715 	    (void)style;
+-> 716 	    hero_rebind_settle();
+    	    ^
+   717 	    HeroSignalStack *own = hero_rebind_own();
+   718 	    uint64_t mine = 0;
+   719 	    bool lost = false;
+Target 0: (malloc-seed-O2) stopped.
+(lldb) register read x0 x1 x2 x3 x4
+warning: malloc-seed-O2 was compiled with optimization - stepping may behave oddly; variables may not be available.
+      x0 = 0x0000000100018260  malloc-seed-O2`hero_signal_probe_plain at sigguard.c:258
+      x1 = 0x0000000000000001
+      x2 = 0x0000000000000010
+      x3 = 0x000000010005c6c0  malloc-seed-O2`hero_signal_probe_stack + 64416
+      x4 = 0x000000010005c728  malloc-seed-O2`hero_signal_probe_stack + 64520
+(lldb) bt 6
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1
+   * frame #0: 0x000000010001d7a0 malloc-seed-O2`hero_rebind_tramp at rebind_entries.c:716:5 [opt]
+     frame #1: 0x00000001929b0960 libsystem_pthread.dylib`pthread_kill + 296
+     frame #2: 0x0000000192a0bbbc libsystem_c.dylib`raise + 32
+     frame #3: 0x00000001000182ec malloc-seed-O2`hero_signal_probe at sigguard.c:299:9 [opt]
+     frame #4: 0x0000000100000c64 malloc-seed-O2`hero_signal_probe_both at sigguard.c:314:5 [opt] [inlined]
+     frame #5: 0x0000000100000c50 malloc-seed-O2`hero_signal_learn at sigguard.c:345:5 [opt]
+(lldb) continue
+Process 78815 resuming
+Process 78815 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1
+       frame #0: 0x000000010001d7a0 malloc-seed-O2`hero_rebind_tramp at rebind_entries.c:716:5 [opt]
+   713 	                                                                                  int sig, siginfo_t *info,
+   714 	                                                                                  void *context, uintptr_t token) {
+   715 	    (void)style;
+-> 716 	    hero_rebind_settle();
+    	    ^
+   717 	    HeroSignalStack *own = hero_rebind_own();
+   718 	    uint64_t mine = 0;
+   719 	    bool lost = false;
+Target 0: (malloc-seed-O2) stopped.
+(lldb) register read x0 x1 x2
+      x0 = 0x000000010001834c  malloc-seed-O2`hero_signal_probe_info at sigguard.c:265
+      x1 = 0x000000000000001e
+      x2 = 0x0000000000000010
+(lldb) bt 4
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1
+   * frame #0: 0x000000010001d7a0 malloc-seed-O2`hero_rebind_tramp at rebind_entries.c:716:5 [opt]
+     frame #1: 0x00000001929b0960 libsystem_pthread.dylib`pthread_kill + 296
+     frame #2: 0x0000000192a0bbbc libsystem_c.dylib`raise + 32
+     frame #3: 0x00000001000182ec malloc-seed-O2`hero_signal_probe at sigguard.c:299:9 [opt]
+(lldb) kill
+Process 78815 exited with status = 9 (0x00000009) killed
+(lldb) quit

@@ -1,0 +1,21 @@
+# fixedbugs, defect d-lane-win-longname-1, 2026-11-27, lane win-paths
+# (M-rebel-library step 212g).
+#
+# SYMPTOM: the shape beside the `use` of the program's own module, through
+# the catalogue: on Windows a package's module whose path passed MAX_PATH from
+# a checkout folder of 22 characters was told `the package has no module ...
+# and that file is not there`, exit 1, where the file was there.
+#
+# FIX: the package's module is told as the path the system will not open,
+# its length and the limit, with no repair, as the program's own is. The
+# words are POSIX's; Windows judges the whole path first, which names the
+# checkout's own folder, so the words are judged off Windows and the mark on
+# all three (`tests/harness/platform_skips.hero`).
+use <pk>/amoduleofapackagewhosefilesnametakestwohundredandfiftysixbytesonemorethanonenameinapathmaytakeonanyofthethreesystemssothesystemwillnotopenitanditsuseistoldsowiththelengthandthelimitandnorepairsincenospellingofthelinemakesthefoldershorterorthenameshort  #~ unknown_package_module
+use <pk>/kept
+
+function main()
+    print(kept.seven())
+    print(
+        amoduleofapackagewhosefilesnametakestwohundredandfiftysixbytesonemorethanonenameinapathmaytakeonanyofthethreesystemssothesystemwillnotopenitanditsuseistoldsowiththelengthandthelimitandnorepairsincenospellingofthelinemakesthefoldershorterorthenameshort.f()
+    )

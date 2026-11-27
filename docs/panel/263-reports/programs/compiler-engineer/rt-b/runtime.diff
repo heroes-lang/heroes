@@ -1,0 +1,21 @@
+--- ../263-compiler-engineer/runtime/heroes_runtime.h	2026-11-27 11:13:55
++++ rt-b/heroes_runtime.h	2026-11-27 11:40:08
+@@ -130,6 +130,8 @@
+  * reaches it, and the end of the program reads what stayed counted. */
+ void hero_callback_entered(const char *what, void *, void *);
+ void hero_callback_left(void);
++/* Panel 263's compiler-engineer's prototype of route (b), unlanded: `fn(arg)` on a stack the runtime owns. */
++void hero_callback_run(void (*fn)(void *), void *arg);
+ void hero_signal_learn(void);
+ 
+ /* `heroes test`'s argument, parsed here so a generated unit still includes this
+--- ../263-compiler-engineer/runtime/runtime.c	2026-11-27 11:13:55
++++ rt-b/runtime.c	2026-11-27 11:40:08
+@@ -232,6 +232,7 @@
+  * makes when C calls back from another one (panel 111 R9). Needs only panic.c;
+  * claimed once from hero_args_set, in os.c below, for stack.c's own reason. */
+ #include "parts/thread.c"
++#include "parts/cbstack.c"
+ 
+ /* Starting a thread and waiting for it (design.md Part 7.13). Immediately
+  * after `thread.c` because it calls that file's `hero_thread_claim` on the

@@ -179,7 +179,9 @@ function run_test(path: str, s: source.Source, inv: argv.Invocation, t: toolchai
     # `cli/test_outcome.hero`): a file of this process's own, named as the
     # binary's second word and removed before each test, so two runs of one
     # program never read each other's and no test reads the one before it.
-    told = publish.private_name(path: made.must().binary + ".skip")
+    # Named beside the binary and not after it (defect d-lane-win-longname-2),
+    # so its path is no longer than the binary's whatever the program's name.
+    told = publish.private_name(path: publish.beside(path: made.must().binary, name: "skip"))
 
     # `--only` runs the tests whose title holds its text, each by its index
     # as the binary takes it (issue 1075, panel 018): two titles may share

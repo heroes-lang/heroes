@@ -1,0 +1,12 @@
+settings set platform.plugin.darwin.ignored-exceptions EXC_BAD_ACCESS|EXC_BAD_INSTRUCTION|EXC_ARITHMETIC
+process handle SIGSEGV -s false -p true -n false
+process handle SIGBUS -s false -p true -n false
+breakpoint set -n hero_rebind_tramp
+run
+register read x0 x1 x2 x3 x4
+bt 6
+continue
+register read x0 x1 x2
+bt 4
+kill
+quit

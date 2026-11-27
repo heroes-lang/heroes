@@ -23,6 +23,7 @@ use model/explorer
 use ops/jobs
 use search/query
 use views/dialogs
+use views/folders
 use views/show
 use views/window
 
@@ -47,6 +48,8 @@ record Controller
     w: window.Widgets
     # Its menus.
     menus: window.Menus
+    # The folders the tree's items show.
+    folders: folders.Shown
     # The explorer's state.
     ex: explorer.Explorer
     # The question window open; none where none is.
@@ -98,6 +101,7 @@ function new_controller(app: ui.App, ex: explorer.Explorer) -> Controller?
         app: held,
         w: made.w,
         menus: made.menus,
+        folders: folders.nothing_shown(),
         ex: ex,
         asks: no_asks,
         progress: no_progress,
@@ -141,7 +145,7 @@ function window_parts(@app: ui.App) -> Parts?
 function redraw(@c: Controller)
     follow_folder(@c)
 
-    match show.sync(@c.app, @c.menus, w: c.w, ex: c.ex)
+    match show.sync(@c.app, @c.menus, @c.folders, w: c.w, ex: c.ex)
         .ok _  => _ = 0
         .err x => c.ex.status @ f"the window could not be drawn: {x.msg}"
 

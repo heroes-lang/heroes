@@ -1,0 +1,130 @@
+(lldb) target create "rs/malloc-O2"
+Current executable set to '/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/263-compiler-engineer-scratch/rs/malloc-O2' (arm64).
+(lldb) command source -s 0 'lldb/cmds.txt'
+Executing commands in '/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/263-compiler-engineer-scratch/lldb/cmds.txt'.
+(lldb) command script import lldb/watch.py
+(lldb) breakpoint set -n hero_thread_guard
+Breakpoint 1: where = malloc-O2`hero_thread_guard + 12 at thread.c:146:9, address = 0x0000000100002020
+(lldb) run
+warning: malloc-O2 was compiled with optimization - stepping may behave oddly; variables may not be available.
+Process 75097 launched: '/Users/joseph/Temp/heroes/heroes-lang/.claude/worktrees/263-compiler-engineer-scratch/rs/malloc-O2' (arm64)
+Process 75097 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = breakpoint 1.1
+       frame #0: 0x0000000100002020 malloc-O2`hero_thread_guard at thread.c:146:9 [opt]
+   143 	}
+   144 	
+   145 	void hero_thread_guard(const char *what) {
+-> 146 	    if (hero_thread_is_home) return;
+    	        ^
+   147 	    hero_thread_refuse(what);
+   148 	}
+Target 0: (malloc-O2) stopped.
+(lldb) command script add -f watch.go p263go
+(lldb) p263go
+Watchpoint created: Watchpoint 1: addr = 0x74db410029 size = 1 state = enabled type = w
+    watchpoint spec = '0x74db410029'
+    watchpoint resources:
+       #0: addr = 0x74db410029 size = 1
+Watchpoint 1 hit:
+    
+new value: 1
+Watchpoint created: Watchpoint 2: addr = 0x74db4100d0 size = 8 state = enabled type = w
+    watchpoint spec = '0x74db4100d0'
+    watchpoint resources:
+       #1: addr = 0x74db4100d0 size = 8
+Watchpoint 2 hit:
+    
+new value: 4295561056
+p263: hero_thread_is_home's per-thread address 0x74db410029 (success)
+p263: hero_callback_mine's per-thread address 0x74db4100d0 (success)
+(lldb) breakpoint delete 1
+1 breakpoints deleted; 0 breakpoint locations disabled.
+(lldb) register read sp
+      sp = 0x00000074db45bfa0
+(lldb) continue
+
+Watchpoint 2 hit:
+old value: 4295561056
+new value: 4295107876
+Process 75097 resuming
+Process 75097 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = watchpoint 2
+       frame #0: 0x0000000100022384 malloc-O2`h_malloc_deep at malloc.hero:8 [opt]
+   5   	extern "co.h"
+   6   	    function co_run(kind: i64, cb: (function(i64) -> i64), n: i64) -> i64
+   7   	
+-> 8   	function deep(n: i64) -> i64
+   9   	    if n == 0
+   10  	        return 1
+   11  	    r = deep(n - 1)
+Target 0: (malloc-O2) stopped.
+(lldb) bt 4
+* thread #1, queue = 'com.apple.main-thread', stop reason = watchpoint 2
+   * frame #0: 0x0000000100022384 malloc-O2`h_malloc_deep at malloc.hero:8 [opt]
+     frame #1: 0x00000001000223ac malloc-O2`h_malloc_deep at malloc.hero:11:150 [opt]
+     frame #2: 0x00000001000223ac malloc-O2`h_malloc_deep at malloc.hero:11:150 [opt]
+     frame #3: 0x00000001000223ac malloc-O2`h_malloc_deep at malloc.hero:11:150 [opt]
+(lldb) register read pc sp x29 x30
+      pc = 0x0000000100022384  malloc-O2`h_malloc_deep + 4 at malloc.hero:8
+      sp = 0x00000074db4100d0
+      fp = 0x00000074db410100
+      lr = 0x00000001000223ac  malloc-O2`h_malloc_deep + 44 at malloc.hero:12:503
+(lldb) disassemble -p -c 4
+malloc-O2`h_malloc_deep:
+->  0x100022384 <+4>:  stp    x29, x30, [sp, #0x10]
+    0x100022388 <+8>:  add    x29, sp, #0x10
+    0x10002238c <+12>: mov    x19, x0
+    0x100022390 <+16>: adrp   x0, 9
+(lldb) continue
+
+Watchpoint 1 hit:
+old value: 1
+new value: 2594073385382183459
+Process 75097 resuming
+Process 75097 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = watchpoint 1
+       frame #0: 0x0000000100002018 malloc-O2`hero_thread_guard at thread.c:145 [opt]
+   142 	    hero_signal_stop(said, sizeof said / sizeof said[0]);
+   143 	}
+   144 	
+-> 145 	void hero_thread_guard(const char *what) {
+   146 	    if (hero_thread_is_home) return;
+   147 	    hero_thread_refuse(what);
+   148 	}
+Target 0: (malloc-O2) stopped.
+(lldb) bt 4
+* thread #1, queue = 'com.apple.main-thread', stop reason = watchpoint 1
+   * frame #0: 0x0000000100002018 malloc-O2`hero_thread_guard at thread.c:145 [opt]
+     frame #1: 0x000000010002239c malloc-O2`h_malloc_deep at malloc.hero:8:39 [opt]
+     frame #2: 0x00000001000223ac malloc-O2`h_malloc_deep at malloc.hero:11:150 [opt]
+     frame #3: 0x00000001000223ac malloc-O2`h_malloc_deep at malloc.hero:11:150 [opt]
+(lldb) register read pc sp x29
+      pc = 0x0000000100002018  malloc-O2`hero_thread_guard + 4 at thread.c:145
+      sp = 0x00000074db410020
+      fp = 0x00000074db410040
+(lldb) disassemble -p -c 4
+malloc-O2`hero_thread_guard:
+->  0x100002018 <+4>:  mov    x29, sp
+    0x10000201c <+8>:  mov    x8, x0
+    0x100002020 <+12>: adrp   x0, 46
+    0x100002024 <+16>: add    x0, x0, #0x200            ; hero_thread_is_home
+(lldb) continue
+panic: malloc.deep ran on a thread this program did not start: C called it back from a thread of its own, where this runtime's values are not safe. To run work on another thread, start it with `hero_thread_spawn` from `hero_os.h`, whose function runs on a thread this program owns. To stop on Ctrl-C or SIGTERM, give C no Heroes function as a signal handler: the platform layer's waiting calls, in `hero_net.h`, end with a stop the program reads
+Process 75097 resuming
+Process 75097 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = signal SIGABRT
+       frame #0: 0x0000000192974650 libsystem_kernel.dylib`__pthread_kill + 8
+libsystem_kernel.dylib`__pthread_kill:
+->  0x192974650 <+8>:  b.lo   0x192974670               ; <+40>
+    0x192974654 <+12>: pacibsp 
+    0x192974658 <+16>: stp    x29, x30, [sp, #-0x10]!
+    0x19297465c <+20>: mov    x29, sp
+Target 0: (malloc-O2) stopped.
+(lldb) bt 3
+* thread #1, queue = 'com.apple.main-thread', stop reason = signal SIGABRT
+   * frame #0: 0x0000000192974650 libsystem_kernel.dylib`__pthread_kill + 8
+     frame #1: 0x00000001929b0960 libsystem_pthread.dylib`pthread_kill + 296
+     frame #2: 0x0000000192a0bbbc libsystem_c.dylib`raise + 32
+(lldb) kill
+Process 75097 exited with status = 9 (0x00000009) killed
+(lldb) quit

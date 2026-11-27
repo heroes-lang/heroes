@@ -331,6 +331,13 @@ function order_by(@ex: Explorer, column: sorting.Column)
         order.column @ column
         order.descending @ false
 
+    set_order(@ex, order: order)
+
+# Orders the entries as `order` says, as a click on a column's header asks.
+#
+# - `ex`: the explorer.
+# - `order`: the order.
+function set_order(@ex: Explorer, order: sorting.Order)
     ex.settings.order @ order
     ex.listing @ listing.resorted(ex.listing, f: ex.formats, order: order)
 

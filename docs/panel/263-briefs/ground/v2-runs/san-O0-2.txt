@@ -1,0 +1,7 @@
+AddressSanitizer:DEADLYSIGNAL
+=================================================================
+==30529==ERROR: AddressSanitizer: stack-overflow on address 0x00010065bff0 (pc 0x00010052c3cc bp 0x00010065c0b0 sp 0x00010065bfb0 T0)
+AddressSanitizer: CHECK failed: sanitizer_stacktrace.cpp:78 "((stack_top)) > ((stack_bottom))" (0x987fa6, 0x1008ec000) (tid=9641410)
+    <empty stack>
+
+exit 134

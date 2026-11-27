@@ -1,0 +1,256 @@
+./runc1.sh: line 5: 83893 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-O0 #1                 exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 83935 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-O0 #2                 exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 83960 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-O0 #3                 exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84001 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-O2 #1                 exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84051 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-O2 #2                 exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84067 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-O2 #3                 exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84088 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+guarded-O0 #1                exit 134  panic: stack exhausted in guarded.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84150 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+guarded-O0 #2                exit 134  panic: stack exhausted in guarded.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84206 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+guarded-O0 #3                exit 134  panic: stack exhausted in guarded.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84223 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+guarded-O2 #1                exit 134  panic: stack exhausted in guarded.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84270 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+guarded-O2 #2                exit 134  panic: stack exhausted in guarded.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84286 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+guarded-O2 #3                exit 134  panic: stack exhausted in guarded.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84304 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+bare-O0 #1                   exit 134  panic: stack exhausted in bare.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84333 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+bare-O0 #2                   exit 134  panic: stack exhausted in bare.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84351 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+bare-O0 #3                   exit 134  panic: stack exhausted in bare.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84372 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+bare-O2 #1                   exit 134  panic: stack exhausted in bare.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84436 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+bare-O2 #2                   exit 134  panic: stack exhausted in bare.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84450 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+bare-O2 #3                   exit 134  panic: stack exhausted in bare.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84477 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+thread-O0 #1                 exit 134  panic: stack exhausted in thread.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84541 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+thread-O0 #2                 exit 134  panic: stack exhausted in thread.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84565 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+thread-O0 #3                 exit 134  panic: stack exhausted in thread.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84592 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+thread-O2 #1                 exit 134  panic: stack exhausted in thread.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84633 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+thread-O2 #2                 exit 134  panic: stack exhausted in thread.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84649 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+thread-O2 #3                 exit 134  panic: stack exhausted in thread.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84665 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+static-O0 #1                 exit 134  panic: stack exhausted in static.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84723 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+static-O0 #2                 exit 134  panic: stack exhausted in static.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84740 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+static-O0 #3                 exit 134  panic: stack exhausted in static.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84751 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+static-O2 #1                 exit 134  panic: stack exhausted in static.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84783 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+static-O2 #2                 exit 134  panic: stack exhausted in static.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84797 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+static-O2 #3                 exit 134  panic: stack exhausted in static.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 84816 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-san-O0 #1             exit 134  ==84819==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016f204000; bottom 0x000101428000; size: 0x00006ddd
+./runc1.sh: line 5: 84898 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+static-san-O0 #1             exit 134  ==84899==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016b894000; bottom 0x0001046ac000; size: 0x0000671e
+./runc1.sh: line 5: 84957 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-san-O0 #2             exit 134  ==84961==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016f960000; bottom 0x000100774000; size: 0x00006f1e
+./runc1.sh: line 5: 84976 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+static-san-O0 #2             exit 134  ==84978==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016b994000; bottom 0x0001045ac000; size: 0x0000673e
+./runc1.sh: line 5: 84996 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-san-O0 #3             exit 134  ==84998==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016f444000; bottom 0x000101504000; size: 0x00006df4
+./runc1.sh: line 5: 85013 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+static-san-O0 #3             exit 134  ==85014==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016f6dc000; bottom 0x000100864000; size: 0x00006ee7
+./runc1.sh: line 5: 85038 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-san-O2 #1             exit 134  ==85039==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016d488000; bottom 0x000102bdc000; size: 0x00006a8a
+./runc1.sh: line 5: 85084 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+static-san-O2 #1             exit 134  ==85086==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016b778000; bottom 0x000104764000; size: 0x00006701
+./runc1.sh: line 5: 85116 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-san-O2 #2             exit 134  ==85118==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016f6a0000; bottom 0x000100c04000; size: 0x00006ea9
+./runc1.sh: line 5: 85134 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+static-san-O2 #2             exit 134  ==85136==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016f85c000; bottom 0x000100680000; size: 0x00006f1d
+./runc1.sh: line 5: 85151 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-san-O2 #3             exit 134  ==85152==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016d940000; bottom 0x000102c80000; size: 0x00006acc
+./runc1.sh: line 5: 85165 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+static-san-O2 #3             exit 134  ==85166==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016b2ac000; bottom 0x000104c30000; size: 0x00006667
+== canary, plain and sanitized, CO_N
+canary-O2 n7000 #1           exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it|depth reached: 544920|
+canary-O2 n7000 #2           exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it|depth reached: 544920|
+canary-O2 n7000 #3           exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it|depth reached: 544920|
+canary-san-O2 n7000 #1       exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it|depth reached: 544920|
+canary-san-O2 n7000 #2       exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it|depth reached: 544920|
+canary-san-O2 n7000 #3       exit 0    co: 0 bytes of the 262144 below the stack were written, the lowest 0 bytes below it|depth reached: 544920|
+./runc1.sh: line 5: 85279 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O2 n9000 #1           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 85303 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O2 n9000 #2           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 85318 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O2 n9000 #3           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 85333 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O2 n9000 #1       exit 134  ==85335==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016d3b0000; bottom 0x000102cf4000; size: 0x00006a6b
+./runc1.sh: line 5: 85351 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O2 n9000 #2       exit 134  ==85353==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016da6c000; bottom 0x000102b90000; size: 0x00006aed
+./runc1.sh: line 5: 85370 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O2 n9000 #3       exit 134  ==85371==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016fa10000; bottom 0x000100bd8000; size: 0x00006ee3
+./runc1.sh: line 5: 85389 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O2 n10000 #1          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 85407 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O2 n10000 #2          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 85426 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O2 n10000 #3          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 85448 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O2 n10000 #1      exit 134  ==85450==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016f69c000; bottom 0x000100a08000; size: 0x00006ec9
+./runc1.sh: line 5: 85471 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O2 n10000 #2      exit 134  ==85472==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016dc6c000; bottom 0x000102438000; size: 0x00006b83
+./runc1.sh: line 5: 85490 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O2 n10000 #3      exit 134  ==85491==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016dc44000; bottom 0x000102460000; size: 0x00006b7e
+./runc1.sh: line 5: 85513 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O2 n14000 #1          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 85532 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O2 n14000 #2          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 85546 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O2 n14000 #3          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 85568 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O2 n14000 #1      exit 134  ==85569==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016f5c8000; bottom 0x000100c44000; size: 0x00006e98
+./runc1.sh: line 5: 85584 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O2 n14000 #2      exit 134  ==85586==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016d394000; bottom 0x0001033a0000; size: 0x000069ff
+./runc1.sh: line 5: 85599 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O2 n14000 #3      exit 134  ==85601==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016f8f0000; bottom 0x0001007b4000; size: 0x00006f13
+./runc1.sh: line 5: 85630 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O2 n50000 #1          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 85644 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O2 n50000 #2          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 85665 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O2 n50000 #3          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 85691 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O2 n50000 #1      exit 134  ==85692==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016dcf4000; bottom 0x0001023b0000; size: 0x00006b94
+./runc1.sh: line 5: 85723 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O2 n50000 #2      exit 134  ==85725==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016af94000; bottom 0x000105110000; size: 0x000065e8
+./runc1.sh: line 5: 85750 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O2 n50000 #3      exit 134  ==85752==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016d3dc000; bottom 0x0001033b4000; size: 0x00006a02
+./runc1.sh: line 5: 85774 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O0 n1200 #1           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 85825 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O0 n1200 #2           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 85845 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O0 n1200 #3           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 85879 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O0 n1200 #1       exit 134  ==85880==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016d594000; bottom 0x000102b80000; size: 0x00006aa1
+./runc1.sh: line 5: 85920 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O0 n1200 #2       exit 134  ==85921==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016f398000; bottom 0x000100d7c000; size: 0x00006e61
+./runc1.sh: line 5: 85934 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O0 n1200 #3       exit 134  ==85936==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016d830000; bottom 0x0001029e4000; size: 0x00006ae4
+./runc1.sh: line 5: 85965 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O0 n1500 #1           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 85985 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O0 n1500 #2           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86001 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O0 n1500 #3           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86017 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O0 n1500 #1       exit 134  ==86018==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016fa18000; bottom 0x000100f44000; size: 0x00006ead
+./runc1.sh: line 5: 86037 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O0 n1500 #2       exit 134  ==86038==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016bdc4000; bottom 0x000104450000; size: 0x00006797
+./runc1.sh: line 5: 86058 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O0 n1500 #3       exit 134  ==86059==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016d3ac000; bottom 0x000102d68000; size: 0x00006a64
+./runc1.sh: line 5: 86078 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O0 n2000 #1           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86097 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O0 n2000 #2           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86115 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O0 n2000 #3           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86136 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O0 n2000 #1       exit 134  ==86138==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016b958000; bottom 0x0001048bc000; size: 0x00006709
+./runc1.sh: line 5: 86156 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O0 n2000 #2       exit 134  ==86157==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016ce58000; bottom 0x0001032bc000; size: 0x000069b9
+./runc1.sh: line 5: 86175 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O0 n2000 #3       exit 134  ==86177==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016b068000; bottom 0x000105944000; size: 0x00006572
+./runc1.sh: line 5: 86201 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O0 n3000 #1           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86218 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O0 n3000 #2           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86236 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O0 n3000 #3           exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86255 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O0 n3000 #1       exit 134  ==86257==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016d7e4000; bottom 0x000102a30000; size: 0x00006adb
+./runc1.sh: line 5: 86273 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O0 n3000 #2       exit 134  ==86274==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016f1dc000; bottom 0x0001014e8000; size: 0x00006dcf
+./runc1.sh: line 5: 86290 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O0 n3000 #3       exit 134  ==86291==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016bc58000; bottom 0x0001044bc000; size: 0x00006779
+./runc1.sh: line 5: 86310 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O0 n30000 #1          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86325 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O0 n30000 #2          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86343 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-O0 n30000 #3          exit 134  panic: stack exhausted in canary.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86363 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O0 n30000 #1      exit 134  ==86364==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016fcd0000; bottom 0x000100ae8000; size: 0x00006f1e
+./runc1.sh: line 5: 86380 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O0 n30000 #2      exit 134  ==86381==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016b478000; bottom 0x000105544000; size: 0x000065f3
+./runc1.sh: line 5: 86399 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+canary-san-O0 n30000 #3      exit 134  ==86400==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016f5c8000; bottom 0x0001011d4000; size: 0x00006e3f
+== malloc by CO_N
+./runc1.sh: line 5: 86417 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-O0 n1600              exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86432 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-san-O0 n1600          exit 134  ==86435==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016f090000; bottom 0x000101144000; size: 0x00006df4
+./runc1.sh: line 5: 86447 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-O0 n2000              exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86467 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-san-O0 n2000          exit 134  ==86469==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016fcbc000; bottom 0x000100518000; size: 0x00006f7a
+./runc1.sh: line 5: 86482 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-O0 n3000              exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86495 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-san-O0 n3000          exit 134  ==86496==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016ddf0000; bottom 0x0001022e4000; size: 0x00006bb0
+./runc1.sh: line 5: 86514 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-O0 n10000             exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86523 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-san-O0 n10000         exit 134  ==86526==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016f124000; bottom 0x000100fb0000; size: 0x00006e17
+./runc1.sh: line 5: 86544 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-O0 n20000             exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86561 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-san-O0 n20000         exit 134  ==86562==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016d948000; bottom 0x000102cfc000; size: 0x00006ac4
+./runc1.sh: line 5: 86576 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-O0 n30000             exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86591 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-san-O0 n30000         exit 134  ==86592==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016bb4c000; bottom 0x000104588000; size: 0x0000675c
+./runc1.sh: line 5: 86607 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-O0 n50000             exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86623 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-san-O0 n50000         exit 134  ==86624==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016d1c4000; bottom 0x000103350000; size: 0x000069e7
+./runc1.sh: line 5: 86642 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-O2 n9600              exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86656 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-san-O2 n9600          exit 134  ==86657==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016b0c4000; bottom 0x000105508000; size: 0x000065bb
+./runc1.sh: line 5: 86673 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-O2 n9800              exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86695 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-san-O2 n9800          exit 134  ==86696==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016fbdc000; bottom 0x0001009fc000; size: 0x00006f1e
+./runc1.sh: line 5: 86711 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-O2 n10000             exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86723 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-san-O2 n10000         exit 134  ==86726==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016f48c000; bottom 0x000101054000; size: 0x00006e43
+./runc1.sh: line 5: 86745 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-O2 n14000             exit 134  panic: stack exhausted in malloc.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86763 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+malloc-san-O2 n14000         exit 134  ==86764==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0x00016f254000; bottom 0x000100f10000; size: 0x00006e34
+thread-O0 n1                 exit 0    depth reached: 4|
+static-O0 n1                 exit 0    depth reached: 4|
+static-O2 n1                 exit 0    depth reached: 4|
+thread-O0 n1300              exit 0    depth reached: 651509|
+./runc1.sh: line 5: 86851 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+static-O0 n1300              exit 134  panic: stack exhausted in static.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+static-O2 n1300              exit 0    depth reached: 651509|
+thread-O0 n9600              exit 0    depth reached: 480257|
+./runc1.sh: line 5: 86906 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+static-O0 n9600              exit 134  panic: stack exhausted in static.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|
+./runc1.sh: line 5: 86931 Abort trap: 6           timeout -k 5 20 "$D/$2" 2>&1
+static-O2 n9600              exit 134  panic: stack exhausted in static.deep (a stack check at its entry: the stack it runs on has less than its reserve left)|

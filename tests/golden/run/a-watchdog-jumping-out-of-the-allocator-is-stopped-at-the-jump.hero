@@ -1,0 +1,23 @@
+# Panel 262's R5 (lane land262, step 215a): panel 258's stop, which spec
+# § 13 promises: where C jumps out of a signal handler whose signal
+# interrupted this runtime's allocator, the program aborts at the jump,
+# saying so, where this runtime saw the handler begin and the jump. The
+# watchdog of defect 2873's case with its handler installed by `sigaction`,
+# its alarm repeating every 200 microseconds, each `siglongjmp`ing out of a
+# loop of C calling a Heroes function that only allocates, until one lands
+# inside this runtime's allocator.
+# MUST STOP, at the jump, in words naming the jump out of the allocator.
+extern "a-watchdog-jumping-out-of-the-allocator.h"
+    function wds_run(cb: (function(i64) -> i64)) -> i64
+
+function work(n: i64) -> i64
+    xs: [i64] @= []
+
+    for i in range(from: 0, to: 64)
+        xs @ xs.push(i + n)
+
+    return len(xs)
+
+function main()
+    print("the watchdog starts")
+    print("a million alarms and none inside the allocator: ", wds_run(cb: work))

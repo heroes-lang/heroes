@@ -1,0 +1,8 @@
+AddressSanitizer:DEADLYSIGNAL
+=================================================================
+==30621==ERROR: AddressSanitizer: stack-overflow on address 0x0001032bbfc0 (pc 0x000102f2c3cc bp 0x0001032bc080 sp 0x0001032bbf80 T0)
+    #0 0x000102f2c3cc in h_malloc_deep malloc.hero:8
+
+SUMMARY: AddressSanitizer: stack-overflow malloc.hero:8 in h_malloc_deep
+==30621==ABORTING
+exit 134

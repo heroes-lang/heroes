@@ -101,6 +101,9 @@ constant SECOND_INTERRUPT_ON_WINDOWS: str
 constant CONNECT_WAKE_ON_WINDOWS: str
     "the case sends a connect the poller's wake with nothing behind it, and on Windows a connect joins no waiter list: it waits in slices, `hero_net_wait_slice`, one `WSAPoll` over its own socket, so no wake but the system's reaches it and the case's header answers 0 there (read in `runtime/platform/hero_net.c`, unrun on the box); the loop's order it pins is the same lines on every platform, the wait's one line apart (M-rebel-library step 87b)"
 
+constant WHOLE_PATH_ON_WINDOWS: str
+    "Windows judges a path whole, so a source whose name takes 256 bytes is told by its whole path, which names the checkout's own folder and its length, `C:\\w\\...\\<name>.hero is 300 characters, past the 259 Windows takes in a path` from a folder of 18 characters (the Windows box, 2026-11-27, step 212g; 399 for the package's case), where this Mac and Linux tell the name past NAME_MAX's 255 in words of the case alone; the words are judged off Windows, and the case's mark, the same code there, on all three (defect d-lane-win-longname-1)"
+
 constant SIGNAL_SETS_ON_WINDOWS: str
     "POSIX's signal sets, `sigset_t` and the five functions over it, are POSIX's and not C11's, whose `signal.h` holds `signal` and `raise` alone (C11 7.14, read); the Windows target's C library is C's, and its build refuses the case at each of the five, `signal.h` declares no `sigemptyset` (`ffi_unknown_name`, the CI's Windows x86-64 leg, run 43571761187, 2026-11-14), so it is built nowhere there, and its shape is judged on every platform by `fixedbugs-2511-a-function-behind-a-macro-that-assigns-through-its-argument-is-called` (defect 2511, lane b35-ffi; defect 2523)"
 
@@ -149,6 +152,9 @@ constant DOORS_BY_NAME_ON_WINDOWS: str
 constant POSIX_PAGES_AND_CONTEXTS_ON_WINDOWS: str
     "the case's header binds POSIX's `mmap`, `munmap`, `mprotect`, `sigaltstack` or `ucontext_t` and its functions, none of C11's (C11 7.13 and 7.14 hold `setjmp` and `signal` alone, read), and the Windows target's C refuses it at `sys/mman.h` or `ucontext.h` not found (`zig cc` 0.15.2 for x86_64-windows-gnu and aarch64-windows-gnu on this Mac, 2026-11-25, the header compiled alone; MSVC's headers, the CI's Windows target, unrun), so it is built nowhere there; what it asks of the runtime is the POSIX route's (defect d-lane-d2745-1, lane ctx-after)"
 
+constant ALARM_ON_WINDOWS: str
+    "`setitimer` and its `sys/time.h`, `sigaction`, `sigsetjmp` and `siglongjmp` are POSIX's and not C11's (C11 7.13 and 7.14 hold `setjmp`, `longjmp`, `signal` and `raise` alone, read), and the box's compiler refuses the case at its header's `#include <sys/time.h>`, not on its include path (`ffi_missing_header`, `heroes.exe build` at `sources 7abf0f6d77ca4327`, clang for x86_64-pc-windows-msvc, run on the box 2026-11-27 by lane land262), so it is built nowhere there; no alarm of POSIX's reaches a Windows program, and a jump out of the handler it interrupts is the POSIX route's (panel 262's R5, panel 258's stop)"
+
 # The cases and rows whose shape Windows cannot hold, by the name the report
 # gives them: each builds there, or is refused there in other words, so only
 # the forms that judge what it does skip it (every `run` case here was built,
@@ -180,6 +186,8 @@ function windows() -> [Skip]
         Skip(name: "the-platform-layer-ends-at-a-second-request-to-end", why: SECOND_EVENT_ON_WINDOWS)
         Skip(name: "the-platform-layer-ends-at-a-second-interrupt-after-the-program-asked-its-stop", why: SECOND_INTERRUPT_ON_WINDOWS)
         Skip(name: "the-platform-layer-never-takes-a-connect-that-failed-between-its-two-looks-for-one-made", why: CONNECT_WAKE_ON_WINDOWS)
+        Skip(name: "fixedbugs-a-use-whose-file-takes-a-name-of-256-bytes-is-told-so-with-the-limit-and-no-repair", why: WHOLE_PATH_ON_WINDOWS)
+        Skip(name: "fixedbugs-a-package-module-whose-file-takes-a-name-of-256-bytes-is-told-so-with-the-limit", why: WHOLE_PATH_ON_WINDOWS)
     ]
 
 # The programs every other platform builds and the Windows target's C refuses,
@@ -567,7 +575,7 @@ test "every name skipped on Windows is a case or a surface row that exists"
     surface = read_file("tests/harness/suite_surface.hero")
     assert !surface.is_err()
     assert strings.contains(s: surface.must(), substr: "row(name: \"" + windows()[1].name + "\"")
-    assert windows().len() == 22
+    assert windows().len() == 24
 
     for one in windows().slice(from: 5, to: 17)
         assert shell.exists("tests/golden/run/" + one.name + ".hero")
@@ -589,6 +597,12 @@ test "every name skipped on Windows is a case or a surface row that exists"
     # connect waiting in slices and joining no waiter list (M-rebel-library
     # step 87b).
     assert shell.exists("tests/golden/run/" + windows()[21].name + ".hero")
+
+    # A source whose name takes 256 bytes, its words POSIX's, and Windows'
+    # naming the checkout's folder, which a path is judged whole by there
+    # (defect d-lane-win-longname-1, step 212g): a `use` case and a folder case.
+    assert shell.exists("tests/golden/unsupported/" + windows()[22].name + ".hero")
+    assert shell.exists("tests/golden/unsupported/" + windows()[23].name + ".case/main.hero")
 
     # Each case named for one platform's words is a case that exists, so a
     # renamed one is judged rather than skipped in silence (defect 2053).

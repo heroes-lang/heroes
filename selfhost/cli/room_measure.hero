@@ -1,0 +1,322 @@
+# How long a folder clang searches may be at its place in the search and
+# still leave room for every name clang looks for inside it, asked of clang
+# itself (design.md §1.12, §4.19; defect d-lane-win-paths-1, M-rebel-library
+# step 212i). `cli/search_room.hero` asks it of a folder within one name of
+# the limit, and tells what it answers.
+#
+# **Which names, only clang can say**: the C library's headers ask after
+# files they never read (`__has_include`), so no listing of what a unit
+# reads holds them. Measured on this Mac: the longest name clang looks for
+# there is `AvailabilityProhibitedInternal.h`, 32 bytes, a file read by
+# none, and in the Linux arm64 image `__stddef_header_macro.h`, 23. So each
+# such folder is asked of clang, before the first clang that searches it
+# (`shadowed.checked`): a folder of the same length, made under `build/`,
+# stands at its place in the search, and the unit's opening and the
+# program's groups (`shadowed_tree.text`) are listed under the build's own
+# words, `-MG` writing a header no folder holds as its name. **That folder
+# holds the files of the real one clang reads**, each name such a listing
+# writes that the real folder holds given to it as a second name, listing
+# again until none is new (`held`): in the Linux arm64 image a header of the
+# program's own beside `main.hero` that includes `<stdio.h>` makes clang look
+# for `__stdarg___gnuc_va_list.h`, two bytes longer than any name the opening
+# alone asks after, and an empty folder there passed what clang refused,
+# `ffi_header_refused` blaming the header (measured with this module's first
+# form). Listed, the folder leaves room; refused where a short folder lists,
+# it does not, and the longest that would is found by halving. A listing a
+# short folder cannot make either is no verdict.
+#
+# **What the stand-in folder cannot hold**: a file of the real folder an
+# include names from the root or by climbing out of it (`..`), and one a
+# header only asks after with `__has_include`, which no listing names; a
+# name only such a file makes clang look for is not seen here, and clang
+# still stops on it at the unit's compile. No program measured reaches it.
+
+use cli/compiling
+use cli/deps
+use cli/files
+use cli/path_room
+use cli/process
+use cli/publish
+use cli/response_file
+use cli/strings
+use module/reading as file_reading
+
+# `folder` as clang joins a name to it: with no `/` at its end, since clang
+# writes one between the two only where the folder has none.
+function core(folder: str) -> str
+    if folder.len() > 1 && folder[folder.len() - 1] == '/'
+        return folder.slice(from: 0, to: folder.len() - 1)
+    return folder
+
+# Whether `list` holds `one`.
+function among(list: [str], one: str) -> bool
+    for item in list
+        if item == one
+            return true
+
+    return false
+
+# `c` with each folder `pads` names searched at the place it stood, as the
+# words spell it (`search_room.folders`).
+function padded(c: compiling.Compiling, pads: {str: str}) -> compiling.Compiling
+    named: [str] @= []
+
+    for one in c.search_include
+        named @ named.push(pads[one].default(one))
+
+    words: [str] @= []
+
+    for word in c.pkgconfig_flags
+        if word.len() > 2 && (strings.starts_with(text: word, prefix: "-I") || strings.starts_with(text: word, prefix: "-F"))
+            dir = word.slice(from: 2, to: word.len())
+            words @ words.push(word.slice(from: 0, to: 2) + pads[dir].default(dir))
+        else
+            words @ words.push(word)
+
+    return compiling.Compiling(
+        level: c.level,
+        sanitize: c.sanitize,
+        search_include: named,
+        pkgconfig_flags: words,
+        runtime: c.runtime,
+        source_dir: pads[c.source_dir].default(c.source_dir)
+    )
+
+# For each folder of `risky` that leaves no room, the longest folder at its
+# place that would: nothing where each fits, or where `text` is not listed
+# with a short folder at each place, which is no verdict. A folder standing
+# in another's place holds that folder's files clang reads (`held`), so what
+# they include is looked for there too. Every folder made here lies under
+# `base`, which the caller removes.
+function rooms(base: str, under: compiling.Compiling, risky: [str], text: str) -> {str: i64}
+    out: {str: i64} @= {}
+    unit = base + "/room.c"
+
+    if process.mkdir_all(base).is_err() || publish.write_whole(path: unit, text: text, keyed: true).is_err()
+        return out
+    short: {str: str} @= {}
+
+    for at in range(from: 0, to: risky.len())
+        low = made(base: base, tag: "s" + at.to_str(), bytes: 0)
+
+        if low.is_err()
+            return out
+        short[risky[at]] @ low.must()
+
+    names = held(base: base, under: under, short: short, risky: risky, unit: unit)
+
+    if names.is_err()
+        return out
+    whole: {str: str} @= {}
+
+    for at in range(from: 0, to: risky.len())
+        high = filled(
+            base: base,
+            tag: "w" + at.to_str(),
+            bytes: core(risky[at]).len(),
+            folder: risky[at],
+            names: names.must()
+        )
+
+        if high.is_err()
+            return out
+        whole[risky[at]] @ high.must()
+
+    # Each folder at its own length: listed, every one leaves room.
+    if !refused(listing(base: base, c: padded(under, pads: whole), unit: unit))
+        return out
+
+    for at in range(from: 0, to: risky.len())
+        found = longest(
+            base: base,
+            under: under,
+            short: short,
+            folder: risky[at],
+            tag: at.to_str(),
+            unit: unit,
+            names: names.must()
+        )
+
+        if !found.is_err()
+            out[risky[at]] @ found.must()
+
+    return out
+
+# The files of each folder of `risky` that clang reads there, by the names it
+# looks for: `unit` listed with each short folder of `short` at its folder's
+# place, `-MG` writing a header no folder holds as its name, and each such
+# name its folder holds given to the short one too, until a listing names
+# none new; absent where a listing is refused or clang does not start, or
+# where the names go deeper than `ROUNDS` listings.
+function held(base: str, under: compiling.Compiling, short: {str: str}, risky: [str], unit: str) -> {str: [str]}?
+    names: {str: [str]} @= {}
+    none: [str] = []
+
+    for _ in range(from: 0, to: ROUNDS)
+        got = listing(base: base, c: padded(under, pads: short), unit: unit)?
+        fresh: bool @= false
+
+        for path in deps.paths_of(got)
+            for folder in risky
+                known = names[folder].default(none)
+
+                if named_inside(path: path, base: base) && !among(known, one: path) && files.is_file(core(folder) + "/" + path)
+                    linked(from: core(folder) + "/" + path, to: short[folder].must() + "/" + path)?
+                    names[folder] @ known.push(path)
+                    fresh @ true
+
+        if !fresh
+            return ok(names)
+
+    return fail(code: "deep", msg: "a folder's files were still named after " + ROUNDS.to_str() + " listings")
+
+# How many listings `held` asks for before it gives no verdict: one more than
+# the depth of the deepest include, among a folder's own files, it follows.
+constant ROUNDS: i64
+    16
+
+# Whether `path`, a row of a listing, is a name a folder may answer: written
+# as the include wrote it, so neither from the root nor climbing out, and
+# none of the files made under `base`.
+function named_inside(path: str, base: str) -> bool
+    if path.len() == 0 || path[0] == '/' || strings.starts_with(text: path, prefix: base + "/")
+        return false
+    return !strings.holds(text: "/" + path + "/", needle: "/../")
+
+# `to` made a second name of `from`, or a copy of its text where the system
+# links no second name there.
+function linked(from: str, to: str) -> ()?
+    cut: i64 @= to.len()
+
+    while cut > 0 && to[cut - 1] != '/'
+        cut @ cut - 1
+
+    process.mkdir_all(to.slice(from: 0, to: cut))?
+
+    if !files.second_name(existing: from, name: to).is_err()
+        return ok()
+    text = file_reading.text_of(from)?
+    return publish.write_whole(path: to, text: text, keyed: true)
+
+# The longest folder at `folder`'s place that leaves room, the others short,
+# found by halving between the short one, which lists, and `folder`'s own
+# length; absent where `folder`'s own length lists, another folder being the
+# one past it, or where clang did not answer.
+function longest(base: str, under: compiling.Compiling, short: {str: str}, folder: str, tag: str, unit: str, names: {str: [str]}) -> i64?
+    low: i64 @= short[folder].must().len()
+    high: i64 @= core(folder).len()
+    own: {str: str} @= short
+    own[folder] @ filled(base: base, tag: tag + "-" + high.to_str(), bytes: high, folder: folder, names: names)?
+
+    if !refused(listing(base: base, c: padded(under, pads: own), unit: unit))
+        return fail(code: "fits", msg: "`" + folder + "` leaves room, or clang did not answer")
+
+    while high - low > 1
+        middle = (low + high) / 2
+        pads: {str: str} @= short
+        pads[folder] @ filled(base: base, tag: tag + "-" + middle.to_str(), bytes: middle, folder: folder, names: names)?
+        got = listing(base: base, c: padded(under, pads: pads), unit: unit)
+
+        if !got.is_err()
+            low @ middle
+        else if refused(got)
+            high @ middle
+        else
+            return fail(code: "unanswered", msg: "clang did not answer")
+
+    return ok(low)
+
+# A folder made by `made` holding a second name of each file of `folder` that
+# `names` gives it.
+function filled(base: str, tag: str, bytes: i64, folder: str, names: {str: [str]}) -> str?
+    path = made(base: base, tag: tag, bytes: bytes)?
+    none: [str] = []
+
+    for name in names[folder].default(none)
+        linked(from: core(folder) + "/" + name, to: path + "/" + name)?
+
+    return ok(path)
+
+# An empty folder whose path takes `bytes` bytes, or the fewest it can take
+# where `bytes` is fewer: `base`, `/`, `tag`, then parts of `x` of at most 200
+# bytes, one of 201 where a single byte is left; absent where the system made
+# none.
+function made(base: str, tag: str, bytes: i64) -> str?
+    start = base + "/" + tag
+    pieces: [str] @= [start]
+    rest: i64 @= bytes - start.len()
+
+    while rest > 0
+        if rest == 1
+            pieces @ pieces.push("x")
+            rest @ 0
+        else if rest > 201
+            pieces @ pieces.push("/" + "x".repeat(200))
+            rest @ rest - 201
+        else
+            pieces @ pieces.push("/" + "x".repeat(to_u64(rest - 1).must()))
+            rest @ 0
+
+    path = pieces.join("")
+    process.mkdir_all(path)?
+    return ok(path)
+
+# What clang lists `unit` as reading under `c`'s words, `-MG` writing a header
+# no folder holds as its name; absent where clang refused, `refused`, or did
+# not start.
+function listing(base: str, c: compiling.Compiling, unit: str) -> str?
+    line = response_file.carried(line: strings.with_all(list: ["clang"], more: compiling.probe_words(c)), dir: base)
+    depfile = base + "/room.d"
+    ran = process.run(
+        program: "clang",
+        words: strings.with_all(list: line, more: ["-M", "-MG", "-MT", "dep", "-MF", depfile, unit]),
+        out: process.discard(),
+        err: process.discard()
+    )
+
+    if !ran.started
+        return fail(code: "unstarted", msg: "clang did not start")
+
+    if ran.code != 0
+        return fail(code: "refused", msg: "clang did not list " + unit)
+    return file_reading.text_of(depfile)
+
+# Whether `got` is clang's refusal, and not a listing or no answer.
+function refused(got: str?) -> bool
+    match got
+        .ok _  => return false
+        .err e => return e.code == "refused"
+
+## Tests
+
+# **A folder is counted as clang joins a name to it**, its `/` at the end
+# left out, and each folder the words name stands where it stood with another
+# put in its place, as the words spell it.
+test "a folder is counted as clang joins a name to it, and another stands in its place as the words spell it (d-lane-win-paths-1)"
+    assert core("src/") == "src" && core("/") == "/" && core("src") == "src"
+    c = compiling.Compiling(
+        level: "-O0",
+        sanitize: false,
+        search_include: ["inc", "two/"],
+        pkgconfig_flags: ["-DX", "-Ipkg", "-Fframes", "-Iinc", "-Isrc/"],
+        runtime: "rt",
+        source_dir: "src/"
+    )
+    moved = padded(c, pads: {"two/": "p2", "frames": "pf", "src/": "ps"})
+    assert moved.search_include == ["inc", "p2"]
+    assert moved.pkgconfig_flags == ["-DX", "-Ipkg", "-Fpf", "-Iinc", "-Ips"]
+    assert moved.source_dir == "ps" && moved.runtime == "rt"
+
+# **A folder made to stand in another's place takes the length asked**, in
+# parts no name past the limit holds, or the fewest it can.
+test "a folder made to stand in another's place takes the bytes asked (d-lane-win-paths-1)"
+    base = "build/selftest-search-room-made"
+    assert !process.remove_tree(base).is_err()
+
+    for bytes in [0, 40, 241, 242, 243, 600]
+        got = made(base: base, tag: "t" + bytes.to_str(), bytes: bytes).must()
+        assert got.len() == bytes || bytes < 40 && got == base + "/t" + bytes.to_str()
+        assert process.is_directory(got)
+        assert path_room.part_past(got) == ""
+
+    assert !process.remove_tree(base).is_err()

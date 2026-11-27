@@ -1,0 +1,5 @@
+AddressSanitizer:DEADLYSIGNAL
+=================================================================
+AddressSanitizer:DEADLYSIGNAL
+AddressSanitizer: nested bug in the same thread, aborting.
+exit 1

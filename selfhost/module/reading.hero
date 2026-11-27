@@ -19,6 +19,7 @@
 use byte_evidence
 use cli/digest
 use cli/files
+use cli/path_room
 use cli/process
 use cli/stands
 use cli/strings
@@ -236,8 +237,15 @@ function add_fault(@faults: [source.Fault], one: source.Fault)
 # something is there and cannot be read, the failure the compilation stops
 # on, `cannot read` and the file as the author names it, as an unreadable
 # root's is (`cli/input.hero`), at exit 2.
+#
+# **A path the system will not open for its length is no absence and no
+# unreadable file** (step 212g): its module is left out like an absent one,
+# and the graph tells it on the `use` line as that path, its length and the
+# limit (`package_told`). Windows answered such a path as not found, so it
+# was told *that file is not there*; this Mac answered ENAMETOOLONG, and the
+# whole compilation stopped at exit 2 without naming the `use`.
 function nothing_at(opened: str, named: str) -> ()?
-    if absent(opened)
+    if absent(opened) || path_room.beyond(opened).len() > 0
         return ok()
     return fail(code: "unreadable", msg: stands.unread_said(opened: opened, named: named))
 

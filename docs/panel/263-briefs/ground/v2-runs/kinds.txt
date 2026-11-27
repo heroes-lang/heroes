@@ -1,0 +1,10 @@
+panic: malloc.deep ran on a thread this program did not start: C called it back from a thread of its own, where this runtime's values are not safe. To run work on another thread, start it with `hero_thread_spawn` from `hero_os.h`, whose function runs on a thread this program owns. To stop on Ctrl-C or SIGTERM, give C no Heroes function as a signal handler: the platform layer's waiting calls, in `hero_net.h`, end with a stop the program reads|exit 134| <- malloc-O2
+panic: malloc.deep ran on a thread this program did not start: C called it back from a thread of its own, where this runtime's values are not safe. To run work on another thread, start it with `hero_thread_spawn` from `hero_os.h`, whose function runs on a thread this program owns. To stop on Ctrl-C or SIGTERM, give C no Heroes function as a signal handler: the platform layer's waiting calls, in `hero_net.h`, end with a stop the program reads|exit 134| <- malloc-O2
+exit 138| <- malloc-O0
+exit 138| <- malloc-O0
+panic: stack exhausted in guarded.deep|exit 134| <- guarded-O2
+panic: stack exhausted in guarded.deep|exit 134| <- guarded-O0
+panic: stack exhausted in bare.deep|exit 134| <- bare-O2
+panic: stack exhausted in bare.deep|exit 134| <- bare-O0
+panic: stack exhausted in thread.deep|exit 134| <- thread-O2
+panic: stack exhausted in thread.deep|exit 134| <- thread-O0

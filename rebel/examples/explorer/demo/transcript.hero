@@ -1,9 +1,20 @@
 # The demo's transcript: the headless drawing of the windows (`ui.render`)
-# after each step. The first drawing is printed whole; after it, each step
-# prints the lines of the widgets it changed, as they stand now, and a line
-# `gone` for each widget a step destroyed, so a reader sees what the step
-# did and nothing it left alone. A widget is known by its number, `#12`,
-# which its app never gives twice.
+# after each step, with the rows of the entries' table under its line while
+# the table is shown, each `row <index> [<its cells>]` as the table gives
+# them back (`ui.rows_of`), since the drawing says how many rows a table
+# holds and not what they hold. The first drawing is printed whole; after
+# it, each step prints the lines that changed, as they stand now, each item
+# or row with the lines it stands under, its tree or table and the items
+# above it, so it is read in its place; and a line `gone` for each widget a
+# step destroyed and each item of the tree it took out, so a reader sees
+# what the step did and nothing it left alone.
+#
+# A widget is known by its number, `#12`, which its app never gives twice,
+# and an item by its tree's number and its own, `#18 item 3`, which its tree
+# never gives twice either; the drawing writes an item's line under its
+# tree's, so an item belongs to the widget drawn last above it. A row is a
+# place and not a thing: a table holding fewer rows says so by its count,
+# and no row is told gone.
 
 use <rebel>/strings
 use <rebel>/ui
@@ -12,7 +23,7 @@ use app/controller
 
 # What the transcript printed last.
 record Transcript
-    # The drawing printed last, one line a widget.
+    # The drawing printed last, one line a widget, an item or a row.
     last: [str]
 
 # A transcript that has printed nothing.
@@ -32,38 +43,115 @@ function heading(title: str)
 # - `t`: the transcript; it keeps the drawing.
 # - `c`: the controller.
 function whole(@t: Transcript, @c: controller.Controller)
-    lines = ui.render(@c.app).default([])
+    lines = drawing(@c)
 
     for line in lines
         print(line)
 
     t.last @ lines
 
-# Prints the lines of the widgets that changed since the drawing printed
-# last, and the widgets gone, and says so where nothing changed.
+# Prints the lines that changed since the drawing printed last, and the
+# widgets and items gone, and says so where nothing changed.
 #
 # - `t`: the transcript; it keeps the new drawing.
 # - `c`: the controller.
 function changes(@t: Transcript, @c: controller.Controller)
-    lines = ui.render(@c.app).default([])
+    lines = drawing(@c)
     told @= 0
+    printed: [bool] @= []
 
-    for line in lines
-        if !holds(t.last, line: line)
-            print(line)
+    for _ in lines
+        printed @ printed.push(false)
+
+    for i in range(from: 0, to: lines.len())
+        if !holds(t.last, line: lines[i])
+            for above in context_of(lines, at: i)
+                if !printed[above]
+                    print(lines[above])
+                    printed[above] @ true
+                    told @ told + 1
+
+            print(lines[i])
+            printed[i] @ true
             told @ told + 1
 
-    for old in t.last
-        key = key_of(old)
+    now = keys_of(lines)
+    before = keys_of(t.last)
 
-        if key != "" && !has_key(lines, key: key)
-            print(f"gone: {strings.trim(old)}")
+    for i in range(from: 0, to: t.last.len())
+        if before[i] != "" && !holds(now, line: before[i])
+            print(f"gone: {strings.trim(t.last[i])}")
             told @ told + 1
 
     if told == 0
         print("(the window did not change)")
 
     t.last @ lines
+
+# The drawing of the windows, the rows of the entries' table under its line,
+# each one level deeper, where the line places the table on the screen.
+#
+# - `c`: the controller.
+function drawing(@c: controller.Controller) -> [str]
+    lines = ui.render(@c.app).default([])
+    table = f"#{c.w.entries.id}"
+    out: [str] @= []
+
+    for line in lines
+        out @ out.push(line)
+
+        if key_of(line) == table && placed(line)
+            indent = repeat(" ", to_u64(indent_of(line) + 2).must())
+            cells = ui.rows_of(c.app, widget: c.w.entries).default([])
+
+            for i in range(from: 0, to: cells.len())
+                out @ out.push(f"{indent}row {i} {quoted_all(cells[i])}")
+
+    return out
+
+# Whether `line` places its widget on the screen: the drawing ends the line
+# of a widget shown with where it stands, `at 12,94 200x200`, and writes no
+# place for one hidden.
+#
+# - `line`: a line of the drawing.
+function placed(line: str) -> bool
+    words = strings.words(line)
+    return words.len() >= 3 && words[words.len() - 3] == "at"
+
+# The spaces `line` begins with.
+#
+# - `line`: a line of the drawing.
+function indent_of(line: str) -> i64
+    return line.len() - strings.trim_start(line).len()
+
+# The lines an item's or a row's line at `at` stands under, the outermost
+# first: each line above it written less deep than the one below, up to its
+# tree's or its table's line; none for any other line.
+#
+# - `lines`: the lines of a drawing.
+# - `at`: the line's index.
+function context_of(lines: [str], at: i64) -> [i64]
+    out: [i64] @= []
+    words = strings.words(lines[at])
+
+    if words.len() < 2 || words[0] != "item" && words[0] != "row"
+        return out
+
+    inner: [i64] @= []
+    depth @= indent_of(lines[at])
+    k @= at - 1
+
+    while k >= 0 && (inner.len() == 0 || key_of(lines[inner[inner.len() - 1]]) == "")
+        if indent_of(lines[k]) < depth
+            inner @ inner.push(k)
+            depth @ indent_of(lines[k])
+
+        k @ k - 1
+
+    for i in range(from: 0, to: inner.len())
+        out @ out.push(inner[inner.len() - 1 - i])
+
+    return out
 
 # Whether `lines` holds `line`.
 #
@@ -76,16 +164,28 @@ function holds(lines: [str], line: str) -> bool
 
     return false
 
-# Whether a line of `lines` draws the widget `key`.
+# The key of each of `lines`: a widget's number for a widget's line, the
+# number of the widget drawn last above it and the item's own for an item's
+# line, and empty for a row's line or a line that draws neither.
 #
-# - `lines`: the lines.
-# - `key`: a widget's number, `#12`.
-function has_key(lines: [str], key: str) -> bool
-    for l in lines
-        if key_of(l) == key
-            return true
+# - `lines`: the lines of a drawing.
+function keys_of(lines: [str]) -> [str]
+    out: [str] @= []
+    above @= ""
 
-    return false
+    for line in lines
+        key = key_of(line)
+        words = strings.words(line)
+
+        if key != ""
+            above @ key
+            out @ out.push(key)
+        else if words.len() >= 2 && words[0] == "item" && above != ""
+            out @ out.push(f"{above} item {words[1]}")
+        else
+            out @ out.push("")
+
+    return out
 
 # The widget's number a drawn line names, `#12`: the second word of the
 # line; empty where there is none.
@@ -99,8 +199,77 @@ function key_of(line: str) -> str
 
     return words[1]
 
+# `cells` each between double quotes, in brackets and joined by `, `, as the
+# drawing writes a list's items.
+#
+# - `cells`: the texts.
+function quoted_all(cells: [str]) -> str
+    parts: [str] @= []
+
+    for cell in cells
+        parts @ parts.push(quoted(cell))
+
+    return "[" + parts.join(", ") + "]"
+
+# `text` between double quotes, a quote, a backslash, a line feed and a tab
+# escaped as a Heroes string writes them, as the drawing writes a text.
+#
+# - `text`: the text.
+function quoted(text: str) -> str
+    parts: [str] @= ["\""]
+
+    for c in text.chars()
+        if c == "\""
+            parts @ parts.push("\\\"")
+        else if c == "\\"
+            parts @ parts.push("\\\\")
+        else if c == "\n"
+            parts @ parts.push("\\n")
+        else if c == "\t"
+            parts @ parts.push("\\t")
+        else
+            parts @ parts.push(c)
+
+    parts @ parts.push("\"")
+    return parts.join("")
+
 test "key_of: a widget's number, and none in a line that draws none"
     assert key_of("  button #17 \"Go\" at 12,352 40x24") == "#17"
     assert key_of("window #1 \"Test\" 300x388") == "#1"
     assert key_of("") == ""
     assert key_of("loose words") == ""
+
+test "keys_of: a widget's lines, its tree's items under it by both numbers, a row and a loose line none"
+    lines = [
+        "window #1 \"Test\" 300x388"
+        "  tree #2 2 items chosen [1] at 12,12 160x96"
+        "    item 1 \"Home\" unfolded chosen"
+        "      item 2 \"Music\""
+        "  table #3 [\"Name\"] 1 rows chosen [] at 12,120 160x96"
+        "    row 0 [\"a.txt\"]"
+        "loose words"
+    ]
+    assert keys_of(lines) == ["#1", "#2", "#2 item 1", "#2 item 2", "#3", "", ""]
+
+test "placed and context_of: a shown widget's place and a hidden one's none; an item under its items and its tree, a row under its table, a widget's line under nothing"
+    assert placed("  table #3 [\"Name\"] 1 rows chosen [] at 12,120 160x96")
+    assert !placed("  table #3 [\"Name\"] 1 rows chosen [] sorted by 0 ascending hidden")
+    lines = [
+        "window #1 \"Test\" 300x388"
+        "  tree #2 3 items chosen [1] at 12,12 160x96"
+        "    item 1 \"Home\" unfolded chosen"
+        "      item 2 \"Music\" unfolded"
+        "        item 3 \"Live\""
+        "      item 4 \"Video\""
+        "  table #5 [\"Name\"] 1 rows chosen [] at 12,120 160x96"
+        "    row 0 [\"a.txt\"]"
+    ]
+    assert context_of(lines, at: 4) == [1, 2, 3]
+    assert context_of(lines, at: 5) == [1, 2]
+    assert context_of(lines, at: 7) == [6]
+    assert context_of(lines, at: 6) == [] && context_of(lines, at: 0) == []
+
+test "quoted_all: plain cells, every escape, and text of more than one byte"
+    assert quoted_all(["a", "crème"]) == "[\"a\", \"crème\"]"
+    assert quoted_all(["a\"b\\c\nd\te"]) == "[\"a\\\"b\\\\c\\nd\\te\"]"
+    assert quoted_all([]) == "[]"

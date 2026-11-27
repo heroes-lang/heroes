@@ -1,8 +1,9 @@
 # The demo: the explorer opened headless on a folder tree it writes under
 # `build/explorer/`, driven by the inputs a person would give (clicks,
-# choices in the lists, words typed, menu items, the answers to a question)
-# through a session that uses every command: ordering by the locale's
-# collation, the tree, Back and Forward, the preview of texts in four
+# choices in the lists, the table and the tree, a header clicked, a row
+# opened, a folder unfolded, words typed, menu items, the answers to a
+# question) through a session that uses every command: ordering by the
+# locale's collation, the tree, Back and Forward, the preview of texts in four
 # encodings, pictures and archives, search by content across encodings and
 # by name, rename and a rename by pattern with Undo and Redo, a new folder,
 # copy, a copy cancelled, a move undone, the trash and Put Back, compressing
@@ -135,9 +136,14 @@ function scene_order(@c: controller.Controller, @t: transcript.Transcript) -> ()
     shown(@c, @t, title: "View, By Size again: the order turned over, the largest first")
     hands.menu(@c, item: c.menus.by_name)?
     shown(@c, @t, title: "View, By Name: the locale's collation, so Äpfel stands beside apricot")
+    hands.click_header(@c, column: 1, ascending: true)?
+    shown(@c, @t, title: "The Size header clicked: the smallest file first, as View, By Size")
+    hands.click_header(@c, column: 0, ascending: true)?
+    shown(@c, @t, title: "The Name header clicked: by name again")
     return ok()
 
-# Opens a folder from the tree and previews texts in three encodings.
+# Opens a folder from the tree, previews texts in three encodings, and opens
+# a file by a double click.
 #
 # - `c`: the controller.
 # - `t`: the transcript.
@@ -153,6 +159,12 @@ function scene_tree(@c: controller.Controller, @t: transcript.Transcript) -> ()?
     shown(@c, @t, title: "greeting.txt: UTF-16LE by its byte order mark")
     hands.choose_named(@c, names: ["japanese.txt"])?
     shown(@c, @t, title: "japanese.txt: Shift_JIS detected")
+    hands.open_named(@c, name: "notes.txt")?
+    shown(
+        @c,
+        @t,
+        title: "notes.txt opened by a double click: chosen and previewed, and no application on the headless side"
+    )
     return ok()
 
 # Back, Forward and Up.
@@ -203,7 +215,7 @@ function scene_search(@c: controller.Controller, @t: transcript.Transcript) -> (
     shown(@c, @t, title: "Searching the contents for crème: the progress window")
     _ = hands.run_job(@c)?
     shown(@c, @t, title: "Found in UTF-8 and in windows-1252, whatever the case")
-    hands.choose(@c, widget: c.w.entries, indices: [1])?
+    hands.choose(@c, widget: c.w.results, indices: [1])?
     shown(@c, @t, title: "The second result chosen: its file previewed")
     hands.click(@c, widget: c.w.open)?
     shown(@c, @t, title: "Open on a result: its folder, the file chosen")
@@ -350,7 +362,9 @@ function scene_compress(@c: controller.Controller, @t: transcript.Transcript) ->
     shown(@c, @t, title: "File, Compress to tar.gz on docs: docs.tar.gz")
     return ok()
 
-# Four archives extracted, one of which names a member outside its folder.
+# Four archives extracted, one of which names a member outside its folder,
+# and the folder one of them made unfolded in the tree by its triangle and
+# folded again.
 #
 # - `c`: the controller.
 # - `t`: the transcript.
@@ -368,6 +382,10 @@ function scene_extract(@c: controller.Controller, @t: transcript.Transcript) -> 
 
     outside = fs.exists(demo_tree.BASE + "/escaped.txt").default(true) || fs.exists(demo_tree.ROOT + "/escaped.txt").default(true)
     print(f"a member named outside its folder landed there: {outside}")
+    hands.unfold_folder(@c, folder: demo_tree.at_root("site"), open: true)?
+    shown(@c, @t, title: "The triangle of site in the tree: its folders under it, root still shown")
+    hands.unfold_folder(@c, folder: demo_tree.at_root("site"), open: false)?
+    shown(@c, @t, title: "The triangle again: site folded")
     return ok()
 
 # A large file's checksums, with the progress after one tick.

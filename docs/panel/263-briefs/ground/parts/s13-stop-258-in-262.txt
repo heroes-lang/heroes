@@ -1,0 +1,1 @@
+Where C jumps out of a signal handler whose signal interrupted this runtime's allocator, or its record of what is lent to C, the program aborts: at the jump, saying so, where this runtime saw the handler begin and the jump, and else where the program next uses that code.

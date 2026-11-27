@@ -1,0 +1,26 @@
+malloc-O0  n   1600: depth reached: 811991|exit 0|
+thread-O0  n   1600: depth reached: 811991|exit 0|
+malloc-O0  n   2000: depth reached: 564721|exit 0|
+thread-O0  n   2000: depth reached: 564721|exit 0|
+malloc-O0  n   3000: depth reached: 210722|exit 0|
+thread-O0  n   3000: depth reached: 210722|exit 0|
+malloc-O0  n  10000: depth reached: 742238|exit 0|
+thread-O0  n  10000: depth reached: 742238|exit 0|
+malloc-O0  n  20000: depth reached: 532635|exit 0|
+thread-O0  n  20000: depth reached: 532635|exit 0|
+malloc-O0  n  30000: depth reached: 441055|exit 0|
+thread-O0  n  30000: depth reached: 441055|exit 0|
+malloc-O0  n  50000: exit 138|
+thread-O0  n  50000: panic: stack exhausted in thread.deep|exit 134|
+malloc-O2  n   9600: depth reached: 480257|exit 0|
+thread-O2  n   9600: depth reached: 480257|exit 0|
+malloc-O2  n   9800: exit 124|
+thread-O2  n   9800: depth reached: 351880|exit 0|
+malloc-O2  n  10000: exit 124|
+thread-O2  n  10000: depth reached: 742238|exit 0|
+malloc-san-O2 n   7000: depth reached: 544920|exit 0|
+malloc-san-O2 n   9000: depth reached: 665854|exit 0|
+malloc-san-O2 n  12000: depth reached: 964095|exit 0|
+malloc-san-O0 n   1200: depth reached: 280890|exit 0|
+malloc-san-O0 n   1500: depth reached: 22407|exit 0|
+malloc-san-O0 n   2000: depth reached: 564721|exit 0|

@@ -186,6 +186,9 @@ function priority(pathname) {
   // Rebel's two catalogues sit one click below its page, as the refusals do
   // below Why's, so they take that tier rather than the reference pages'.
   if (path === '/rebel/packages/' || path === '/rebel/apps/') return 0.7;
+  // The log left the nav for Rebel (2026-11-27) and stands one click below
+  // Project, so it takes the same tier.
+  if (path === '/log/') return 0.7;
   if (path.startsWith('/rebel/') && path !== '/rebel/') return 0.6;
   return path.startsWith('/docs/') ? 0.6 : 0.8;
 }

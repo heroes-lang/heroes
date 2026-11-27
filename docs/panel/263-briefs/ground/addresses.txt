@@ -1,0 +1,26 @@
+Panel 263's clerk, 2026-11-27, this Mac. Each line: the build, how it was run, what co.h's CO_SAY wrote (the
+coroutine stack's [lo, hi) and the address of co.h's own `_Thread_local` word `co_tls_probe` on the calling thread),
+and how the run ended. The distance from the probe to the stack's lowest address is 0xC000 (49,152 bytes) in all
+eleven readings. Commands: `CO_SAY=1 timeout <s> <binary>` from the folder named, in the clerk's scratch
+`.claude/worktrees/panel263-scratch/`; builds of `reproducer/malloc.hero` with the seed's compiler at a246032bf
+(`sources 1e1eb23a1927d35b`). v1 = `ground/co-v1.h` (its machine code re-made and compared: `otool -t | shasum`,
+89d8dfe34196 both), v2 = `reproducer/co.h`, runsh = v2 built by `reproducer/run.sh` into another folder (machine code
+equal to v2's, 4994fe30d364 both; the files differ).
+
+v1 -O2, ./malloc-O2 from run/      stack [0x79b080c000, 0x79b084c000) tls 0x79b0800000   hung, killed (vmmap taken)
+v1 -O2, lldb, run/                 stack [0x7b5c81c000, 0x7b5c85c000) tls 0x7b5c810000   stopped at the first guard
+v1 -O2, lldb, run/                 stack [0x7c6081c000, 0x7c6085c000) tls 0x7c60810000   stopped at the first guard;
+                                   hero_thread_is_home's own address on the thread, by calling its TLV descriptor's
+                                   thunk: 0x7c60810029 (lldb2-malloc-O2.txt), 49,111 bytes below the stack
+v1 -O2, ./malloc-O2 from run/      stack [0x779e80c000, 0x779e84c000) tls 0x779e800000   exit 124 at 8 s
+v1 -O0, ./malloc-O0 from run/      stack [0x799e80c000, 0x799e84c000) tls 0x799e800000   panic: stack exhausted in malloc.deep, 134
+v2 -O2, ./malloc-O2 from run/v2/   stack [0x772940c000, 0x772944c000) tls 0x7729400000   panic: malloc.deep ran on a thread this program did not start, 134
+v2 -O0, ./malloc-O0 from run/v2/   stack [0x780140c000, 0x780144c000) tls 0x7801400000   exit 138, nothing said
+v2 -O2, absolute path              stack [0x7b5f40c000, 0x7b5f44c000) tls 0x7b5f400000   the thread's words, 134
+v2 -O2, ./malloc-O2 from run/v2/   stack [0x79d740c000, 0x79d744c000) tls 0x79d7400000   the thread's words, 134
+runsh -O2, absolute path           stack [0x76ee80c000, 0x76ee84c000) tls 0x76ee800000   exit 124 at 15 s
+runsh -O2, ./malloc-O2 from runsh/ stack [0x7b9080c000, 0x7b9084c000) tls 0x7b90800000   exit 124 at 15 s
+
+vmmap of the first (vmmap-malloc-O2.txt): the probe is the first byte of `Malloc Small 79b0800000-79b0c00000
+[4096K 304K 304K]`, DefaultMallocZone; the next region below it in the listing ends at 0x734a400000 (`Malloc Small
+(empty) 734a004000-734a400000`), so nothing is mapped between them (python over the listing's address ranges).

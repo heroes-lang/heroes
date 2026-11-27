@@ -1,0 +1,2 @@
+- A source nested up to 2,000 deep compiles on every platform, and none is refused for
+  its depth; running out of stack aborts.

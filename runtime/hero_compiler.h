@@ -152,4 +152,11 @@ HeroStr hero_path_judged_shown(const char *path, int64_t *units, int64_t *status
  * PATH_MAX less one elsewhere for both. */
 int64_t hero_path_limit(int64_t folder);
 
+/* The most units one part of a path may take, a name between two
+ * separators: NAME_MAX bytes on a POSIX system, 255 on this Mac and on
+ * Linux, and 255 UTF-16 units on Windows, NTFS's own (M-rebel-library step
+ * 212g). A POSIX kernel refuses a longer part with ENAMETOOLONG however
+ * short the whole path is. */
+int64_t hero_path_part_limit(void);
+
 #endif

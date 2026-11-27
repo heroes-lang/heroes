@@ -1,0 +1,1 @@
+A callback C calls on a stack with no page of no access below it that this runtime can see (one C took from `malloc`, say) aborts before it runs, saying so.
