@@ -8,10 +8,13 @@
 
 use cli/digest
 use cli/link
+use cli/link_room
 use cli/link_warning
 use cli/publish
+use cli/served
 use cli/strings
 use cli/toolchain
+use cli/unit_names
 use cli/units
 
 # **The author's `-o` takes the platform's suffix where its last part has
@@ -37,6 +40,27 @@ function with_suffix(path: str, suffix: str) -> str
     if at == path.len()
         return path
     return path + suffix
+
+# **The binary's own name in its home holds at most KEPT bytes** (defect
+# d-lane-win-longname-2, M-rebel-library step 212h). It was the module's
+# whole, so a path the compiler chooses grew with a name the program chose:
+# on the Windows box (2026-11-27) `heroes run`, `test` and `build` with no
+# `-o`, of a root named in 220 letters from a folder of the CI's 18
+# characters, were refused at `build/<16>/<module>.exe`, 266 characters,
+# where `-o` built it. The binary is still named after the author's file (the
+# `special` suite's `00first`), whole up to 48 bytes; a longer name keeps its
+# first 31, `-` and the 16 digits of `cli/digest` of the whole, so two names
+# sharing a beginning keep two. 48 is a unit's longest name
+# (`cli/unit_names.hero`), and the longest file a link leaves here, the PDB,
+# is shorter than the private name a unit's seal is written under before any
+# link: a folder deep enough to refuse the binary refused its units first.
+constant KEPT: i64
+    48
+
+function home_name(module: str) -> str
+    if module.len() <= KEPT
+        return module
+    return link_room.kept(name: module, most: KEPT - 17) + "-" + digest.digest(module)
 
 # Where a binary built from `line` lives under `build/`: one directory per
 # link line, every word counted by its length so no two lines share one,
@@ -133,3 +157,20 @@ test "a Windows link records the published PDB's own name, and a POSIX link reco
     assert pdb_words(suffix: "", at: "build/0123456789abcdef/prog", inner: "prog", module: "prog").len() == 0
     assert last_part("a/b\\c.pdb") == "c.pdb"
     assert last_part("plain.pdb") == "plain.pdb"
+
+# The name a binary takes in its home: the author's file's, whole up to 48
+# bytes, and past it a beginning and the whole name's digest; and the
+# relation KEPT rests on, so a change to a unit's names or to KEPT that
+# breaks it fails here (`cli/unit_names.hero`, `cli/served.hero`).
+test "a binary's own name keeps at most 48 bytes, two long names sharing a beginning keep two, and its home's longest file is shorter than a unit's seal as first written (d-lane-win-longname-2)"
+    assert home_name("00first") == "00first"
+    assert home_name("m".repeat(48)) == "m".repeat(48)
+    assert home_name("m".repeat(49)).len() == KEPT
+    long = "m".repeat(220)
+    assert home_name(long) == "m".repeat(31) + "-" + digest.digest(long)
+    assert home_name(long) != home_name("m".repeat(219) + "n")
+    pdb = "build/" + "0".repeat(16) + "/" + home_name(long) + ".exe.pdb"
+    seal = publish.private_name(
+        served.seal_of(unit_names.object_of(dir: "build/tu-" + "0".repeat(16), component: long, sum: "0".repeat(16)))
+    )
+    assert pdb.len() < seal.len()
