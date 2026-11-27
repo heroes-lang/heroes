@@ -23,9 +23,11 @@
 # at `heroes.toml` hung every verb and every build that read it.
 
 use cli/files
+use cli/path_room
 use cli/process
 use cli/stands
 use module/reading
+use module/spelling
 
 # What stands at a key: no name; a folder; a link naming a folder; a link
 # naming nothing; a link naming something that is not a folder; a file; or a
@@ -136,7 +138,9 @@ function named_kind(path: str) -> files.Entry
 # to open one (defect 2572: a FIFO at `heroes.toml` hung every verb and
 # every build reading it, `read_file` waiting for a writer); a failure is
 # `file_not_found` where nothing stands there, else `unread_said`'s words,
-# a link to nothing among them (defect 2573).
+# a link to nothing among them (defect 2573). A path the system will not
+# open for its length is none it can call absent (step 212g): Windows answered
+# one as not found, and a program with a catalogue was read as one with none.
 function catalogue_text(path: str, named: str) -> str?
     match reading.source_text(path)
         .ok got =>
@@ -144,6 +148,19 @@ function catalogue_text(path: str, named: str) -> str?
                 return ok(got.text)
             return fail(code: "not_text", msg: unread_said(path: path, named: named, code: "not_text"))
         .err e =>
+            unopened = path_room.beyond(path)
+
+            # Its folder's listing says whether one is there: a catalogue is
+            # optional, and a package with none is read without one, whatever
+            # the read answered (this Mac: ENAMETOOLONG, never `not found`).
+            if unopened.len() > 0
+                if spelling.unlisted_file(path)
+                    return fail(code: "file_not_found", msg: "no file at " + path)
+                return fail(
+                    code: "unread",
+                    msg: "`" + named + "` cannot be read: the system will not open that path: " + unopened
+                )
+
             if e.code == "file_not_found" && at(path) != .dangling
                 return fail(code: e.code, msg: e.msg)
             return fail(code: "unread", msg: unread_said(path: path, named: named, code: e.code))
@@ -293,4 +310,26 @@ test "a link that loops is told as one, never as a link to nothing"
 
         assert !files.symbolic_link(target: "nowhere", name: dir + "/gone").is_err()
         assert said(at(dir + "/gone"), path: dir + "/gone") == "a link to nothing"
+    assert !process.remove_tree(dir).is_err()
+
+# Defect d-lane-win-longname-1's catalogue: a catalogue whose path the system
+# will not open for its length is told where its folder may hold one, a folder
+# that cannot be listed among them, and is none where its folder lists none,
+# since a catalogue is optional: refused there, a package with no catalogue of
+# its own was refused on the Windows box, its catalogue's path 261 characters.
+test "a catalogue past the system's limit is told where its folder may hold one, and none where its folder lists none (d-lane-win-longname-1)"
+    dir = SCRATCH + "-limit"
+    assert !process.remove_tree(dir).is_err()
+    assert !process.mkdir_all(dir).is_err()
+
+    match catalogue_text(path: dir + "/" + "n".repeat(256) + ".toml", named: "n.toml")
+        .ok _  => assert false
+        .err e => assert e.code == "file_not_found"
+
+    match catalogue_text(path: dir + "/" + "n".repeat(256) + "/heroes.toml", named: "app/heroes.toml")
+        .ok _ => assert false
+        .err e =>
+            head = "`app/heroes.toml` cannot be read: the system will not open that path: "
+            assert e.code == "unread" && e.msg.slice(from: 0, to: head.len()) == head
+
     assert !process.remove_tree(dir).is_err()

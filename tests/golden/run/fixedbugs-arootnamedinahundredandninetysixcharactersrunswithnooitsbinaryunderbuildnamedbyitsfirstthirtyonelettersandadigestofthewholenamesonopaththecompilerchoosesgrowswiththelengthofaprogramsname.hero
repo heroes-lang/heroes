@@ -1,0 +1,24 @@
+# fixedbugs, defect d-lane-win-longname-2, 2026-11-27, lane win-paths
+# (M-rebel-library step 212h).
+#
+# SYMPTOM: a correct program whose root is named in 220 letters was refused
+# by `heroes run`, `test` and `build` with no `-o` on Windows, from a folder
+# of the CI's 18 characters: *cannot write build/<16>/<module>.exe: its whole
+# path ... is 266 characters, past the 259 Windows takes in a path*, exit 2,
+# where the same program with `-o` built. The binary's home is the
+# compiler's choice, `build/<16>/`, and it named the binary by the module
+# whole, so a path the compiler chose grew with a name the program chose.
+#
+# FIX: the binary's own name in its home holds at most 48 bytes: the
+# module's whole up to that, and past it its first 31, `-` and a digest of
+# the whole (`selfhost/cli/link_output.hero`'s `home_name`). This root's
+# name takes 196 characters, 195 of them letters, so the `run` form's
+# `heroes run` with no `-o` builds and runs it under that shorter name on
+# every platform. It cannot show the refusal from the CI's folder: the form
+# first builds every case with `-o build/harness-<pid>/binaries/<case>.exe`,
+# a path of the harness's own five characters longer than the compiler's
+# home, so a name long enough to pass the limit there is refused at the
+# harness's `-o` first. The roots of 200 to 240 letters at folders of 18 and
+# 44 characters were run by hand on the Windows box, before and after.
+function main()
+    print("run with no -o, its name of 196 characters held to 48 in its binary")

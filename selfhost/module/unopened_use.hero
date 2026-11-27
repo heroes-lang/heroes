@@ -1,0 +1,46 @@
+# What a `use` is told whose module's file the system will not open for its
+# length (design.md §1.12, §4.17; defect d-lane-win-longname-1, M-rebel-library
+# step 212g). Windows answers a path past MAX_PATH as one not found, so such a
+# module was told *that file is not there*, and the directory's listing, which
+# names the file, offered `use <the same line>` as its repair; this Mac
+# answers a name past 255 bytes, or a path past 1,023, with ENAMETOOLONG, and
+# the compilation stopped at exit 2 naming no `use`. Discovery leaves such a
+# module out as it does an absent one (`reading.nothing_at`), and the graph
+# asks here first (`package_told`), for the program's own module and a
+# package's alike: the path, its length, the limit and what would fit, said
+# by `cli/path_room.beyond`, and no repair, since no spelling of the line makes
+# the folder shorter.
+
+use ast
+use cli/path_room
+use diag
+use module/paths
+use module/reached
+use source
+
+# The program's own module `name`, read from the directory of the file you
+# compile; a failure where its path fits, whose words are another's to say.
+function own(s: source.Source, used: ast.Use, name: str) -> diag.Diagnostic?
+    unopened = path_room.beyond(paths.open_directory(s.name) + name + ".hero")
+
+    if unopened.len() == 0
+        return fail(code: "fits", msg: name)
+    return ok(
+        diag.new_diagnostic(code: "unknown_module", message: "the module `" + name + "` cannot be read — `use " + name + "` reads `" + paths.directory_text(s.name) + name + ".hero`, from the directory of `" + s.name + "`, the file you compile, and " + said(unopened), span: used.name)
+    )
+
+# The module `inside` of `package`, written `written` on the line; a failure
+# where its path fits.
+function in_package(package: reached.Package, used: ast.Use, inside: str, written: str) -> diag.Diagnostic?
+    unopened = path_room.beyond(package.opened + inside + ".hero")
+
+    if unopened.len() == 0
+        return fail(code: "fits", msg: inside)
+    return ok(
+        diag.new_diagnostic(code: "unknown_package_module", message: "the package `" + package.alias + "` has its module `" + inside + "` where it cannot be read: `use " + written + "` reads `" + package.root + inside + ".hero`, and " + said(unopened), span: used.name)
+    )
+
+# The words after a source's path, `clause` naming the path, its length, the
+# limit and what would fit.
+function said(clause: str) -> str
+    return "the system will not open that path: " + clause

@@ -19,6 +19,7 @@
 # parked DECIDE question.
 
 use cli/files
+use cli/path_room
 use cli/process
 use cli/stands
 use module/reading
@@ -78,7 +79,17 @@ function read_root_only(path: str) -> source.Source?
 # And where something other than a file stands there, what it is (defect
 # 2572): a FIFO, a socket, a device or a link to nothing, never only *cannot
 # read*, which sent the reader looking for a permission there too.
+#
+# **And a path the system will not open for its length is told as that**,
+# with its length and the limit (step 212g): Windows answered one as not
+# found, told *no file is named* where the file was there, and this Mac
+# *the system will not look at it*, with no length.
 function unread(path: str) -> str
+    unopened = path_room.beyond(path)
+
+    if unopened.len() > 0
+        return "cannot read `" + path + "`: the system will not open that path: " + unopened
+
     if reading.absent(path)
         return "no file is named `" + path + "`"
     return stands.unread_said(opened: path, named: path)
@@ -223,3 +234,14 @@ test "two aliases of one package compile one module"
 
     assert held == 1
     assert s.files.len() == 4
+
+# Defect d-lane-win-longname-1's root: a file named on the command line whose
+# path the system will not open for its length is told as that, never as no
+# file named, on every platform: Windows judges the whole path, this Mac and
+# Linux the name of 256 bytes in it.
+test "a root the system will not open for its length is told as that, with its length and the limit (d-lane-win-longname-1)"
+    long = "build/" + "n".repeat(256) + ".hero"
+    told = unread(long)
+    head = "cannot read `" + long + "`: the system will not open that path: "
+    assert told.slice(from: 0, to: head.len()) == head
+    assert told.len() > head.len() + 20
