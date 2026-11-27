@@ -133,6 +133,11 @@ function units_of(text: str, windows: bool) -> i64
 
     return units
 
+# The most one name in a path may take, NAME_MAX's bytes on POSIX and 255
+# UTF-16 units on Windows (`hero_path_part_limit`).
+function part_limit() -> i64
+    return hero_path_part_limit()
+
 function part_said(path: str, units: i64, most: i64, windows: bool) -> str
     if windows
         return path + " holds a name of " + units.to_str() + " characters, past the " + most.to_str() + " Windows takes in one name of a path"
