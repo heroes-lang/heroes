@@ -10,8 +10,9 @@
 # C converts exactly where they have one width and one sign, as the probe
 # asks of C at the binding's line. Written only for a function whose thunk
 # spells the callback's type as the variant's own: every position by value,
-# each the type the function type's typedef spells. A program that learned
-# nothing writes none of this, so its C is what it was.
+# each the type the function type's typedef spells, and only one C can be
+# handed, as a thunk is (`callback_thunk.handed_to_c`, step 203j). A program
+# that learned nothing writes none of this, so its C is what it was.
 
 use ast
 use check/state
@@ -19,7 +20,6 @@ use emit/callback_guard
 use emit/callback_thunk
 use emit/callback_variant
 use emit/ctype
-use emit/large_value
 use emit/signature
 use emit/writer
 use ir/containers
@@ -72,7 +72,7 @@ function serves(names: ctype.Names, c: state.Checked, f: containers.Function, v:
 
 # Each variant thunk of `f`, beside its thunk (`emit/body.hero`).
 function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, guarded_decls: {i64: bool})
-    if guarded_decls[f.decl].is_err() || !large_value.crosses(names, f)
+    if guarded_decls[f.decl].is_err() || !callback_thunk.handed_to_c(c, names, s, decls, f)
         return
     real = signature.as_value(f, c, names, s, decls)
 
@@ -130,7 +130,7 @@ function tables(@w: writer.Writer, p: containers.Program, c: state.Checked, name
         for at in callbacks.functions
             f = p.functions[at]
 
-            if callback_thunk.is_ordinary(f) && large_value.crosses(names, f) && serves(names, c, f, v: v)
+            if callback_thunk.is_ordinary(f) && callback_thunk.handed_to_c(c, names, s, decls, f) && serves(names, c, f, v: v)
                 real = signature.as_value(f, c, names, s, decls)
                 writer.line(@w, text: head(f, v: v, real: real) + ";")
                 served @ served.push(real)
