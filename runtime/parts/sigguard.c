@@ -871,7 +871,12 @@ static void hero_signal_measure(void) {
  * at `-O0` in Linux arm64, 2026-11-20 (defect 2522's row 1, step 70d). And
  * *a buffer this runtime never saw filled*, the words of that day, was false
  * of a buffer it saw filled and that was refilled since, or whose record a
- * full table overwrote: the record is of the buffer as it now stands. */
+ * full table overwrote: the record is of the buffer as it now stands. And
+ * since defect 2867 a record is read wherever the system lets the runtime
+ * copy its bytes, so a buffer it could not read is the fourth cause the words
+ * name: until then a buffer on the heap was never read, and a correct program
+ * leaving its handler by a `setcontext` to its runner's heap context was
+ * refused in words naming three causes it had none of. */
 static _Noreturn void hero_signal_refuse(const char *what, int how) {
     const char *const said[] = {
         "panic: ",
@@ -918,9 +923,9 @@ static _Noreturn void hero_signal_refuse(const char *what, int how) {
         : how == HERO_SIGNAL_UNFOLLOWED
             ? " was called after C, inside a signal handler, jumped to a buffer this runtime holds no "
               "record of as it now stands (copied with `memcpy`, refilled where the runtime does not "
-              "look, or saved before more save points than it keeps), so whether the jump left the "
-              "handler is not known: a handler not seen to end is held to be running, where neither "
-              "this runtime's memory nor the C library's is safe to use. "
+              "look, saved before more save points than it keeps, or in memory the system would not let "
+              "it read), so whether the jump left the handler is not known: a handler not seen to end is "
+              "held to be running, where neither this runtime's memory nor the C library's is safe to use. "
             : " was called from inside a signal handler: C called it while handling a signal, where "
               "neither this runtime's memory nor the C library's is safe to use. ",
         HERO_SIGNAL_REMEDY,

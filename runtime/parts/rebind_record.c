@@ -63,16 +63,22 @@ static HeroRebindRecord *hero_rebind_probe(size_t home, int i) {
     return &hero_rebind_records[(home + (size_t)i) & (HERO_REBIND_RECORDS - 1)];
 }
 
-/* A fingerprint read only of a buffer that provably lives (rule 3), into
- * `*print`; false where it could not be read. The bytes are copied by the
- * kernel (`mach_vm_read_overwrite` of this task), never loaded by this thread:
- * memory that provably lives may still have been made unreadable by the
- * program since the save (a static page `mprotect`ed to none: a Bus error at
- * the next save point, measured with `HERO_JMP_FORCE_UNCALIBRATED` 3 on this
- * Mac, defect d-lane-d2745-1's class), and a copy the kernel refuses is an
+/* A buffer's fingerprint (rule 3), into `*print`; false where it could not
+ * be read. The bytes are copied by the kernel (`mach_vm_read_overwrite` of
+ * this task) wherever the buffer is mapped, never loaded by this thread: the
+ * program may have given the buffer back or made it unreadable since the save
+ * (a heap block freed, a page unmapped, a static page `mprotect`ed to none: a
+ * Bus error or a heap-use-after-free at the next save point when the bytes
+ * were loaded, measured with `HERO_JMP_FORCE_UNCALIBRATED` 3 on this Mac,
+ * defects 2679 and d-lane-d2745-1), and a copy the kernel refuses is an
  * answer, never a fault. Nor is it a program's access, so AddressSanitizer
  * does not see it: a returned frame's bytes may sit under a later frame's
- * redzone. */
+ * redzone. Until defect 2867 a buffer was read only where it provably lived
+ * (the thread's own stack, the alternate stack it ran on, an image loaded
+ * before `main`), the rule of the days its bytes were loaded, so a context or
+ * a `jmp_buf` on the heap was never trusted and a correct program leaving its
+ * handler by a `setcontext` to its runner's heap context was refused in words
+ * naming a copy, a refill or a full table. */
 static bool hero_rebind_fingerprint(const void *buf, uint64_t *print) {
     unsigned char copy[HERO_REBIND_PRINT_BYTES];
     mach_vm_size_t got = 0;
@@ -112,49 +118,8 @@ static HeroRebindRecord *hero_rebind_record(const void *buf) {
     return NULL;
 }
 
-/* The writable segments of the images loaded before `main`, which stay mapped
- * while the process runs; written once, before `main`. */
-#define HERO_REBIND_REGIONS 1024
-static _Atomic uintptr_t hero_rebind_region_lo[HERO_REBIND_REGIONS];
-static _Atomic uintptr_t hero_rebind_region_hi[HERO_REBIND_REGIONS];
-static _Atomic int hero_rebind_regions = 0;
-
-static void hero_rebind_regions_of(const struct mach_header *header, intptr_t slide) {
-    const struct mach_header_64 *mh = (const struct mach_header_64 *)header;
-    const uint8_t *p = (const uint8_t *)(mh + 1);
-    for (uint32_t i = 0; i < mh->ncmds; i += 1) {
-        const struct load_command *lc = (const struct load_command *)p;
-        p += lc->cmdsize;
-        if (lc->cmd != LC_SEGMENT_64) continue;
-        const struct segment_command_64 *seg = (const struct segment_command_64 *)lc;
-        if ((seg->initprot & VM_PROT_WRITE) == 0 || seg->vmsize == 0) continue;
-        int n = atomic_load(&hero_rebind_regions);
-        if (n == HERO_REBIND_REGIONS) return;
-        atomic_store(&hero_rebind_region_lo[n], (uintptr_t)slide + (uintptr_t)seg->vmaddr);
-        atomic_store(&hero_rebind_region_hi[n], (uintptr_t)slide + (uintptr_t)seg->vmaddr + (uintptr_t)seg->vmsize);
-        atomic_store(&hero_rebind_regions, n + 1);
-    }
-}
-
-/* Whether `[buf, buf + size)` lies on this thread's stack, on the alternate
- * stack it is running on, or in a writable segment of an image loaded before
- * `main`. */
-static bool hero_rebind_lives(const void *buf, size_t size) {
-    uintptr_t lo = (uintptr_t)buf, hi = lo + size;
-    pthread_t self = pthread_self();
-    uintptr_t top = (uintptr_t)pthread_get_stackaddr_np(self);
-    if (lo >= top - pthread_get_stacksize_np(self) && hi <= top) return true;
-    int n = atomic_load(&hero_rebind_regions);
-    for (int i = 0; i < n; i += 1) {
-        if (lo >= atomic_load(&hero_rebind_region_lo[i]) && hi <= atomic_load(&hero_rebind_region_hi[i])) return true;
-    }
-    stack_t alt;
-    return sigaltstack(NULL, &alt) == 0 && (alt.ss_flags & SS_ONSTACK) != 0 && lo >= (uintptr_t)alt.ss_sp &&
-           hi <= (uintptr_t)alt.ss_sp + alt.ss_size;
-}
-
-/* The pending buffer fingerprinted where it provably lives; where it does
- * not, its record is marked one no jump trusts (2). */
+/* The pending buffer fingerprinted by the kernel; where the copy is refused,
+ * its record is marked one no jump trusts (2). */
 static void hero_rebind_settle(void) {
     if (!atomic_load_explicit(&hero_rebind_pending_keyed, memory_order_acquire)) return;
     pthread_key_t key = atomic_load_explicit(&hero_rebind_pending, memory_order_relaxed);
@@ -164,7 +129,7 @@ static void hero_rebind_settle(void) {
     HeroRebindRecord *r = hero_rebind_record(buf);
     if (r == NULL) return;
     uint64_t print = 0;
-    if (!hero_rebind_lives(buf, HERO_REBIND_PRINT_BYTES) || !hero_rebind_fingerprint(buf, &print)) {
+    if (!hero_rebind_fingerprint(buf, &print)) {
         atomic_store(&r->printed, 2);
         return;
     }

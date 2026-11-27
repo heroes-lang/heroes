@@ -323,9 +323,6 @@ __attribute__((constructor(0))) static void hero_rebind_start(void) {
     atomic_store(&hero_rebind_real_bind_hint,
                  (hero_rebind_bind_hint_fn)dlsym(RTLD_DEFAULT, "_dyld_lookup_and_bind_with_hint"));
     atomic_store(&hero_rebind_real_bind_fully, (hero_rebind_bind_fn)dlsym(RTLD_DEFAULT, "_dyld_lookup_and_bind_fully"));
-    for (uint32_t i = 0; i < _dyld_image_count(); i += 1) {
-        hero_rebind_regions_of(_dyld_get_image_header(i), _dyld_get_image_vmaddr_slide(i));
-    }
     hero_rebind_calibrate();
     _dyld_register_func_for_add_image(hero_rebind_image);
     for (int sig = 1; sig < NSIG; sig += 1) {
