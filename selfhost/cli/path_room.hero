@@ -10,6 +10,13 @@
 # written. The question is the runtime's (`runtime/hero_compiler.h`): the
 # whole path on Windows, which judges a path whole, and the path as handed
 # over elsewhere, which a POSIX kernel judges as handed.
+#
+# **And a path a program names is asked the same before its failure is read**
+# (step 212g): a source the system will not open for its length was told
+# *that file is not there* on Windows, which answers such a path as one not
+# found, and on this Mac *the system will not look at it* with no length,
+# a part past 255 bytes refused whatever the whole path takes. `beyond` asks
+# both, the whole path and each part, for every reader of a source.
 
 use cli/process
 use cli/strings
@@ -17,6 +24,7 @@ use cli/strings
 extern "hero_compiler.h"
     function hero_path_judged_shown(path: cstr lent, @units: i64, @status: i64, @marks: i64) -> str
     function hero_path_limit(folder: i64) -> i64
+    function hero_path_part_limit() -> i64
 
 extern "hero_os.h"
     constant HERO_OS_OK: i64
@@ -71,6 +79,65 @@ function said(whole: str, units: i64, most: i64, folder: bool, windows: bool) ->
         return whole + " is " + units.to_str() + " characters, past the " + most.to_str() + " Windows takes in a folder's path (MAX_PATH less the 12 a file's short name in it needs, with its closing NUL)"
     return whole + " is " + units.to_str() + " characters, past the " + most.to_str() + " Windows takes in a path (MAX_PATH, " + (most + 1).to_str() + " with its closing NUL)"
 
+# Where the system would refuse to open `path` for its length, the clause
+# that says why and what would fit: the whole path past the limit (`past`),
+# or else a name in it past what one name may take (`part_past`); "" where
+# both fit.
+function beyond(path: str) -> str
+    whole = past(path: path, folder: false)
+
+    if whole.len() > 0
+        return whole + ": a shorter folder, or a shorter name, would fit"
+    part = part_past(path)
+
+    if part.len() > 0
+        return part + ": a shorter name would fit"
+    return ""
+
+# Where one part of `path`, a name between two separators, takes more than
+# the system takes in one, the clause naming the path, the part's length and
+# the limit; "" where every part fits. The separators are `/`, and `\` on
+# Windows, where it is one; a part is counted in the system's measure.
+function part_past(path: str) -> str
+    windows = process.exe_suffix() == ".exe"
+    most = hero_path_part_limit()
+    start: i64 @= 0
+
+    for at in range(from: 0, to: path.len() + 1)
+        if at == path.len() || path[at] == '/' || windows && path[at] == '\\'
+            units = units_of(text: path.slice(from: start, to: at), windows: windows)
+
+            if units > most
+                return part_said(path: path, units: units, most: most, windows: windows)
+            start @ at + 1
+
+    return ""
+
+# A text's length as the system counts a name: its bytes on POSIX; on
+# Windows its UTF-16 units, one for each character and two for one past
+# U+FFFF, whose UTF-8 opens with 0xF0 to 0xF4. A continuation byte, 0x80 to
+# 0xBF, opens nothing.
+function units_of(text: str, windows: bool) -> i64
+    if !windows
+        return text.len()
+    units: i64 @= 0
+
+    for at in range(from: 0, to: text.len())
+        b = text[at]
+
+        if b < 128 || b >= 192
+            units @ units + 1
+
+        if b >= 240
+            units @ units + 1
+
+    return units
+
+function part_said(path: str, units: i64, most: i64, windows: bool) -> str
+    if windows
+        return path + " holds a name of " + units.to_str() + " characters, past the " + most.to_str() + " Windows takes in one name of a path"
+    return path + " holds a name of " + units.to_str() + " bytes, past the " + most.to_str() + " one name in a path may take on this system (NAME_MAX)"
+
 ## Tests
 
 # The measure is the system's: Windows judges the whole path a relative one
@@ -99,3 +166,32 @@ test "the clause names the path, its length and the limit in the system's own me
     assert said(whole: "C:\\w\\x.exe", units: 262, most: 259, folder: false, windows: true) == "C:\\w\\x.exe is 262 characters, past the 259 Windows takes in a path (MAX_PATH, 260 with its closing NUL)"
     assert said(whole: "C:\\w\\d", units: 250, most: 247, folder: true, windows: true) == "C:\\w\\d is 250 characters, past the 247 Windows takes in a folder's path (MAX_PATH less the 12 a file's short name in it needs, with its closing NUL)"
     assert said(whole: "a/b", units: 1030, most: 1023, folder: false, windows: false) == "a/b is 1030 bytes, past the 1023 a path handed to this system may take (PATH_MAX, 1024 with its closing NUL)"
+
+# A part is held to the system's own limit, 255 on the three platforms (the
+# premise `beyond`'s words rest on, asserted so a system holding a name to
+# another is told here first), counted as the system counts: bytes on POSIX,
+# UTF-16 units on Windows, where `\` separates parts as `/` does.
+test "a name past what one part of a path takes is told in the system's measure, and one at the most is not (d-lane-win-longname-1)"
+    most = hero_path_part_limit()
+    assert most == 255
+    windows = process.exe_suffix() == ".exe"
+    at_most = "build/" + "n".repeat(255) + "/x"
+    over = "build/" + "n".repeat(256) + "/x"
+    assert part_past(at_most) == ""
+
+    if windows
+        assert part_past(over) == over + " holds a name of 256 characters, past the 255 Windows takes in one name of a path"
+
+        # Here the whole path is past MAX_PATH first, and told as that.
+        assert strings.ends_with(
+            text: beyond(over),
+            suffix: "with its closing NUL): a shorter folder, or a shorter name, would fit"
+        )
+        assert part_past("n".repeat(200) + "\\" + "n".repeat(200)) == ""
+    else
+        assert part_past(over) == over + " holds a name of 256 bytes, past the 255 one name in a path may take on this system (NAME_MAX)"
+        assert beyond(over) == part_past(over) + ": a shorter name would fit"
+        assert part_past("n".repeat(200) + "\\" + "n".repeat(200)).len() > 0
+    assert beyond("build/a-file") == ""
+    assert units_of(text: "aé", windows: true) == 2 && units_of(text: "aé", windows: false) == 3
+    assert units_of(text: "a😀", windows: true) == 3 && units_of(text: "a😀", windows: false) == 5

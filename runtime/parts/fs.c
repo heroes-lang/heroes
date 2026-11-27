@@ -574,3 +574,19 @@ int64_t hero_path_limit(int64_t folder) {
     return (int64_t)(PATH_MAX - 1);
 #endif
 }
+
+/* A PART's limit (step 212g): this Mac refused a `use` whose file's name took
+ * 256 bytes, *the operating system's own reason is 63*, ENAMETOOLONG, from a
+ * whole path of 261 (2026-11-27), and read a root whose name took 255. NTFS holds a part to 255
+ * UTF-16 units (`lpMaximumComponentLength`), which with `LongPathsEnabled` 0
+ * only a part right under a drive's root can reach before MAX_PATH does. A
+ * POSIX system with no NAME_MAX is refused at the build, never guessed. */
+int64_t hero_path_part_limit(void) {
+#if defined(_WIN32)
+    return 255;
+#elif defined(NAME_MAX)
+    return (int64_t)NAME_MAX;
+#else
+#error "hero_path_part_limit: this system's <limits.h> defines no NAME_MAX"
+#endif
+}

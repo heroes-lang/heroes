@@ -97,7 +97,11 @@ function unknown(s: source.Source, uses: [ast.Use], used: ast.Use, base: str, na
     said = "there is no module `" + name + "` — `use " + name + "` reads `" + base + name + ".hero`, from the directory of `" + s.name + "`, the file you compile, "
     spelt_so = others(opened: base, module: name)
 
-    if spelt_so.len() != 1
+    # The directory listing the very spelling the line writes is no other
+    # case (step 212g): on Windows a path past MAX_PATH was listed and not
+    # opened, and told *write `use <the same>`*, a repair that changes
+    # nothing. A path too long is told before this (`package_told`).
+    if spelt_so.len() != 1 || spelt_so[0] == name
         return diag.new_diagnostic(
             code: "unknown_module",
             message: said + "and that file is not there",
@@ -149,6 +153,12 @@ function names_in(@listed: Listed, folder: str, kind: i64) -> [str]
     return scanned
 
 function scan(folder: str, kind: i64) -> [str]
+    nothing: [str] = []
+    return listing_of(folder: folder, kind: kind).default(nothing)
+
+# A directory's names of one kind, or a failure where it could not be listed,
+# which an empty directory is not.
+function listing_of(folder: str, kind: i64) -> [str]?
     where: str @= folder
 
     if where.len() == 0
@@ -157,7 +167,7 @@ function scan(folder: str, kind: i64) -> [str]
     out: [str] @= []
 
     if found < 0
-        return out
+        return fail(code: "unlisted", msg: "cannot list " + where)
 
     for at in range(from: 0, to: found)
         status: i64 @= 0
@@ -168,7 +178,22 @@ function scan(folder: str, kind: i64) -> [str]
             out @ out.push(name)
 
     hero_dir_release()
-    return out
+    return ok(out)
+
+# Whether the file at `path` is certainly not there: its folder, the path to
+# its last `/` or `\`, lists no file of its name (step 212g). A path the
+# system will not open for its length is answered by Windows as one not
+# found, which says nothing of a file there; its folder's listing, shorter,
+# does. A folder that cannot be listed answers no.
+function unlisted_file(path: str) -> bool
+    cut: i64 @= path.len()
+
+    while cut > 0 && path[cut - 1] != '/' && path[cut - 1] != '\\'
+        cut @ cut - 1
+
+    match listing_of(folder: path.slice(from: 0, to: cut), kind: 0)
+        .ok names => return !holds(names, name: path.slice(from: cut, to: path.len()))
+        .err _    => return false
 
 function holds(names: [str], name: str) -> bool
     for one in names

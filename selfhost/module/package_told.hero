@@ -36,6 +36,7 @@ use module/private
 use module/reached
 use module/spelling
 use module/unlisted
+use module/unopened_use
 use resolve/library_declared
 use source
 use token
@@ -152,6 +153,11 @@ record Named
 # not hold (`spelling.unknown`, defect 2290).
 function own_unknown(s: source.Source, uses: [ast.Use], used: ast.Use, name: str) -> diag.Diagnostic
     base = paths.directory_text(s.name)
+    too_long = unopened_use.own(s, used: used, name: name)
+
+    # A path the system will not open for its length (step 212g).
+    if !too_long.is_err()
+        return too_long.must()
     head = head_of(name)
     listed = catalogue.read(opened: base, named: base)
     plain = spelling.unknown(s, uses, used: used, base: base, name: name)
@@ -184,6 +190,10 @@ function in_package(s: source.Source, used: ast.Use, package: reached.Package, i
         if !private.reaches(from: source.module_at(s, used.span.start), name: name)
             return private.refusal(name: name, span: used.name)
         return lacks[0]
+    too_long = unopened_use.in_package(package, used: used, inside: inside, written: written)
+
+    if !too_long.is_err()
+        return too_long.must()
     plain = diag.new_diagnostic(
         code: "unknown_package_module",
         message: "the package `" + package.alias + "` has no module `" + inside + "`: `use " + written + "` reads `" + package.root + inside + ".hero`, and that file is not there",

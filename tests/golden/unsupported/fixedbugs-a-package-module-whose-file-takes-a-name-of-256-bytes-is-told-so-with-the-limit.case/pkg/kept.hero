@@ -1,0 +1,3 @@
+# The package's one module that is there.
+function seven() -> i64
+    return 7
