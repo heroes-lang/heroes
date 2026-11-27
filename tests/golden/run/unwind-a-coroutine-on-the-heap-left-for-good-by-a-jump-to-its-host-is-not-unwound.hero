@@ -1,0 +1,34 @@
+# Panel 258's R2, step 214c: panel 262's blind program n2. A coroutine of the
+# program's own switch, on a stack from `malloc`, leaves for good by a
+# `longjmp` to the save point its host made on the thread's stack; then C
+# calls a function of the program, which must run.
+# Symptom: with step 214a, under `--sanitize`, ASan's `SEGV on unknown address
+# 0xfffffffffffffff8` inside `libunwind::UnwindCursor::step`, 34 runs of 34 on
+# this Mac (lane land262's reading on main de57f9129, measured again by this
+# lane against de57f9129 with 214a reverted: 34 of 34 exit 0).
+# Cause: the jump's hook walked the frames with libunwind from the coroutine's
+# stack, and the coroutine's first frame record, which the library's switch
+# wrote as it liked, sent the walk to address -8.
+# Fix: the hook unwinds only a jump made on the thread's own stack to a target
+# on it, over frame records it has checked to rise on that stack before
+# libunwind reads any (`runtime/parts/unwind.c`); this jump is made as before.
+extern "unwind-esc.h"
+    function sw_start(k: i64, f: (function(i64) -> i64))
+    function sw_yield()
+    function esc_resume(k: i64) -> i64
+    function esc_leave()
+    function esc_call(f: (function(i64) -> i64), n: i64) -> i64
+
+function leave(k: i64) -> i64
+    sw_yield()
+    esc_leave()
+    return k
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    sw_start(k: 0, f: leave)
+    print("left: ", esc_resume(k: 0))
+    print("result ", esc_call(f: answer, n: 7))
