@@ -380,6 +380,9 @@ function unbuildable_on_windows() -> [Skip]
         Skip(name: "tests/golden/run/fixedbugs-openssl-async-jobs-on-heap-fibres-run-under-the-sanitizer.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-nine-handlers-left-by-a-jump-on-two-stacks-then-a-coroutine-resumed-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
         Skip(name: "tests/golden/run/fixedbugs-twenty-one-handlers-left-by-a-jump-on-two-stacks-then-a-coroutine-resumed-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2872-a-handler-on-a-coroutines-stack-left-by-a-jump-runs.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2872-a-handler-on-a-coroutines-stack-that-saved-inside-itself-then-left-by-a-jump-is-refused.hero", why: POSIX_CONTEXT_SHAPES_ON_WINDOWS)
+        Skip(name: "tests/golden/run/fixedbugs-2873-a-watchdog-jumping-out-of-the-allocator-is-stopped-in-words-naming-the-jump.hero", why: RAW_SYSCALL_ON_WINDOWS)
     ]
 
 # Why the program at `source` is not built on this machine: one of
@@ -696,7 +699,13 @@ test "every program Windows cannot build is a file that exists, skipped there al
     # Then the 2 of defect 2869 (d-lane-sig-family-4), their one header
     # refused at `sys/mman.h` not found by `zig cc` 0.15.2 for Windows x86-64
     # on 2026-11-27 (`POSIX_CONTEXT_SHAPES_ON_WINDOWS`).
-    assert unbuildable_on_windows().len() == 191
+    # Then the 2 of defect 2872, their one header refused at `sys/mman.h` not
+    # found by `zig cc` 0.15.2 for Windows x86-64 on 2026-11-27
+    # (`POSIX_CONTEXT_SHAPES_ON_WINDOWS`).
+    # Then the 1 of defect 2873, its header including defect 2522's raw
+    # install, refused at `sys/syscall.h` not found by `zig cc` 0.15.2 for
+    # Windows x86-64 on 2026-11-27 (`RAW_SYSCALL_ON_WINDOWS`).
+    assert unbuildable_on_windows().len() == 194
 
     for one in unbuildable_on_windows()
         assert strings.has_prefix(s: one.name, prefix: "tests/golden/run/")

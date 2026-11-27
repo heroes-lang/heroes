@@ -221,12 +221,25 @@ constant EXTENDED: [str]
 # fixture, measured a warning on four clangs). A call that gives such a
 # function the wrong count stays an error, `[-Werror]` with no word of its
 # own (measured that day on Apple clang 21).
+#
+# And clang 22's advice that a function handing its format on take the
+# `format` attribute, *"diagnostic behavior may be improved by adding the
+# 'format(printf, 1, 2)' attribute"*, which takes `-Wformat-nonliteral`'s
+# place there (lane p261-beside, 2026-11-27, issue 2875): Debian clang
+# 22.1.8 in the Linux arm64 image told a door's `printf(f, v)`,
+# `vprintf(f, ap)` and `snprintf(b, n, f, v)` by it where Apple clang 21
+# says *"format string is not a string literal"*, so one door was refused
+# under two names and `unsupported/fixedbugs-2421-*` read red on Linux.
+# Quiet after `LITERAL`, clang 22 says `-Wformat-nonliteral` at the same
+# lines, an error as before (measured that day on both), so nothing is
+# passed over and every clang names the format the region's note names.
 constant ADVICE: [str]
     [
         "-Wdeprecated-declarations"
         "-Wdeprecated-pragma"
         "-Wdeprecated-non-prototype"
         "-Winvalid-source-encoding"
+        "-Wmissing-format-attribute"
     ]
 
 # Two words `-Wall`'s ignore reaches that are no library's style (panel
@@ -316,6 +329,12 @@ test "a header's own code is quiet of -Wall and sign conversion alone, a missing
     # A deprecation quiet, then the two words `-Wall`'s ignore took raised
     # again after it (panel 245's R1).
     assert got[tail + EXTENDED.len()] == "#pragma clang diagnostic ignored \"-Wdeprecated-declarations\""
+
+    # Clang 22's advice of a format attribute is quiet after `LITERAL`'s
+    # error, which then names the door on every clang (issue 2875).
+    advised = tail + EXTENDED.len() + ADVICE.len() - 1
+    assert got[advised] == "#pragma clang diagnostic ignored \"-Wmissing-format-attribute\""
+    assert got[1 + QUIETED.len() + KEPT.len() + FORMAT_DEFINED.len()] == "#pragma clang diagnostic error \"-Wformat-nonliteral\""
     assert got[got.len() - 2] == "#pragma clang diagnostic error \"-Wimplicit-int\""
     assert got[got.len() - 1] == "#pragma clang diagnostic error \"-Wuser-defined-warnings\""
 
@@ -354,9 +373,10 @@ test "a unit's line makes every warning an error but a #warning and an unused wo
 
 # The two advice words the gate found, each a header C11 defines whole that
 # the line's `-Werror` refused (batch 31's gate B, 2026-11-11), are quiet in
-# the region, after the deprecations before them.
+# the region, after the deprecations before them, and clang 22's advice of a
+# format attribute after them (issue 2875).
 test "a definition in the old style and a literal's byte that is not UTF-8 are passed over in a header's code"
-    assert ADVICE == ["-Wdeprecated-declarations", "-Wdeprecated-pragma", "-Wdeprecated-non-prototype", "-Winvalid-source-encoding"]
+    assert ADVICE == ["-Wdeprecated-declarations", "-Wdeprecated-pragma", "-Wdeprecated-non-prototype", "-Winvalid-source-encoding", "-Wmissing-format-attribute"]
     got = opening()
     tail = 1 + QUIETED.len() + KEPT.len() + FORMAT_DEFINED.len() + LITERAL.len() + EXTENDED.len()
     assert got[tail + 2] == "#pragma clang diagnostic ignored \"-Wdeprecated-non-prototype\""

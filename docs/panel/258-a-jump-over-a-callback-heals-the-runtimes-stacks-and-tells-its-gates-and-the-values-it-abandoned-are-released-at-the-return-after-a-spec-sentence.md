@@ -114,3 +114,12 @@ address of the frame that took each entry (steps 175a to 175c and 181a's lanes, 
 192a, `3f9fe858d`; panel 259's resolution, ratified the same day). **What it does not answer**: R2, the unwinder that
 releases the abandoned values at the return of the extern call, stays provisional and pending as this sitting wrote
 it; decision issue 2758 stays open for it.
+
+**R2 ratified by the author's reading, 2026-11-27, at about 08:25**, in conversation (the answer *3a* to the
+coordinator's three routes, meant as: *ratify R2 and build it before the milestone's tag*; the coordinator had
+recommended building it after the tag). **What it ratifies**: R2 as this sitting wrote it, the unwind that collects
+the owned values a C jump abandons onto a per-thread list released when the extern call holding the catch returns into
+Heroes code, scoped to programs that declare a foreign extern with a function-typed parameter, built before
+M-rebel-library's tag. **The sentence R2 waited on**: the landing measures whether spec § 13's sentence of panel 259 (what
+a callback C left held stays held to a bound) stays true of a value released at that return; where it does, no
+sentence moves; where it does not, a sitting is owed before the landing. Decision issue 2758 closes with this verdict.

@@ -1,0 +1,28 @@
+# fixedbugs, defect 2877, 2026-11-27, lane win-longname (M-rebel-library step
+# 212e).
+#
+# SYMPTOM: on Windows a program reaching a module named in 180 letters, as
+# `fixedbugs2877/<180 letters>` is, did not compile from the CI's checkout,
+# `D:\a\heroes\heroes`: *cannot write build/tu-<16>/<module>-<16>.o.key.txt:
+# the operating system's own reason is 3*, exit 2, while the module's own
+# source, 235 characters there, was read. Measured on the Windows box from a
+# folder of the CI's 18 characters, a root module named in 180 `m`s built and
+# one named in 200 was refused; from the 22 of the box's own, 180 was refused.
+#
+# CAUSE: every file of a module's unit under `build/tu-<key>/` was named by
+# the module, `<module>.c`, `<module>.deps.txt`, `<module>-<sum>.o` and the
+# object's seal `<module>-<sum>.o.key.txt`, each first under a private name
+# about 12 characters longer, and Windows refuses a whole path past 259.
+#
+# FIX: each is named by the module's stem, `unit-` and sixteen hexadecimal
+# digits of the module's digest (`selfhost/cli/unit_names.hero`), 48
+# characters at the longest whatever the module's length; a link's refusal is
+# placed at the module through the same stem (the `unsupported` case of the
+# same defect). The module's source bounds the folder this case builds from:
+# on Windows it takes 216 characters under the checkout, so a folder of up to
+# 43 characters with its separator, where the CI's takes 19.
+use fixedbugs2877/amodulewhosenametakesonehundredandeightylettershasitsunitsfilesnamedbyadigestofitsnameandnotbythenameitselfsotheyfitwhatawindowspathtakesfromthecheckoutsfolderandfromdeeperonesalso as long
+
+function main()
+    print(long.greeting())
+    print(long.length())

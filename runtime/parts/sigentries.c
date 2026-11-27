@@ -602,6 +602,7 @@ static bool hero_sig_push(HeroSignalStack *own, uintptr_t at, uintptr_t alt_lo, 
     e->gen = 0;
     e->held = 0;
     e->unsure = unsure;
+    e->saved = 0;
     e->dead = 0;
     e->cut_from = 0;
     e->cut_to = 0;
@@ -642,6 +643,42 @@ static bool hero_sig_standing(const HeroSignalStack *own) { return own->depth > 
  * jump never comes back, as `longjmp` and `setcontext` do not): an entry
  * nothing pins is left where the target lies on the entry's range above it,
  * or where the jump leaves the alternate stack the entry was pushed on. */
+/* A save point made at `frame` (the save hooks and the swap): every entry
+ * standing whose own stack holds the frame, below the entry's, has had a save
+ * made inside its handler's frames, which can switch back into them however
+ * the handler is later left (defect 2872). An entry whose stack is not known
+ * is marked too, so it is judged as before. */
+static void hero_sig_saved_at(HeroSignalStack *own, uintptr_t frame) {
+    if (own == NULL) return;
+    for (int i = 0; i < own->depth; i += 1) {
+        HeroSigEntry *e = &own->entries[i];
+        if (e->dead || frame >= e->at) continue;
+        uintptr_t lo = 0, hi = 0;
+        if (e->alt_hi > e->alt_lo) {
+            lo = e->alt_lo;
+            hi = e->alt_hi;
+        } else if (!hero_sig_target_range(own, e->at, &lo, &hi)) {
+            e->saved = 1;
+            continue;
+        }
+        if (frame >= lo && frame < hi) e->saved = 1;
+    }
+}
+
+/* Whether a jump from `here` to `t` leaves the handler of `e`, which runs on a
+ * coroutine's stack, by leaving that stack (defect 2872): 1 where the jump is
+ * made inside the handler's frames there and lands off that stack, no save
+ * point having been made inside those frames since the handler began, so
+ * nothing can switch back into them but a landing its left span catches
+ * (rule 6); 2 where one was, which can; 0 otherwise, the handler on the
+ * thread's own stack or an alternate one among them. */
+static int hero_sig_off_coroutine(const HeroSigEntry *e, uintptr_t here, uintptr_t t) {
+    uintptr_t lo = 0, hi = 0;
+    if (e->alt_hi > e->alt_lo || !hero_sig_live_range(e->at, &lo, &hi)) return 0;
+    if (here < lo || here >= e->at || (t - 1 >= lo && t - 1 < hi)) return 0;
+    return e->saved ? 2 : 1;
+}
+
 static void hero_sig_prune_to(HeroSignalStack *own, uintptr_t t, bool by_jump) {
     uintptr_t here = (uintptr_t)__builtin_frame_address(0);
     uintptr_t lo = 0, hi = 0;
@@ -657,11 +694,14 @@ static void hero_sig_prune_to(HeroSignalStack *own, uintptr_t t, bool by_jump) {
         if (e->dead || hero_sig_pinned(e)) continue;
         bool above = ranged && e->at >= lo && e->at < hi && e->at <= t;
         bool left_alt = by_jump && e->alt_hi > e->alt_lo && !hero_sig_holds(e->alt_lo, e->alt_hi, t);
-        if (above || left_alt) {
+        int off = by_jump ? hero_sig_off_coroutine(e, here, t) : 0;
+        if (above || left_alt || off == 1) {
             hero_sig_left_by_jump(own, e, here);
             hero_sig_drop(own, i);
         } else if (oncoroutine && e->unsure == 0) {
             e->unsure = life == HERO_SIG_RANGE_ENTERED ? 3 : 4;
+        } else if (off == 2 && e->unsure == 0) {
+            e->unsure = 5;
         }
     }
 }
@@ -742,6 +782,7 @@ static int hero_sig_inside(HeroSignalStack *own) {
             return e->unsure == 2   ? HERO_SIG_REENTERED
                    : e->unsure == 3 ? HERO_SIG_ONSTACK
                    : e->unsure == 4 ? HERO_SIG_HELD
+                   : e->unsure == 5 ? HERO_SIG_PARKED
                                     : HERO_SIG_UNSURE;
         }
         return hero_sig_pinned(e) ? HERO_SIG_SWITCHED : HERO_SIG_INSIDE;

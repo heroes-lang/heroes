@@ -1,0 +1,163 @@
+# The names a module's translation unit takes in its folder under `build/`,
+# and the way back from such a name to its module (design.md §1.12, §3.1,
+# §4.17; defect 2877, 2026-11-27).
+#
+# **Every file of a unit was named by its module until this defect**,
+# `<module>.c`, `<module>.deps.txt`, `<module>-<sum>.o` and the object's seal
+# `<module>-<sum>.o.key.txt`, each written first under a private name 12 to
+# 14 characters longer (`publish.private_name`), so a unit's paths grew with
+# the module's name. Windows refuses a whole path past 259 characters
+# (`cli/path_room.hero`). Measured on the Windows box (2026-11-26, a folder of
+# 22 characters): a root module named in 160 `m`s built; 180 was refused at
+# `<module>-<sum>.o.key.txt` and 200 at `<module>.c`, both *the operating
+# system's own reason is 3*, exit 2, while the program's own source, 217
+# characters for 180, was read. A correct program was refused for its name's
+# length, in words that named neither.
+#
+# **So a unit's files are named by a digest of the module, never by the
+# module**: the stem `unit-` and the sixteen characters `cli/digest` gives the
+# module's C component, whatever its length; the folder, `tu-<key>`, is keyed
+# by the module's name and text already (`units.tu_object`). A cut at a length
+# was the other shape, the longest beginning of the name that fits, as
+# `cli/link_room.hero` keeps for a link's staged output: it leaves two
+# modules sharing a beginning one name, and every reader below unable to say
+# which module a cut name is.
+#
+# **What read a module back from its unit's names reads it through the
+# digest**, the one function here, so the namer and the readers cannot drift:
+#
+# - a link's refusal names an object by its file alone where the linker is
+#   ld64 or MSVC's `link.exe` (`cli/link_report.hero`), and the module whose
+#   object holds a reference is the one whose stem it opens with
+#   (`names_object`, `cli/needs_placed.hero`);
+# - a unit's own `#line`s name its file `<component>.c`, the name
+#   `emit/writer.hero` gives the generated file in every emission, where the
+#   folder holds it as `unit-<16>.c`: the two are one file (`restores`,
+#   `cli/group_file.hero`'s `compilers`), and the module a refused unit is
+#   (`component_of`, `group_file.unit_group`, defect 2208).
+#
+# **What a stem shared by two modules would cost**, a residue said once: the
+# digest is the 62 bits every key of the cache is built from, two polynomial
+# hashes a pair of names can be built to meet. Two modules of one program whose
+# components meet in it keep two folders, so two objects and two units; a
+# refusal one of them earns would be told at the first of the two. A program's
+# bytes never depend on it.
+
+use cli/digest
+use cli/strings
+use source
+
+# What every unit's stem opens with: a word no other file of `build/` takes,
+# the runtime's object being `runtime-<key>-<sum>.o` (`toolchain.runtime_object`).
+constant PREFIX: str
+    "unit-"
+
+# The stem of every file of the unit of the module whose C component is
+# `component`: `unit-` and sixteen hexadecimal digits.
+function stem_of(component: str) -> str
+    return PREFIX + digest.digest(component)
+
+# The unit's C, as its folder holds it.
+function c_name(component: str) -> str
+    return stem_of(component) + ".c"
+
+# The object a unit's record names (`units.tu_object`): its stem and the
+# sixteen hexadecimal digits of what its compile read (`cli/deps.hero`). A
+# link's refusal names it, by its file alone under ld64 and MSVC's
+# `link.exe`, and `cli/needs_placed.hero` reads its module back from it.
+function object_of(dir: str, component: str, sum: str) -> str
+    return dir + "/" + stem_of(component) + "-" + sum + ".o"
+
+# The warnings the compile of that object said, replayed by a warm build.
+function warnings_of(dir: str, sum: str) -> str
+    return dir + "/warnings-" + sum + ".txt"
+
+# Whether `base`, an object's file without its folder, is one `object_of`
+# names for `component`: its stem, `-`, sixteen hexadecimal digits and `.o`.
+function names_object(base: str, component: str) -> bool
+    head = stem_of(component) + "-"
+
+    if !strings.starts_with(text: base, prefix: head) || !strings.ends_with(text: base, suffix: ".o")
+        return false
+    sum = base.slice(from: head.len(), to: base.len() - 2)
+    return sum.len() == 16 && hexadecimal(sum)
+
+# Whether `name`, a file clang names, is the name the `#line`s of the unit at
+# `file` give it: `<component>.c` with no folder, where the folder holds the
+# unit as that component's `c_name`.
+function restores(name: str, file: str) -> bool
+    if strings.holds(text: name, needle: "/") || strings.holds(text: name, needle: "\\") || !strings.ends_with(text: name, suffix: ".c")
+        return false
+    return c_name(name.slice(from: 0, to: name.len() - 2)) == base_of(file)
+
+# The C component of the module of `s` whose unit `file` is, a path as clang
+# prints it: by the name its folder holds it under, or by the name its own
+# `#line`s give it; "" where it is no module's, a probe's or `heroes test`'s
+# file.
+function component_of(s: source.Source, file: str) -> str
+    base = base_of(file)
+
+    for entry in s.files
+        if base == c_name(entry.component) || base == entry.component + ".c"
+            return entry.component
+
+    return ""
+
+# A path's last part, cut at `/` or `\`, the two separators clang prints on
+# Windows.
+function base_of(path: str) -> str
+    cut: i64 @= path.len()
+
+    while cut > 0 && path[cut - 1] != '/' && path[cut - 1] != '\\'
+        cut @ cut - 1
+
+    return path.slice(from: cut, to: path.len())
+
+function hexadecimal(text: str) -> bool
+    for i in range(from: 0, to: text.len())
+        b = text[i]
+
+        if !(b >= '0' && b <= '9' || b >= 'a' && b <= 'f')
+            return false
+
+    return true
+
+## Tests
+
+# A stem takes 21 characters whatever the module's, and two modules sharing
+# a beginning take two (defect 2877).
+test "a unit's stem takes the same length for every module, and two modules sharing a beginning two stems (defect 2877)"
+    long = "m".repeat(300)
+    assert stem_of(long).len() == 21 && stem_of("main").len() == 21
+    assert strings.starts_with(text: stem_of(long), prefix: "unit-")
+    assert stem_of(long) != stem_of(long + "n")
+    assert c_name("main") == stem_of("main") + ".c"
+    assert !strings.holds(text: c_name("inlineref"), needle: "inlineref")
+
+    # The net's `units` and `cache` suites find a module's files by these
+    # stems, from a mirror held to the same three literals
+    # (`tests/harness/unit_files.hero`): a change to either side fails one.
+    assert stem_of("unitprog") == "unit-6503b22872040a4f"
+    assert stem_of("unitshape") == "unit-6432a046419b0ef2"
+    assert stem_of("bind") == "unit-0d3d6cb50f23678d"
+
+test "an object is its module's by its stem and a sum of sixteen hexadecimal digits, and no other's (defect 2877)"
+    object = stem_of("inlineref") + "-1d862cfd051b96b5.o"
+    assert names_object(base: object, component: "inlineref")
+    assert !names_object(base: object, component: "other")
+    assert !names_object(base: stem_of("inlineref") + "-.o", component: "inlineref")
+    assert !names_object(base: stem_of("inlineref") + "-1d862cfd051b96b.o", component: "inlineref")
+    assert !names_object(base: stem_of("inlineref") + "-1D862CFD051B96B5.o", component: "inlineref")
+    assert !names_object(base: "inlineref-1d862cfd051b96b5.o", component: "inlineref")
+    assert !names_object(base: "runtime-0128005f5ecb3c36-578c67547cb30f76.o", component: "runtime")
+
+test "the name a unit's lines give its file is that unit's, and no other's (defect 2877)"
+    long = "m".repeat(200)
+    at = "build/tu-15bf19db65b23463/" + c_name(long)
+    assert restores(name: long + ".c", file: at)
+    assert restores(name: long + ".c", file: "C:\\w\\build\\tu-1\\" + c_name(long))
+    assert !restores(name: long + "n.c", file: at)
+    assert !restores(name: "inc/" + long + ".c", file: at)
+    assert !restores(name: long + ".h", file: at)
+    assert !restores(name: "main.c", file: "build/tu-1/main.c")
+    assert base_of("C:\\w\\b/x.c") == "x.c" && base_of("x.c") == "x.c"

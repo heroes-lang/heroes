@@ -155,7 +155,10 @@ __attribute__((noinline)) static void hero_jmp_set(const ucontext_t *ucp) {
  * up. One read of the thread's slot where no span stands. */
 static void hero_jmp_saving(void) {
     HeroSignalStack *own = hero_sig_own();
-    if (own != NULL && own->left_n > 0) hero_sig_relived(own, hero_jmp_below());
+    if (own == NULL || (own->left_n == 0 && own->depth == 0)) return;
+    uintptr_t below = hero_jmp_below();
+    if (own->left_n > 0) hero_sig_relived(own, below);
+    if (own->depth > 0) hero_sig_saved_at(own, below);
 }
 
 /* THE SAVE POINTS: under A the buffer noted with a frame below this one's
@@ -291,6 +294,7 @@ int(swapcontext)(ucontext_t *restrict oucp, const ucontext_t *restrict ucp) {
     uintptr_t entered = 0;
     hero_sig_range_left((uintptr_t)__builtin_frame_address(0));
     hero_sig_relived(own, (uintptr_t)__builtin_frame_address(0));
+    hero_sig_saved_at(own, (uintptr_t)__builtin_frame_address(0));
     if (own != NULL && oucp != NULL && ucp != NULL) {
         bool field = !hero_ctx_recording();
         uintptr_t t = field ? hero_jmp_context_sp(ucp) : 0;

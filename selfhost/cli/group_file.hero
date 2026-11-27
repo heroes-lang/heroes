@@ -7,10 +7,10 @@
 
 use ast
 use cli/strings
+use cli/unit_names
 use emit/clang_name
 use emit/clang_place
 use emit/externs as emit_externs
-use module/names as module_names
 use source
 use token
 
@@ -47,11 +47,15 @@ record Group
 # the compiler wrote around it is the unit's file by its name alone, so both
 # are the compiler's. A line lowered from the program's own functions keeps
 # its `.hero` name, which the debugger reads, and is the compiler's too where
-# no reader makes it the header's (`declared_after.kept`).
+# no reader makes it the header's (`declared_after.kept`). **The unit's own
+# name is `<component>.c` where its folder holds it as `unit-<16>.c`** (defect
+# 2877, `cli/unit_names.hero`): the restores are the emission's, and the file
+# was named by the module until a module's long name passed what a path
+# takes, so the two are held together through the digest.
 function compilers(path: str, compiled: str, runtime: [str]) -> bool
     p = settled(path)
 
-    if p == settled(compiled) || p == LIBRARY || p == restored_name(compiled)
+    if p == settled(compiled) || p == LIBRARY || unit_names.restores(name: p, file: settled(compiled))
         return true
 
     for own in runtime
@@ -59,17 +63,6 @@ function compilers(path: str, compiled: str, runtime: [str]) -> bool
             return true
 
     return false
-
-# The name a unit's `#line` restores give its own file: the file's, without
-# its directory (`emit/writer.hero`'s `generated`, the module's unit name).
-function restored_name(compiled: str) -> str
-    p = settled(compiled)
-    cut: i64 @= p.len()
-
-    while cut > 0 && p[cut - 1] != '/'
-        cut @ cut - 1
-
-    return p.slice(from: cut, to: p.len())
 
 # A path as its segments, either separator a `/`, an empty or a `.` segment
 # dropped, a leading `/` kept: clang prints a header found through `-I rt/`
@@ -112,10 +105,16 @@ function group_of(s: source.Source, decls: [ast.Decl], path: str) -> Group?
 # `compiled`, the file clang compiled, where that module has one, else the
 # first of the program's (defect 2208): a header two modules' groups name,
 # refused in both units, is told at each unit's own group. A unit's file is
-# its module's C component and `.c` (`cli/units.hero`), so a file that is no
-# module's, `heroes test`'s or a probe's, finds the first as before.
+# named by its module's stem, `unit-<16>.c`, and its `#line`s name it by the
+# module's C component and `.c` (`cli/unit_names.hero`, defect 2877), so a
+# file that is no module's, `heroes test`'s or a probe's, finds the first as
+# before.
 function unit_group(s: source.Source, decls: [ast.Decl], path: str, compiled: str) -> Group?
-    own = group_among(s, decls, path: path, component: module_names.stem_of(compiled))
+    component = unit_names.component_of(s, file: compiled)
+
+    if component == ""
+        return group_of(s, decls, path: path)
+    own = group_among(s, decls, path: path, component: component)
 
     if !own.is_err()
         return own

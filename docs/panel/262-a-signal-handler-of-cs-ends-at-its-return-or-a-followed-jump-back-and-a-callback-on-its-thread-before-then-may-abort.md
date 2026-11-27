@@ -580,3 +580,12 @@ which no wrong answer of this run carried.
 
 **Pending.** The decision's draft is `docs/panel/262-reports/decision-draft.md`, filed with this sitting as
 `panel 262`.
+
+**Ratified by the author's reading, 2026-11-27, at about 08:25**, in conversation (the answer *1a* to the
+coordinator's recommendation, meant as: *ratify the adopted text*). **What it ratifies**: R1, the spec-warden's
+`spec-w2` with the synthesis's five changes (`262-reports/synthesis/spec-adopted.txt`), over the rival `spec-w1` and
+the conservative sentence, on the blind reading's result (none of the adopted text's 85 answers wrong; the rival's five
+wrong on `n4`); and R2 to R7 as written. **R2's three repairs stand on `main`**: `fm_top` by step 199g (`d783018e7`),
+`wide` by step 199h (`a0088cee2`), `so` by step 199i (`94c2266a4`); R1 lands once every program of its table re-runs on
+both arm64 platforms, in the landing lane, with what R5 says the landing owes. Decision issue 2901 closes with this
+verdict.
