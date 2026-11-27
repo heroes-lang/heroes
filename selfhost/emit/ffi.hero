@@ -20,6 +20,7 @@ use check/state
 use checker
 use cli/pointee_ask
 use diag
+use emit/callback_learn
 use emit/carried_library
 use emit/ctype
 use emit/ffi_asked
@@ -158,6 +159,13 @@ function explain(stderr: str, s: source.Source, tree: ast.Ast, decls: [ast.Decl]
 
         if !void_p.is_err()
             found @ ffi_lookup.add_once(found, d: void_p.must())
+
+        # A callback's integer a learned variant spelled at another width or
+        # sign, its own marker line (`emit/callback_learn.hero`).
+        fit = callback_learn.fit_told(s, decls, p, names, line: line)
+
+        if !fit.is_err()
+            found @ ffi_lookup.add_once(found, d: fit.must())
 
         # A pointee that is no number, its own marker line (defect 2518).
         kind_p = ffi_pointee_kind.told(s, decls, tree, line: line)

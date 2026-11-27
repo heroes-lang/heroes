@@ -21,6 +21,7 @@ use check/freer_marks
 use check/state
 use check/table
 use checker
+use emit/callback_variant
 use emit/checks_raised
 use emit/ctype
 use emit/externs as emit_externs
@@ -125,7 +126,7 @@ function extern_probes(@w: writer.Writer, p: containers.Program, c: state.Checke
         found = source.source_line(s, decls[f.decl].name.start)
         module = source.component_at(s, decls[f.decl].span.start)
         probes @ probes.push(
-            Probe(file: found.file, line: found.line, text: probe_line(probe: probe_name(module: module, name: name), name: name, parameters: parameters.must(), arguments: arguments))
+            Probe(file: found.file, line: found.line, text: probe_line(probe: probe_name(module: module, name: name), name: name, parameters: parameters.must(), arguments: arguments) + callback_variant.asserted_all(names.variants, name: f.name, count: f.params.len()))
         )
 
     # Every check raised again at the region's opening, outside its push so

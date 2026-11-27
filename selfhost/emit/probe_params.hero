@@ -9,6 +9,7 @@ use ast
 use check/freer as freer
 use check/state
 use check/table
+use emit/callback_variant
 use emit/ctype
 use emit/mangle
 use ir/containers
@@ -71,7 +72,15 @@ function parameter_list(names: ctype.Names, c: state.Checked, decls: [ast.Decl],
         if mutable && read_lend.record_to_c(decls, decl: f.decl, at: index, named: is_record_type(c, ty: declared.ty))
             spelled @ "const " + spelled
 
-        if mutable
+        # A callback whose header writes its integers with C's other words
+        # is declared with them, as a refused round learned them
+        # (`emit/callback_variant.hero`): the probe then hands the header a
+        # function of its own type, and asks the width and the sign beside it.
+        taught = names.variants[callback_variant.site(name: f.name, index: index)]
+
+        if !taught.is_err() && !mutable
+            out @ out.push(callback_variant.declared(taught.must(), name: mangle.argument(index)))
+        else if mutable
             out @ out.push(spelled + " * " + mangle.argument(index))
         else
             out @ out.push(spelled + " " + mangle.argument(index))

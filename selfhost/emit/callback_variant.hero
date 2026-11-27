@@ -1,0 +1,369 @@
+# A C callback whose header spells an integer of the callback's own with
+# another of C's words than this compiler's C writes for the Heroes type, at
+# the same width and sign (design.md §4.19; spec § 13; lane p261-beside,
+# 2026-11-26, the draft d-p261-long-long).
+#
+# **What it closes, measured with the compiler of `e5b7e30ab`.** Spec § 13
+# holds a callback's parameters to the header's width and sign, as it holds a
+# call's, and a call's `i64` meets a header's `long long` or `long` by C's own
+# conversion, on every platform. Inside a function-pointer type C wants the
+# two types identical, and `i64` is `int64_t`: `long` on Linux and `long long`
+# on Darwin. So `sqlite3_update_hook`'s `sqlite3_int64`, `long long`, was
+# refused `ffi_callback_type` in the Linux arm64 image and built on this Mac,
+# and a callback of `long`, `ssize_t` or `size_t` the other way round: the
+# same rule asked of a callback by C's identity and of a call by width and
+# sign.
+#
+# **The rule**: where clang refuses the probe's callback, the round learns the
+# header's own word for each integer of the callback (`emit/callback_learn`),
+# and the next round hands C a THUNK OF THE HEADER'S WORDS: a variant of each
+# function's thunk, the same body, defined with those words, calling the
+# function by C's exact conversion between two integers of one width and
+# sign, so C calls a function of exactly the type its pointer says, never
+# one of another type through a cast. The width and the sign are asked of C
+# at the binding's own line, where the probe stands, and a word of another
+# width or sign is refused `ffi_callback_type` in the words it had
+# (`emit/callback_learn.hero`'s `fit_told`).
+# Only an integer moves: every other position is spelled as the function
+# type's typedef spells it, and C's identity still judges it.
+#
+# What the rounds learn rides beside a handle's tags, in the one table every
+# unit of a build is emitted with (`cli/tag_spelling.hero`), under keys of its
+# own: `KEY`, then the extern's C name, the parameter's position, the
+# callback's C words as its typedef spells them, the header's, and the
+# header's type as clang printed it, a tab between, which no C type holds.
+
+use emit/mangle
+
+constant KEY: str
+    "%callback "
+
+# One learned callback parameter: the extern's C name and the parameter's
+# position; the callback's result and parameters as this compiler spells
+# them (`base`) and as the header does (`words`); and the header's type as
+# clang printed it, for a refusal to name.
+record Variant
+    name: str
+    index: i64
+    base: [str]
+    words: [str]
+    header: str
+
+# A variant's key in the build's table.
+function key(v: Variant) -> str
+    return KEY + v.name + "\t" + v.index.to_str() + "\t" + v.base.join("|") + "\t" + v.words.join("|") + "\t" + v.header
+
+# The variants the rounds learned, by `site`, out of the table they learn in.
+function learned(struct_tags: {str: bool}) -> {str: Variant}
+    out: {str: Variant} @= {}
+
+    # ORDER: none, as a fact: the walk fills a map, whose keys have no order
+    # either, so no order of this walk reaches anything.
+    for one in keys(struct_tags)
+        if one.len() > KEY.len() && one.slice(from: 0, to: KEY.len()) == KEY
+            read = parsed(one.slice(from: KEY.len(), to: one.len()))
+
+            if !read.is_err()
+                out[site(name: read.must().name, index: read.must().index)] @ read.must()
+
+    return out
+
+function parsed(text: str) -> Variant?
+    fields = split_on(text: text, by: 9)
+
+    if fields.len() != 5
+        return fail(code: "none", msg: "not a variant's key")
+    index = number(fields[1])
+
+    if index.is_err()
+        return fail(code: "none", msg: "not a variant's key")
+    return ok(
+        Variant(name: fields[0], index: index.must(), base: split_on(text: fields[2], by: '|'), words: split_on(text: fields[3], by: '|'), header: fields[4])
+    )
+
+# Where a parameter of an extern stands, as the table finds it.
+function site(name: str, index: i64) -> str
+    return name + " " + index.to_str()
+
+# What tells two variants apart and names the C a variant writes: its two
+# spellings, hashed as the emitter names a function type's typedef.
+function tag(v: Variant) -> str
+    return mangle.instance(v.base.join("|") + "=>" + v.words.join("|"))
+
+# The variant thunk of the thunk `thunk` (`callback_thunk.thunk_name`),
+# `h_0cb_main_seen` becoming `h_0cv<tag>_main_seen`.
+function thunk_of(v: Variant, thunk: str) -> str
+    return "h_0cv" + tag(v) + "_" + thunk.slice(from: 6, to: thunk.len())
+
+# The table a variant's crossing goes through, as `hero_callback_of` for the
+# thunks.
+function table_of(v: Variant) -> str
+    return "hero_callback_of_v" + tag(v)
+
+# A function value handed to the learned parameter, through the variant's
+# table and cast to the header's own type, as `callback_thunk.crossings`
+# writes the thunk's.
+function crossed(v: Variant, argument: str) -> str
+    return "(" + pointer_type(v) + ")" + table_of(v) + "((void (*)(void))" + argument + ")"
+
+# A prototype of each learned variant's table, once, by the tag's order, for
+# the C that crosses through one before the tables are written (a bound
+# function's adapter, `emit/bound_value.hero`).
+function table_prototypes(variants: {str: Variant}) -> [str]
+    by_tag: {str: bool} @= {}
+
+    # ORDER: none, as a fact: the walk fills a map, read below by its sorted keys.
+    for at in keys(variants)
+        by_tag[table_of(variants[at].must())] @ true
+
+    out: [str] @= []
+
+    # ORDER: by the table's name, as `sort` orders a `str`.
+    for name in sort(keys(by_tag))
+        out @ out.push("static void (*" + name + "(void (*hero_f)(void)))(void);")
+
+    return out
+
+# The variant's own function-pointer type, the header's words in place.
+function pointer_type(v: Variant) -> str
+    return v.words[0] + " (*)(" + listed(v) + ")"
+
+# The parameter of the probe at the variant's position, named `name`.
+function declared(v: Variant, name: str) -> str
+    return v.words[0] + " (*" + name + ")(" + listed(v) + ")"
+
+# The variant thunk's header: the header's words, its parameters named.
+function header_of(v: Variant, thunk: str, names: [str]) -> str
+    params: [str] @= []
+
+    for i in range(from: 1, to: v.words.len())
+        params @ params.push(v.words[i] + " " + names[i - 1])
+
+    list: str @= "void"
+
+    if params.len() > 0
+        list @ params.join(", ")
+    return v.words[0] + " " + thunk_of(v, thunk: thunk) + "(" + list + ")"
+
+function listed(v: Variant) -> str
+    if v.words.len() < 2
+        return "void"
+    return v.words.slice(from: 1, to: v.words.len()).join(", ")
+
+# **The width and the sign, asked of C** where the probe stands: for each
+# pair of words the header and the compiler write a position with, once, one
+# `_Static_assert` that the two integers have one size and one sign, its
+# marker naming the binding and the position, which
+# `emit/callback_learn.hero`'s `fit_told` reads into `ffi_callback_type`.
+function asserted(v: Variant) -> str
+    out: [str] @= []
+    asked: {str: bool} @= {}
+
+    for i in range(from: 0, to: v.words.len())
+        if v.words[i] != v.base[i] && asked[v.words[i] + "|" + v.base[i]].is_err()
+            asked[v.words[i] + "|" + v.base[i]] @ true
+            w = v.words[i]
+            b = v.base[i]
+            out @ out.push(
+                " _Static_assert(sizeof(" + w + ") == sizeof(" + b + ") && ((" + w + ")-1 < (" + w + ")0) == ((" + b + ")-1 < (" + b + ")0), \"" + MARKER + v.name + " " + v.index.to_str() + "\");"
+            )
+
+    return out.join("")
+
+# Every learned callback's assertions of the binding `name`, in the order of
+# its `count` parameters, after its probe on the probe's own line.
+function asserted_all(variants: {str: Variant}, name: str, count: i64) -> str
+    out: str @= ""
+
+    for i in range(from: 0, to: count)
+        held = variants[site(name: name, index: i)]
+
+        if !held.is_err()
+            out @ out + asserted(held.must())
+
+    return out
+
+constant MARKER: str
+    "heroes-callback-fit "
+
+# C's words for an integer, as clang prints a type: what a header's integer
+# may be written with, and the only words this module puts in place of the
+# compiler's own.
+constant INTEGERS: [str]
+    [
+        "char"
+        "signed char"
+        "unsigned char"
+        "short"
+        "unsigned short"
+        "int"
+        "unsigned int"
+        "long"
+        "unsigned long"
+        "long long"
+        "unsigned long long"
+    ]
+
+# The compiler's own words for the Heroes integers (`widths.int_c_type`).
+constant OWN: [str]
+    ["int8_t", "int16_t", "int32_t", "int64_t", "uint8_t", "uint16_t", "uint32_t", "uint64_t"]
+
+function is_integer_word(word: str) -> bool
+    for one in INTEGERS
+        if one == word
+            return true
+
+    return false
+
+function is_own_integer(word: str) -> bool
+    for one in OWN
+        if one == word
+            return true
+
+    return false
+
+# The header's type, `R (*)(P1, ..., Pn)` as clang prints it, into `R` and
+# each `P`, split at the commas no parenthesis holds; anything else, a
+# typedef's name, an attribute after the list, a function returned, is none.
+function split(header: str) -> [str]?
+    opens = found(text: header, needle: " (*)(")
+
+    if opens.is_err() || header.len() == 0 || header[header.len() - 1] != ')'
+        return fail(code: "none", msg: "not a function pointer's type")
+    result = header.slice(from: 0, to: opens.must())
+
+    if !found(text: result, needle: "(").is_err()
+        return fail(code: "none", msg: "a function returned")
+    inside = header.slice(from: opens.must() + 5, to: header.len() - 1)
+    out: [str] @= [result]
+
+    if inside == "void"
+        return ok(out)
+    depth: i64 @= 0
+    start: i64 @= 0
+
+    for i in range(from: 0, to: inside.len())
+        if inside[i] == '('
+            depth @ depth + 1
+        else if inside[i] == ')'
+            depth @ depth - 1
+        else if inside[i] == ',' && depth == 0
+            out @ out.push(trimmed(inside.slice(from: start, to: i)))
+            start @ i + 1
+
+    out @ out.push(trimmed(inside.slice(from: start, to: inside.len())))
+    return ok(out)
+
+# `base` with each of the compiler's integers the header writes with another
+# of C's integer words taken in that word; none where no word moves.
+function moved(base: [str], header: [str]) -> [str]?
+    if base.len() != header.len()
+        return fail(code: "none", msg: "another count of parameters")
+    out: [str] @= []
+    changed: bool @= false
+
+    for i in range(from: 0, to: base.len())
+        if is_own_integer(base[i]) && is_integer_word(header[i])
+            out @ out.push(header[i])
+            changed @ true
+        else
+            out @ out.push(base[i])
+
+    if !changed
+        return fail(code: "none", msg: "no integer of the callback is spelled otherwise")
+    return ok(out)
+
+function found(text: str, needle: str) -> i64?
+    if needle.len() > text.len()
+        return fail(code: "none", msg: "not found")
+
+    for i in range(from: 0, to: text.len() - needle.len() + 1)
+        if text.slice(from: i, to: i + needle.len()) == needle
+            return ok(i)
+
+    return fail(code: "none", msg: "not found")
+
+function trimmed(text: str) -> str
+    from: i64 @= 0
+    to: i64 @= text.len()
+
+    while from < to && text[from] == ' '
+        from @ from + 1
+
+    while to > from && text[to - 1] == ' '
+        to @ to - 1
+
+    return text.slice(from: from, to: to)
+
+function split_on(text: str, by: u8) -> [str]
+    out: [str] @= []
+    start: i64 @= 0
+
+    for i in range(from: 0, to: text.len())
+        if text[i] == by
+            out @ out.push(text.slice(from: start, to: i))
+            start @ i + 1
+
+    return out.push(text.slice(from: start, to: text.len()))
+
+function number(text: str) -> i64?
+    if text.len() == 0
+        return fail(code: "none", msg: "no digits")
+    value: i64 @= 0
+
+    for i in range(from: 0, to: text.len())
+        if text[i] < '0' || text[i] > '9'
+            return fail(code: "none", msg: "not a number")
+        value @ value * 10 + (text[i] - '0').to_i64().must()
+
+    return ok(value)
+
+## Tests
+
+# `sqlite3_update_hook`'s callback as clang 22.1.8 printed it in the Linux
+# arm64 image, and the program's `(function(data: ptr, op: i32, base: cstr,
+# table: cstr, row: i64) -> ())` as its typedef spells it there.
+test "the header's integer word takes the place of the compiler's, and nothing else moves"
+    header = "void (*)(void *, int, const char *, const char *, long long)"
+    words = split(header).must()
+    assert words == ["void", "void *", "int", "const char *", "const char *", "long long"]
+    base = ["void", "void *", "int32_t", "const char *", "const char *", "int64_t"]
+    moved_words = moved(base: base, header: words).must()
+    assert moved_words == ["void", "void *", "int", "const char *", "const char *", "long long"]
+    v = Variant(name: "sqlite3_update_hook", index: 1, base: base, words: moved_words, header: header)
+    assert pointer_type(v) == "void (*)(void *, int, const char *, const char *, long long)"
+    assert declared(v, name: "a1") == "void (*a1)(void *, int, const char *, const char *, long long)"
+    assert crossed(v, argument: "t4") == "(void (*)(void *, int, const char *, const char *, long long))" + table_of(v) + "((void (*)(void))t4)"
+    asked = asserted(v)
+    assert asked == " _Static_assert(sizeof(int) == sizeof(int32_t) && ((int)-1 < (int)0) == ((int32_t)-1 < (int32_t)0), \"heroes-callback-fit sqlite3_update_hook 1\"); _Static_assert(sizeof(long long) == sizeof(int64_t) && ((long long)-1 < (long long)0) == ((int64_t)-1 < (int64_t)0), \"heroes-callback-fit sqlite3_update_hook 1\");"
+
+# A learned site rides in the build's table and reads back whole.
+test "a variant's key reads back as the variant"
+    v = Variant(
+        name: "call_size",
+        index: 0,
+        base: ["uint64_t", "uint64_t"],
+        words: ["unsigned long", "unsigned long"],
+        header: "unsigned long (*)(unsigned long)"
+    )
+    table: {str: bool} @= {}
+    table[key(v)] @ true
+    table["%call memset"] @ true
+    got = learned(table)
+    assert keys(got).len() == 1
+    back = got[site(name: "call_size", index: 0)].must()
+    assert back.name == "call_size" && back.index == 0 && back.base == v.base && back.words == v.words && back.header == v.header
+    assert thunk_of(v, thunk: "h_0cb_main_thrice") == "h_0cv" + tag(v) + "_main_thrice"
+    assert header_of(v, thunk: "h_0cb_main_thrice", names: ["h1_x"]) == "unsigned long h_0cv" + tag(v) + "_main_thrice(unsigned long h1_x)"
+
+# A shape no word of C's integers explains learns nothing: another count, a
+# pointer, a type's name, a function returned.
+test "a callback that differs any other way learns nothing"
+    assert moved(base: ["int64_t", "int64_t"], header: ["int64_t", "int64_t"]).is_err()
+    assert moved(base: ["int64_t", "int64_t"], header: ["long long"]).is_err()
+    assert moved(base: ["void", "void *"], header: ["void", "char *"]).is_err()
+    assert moved(base: ["double", "double"], header: ["double", "long"]).is_err()
+    assert split("sqlite3_callback").is_err()
+    assert split("void (*(*)(int))(int)").is_err()
+    assert split("int (*)(void)").must() == ["int"]
+    assert split("void (*)(int (*)(int, int), long)").must() == ["void", "int (*)(int, int)", "long"]

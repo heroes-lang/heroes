@@ -1,0 +1,242 @@
+# What a refused round learns of a callback the header spells with other
+# integer words (design.md §4.19; spec § 13; lane p261-beside, 2026-11-26;
+# `emit/callback_variant.hero` says why and what the next round writes).
+#
+# **Where it learns**: clang's own refusal of the probe, *incompatible
+# function pointer types passing '...' to parameter of type 'Y'*, at the
+# binding's own line, found by the column the probe's arguments stand at, as
+# `emit/ffi_narrowed.hero` finds the parameter it tells. `Y`, the last
+# quoted type, is the header's type with its sugar taken off where clang
+# names both. A callback whose integers the header writes with C's other
+# words is learned; one whose shape differs any other way learns nothing, and
+# its refusal is told as it always was.
+#
+# **The rounds end.** A site is learned once, so the table only grows, over
+# the program's callback parameters; a round that learns none ends them.
+
+use ast
+use check/freer_marks
+use check/state
+use check/table
+use cli/pointee_ask
+use diag
+use emit/callback_variant
+use emit/ctype
+use emit/extern_probe
+use emit/ffi_lookup
+use emit/ffi_site
+use emit/lend_type
+use emit/probe_reply
+use ir/containers
+use source
+use token
+
+constant PASSING: str
+    "incompatible function pointer types passing '"
+
+# Learn from a refused round's `refusals` each callback site `to_learn`
+# gives that no round had, into the build's table; how many it learned.
+#
+# Its names table is the one `emit/ffi.hero`'s `explain` rebuilds the probe
+# with, a function type's typedef and the lends' casts included, so the
+# columns read here are the ones clang read.
+function learn(s: source.Source, decls: [ast.Decl], p: containers.Program, c: state.Checked, answered: [pointee_ask.Answered], refusals: [str], @struct_tags: {str: bool}) -> i64
+    names: ctype.Names @= ctype.with_functions(
+        ctype.new_names_qualified(s, decls, struct_tags: struct_tags),
+        c: c,
+        s: s,
+        decls: decls,
+        p: p
+    )
+    names.lend_units @ lend_type.with_read_casts(names.lend_units, answered)
+    known = callback_variant.learned(struct_tags)
+    learned_now: i64 @= 0
+
+    for v in to_learn(s, decls, p, c, names, refusals: refusals.join("\n"))
+        if known[callback_variant.site(name: v.name, index: v.index)].is_err()
+            struct_tags[callback_variant.key(v)] @ true
+            learned_now @ learned_now + 1
+
+    return learned_now
+
+# What a refused round's `refusals` teach, in their order, each site once.
+function to_learn(s: source.Source, decls: [ast.Decl], p: containers.Program, c: state.Checked, names: ctype.Names, refusals: str) -> [callback_variant.Variant]
+    out: [callback_variant.Variant] @= []
+    seen: {str: bool} @= {}
+
+    for row in ffi_lookup.lines(text: refusals)
+        if !ffi_lookup.has(text: row, needle: PASSING)
+            continue
+        one = site_of(s, decls, p, c, names, row: row)
+
+        if one.is_err()
+            continue
+        at = callback_variant.site(name: one.must().name, index: one.must().index)
+
+        if seen[at].is_err()
+            seen[at] @ true
+            out @ out.push(one.must())
+
+    return out
+
+# The site one refusal names, and the variant the header's words make of it:
+# the probe's line at a binding, the column at a parameter whose type is a
+# function's, the header's type split into its result and parameters, as
+# many as the function type's, and an integer among them spelled otherwise.
+function site_of(s: source.Source, decls: [ast.Decl], p: containers.Program, c: state.Checked, names: ctype.Names, row: str) -> callback_variant.Variant?
+    at = ffi_site.location(s, line: row)?
+    found = ffi_site.extern_at_line(p, s, decls, file: at.file, at_line: at.line)?
+    f = found.f
+    name = found.name
+    parameters = extern_probe.parameter_list(names, c, decls, f, frees: !freer_marks.marked_as_freer(c.freers, name: name).is_err())?
+    module = source.component_at(s, decls[f.decl].span.start)
+    columns = probe_reply.argument_columns(
+        probe: extern_probe.probe_name(module: module, name: name),
+        name: name,
+        parameters: parameters,
+        arguments: extern_probe.probe_arguments(f, c, names, callee: name)
+    )
+    index: i64 @= -1
+
+    for i in range(from: 0, to: columns.len())
+        if columns[i] == at.col && i < f.params.len()
+            index @ i
+
+    if index < 0
+        return fail(code: "none", msg: "no parameter at that column")
+    base = spelled(names, c, ty: f.slots[f.params[index]].ty)?
+    header = ffi_site.last_quoted(at.rest)?
+    words = callback_variant.split(header)?
+    moved = callback_variant.moved(base: base, header: words)?
+    return ok(callback_variant.Variant(name: f.name, index: index, base: base, words: moved, header: header))
+
+# A function type's result and parameters as its typedef spells them
+# (`types.function_type`), where every position crosses by value: none for
+# one with an `@` or `lent` position or a value kept off the frame, whose C
+# a variant does not write.
+function spelled(names: ctype.Names, c: state.Checked, ty: i64) -> [str]?
+    return match table.get(c.types, ty)
+        .function_ty ft => positions(names, c, params: ft.params, modes: ft.modes, result: ft.result)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => fail(code: "none", msg: "not a function type")
+        .array | .fixed | .map | .named | .fallible | .case_ty => fail(code: "none", msg: "not a function type")
+        .failure | .generic | .error | .thread_ty | .mailbox_ty => fail(code: "none", msg: "not a function type")
+
+function positions(names: ctype.Names, c: state.Checked, params: table.Params, modes: table.Params, result: i64) -> [str]?
+    if names.large[result].default(false)
+        return fail(code: "none", msg: "a result kept off the frame")
+    out: [str] @= [ctype.c_result(names, c: c, ty: result)]
+    held = table.params_of(c.types, params)
+    marked = table.modes_of(c.types, modes, count: held.len())
+
+    for i in range(from: 0, to: held.len())
+        if marked[i].len() > 0 || names.large[held[i]].default(false)
+            return fail(code: "none", msg: "a position that is a place")
+        one = ctype.c_type(names, c: c, ty: held[i])?
+        out @ out.push(one)
+
+    return ok(out)
+
+# **The width and the sign a variant asked, told as the callback it is**: a
+# `_Static_assert` of `callback_variant.asserted` that failed, at the
+# binding's own line, is `ffi_callback_type` on the binding, the parameter
+# named and the header's type as clang printed it when the round learned it,
+# the words a refusal of the probe's pointer said before.
+function fit_told(s: source.Source, decls: [ast.Decl], p: containers.Program, names: ctype.Names, line: str) -> diag.Diagnostic?
+    marked = ffi_lookup.after(text: line, marker: callback_variant.MARKER)?
+    at = ffi_site.location(s, line: line)?
+    found = ffi_site.extern_at_line(p, s, decls, file: at.file, at_line: at.line)?
+    f = found.f
+
+    for index in range(from: 0, to: f.params.len())
+        taught = names.variants[callback_variant.site(name: f.name, index: index)]
+
+        if !taught.is_err() && ffi_lookup.has(text: marked + " ", needle: f.name + " " + index.to_str() + " ")
+            which = "`" + f.slots[f.params[index]].name + "`"
+            return ok(
+                callback_told(which: which, name: found.name, c_type: taught.must().header, span: decls[f.decl].span)
+            )
+
+    return fail(code: "none", msg: "no learned callback of that binding")
+
+# A callback that is not the header's, in the words of `ffi_callback_type`,
+# whether clang refused the probe's pointer (`emit/ffi_narrowed.hero`) or a
+# learned variant's width and sign; moved here from that module with the
+# second way.
+function callback_told(which: str, name: str, c_type: str, span: token.Span) -> diag.Diagnostic
+    cb: diag.Diagnostic @= diag.new_diagnostic(
+        code: "ffi_callback_type",
+        message: which + " of `" + name + "` is not the callback the header declares — clang read the header, and it says `" + c_type + "`",
+        span: span
+    )
+    cb.notes @ cb.notes.push(
+        "spec § 13: a callback is declared with the header's own parameter and result types — each parameter at its width and sign, and `()` where the header says void"
+    )
+
+    # The second note fires only where the header qualifies a pointee THIS
+    # LANGUAGE CANNOT SPELL, and `const char *` is not one of those: `cstr`
+    # spells it exactly. **This shipped wrong for one commit** and panel 112's
+    # ffi seat found it: the needle was a bare `"const "`, so a callback whose
+    # only mistake was `i64` where the header says `int` was told *"this one
+    # cannot be written at all today"* — while the one-character repair to
+    # `i32` builds and runs at exit 0. A diagnostic that stops a correct
+    # repair is §4.17's own failure, and a needle is the wrong instrument
+    # for a question about which spellings exist.
+    #
+    # So the text is asked with every `const char *` taken out of it first,
+    # which leaves exactly the qualified pointees that have no Heroes name.
+    # `nftw` still fires, correctly: it carries `const char *` AND
+    # `const struct stat *`, and only the first has a spelling.
+    if ffi_lookup.has(text: without_const_char(c_type), needle: "const ")
+        cb.notes @ cb.notes.push(
+            "a pointee the header marks `const` has no spelling here unless it is `const char *`, which is `cstr` — design.md Part 8 wart 19 names this and the four causes measured beside it"
+        )
+
+    return cb
+
+# The header's callback type with every `const char *` removed — the one
+# qualified pointee this language already spells, as `cstr`. What is left is
+# exactly the set of qualified pointees with no Heroes name, which is the
+# question the note above needs answered (panel 112).
+#
+# It walks characters rather than bytes for the same reason every scan in this
+# file does, and it is written as a loop rather than a `replace` because this
+# module has no string library behind it and one caller does not earn one.
+function without_const_char(text: str) -> str
+    cs = text.chars()
+    kept: [str] @= []
+    at: i64 @= 0
+    marker = "const char *".chars()
+
+    while at < cs.len()
+        matched: bool @= at + marker.len() <= cs.len()
+        offset: i64 @= 0
+
+        while matched && offset < marker.len()
+            if cs[at + offset] != marker[offset]
+                matched @ false
+            offset @ offset + 1
+
+        if matched
+            at @ at + marker.len()
+        else
+            kept @ kept.push(cs[at])
+            at @ at + 1
+
+    return kept.join("")
+
+## Tests
+
+test "a const char * is spelled cstr, so it is not a hole and the note must not fire"
+    assert without_const_char("void (*)(const char *, int)") == "void (*)(, int)"
+    assert !ffi_lookup.has(text: without_const_char("void (*)(const char *, int)"), needle: "const ")
+
+# nftw is the shape that keeps the note honest in the other direction: it
+# carries BOTH, and only the char half has a spelling.
+test "a const pointee with no spelling still fires, even beside a const char *"
+    nftw = "int (*)(const char *, const struct stat *, int, struct FTW *)"
+    assert ffi_lookup.has(text: without_const_char(nftw), needle: "const ")
+    assert ffi_lookup.has(text: without_const_char("int (*)(const void *, const void *)"), needle: "const ")
+
+test "a callback with no qualifier anywhere leaves nothing to say"
+    assert !ffi_lookup.has(text: without_const_char("void (*)(void)"), needle: "const ")
+    assert !ffi_lookup.has(text: without_const_char("int (*)(void *, int, char **, char **)"), needle: "const ")

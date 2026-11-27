@@ -22,6 +22,7 @@ use emit/builtins
 use emit/c_main
 use emit/callback_guard
 use emit/callback_thunk
+use emit/callback_variants
 use emit/crossing
 use emit/crossing_bodies
 use emit/ctype
@@ -260,6 +261,7 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
                 signature.value_prototype(@w, p.functions[at], c, names, s, decls)
 
     callback_thunk.lookup_table(@w, p, c, names, s, decls, callbacks: callbacks)
+    callback_variants.tables(@w, p, c, names, s, decls, callbacks: callbacks)
 
     # The padding tables of the group records these bodies lend (panel 215's
     # R1, `emit/padding_tables.hero`), before the first body that reads one.
