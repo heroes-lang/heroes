@@ -72,7 +72,6 @@ use emit/signature
 use emit/synth
 use emit/typeorder
 use emit/unit_plan
-use emit/unwind_scope
 use emit/value_probe
 use emit/writer
 use ir/containers
@@ -137,7 +136,6 @@ function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: 
         headers: plan.headers,
         kept: whole.kept
     )
-    unwind_scope.unit_mark(@w, names)
     typeorder.definitions(@w, c, names, s, decls, want: want, kinds: whole.kinds)
 
     # A probe's parameters are the DECLARED types, so it belongs after

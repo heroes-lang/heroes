@@ -126,7 +126,6 @@
 #   (`cli/macro_twice.hero`). Words, so it reaches every probe; the key names
 #   this list, so every key moved once.
 use cli/process
-use emit/unwind_scope
 
 extern "hero_compiler.h"
     function hero_frame_probes_asked() -> i64
@@ -247,12 +246,6 @@ function level_words(level: str, sanitize: bool) -> [str]
         out @ out.push(word)
 
     return out
-
-# What a unit of a program that unwinds compiles with besides the level's
-# words (panel 258's R2): `-fexceptions`, read off the unit's own text by
-# `emit/unwind_scope.hero`'s `words`.
-function unwind_words(text: str) -> [str]
-    return unwind_scope.words(text)
 
 # What --sanitize adds — NOT a leak detector: ASan's is missing on
 # Darwin arm64, and leaks are hero_runtime_check_leaks()'s job in the

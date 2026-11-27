@@ -38,7 +38,6 @@ use emit/printing
 use emit/shadowed
 use emit/stop_place
 use emit/threads
-use emit/unwind_scope
 use emit/writer
 use inventory
 use ir
@@ -297,9 +296,6 @@ function call(@w: writer.Writer, p: instances.Held, f: containers.Function, site
                 result_name @ ok("hero_when")
             else
                 writer.line(@w, text: "    " + assign + cast + invocation + ";")
-
-            if !declared.is_err()
-                unwind_scope.after_call(@w, s, decls, names, callee: p.program.functions[declared.must()])
 
             # The counter rides the call it belongs to, on the lines after it, so
             # the two are one instruction to read and cannot drift apart. The

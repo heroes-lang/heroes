@@ -26,7 +26,6 @@ use emit/option_entries
 use emit/structural
 use emit/synth
 use emit/types
-use emit/unwind_scope
 use emit/writer
 use handles
 use ir/layout
@@ -84,7 +83,6 @@ function prototypes(@w: writer.Writer, c: state.Checked, names: ctype.Names, dec
                 text: "HERO_TU_LOCAL void " + one.at.prefix + "_retain(const " + one.at.c_type + " *hero_v);"
             )
             writer.line(@w, text: "HERO_TU_LOCAL void " + one.at.prefix + "_release(" + one.at.c_type + " *hero_v);")
-            unwind_scope.collector_prototypes(@w, names, prefix: one.at.prefix)
         writer.line(
             @w,
             text: "HERO_TU_LOCAL _Bool " + one.at.prefix + "_eq(" + handles.const_pointer(one.at.c_type) + "hero_a, " + handles.const_pointer(one.at.c_type) + "hero_b);"
@@ -98,7 +96,6 @@ function prototypes(@w: writer.Writer, c: state.Checked, names: ctype.Names, dec
         writer.at_generated(@w)
         writer.line(@w, text: "HERO_TU_LOCAL void " + entry.name + "_retain(const " + entry.name + " *hero_v);")
         writer.line(@w, text: "HERO_TU_LOCAL void " + entry.name + "_release(" + entry.name + " *hero_v);")
-        unwind_scope.collector_prototypes(@w, names, prefix: entry.name)
         writer.line(
             @w,
             text: "HERO_TU_LOCAL _Bool " + entry.name + "_eq(const " + entry.name + " *hero_a, const " + entry.name + " *hero_b);"
@@ -146,17 +143,6 @@ function bodies(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: sour
         structural.hash_body(@w, c, names, s, at: at, fields: fields)
 
     option_bodies(@w, c, names, want: want)
-
-    # The collectors a C jump's unwind runs on a slot of each counted type
-    # (panel 258's R2, `emit/unwind_scope.hero`), in a program that unwinds.
-    if unwind_scope.unwinds(names)
-        for one in every_generated_type(c, names, decls, want: want)
-            if one.counted
-                unwind_scope.collector_bodies(@w, prefix: one.at.prefix, c_type: one.at.c_type)
-
-        for entry in option_entries.of(names, c)
-            if synth.wants_type(w: want, ty: entry.at)
-                unwind_scope.collector_bodies(@w, prefix: entry.name, c_type: entry.name)
 
 # The four functions for each T?. Every one switches on the tag,
 # because the two sides are alternatives and touching the wrong one is
