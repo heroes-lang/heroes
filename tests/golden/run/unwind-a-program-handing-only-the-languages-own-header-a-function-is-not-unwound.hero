@@ -1,0 +1,20 @@
+# Panel 258's R2, ratified by the author's reading on 2026-11-27 (decision
+# 2758): where the program declares no extern of a C library's own group with
+# a function-typed parameter, nothing changes. This program hands a function
+# only to the language's own `hero_os.h`, as the compiler and every shipped
+# program do (`hero_thread_spawn`), and its slots hold `str`s and an array.
+# What it pins: its C declares no cleanup, writes no line after a call and
+# builds without `-fexceptions` (`emit/unwind_scope.hero`, `cli/flags.hero`'s
+# `unwind_words`), which its blessed emission holds byte for byte; and it runs
+# as it did.
+extern "hero_os.h"
+    function hero_thread_spawn(body: (function(i64) -> i64), arg: i64) -> i64
+    function hero_thread_join(handle: i64) -> i64
+
+function body(n: i64) -> i64
+    words: [str] = [f"one {n}", f"two {n}"]
+    return words.len() + n
+
+function main()
+    worker = hero_thread_spawn(body: body, arg: 40)
+    print("the worker answered ", hero_thread_join(handle: worker))

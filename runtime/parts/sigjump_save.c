@@ -205,6 +205,30 @@ int(getcontext)(ucontext_t *ucp) {
     __attribute__((musttail)) return real(ucp);
 }
 
+/* THE FRAMES A JUMP ABANDONS ARE UNWOUND FIRST (panel 258's R2,
+ * `parts/unwind.c`), where the jump is made outside every handler and its
+ * target is decoded (route C): the stack pointer it will install, read before
+ * `hero_jmp_jump` judges the handlers, or 0 where the unwind is not asked. */
+static uintptr_t hero_jmp_unwinds(const struct __jmp_buf_tag *env) {
+    HeroSignalStack *own = hero_sig_own();
+    if (own == NULL || env == NULL || hero_sig_standing(own) || hero_jmp_recording()) return 0;
+    return hero_jmp_sp_of(env);
+}
+
+/* The jump `parts/unwind.c`'s stop makes, the C library's own, as below, and
+ * the shadow it clears before its unwind, as a jump's is. */
+#if defined(__aarch64__) || defined(__x86_64__)
+static void hero_unwind_clear(void) { hero_jmp_leaving(); }
+
+__attribute__((no_sanitize("address"))) static _Noreturn void hero_unwind_go(int kind, void *env, int value) {
+    hero_jmp_jump_fn real = atomic_load_explicit(&hero_jmp_real_longjmp, memory_order_relaxed);
+    if (kind == HERO_UNWIND__LONGJMP) real = atomic_load_explicit(&hero_jmp_real__longjmp, memory_order_relaxed);
+    if (kind == HERO_UNWIND_SIGLONGJMP) real = atomic_load_explicit(&hero_jmp_real_siglongjmp, memory_order_relaxed);
+    if (kind == HERO_UNWIND_LONGJMP_CHK) real = atomic_load_explicit(&hero_jmp_real_chk, memory_order_relaxed);
+    hero_jmp_go(real, (struct __jmp_buf_tag *)env, value);
+}
+#endif
+
 /* THE JUMPS. Each finds the C library's own first, as a save point does.
  * Under AddressSanitizer none is instrumented (defect d-lane-sig-family-10):
  * clang puts a call to `__asan_handle_no_return` before every call of a
@@ -214,26 +238,34 @@ int(getcontext)(ucontext_t *ucp) {
  * cleared by `hero_jmp_leaving`, as Darwin's are (`parts/rebind_jump.c`). */
 __attribute__((no_sanitize("address"))) void(longjmp)(struct __jmp_buf_tag env[1], int val) {
     hero_jmp_find();
+    uintptr_t unwinds = hero_jmp_unwinds(env);
     hero_jmp_jump(env);
+    if (unwinds != 0) hero_unwind_jump(env, val, HERO_UNWIND_LONGJMP, unwinds);
     hero_jmp_go(atomic_load_explicit(&hero_jmp_real_longjmp, memory_order_relaxed), env, val);
 }
 
 __attribute__((no_sanitize("address"))) void(_longjmp)(struct __jmp_buf_tag env[1], int val) {
     hero_jmp_find();
+    uintptr_t unwinds = hero_jmp_unwinds(env);
     hero_jmp_jump(env);
+    if (unwinds != 0) hero_unwind_jump(env, val, HERO_UNWIND__LONGJMP, unwinds);
     hero_jmp_go(atomic_load_explicit(&hero_jmp_real__longjmp, memory_order_relaxed), env, val);
 }
 
 __attribute__((no_sanitize("address"))) void(siglongjmp)(struct __jmp_buf_tag env[1], int val) {
     hero_jmp_find();
+    uintptr_t unwinds = hero_jmp_unwinds(env);
     hero_jmp_jump(env);
+    if (unwinds != 0) hero_unwind_jump(env, val, HERO_UNWIND_SIGLONGJMP, unwinds);
     hero_jmp_go(atomic_load_explicit(&hero_jmp_real_siglongjmp, memory_order_relaxed), env, val);
 }
 
 void __longjmp_chk(struct __jmp_buf_tag env[1], int val);
 __attribute__((no_sanitize("address"))) void __longjmp_chk(struct __jmp_buf_tag env[1], int val) {
     hero_jmp_find();
+    uintptr_t unwinds = hero_jmp_unwinds(env);
     hero_jmp_jump(env);
+    if (unwinds != 0) hero_unwind_jump(env, val, HERO_UNWIND_LONGJMP_CHK, unwinds);
     hero_jmp_go(atomic_load_explicit(&hero_jmp_real_chk, memory_order_relaxed), env, val);
 }
 
