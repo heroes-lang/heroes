@@ -362,7 +362,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4544461e6051e69e", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3472e07b7c150ab4", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2870acallbackrecursingpastacoroutinesguardedstackaborts\tfixedbugs-2870-a-callback-recursing-past-a-coroutines-guarded-stack-aborts\n");

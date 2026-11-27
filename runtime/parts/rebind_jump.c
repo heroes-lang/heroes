@@ -142,6 +142,18 @@ static bool hero_rebind_switch_target(HeroSignalStack *own, const void *uc, int 
     return true;
 }
 
+/* The switch of contexts, of `call`, from `from` (none for `setcontext`) to
+ * `to`, that the wrapper whose frame is `frame` begins: refused where the
+ * handler the thread runs now interrupted a switch naming either, else noted
+ * until it is seen to end, the one it is made inside of kept in `prev`
+ * (defect 2871, `parts/sigguard.c`). */
+static void hero_rebind_switch_begins(HeroSignalStack *own, const char *call, uintptr_t frame, const void *from,
+                                      const void *to, HeroSigSwitch *prev) {
+    HeroSigSwitch next = {frame, 0, 0, (uintptr_t)from, (uintptr_t)to};
+    if (!hero_rebind_target_range(own, frame, &next.lo, &next.hi)) next.lo = next.hi = 0;
+    hero_signal_switch_begin(own, call, &next, prev);
+}
+
 /* A jump of the setjmp family to `env`: its target decoded at every jump,
  * inside a handler or not (one word of a buffer the C library reads next), so
  * a landing in frames already left is seen wherever it happens. Where the
@@ -156,6 +168,7 @@ __attribute__((noinline)) static void hero_rebind_jump(const void *env) {
     bool standing = hero_rebind_standing(own);
     if (hero_rebind_decoding(HERO_REBIND_JMP)) {
         uintptr_t t = hero_rebind_jmp_sp(env);
+        hero_signal_switch_left(own, t);
         if (standing) hero_rebind_landing(own, t);
         if (standing) hero_rebind_prune_to(own, t, true);
         hero_rebind_reenter(own, t);
@@ -163,6 +176,7 @@ __attribute__((noinline)) static void hero_rebind_jump(const void *env) {
         uintptr_t t = 0;
         bool back = false;
         if (hero_rebind_target(own, env, &t, &back)) {
+            hero_signal_switch_left(own, t);
             if (standing) hero_rebind_landing(own, t);
             if (standing) hero_rebind_prune_to(own, t, true);
             hero_rebind_landed(own, t, back);
@@ -232,6 +246,10 @@ __attribute__((noinline, no_sanitize("address"))) static int hero_rebind_swapcon
     uintptr_t entered = 0;
     int watched = -1;
     unsigned seq = 0;
+    HeroSigSwitch outer = {0, 0, 0, 0, 0};
+    if (own != NULL) {
+        hero_rebind_switch_begins(own, "swapcontext", (uintptr_t)__builtin_frame_address(0), from, to, &outer);
+    }
     hero_rebind_range_left((uintptr_t)__builtin_frame_address(0));
     hero_rebind_relived(own, (uintptr_t)__builtin_frame_address(0));
     if (own != NULL && from != NULL && hero_rebind_ctx_valid(to)) {
@@ -271,6 +289,7 @@ __attribute__((noinline, no_sanitize("address"))) static int hero_rebind_swapcon
         }
     }
     int r = atomic_load_explicit(&hero_rebind_real_swapcontext, memory_order_relaxed)(from, to);
+    if (own != NULL) hero_signal_switch_back(own, &outer, (uintptr_t)__builtin_frame_address(0));
     /* Back in this frame: where no switch was made from the range entered
      * and the context did not move, its coroutine returned through `uc_link`
      * and the range holds no frames of it any more (defect 2706,
@@ -319,12 +338,22 @@ __attribute__((noreturn, no_sanitize("address"))) static void hero_rebind__longj
 }
 
 /* A switch made from this frame leaves the range it lies on, if a swap into
- * that range waits to return (`rebind_entries.c`, the life of a range). */
-__attribute__((no_sanitize("address"))) static int hero_rebind_setcontext(const void *context) {
+ * that range waits to return (`rebind_entries.c`, the life of a range). The
+ * C library's own is called, never reached by a tail call, so its frames link
+ * to this one while it switches (defect 2871); it returns only where it
+ * refused the context. */
+__attribute__((noinline, no_sanitize("address"))) static int hero_rebind_setcontext(const void *context) {
+    HeroSignalStack *own = hero_rebind_own();
+    HeroSigSwitch outer = {0, 0, 0, 0, 0};
+    if (own != NULL) {
+        hero_rebind_switch_begins(own, "setcontext", (uintptr_t)__builtin_frame_address(0), NULL, context, &outer);
+    }
     hero_rebind_range_left(hero_rebind_below());
     hero_rebind_set(context);
     hero_rebind_leaving();
-    return atomic_load_explicit(&hero_rebind_real_setcontext, memory_order_relaxed)(context);
+    int r = atomic_load_explicit(&hero_rebind_real_setcontext, memory_order_relaxed)(context);
+    if (own != NULL) hero_signal_switch_back(own, &outer, (uintptr_t)__builtin_frame_address(0));
+    return r;
 }
 
 /* The save points: on route A each records, with a frame below its caller's
@@ -369,6 +398,12 @@ static int hero_rebind_getcontext(void *context) {
  * left it. */
 void hero_rebind_made_context(const void *context);
 void hero_rebind_made_context(const void *context) {
+    const ucontext_t *uc = (const ucontext_t *)context;
+    HeroSignalStack *own = hero_rebind_own();
+    if (own != NULL && uc != NULL) {
+        uintptr_t lo = (uintptr_t)uc->uc_stack.ss_sp;
+        hero_signal_switch_remade(own, lo, lo + (uintptr_t)uc->uc_stack.ss_size);
+    }
     /* Route A reads no switch's target, so it cannot see the range entered or
      * its coroutine end: the range is held from here on, and a target in it
      * lies on the coroutine (rule 7, defect 2745). */

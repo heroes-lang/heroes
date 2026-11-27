@@ -416,7 +416,23 @@ typedef struct {
     int held;
     int unsure;
     int dead;
+    /* Where the signal interrupted a switch of contexts this thread was
+     * making, the contexts that switch saves into and loads (defect 2871);
+     * `cut_to` 0 elsewhere. */
+    uintptr_t cut_from;
+    uintptr_t cut_to;
 } HeroSigEntry;
+
+/* A switch of contexts a wrapper of `swapcontext` or `setcontext` has begun
+ * (defect 2871): the wrapper's frame, 0 for none; the stack it lies on; the
+ * context it saves into (0 for `setcontext`) and the one it loads. */
+typedef struct {
+    uintptr_t frame;
+    uintptr_t lo;
+    uintptr_t hi;
+    uintptr_t from;
+    uintptr_t to;
+} HeroSigSwitch;
 
 #if defined(HERO_SIG_REBIND)
 typedef HeroSigEntry HeroRebindEntry;
@@ -425,6 +441,11 @@ typedef HeroSigEntry HeroRebindEntry;
 typedef struct {
     uintptr_t lo;
     uintptr_t hi;
+#if defined(HERO_SIG_WRAPS) || defined(HERO_SIG_REBIND)
+    /* The switch of contexts this thread has begun and not yet been seen to
+     * end (defect 2871). */
+    HeroSigSwitch switching;
+#endif
 #if defined(HERO_SIG_WRAPS)
     /* B': the handlers this thread is inside, innermost last, `depth` past the
      * last one not gone; how many run with no entry because the record was
@@ -508,6 +529,166 @@ static _Thread_local HeroSignalStack hero_signal_stack;
 #define HERO_SIG_REENTERED 4
 #define HERO_SIG_ONSTACK 5
 #define HERO_SIG_HELD 6
+
+#if defined(HERO_SIG_WRAPS) || defined(HERO_SIG_REBIND)
+/* A HANDLER THAT SWITCHES CONTEXTS INSIDE A SWITCH IT INTERRUPTED (defect
+ * 2871, 2026-11-27; panel 262's ffi-pragmatist, `gtc`). A switch loads the
+ * target's signal mask before its registers, Darwin's `setcontext` and
+ * glibc's `swapcontext` alike, so a signal pending while blocked is delivered
+ * inside the switch, on the stack being left, as soon as the target's mask
+ * lets it through. A green-thread scheduler whose `SIGALRM` handler
+ * `swapcontext`s to a thread never run before, whose context `getcontext`
+ * made with the signal let through, meets that whenever its next tick is
+ * already due: the handler runs again there with the scheduler's current
+ * thread already the new one, saves into that thread's context, the one the
+ * interrupted switch has yet to load, and the switch, resumed later, loads
+ * the frames of a handler that has returned. Measured: `gtc` with the tick
+ * forced due there (a wait of 7 ms in its handler) died inside the runtime's
+ * `swapcontext` by `__stack_chk_fail` at its return on a green thread's
+ * stack, 3 runs of 3 on this Mac (lldb), the very end of the one failure of
+ * 640 runs under `--sanitize` there (its crash report), and as C alone, with
+ * no Heroes runtime, by Bus error or Segmentation fault, 6 of 6 at `-O0` and
+ * `-O2`; in Linux arm64, 139 plain, 3 of 3, and as C alone 2,222 ticks
+ * found on another thread's stack than the scheduler's current one when its
+ * output was cut at 20,000 bytes, 3 of 3. Neither
+ * function is async-signal-safe, and POSIX leaves a call of one by a handler
+ * that interrupted one undefined.
+ *
+ * So each wrapper of `swapcontext` and `setcontext` notes the switch it
+ * begins, its own frame, the stack that frame lies on and the two contexts,
+ * until the switch is seen to end (`parts/rebind_jump.c`,
+ * `parts/sigjump_save.c`); a delivery whose interrupted frame records reach
+ * that frame within HERO_SIG_SWITCH_WALK records interrupted the switch
+ * (each record read lies on that stack below the frame), and its entry keeps
+ * the two contexts; and a `swapcontext` or `setcontext` its handler then
+ * calls naming either of them stops the program before it switches, saying
+ * why. A handler's switch naming other contexts runs, as it ran before: no
+ * context the interrupted switch has yet to finish is touched, and both
+ * libraries finish it when the handler returns
+ * (`run/fixedbugs-2871-a-handler-swapping-other-contexts-inside-a-swapcontext-runs`,
+ * which ran before this repair too). The end is seen where the switch returns
+ * into a wrapper's frame, which puts back the switch it was made inside of,
+ * or where a jump lands at or above the noted frame on its stack, or where
+ * `makecontext` names that stack again; a switch to a context no wrapper
+ * saved (a coroutine `makecontext` made, one `getcontext` saved) leaves the
+ * note behind, and only a delivery whose own frame records reach that very
+ * frame again reads it.
+ *
+ * What it does not reach, said: a jump out of such a handler, which panel
+ * 258's refusal of the allocator's bracket sees and nothing here; a scheduler
+ * whose first tick is due before its first switch begins (`gtc` arms its
+ * timer and then switches, its current thread already the first), whose
+ * handler interrupts the program's own code and saves the thread that is
+ * running into another's context, a race of the program's own that C alone
+ * dies of too (forced: Bus error on this Mac, SIGTRAP as C alone, 3 of 3); and
+ * a handler installed where no route stands. */
+#define HERO_SIG_SWITCH_WALK 8
+
+/* The switch `next` begins, the wrapper of `call` asking: refused where the
+ * handler the thread runs now interrupted a switch and `next` names either
+ * context of it, which the C library has yet to finish saving or loading;
+ * else noted, the switch it was made inside of kept in `prev`. A switch
+ * naming other contexts is no harm the runtime sees, and runs. */
+static void hero_signal_switch_begin(HeroSignalStack *own, const char *call, const HeroSigSwitch *next,
+                                     HeroSigSwitch *prev) {
+    for (int i = own->depth - 1; i >= 0; i -= 1) {
+        const HeroSigEntry *e = &own->entries[i];
+        if (e->dead) continue;
+        if (e->cut_to == 0) break;
+        bool named = (next->from != 0 && (next->from == e->cut_from || next->from == e->cut_to)) ||
+                     next->to == e->cut_from || next->to == e->cut_to;
+        if (!named) break;
+        const char *const said[] = {
+            "panic: a signal handler called `",
+            call,
+            "` naming a context that the code the signal interrupted was itself switching from or to, inside a "
+            "`swapcontext` or `setcontext` of this thread that had not yet loaded the context it switches to: "
+            "neither is async-signal-safe, and that switch, resumed, would save or load a context this one "
+            "changes and resume frames that have returned, so the program stops here, before the switch. A "
+            "handler that switches contexts may interrupt only code that is not switching: keep its signal "
+            "blocked around every switch made outside a handler, and in the `uc_sigmask` of every context given "
+            "to `makecontext` until that context runs",
+        };
+        hero_signal_stop(said, sizeof said / sizeof said[0]);
+    }
+    *prev = own->switching;
+    own->switching.frame = 0;
+    atomic_signal_fence(memory_order_seq_cst);
+    own->switching.lo = next->lo;
+    own->switching.hi = next->hi;
+    own->switching.from = next->from;
+    own->switching.to = next->to;
+    atomic_signal_fence(memory_order_seq_cst);
+    own->switching.frame = next->hi > next->lo && next->frame >= next->lo && next->frame < next->hi ? next->frame : 0;
+}
+
+/* The switch noted has ended, its wrapper's frame `frame` running again: the
+ * switch it was made inside of, where that one's frame lies above it on its
+ * stack (a handler's switch inside the switch it interrupted), is the one in
+ * progress again; else none is. */
+static void hero_signal_switch_back(HeroSignalStack *own, const HeroSigSwitch *prev, uintptr_t frame) {
+    own->switching.frame = 0;
+    if (prev->frame == 0 || frame < prev->lo || frame >= prev->frame) return;
+    atomic_signal_fence(memory_order_seq_cst);
+    own->switching.lo = prev->lo;
+    own->switching.hi = prev->hi;
+    own->switching.from = prev->from;
+    own->switching.to = prev->to;
+    atomic_signal_fence(memory_order_seq_cst);
+    own->switching.frame = prev->frame;
+}
+
+/* A jump landing at `t`: at or above the noted frame on its stack, it leaves
+ * the switch there for good. */
+static void hero_signal_switch_left(HeroSignalStack *own, uintptr_t t) {
+    if (own->switching.frame != 0 && t >= own->switching.frame && t < own->switching.hi) own->switching.frame = 0;
+}
+
+/* `makecontext` names `[lo, hi)` a coroutine's stack: a switch noted on it is
+ * gone with it. */
+static void hero_signal_switch_remade(HeroSignalStack *own, uintptr_t lo, uintptr_t hi) {
+    if (own->switching.frame != 0 && lo < own->switching.hi && own->switching.lo < hi) own->switching.frame = 0;
+}
+
+/* Whether the code a delivery interrupted, its context `context`, is inside
+ * the switch noted: its frame pointer is the noted frame, or links up to it
+ * within HERO_SIG_SWITCH_WALK records, each read on the noted stack below the
+ * noted frame and above the one before. The words read are other frames',
+ * whose shadow AddressSanitizer may hold poisoned for their own locals, so
+ * the walk is not instrumented: instrumented, it was told as an
+ * `unknown-crash` inside the runtime under `--sanitize` at `-O2`, where a
+ * handler resumes frames it left (`run/fixedbugs-2702-a-handler-swapped-away-
+ * from-and-resumed-after-it-was-left-form-0-on-the-own-stack-is-refused` and
+ * its form 2, this repair's first run of them). */
+__attribute__((no_sanitize("address"))) static bool hero_signal_in_switch(const HeroSignalStack *own,
+                                                                          void *context) {
+    uintptr_t f = own->switching.frame;
+    if (f == 0 || context == NULL) return false;
+    uintptr_t pc = 0, fp = 0, sp = 0, lr = 0;
+    hero_stack_regs(context, &pc, &fp, &sp, &lr);
+    for (int i = 0; i < HERO_SIG_SWITCH_WALK; i += 1) {
+        if (fp == f) return true;
+        if (fp < own->switching.lo || fp > f || fp + 16 > own->switching.hi || (fp & 7) != 0) return false;
+        uintptr_t next = *(const uintptr_t *)fp;
+        if (next <= fp) return false;
+        fp = next;
+    }
+    return false;
+}
+
+/* A delivery's entry, `mine` its serial, given the contexts of the switch
+ * noted where the signal interrupted it (`cut`). */
+static void hero_signal_mark_cut(HeroSignalStack *own, uint64_t mine, bool cut) {
+    if (!cut || mine == 0) return;
+    for (int i = own->depth - 1; i >= 0; i -= 1) {
+        if (own->entries[i].serial == mine) {
+            own->entries[i].cut_from = own->switching.from;
+            own->entries[i].cut_to = own->switching.to;
+            return;
+        }
+    }
+}
+#endif
 
 #if defined(HERO_SIG_WRAPS)
 /* `parts/sigentries.c`, below: is this thread inside a wrapped handler? And

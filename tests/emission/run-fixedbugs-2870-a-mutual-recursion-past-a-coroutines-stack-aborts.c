@@ -376,7 +376,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("112ca9a60168f191", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("005b44031d2c15a7", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2870amutualrecursionpastacoroutinesstackaborts\tfixedbugs-2870-a-mutual-recursion-past-a-coroutines-stack-aborts\n");

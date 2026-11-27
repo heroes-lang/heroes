@@ -1,0 +1,28 @@
+# Fixed 2026-11-27, defect 2871, lane sig-family-2 (panel 262's
+# ffi-pragmatist, `gtc`): a `swapcontext` to a coroutine is interrupted by a
+# signal made pending on purpose, and the handler `swapcontext`s saving into
+# that coroutine's context, as a green-thread scheduler whose current thread
+# is already the new one does.
+# Symptom: the program died by the fault with nothing said, Bus error, exit
+# 138, on this Mac and Segmentation fault, exit 139, on Linux arm64, 3 runs of
+# 3 each.
+# Cause: a switch loads the target's signal mask before its registers, so a
+# signal pending while blocked runs its handler inside the switch, on the
+# stack being left; a handler that then saves into or loads a context the
+# interrupted switch has yet to finish makes it resume frames that have
+# returned, a call POSIX leaves undefined, neither `swapcontext` nor
+# `setcontext` being async-signal-safe.
+# Fix: each wrapper of `swapcontext` and `setcontext` notes the switch it
+# begins (`runtime/parts/sigguard.c`), a delivery whose frame records reach
+# that wrapper's frame keeps the switch's two contexts, and a switch its
+# handler makes naming either stops the program before it switches, saying
+# why; a handler's switch naming other contexts runs.
+extern "fixedbugs-2871-a-handler-switching-contexts-inside-a-switch.h"
+    function sw_run(shape: i32, cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("sw_0: ", sw_run(shape: 0, cb: answer))
