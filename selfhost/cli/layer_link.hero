@@ -8,9 +8,12 @@
 # without a group saying so: told at the groups linking the library the
 # linker says refers to it (R3: a library of the program's compiled against
 # the layer, `extern "libnow.h" link "now"`, says `layer` before `link`), at
-# the binding that names it, or at the group whose header is the program's
-# own and puts the call in its code. Never as `internal error: linking
-# failed`, and never as a name no group says which library has.
+# the binding that names it, or at each group whose header is the program's
+# own and puts the call in its code, in the module whose object refers to it
+# (`cli/layer_placed.hero`; defect d-lane-room-mixedown-1: until 2026-11-26
+# at the program's first group, whatever header reached it). Never as
+# `internal error: linking failed`, and never as a name no group says which
+# library has.
 #
 # **A program one of whose groups says `layer` links the archive**, inside
 # GNU ld's group of the libraries (`link.link_line`), so a layer name
@@ -24,9 +27,11 @@ use ast
 use check/layer_header
 use cli/layer_bound
 use cli/layer_libraries
+use cli/layer_placed
 use cli/library_needs
 use cli/link_flags
 use cli/link_report
+use cli/probing
 use cli/runtime_bound
 use cli/runtime_key
 use cli/toolchain
@@ -38,9 +43,11 @@ use source
 use token
 
 # The diagnostics for a refused link's `message`: one per name it reports that
-# a header of the layer declares, each told once; none where it reports none,
-# the other readers' then. `linked` are the packages' answers' words.
-function told(message: str, s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, linked: [str]) -> [diag.Diagnostic]
+# a header of the layer declares, each told once, at each place that puts it
+# in the program; none where it reports none, the other readers' then.
+# `linked` are the packages' answers' words; `asking` each header list of the
+# build and the modules that read it.
+function told(message: str, s: source.Source, decls: [ast.Decl], t: toolchain.Toolchain, linked: [str], asking: [probing.Probing]) -> [diag.Diagnostic]
     out: [diag.Diagnostic] @= []
     refs = link_report.references(message)
 
@@ -74,10 +81,13 @@ function told(message: str, s: source.Source, decls: [ast.Decl], t: toolchain.To
         if !at.is_err()
             out @ out.push(missing(name: one.symbol, header: header.must(), span: at.must(), bound: true))
             continue
-        own = first_group(decls, said: false)
+        placed = layer_placed.placed(t, s, decls, asking: asking, refs: refs, name: one.symbol, libraries: libs)
 
-        if !own.is_err()
-            out @ out.push(missing(name: one.symbol, header: header.must(), span: own.must(), bound: false))
+        for group in placed
+            out @ out.push(missing(name: one.symbol, header: header.must(), span: group, bound: false))
+
+        if placed.len() == 0
+            out @ out.push(unplaced(name: one.symbol, header: header.must()))
 
     # ORDER: by library name, as `sort` orders a `str`, so two machines tell
     # one link in one order; each group linking it, in the order they stand.
@@ -115,6 +125,19 @@ function missing(name: str, header: str, span: token.Span, bound: bool) -> diag.
     d.fixes @ d.fixes.push(
         diag.Fix(title: "name the layer's header and say `layer`", replacement: "\"" + header + "\" layer", span: span, certainty: .guess)
     )
+    return d
+
+# A name of the layer's in the program's own code whose place no header list
+# of the program's explains (`cli/layer_placed.hero`): told for the program,
+# at its first byte, with no group named and no fix, since no group is known
+# to be the one whose header puts it there.
+function unplaced(name: str, header: str) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: layer_header.UNDECLARED,
+        message: "`" + name + "` is the platform layer's, declared by its `" + header + "`, and the program's own code calls it while no group of this program says `layer`, so its link carries none of the layer: name `" + header + "` in the group whose header puts the call there, or include it in that header, and say `layer` after the header",
+        span: token.Span(start: 0, end: 0)
+    )
+    d.notes @ d.notes.push(layer_header.WHY)
     return d
 
 # A name of the layer's that the link of a program saying `layer` misses: the
@@ -213,3 +236,12 @@ test "a layer name no member of this target defines is told by the member that d
     assert inside(runtime: "rt", path: "rt/platform/x.c") == "platform/x.c"
     assert holds_text(text: "@_cdecl(\"a\")", needle: "@_cdecl(\"a\")")
     assert !holds_text(text: "ab", needle: "abc")
+
+# **A name no header list places names no group** (defect
+# d-lane-room-mixedown-1): told for the program, at its first byte, the
+# layer's header named, and no fix, since no group is known to be the one
+# to change.
+test "a layer name no header list places is told for the program, with no group and no fix (defect d-lane-room-mixedown-1)"
+    d = unplaced(name: "hero_time_monotonic_ns", header: "hero_time.h")
+    assert d.code == layer_header.UNDECLARED && d.span.start == 0 && d.span.end == 0 && d.fixes.len() == 0
+    assert holds_text(text: d.message, needle: "`hero_time.h`") && !holds_text(text: d.message, needle: "this group's header")
