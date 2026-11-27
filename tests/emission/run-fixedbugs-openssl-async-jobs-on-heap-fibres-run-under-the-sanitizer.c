@@ -20,6 +20,7 @@
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
 #pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
 #pragma clang diagnostic ignored "-Winvalid-source-encoding"
+#pragma clang diagnostic ignored "-Wmissing-format-attribute"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -177,7 +178,7 @@ HERO_STR_STATIC(hero_str_443078d7, " jobs ");
 HERO_STR_STATIC(hero_str_d5ccaab, "allocator ");
 HERO_STR_STATIC(hero_str_265f789c, "jobs on the heap: ");
 
-#line 181 "fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer.c"
+#line 182 "fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer.c"
 typedef struct h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E0 {
     int64_t f_x;
 } h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E0;
@@ -291,7 +292,7 @@ __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(i
 __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
 __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
-#line 295 "fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer.c"
+#line 296 "fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL _Bool h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_0E0_eq(const h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E0 *hero_a, const h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E0 *hero_b);
@@ -344,7 +345,7 @@ __attribute__((__noinline__)) void h_fixedbugsopensslasyncjobsonheapfibresrunund
     t12 = h2_v1; t13 = h2_v1; t14 = h2_v1; t15 = h2_v1; t16 = h2_v1; t17 = h2_v1; t18 = h2_v1; t19 = h2_v1; t20 = (h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E2){.f_a = t12, .f_b = t13, .f_c = t14, .f_d = t15, .f_e = t16, .f_f = t17, .f_g = t18, .f_h = t19}; h3_v2 = t20;
     t21 = h3_v2; t22 = h3_v2; t23 = h3_v2; t24 = h3_v2; t25 = h3_v2; t26 = h3_v2; t27 = h3_v2; t28 = h3_v2; t29 = (h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E3){.f_a = t21, .f_b = t22, .f_c = t23, .f_d = t24, .f_e = t25, .f_f = t26, .f_g = t27, .f_h = t28}; h4_v3 = t29;
     t30 = h4_v3; t31 = h4_v3; t32 = h4_v3; t33 = h4_v3; t34 = h4_v3; t35 = h4_v3; t36 = h4_v3; t37 = h4_v3; t38 = *(h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4 *)__builtin_memset(&t38, 0, sizeof t38); t38.f_a = t30; t38.f_b = t31; t38.f_c = t32; t38.f_d = t33; t38.f_e = t34; t38.f_f = t35; t38.f_g = t36; t38.f_h = t37; if (hero_out != ((void *)0)) *hero_out = t38; hero_frame_give(hero_big_t38); return;
-#line 348 "fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer.c"
+#line 349 "fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer.c"
 }
 #undef t38
 
@@ -376,7 +377,7 @@ __attribute__((__noinline__)) void h_fixedbugsopensslasyncjobsonheapfibresrunund
     h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4 *const hero_big_h1_v4 = (h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4 *)hero_frame_take(sizeof(h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4)); HERO_NODEBUG int64_t t1; HERO_NODEBUG h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4 *const hero_big_t2 = (h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4 *)hero_frame_take(sizeof(h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4)); HERO_NODEBUG h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4 *const hero_big_t3 = (h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4 *)hero_frame_take(sizeof(h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4)); HERO_NODEBUG h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4 *const hero_big_t4 = (h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4 *)hero_frame_take(sizeof(h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4)); HERO_NODEBUG h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4 *const hero_big_t5 = (h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4 *)hero_frame_take(sizeof(h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4)); HERO_NODEBUG h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4 *const hero_big_t6 = (h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4 *)hero_frame_take(sizeof(h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4)); HERO_NODEBUG h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4 *const hero_big_t7 = (h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4 *)hero_frame_take(sizeof(h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4)); HERO_NODEBUG h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4 *const hero_big_t8 = (h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4 *)hero_frame_take(sizeof(h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4)); HERO_NODEBUG h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4 *const hero_big_t9 = (h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4 *)hero_frame_take(sizeof(h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4)); HERO_NODEBUG h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4 *const hero_big_t10 = (h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4 *)hero_frame_take(sizeof(h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E4)); HERO_NODEBUG h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E5 *const hero_big_t11 = (h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E5 *)hero_frame_take(sizeof(h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E5)); HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = h0_n; h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_e4(&t2, t1); h1_v4 = t2;
     t3 = h1_v4; t4 = h1_v4; t5 = h1_v4; t6 = h1_v4; t7 = h1_v4; t8 = h1_v4; t9 = h1_v4; t10 = h1_v4; t11 = *(h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E5 *)__builtin_memset(&t11, 0, sizeof t11); t11.f_a = t3; t11.f_b = t4; t11.f_c = t5; t11.f_d = t6; t11.f_e = t7; t11.f_f = t8; t11.f_g = t9; t11.f_h = t10; if (hero_out != ((void *)0)) *hero_out = t11; hero_frame_give(hero_big_t11); hero_frame_give(hero_big_t10); hero_frame_give(hero_big_t9); hero_frame_give(hero_big_t8); hero_frame_give(hero_big_t7); hero_frame_give(hero_big_t6); hero_frame_give(hero_big_t5); hero_frame_give(hero_big_t4); hero_frame_give(hero_big_t3); hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_v4); return;
-#line 380 "fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer.c"
+#line 381 "fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer.c"
 }
 #undef h1_v4
 #undef t2
@@ -406,7 +407,7 @@ __attribute__((__noinline__)) int64_t h_fixedbugsopensslasyncjobsonheapfibresrun
     { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-openssl-async-jobs-on-heap-fibres-run-under-the-sanitizer.hero", "fixedbugs-openssl-async-jobs-on-heap-fibres-run-under-the-sanitizer.run", 90, 5}; (void)aj_pause(); }
     t5 = h0_k; t6 = ((__INT64_TYPE__)20); if (__builtin_add_overflow(t5, t6, &t7)) hero_panic_overflow_at("fixedbugs-openssl-async-jobs-on-heap-fibres-run-under-the-sanitizer.hero", "fixedbugs-openssl-async-jobs-on-heap-fibres-run-under-the-sanitizer.run", 91, 12); h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_e5(&t8, t7); h2_w = t8;
     t9 = h1_v.f_a.f_a.f_a.f_a.f_a.f_x; t10 = h2_w.f_b.f_b.f_b.f_b.f_b.f_x; if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at("fixedbugs-openssl-async-jobs-on-heap-fibres-run-under-the-sanitizer.hero", "fixedbugs-openssl-async-jobs-on-heap-fibres-run-under-the-sanitizer.run", 92, 12); hero_frame_give(hero_big_t8); hero_frame_give(hero_big_t4); hero_frame_give(hero_big_h2_w); hero_frame_give(hero_big_h1_v); return t11;
-#line 410 "fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer.c"
+#line 411 "fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer.c"
 }
 #undef h1_v
 #undef h2_w
@@ -437,7 +438,7 @@ __attribute__((__noinline__)) int64_t h_fixedbugsopensslasyncjobsonheapfibresrun
     t20 = ((__INT64_TYPE__)0); t21 = h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_run; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-openssl-async-jobs-on-heap-fibres-run-under-the-sanitizer.hero", "fixedbugs-openssl-async-jobs-on-heap-fibres-run-under-the-sanitizer.body", 101, 9}; t22 = aj_go(t20, (h_0fn_48ac9712)hero_callback_of((void (*)(void))t21)); } h5_a = t22;
     t23 = HERO_STR_LIT(hero_str_55ad8127); t24 = h1_mine.f_a.f_a.f_a.f_a.f_a.f_x; t25 = HERO_STR_LIT(hero_str_443078d7); t26 = h5_a; t27 = HERO_STR_LIT(hero_str_20); t28 = h4_b; hero_print_str(t23); hero_print_int(t24); hero_print_str(t25); hero_print_int(t26); hero_print_str(t27); hero_print_int(t28); hero_print_end();
     t29 = h1_mine.f_h.f_h.f_h.f_h.f_h.f_x; hero_frame_give(hero_big_t2); hero_frame_give(hero_big_h1_mine); return t29;
-#line 441 "fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer.c"
+#line 442 "fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer.c"
 }
 #undef h1_mine
 #undef t2
@@ -446,7 +447,7 @@ __attribute__((__noinline__)) int64_t h_fixedbugsopensslasyncjobsonheapfibresrun
 void h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_main(void) { HERO_NODEBUG HeroStr t1, t3; HERO_NODEBUG int64_t t2, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_d5ccaab); { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-openssl-async-jobs-on-heap-fibres-run-under-the-sanitizer.hero", "fixedbugs-openssl-async-jobs-on-heap-fibres-run-under-the-sanitizer.main", 106, 25}; t2 = aj_mem(); } hero_print_str(t1); hero_print_int(t2); hero_print_end();
     t3 = HERO_STR_LIT(hero_str_265f789c); t4 = ((__INT64_TYPE__)7); t5 = h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_body(t4); hero_print_str(t3); hero_print_int(t5); hero_print_end(); return;
-#line 450 "fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer.c"
+#line 451 "fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer.c"
 }
 HERO_TU_LOCAL _Bool h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_0E0_eq(const h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E0 *hero_a, const h_fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer_E0 *hero_b) {
     if (!(hero_a->f_x == hero_b->f_x)) return false;
@@ -687,7 +688,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("61ad49433c1db1f1", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("0a263e0a2fec70e0", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer\tfixedbugs-openssl-async-jobs-on-heap-fibres-run-under-the-sanitizer\n");

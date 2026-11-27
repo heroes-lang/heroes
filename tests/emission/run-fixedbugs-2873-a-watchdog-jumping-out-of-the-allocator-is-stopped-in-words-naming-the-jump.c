@@ -20,6 +20,7 @@
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
 #pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
 #pragma clang diagnostic ignored "-Winvalid-source-encoding"
+#pragma clang diagnostic ignored "-Wmissing-format-attribute"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -161,7 +162,7 @@ _Static_assert(HERO_RET_STR(hero_str_try_from_cstr(0, 0)), "heroes-ffi-return he
 HERO_STR_STATIC(hero_str_67e7572d, "the watchdog starts");
 HERO_STR_STATIC(hero_str_31c2a418, "a million alarms and none inside the allocator: ");
 
-#line 165 "fixedbugs2873awatchdogjumpingoutoftheallocatorisstoppedinwordsnamingthejump.c"
+#line 166 "fixedbugs2873awatchdogjumpingoutoftheallocatorisstoppedinwordsnamingthejump.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t hero_tag;
@@ -214,7 +215,7 @@ __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(i
 __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
 __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
-#line 218 "fixedbugs2873awatchdogjumpingoutoftheallocatorisstoppedinwordsnamingthejump.c"
+#line 219 "fixedbugs2873awatchdogjumpingoutoftheallocatorisstoppedinwordsnamingthejump.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
@@ -253,7 +254,7 @@ int64_t h_fixedbugs2873awatchdogjumpingoutoftheallocatorisstoppedinwordsnamingth
     t18 = h3_i0; t19 = ((__INT64_TYPE__)1); if (__builtin_add_overflow(t18, t19, &t20)) hero_panic_overflow_at("fixedbugs-2873-a-watchdog-jumping-out-of-the-allocator-is-stopped-in-words-naming-the-jump.hero", "fixedbugs-2873-a-watchdog-jumping-out-of-the-allocator-is-stopped-in-words-naming-the-jump.work", 21, 9); h3_i0 = t20; goto hero_bb1; hero_bb4:
 #line 24
     t21 = h1_xs; t22 = ((void)(t21 == ((void *)0) ? ((void)hero_array_len(t21), hero_unreachable()) : (void)0), t21->len);
-#line 257 "fixedbugs2873awatchdogjumpingoutoftheallocatorisstoppedinwordsnamingthejump.c"
+#line 258 "fixedbugs2873awatchdogjumpingoutoftheallocatorisstoppedinwordsnamingthejump.c"
     hero_array_release_at(&h1_xs);
     hero_array_release_at(&h2_xs0);
     hero_array_release_at(&h5_own5);
@@ -272,7 +273,7 @@ __attribute__((__noinline__)) int64_t h_0cb_fixedbugs2873awatchdogjumpingoutofth
 void h_fixedbugs2873awatchdogjumpingoutoftheallocatorisstoppedinwordsnamingthejump_main(void) { HERO_NODEBUG HeroStr t1, t2; HERO_NODEBUG h_0fn_48ac9712 t3; HERO_NODEBUG int64_t t4; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_67e7572d); hero_print_str(t1); hero_print_end();
     t2 = HERO_STR_LIT(hero_str_31c2a418); t3 = h_fixedbugs2873awatchdogjumpingoutoftheallocatorisstoppedinwordsnamingthejump_work; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-2873-a-watchdog-jumping-out-of-the-allocator-is-stopped-in-words-naming-the-jump.hero", "fixedbugs-2873-a-watchdog-jumping-out-of-the-allocator-is-stopped-in-words-naming-the-jump.main", 28, 63}; t4 = wdj_run((h_0fn_48ac9712)hero_callback_of((void (*)(void))t3)); } hero_print_str(t2); hero_print_int(t4); hero_print_end(); return;
-#line 276 "fixedbugs2873awatchdogjumpingoutoftheallocatorisstoppedinwordsnamingthejump.c"
+#line 277 "fixedbugs2873awatchdogjumpingoutoftheallocatorisstoppedinwordsnamingthejump.c"
 }
 
 #line 26 "<heroes library>"
@@ -283,7 +284,7 @@ HeroArrayHeader * h_library_range(int64_t h0_from, int64_t h1_to, const HeroPlac
     t7 = h3_i; hero_array_push_owned(&h2_out, &t7);
     t9 = h3_i; t10 = ((__INT64_TYPE__)1); if (__builtin_add_overflow(t9, t10, &t11)) hero_panic_overflow_at(HERO_PLACE_PATH(hero_caller), HERO_PLACE_NAME(hero_caller), HERO_PLACE_LINE(hero_caller), HERO_PLACE_COLUMN(hero_caller)); h3_i = t11; goto hero_bb1; hero_bb3:
     t12 = h2_out;
-#line 287 "fixedbugs2873awatchdogjumpingoutoftheallocatorisstoppedinwordsnamingthejump.c"
+#line 288 "fixedbugs2873awatchdogjumpingoutoftheallocatorisstoppedinwordsnamingthejump.c"
     hero_array_incref(t12);
     hero_array_release_at(&h2_out);
     hero_array_release_at(&h4_own4);
@@ -390,7 +391,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("41073fec312e7413", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("3804bfe3009f7977", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugs2873awatchdogjumpingoutoftheallocatorisstoppedinwordsnamingthejump\tfixedbugs-2873-a-watchdog-jumping-out-of-the-allocator-is-stopped-in-words-naming-the-jump\n");

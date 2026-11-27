@@ -20,6 +20,7 @@
 #pragma clang diagnostic ignored "-Wdeprecated-pragma"
 #pragma clang diagnostic ignored "-Wdeprecated-non-prototype"
 #pragma clang diagnostic ignored "-Winvalid-source-encoding"
+#pragma clang diagnostic ignored "-Wmissing-format-attribute"
 #pragma clang diagnostic error "-Wimplicit-int"
 #pragma clang diagnostic error "-Wuser-defined-warnings"
 #pragma clang diagnostic ignored "-Wpragma-pack"
@@ -163,7 +164,7 @@ HERO_STR_STATIC(hero_str_17d3d2b, "the thread's stack (470 is right): ");
 HERO_STR_STATIC(hero_str_cdd28cd, "a coroutine's heap stack (490 is right): ");
 HERO_STR_STATIC(hero_str_53f775e8, "an alternate stack, three deliveries (560 is right): ");
 
-#line 167 "fixedbugsframesleftbysetcontextonthreestacksrununderthesanitizer.c"
+#line 168 "fixedbugsframesleftbysetcontextonthreestacksrununderthesanitizer.c"
 typedef int64_t (*h_0fn_48ac9712)(int64_t);
 typedef struct h_0opt_f87774a {
     int64_t hero_tag;
@@ -216,7 +217,7 @@ __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_args_raw(i
 __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_exit(int64_t hero_a0) { (void)(hero_exit)(hero_a0); }
 #line 123
 __attribute__((__unused__)) static void hero_ffi_probe_h_library_hero_str_try_from_cstr(const char * hero_a0, int64_t * hero_a1) { (void)(hero_str_try_from_cstr)(hero_a0, (void *)hero_a1); }
-#line 220 "fixedbugsframesleftbysetcontextonthreestacksrununderthesanitizer.c"
+#line 221 "fixedbugsframesleftbysetcontextonthreestacksrununderthesanitizer.c"
 #pragma clang diagnostic pop
 
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v);
@@ -247,7 +248,7 @@ __attribute__((__unused__)) static void (*hero_callback_of(void (*hero_f)(void))
 int64_t h_fixedbugsframesleftbysetcontextonthreestacksrununderthesanitizer_answer(int64_t h0_n) { hero_thread_guard("fixedbugsframesleftbysetcontextonthreestacksrununderthesanitizer.answer"); HERO_NODEBUG HeroStr t1; HERO_NODEBUG int64_t t2, t3, t4, t5; HERO_ENTRY_STOP; goto hero_bb0; hero_bb0:
     t1 = HERO_STR_LIT(hero_str_68c6c2a6); t2 = h0_n; hero_print_str(t1); hero_print_int(t2); hero_print_end();
     t3 = h0_n; t4 = ((__INT64_TYPE__)10); if (__builtin_mul_overflow(t3, t4, &t5)) hero_panic_overflow_at("fixedbugs-frames-left-by-setcontext-on-three-stacks-run-under-the-sanitizer.hero", "fixedbugs-frames-left-by-setcontext-on-three-stacks-run-under-the-sanitizer.answer", 22, 12); return t5;
-#line 251 "fixedbugsframesleftbysetcontextonthreestacksrununderthesanitizer.c"
+#line 252 "fixedbugsframesleftbysetcontextonthreestacksrununderthesanitizer.c"
 }
 
 __attribute__((__noinline__)) int64_t h_0cb_fixedbugsframesleftbysetcontextonthreestacksrununderthesanitizer_answer(int64_t h0_n) {
@@ -262,7 +263,7 @@ void h_fixedbugsframesleftbysetcontextonthreestacksrununderthesanitizer_main(voi
     t1 = HERO_STR_LIT(hero_str_17d3d2b); t2 = ((__INT64_TYPE__)2); t3 = h_fixedbugsframesleftbysetcontextonthreestacksrununderthesanitizer_answer; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-frames-left-by-setcontext-on-three-stacks-run-under-the-sanitizer.hero", "fixedbugs-frames-left-by-setcontext-on-three-stacks-run-under-the-sanitizer.main", 25, 50}; t4 = kp_run(t2, (h_0fn_48ac9712)hero_callback_of((void (*)(void))t3)); } hero_print_str(t1); hero_print_int(t4); hero_print_end();
     t5 = HERO_STR_LIT(hero_str_cdd28cd); t6 = ((__INT64_TYPE__)4); t7 = h_fixedbugsframesleftbysetcontextonthreestacksrununderthesanitizer_answer; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-frames-left-by-setcontext-on-three-stacks-run-under-the-sanitizer.hero", "fixedbugs-frames-left-by-setcontext-on-three-stacks-run-under-the-sanitizer.main", 26, 56}; t8 = kp_run(t6, (h_0fn_48ac9712)hero_callback_of((void (*)(void))t7)); } hero_print_str(t5); hero_print_int(t8); hero_print_end();
     t9 = HERO_STR_LIT(hero_str_53f775e8); t10 = ((__INT64_TYPE__)6); t11 = h_fixedbugsframesleftbysetcontextonthreestacksrununderthesanitizer_answer; { HERO_NODEBUG __attribute__((__unused__)) static const HeroPlace hero_here = {"fixedbugs-frames-left-by-setcontext-on-three-stacks-run-under-the-sanitizer.hero", "fixedbugs-frames-left-by-setcontext-on-three-stacks-run-under-the-sanitizer.main", 27, 68}; t12 = kp_run(t10, (h_0fn_48ac9712)hero_callback_of((void (*)(void))t11)); } hero_print_str(t9); hero_print_int(t12); hero_print_end(); return;
-#line 266 "fixedbugsframesleftbysetcontextonthreestacksrununderthesanitizer.c"
+#line 267 "fixedbugsframesleftbysetcontextonthreestacksrununderthesanitizer.c"
 }
 HERO_TU_LOCAL void h_0opt_f87774a_retain(const h_0opt_f87774a *hero_v) {
     if (hero_v->hero_tag == ((__INT64_TYPE__)0)) {
@@ -361,7 +362,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("6ca1d9bb6940e140", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("2adc39392af05cc2", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugsframesleftbysetcontextonthreestacksrununderthesanitizer\tfixedbugs-frames-left-by-setcontext-on-three-stacks-run-under-the-sanitizer\n");
