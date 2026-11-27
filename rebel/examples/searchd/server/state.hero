@@ -1,0 +1,22 @@
+# What searchd's server holds while it serves: its routes, the tables that
+# bind each route's and each step's name to the server's function, and the
+# engine queries are answered from. One value, read by every request: a
+# query changes nothing, so `http`'s serving hands the service to each
+# request as it is, and `service.answer` lends its own copy to the chain.
+
+use <rebel>/http
+use <rebel>/web
+use <rebel>/web/chain
+
+use index/engine
+
+# What the server serves with.
+record Service
+    # The routes, each bound in `answers` by `service.service`.
+    router: web.Router
+    # The steps the routes run, by their names.
+    steps: {str: (function(@Service, chain.Next, http.Request) -> http.Response?)}
+    # The function that answers each route, by the route's name.
+    answers: {str: (function(@Service, web.Found, http.Request) -> http.Response?)}
+    # The engine queries are answered from.
+    engine: engine.Engine
