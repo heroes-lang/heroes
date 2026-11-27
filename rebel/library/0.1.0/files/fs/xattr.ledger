@@ -54,7 +54,7 @@ capability xattr/link  the attributes of a link itself, not of what it names
   go      -
   rust    -
   python  os.listxattr, os.getxattr, os.setxattr, os.removexattr
-  note    Python's `follow_symlinks=False`. Darwin `XATTR_NOFOLLOW`, Linux the `l` calls, Windows `FILE_FLAG_OPEN_REPARSE_POINT`; Linux keeps no `user.` attribute on a link and answers `permission`
+  note    Python's `follow_symlinks=False`. Darwin `XATTR_NOFOLLOW`, Linux the `l` calls, Windows `FILE_FLAG_OPEN_REPARSE_POINT`; Linux keeps no `user.` attribute on a link and answers `permission` to a write there, `not_found` to a reading or a removal
 
 capability xattr/copy  every extended attribute of one path written on another
   heroes  fs/xattr.copy

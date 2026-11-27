@@ -43,6 +43,7 @@
 #include <errno.h>
 #include <limits.h>
 #if defined(__APPLE__) || defined(__linux__)
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/xattr.h>
 #endif
@@ -255,6 +256,30 @@ int64_t hero_xattr_write(const char *path, const char *name, const void *value, 
     return 0;
 }
 
+#if defined(__linux__)
+/* Whether Linux refused the removal of `name` from `path` only because the
+ * object there can hold no `user.` attribute: Linux keeps `user.` names on
+ * regular files and folders alone, and answers a write or a removal of one on
+ * anything else with `EPERM` where a reading of the same name answers
+ * `ENODATA` (measured in the Linux arm64 image, kernel 7.0.14, on overlayfs
+ * and tmpfs, as root and as a user, 2026-11-27: `lremovexattr` and
+ * `lsetxattr` of a link, `removexattr` of a pipe and of `/dev/null`), so such
+ * an object never holds one. Asked of the object the call named, the link
+ * itself where `follow` is 0; any other `EPERM` (another namespace, a sticky
+ * folder of another user's, an immutable file) stays a refusal. */
+static bool hero_xattr_none_kept(const char *path, const char *name, int64_t follow, int code) {
+    struct stat seen;
+
+    if (code != EPERM || strncmp(name, "user.", 5) != 0) {
+        return false;
+    }
+    if ((follow != 0 ? stat(path, &seen) : lstat(path, &seen)) != 0) {
+        return false;
+    }
+    return !S_ISREG(seen.st_mode) && !S_ISDIR(seen.st_mode);
+}
+#endif
+
 int64_t hero_xattr_remove(const char *path, const char *name, int64_t follow) {
     int done;
 
@@ -267,6 +292,14 @@ int64_t hero_xattr_remove(const char *path, const char *name, int64_t follow) {
     done = follow != 0 ? removexattr(path, name) : lremovexattr(path, name);
 #endif
     if (done != 0) {
+#if defined(__linux__)
+        int code = errno;
+
+        if (hero_xattr_none_kept(path, name, follow, code)) {
+            return hero_xattr_fail(HERO_XATTR_ABSENT, (int64_t)code);
+        }
+        errno = code;
+#endif
         return hero_xattr_failed();
     }
     hero_xattr_fine();
