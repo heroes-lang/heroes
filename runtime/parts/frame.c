@@ -105,10 +105,12 @@ static _Atomic size_t hero_frame_held = 0;
  * a wait (until defect 2854, 2026-11-26, the calling thread's and
  * the ended threads' alone, so another thread still running left its
  * callbacks out of the number); and the words name no cause of it, since a
- * jump, an exception and a coroutine nobody resumes each leave one. Where
- * none is unreturned, the room's words alone. */
+ * jump, an exception and a coroutine nobody resumes each leave one. A callback
+ * whose frames this runtime's unwind left is one of them (panel 258's R2,
+ * `parts/unwind.c`): its room stays held, as spec § 13 says, and it never
+ * returned. Where none is unreturned, the room's words alone. */
 static _Noreturn void hero_frame_exhausted(void *caller) {
-    int64_t left = hero_callbacks_unfinished();
+    int64_t left = hero_callbacks_unreturned();
     char tail[128];
     if (left > 0) {
         snprintf(tail, sizeof tail, ", while %lld callback%s C called %s not returned", (long long)left,

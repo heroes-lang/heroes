@@ -74,6 +74,7 @@ use emit/lend_local
 use emit/mangle
 use emit/nodebug
 use emit/unread
+use emit/unwind_scope
 use ir/containers
 use ir/layout
 
@@ -135,6 +136,10 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
     off_frame: [str] @= []
     defined: [str] @= []
 
+    # A counted value the unwind of a C jump leaves held, in the room or lent
+    # whole (panel 258's R2, `emit/unwind_scope.hero`).
+    held_off: bool @= false
+
     # A large plain parameter arrives as a pointer to its caller's copy, and
     # its name is that copy for the body.
     for param in f.params
@@ -149,6 +154,7 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
             continue
 
         if !in_place[index].is_err()
+            held_off @ held_off || layout.is_refcounted(c, slot.ty)
             declared = lend_local.declared(c, names, f, at: index, owner: owner)
 
             if declared != ""
@@ -168,6 +174,7 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
             )
 
             if layout.is_refcounted(c, slot.ty)
+                held_off @ true
                 nodebug.whole(
                     @lines,
                     text: "__builtin_memset(" + large_value.pointer(name) + ", 0, sizeof(" + spelled.must() + "));"
@@ -180,7 +187,7 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
 
         if !spelled.is_err()
             initialiser: str @= ""
-            name = mangle.slot(index: index, name: slot.name)
+            name = mangle.slot(index: index, name: slot.name) + unwind_scope.attribute(c, names, f, ty: slot.ty)
             by_bytes: bool @= false
 
             # Refcounted (the header above says why). Past `typeorder`'s
@@ -217,7 +224,8 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
                 nodebug.whole(@lines, text: deliberate + spelled.must() + " " + name + initialiser + ";")
 
             if by_bytes
-                nodebug.whole(@lines, text: "__builtin_memset(&" + name + ", 0, sizeof " + name + ");")
+                bare = mangle.slot(index: index, name: slot.name)
+                nodebug.whole(@lines, text: "__builtin_memset(&" + bare + ", 0, sizeof " + bare + ");")
         index @ index + 1
 
     value_at: i64 @= 0
@@ -298,4 +306,8 @@ function written(c: state.Checked, names: ctype.Names, f: containers.Function, l
                     nodebug.hidden(@lines, words: deliberate, spelling: spelling, declared: mangle.value(value_at))
         value_at @ value_at + 1
 
+    mark = unwind_scope.frame_mark(c, names, f, off_frame: held_off)
+
+    if mark != ""
+        nodebug.whole(@lines, text: mark)
     return Prologue(lines: nodebug.statements(lines), defines: defines, off_frame: off_frame, defined: defined)

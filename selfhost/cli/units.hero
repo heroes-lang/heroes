@@ -158,7 +158,7 @@ function tu_object(t: toolchain.Toolchain, module: str, tu_text: str, level: str
         runtime: t.runtime,
         source_dir: source_dir
     )
-    words = compiling.unit_words(under)
+    words = strings.with_all(list: compiling.unit_words(under), more: flags.unwind_words(tu_text))
     named = digest.digest(
         t.fingerprint + "|tu|" + t.compiler_key + "|" + module + "|" + tu_text + "|" + t.runtime_key + "|" + search + "|words:" + libraries.key_text(words) + front_check.key_text(tu_text) + region_level.key_text(tu_text: tu_text, under: under)
     )

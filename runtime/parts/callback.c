@@ -142,6 +142,30 @@ static int64_t hero_callbacks_unfinished(void) {
     return sum;
 }
 
+/* AND THE CALLBACKS AN UNWIND LEFT (panel 258's R2, `parts/unwind.c`). Where
+ * this runtime unwinds the frames a C jump abandons, each thunk it leaves ends
+ * its count here as one left, since its values are collected and released
+ * when the call holding the jump's target returns, and counts below as one
+ * that never returned, which it did not: the room's abort and the gates' words
+ * read both (`hero_callbacks_unreturned`), the exit audit forgives only what no
+ * unwind collected (`hero_callbacks_unaudited`). `residue` counts the frames
+ * an unwind left holding what it does not release, a value in the room, a
+ * local lent whole or a reference held across a call, after which the audit
+ * forgives as it did before. Both only grow. */
+static int64_t hero_callbacks_unwound = 0;
+static int64_t hero_callbacks_residue = 0;
+
+/* Callbacks C called that never returned, unwound or not. */
+static int64_t hero_callbacks_unreturned(void) {
+    return hero_callbacks_unfinished() + __atomic_load_n(&hero_callbacks_unwound, __ATOMIC_RELAXED);
+}
+
+/* Whether a frame C left may still hold a block of the program's: a callback
+ * never returned and no unwind collected it, or an unwind left a residue. */
+static bool hero_callbacks_unaudited(void) {
+    return hero_callbacks_unfinished() > 0 || __atomic_load_n(&hero_callbacks_residue, __ATOMIC_RELAXED) > 0;
+}
+
 /* THE GATES' WORDS WHERE A CALLBACK NEVER RETURNED (panel 258's R1,
  * provisional, author ratification pending; defects 2753 and 2756). The
  * handle, lease and scratch gates of `hero_runtime_check_leaks`
@@ -162,6 +186,6 @@ static int64_t hero_callbacks_unfinished(void) {
 /* LeakSanitizer's own hook (`sanitizer/lsan_interface.h`), a function the
  * program may define: nonzero turns its check at the end of the process off. */
 int __lsan_is_turned_off(void);
-int __lsan_is_turned_off(void) { return hero_callbacks_unfinished() > 0; }
+int __lsan_is_turned_off(void) { return hero_callbacks_unaudited(); }
 #endif
 #endif

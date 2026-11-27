@@ -361,6 +361,10 @@ void hero_runtime_check_leaks(void) {
     /* Then the mailboxes (panel 254's R5): once every thread was waited for, a
      * queue still alive is held by a copy of itself inside a queue. */
     hero_mail_check_alive();
+    /* What an unwind collected and a call still owed its release is given
+     * back now, no C call being in progress (panel 258's R2,
+     * `parts/unwind.c`), before any balance is read. */
+    hero_unwind_release_all();
     hero_lend_audit_given("found when the program ended");
     int64_t blocks = hero_live_blocks;
     /* A CALLBACK'S FRAME THAT NEVER FINISHED HOLDS WHAT IT HELD (defect 2704): C
@@ -370,9 +374,13 @@ void hero_runtime_check_leaks(void) {
      * and *this is a compiler bug* was false of the program (panel 257's
      * ffi-pragmatist: libpng's error path over a Heroes frame, 27 runs of 27).
      * Not audited, as a program that calls `exit` is not (`hero_exit`); the
-     * count is `parts/callback.c`'s. */
-    int64_t unfinished = hero_callbacks_unfinished();
-    if (blocks != 0 && unfinished > 0) blocks = 0;
+     * count is `parts/callback.c`'s. A callback whose frames this runtime's
+     * unwind left had what they held collected and released (panel 258's R2),
+     * so the balance is read again after it, unless the unwind left a residue
+     * it does not release (`hero_callbacks_unaudited`); the words below count
+     * it among those that never returned, which it did not. */
+    int64_t unfinished = hero_callbacks_unreturned();
+    if (blocks != 0 && hero_callbacks_unaudited()) blocks = 0;
     if (blocks != 0) {
         hero_report_begin();
         hero_report_printf("panic: %lld heap blocks still live at exit "
