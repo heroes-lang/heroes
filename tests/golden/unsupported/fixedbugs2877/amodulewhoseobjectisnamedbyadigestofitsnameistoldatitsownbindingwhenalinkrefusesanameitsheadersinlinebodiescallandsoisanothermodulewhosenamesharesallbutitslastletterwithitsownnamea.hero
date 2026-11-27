@@ -1,0 +1,8 @@
+# A module of defect 2877's unsupported case: its name takes 180 letters, and
+# the other module's shares all but its last.
+
+extern "fixedbugs-2877-inline.h"
+    function top2877_a() -> i64  #~ ffi_missing_link
+
+function a() -> i64
+    return top2877_a()

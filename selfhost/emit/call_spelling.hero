@@ -41,6 +41,7 @@
 use ast
 use checker
 use cli/strings
+use cli/unit_names
 use emit/ffi_lookup
 use parse
 use resolve
@@ -156,13 +157,12 @@ function file_part(position: str) -> str
     return position.slice(from: 0, to: end)
 
 # Whether a location's file is the program's own C: a file a `#line` names, or
-# the unit this compiler wrote for a module, `<component>.c`, wherever its
-# build folder stands.
+# the unit this compiler wrote for a module, which its own `#line`s name
+# `<component>.c` and its build folder holds as `unit-<16>.c`, wherever that
+# folder stands (`cli/unit_names.hero`, defect 2877).
 function written_here(s: source.Source, file: str) -> bool
     for entry in s.files
-        unit = entry.component + ".c"
-
-        if file == entry.name || file == unit || strings.ends_with(text: file, suffix: "/" + unit) || strings.ends_with(text: file, suffix: "\\" + unit)
+        if file == entry.name || file == entry.component + ".c" || unit_names.base_of(file) == unit_names.c_name(entry.component)
             return true
 
     return false
@@ -191,8 +191,16 @@ test "a round learns a bound function whose macro clang refused at the program's
 
     # Clang's lines for the call and the return assertion, each error with
     # the macro it expanded beneath, as this Mac's clang 21 writes them.
-    said = "build/tu-1/t.c:82:29: error: incomplete type 'void' is not assignable\n   82 | _Static_assert(HERO_RET_I32(sigemptyset((void *)0)), \"x\");\nIn file included from build/tu-1/t.c:28:\n/sdk/usr/include/signal.h:128:34: note: expanded from macro 'sigemptyset'\nbuild/tu-1/t.c:71:41: note: expanded from macro 'HERO_RET_I32'\nt.hero:10:133: error: ISO C does not allow indirection on operand of type 'void *'\n/sdk/usr/include/signal.h:128:27: note: expanded from macro 'sigemptyset'\n"
+    unit = "build/tu-1/" + unit_names.c_name("t")
+    said = unit + ":82:29: error: incomplete type 'void' is not assignable\n   82 | _Static_assert(HERO_RET_I32(sigemptyset((void *)0)), \"x\");\nIn file included from " + unit + ":28:\n/sdk/usr/include/signal.h:128:34: note: expanded from macro 'sigemptyset'\n" + unit + ":71:41: note: expanded from macro 'HERO_RET_I32'\nt.hero:10:133: error: ISO C does not allow indirection on operand of type 'void *'\n/sdk/usr/include/signal.h:128:27: note: expanded from macro 'sigemptyset'\n"
     assert to_learn(s, parsed.decls, refusals: said) == ["sigemptyset"]
+
+    # The same lines under the name the unit's own `#line`s give it, and under
+    # Windows' separator (defect 2877).
+    restored = "t.c:82:29: error: incomplete type 'void' is not assignable\nt.c:71:41: note: expanded from macro 'HERO_RET_I32'\n/sdk/usr/include/signal.h:128:34: note: expanded from macro 'sigemptyset'\n"
+    assert to_learn(s, parsed.decls, refusals: restored) == ["sigemptyset"]
+    assert written_here(s, file: "C:\\w\\build\\tu-1\\" + unit_names.c_name("t"))
+    assert !written_here(s, file: "build/tu-1/t-other.c")
 
     # Not a macro a header's own code expands, nor one under a warning, nor a
     # name clang found undeclared, nor a name no group binds as a function.

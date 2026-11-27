@@ -1,0 +1,13 @@
+error[ffi_missing_link]: `top2877_a` is defined inline in `fixedbugs-2877-inline.h` line 6, and its body calls `base2877`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs2877/amodulewhoseobjectisnamedbyadigestofitsnameistoldatitsownbindingwhenalinkrefusesanameitsheadersinlinebodiescallandsoisanothermodulewhosenamesharesallbutitslastletterwithitsownnamea.hero:5:5
+    |
+  5 |     function top2877_a() -> i64  #~ ffi_missing_link
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2877` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2877-inline.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it
+
+error[ffi_missing_link]: `top2877_b` is defined inline in `fixedbugs-2877-inline.h` line 7, and its body calls `base2877`, which nothing on the link line defines
+  at tests/golden/unsupported/fixedbugs2877/amodulewhoseobjectisnamedbyadigestofitsnameistoldatitsownbindingwhenalinkrefusesanameitsheadersinlinebodiescallandsoisanothermodulewhosenamesharesallbutitslastletterwithitsownnameb.hero:5:5
+    |
+  5 |     function top2877_b() -> i64  #~ ffi_missing_link
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: this program needs one definition of `base2877` on its link line: the body of a function a header defines is compiled into this program's own object wherever the program reaches it, at `-O0` and `-O2` alike; a definition comes from a library, linked only where a group names it, or from a header that defines it, compiled into every module whose group names that header; name that library in this group's own `link`, `extern "fixedbugs-2877-inline.h" link "<library>"`, or give this program a group for that library, `extern "<its header>" link "<library>"`, holding a function its header declares; or have one module's group, and no other's, name a header that defines it

@@ -204,7 +204,7 @@ function object_needs(t: toolchain.Toolchain, object: str, what: str) -> [str]
     return out
 
 # The name `object`'s needs are kept by: its folder's name and its own. A
-# unit's object is `tu-<key>/<module>-<sum>.o` (`cli/units.hero`), the key
+# unit's object is `tu-<key>/unit-<16>-<sum>.o` (`cli/units.hero`), the key
 # naming its C and the sum the headers its compile read, so an edit that
 # reads the same headers keeps the file's name in a new folder (measured
 # 2026-11-13), and a list kept by that name alone answered for the edit: a

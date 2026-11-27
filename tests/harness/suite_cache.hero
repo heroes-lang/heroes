@@ -90,6 +90,7 @@
 use report
 use shell
 use strings
+use unit_files
 
 # Six builds at once need six threads, and a thread body is handed one `i64`
 # (`examples/threads/main.hero`), so what they run is read from a plan file.
@@ -679,7 +680,7 @@ function only_the_module_that_read_it_is_rebuilt(@r: report.Report, scratch: str
     names: [str] @= []
 
     for path in moved.must()
-        names @ names.push(module_of_object(strings.base_name(path)))
+        names @ names.push(unit_files.module_of_object(name: strings.base_name(path), known: ["prog", "bind"]))
 
     only = names.sort()
 
@@ -691,32 +692,6 @@ function only_the_module_that_read_it_is_rebuilt(@r: report.Report, scratch: str
         )
     else
         report.keep_pass(@r)
-
-# The module an object belongs to, which is the question and not the
-# layout: `bind-<digest>.o` since defect 134, the digest naming the headers
-# its compile read (`selfhost/cli/deps.hero`), and `bind.o` before it, so
-# the suite reads either compiler the same way. A name of neither shape
-# comes back whole, so a report names it rather than a guess.
-function module_of_object(name: str) -> str
-    if !strings.has_suffix(s: name, suffix: ".o")
-        return name
-    stem = name.slice(from: 0, to: name.len() - 2)
-
-    if stem.len() > 17 && stem[stem.len() - 17] == 45 && is_digest_tail(stem)
-        return stem.slice(from: 0, to: stem.len() - 17)
-    return stem
-
-function is_digest_tail(stem: str) -> bool
-    at: i64 @= stem.len() - 16
-
-    while at < stem.len()
-        b = stem[at]
-
-        if !(b >= 48 && b <= 57) && !(b >= 97 && b <= 102)
-            return false
-        at @ at + 1
-
-    return true
 
 # **A reordered variant is not served from a warm object.** Three
 # orderings in a row, the third one seen by neither of the first two, and

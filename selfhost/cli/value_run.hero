@@ -31,6 +31,7 @@ use cli/read_back
 use cli/response_file
 use cli/strings
 use cli/toolchain
+use cli/unit_names
 use cli/value_told
 use emit/ffi_lookup
 use emit/probe_cut
@@ -81,10 +82,12 @@ record Unit
 # renamed in the text (`value_probe.unit_text`; a `-D main=` word here was
 # read by every header too, defect 2146), its `#define`s kept only where
 # `defines` asks: a probe compiles it without them, since a kept one expands
-# a second time (panel 218's critic, `K_W`).
+# a second time (panel 218's critic, `K_W`). Its file is named as the
+# module's unit is, by the module's stem (`cli/unit_names.hero`, defect 2877):
+# by the module, a module's long name passed what a path takes here too.
 function preprocessed(dir: str, one: Unit, defines: bool) -> str?
     process.mkdir_all(dir)?
-    unit = dir + "/" + one.module + ".c"
+    unit = dir + "/" + unit_names.c_name(one.module)
     publish.write_whole(path: unit, text: value_probe.unit_text(one.text), keyed: true)?
     i_path = publish.private_name(dir + "/unit.i")
     head: [str] @= ["clang", "-E"]
