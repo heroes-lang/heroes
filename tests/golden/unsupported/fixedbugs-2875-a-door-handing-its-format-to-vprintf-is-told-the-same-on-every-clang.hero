@@ -1,0 +1,27 @@
+# FIXED ISSUE 2875, 2026-11-27, lane p261-beside: a header of the program's
+# own whose `say_list(const char *f, va_list ap)` hands `vprintf` the format
+# it was given is refused under one name on every clang.
+#
+# SYMPTOM: defect 2421's door, `printf(f, v)`, read red in the Linux arm64
+# image (`unsupported/fixedbugs-2421-a-door-that-hands-on-its-format-is-
+# refused`): Debian clang 22.1.8 told it `-Wmissing-format-attribute`,
+# *"diagnostic behavior may be improved by adding the 'format(printf, 1, 2)'
+# attribute"*, where Apple clang 21 says `-Wformat-nonliteral`, *"format
+# string is not a string literal"*, and so did this door's `vprintf(f, ap)`,
+# the attribute `format(printf, 1, 0)`.
+#
+# CAUSE: clang 22 gives the attribute's advice in `-Wformat-nonliteral`'s
+# place where the format is the function's own parameter.
+#
+# FIX: the advice is quiet in a header's region after `-Wformat-nonliteral`
+# is made an error (`emit/header_region.hero`'s `ADVICE`), so clang 22 says
+# `-Wformat-nonliteral` there as clang 21 does: one door, one name, refused
+# as before on both, measured on this Mac and in the Linux arm64 image.
+# The group binds the header's other function; the region judges the whole
+# header's code.
+
+extern "fixedbugs-2875-forward-va.h"  #~ ffi_header_refused
+    function say_count() -> i32
+
+function main()
+    print(say_count())
