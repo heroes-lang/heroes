@@ -550,10 +550,11 @@ static _Thread_local HeroSignalStack hero_signal_stack;
  * thread already the new one, saves into that thread's context, the one the
  * interrupted switch has yet to load, and the switch, resumed later, loads
  * the frames of a handler that has returned. Measured: `gtc` with the tick
- * forced due there (a wait of 7 ms in its handler) died inside the runtime's
- * `swapcontext` by `__stack_chk_fail` at its return on a green thread's
- * stack, 3 runs of 3 on this Mac (lldb), the very end of the one failure of
- * 640 runs under `--sanitize` there (its crash report), and as C alone, with
+ * forced due there (a wait of 7 ms in its handler) died at 134 with nothing
+ * said, 3 runs of 3 on this Mac, which lldb read in a fourth as
+ * `__stack_chk_fail` at the return of the runtime's `swapcontext` on a green
+ * thread's stack, the very end of the one failure of 640 runs under
+ * `--sanitize` there (its crash report); and as C alone, with
  * no Heroes runtime, by Bus error or Segmentation fault, 6 of 6 at `-O0` and
  * `-O2`; in Linux arm64, 139 plain, 3 of 3, and as C alone 2,222 ticks
  * found on another thread's stack than the scheduler's current one when its

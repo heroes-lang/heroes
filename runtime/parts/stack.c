@@ -1090,9 +1090,11 @@ static _Noreturn void hero_stack_tell_exhausted(uintptr_t pc, uintptr_t fp, uint
  * allocator's own), which only C's choice of a guarded stack prevents, and a
  * recursion that ends before the first address that faults ends having
  * written there in silence. On this Mac at `-O2` the same `malloc`'d stack's
- * recursion overwrote this runtime's own thread-local words before any fault,
- * and the callback's next entry was refused as run on a thread the program
- * did not start, 20 runs of 20 (the base hung, 3 of 3): a defect of its own.
+ * callback, at an entry before any fault, was refused as run on a thread the
+ * program did not start, 20 runs of 20 (the base hung, 3 of 3): the guard
+ * that refuses reads one thread-local word this thread set, so the recursion
+ * overwrote it (read from the code, the word's address unread), a defect of
+ * its own.
  * And a stack no `makecontext` handed out (a library's own switch), which no
  * range names. */
 #if defined(__APPLE__)
