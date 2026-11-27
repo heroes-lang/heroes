@@ -20,6 +20,7 @@ use <rebel>/json
 use <rebel>/maps
 use <rebel>/strings
 use <rebel>/time
+use <rebel>/web
 
 use accounts/accounts
 use api/oauth_api
@@ -98,7 +99,7 @@ function asking(parameters: str) -> http.Response
 # - `r`: the request.
 #
 # Fails as `tokens.issue_service` fails.
-function service_token(@st: state.State, r: http.Request) -> http.Response?
+function service_token(@st: state.State, _: web.Found, r: http.Request) -> http.Response?
     header = match http.value_of(r.headers, name: "Authorization")
         .ok v  => v
         .err _ => return ok(asking(f"realm=\"{st.issuer}\""))
@@ -183,7 +184,7 @@ function scoped(st: state.State, r: http.Request, scope: str) -> [str]?
 # - `r`: the request, its token holding `directory:import`.
 #
 # Fails where the data file cannot be written.
-function import_now(@st: state.State, r: http.Request) -> http.Response?
+function import_now(@st: state.State, _: web.Found, r: http.Request) -> http.Response?
     match scoped(st, r: r, scope: "directory:import")
         .ok _  => _ = 0
         .err e => return ok(oauth_api.challenge(error: "insufficient_scope", description: e.msg))
@@ -231,10 +232,10 @@ function summary_json(s: directory_import.Summary, next: str) -> {str: json.Valu
 #
 # - `st`: the server.
 # - `r`: the request, its token holding `users:read`.
-function list_users(st: state.State, r: http.Request) -> http.Response
+function list_users(st: state.State lent, _: web.Found, r: http.Request) -> http.Response?
     match scoped(st, r: r, scope: "users:read")
         .ok _  => _ = 0
-        .err e => return oauth_api.challenge(error: "insufficient_scope", description: e.msg)
+        .err e => return ok(oauth_api.challenge(error: "insufficient_scope", description: e.msg))
 
     out: [json.Value] @= []
 
@@ -243,7 +244,7 @@ function list_users(st: state.State, r: http.Request) -> http.Response
             .object(members: {"username": .text(v: u.username), "source": .text(v: u.source), "email_verified": .boolean(v: u.email_verified), "totp": .boolean(v: u.totp_confirmed), "passkeys": answers.number(u.passkeys.len()), "disabled": .boolean(v: u.disabled)})
         )
 
-    return answers.json_answer(200, members: {"users": .list(items: out)})
+    return ok(answers.json_answer(200, members: {"users": .list(items: out)}))
 
 test "fields_of: the first message, and a later one with its sid"
     first = fields_of("SCRAM-SHA-256 data=biwsbj11c2VyLHI9cmJ0").must()
