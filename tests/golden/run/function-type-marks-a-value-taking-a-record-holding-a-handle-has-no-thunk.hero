@@ -1,0 +1,34 @@
+# Lane land261, found by lane router's rewrite of chat (2026-11-27): a
+# function whose parameter is a record of the program holding a C handle,
+# and one with an `@` parameter beside it, taken as values in a program that
+# hands C a callback. Every function whose address is taken got a thunk, the
+# second C function C calls; these two can never be handed to C, a callback
+# type naming neither a record of the program nor a mark, and the thunk lent
+# the record's handle by its source path, `hero_handle_lent(h1_h.box)`, where
+# C names the field `f_box`: `check` passed and `build` exited 2. Such a
+# function has no thunk and no table row since. Prints 7 7 23.
+extern "function-type-marks-a-value-taking-a-record-holding-a-handle-has-no-thunk.h"
+    record Box tag box
+    function box_get() -> Box
+    function box_value(b: Box) -> i64
+    function call_twice(cb: (function(i64) -> i64)) -> i64
+
+record Holder
+    box: Box
+
+function plus(n: i64) -> i64
+    return n + 10
+
+function add(@total: i64, h: Holder)
+    total @ total + box_value(b: h.box)
+
+function show(h: Holder) -> i64
+    return box_value(b: h.box)
+
+function main()
+    h = Holder(box: box_get())
+    total @= 0
+    handlers: {str: (function(@i64, Holder) -> ())} = {"add": add}
+    handlers["add"].must()(@total, h)
+    readers = [show]
+    print(total, " ", readers[0](h), " ", call_twice(plus))

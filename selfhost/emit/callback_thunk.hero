@@ -43,6 +43,7 @@
 
 use ast
 use bytes
+use check/ffi_crossing
 use check/reaches
 use check/state
 use check/table
@@ -94,7 +95,7 @@ constant OWN_FRAME: str
     "__attribute__((__noinline__)) "
 
 function definition(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, guarded_decls: {i64: bool})
-    if guarded_decls[f.decl].is_err() || !large_value.crosses(names, f)
+    if guarded_decls[f.decl].is_err() || !handed_to_c(c, names, s, decls, f)
         return
     real = signature.as_value(f, c, names, s, decls)
     result = ctype.c_result(names, c: c, ty: f.result)
@@ -158,6 +159,30 @@ function definition(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: 
             @w,
             text: "_Static_assert(__builtin_types_compatible_p(__typeof__(&" + thunk_name(real) + "), __typeof__(&" + real + ")), \"heroes-callback " + source.component_at(s, f.span.start) + "." + f.name + ": the thunk C is handed has its value's type\");"
         )
+
+# Whether C can be handed `f`, defect 2337's rule widened by panel 261: its
+# value takes C's convention (`large_value.crosses`), no parameter is marked,
+# a callback type C calls carrying no mark (`check/ffi_crossing.hero`), and
+# no parameter or result is a type no callback's may be that reaches a
+# handle, a record of the program holding one. A function the program only
+# calls through its own values then has no thunk and no table row: its
+# record's handle was lent in a thunk nothing calls by its source path,
+# `hero_handle_lent(h1_.handle)` where C names the field `f_handle`, and
+# clang refused the program, exit 2 (lane router's chat, whose handlers took
+# `@srv` and a `poll.Set` and became values with R1).
+function handed_to_c(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function) -> bool
+    if !large_value.crosses(names, f) || stays_home(c, s, decls, ty: f.result)
+        return false
+
+    for slot_id in f.params
+        if is_mutable(f.slots[slot_id]) || stays_home(c, s, decls, ty: f.slots[slot_id].ty)
+            return false
+
+    return true
+
+# A type no callback's may be that reaches a handle.
+function stays_home(c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64) -> bool
+    return !ffi_crossing.crosses_the_boundary(c.types, decls, ty) && reaches.handle_suffixes(c, s, decls, ty: ty).len() > 0
 
 # THE THUNK'S FIRST LINE ASKS WHETHER A SIGNAL CALLED IT (panel 247's R1,
 # defect 2494): no Heroes code runs inside a signal handler (panel 246's R4),
@@ -223,7 +248,7 @@ function lookup_table(@w: writer.Writer, p: containers.Program, c: state.Checked
     for at in callbacks.functions
         f = p.functions[at]
 
-        if !is_ordinary(f) || !large_value.crosses(names, f)
+        if !is_ordinary(f) || !handed_to_c(c, names, s, decls, f)
             continue
         signature.prototype(@w, f, c, names, s, decls)
 
@@ -243,7 +268,7 @@ function lookup_table(@w: writer.Writer, p: containers.Program, c: state.Checked
     for at in callbacks.functions
         f = p.functions[at]
 
-        if !is_ordinary(f) || !large_value.crosses(names, f)
+        if !is_ordinary(f) || !handed_to_c(c, names, s, decls, f)
             continue
         real = signature.as_value(f, c, names, s, decls)
         writer.line(
