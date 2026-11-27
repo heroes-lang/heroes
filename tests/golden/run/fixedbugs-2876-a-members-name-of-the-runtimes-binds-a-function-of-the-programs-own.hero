@@ -1,0 +1,29 @@
+# Fixed 2026-11-27, defect 2876, lane runtime-names: two functions of the
+# program's own header named as members of the Heroes runtime's structs are,
+# `hero_code`, a member of its `HeroFailure`, and `hero_header`, a member a
+# macro of its header writes inside a struct.
+# Symptom: both refused at `build` as names `heroes_runtime.h` declares,
+# whose functions free what the program holds; the runtime's header
+# declares neither at the file's scope, and a member's name is no name a C
+# program shares with it.
+# Cause: every word the runtime's header writes was taken as a name it
+# declares. A word is the runtime's only where one of its two first headers
+# defines it as a macro or clang reads it declared at the file's scope
+# (`cli/runtime_kinds.hero`); these bind, and a fallible's code and message,
+# which the unit's C reads through those members, are untouched.
+
+extern "fixedbugs-2876-members-names.h"
+    function hero_code() -> i64
+    function hero_header() -> i64
+
+function failing(n: i64) -> i64?
+    if n > 0
+        return fail(code: "too_big", msg: "past zero")
+    return ok(n)
+
+function main()
+    print("code: ", hero_code(), ", header: ", hero_header())
+
+    match failing(n: hero_code())
+        .ok n  => print(n)
+        .err e => print(e.code, ": ", e.msg)

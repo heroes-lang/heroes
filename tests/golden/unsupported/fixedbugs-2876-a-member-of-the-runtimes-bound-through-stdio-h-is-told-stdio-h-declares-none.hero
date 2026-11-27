@@ -1,0 +1,17 @@
+# Fixed 2026-11-27, defect 2876, lane runtime-names: a member's name of a
+# struct the Heroes runtime's header declares, `hero_code`, bound as a
+# function through `stdio.h`.
+# Symptom: refused as a name `heroes_runtime.h` declares, whose functions
+# free what the program holds; the header declares no `hero_code`, only a
+# member of that name, which no binding can reach.
+# Cause and repair: `fixedbugs-2876-the-switch-heroes-unit-h-defines-bound-through-it-is-told-as-its-macro`.
+# A member's name is no name of the runtime's, so the binding is told as any
+# other name `stdio.h` does not declare. Bound from a header of the
+# program's own that declares it, it builds and runs:
+# `tests/golden/run/fixedbugs-2876-a-members-name-of-the-runtimes-binds-a-function-of-the-programs-own`.
+
+extern "stdio.h"
+    function hero_code() -> i64  #~ ffi_unknown_name
+
+function main()
+    print(hero_code())

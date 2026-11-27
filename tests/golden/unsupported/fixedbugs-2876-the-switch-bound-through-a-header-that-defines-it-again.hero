@@ -1,0 +1,16 @@
+# Fixed 2026-11-27, defect 2876, lane runtime-names: the switch the
+# runtime's `heroes_unit.h` defines, bound through a header of the program's
+# own that takes it back and defines it again as `7`.
+# Symptom: told as a name `heroes_runtime.h` declares, whose functions free
+# what the program holds.
+# Cause and repair: `fixedbugs-2876-the-switch-heroes-unit-h-defines-bound-through-it-is-told-as-its-macro`.
+# Still the runtime's: the unit defines it before the program's header, and
+# a binding of it reads what the compiler set unless a header undoes the
+# compiler's switch, as this one does (measured: `7` here, `1` under a
+# header that defines nothing).
+
+extern "fixedbugs-2876-defines-the-switch-again.h"
+    constant HERO_STANDARD_AFTER_GROUPS: i64  #~ ffi_runtime_header
+
+function main()
+    print(HERO_STANDARD_AFTER_GROUPS)

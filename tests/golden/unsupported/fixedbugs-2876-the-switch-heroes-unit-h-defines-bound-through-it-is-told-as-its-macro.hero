@@ -1,0 +1,25 @@
+# Fixed 2026-11-27, defect 2876, lane runtime-names: a binding of the switch
+# the runtime's `heroes_unit.h` defines, through `heroes_unit.h` itself.
+# Symptom: `constant HERO_STANDARD_AFTER_GROUPS: i64` passed `check`, and
+# `build` refused it as a name `heroes_runtime.h` declares, saying the
+# runtime's functions free what the program holds and that the note's fix is
+# to name the header declaring the function; `runtime/heroes_unit.h` defines
+# it as a macro, and `runtime/heroes_runtime.h` only asks whether it is
+# defined.
+# Cause: every word the runtime's header writes was told with one sentence,
+# a function's. Each name is now told as what it is and by the header that
+# gives it (`cli/runtime_kinds.hero`). The binding stays refused: bound, it
+# reads `1`, the compiler's switch, which every unit defines before its
+# groups' headers (measured that day, `cli/runtime_bound.hero`'s comment).
+# The shapes beside: the switch through `stdio.h`
+# (`fixedbugs-2876-the-switch-bound-through-stdio-h-is-told-as-heroes-unit-hs-macro`),
+# through a header of the program's own that defines it again
+# (`fixedbugs-2876-the-switch-bound-through-a-header-that-defines-it-again`),
+# and each other kind of the runtime's names
+# (`fixedbugs-2876-each-name-of-the-runtimes-own-is-told-as-what-it-is`).
+
+extern "heroes_unit.h"
+    constant HERO_STANDARD_AFTER_GROUPS: i64  #~ ffi_runtime_header
+
+function main()
+    print(HERO_STANDARD_AFTER_GROUPS)

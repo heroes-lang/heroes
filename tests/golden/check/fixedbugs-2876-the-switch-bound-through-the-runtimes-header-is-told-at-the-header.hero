@@ -1,0 +1,15 @@
+# Fixed 2026-11-27, defect 2876, lane runtime-names: the switch the
+# runtime's `heroes_unit.h` defines, bound through a group naming
+# `heroes_runtime.h`, which only asks whether it is defined.
+# The group is refused at its string, as every group naming the runtime's
+# own header is (`fixedbugs-2256-a-group-naming-the-runtimes-own-header-is-refused`),
+# and its binding is told nothing more: the message says what the header is
+# and nothing of the name. The same binding through any other header is
+# `build`'s, told as `heroes_unit.h`'s macro:
+# `tests/golden/unsupported/fixedbugs-2876-the-switch-heroes-unit-h-defines-bound-through-it-is-told-as-its-macro`.
+
+extern "heroes_runtime.h"  #~ ffi_runtime_header
+    constant HERO_STANDARD_AFTER_GROUPS: i64
+
+function main()
+    print(HERO_STANDARD_AFTER_GROUPS)

@@ -1,0 +1,379 @@
+# What a name of the Heroes runtime's own is, and which of the two headers
+# every unit reads first gives it (design.md §4.19, §4.20, §4.17; defect
+# 2876, 2026-11-27).
+#
+# **One sentence was told of every name until then.** `cli/runtime_bound.hero`
+# took every word `heroes_runtime.h`'s code writes in the compiler's own forms
+# as a name the runtime declares, and told each as a function that frees
+# what the program holds. Measured on the 286 such words that day: 209
+# functions, 18 variables, 17 types, 13 enumeration constants and 24 macros
+# the header defines, `HERO_STANDARD_AFTER_GROUPS`, a macro `heroes_unit.h`
+# defines and the header only tests (`#if !defined(...)`), and four that are
+# no name of the file's scope at all: the members `hero_code` and `hero_msg`,
+# and `hero_header` and `hero_body`, which a macro's body writes inside a
+# struct. A function of a program's own header named `hero_code` was refused
+# as the runtime's.
+#
+# **What each name is, asked of what decides it**:
+#
+# - a macro, where a `#define` line of a header's code names it, read from
+#   the header's text (`defined_macros`): `heroes_unit.h`'s first, since a
+#   unit reads it first, then `heroes_runtime.h`'s; an `#if`, `#ifdef`,
+#   `#ifndef` or `#elif` that only asks whether it is defined defines
+#   nothing, and a `#define` in a comment or after a string's `/*` is none;
+# - else what clang's dump of the two headers alone declares at the file's
+#   scope (`asked`, `declared`): a function, a variable, a type, a typedef's
+#   or a tag's, or an enumeration constant; a member, a parameter or a word
+#   no declaration names is none, so the runtime does not own it and the
+#   build tells the binding as it tells any other.
+#
+# clang is asked only where a binding of the compiler's forms names a word
+# the two headers' code writes and no `#define` of theirs names, a build
+# that binds none paying nothing. **The premise that makes the words a
+# complete screen**: every name the two headers declare is written in their
+# text, which token pasting would break; the test below fires when either
+# header's code writes `##`, measured absent that day, and the dump's 257
+# names of the compiler's forms were all among the words.
+
+use cli/clang_tree
+use cli/digest
+use cli/flags
+use cli/process
+use cli/publish
+use cli/read_back
+use cli/response_file
+use cli/strings
+use emit/c_words
+
+# What a name is, as the message says it.
+constant FUNCTION: str
+    "a function"
+
+constant VARIABLE: str
+    "a variable"
+
+constant TYPE: str
+    "a type"
+
+constant ENUMERATOR: str
+    "an enumeration constant"
+
+constant MACRO: str
+    "a macro"
+
+# What a name is where clang gave no answer: a word the header's code
+# writes, all that is then known, refused rather than let through.
+constant WRITTEN: str
+    "a name"
+
+constant RUNTIME: str
+    "heroes_runtime.h"
+
+constant UNIT: str
+    "heroes_unit.h"
+
+# A name of the runtime's own: what it is and the header that gives it.
+record Owned
+    what: str
+    file: str
+
+# The two headers' texts as the build reads them: the macros each defines
+# and the words of the compiler's forms their code writes.
+record Prefix
+    unit_macros: {str: bool}
+    runtime_macros: {str: bool}
+    unit_words: {str: bool}
+    runtime_words: {str: bool}
+
+# The readings of `unit`, `heroes_unit.h`'s text, and `runtime`,
+# `heroes_runtime.h`'s.
+function prefix_of(unit: str, runtime: str) -> Prefix
+    return Prefix(
+        unit_macros: defined_macros(unit),
+        runtime_macros: defined_macros(runtime),
+        unit_words: c_words.used(unit),
+        runtime_words: c_words.used(runtime)
+    )
+
+# Whether either header's code writes `name`, the screen before anything is
+# asked.
+function written(p: Prefix, name: str) -> bool
+    return !p.unit_words[name].is_err() || !p.runtime_words[name].is_err()
+
+# Whether a `#define` of either header names `name`.
+function a_macro(p: Prefix, name: str) -> bool
+    return !p.unit_macros[name].is_err() || !p.runtime_macros[name].is_err()
+
+# What `name` is to the two headers, given clang's file-scope names
+# (`declared`), or none where clang answered and declares no such name: a
+# member's, a parameter's, or a word an `#if` only tests. `answered` false is
+# clang giving no answer, and a word the headers write is then `WRITTEN`.
+function owned(p: Prefix, name: str, declared: {str: str}, answered: bool) -> Owned?
+    if !p.unit_macros[name].is_err()
+        return ok(Owned(what: MACRO, file: UNIT))
+
+    if !p.runtime_macros[name].is_err()
+        return ok(Owned(what: MACRO, file: RUNTIME))
+
+    # A name neither header writes is declared, where it is, by a header
+    # they read, clang's `stddef.h`, and is not theirs to tell.
+    if !written(p, name: name)
+        return fail(code: "none", msg: "no word of the runtime's headers")
+
+    file = if !p.runtime_words[name].is_err()
+        RUNTIME
+    else
+        UNIT
+
+    if !answered
+        return ok(Owned(what: WRITTEN, file: file))
+    what = declared[name]
+
+    if what.is_err()
+        return fail(code: "none", msg: "no name the runtime's headers declare")
+    return ok(Owned(what: what.must(), file: file))
+
+# The verb the message says of `o`'s header: a macro is defined, a
+# declaration declared, and a name clang said nothing of only written.
+function verb(o: Owned) -> str
+    if o.what == MACRO
+        return "defines"
+
+    if o.what == WRITTEN
+        return "writes"
+    return "declares"
+
+# The macros the `#define` lines of `text`'s code name: its lines spliced
+# where a backslash ends one, its comments passed over, a string or a
+# character literal read whole so a `/*` inside one opens no comment.
+function defined_macros(text: str) -> {str: bool}
+    out: {str: bool} @= {}
+
+    for line in c_words.lines_of(uncommented(spliced(text)))
+        named = define_of(line)
+
+        if !named.is_err()
+            out[named.must()] @ true
+
+    return out
+
+# `text` with every backslash that ends a line taken out with its line end,
+# as C splices lines before it reads a comment (C11 5.1.1.2).
+function spliced(text: str) -> str
+    pieces: [str] @= []
+
+    for line in c_words.lines_of(text)
+        if line.len() > 0 && line[line.len() - 1] == '\\'
+            pieces @ pieces.push(line.slice(from: 0, to: line.len() - 1))
+            continue
+        pieces @ pieces.push(line).push("\n")
+
+    return pieces.join("")
+
+# `text` with each comment made a space, a block comment's line ends kept so
+# a line stays where it stood.
+function uncommented(text: str) -> str
+    parts: [str] @= []
+    n = text.len()
+    kept: i64 @= 0
+    i: i64 @= 0
+
+    while i < n
+        b = text[i]
+
+        if b == '"' || b == '\''
+            i @ i + 1
+
+            while i < n && text[i] != b && text[i] != '\n'
+                if text[i] == '\\'
+                    i @ i + 1
+                i @ i + 1
+
+            i @ i + 1
+            continue
+
+        if b == '/' && i + 1 < n && text[i + 1] == '*'
+            parts @ parts.push(text.slice(from: kept, to: i)).push(" ")
+            i @ i + 2
+
+            while i + 1 < n && !(text[i] == '*' && text[i + 1] == '/')
+                if text[i] == '\n'
+                    parts @ parts.push("\n")
+                i @ i + 1
+
+            i @ i + 2
+
+            if i > n
+                i @ n
+            kept @ i
+            continue
+
+        if b == '/' && i + 1 < n && text[i + 1] == '/'
+            parts @ parts.push(text.slice(from: kept, to: i))
+
+            while i < n && text[i] != '\n'
+                i @ i + 1
+
+            kept @ i
+            continue
+        i @ i + 1
+
+    if kept < n
+        parts @ parts.push(text.slice(from: kept, to: n))
+    return parts.join("")
+
+# The name a `#define` line defines, or none for any other line.
+function define_of(line: str) -> str?
+    at: i64 @= c_words.past_blanks(text: line, at: 0)
+
+    if at >= line.len() || line[at] != '#'
+        return fail(code: "none", msg: "no directive")
+    at @ c_words.past_blanks(text: line, at: at + 1)
+
+    if !c_words.holds_at(text: line, at: at, word: "define") || at + 6 >= line.len() || line[at + 6] != ' ' && line[at + 6] != '\t'
+        return fail(code: "none", msg: "no `#define`")
+    start = c_words.past_blanks(text: line, at: at + 6)
+    end: i64 @= start
+
+    while end < line.len() && c_words.in_word(line[end])
+        end @ end + 1
+
+    if end == start || !c_words.starts_word(line[start])
+        return fail(code: "none", msg: "no name")
+    return ok(line.slice(from: start, to: end))
+
+# What clang's dump of the two headers alone declares at the file's scope,
+# by name, under `build`, the runtime at `runtime`; none where clang did not
+# start, refused the headers or wrote no dump.
+function asked(build: str, runtime: str) -> {str: str}?
+    dir = build + "/runtime-names"
+    process.mkdir_all(dir)?
+    text = "#include \"" + UNIT + "\"\n"
+    unit = dir + "/prefix-" + digest.digest(text) + ".c"
+    publish.write_whole(path: unit, text: text, keyed: true)?
+    out = publish.private_name(dir + "/dump.json")
+    err = publish.private_name(dir + "/said.txt")
+    head = strings.with_all(
+        list: strings.with_all(list: ["clang"], more: flags.level_words(level: "-O0", sanitize: false)),
+        more: ["-I", runtime]
+    )
+    line = response_file.carried(line: head, dir: dir)
+    ran = process.run(
+        program: "clang",
+        words: strings.with_all(list: line, more: ["-fsyntax-only", "-Xclang", "-ast-dump=json", unit]),
+        out: out,
+        err: err
+    )
+    dumped = read_back.words(out)
+    publish.discard(out)
+    publish.discard(err)
+
+    if !ran.started || ran.code != 0 || dumped.is_err()
+        return fail(code: "unasked", msg: "clang wrote no dump of the runtime's headers")
+    tree = clang_tree.read(dumped.must())?
+    return ok(declarations(tree))
+
+# Each name `tree` declares at the file's scope and what it is: a function,
+# a variable or a typedef directly under the unit, a struct, union or enum
+# tag outside any function, an enumeration constant of such an enum. A name
+# both a tag and another kind is the other, C keeping tags apart.
+function declarations(tree: clang_tree.Tree) -> {str: str}
+    out: {str: str} @= {}
+    index: i64 @= 0
+
+    for node in tree.nodes
+        what = kind_at(tree, index: index)
+        index @ index + 1
+
+        if what.len() == 0 || node.name.len() == 0
+            continue
+        held = out[node.name]
+
+        if held.is_err() || held.must() == TYPE && what != TYPE
+            out[node.name] @ what
+
+    return out
+
+# What the node at `index` declares at the file's scope, "" where nothing.
+function kind_at(tree: clang_tree.Tree, index: i64) -> str
+    node = tree.nodes[index]
+
+    if node.parent < 0
+        return ""
+    on_top = tree.nodes[node.parent].kind == "TranslationUnitDecl"
+
+    if node.kind == "FunctionDecl" && on_top
+        return FUNCTION
+
+    if node.kind == "VarDecl" && on_top
+        return VARIABLE
+
+    if node.kind == "TypedefDecl" && on_top
+        return TYPE
+
+    if (node.kind == "RecordDecl" || node.kind == "EnumDecl") && tag_scope(tree, index: node.parent)
+        return TYPE
+
+    if node.kind == "EnumConstantDecl" && tree.nodes[node.parent].kind == "EnumDecl" && tag_scope(tree, index: tree.nodes[node.parent].parent)
+        return ENUMERATOR
+    return ""
+
+# Whether a tag declared under the node at `index` has the file's scope:
+# that node is the unit, or a struct, union or enum standing at that scope.
+function tag_scope(tree: clang_tree.Tree, index: i64) -> bool
+    at: i64 @= index
+
+    while at >= 0
+        kind = tree.nodes[at].kind
+
+        if kind == "TranslationUnitDecl"
+            return true
+
+        if kind != "RecordDecl" && kind != "EnumDecl"
+            return false
+        at @ tree.nodes[at].parent
+
+    return false
+
+## Tests
+
+test "a `#define` line names a macro, and an `#if`, `#ifdef`, `#ifndef` or `#elif` that only asks names none (defect 2876)"
+    text = "#ifndef HERO_GUARD_X\n#define HERO_GUARD_X\n#if defined(HERO_TESTED_A)\n#elif HERO_TESTED_E\n#endif\n#ifdef HERO_TESTED_B\n#endif\n#if !defined(HERO_TESTED_C) && HERO_TESTED_D\n#  define HERO_SPACED 1\n#endif\n/* #define HERO_IN_COMMENT 1 */\n/* a comment\n#define HERO_IN_LONG_COMMENT 1\n*/\n// #define HERO_IN_LINE_COMMENT\nstatic const char *s = \"/*\";\n#define HERO_AFTER_STRING 1\n#define HERO_LONG(a) \\\n    a\n#define\tHERO_TABBED 2\n#undef HERO_UNDONE\n#define HERO_SPLIT\\\n_NAME 3\n#defined HERO_NOT_A_DEFINE\n#define\n"
+    assert sort(keys(defined_macros(text))) == ["HERO_AFTER_STRING", "HERO_GUARD_X", "HERO_LONG", "HERO_SPACED", "HERO_SPLIT_NAME", "HERO_TABBED"]
+
+test "clang's dump names what each file-scope declaration is, a member's and a parameter's name none (defect 2876)"
+    json = "{\"id\":\"0x1\",\"kind\":\"TranslationUnitDecl\",\"inner\":[{\"id\":\"0x2\",\"kind\":\"FunctionDecl\",\"name\":\"hero_f\",\"inner\":[{\"id\":\"0x3\",\"kind\":\"ParmVarDecl\",\"name\":\"hero_p\"}]},{\"id\":\"0x4\",\"kind\":\"VarDecl\",\"name\":\"hero_v\"},{\"id\":\"0x5\",\"kind\":\"RecordDecl\",\"name\":\"HeroR\",\"inner\":[{\"id\":\"0x6\",\"kind\":\"FieldDecl\",\"name\":\"hero_m\"},{\"id\":\"0x7\",\"kind\":\"RecordDecl\",\"name\":\"HeroInner\"}]},{\"id\":\"0x8\",\"kind\":\"TypedefDecl\",\"name\":\"HeroT\"},{\"id\":\"0x9\",\"kind\":\"EnumDecl\",\"inner\":[{\"id\":\"0xa\",\"kind\":\"EnumConstantDecl\",\"name\":\"HERO_E\"}]},{\"id\":\"0xb\",\"kind\":\"RecordDecl\",\"name\":\"HeroBoth\"},{\"id\":\"0xc\",\"kind\":\"FunctionDecl\",\"name\":\"HeroBoth\"}]}"
+    got = declarations(clang_tree.read(json).must())
+    assert got["hero_f"].must() == FUNCTION && got["hero_v"].must() == VARIABLE && got["HERO_E"].must() == ENUMERATOR
+    assert got["HeroR"].must() == TYPE && got["HeroInner"].must() == TYPE && got["HeroT"].must() == TYPE
+    assert got["HeroBoth"].must() == FUNCTION
+    assert got["hero_p"].is_err() && got["hero_m"].is_err()
+
+test "a name is the runtime's by its macro first, `heroes_unit.h`'s before `heroes_runtime.h`'s, then by what clang declares, and a tested word is none (defect 2876)"
+    p = prefix_of(
+        unit: "#define HERO_SWITCH 1\n#include \"heroes_runtime.h\"\n",
+        runtime: "#if !defined(HERO_SWITCH) || defined(HERO_ASKED)\n#endif\n#define HERO_OWN 2\nvoid hero_f(void);\nstruct HeroS { int hero_m; };\n"
+    )
+    declared_names: {str: str} = {"hero_f": FUNCTION, "HeroS": TYPE, "hero_elsewhere": FUNCTION}
+    assert owned(p, name: "HERO_SWITCH", declared: declared_names, answered: true).must() == Owned(what: MACRO, file: UNIT)
+    assert owned(p, name: "HERO_OWN", declared: declared_names, answered: true).must() == Owned(what: MACRO, file: RUNTIME)
+    assert owned(p, name: "hero_f", declared: declared_names, answered: true).must() == Owned(what: FUNCTION, file: RUNTIME)
+    assert owned(p, name: "HeroS", declared: declared_names, answered: true).must() == Owned(what: TYPE, file: RUNTIME)
+    assert owned(p, name: "HERO_ASKED", declared: declared_names, answered: true).is_err()
+    assert owned(p, name: "hero_m", declared: declared_names, answered: true).is_err()
+    assert owned(p, name: "hero_elsewhere", declared: declared_names, answered: true).is_err()
+    assert written(p, name: "HERO_ASKED") && written(p, name: "hero_m") && !written(p, name: "hero_other")
+    none: {str: str} = {}
+    assert owned(p, name: "hero_m", declared: none, answered: false).must() == Owned(what: WRITTEN, file: RUNTIME)
+    assert verb(Owned(what: MACRO, file: UNIT)) == "defines" && verb(Owned(what: TYPE, file: RUNTIME)) == "declares"
+
+test "the runtime's two first headers write every name they declare, no `##` pasting one, and the switch is `heroes_unit.h`'s macro alone (defect 2876)"
+    unit = read_file(path: "runtime/heroes_unit.h").must()
+    runtime = read_file(path: "runtime/heroes_runtime.h").must()
+
+    for text in [unit, runtime]
+        assert !c_words.found(text: uncommented(spliced(text)), word: "##")
+
+    p = prefix_of(unit: unit, runtime: runtime)
+    assert !p.unit_macros["HERO_STANDARD_AFTER_GROUPS"].is_err() && p.runtime_macros["HERO_STANDARD_AFTER_GROUPS"].is_err()
+    assert !p.runtime_words["HERO_STANDARD_AFTER_GROUPS"].is_err() && !p.runtime_macros["HERO_RUNTIME_ABI"].is_err()
