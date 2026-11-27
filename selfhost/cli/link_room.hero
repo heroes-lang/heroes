@@ -19,6 +19,7 @@
 # the module's name that fits. What the linker wrote is published under the
 # binary's own name all the same (`link_output.published_as`).
 
+use cli/author_file
 use cli/path_room
 use cli/process
 use cli/publish
@@ -76,7 +77,7 @@ function made(at: str, binary: str, module: str, suffix: str) -> Room?
     folder = process.made_dir(held.stage)
 
     if folder.is_err()
-        said = publish.untouched(
+        said = author_file.untouched(
             path: binary,
             what: "no directory could be made beside it for the linker's output" + publish.message_of(folder)
         )
@@ -84,7 +85,7 @@ function made(at: str, binary: str, module: str, suffix: str) -> Room?
     return ok(held)
 
 function refused(binary: str, what: str) -> Room?
-    said = publish.untouched(path: binary, what: what + ": a shorter folder, or a shorter name, would fit")
+    said = author_file.untouched(path: binary, what: what + ": a shorter folder, or a shorter name, would fit")
     return fail(code: "not_written", msg: publish.message_of(said))
 
 # The private folder beside `at`: in the folder that holds it, named by this

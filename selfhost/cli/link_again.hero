@@ -24,6 +24,7 @@
 # asked as every object is, so a folded name the runtime refers to leaves
 # the link the compiler's, as a name it refers to in the report does.
 
+use cli/author_file
 use cli/link_folds
 use cli/link_report
 use cli/link_warning
@@ -122,7 +123,7 @@ test "a name the linker folded is asked of each object alone, and every object n
     other = "build/tu-3/other-0a1b2c3d4e5f6789.o"
 
     for kept in [[root, "base2495_m\nhero_print_end\n"], [alias, "base2495_m\n"], [other, "puts\n"]]
-        _ = publish.rewrite(
+        _ = author_file.rewrite(
             path: dir + "/supplied-alone-" + supplied_kept.kept_name(kept[0]) + ".txt",
             text: kept[1]
         ).is_err()

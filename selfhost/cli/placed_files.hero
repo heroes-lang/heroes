@@ -44,7 +44,7 @@
 # and the premise is a claim about the world: on POSIX the place goes
 # unresolved only where the kernel's own walk refuses a write too, a loop of
 # links, a folder that cannot be searched, a path too long, so the writer's
-# own question refuses it after this one (`publish.landing_for`), and
+# own question refuses it after this one (`author_file.landing_for`), and
 # nothing is written. The test below makes a loop and fires if a write
 # through it ever lands. On Windows a dangling link and a volume that gives
 # no handle's final path go unresolved too, unrun.

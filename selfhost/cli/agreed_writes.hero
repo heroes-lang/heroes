@@ -10,6 +10,7 @@
 # that may be one file holding two texts. A failure after that, a full disk,
 # leaves each file whole and names those written.
 
+use cli/author_file
 use cli/files as fs
 use cli/io
 use cli/placed_files
@@ -52,7 +53,7 @@ function refused(files: [source.InputFile], dir: str) -> str
             if other.name != one.name && folded(other.name) == folded(one.name)
                 return "cannot write " + one.name + " and " + other.name + ": the two names may be one file, and the roots made two texts of them; nothing was written"
 
-        at = match publish.landing_for(one.name)
+        at = match author_file.landing_for(one.name)
             .ok found => found
             .err e    => return e.msg + "; nothing was written"
 
@@ -115,7 +116,7 @@ function writes(files: [source.InputFile]) -> ()?
     done: [str] @= []
 
     for one in files
-        result = publish.rewrite(path: one.name, text: one.text)
+        result = author_file.rewrite(path: one.name, text: one.text)
 
         if result.is_err()
             told: str @= publish.message_of(result)

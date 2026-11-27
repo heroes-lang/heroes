@@ -28,9 +28,9 @@
 # the build list from it and writes the catalogue back.
 
 use cli/argv
+use cli/author_file
 use cli/files
 use cli/process
-use cli/publish
 use cli/strings
 use cli/table as cli_table
 use fetch/add_package
@@ -143,7 +143,7 @@ function placed_and_written(@ledger: staging.Ledger, inv: argv.Invocation, tools
         written @ line
     file = program + catalogue.FILE
     text = catalogue_edit.edited(text: reading.text_of(file).default(""), entries: entries_of(built), index: written)
-    published = publish.rewrite(path: file, text: text)
+    published = author_file.rewrite(path: file, text: text)
 
     if published.is_err()
         return fail(code: "cannot_place", msg: verb_place.why(published))

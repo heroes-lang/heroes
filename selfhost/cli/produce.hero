@@ -434,7 +434,7 @@ test "a failure that is not clang's refusal is not worded as one (defect 134)"
         assert said != "clang refused the generated C"
 
         # One sentence for the author's file whichever verb writes it (defect
-        # 136, `publish.landing_for`), where the C said the operating
+        # 136, `author_file.landing_for`), where the C said the operating
         # system's number for a missing directory and the link said this.
         # The binary's path takes the platform's suffix where the C's does
         # not (defect 359): `out.exe` on Windows, the file that would be.

@@ -5,6 +5,7 @@
 # to, and this answers what the objects of a program become, a question
 # with its own key.
 
+use cli/author_file
 use cli/files
 use cli/flags
 use cli/libraries
@@ -86,7 +87,7 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
         # file that could not be opened for writing, a directory, and a
         # directory that is not there, which is the author's to make, since
         # the stage below would make it and the linker never did.
-        at @ publish.landing_for(binary)?
+        at @ author_file.landing_for(binary)?
         keyed @ false
 
         # Something that is not a file, `-o /dev/null`, cannot be renamed
