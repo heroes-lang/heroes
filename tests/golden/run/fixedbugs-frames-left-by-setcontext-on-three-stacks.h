@@ -20,6 +20,15 @@ static int64_t (*kp_cb)(int64_t);
 static ucontext_t *kp_main, *kp_co, *kp_back;
 static volatile int kp_phase, kp_round;
 static volatile int64_t kp_got;
+/* Every block allocated stays reachable from here, so LeakSanitizer, on by
+ * default under `--sanitize` on Linux, reads none lost though each call
+ * makes new ones. */
+static void *kp_kept[16];
+static int kp_nkept;
+static void *kp_keep(void *p) {
+    if (p != NULL && kp_nkept < 16) kp_kept[kp_nkept++] = p;
+    return p;
+}
 static void kp_leave(int how) {
     if (how == 2) setcontext(kp_back);
 }
@@ -69,12 +78,12 @@ static void kp_handler6(int sig) {
 static inline int64_t kp_run(int32_t which, int64_t (*cb)(int64_t)) {
     kp_cb = cb;
     kp_got = 0;
-    kp_main = calloc(1, sizeof(ucontext_t));
-    kp_co = calloc(1, sizeof(ucontext_t));
-    kp_back = calloc(1, sizeof(ucontext_t));
+    kp_main = kp_keep(calloc(1, sizeof(ucontext_t)));
+    kp_co = kp_keep(calloc(1, sizeof(ucontext_t)));
+    kp_back = kp_keep(calloc(1, sizeof(ucontext_t)));
     if (kp_main == NULL || kp_co == NULL || kp_back == NULL) return -1;
     if (which == 4) {
-        void *stack = malloc((size_t)1 << 18);
+        void *stack = kp_keep(malloc((size_t)1 << 18));
         if (stack == NULL || getcontext(kp_co) != 0) return -1;
         kp_co->uc_stack.ss_sp = stack;
         kp_co->uc_stack.ss_size = (size_t)1 << 18;

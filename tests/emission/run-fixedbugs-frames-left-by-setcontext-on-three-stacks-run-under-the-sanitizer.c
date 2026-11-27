@@ -361,7 +361,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("5165e2996cf2e09f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("6ca1d9bb6940e140", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugsframesleftbysetcontextonthreestacksrununderthesanitizer\tfixedbugs-frames-left-by-setcontext-on-three-stacks-run-under-the-sanitizer\n");
