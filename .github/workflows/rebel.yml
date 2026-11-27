@@ -92,11 +92,23 @@ permissions:
   contents: read
 
 env:
-  # The parts the drivers are dealt into on each leg (job `plan`).
-  PARTS: 8
   # A driver's run that has not ended after this many seconds is stopped and
-  # read as red, so one hung test costs one driver rather than its part.
+  # read as red, so one hung test costs one driver rather than its part: a
+  # `plain` run after `LIMIT`, a `sanitize` run after `LIMIT_SANITIZE`. **One
+  # limit for both until step 218d** (2026-11-27), when the Linux arm64 leg
+  # stopped four drivers' `sanitize` runs at its 3,600 s on `0f9da0309` (run
+  # 45994435356: `reach_sse`, `reach_mcp`, `reach_web`, `reach_web_steps`)
+  # and two more on `77eb38534` (`reach_openapi`, `reach_web_chain`), every
+  # one still printing `ok` lines when it was stopped, and the Linux x86-64
+  # leg ended the same six in 2,187 to 2,717 s. No `plain` run took more
+  # than 802 s on any leg of either run (`reach_web` on Windows), so an hour
+  # stays four times the slowest. The ten `sanitize` runs Linux arm64 ended
+  # whose x86-64 run passed 800 s took 1.61 to 2.68 times as long there
+  # (`reach_mail_smtp` 3,493 s against 1,304), which by the highest puts the
+  # six at 98 to 121 minutes, an inference from the ratio until a run ends
+  # them; three hours is half as much again over the longest.
   LIMIT: 3600
+  LIMIT_SANITIZE: 10800
   # The most bytes of one run's output kept; a run that writes more is cut
   # there and read as red, so a program writing without end fills no disk.
   BYTES: 20000000
@@ -428,21 +440,53 @@ jobs:
   # by side from 13:32 to 18:23 on 2026-11-19 (the coordinator's record of it),
   # about five hours of wall for two; one lane alone reading near that or more
   # is an inference, and too close to the ceiling to rest a leg on. So each leg
-  # runs them in `PARTS` parts, each its own job building its own compiler, as
-  # `ci.yml`'s Windows and Darwin nets do. The drivers are dealt round by their
-  # sorted index, the `run` suite's way with its shards, since no runner has
-  # timed them yet; every run's seconds go to the job's summary, so a later
-  # commit can place them by their minutes as `ci.yml`'s tables are placed.
+  # runs them in parts, each its own job building its own compiler, as
+  # `ci.yml`'s nets do.
+  #
+  # **Eight parts on every leg, the drivers dealt round by their sorted index,
+  # until step 218d** (2026-11-27). On `0f9da0309` (run 45994435356) Linux
+  # arm64's parts ran 230 to 332 minutes each with four drivers stopped at
+  # the hour, and its parts 4 and 8 were still running at 337 and 323
+  # minutes when the run was read; Linux x86-64's ran 112 to 220, Windows' 56
+  # to 112, Darwin's 46 to 70. Every run's seconds are in those jobs' logs,
+  # and each part's sum is a few heavy drivers: 23 of the 215 take 20 minutes
+  # or more on Linux arm64, plain and `sanitize` together, and six of them
+  # about two hours, so a deal round by the index put two of those in one part
+  # or not as the drivers' names fell, and a projection of that deal over 16
+  # to 48 parts read its longest part anywhere from 125 to 341 minutes.
+  #
+  # So each leg has its own number of parts, and the drivers are placed by
+  # their minutes: the table's heavy drivers first, heaviest first, then every
+  # other driver in sorted order at `light` minutes, each into the part that
+  # holds the fewest minutes so far (ties to the first), which makes a part's
+  # sum about the leg's whole divided by its parts and never less than its
+  # heaviest driver. Projected from the two runs' seconds (`0f9da0309`'s, and
+  # `77eb38534`'s, run 45904453647, for the drivers this run did not end on
+  # Linux arm64, a stopped run there projected from its x86-64 one by the
+  # median ratio of the two legs or by the highest), Linux arm64's whole is
+  # 2,480 to 2,830 minutes, and this deal's 24 parts 69 to 147 each, under
+  # half the ceiling; Linux x86-64's about 1,490 minutes in 16 parts of 68 to
+  # 115; Darwin and Windows keep their eight, at most 70 and 112 minutes on
+  # that run. Those projections are inferences until a run reads them. 54 drivers ended
+  # on neither run's logs at hand (parts 5 and 7 of both Linux legs, green and
+  # not downloaded) and are placed at `light`.
+  #
+  # **The table is a measurement, and it expires**: a driver that a part's
+  # summary shows at 20 minutes or more on Linux arm64 is owed its row, and a
+  # row whose driver is gone is told and dropped, every driver still placed.
+  # Every leg is placed with Linux arm64's minutes, the slowest leg's, since a
+  # driver heavy there is heavy on the others (`reach_mail_smtp` the one that
+  # differs most, its `sanitize` run 2.68 times its x86-64 one).
   plan:
-    name: Rebel's drivers in parts, and the programs' part
+    name: Rebel's drivers in parts on each leg, placed by their minutes, and the programs' part
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
-      parts: ${{ steps.plan.outputs.parts }}
+      matrix: ${{ steps.plan.outputs.matrix }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
-      - name: Every driver in exactly one part
+      - name: Every driver in exactly one part of each leg
         id: plan
         shell: bash
         run: |
@@ -460,28 +504,121 @@ jobs:
             echo "::error::no rebel/examples/reach/reach_*.hero, so no package's tests would run"
             exit 1
           fi
-          json=""
-          dealt=""
-          for k in $(seq 1 "$PARTS"); do
-            words=""
-            for i in "${!drivers[@]}"; do
-              if [ $(( i % PARTS + 1 )) -eq "$k" ]; then words="$words${words:+ }${drivers[$i]}"; fi
-            done
-            if [ -z "$words" ]; then continue; fi
-            dealt="$dealt${dealt:+ }$words"
-            echo "part $k of $PARTS, $(printf '%s\n' $words | wc -l | tr -d ' ') drivers: $words"
-            json="$json${json:+,}{\"part\":\"$k of $PARTS\",\"drivers\":\"$words\"}"
+
+          # THE LEGS, one line each: its name, its runner, its binaries'
+          # suffix, the configurations each driver is tested in there, and
+          # its number of parts.
+          legs=(
+            'Linux x86-64|ubuntu-26.04||plain sanitize|16'
+            'Linux arm64|ubuntu-26.04-arm||plain sanitize|24'
+            'Darwin arm64|macos-26||plain|8'
+            'Windows x86-64|windows-latest|.exe|plain|8'
+          )
+
+          # THE HEAVY DRIVERS, each with its minutes on Linux arm64, `plain`
+          # and `sanitize` together, as run 45994435356 (`0f9da0309`) read
+          # them, or run 45904453647 (`77eb38534`) for a driver the first did
+          # not run on that leg (`reach_openapi`, `reach_web_chain`,
+          # `reach_mail`, `reach_url_idna`, `reach_i18n_dates`,
+          # `reach_sql_migrate`, `reach_kafka`, `reach_scram`, `reach_nats`).
+          # The six whose `sanitize` run that leg stopped at the hour
+          # (`reach_openapi`, `reach_web_steps`, `reach_sse`, `reach_mcp`,
+          # `reach_web`, `reach_web_chain`) are their `plain` run there and
+          # their x86-64 `sanitize` run times 2.68, the highest ratio of the
+          # two legs measured (above, `LIMIT_SANITIZE`), so placed as the
+          # longest they may be. Every other driver is placed at `light`, the
+          # others' mean, 5.6 minutes on that run, rounded up.
+          heavy=(
+            'reach_openapi 133'
+            'reach_web_steps 128'
+            'reach_sse 127'
+            'reach_mcp 116'
+            'reach_web 108'
+            'reach_web_chain 108'
+            'reach_mail_smtp 63'
+            'reach_mail_imap 62'
+            'reach_mail 59'
+            'reach_url_idna 52'
+            'reach_i18n_dates 40'
+            'reach_kafka 38'
+            'reach_sql_migrate 38'
+            'reach_sql_build 37'
+            'reach_saml 34'
+            'reach_scram 32'
+            'reach_acme 25'
+            'reach_image_webp 25'
+            'reach_x509_ocsp 25'
+            'reach_oauth2 23'
+            'reach_nats 22'
+            'reach_mqtt 21'
+            'reach_x509_pkcs12 21'
+          )
+          light=6
+
+          # The order the drivers are placed in: the table's, heaviest first
+          # whatever order its rows are written in, then every other driver
+          # in sorted order.
+          declare -A weight=()
+          order=()
+          while read -r name minutes; do
+            if ! printf '%s\n' "${drivers[@]}" | grep -qx "$name"; then
+              echo "::warning::the heavy drivers' table names $name, which rebel/examples/reach does not hold: dropped, every driver still placed, and the table's row is the one to remove"
+              continue
+            fi
+            if [ -n "${weight[$name]:-}" ]; then
+              echo "::error::the heavy drivers' table names $name twice"
+              exit 1
+            fi
+            weight[$name]=$minutes
+            order+=("$name")
+          done < <(printf '%s\n' "${heavy[@]}" | LC_ALL=C sort -k2,2nr -k1,1)
+          for name in "${drivers[@]}"; do
+            if [ -z "${weight[$name]:-}" ]; then order+=("$name"); fi
           done
-          if [ "$(printf '%s\n' $dealt | LC_ALL=C sort)" != "$(printf '%s\n' "${drivers[@]}" | LC_ALL=C sort)" ]; then
-            echo "::error::the parts do not hold every driver exactly once"
-            exit 1
-          fi
-          echo "${#drivers[@]} drivers in $PARTS parts"
-          # One more part, `programs`, holding no driver: Rebel's programs,
-          # judged by the step of that name in this job's installs.
-          json="$json,{\"part\":\"programs\",\"drivers\":\"\"}"
-          echo "and the part programs, the check of Rebel's programs"
-          echo "parts=[$json]" >> "$GITHUB_OUTPUT"
+
+          # Each leg's parts, every driver into the part holding the fewest
+          # minutes so far, then the leg's part `programs`, holding no driver:
+          # Rebel's programs, judged by the step of that name in this job's
+          # installs. Each is a cell of the `tests` matrix, its `leg` and its
+          # `slice`.
+          cells=""
+          for row in "${legs[@]}"; do
+            IFS='|' read -r leg os exe runs parts <<< "$row"
+            load=()
+            words=()
+            for k in $(seq 0 $(( parts - 1 ))); do
+              load[k]=0
+              words[k]=""
+            done
+            for name in "${order[@]}"; do
+              best=0
+              for k in $(seq 1 $(( parts - 1 ))); do
+                if [ "${load[k]}" -lt "${load[best]}" ]; then best=$k; fi
+              done
+              load[best]=$(( load[best] + ${weight[$name]:-$light} ))
+              words[best]="${words[best]}${words[best]:+ }$name"
+            done
+            kept=()
+            for k in $(seq 0 $(( parts - 1 ))); do
+              if [ -n "${words[k]}" ]; then kept+=("$k"); fi
+            done
+            dealt=""
+            j=0
+            for k in "${kept[@]}"; do
+              j=$(( j + 1 ))
+              list=$(printf '%s\n' ${words[k]} | LC_ALL=C sort | tr '\n' ' ' | sed 's/ $//')
+              dealt="$dealt${dealt:+ }$list"
+              echo "$leg, part $j of ${#kept[@]}, about ${load[k]} minutes on Linux arm64's measure, $(printf '%s\n' $list | wc -l | tr -d ' ') drivers: $list"
+              cells="$cells${cells:+,}{\"leg\":{\"name\":\"$leg\",\"os\":\"$os\",\"exe\":\"$exe\",\"runs\":\"$runs\"},\"slice\":{\"part\":\"$j of ${#kept[@]}\",\"drivers\":\"$list\"}}"
+            done
+            if [ "$(printf '%s\n' $dealt | LC_ALL=C sort)" != "$(printf '%s\n' "${drivers[@]}" | LC_ALL=C sort)" ]; then
+              echo "::error::the $leg parts do not hold every driver exactly once"
+              exit 1
+            fi
+            echo "$leg: ${#drivers[@]} drivers in ${#kept[@]} parts, and the part programs"
+            cells="$cells,{\"leg\":{\"name\":\"$leg\",\"os\":\"$os\",\"exe\":\"$exe\",\"runs\":\"$runs\"},\"slice\":{\"part\":\"programs\",\"drivers\":\"\"}}"
+          done
+          echo "matrix={\"include\":[$cells]}" >> "$GITHUB_OUTPUT"
 
   tests:
     name: ${{ matrix.leg.name }}, Rebel's tests, part ${{ matrix.slice.part }}
@@ -492,14 +629,12 @@ jobs:
     strategy:
       # No part's failure hides another's.
       fail-fast: false
-      matrix:
-        # `runs`: the configurations each driver is tested in on that leg.
-        leg:
-          - { name: 'Linux x86-64', os: ubuntu-26.04, exe: '', runs: 'plain sanitize' }
-          - { name: 'Linux arm64', os: ubuntu-26.04-arm, exe: '', runs: 'plain sanitize' }
-          - { name: 'Darwin arm64', os: macos-26, exe: '', runs: 'plain' }
-          - { name: 'Windows x86-64', os: windows-latest, exe: '.exe', runs: 'plain' }
-        slice: ${{ fromJSON(needs.plan.outputs.parts) }}
+      # Job `plan`'s cells: each a `leg`, its `name`, its runner `os`, its
+      # binaries' suffix `exe` and `runs`, the configurations each driver is
+      # tested in there; and a `slice`, its `part` and its `drivers`. Until
+      # step 218d the legs were written here and crossed with one list of
+      # parts, which gave every leg the same number.
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
@@ -656,7 +791,8 @@ jobs:
           ./heroes${{ matrix.leg.exe }} --version
 
       # Each driver of the part, in each of the leg's configurations: `heroes
-      # test` bounded by `LIMIT` seconds and its output by `BYTES`, its whole
+      # test` bounded by `LIMIT` seconds, or `LIMIT_SANITIZE` under
+      # `--sanitize`, and its output by `BYTES`, its whole
       # output kept under build/rebel-logs/, its count line and its skipped
       # tests printed, and a red one's FAIL lines and last lines with them.
       # After a run stopped for time, the test program it started is stopped
@@ -772,14 +908,18 @@ jobs:
               echo "::group::$name, $run"
               start=$(date +%s)
               shown=""
-              if [ "$run" = "sanitize" ]; then shown="-u DISPLAY -u WAYLAND_DISPLAY"; fi
+              limit=$LIMIT
+              if [ "$run" = "sanitize" ]; then
+                shown="-u DISPLAY -u WAYLAND_DISPLAY"
+                limit=$LIMIT_SANITIZE
+              fi
               # shellcheck disable=SC2086
-              env $shown "$bound" -k 30 "$LIMIT" "./heroes$EXE" test "$@" 2>&1 | head -c "$BYTES" > "$log"
+              env $shown "$bound" -k 30 "$limit" "./heroes$EXE" test "$@" 2>&1 | head -c "$BYTES" > "$log"
               code=${PIPESTATUS[0]}
               took=$(( $(date +%s) - start ))
               said=""
               if [ "$code" -eq 124 ] || [ "$code" -eq 137 ]; then
-                said="stopped after $LIMIT s"
+                said="stopped after $limit s"
                 if [ "$RUNNER_OS" = "Windows" ]; then
                   MSYS_NO_PATHCONV=1 taskkill /F /T /FI "IMAGENAME eq $base*" > /dev/null 2>&1
                 else
