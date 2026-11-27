@@ -230,6 +230,7 @@ __attribute__((noinline)) static void fp_make(void) {
 __attribute__((noinline)) static void fp_pad_then_make(void) {
     volatile char pad[8192];
     pad[0] = 1;
+    __asm__ volatile("" ::"r"(pad) : "memory"); /* kept whole at -O2 (step 199p) */
     fp_make();
     (void)pad[0];
 }
@@ -240,6 +241,7 @@ static void fp_handler(int sig) {
 __attribute__((noinline)) static void fp_raise_deep(void) {
     volatile char pad[32768];
     pad[0] = 1;
+    __asm__ volatile("" ::"r"(pad) : "memory"); /* kept whole at -O2 (step 199p) */
     raise(SIGUSR1);
     (void)pad[0];
 }
@@ -320,12 +322,14 @@ static void ft_handler(int sig) {
 __attribute__((noinline)) static void ft_raise_deeper(void) {
     volatile char pad[(size_t)320 << 10];
     pad[0] = 1;
+    __asm__ volatile("" ::"r"(pad) : "memory"); /* kept whole at -O2 (step 199p) */
     raise(SIGUSR1);
     (void)pad[0];
 }
 __attribute__((noinline)) static int64_t ft_inside(void) {
     volatile char pad[(size_t)64 << 10];
     pad[0] = 1;
+    __asm__ volatile("" ::"r"(pad) : "memory"); /* kept whole at -O2 (step 199p) */
     if (sigsetjmp(ft_env, 1) == 0) {
         ft_raise_deeper();
         return -2;

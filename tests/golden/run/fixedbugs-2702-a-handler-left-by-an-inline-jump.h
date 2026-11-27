@@ -87,6 +87,7 @@ static void ub_handler(int sig) {
 __attribute__((noinline)) static int32_t ub_escape(void) {
     volatile char pad[16384];
     pad[0] = 1;
+    __asm__ volatile("" ::"r"(pad) : "memory"); /* kept whole at -O2 (step 199p) */
     if (INLINE_SAVE(inline_env) == 0) {
         raise(SIGUSR1);
         return 0;
