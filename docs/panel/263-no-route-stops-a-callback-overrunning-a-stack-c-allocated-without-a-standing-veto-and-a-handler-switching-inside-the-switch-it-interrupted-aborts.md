@@ -545,3 +545,14 @@ check finds the sitting's file; from the scratch, which git does not list, the s
 does not hold). Its `## Prior art` names the two precedents the ranking and (b'') rest on, cgo and OCaml 5, as the
 historian verified them; nobody has re-read their pages since, so the session that files the decision re-reads them
 first (`.claude/rules/records.md` § And the record says whose idea it was).
+
+**The author's reading, 2026-11-27, at about 18:35**, in conversation (the answer *1a* to the coordinator's three
+routes, meant as: *build (b'') and measure it, then the critic and the synthesis judge it*; the coordinator's
+recommendation, and the synthesis's). **What it decides**: no route is adopted yet; (b''), C's calls on the stack C
+entered the callback on and nested callbacks sharing one runtime stack, as OCaml 5 does, is built in a lane of its own
+and run on the canary, shape D, the alternation, `csh.hero`, the static array and the signal guard's cases on both
+arm64 platforms, with every condition the seats named (the spawn doors that must not switch, ASan's fibre
+annotations, CFI on the switch and panel 258's R2 stopping by frame, a bound on held stacks); then the completeness
+critic and the synthesis judge it against every seat's veto, and the author ratifies the route. The secondary
+question's R1 (step 199j's sentence, `spec-w5`) stands provisional, as written. The decision issue opens with this
+reading.
