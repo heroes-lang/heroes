@@ -321,7 +321,7 @@ static void hero_unwind_release_all(void) {
  * any jump leaves frames (AddressSanitizer's shadow); and that clearing alone,
  * from the caller's frame to the stack's top, where the stack is one the
  * route can clear. */
-static _Noreturn void hero_unwind_go(int kind, void *env, int value);
+__attribute__((no_sanitize("address"))) static _Noreturn void hero_unwind_go(int kind, void *env, int value);
 static void hero_unwind_clear(void);
 
 /* One walk of the frames above the hook, before anything is unwound. The
@@ -382,7 +382,11 @@ static void hero_unwind_finish(HeroUnwindThread *me) {
 /* The stop, asked before each frame's cleanups run: at the frame the jump
  * lands in, or where the unwinder finds no more frames, the C library's own
  * jump is made, and no cleanup of that frame or any above it runs. */
-static _Unwind_Reason_Code hero_unwind_stop(int version, _Unwind_Action actions, _Unwind_Exception_Class kind,
+/* Not instrumented under AddressSanitizer, as the jumps' wrappers are not
+ * (defect d-lane-sig-family-10): clang would put `__asan_handle_no_return`
+ * before the jump below, which on a coroutine's stack clears nothing and warns
+ * into a correct program's stderr; `hero_unwind_go` clears what the route can. */
+__attribute__((no_sanitize("address"))) static _Unwind_Reason_Code hero_unwind_stop(int version, _Unwind_Action actions, _Unwind_Exception_Class kind,
                                             struct _Unwind_Exception *exception, struct _Unwind_Context *ctx,
                                             void *param) {
     (void)version;

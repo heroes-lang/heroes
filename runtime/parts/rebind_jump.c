@@ -333,7 +333,7 @@ static void hero_unwind_clear(void) { hero_rebind_leaving(); }
 
 /* The jump `parts/unwind.c`'s stop makes: the C library's own, after the
  * shadow of what it leaves is cleared, as every wrapper below does. */
-static _Noreturn void hero_unwind_go(int kind, void *env, int value) {
+__attribute__((no_sanitize("address"))) static _Noreturn void hero_unwind_go(int kind, void *env, int value) {
     hero_rebind_leaving();
     if (kind == HERO_UNWIND_SIGLONGJMP) {
         atomic_load_explicit(&hero_rebind_real_siglongjmp, memory_order_relaxed)((int *)env, value);
