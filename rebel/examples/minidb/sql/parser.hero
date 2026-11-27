@@ -1,0 +1,397 @@
+# The statements of minidb's SQL, read from text into `ast.Statement`s:
+# `SELECT` with its joins, `WHERE`, `GROUP BY`, `HAVING`, `ORDER BY`,
+# `LIMIT` and `OFFSET`; `INSERT` of values or of a query; `UPDATE`;
+# `DELETE`; `CREATE TABLE`, `CREATE INDEX`, `DROP`; `BEGIN`, `COMMIT`,
+# `ROLLBACK`; `EXPLAIN`; `PRAGMA integrity_check`. Each statement keeps its
+# own text, as the catalogue stores a `CREATE` and the shell echoes it.
+
+use <rebel>/strings
+
+use sql/ast
+use sql/cursor
+use sql/expressions
+use sql/lexer
+
+## Parsing
+
+# A statement and the text it was read from.
+record Parsed
+    # The statement.
+    statement: ast.Statement
+    # Its text, from its first token to its last, the `;` left out.
+    text: str
+
+# Every statement of `source`, in order; `;` separates them and may end the
+# last.
+#
+# - `source`: SQL text.
+#
+# Fails `invalid` at the first token that does not parse, the message giving
+# its line and column, and `limit` for an expression nested too deeply.
+function parse(source: str) -> [Parsed]?
+    c @= cursor.new(lexer.tokens(source)?)
+    found: [Parsed] @= []
+
+    while true
+        while cursor.accept_symbol(@c, symbol: ";")
+            _ = 0
+
+        first = cursor.peek(c)
+
+        if first.kind == .end
+            break
+        s = statement(@c)?
+        last = c.tokens[c.at - 1]
+        found @ found.push(Parsed(statement: s, text: source.slice(from: first.offset, to: last.stop)))
+
+        if cursor.peek(c).kind != .end
+            cursor.expect_symbol(@c, symbol: ";")?
+
+    return ok(found)
+
+# The one statement of `source`.
+#
+# - `source`: SQL text holding one statement.
+#
+# Fails as `parse` does, and `invalid` where it holds none or several.
+function parse_one(source: str) -> ast.Statement?
+    found = parse(source)?
+
+    if found.len() != 1
+        return fail(code: "invalid", msg: f"[42601] expected one statement, found {found.len()}")
+    return ok(found[0].statement)
+
+function statement(@c: cursor.Cursor) -> ast.Statement?
+    t = cursor.peek(c)
+
+    if cursor.accept_word(@c, word: "EXPLAIN")
+        if cursor.accept_word(@c, word: "QUERY")
+            cursor.expect_word(@c, word: "PLAN")?
+        inner_at = cursor.peek(c)
+        inner = statement(@c)?
+
+        return match inner
+            .query _ | .update _ | .delete _ => ok(.explain(inner: [inner]))
+            .create_table _ | .create_index _ | .drop_table _ | .drop_index _ | .insert _ | .explain _ | .begin | .commit | .rollback | .check =>
+                cursor.refuse(inner_at, expected: "SELECT, UPDATE or DELETE after EXPLAIN")
+
+    if lexer.is_word(t, word: "SELECT")
+        return ok(.query(select: select(@c)?))
+
+    if cursor.accept_word(@c, word: "INSERT")
+        return insert(@c)
+
+    if cursor.accept_word(@c, word: "UPDATE")
+        return update(@c)
+
+    if cursor.accept_word(@c, word: "DELETE")
+        return delete(@c)
+
+    if cursor.accept_word(@c, word: "CREATE")
+        return create(@c)
+
+    if cursor.accept_word(@c, word: "DROP")
+        return drop(@c)
+
+    if cursor.accept_word(@c, word: "BEGIN")
+        _ = cursor.accept_word(@c, word: "TRANSACTION")
+        return ok(.begin)
+
+    if cursor.accept_word(@c, word: "COMMIT") || cursor.accept_word(@c, word: "END")
+        _ = cursor.accept_word(@c, word: "TRANSACTION")
+        return ok(.commit)
+
+    if cursor.accept_word(@c, word: "ROLLBACK")
+        _ = cursor.accept_word(@c, word: "TRANSACTION")
+        return ok(.rollback)
+
+    if cursor.accept_word(@c, word: "PRAGMA")
+        pragma_at = cursor.peek(c)
+
+        if cursor.name(@c, what: "a pragma")? == "integrity_check"
+            return ok(.check)
+        return cursor.refuse(pragma_at, expected: "integrity_check, the one pragma minidb knows")
+    return cursor.refuse(t, expected: "a statement")
+
+## SELECT
+
+function select(@c: cursor.Cursor) -> ast.Select?
+    cursor.expect_word(@c, word: "SELECT")?
+    distinct = cursor.accept_word(@c, word: "DISTINCT")
+
+    if !distinct
+        _ = cursor.accept_word(@c, word: "ALL")
+    items @= [item(@c)?]
+
+    while cursor.accept_symbol(@c, symbol: ",")
+        items @ items.push(item(@c)?)
+
+    found_sources: [ast.Source] @= []
+
+    if cursor.accept_word(@c, word: "FROM")
+        found_sources @ sources(@c)?
+
+    # An absent part and a part that does not parse are two failures, and a
+    # `T??` that would tell them apart is refused (spec § 6), so the word
+    # is asked first.
+    where: ast.Expr? @= ast.none()
+
+    if cursor.accept_word(@c, word: "WHERE")
+        where @ ok(expressions.expression(@c)?)
+    grouped: [ast.Expr] @= []
+
+    if cursor.accept_word(@c, word: "GROUP")
+        cursor.expect_word(@c, word: "BY")?
+        grouped @ expression_list(@c)?
+    having: ast.Expr? @= ast.none()
+
+    if cursor.accept_word(@c, word: "HAVING")
+        having @ ok(expressions.expression(@c)?)
+    ordered: [ast.Order] @= []
+
+    if cursor.accept_word(@c, word: "ORDER")
+        cursor.expect_word(@c, word: "BY")?
+        ordered @ [order(@c)?]
+
+        while cursor.accept_symbol(@c, symbol: ",")
+            ordered @ ordered.push(order(@c)?)
+
+    limit: ast.Expr? @= ast.none()
+
+    if cursor.accept_word(@c, word: "LIMIT")
+        limit @ ok(expressions.expression(@c)?)
+    offset: ast.Expr? @= ast.none()
+
+    if cursor.accept_word(@c, word: "OFFSET")
+        offset @ ok(expressions.expression(@c)?)
+    return ok(
+        ast.Select(distinct: distinct, items: items, sources: found_sources, where: where, group_by: grouped, having: having, order_by: ordered, limit: limit, offset: offset)
+    )
+
+function item(@c: cursor.Cursor) -> ast.Item?
+    if cursor.accept_symbol(@c, symbol: "*")
+        return ok(ast.Item(expr: ast.null_literal(), alias: "", star: true, star_table: ""))
+    t = cursor.peek(c)
+
+    if (t.kind == .word || t.kind == .quoted) && lexer.is_symbol(cursor.ahead(c, n: 1), symbol: ".") && lexer.is_symbol(cursor.ahead(c, n: 2), symbol: "*")
+        owner = cursor.name(@c, what: "a table's name")?
+        _ = cursor.advance(@c)
+        _ = cursor.advance(@c)
+        return ok(ast.Item(expr: ast.null_literal(), alias: "", star: true, star_table: owner))
+    e = expressions.expression(@c)?
+    return ok(ast.Item(expr: e, alias: alias(@c)?, star: false, star_table: ""))
+
+# A name after `AS`, or a bare name standing next; "" where none.
+function alias(@c: cursor.Cursor) -> str?
+    if cursor.accept_word(@c, word: "AS")
+        return cursor.name(@c, what: "a name after AS")
+    t = cursor.peek(c)
+
+    if t.kind == .quoted || t.kind == .word && !cursor.is_reserved(t.text)
+        return cursor.name(@c, what: "a name")
+    return ok("")
+
+function sources(@c: cursor.Cursor) -> [ast.Source]?
+    found @= [table_source(@c, how: .first)?]
+
+    while true
+        if cursor.accept_symbol(@c, symbol: ",")
+            found @ found.push(table_source(@c, how: .inner)?)
+        else if cursor.accept_word(@c, word: "LEFT")
+            _ = cursor.accept_word(@c, word: "OUTER")
+            cursor.expect_word(@c, word: "JOIN")?
+            found @ found.push(joined(@c, how: .left)?)
+        else if cursor.accept_word(@c, word: "INNER")
+            cursor.expect_word(@c, word: "JOIN")?
+            found @ found.push(joined(@c, how: .inner)?)
+        else if cursor.accept_word(@c, word: "JOIN")
+            found @ found.push(joined(@c, how: .inner)?)
+        else
+            break
+
+    return ok(found)
+
+# A table and its optional `ON` after a `JOIN`.
+function joined(@c: cursor.Cursor, how: ast.Join) -> ast.Source?
+    s @= table_source(@c, how: how)?
+
+    if cursor.accept_word(@c, word: "ON")
+        s.on @ ok(expressions.expression(@c)?)
+    return ok(s)
+
+function table_source(@c: cursor.Cursor, how: ast.Join) -> ast.Source?
+    table = cursor.name(@c, what: "a table's name")?
+    named_as = alias(@c)?
+    shown = if_empty(s: named_as, otherwise: table)
+    return ok(ast.Source(table: table, alias: shown, join: how, on: ast.none()))
+
+function if_empty(s: str, otherwise: str) -> str
+    if s == ""
+        return otherwise
+    return s
+
+function order(@c: cursor.Cursor) -> ast.Order?
+    e = expressions.expression(@c)?
+
+    if cursor.accept_word(@c, word: "DESC")
+        return ok(ast.Order(expr: e, descending: true))
+    _ = cursor.accept_word(@c, word: "ASC")
+    return ok(ast.Order(expr: e, descending: false))
+
+function expression_list(@c: cursor.Cursor) -> [ast.Expr]?
+    found @= [expressions.expression(@c)?]
+
+    while cursor.accept_symbol(@c, symbol: ",")
+        found @ found.push(expressions.expression(@c)?)
+
+    return ok(found)
+
+## INSERT, UPDATE, DELETE
+
+function insert(@c: cursor.Cursor) -> ast.Statement?
+    cursor.expect_word(@c, word: "INTO")?
+    table = cursor.name(@c, what: "a table's name")?
+    named: [str] @= []
+
+    if cursor.accept_symbol(@c, symbol: "(")
+        named @ name_list(@c, what: "a column's name")?
+
+    if lexer.is_word(cursor.peek(c), word: "SELECT")
+        return ok(.insert(table: table, columns: named, rows: [], query: ok(select(@c)?)))
+    cursor.expect_word(@c, word: "VALUES")?
+    rows @= [value_row(@c)?]
+
+    while cursor.accept_symbol(@c, symbol: ",")
+        rows @ rows.push(value_row(@c)?)
+
+    return ok(.insert(table: table, columns: named, rows: rows, query: ast.no_query()))
+
+function value_row(@c: cursor.Cursor) -> [ast.Expr]?
+    cursor.expect_symbol(@c, symbol: "(")?
+    found = expression_list(@c)?
+    cursor.expect_symbol(@c, symbol: ")")?
+    return ok(found)
+
+# Names separated by commas up to a `)`, the `(` already taken.
+function name_list(@c: cursor.Cursor, what: str) -> [str]?
+    found @= [cursor.name(@c, what: what)?]
+
+    while cursor.accept_symbol(@c, symbol: ",")
+        found @ found.push(cursor.name(@c, what: what)?)
+
+    cursor.expect_symbol(@c, symbol: ")")?
+    return ok(found)
+
+function update(@c: cursor.Cursor) -> ast.Statement?
+    table = cursor.name(@c, what: "a table's name")?
+    cursor.expect_word(@c, word: "SET")?
+    sets @= [assignment(@c)?]
+
+    while cursor.accept_symbol(@c, symbol: ",")
+        sets @ sets.push(assignment(@c)?)
+
+    where: ast.Expr? @= ast.none()
+
+    if cursor.accept_word(@c, word: "WHERE")
+        where @ ok(expressions.expression(@c)?)
+    return ok(.update(table: table, sets: sets, where: where))
+
+function assignment(@c: cursor.Cursor) -> ast.Assignment?
+    column = cursor.name(@c, what: "a column's name")?
+    cursor.expect_symbol(@c, symbol: "=")?
+    return ok(ast.Assignment(column: column, value: expressions.expression(@c)?))
+
+function delete(@c: cursor.Cursor) -> ast.Statement?
+    cursor.expect_word(@c, word: "FROM")?
+    table = cursor.name(@c, what: "a table's name")?
+
+    where: ast.Expr? @= ast.none()
+
+    if cursor.accept_word(@c, word: "WHERE")
+        where @ ok(expressions.expression(@c)?)
+    return ok(.delete(table: table, where: where))
+
+## CREATE and DROP
+
+function create(@c: cursor.Cursor) -> ast.Statement?
+    unique = cursor.accept_word(@c, word: "UNIQUE")
+
+    if cursor.accept_word(@c, word: "INDEX")
+        if_not_exists = if_not_exists_of(@c)?
+        index = cursor.name(@c, what: "an index's name")?
+        cursor.expect_word(@c, word: "ON")?
+        table = cursor.name(@c, what: "a table's name")?
+        cursor.expect_symbol(@c, symbol: "(")?
+        columns = name_list(@c, what: "a column's name")?
+        return ok(
+            .create_index(index: index, table: table, columns: columns, unique: unique, if_not_exists: if_not_exists)
+        )
+
+    if unique
+        return cursor.refuse(cursor.peek(c), expected: "INDEX after UNIQUE")
+    cursor.expect_word(@c, word: "TABLE")?
+    if_not_exists = if_not_exists_of(@c)?
+    table = cursor.name(@c, what: "a table's name")?
+    cursor.expect_symbol(@c, symbol: "(")?
+    columns @= [column_def(@c)?]
+
+    while cursor.accept_symbol(@c, symbol: ",")
+        columns @ columns.push(column_def(@c)?)
+
+    cursor.expect_symbol(@c, symbol: ")")?
+    return ok(.create_table(table: table, columns: columns, if_not_exists: if_not_exists))
+
+function if_not_exists_of(@c: cursor.Cursor) -> bool?
+    if !cursor.accept_word(@c, word: "IF")
+        return ok(false)
+    cursor.expect_word(@c, word: "NOT")?
+    cursor.expect_word(@c, word: "EXISTS")?
+    return ok(true)
+
+function column_def(@c: cursor.Cursor) -> ast.ColumnDef?
+    column = cursor.name(@c, what: "a column's name")?
+    type_at = cursor.peek(c)
+    written = strings.to_upper_ascii(cursor.name(@c, what: "a column's type")?)
+    canonical = type_named(written)
+
+    if canonical == ""
+        return cursor.refuse(type_at, expected: "INTEGER, REAL, TEXT, BLOB or BOOLEAN")
+    d @= ast.ColumnDef(name: column, type_name: canonical, not_null: false, primary: false, unique: false)
+
+    while true
+        if cursor.accept_word(@c, word: "NOT")
+            cursor.expect_word(@c, word: "NULL")?
+            d.not_null @ true
+        else if cursor.accept_word(@c, word: "PRIMARY")
+            cursor.expect_word(@c, word: "KEY")?
+            d.primary @ true
+        else if cursor.accept_word(@c, word: "UNIQUE")
+            d.unique @ true
+        else
+            break
+
+    return ok(d)
+
+# The type a written type name means, "" for none minidb keeps.
+function type_named(written: str) -> str
+    return match written
+        "INTEGER" | "INT" | "BIGINT" => "INTEGER"
+        "REAL" | "FLOAT" | "DOUBLE"  => "REAL"
+        "TEXT" | "VARCHAR"           => "TEXT"
+        "BLOB"                       => "BLOB"
+        "BOOLEAN" | "BOOL"           => "BOOLEAN"
+        _                            => ""
+
+function drop(@c: cursor.Cursor) -> ast.Statement?
+    index = cursor.accept_word(@c, word: "INDEX")
+
+    if !index
+        cursor.expect_word(@c, word: "TABLE")?
+    if_exists = cursor.accept_word(@c, word: "IF")
+
+    if if_exists
+        cursor.expect_word(@c, word: "EXISTS")?
+
+    if index
+        return ok(.drop_index(index: cursor.name(@c, what: "an index's name")?, if_exists: if_exists))
+    return ok(.drop_table(table: cursor.name(@c, what: "a table's name")?, if_exists: if_exists))

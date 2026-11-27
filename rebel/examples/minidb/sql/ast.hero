@@ -1,0 +1,287 @@
+# The syntax tree of minidb's SQL: what the parser makes of a statement and
+# the engine runs. An expression holds the expressions under it in a list,
+# since a variant may hold itself only through a list or a map (spec § 3):
+# a binary operator's two operands are `args[0]` and `args[1]`. A part a
+# statement may leave out is a `T?` failing `not_found`, as Rebel's rule for
+# an absent field has it (`rebel/examples/README.md` § A4).
+
+use <rebel>/sql
+
+## Expressions
+
+# An operator of two operands.
+variant Binary
+    add
+    subtract
+    multiply
+    divide
+    remainder
+    # `||`, two texts joined.
+    concat
+    equal
+    not_equal
+    less
+    less_equal
+    greater
+    greater_equal
+    # `AND`, by three-valued logic.
+    both
+    # `OR`, by three-valued logic.
+    either
+
+# An expression of SQL.
+variant Expr
+    # A literal: a number, a string, `NULL`, `TRUE` or `FALSE`.
+    literal
+        # Its value.
+        value: sql.Value
+    # A column, by its name and the table or alias that qualifies it.
+    column
+        # The table's name or alias, "" where none is written.
+        table: str
+        # The column's name, in lower case.
+        name: str
+    # A parameter, its value given beside the statement.
+    parameter
+        # Its number, from 1.
+        number: i64
+    # `-x`.
+    negate
+        # The one operand.
+        args: [Expr]
+    # `NOT x`, by three-valued logic.
+    negation
+        # The one operand.
+        args: [Expr]
+    # `x op y`.
+    binary
+        # The operator.
+        op: Binary
+        # The two operands, left then right.
+        args: [Expr]
+    # `x IS NULL`, `x IS NOT NULL`.
+    is_null
+        # Whether `NOT` was written.
+        negated: bool
+        # The one operand.
+        args: [Expr]
+    # `x IN (a, b, ...)`, `x NOT IN (...)`.
+    in_list
+        # Whether `NOT` was written.
+        negated: bool
+        # The operand, then the list's members.
+        args: [Expr]
+    # `x BETWEEN a AND b`, `x NOT BETWEEN a AND b`.
+    between
+        # Whether `NOT` was written.
+        negated: bool
+        # The operand, the low bound and the high bound.
+        args: [Expr]
+    # `x LIKE pattern`, `x NOT LIKE pattern`.
+    like
+        # Whether `NOT` was written.
+        negated: bool
+        # The operand, then the pattern.
+        args: [Expr]
+    # `CASE WHEN c THEN v ... ELSE e END`.
+    choice
+        # The conditions and values in pairs, then the `ELSE` value, `NULL`
+        # where none was written.
+        args: [Expr]
+    # A function's call, an aggregate's among them.
+    call
+        # The function's name, in upper case.
+        name: str
+        # `COUNT(*)`.
+        star: bool
+        # `COUNT(DISTINCT x)` and the like.
+        distinct: bool
+        # The arguments.
+        args: [Expr]
+
+## Queries
+
+# One item a `SELECT` answers.
+record Item
+    # The expression; a literal `NULL` for a star.
+    expr: Expr
+    # The name an `AS` gave, "" where none.
+    alias: str
+    # Whether it is `*` or `t.*`.
+    star: bool
+    # The table a `t.*` names, "" for `*`.
+    star_table: str
+
+# How a table of a `FROM` joins the ones before it.
+variant Join
+    # The first table, which joins nothing.
+    first
+    # `JOIN` or `INNER JOIN`, and a comma.
+    inner
+    # `LEFT JOIN`: every row of the tables before it, with `NULL`s where no
+    # row of this one matches.
+    left
+
+# One table of a `FROM`.
+record Source
+    # The table's name, in lower case.
+    table: str
+    # The name the query calls it by: its alias, else its name.
+    alias: str
+    # How it joins the tables before it.
+    join: Join
+    # Its `ON` condition, `not_found` where none was written.
+    on: Expr?
+
+# One term of an `ORDER BY`.
+record Order
+    # What is ordered by.
+    expr: Expr
+    # Whether `DESC` was written.
+    descending: bool
+
+# A `SELECT`.
+record Select
+    # Whether `DISTINCT` was written.
+    distinct: bool
+    # What it answers, in order.
+    items: [Item]
+    # Its tables, in the order written; none for a `SELECT` of expressions.
+    sources: [Source]
+    # Its `WHERE`, `not_found` where none.
+    where: Expr?
+    # Its `GROUP BY` terms, none where it has none.
+    group_by: [Expr]
+    # Its `HAVING`, `not_found` where none.
+    having: Expr?
+    # Its `ORDER BY` terms.
+    order_by: [Order]
+    # Its `LIMIT`, `not_found` where none.
+    limit: Expr?
+    # Its `OFFSET`, `not_found` where none.
+    offset: Expr?
+
+## Statements
+
+# A column as a `CREATE TABLE` declares it.
+record ColumnDef
+    # Its name, in lower case.
+    name: str
+    # Its type: `INTEGER`, `REAL`, `TEXT`, `BLOB` or `BOOLEAN`.
+    type_name: str
+    # Whether `NOT NULL` was written.
+    not_null: bool
+    # Whether `PRIMARY KEY` was written.
+    primary: bool
+    # Whether `UNIQUE` was written.
+    unique: bool
+
+# One `col = expr` of an `UPDATE`.
+record Assignment
+    # The column's name, in lower case.
+    column: str
+    # Its new value.
+    value: Expr
+
+# A statement of SQL.
+variant Statement
+    # `CREATE TABLE`.
+    create_table
+        # The table's name, in lower case.
+        table: str
+        # Its columns, in order.
+        columns: [ColumnDef]
+        # Whether `IF NOT EXISTS` was written.
+        if_not_exists: bool
+    # `CREATE [UNIQUE] INDEX`.
+    create_index
+        # The index's name, in lower case.
+        index: str
+        # The table's name, in lower case.
+        table: str
+        # Its columns' names, in lower case, in order.
+        columns: [str]
+        # Whether `UNIQUE` was written.
+        unique: bool
+        # Whether `IF NOT EXISTS` was written.
+        if_not_exists: bool
+    # `DROP TABLE`.
+    drop_table
+        # The table's name, in lower case.
+        table: str
+        # Whether `IF EXISTS` was written.
+        if_exists: bool
+    # `DROP INDEX`.
+    drop_index
+        # The index's name, in lower case.
+        index: str
+        # Whether `IF EXISTS` was written.
+        if_exists: bool
+    # `INSERT INTO`.
+    insert
+        # The table's name, in lower case.
+        table: str
+        # The columns named, in lower case; none for every column in order.
+        columns: [str]
+        # The rows of a `VALUES`, none where a `SELECT` gives them.
+        rows: [[Expr]]
+        # The `SELECT` that gives the rows, `not_found` for a `VALUES`.
+        query: Select?
+    # `UPDATE`.
+    update
+        # The table's name, in lower case.
+        table: str
+        # Its assignments, in order.
+        sets: [Assignment]
+        # Its `WHERE`, `not_found` where none.
+        where: Expr?
+    # `DELETE FROM`.
+    delete
+        # The table's name, in lower case.
+        table: str
+        # Its `WHERE`, `not_found` where none.
+        where: Expr?
+    # `SELECT`.
+    query
+        # The query.
+        select: Select
+    # `EXPLAIN` before a `SELECT`, an `UPDATE` or a `DELETE`: its plan, not
+    # its rows.
+    explain
+        # The statement explained, one.
+        inner: [Statement]
+    # `BEGIN`.
+    begin
+    # `COMMIT`.
+    commit
+    # `ROLLBACK`.
+    rollback
+    # `PRAGMA integrity_check`.
+    check
+
+## Helpers
+
+# The code of a part a statement leaves out.
+constant ABSENT: str
+    "not_found"
+
+# An absent `WHERE`, `HAVING`, `ON`, `LIMIT` or `OFFSET`.
+function none() -> Expr?
+    return fail(code: ABSENT, msg: "not written")
+
+# An absent `SELECT` of an `INSERT`.
+function no_query() -> Select?
+    return fail(code: ABSENT, msg: "not written")
+
+# The literal `NULL`.
+function null_literal() -> Expr
+    return .literal(value: .null_value)
+
+# Whether `s` changes nothing: a `SELECT`, an `EXPLAIN` or an integrity check.
+#
+# - `s`: the statement.
+function is_read_only(s: Statement) -> bool
+    return match s
+        .query _ | .explain _ | .check => true
+        .create_table _ | .create_index _ | .drop_table _ | .drop_index _ | .insert _ | .update _ | .delete _ | .begin | .commit | .rollback =>
+            false

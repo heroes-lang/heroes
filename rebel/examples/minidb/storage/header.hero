@@ -1,0 +1,127 @@
+# The database file's first page: what says the file is minidb's, its page
+# size, how many pages the database holds, the head of its list of free
+# pages and the version of its schema, which every `CREATE` and `DROP`
+# moves so another connection knows to read the catalogue again. Each field
+# is eight bytes, big-endian, where SQLite writes four: an `i64` crosses to
+# a `u32` only through a `T?` (spec § 11), and eight bytes need no crossing.
+
+use <rebel>/bytes
+use <rebel>/sql
+
+## The header
+
+# The first page's fields.
+record Header
+    # The bytes of a page, a power of two from 512 to 65,536.
+    page_size: i64
+    # The pages the database holds, this one counted.
+    page_count: i64
+    # The first free page, 0 where none is free.
+    free_head: i64
+    # How many pages are free.
+    free_count: i64
+    # The schema's version, moved by every change to the catalogue.
+    schema_version: i64
+
+# The first bytes of every minidb file.
+constant MAGIC: str
+    "minidb format 1\n"
+
+# The bytes the header's fields take.
+constant SIZE: i64
+    56
+
+# The smallest page.
+constant MIN_PAGE: i64
+    512
+
+# The largest page.
+constant MAX_PAGE: i64
+    65_536
+
+# Whether `size` is a page size minidb writes: a power of two from 512 to
+# 65,536.
+#
+# - `size`: the bytes of a page.
+function is_page_size(size: i64) -> bool
+    p @= MIN_PAGE
+
+    while p <= MAX_PAGE
+        if p == size
+            return true
+        p @ p * 2
+
+    return false
+
+# The first page holding `h`, zeros after its fields.
+#
+# - `h`: the header.
+function encode(h: Header) -> [u8]
+    out @= bytes.from_text(MAGIC)
+    bytes.push_all(to: @out, from: bytes.encode_i64_be(h.page_size))
+    bytes.push_all(to: @out, from: bytes.encode_i64_be(h.page_count))
+    bytes.push_all(to: @out, from: bytes.encode_i64_be(h.free_head))
+    bytes.push_all(to: @out, from: bytes.encode_i64_be(h.free_count))
+    bytes.push_all(to: @out, from: bytes.encode_i64_be(h.schema_version))
+
+    while out.len() < h.page_size
+        out @ out.push(0)
+
+    return out
+
+# The header the first page `page` holds.
+#
+# - `page`: the first page's bytes, or at least its first `SIZE`.
+#
+# Fails `invalid` where the bytes are not a minidb file's, or a field is out
+# of its range.
+function decode(page: [u8]) -> Header?
+    magic = bytes.from_text(MAGIC)
+
+    if page.len() < SIZE || page.slice(from: 0, to: magic.len()) != magic
+        return fail(code: sql.INVALID, msg: "not a minidb database: its first bytes are not minidb's")
+    at = magic.len()
+    h = Header(
+        page_size: bytes.decode_i64_be(page, at: at)?,
+        page_count: bytes.decode_i64_be(page, at: at + 8)?,
+        free_head: bytes.decode_i64_be(page, at: at + 16)?,
+        free_count: bytes.decode_i64_be(page, at: at + 24)?,
+        schema_version: bytes.decode_i64_be(page, at: at + 32)?
+    )
+
+    if !is_page_size(h.page_size)
+        return fail(code: sql.INVALID, msg: f"a damaged header: a page size of {h.page_size}")
+
+    if h.page_count < 2 || h.free_head < 0 || h.free_head > h.page_count || h.free_count < 0 || h.free_count > h.page_count
+        return fail(code: sql.INVALID, msg: "a damaged header: its counts are out of range")
+    return ok(h)
+
+## Tests
+
+test "encode and decode: a header round-trips, the page filled to its size"
+    h = Header(page_size: 1024, page_count: 9, free_head: 4, free_count: 2, schema_version: 7)
+    page = encode(h)
+    assert page.len() == 1024
+    assert decode(page).must() == h
+
+test "decode: another file, a cut header, a page size not a power of two, counts out of range"
+    assert decode(bytes.from_text("SQLite format 3\u{1}")).is_err()
+    good = encode(Header(page_size: 512, page_count: 2, free_head: 0, free_count: 0, schema_version: 0))
+    assert decode(good.slice(from: 0, to: SIZE - 1)).is_err()
+    assert decode(
+        encode(Header(page_size: 1000, page_count: 2, free_head: 0, free_count: 0, schema_version: 0))
+    ).is_err()
+    assert decode(
+        encode(Header(page_size: 512, page_count: 2, free_head: 3, free_count: 0, schema_version: 0))
+    ).is_err()
+    assert decode(
+        encode(Header(page_size: 512, page_count: 1, free_head: 0, free_count: 0, schema_version: 0))
+    ).is_err()
+
+test "is_page_size: the powers of two from 512 to 65,536 and nothing else"
+    assert is_page_size(512)
+    assert is_page_size(65_536)
+    assert !is_page_size(256)
+    assert !is_page_size(131_072)
+    assert !is_page_size(0)
+    assert !is_page_size(-512)
