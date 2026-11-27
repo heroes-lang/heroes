@@ -1,0 +1,18 @@
+tree2: git archive ee2aef6d96d6bf59493bfb795227ed395ccd30d0
+20:44:12 seed start
+20:44  up 4 days, 21:41, 1 user, load averages: 7.00 2.87 1.91
+real 59.66
+user 20.50
+sys 1.00
+heroes 0.6.0
+sources 1e1eb23a1927d35b
+20:45:12 stage2 start
+20:45  up 4 days, 21:42, 1 user, load averages: 15.09 6.02 3.16
+wrote heroes-next
+real 453.68
+user 170.70
+sys 34.42
+heroes 0.6.0
+sources 6ce3f9e116d22e3a
+20:52:46 done
+20:52  up 4 days, 21:50, 1 user, load averages: 91.09 51.27 25.37

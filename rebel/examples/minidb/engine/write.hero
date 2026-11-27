@@ -1,0 +1,337 @@
+# The statements that change rows: `INSERT`, `UPDATE` and `DELETE`, each
+# keeping the table's tree and every one of its indexes in step. A value is
+# made to fit its column's type; a `NOT NULL`, a `UNIQUE` and a `PRIMARY
+# KEY` are checked before anything is written for the row; the rowid is the
+# `INTEGER PRIMARY KEY` where one is given, else one past the greatest. An
+# `UPDATE` or a `DELETE` finds its rows first and changes them after, so a
+# row it moves is never met twice.
+
+use <rebel>/sql
+
+use catalog/schema
+use engine/eval
+use engine/fetch
+use engine/planner
+use engine/scope
+use engine/select
+use sql/ast
+use storage/btree
+use storage/pager
+use values/row
+use values/sortkey
+use values/value
+
+## Constraints
+
+# The SQLSTATE of a row two rows' unique values would share.
+constant UNIQUE: str
+    "23505"
+
+# The SQLSTATE of a `NULL` in a `NOT NULL` column.
+constant NOT_NULL: str
+    "23502"
+
+## INSERT
+
+# Inserts the rows of an `INSERT`; answers how many and the last rowid.
+#
+# - `p`: the pager, writing.
+# - `cat`: the catalogue.
+# - `table`: the table's name.
+# - `columns`: the columns named, none for every column in order.
+# - `rows`: the rows of a `VALUES`.
+# - `query`: the `SELECT` giving the rows, where no `VALUES` does.
+# - `params`: the statement's parameters.
+#
+# Fails `not_found` for a table or column that is not there, `invalid` for a
+# value of the wrong type, `exists` for a unique value already there.
+function insert(@p: pager.Pager, cat: schema.Catalog lent, table: str, columns: [str], rows: [[ast.Expr]], query: ast.Select?, params: [sql.Value]) -> sql.Result?
+    t = schema.table_named(cat, name: table)?
+    places = places_of(t, columns: columns)?
+    given: [[sql.Value]] @= []
+
+    match query
+        .ok q => given @ select.run(@p, cat: cat, q: q, params: params)?.rows
+        .err _ =>
+            env = eval.plain(params)
+
+            for r in rows
+                values: [sql.Value] @= []
+
+                for e in r
+                    values @ values.push(eval.eval(e, env: env)?)
+
+                given @ given.push(values)
+
+    last_rowid @= 0
+
+    for values in given
+        if values.len() != places.len()
+            return value.refuse(
+                code: sql.INVALID,
+                state: "42601",
+                message: f"{values.len()} values for {places.len()} columns"
+            )
+        full @= blank(t)
+
+        for k in range(from: 0, to: places.len())
+            full[places[k]] @ values[k]
+
+        last_rowid @ insert_row(@p, cat: cat, t: t, values: full)?
+
+    return ok(sql.Result(rows_affected: given.len(), last_id: ok(last_rowid)))
+
+# The places of the columns an `INSERT` names, every column for none.
+function places_of(t: schema.Table, columns: [str]) -> [i64]?
+    found: [i64] @= []
+
+    if columns.len() == 0
+        return ok(range(from: 0, to: t.columns.len()))
+
+    for c in columns
+        at = schema.column_index(t, name: c)?
+
+        for seen in found
+            if seen == at
+                return value.refuse(code: sql.INVALID, state: "42701", message: f"the column {c} is named twice")
+
+        found @ found.push(at)
+
+    return ok(found)
+
+function blank(t: schema.Table) -> [sql.Value]
+    found: [sql.Value] @= []
+
+    for _ in t.columns
+        found @ found.push(.null_value)
+
+    return found
+
+# Inserts one row of `t`, its values in its columns' order; answers its
+# rowid.
+function insert_row(@p: pager.Pager, cat: schema.Catalog lent, t: schema.Table, values: [sql.Value]) -> i64?
+    full @= checked(t, values: values)?
+    rowid @= 0
+
+    if t.rowid_column >= 0 && full[t.rowid_column] != .null_value
+        rowid @ integer_value(full[t.rowid_column])
+    else
+        rowid @ next_rowid(@p, t: t)?
+
+    if t.rowid_column >= 0
+        full[t.rowid_column] @ .integer(v: rowid)
+
+    if !btree.get(@p, root: t.root, key: sortkey.of_rowid(rowid)).is_err()
+        return conflict(t, column: rowid_name(t))
+
+    for i in schema.indexes_of(cat, table: t.name)
+        unique_check(@p, t: t, i: i, values: full, rowid: rowid)?
+
+    btree.insert(@p, root: t.root, key: sortkey.of_rowid(rowid), value: row.encode(full), replace: false)?
+
+    for i in schema.indexes_of(cat, table: t.name)
+        btree.insert(@p, root: i.root, key: schema.index_key(i, values: full, rowid: rowid), value: [], replace: false)?
+
+    return ok(rowid)
+
+# The values made to fit their columns, `NOT NULL` checked.
+function checked(t: schema.Table, values: [sql.Value]) -> [sql.Value]?
+    found: [sql.Value] @= []
+
+    for k in range(from: 0, to: t.columns.len())
+        c = t.columns[k]
+        v = value.fit(values[k], type_name: c.type_name, column: c.name)?
+
+        if v == .null_value && c.not_null && k != t.rowid_column
+            return value.refuse(
+                code: sql.INVALID,
+                state: NOT_NULL,
+                message: f"NOT NULL constraint failed: {t.name}.{c.name}"
+            )
+        found @ found.push(v)
+
+    return ok(found)
+
+function integer_value(v: sql.Value) -> i64
+    return match v
+        .integer n                                                           => n.v
+        .null_value | .boolean _ | .float _ | .text _ | .blob _ | .instant _ => 0
+
+function rowid_name(t: schema.Table) -> str
+    if t.rowid_column >= 0
+        return t.columns[t.rowid_column].name
+    return "rowid"
+
+# One past the greatest rowid, 1 for an empty table.
+function next_rowid(@p: pager.Pager, t: schema.Table) -> i64?
+    match btree.last_key(@p, root: t.root)
+        .ok key =>
+            greatest = sortkey.rowid_of(key)?
+
+            if greatest == 9_223_372_036_854_775_807
+                return value.refuse(
+                    code: sql.DOES_NOT_FIT,
+                    state: value.OUT_OF_RANGE,
+                    message: f"{t.name} has no rowid left past the greatest"
+                )
+            return ok(greatest + 1)
+        .err _ => return ok(1)
+
+# Refuses a row whose values a unique index holds for another row; `NULL`s
+# never conflict, as in standard SQL.
+function unique_check(@p: pager.Pager, t: schema.Table, i: schema.Index, values: [sql.Value], rowid: i64) -> ()?
+    if !i.unique
+        return ok()
+    own = schema.index_values(i, values: values, rowid: -1)
+
+    for v in own
+        if v == .null_value
+            return ok()
+
+    prefix = sortkey.of(own)
+
+    for entry in btree.scan(@p, root: i.root, span: btree.Span(low: prefix, high: sortkey.after_prefix(prefix), to_end: false))?
+        if sortkey.rowid_of(entry.key)? != rowid
+            names: [str] @= []
+
+            for c in i.columns
+                names @ names.push(t.columns[c].name)
+
+            return conflict(t, column: names.join(", "))
+
+    return ok()
+
+function conflict<T>(t: schema.Table, column: str) -> T?
+    return value.refuse(code: sql.EXISTS, state: UNIQUE, message: f"UNIQUE constraint failed: {t.name}.{column}")
+
+## UPDATE and DELETE
+
+# The rows of `t` a `WHERE` keeps, read the way the planner chose.
+#
+# - `p`: the pager.
+# - `cat`: the catalogue.
+# - `t`: the table.
+# - `where`: the condition, `not_found` for every row.
+# - `params`: the statement's parameters.
+function matching(@p: pager.Pager, cat: schema.Catalog lent, t: schema.Table, where: ast.Expr?, params: [sql.Value]) -> [fetch.Fetched]?
+    sc = scope.single(t)
+    a = access_of(cat, t: t, where: where)?
+    base = eval.Env(scope: sc, values: scope.nulls(sc), params: params, aggregates: [], totals: [])
+    found: [fetch.Fetched] @= []
+
+    for f in fetch.rows_of(@p, cat: cat, t: t, a: a, env: base)?
+        joined = scope.with_table(joined: base.values, scope: sc, k: 0, values: f.values, rowid: f.rowid)
+
+        if select.passes(where, values: joined, base: base, what: "WHERE")?
+            found @ found.push(f)
+
+    return ok(found)
+
+# How an `UPDATE` or a `DELETE` reads its table.
+#
+# - `cat`: the catalogue.
+# - `t`: the table.
+# - `where`: its condition.
+function access_of(cat: schema.Catalog lent, t: schema.Table, where: ast.Expr?) -> planner.Access?
+    sc = scope.single(t)
+    conditions: [ast.Expr] @= []
+
+    for w in select.optional(where)
+        _ = planner.tables_read(w, sc: sc)?
+        conditions @ planner.conjuncts(w)
+
+    return planner.choose(cat, sc: sc, k: 0, conditions: conditions)
+
+# Changes the rows an `UPDATE` keeps; answers how many.
+#
+# - `p`: the pager, writing.
+# - `cat`: the catalogue.
+# - `table`: the table's name.
+# - `sets`: its assignments.
+# - `where`: its condition.
+# - `params`: its parameters.
+#
+# Fails as `insert` does, and for an assignment to a column that is not
+# there.
+function update(@p: pager.Pager, cat: schema.Catalog lent, table: str, sets: [ast.Assignment], where: ast.Expr?, params: [sql.Value]) -> sql.Result?
+    t = schema.table_named(cat, name: table)?
+    sc = scope.single(t)
+    targets: [i64] @= []
+
+    for s in sets
+        targets @ targets.push(schema.column_index(t, name: s.column)?)
+
+    found = matching(@p, cat: cat, t: t, where: where, params: params)?
+    base = eval.Env(scope: sc, values: scope.nulls(sc), params: params, aggregates: [], totals: [])
+
+    for f in found
+        env @= base
+        env.values @ scope.with_table(joined: base.values, scope: sc, k: 0, values: f.values, rowid: f.rowid)
+        changed @= f.values
+
+        for k in range(from: 0, to: sets.len())
+            changed[targets[k]] @ eval.eval(sets[k].value, env: env)?
+
+        full = checked(t, values: changed)?
+        rowid @= f.rowid
+
+        if t.rowid_column >= 0
+            if full[t.rowid_column] == .null_value
+                return value.refuse(
+                    code: sql.INVALID,
+                    state: NOT_NULL,
+                    message: f"NOT NULL constraint failed: {t.name}.{rowid_name(t)}"
+                )
+            rowid @ integer_value(full[t.rowid_column])
+        remove_row(@p, cat: cat, t: t, f: f)?
+
+        if !btree.get(@p, root: t.root, key: sortkey.of_rowid(rowid)).is_err()
+            return conflict(t, column: rowid_name(t))
+
+        for i in schema.indexes_of(cat, table: t.name)
+            unique_check(@p, t: t, i: i, values: full, rowid: rowid)?
+
+        btree.insert(@p, root: t.root, key: sortkey.of_rowid(rowid), value: row.encode(full), replace: false)?
+
+        for i in schema.indexes_of(cat, table: t.name)
+            btree.insert(@p, root: i.root, key: schema.index_key(i, values: full, rowid: rowid), value: [], replace: false)?
+
+    return ok(
+        sql.Result(rows_affected: found.len(), last_id: fail(code: sql.UNSUPPORTED, msg: "an UPDATE inserts no row"))
+    )
+
+# Deletes the rows a `DELETE` keeps; answers how many.
+#
+# - `p`: the pager, writing.
+# - `cat`: the catalogue.
+# - `table`: the table's name.
+# - `where`: its condition.
+# - `params`: its parameters.
+#
+# Fails where the table is not there or a page is damaged.
+function delete(@p: pager.Pager, cat: schema.Catalog lent, table: str, where: ast.Expr?, params: [sql.Value]) -> sql.Result?
+    t = schema.table_named(cat, name: table)?
+    found = matching(@p, cat: cat, t: t, where: where, params: params)?
+
+    for f in found
+        remove_row(@p, cat: cat, t: t, f: f)?
+
+    return ok(
+        sql.Result(rows_affected: found.len(), last_id: fail(code: sql.UNSUPPORTED, msg: "a DELETE inserts no row"))
+    )
+
+# Takes a row out of its table and every index.
+function remove_row(@p: pager.Pager, cat: schema.Catalog lent, t: schema.Table, f: fetch.Fetched) -> ()?
+    for i in schema.indexes_of(cat, table: t.name)
+        btree.remove(@p, root: i.root, key: schema.index_key(i, values: f.values, rowid: f.rowid))?
+
+    return btree.remove(@p, root: t.root, key: sortkey.of_rowid(f.rowid))
+
+# The plan of an `UPDATE` or a `DELETE` on `table`.
+#
+# - `cat`: the catalogue.
+# - `table`: the table's name.
+# - `where`: its condition.
+function plan(cat: schema.Catalog lent, table: str, where: ast.Expr?) -> [str]?
+    t = schema.table_named(cat, name: table)?
+    return ok(planner.drawn([planner.describe(scope.single(t).sources[0], a: access_of(cat, t: t, where: where)?)]))

@@ -1,0 +1,42 @@
+escape_carved plain: exit 0, escaped: -1 then 42
+escape_carved sanitize: exit 0, escaped: -1 then 42
+escape_heap plain: exit 0, escaped: -1 then 42
+escape_heap sanitize: exit 0, ==3224==WARNING: ASan is ignoring requested __asan_handle_no_return: stack type: default top: 0xffffcc433000; bottom 0xf
+mj_carved plain: exit 0, body holds 7
+mj_carved sanitize: exit 0, body holds 7
+### fixedbugs-2707
+  run (only fixedbugs-2707): 4 passed, 0 failed
+harness: 4 passed, 0 failed
+### fixedbugs-2706
+  run (only fixedbugs-2706): 2 passed, 0 failed
+harness: 2 passed, 0 failed
+### fixedbugs-2848
+  run (only fixedbugs-2848): 6 passed, 0 failed
+harness: 6 passed, 0 failed
+### fixedbugs-2705
+  run (only fixedbugs-2705): 1 passed, 0 failed
+harness: 1 passed, 0 failed
+### 2494-a-heroes-function-a-c-handler-calls-on-a-thread
+  run (only 2494-a-heroes-function-a-c-handler-calls-on-a-thread): 1 passed, 0 failed
+harness: 1 passed, 0 failed
+### 2702-a-handler-left-by-setcontext
+  run (only 2702-a-handler-left-by-setcontext): 2 passed, 0 failed
+harness: 2 passed, 0 failed
+### 2702-a-handler-on-the-alternate-stack-left-by-setcontext
+  run (only 2702-a-handler-on-the-alternate-stack-left-by-setcontext): 1 passed, 0 failed
+harness: 1 passed, 0 failed
+### 2702-a-handler-swapped-away-from-and-never-resumed
+  run (only 2702-a-handler-swapped-away-from-and-never-resumed): 6 passed, 0 failed
+harness: 6 passed, 0 failed
+### 2522-a-callback-after-a-siglongjmp-out-of-a-handler-on-its-own
+  run (only 2522-a-callback-after-a-siglongjmp-out-of-a-handler-on-its-own): 2 passed, 0 failed
+harness: 2 passed, 0 failed
+### 2522-a-correct-inline-jump
+  run (only 2522-a-correct-inline-jump): 1 passed, 0 failed
+harness: 1 passed, 0 failed
+### 2494-a-heroes-function-a-c-handler-calls-is-refused
+  run (only 2494-a-heroes-function-a-c-handler-calls-is-refused): 1 passed, 0 failed
+harness: 1 passed, 0 failed
+### 2702-a-handler-jumps-into-a-coroutine-on-the-own-stack
+  run (only 2702-a-handler-jumps-into-a-coroutine-on-the-own-stack): 1 passed, 0 failed
+harness: 1 passed, 0 failed

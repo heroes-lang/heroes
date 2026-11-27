@@ -359,6 +359,30 @@ test "the filesystem answers the shell utility's question, not C's"
     assert !landed.is_err()
     assert landed.must() == "NEW"
 
+# **A folder named with its separator at the end is listed and removed as the
+# folder it names** (d-windows-ci-6-2, 2026-11-26): the Windows scan asked for
+# `<root>\*` and joined a child as `<root>/<name>`, so the drive's root, `/`
+# or `\`, became `/\*`, which Windows reads as the UNC path `\\*` (161,
+# measured on the box), and `hero_dir_scan` of `/` answered -1 there.
+test "a folder named with its separator at the end, the root among them, is listed and removed (d-windows-ci-6-2)"
+    dir = "build/selftest-open-ended-" + pid().to_str()
+    assert !remove_tree(dir).is_err()
+    assert !mkdir_all(dir + "/inner").is_err()
+    assert !write_file(path: dir + "/inner/one.txt", text: "one\n").is_err()
+    assert walk(dir + "/").must().files.len() == 1
+    roots: [str] @= ["/"]
+
+    if exe_suffix() == ".exe"
+        assert walk(dir + "\\").must().files.len() == 1
+        roots @ roots.push("\\")
+
+    for root in roots
+        assert hero_dir_scan(root: root.cstr(), want: 0, recursive: 0) >= 0
+        hero_dir_release()
+
+    assert !remove_tree(dir + "/").is_err()
+    assert !path_exists(dir)
+
 # Defect 345: a tree is removed by its own names, a link among them removed as
 # the link and never followed, as `rm -rf` removes one: until 2026-10-05 the
 # walk entered a link to a directory and deleted the files it named, outside

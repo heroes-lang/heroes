@@ -1,0 +1,101 @@
+# `PRAGMA integrity_check`: every tree walked and every page accounted for,
+# as SQLite's check does. Each tree's keys stand in order within the bounds
+# their parents give, its leaves at one depth; every row decodes; every
+# index holds one entry per row of its table, each the entry the row's
+# values make; and every page of the file is the header, a page of exactly
+# one tree, or a page of the free list, none twice and none lost.
+
+use <rebel>/sql
+
+use catalog/schema
+use storage/btree
+use storage/node
+use storage/pager
+use values/row
+use values/sortkey
+
+## The check
+
+# What is wrong with the database, one line each; `["ok"]` where nothing is.
+#
+# - `p`: the pager, holding a snapshot.
+# - `cat`: the catalogue.
+#
+# Fails `invalid` where a page cannot be decoded at all.
+function check(@p: pager.Pager, cat: schema.Catalog lent) -> [str]?
+    found: [str] @= []
+    owners: {i64: str} @= {}
+    claim(@owners, @found, pages: [1], owner: "the header")
+    claim(@owners, @found, pages: btree.pages_of(@p, root: pager.SCHEMA_ROOT)?, owner: "the schema")
+
+    for name in sort(keys(cat.tables))
+        t = cat.tables[name]?
+        claim(@owners, @found, pages: btree.pages_of(@p, root: t.root)?, owner: name)
+
+        for line in btree.problems_of(@p, root: t.root, table: true, name: name)?
+            found @ found.push(line)
+
+        entries = btree.scan(@p, root: t.root, span: btree.whole())?
+
+        for i in schema.indexes_of(cat, table: name)
+            claim(@owners, @found, pages: btree.pages_of(@p, root: i.root)?, owner: i.name)
+
+            for line in btree.problems_of(@p, root: i.root, table: false, name: i.name)?
+                found @ found.push(line)
+
+            held = btree.scan(@p, root: i.root, span: btree.whole())?
+
+            if held.len() != entries.len()
+                found @ found.push(f"{i.name}: {held.len()} entries for {entries.len()} rows of {name}")
+
+        for entry in entries
+            match row.decode(entry.value)
+                .ok values =>
+                    rowid = sortkey.rowid_of(entry.key)?
+
+                    if values.len() != t.columns.len()
+                        found @ found.push(
+                            f"{name}: row {rowid} holds {values.len()} values for {t.columns.len()} columns"
+                        )
+                    else
+                        for i in schema.indexes_of(cat, table: name)
+                            if btree.get(@p, root: i.root, key: schema.index_key(i, values: values, rowid: rowid)).is_err()
+                                found @ found.push(f"{i.name}: no entry for row {rowid} of {name}")
+                .err e => found @ found.push(f"{name}: {e.msg}")
+
+    free = free_pages(@p)?
+
+    if free.len() != pager.read_header(@p)?.free_count
+        found @ found.push(
+            f"the free list holds {free.len()} pages, the header says {pager.read_header(@p)?.free_count}"
+        )
+    claim(@owners, @found, pages: free, owner: "the free list")
+
+    for page in range(from: 1, to: p.page_count + 1)
+        if owners[page].is_err()
+            found @ found.push(f"page {page} is lost: no tree holds it and it is not free")
+
+    if found.len() == 0
+        return ok(["ok"])
+    return ok(found)
+
+# Marks `pages` as `owner`'s, telling a page two owners claim.
+function claim(@owners: {i64: str}, @found: [str], pages: [i64], owner: str)
+    for page in pages
+        match owners[page]
+            .ok other => found @ found.push(f"page {page} is held by {other} and by {owner}")
+            .err _    => owners[page] @ owner
+
+# The pages of the free list, walked from the header's head, no further than
+# the database's page count, so a list that loops is told, never followed.
+function free_pages(@p: pager.Pager) -> [i64]?
+    found: [i64] @= []
+    page @= pager.read_header(@p)?.free_head
+
+    while page != 0
+        if found.len() > p.page_count
+            return fail(code: sql.INVALID, msg: "a damaged database: the free list loops")
+        found @ found.push(page)
+        page @ node.next_free(pager.read(@p, page: page)?, page_count: p.page_count)?
+
+    return ok(found)

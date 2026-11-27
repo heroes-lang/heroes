@@ -127,11 +127,14 @@ function folder_script() -> str
         return "cd"
     return "pwd"
 
-# A folder every system has: the system's root on Windows, `/bin` elsewhere.
+# A folder every system has, and that no link names: the system's root on
+# Windows, `/` elsewhere. Not `/bin`, which a Linux of merged folders (Debian
+# 12 and later, Ubuntu 20.04 and later) makes a link to `usr/bin`, so a
+# child's `pwd` there answers `/usr/bin`.
 function a_folder() -> str
     if on_windows()
         return os.env("SystemRoot").default("C:\\Windows")
-    return "/bin"
+    return "/"
 
 # The system's program that copies its input to its output, and ends when the
 # input does.

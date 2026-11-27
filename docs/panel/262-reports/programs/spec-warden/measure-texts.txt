@@ -1,0 +1,9 @@
+w1 main: 10381 10571 | base: 10130 10309 | text alone: 151 152 | lines      526      516
+w2 main: 10497 10686 | base: 10246 10424 | text alone: 267 267 | lines      526      516
+w3 main: 10327 10516 | base: 10076 10254 | text alone: 97 97 | lines      526      516
+w4 main: 10298 10487 | base: 10047 10225 | text alone: 68 68 | lines      526      516
+w5 main: 10338 10527 | base: 10087 10265 | text alone: 197 198 | lines      526      516
+w6 main: 10289 10478 | base: 10038 10216 | text alone: 79 79 | lines      526      516
+w7 main: 10366 10556 | base: 10115 10294 | text alone: 136 137 | lines      526      516
+w8 main: 10231 10420 | base: 9980 10158 | text alone: 0 0 | lines      526      516
+w9 main: 10318 10507 | base: 10067 10245 | text alone: 88 88 | lines      526      516

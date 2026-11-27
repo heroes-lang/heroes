@@ -1,0 +1,47 @@
+# The demo, which is this program's test: the shell run over the script of
+# the standard input, on a database made fresh in the work folder, with
+# small pages so a few hundred rows make trees of several levels, a cache
+# of 16 pages and a transaction that spills to the log after 8. Every
+# statement is echoed before its answer. Nothing it prints holds a path, a
+# clock or an address of the host's.
+
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/path
+
+use shell/shell
+use storage/pager
+
+## The session
+
+# The demo's database file, in the work folder.
+constant DATABASE: str
+    "shop.db"
+
+# The storage the demo's database is made with.
+function storage() -> pager.Options
+    return pager.Options(page_size: 1024, cache_pages: 16, spill_limit: 8)
+
+# Runs the demo's script, read from `script`, on a fresh database in `work`;
+# answers how many errors the shell wrote, which the script provokes on
+# purpose.
+#
+# - `work`: the folder the database is made in; made where it is not.
+# - `script`: the stream the statements are read from.
+#
+# Fails where the folder or the database cannot be made, or the script read.
+function run(work: str, script: io.Stream) -> i64?
+    fs.make_dir_all(work)?
+    database = path.join_all([work, DATABASE])
+
+    for suffix in ["", "-wal", "-lock", "-read"]
+        if fs.exists(database + suffix)?
+            fs.remove(database + suffix)?
+
+    text = io.read_all_text(script)?
+    settings @= shell.plain_settings()
+    settings.echo @ true
+    sh @= shell.open(database, options: storage(), settings: settings)?
+    errors = shell.run(@sh, input: text)
+    shell.close(@sh)?
+    return ok(errors)

@@ -1,0 +1,6 @@
+Linux e71fcee51145 7.0.14-linuxkit #1 SMP PREEMPT Fri Oct 30 13:45:20 UTC 2026 aarch64 GNU/Linux
+PRETTY_NAME="Debian GNU/Linux 13 (trixie)"
+NAME="Debian GNU/Linux"
+VERSION_ID="13"
+ldd (Debian GLIBC 2.41-12+deb13u3) 2.41
+Debian clang version 22.1.8 (1~deb13u4)

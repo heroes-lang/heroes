@@ -1,0 +1,1 @@
+C leaving a signal handler of its own by a `swapcontext`, a `setcontext` or a jump into a coroutine the signal did not interrupt aborts there, saying the handler was not seen to end; a callback called after C left one by a jump no function of the C library makes, or from inside one, may abort, saying the handler was not seen to end, or that C called it from inside one.

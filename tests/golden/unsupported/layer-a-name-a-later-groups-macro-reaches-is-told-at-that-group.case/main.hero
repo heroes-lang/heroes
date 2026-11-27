@@ -1,0 +1,16 @@
+# Defect d-lane-room-mixedown-1 (lane room-mixedown, 2026-11-26; panel 260's
+# R2 to R4, provisional, author ratification pending): in a program none of
+# whose groups says `layer`, a name of the layer's that a header's text puts
+# in the program's own code is told at the group whose header puts it there.
+# `now.h` makes `now_ns` a macro for `hero_time_monotonic_ns`; until the
+# repair it was told at the program's first group, `"a.h"`, whose `answer`
+# reaches nothing of the layer, its guess fix replacing that group's string.
+extern "a.h"
+    function answer() -> i64
+
+extern "now.h"  #~ ffi_layer_undeclared
+    function now_ns() -> i64
+
+function main()
+    print(answer())
+    print(now_ns() > 0)

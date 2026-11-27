@@ -1,0 +1,272 @@
+# Kite's syntax tree: what the parser makes of a source and every other part
+# of the program reads. A source is records and functions; a function's body
+# is a block of `let` bindings ending in the expression it answers. Every
+# expression is a node of one list, `Tree.nodes`, and names its children by
+# their index there, since a record holds itself only through a list; the
+# index is also what the checker's types and the queries' answers are keyed
+# by. Every place is a `Span` of byte offsets into the source, which the
+# server turns into an editor's lines and characters only at its edge.
+
+use <rebel>/lists
+
+## Places
+
+# The bytes of a source from `start` to `end`, `end` excluded.
+record Span
+    # The offset of the first byte, from 0.
+    start: i64
+    # The offset of the byte after the last; `start` for an empty span.
+    end: i64
+
+# Whether `at` stands inside `s` or right after its last byte, where an
+# editor's cursor stands when it has just typed a name.
+#
+# - `s`: the span.
+# - `at`: a byte offset.
+function touches(s: Span, at: i64) -> bool
+    return at >= s.start && at <= s.end
+
+# The span from the start of `first` to the end of `last`.
+#
+# - `first`: the earlier span.
+# - `last`: the later span.
+function cover(first: Span, last: Span) -> Span
+    return Span(start: first.start, end: last.end)
+
+## Types as written
+
+# A type's name as the source writes it: `Int`, `Bool`, `Str` or a record's.
+record TypeRef
+    # The name; empty where the parser found none, which it has told.
+    name: str
+    # Where the name stands.
+    span: Span
+
+## Declarations
+
+# A field of a record.
+record FieldDecl
+    # Its name.
+    name: str
+    # Where the name stands.
+    span: Span
+    # Its type.
+    type_ref: TypeRef
+    # The comment lines above it, their `#` taken off, joined by line feeds.
+    doc: str
+
+# `record Name { field: Type, ... }`.
+record RecordDecl
+    # Its name.
+    name: str
+    # Where the name stands.
+    span: Span
+    # From `record` to the closing brace.
+    whole: Span
+    # Its fields, in order.
+    fields: [FieldDecl]
+    # The comment lines above it.
+    doc: str
+
+# A parameter of a function.
+record Param
+    # Its name.
+    name: str
+    # Where the name stands.
+    span: Span
+    # Its type.
+    type_ref: TypeRef
+
+# `fn name(params) -> Type { body }`.
+record FunctionDecl
+    # Its name.
+    name: str
+    # Where the name stands.
+    span: Span
+    # From `fn` to the body's closing brace.
+    whole: Span
+    # Its parameters, in order.
+    params: [Param]
+    # What it answers: absent for a function that answers nothing (`Unit`).
+    result: TypeRef?
+    # The node of its body, a `.block`.
+    body: i64
+    # The comment lines above it.
+    doc: str
+
+# One declaration of a source.
+variant Decl
+    # A record type.
+    record_decl
+        # The declaration.
+        r: RecordDecl
+    # A function.
+    function_decl
+        # The declaration.
+        f: FunctionDecl
+
+## Expressions
+
+# `let name: Type = value;` inside a block.
+record Let
+    # The name it binds.
+    name: str
+    # Where the name stands.
+    span: Span
+    # The type written after the name, absent where the value's type is
+    # taken.
+    declared: TypeRef?
+    # The node of the value.
+    value: i64
+    # From `let` to the semicolon.
+    whole: Span
+    # The comment lines above it.
+    doc: str
+
+# A field given in a record's construction: `x: 1`.
+record FieldInit
+    # The field's name.
+    name: str
+    # Where the name stands.
+    span: Span
+    # The node of its value.
+    value: i64
+
+# What an expression is. Children are indexes into `Tree.nodes`.
+variant NodeKind
+    # An integer literal.
+    int_lit
+        # Its value.
+        value: i64
+    # A string literal, its escapes read.
+    str_lit
+        # Its value.
+        value: str
+    # `true` or `false`.
+    bool_lit
+        # Its value.
+        value: bool
+    # The value of a block with no expression at its end.
+    unit_lit
+    # A name read: a binding, a parameter or a function.
+    name
+        # The name.
+        text: str
+    # `-x` or `!x`.
+    unary
+        # The operator.
+        op: str
+        # The operand's node.
+        operand: i64
+    # `a + b` and every other operator between two operands.
+    binary
+        # The operator.
+        op: str
+        # The left operand's node.
+        left: i64
+        # The right operand's node.
+        right: i64
+    # `f(a, b)`.
+    call
+        # The node of what is called, a `.name` for every call that checks.
+        callee: i64
+        # The arguments' nodes, in order.
+        args: [i64]
+    # `target.name`.
+    field
+        # The node whose field is read.
+        target: i64
+        # The field's name; empty where the source stops after the dot.
+        name: str
+        # Where the name stands; empty, right after the dot, where it is
+        # missing.
+        name_span: Span
+    # `Name { field: value, ... }`.
+    construct
+        # The record's name as written.
+        type_ref: TypeRef
+        # The fields given, in the order written.
+        inits: [FieldInit]
+    # `if cond { ... } else { ... }`; an `else if` is an `if` node in the
+    # `otherwise` place.
+    if_else
+        # The condition's node.
+        cond: i64
+        # The node of the block run where it holds.
+        then: i64
+        # The node run where it does not: a block or another `if`.
+        otherwise: i64
+    # `{ let ...; let ...; value }`.
+    block
+        # The bindings, in order.
+        lets: [Let]
+        # The node of the value at its end, a `.unit_lit` where none is
+        # written.
+        value: i64
+    # Where the parser read no expression: it has told why, and the checker
+    # tells nothing more about it.
+    missing
+
+# One expression and where it stands.
+record Node
+    # What it is.
+    kind: NodeKind
+    # Its whole extent.
+    span: Span
+
+# A parsed source: its declarations and the nodes of every expression.
+record Tree
+    # The declarations, in source order.
+    decls: [Decl]
+    # Every expression's node; a node's children come before it.
+    nodes: [Node]
+    # How many comments the source holds.
+    comments: i64
+    # How many of them stand as a declaration's, a field's or a binding's
+    # documentation: the formatter refuses a source where this is fewer than
+    # `comments`, since it would drop the others.
+    placed: i64
+
+# The nodes `kind` names as its children, in source order.
+#
+# - `kind`: any node's kind.
+function children_of(kind: NodeKind) -> [i64]
+    return match kind
+        .int_lit _ | .str_lit _ | .bool_lit _ | .unit_lit | .name _ | .missing => []
+        .unary u => [u.operand]
+        .binary b => [b.left, b.right]
+        .call c => lists.concat(xs: [c.callee], then: c.args)
+        .field f => [f.target]
+        .construct c => inits_values(c.inits)
+        .if_else i => [i.cond, i.then, i.otherwise]
+        .block b => lets_values(b.lets).push(b.value)
+
+# The nodes of the values a record's construction gives, in order.
+function inits_values(inits: [FieldInit]) -> [i64]
+    out: [i64] @= []
+
+    for one in inits
+        out @ out.push(one.value)
+
+    return out
+
+# The nodes of the values a block's bindings take, in order.
+function lets_values(lets: [Let]) -> [i64]
+    out: [i64] @= []
+
+    for one in lets
+        out @ out.push(one.value)
+
+    return out
+
+## Tests
+
+test "touches: inside, at either end, and outside"
+    s = Span(start: 4, end: 7)
+    assert touches(s, at: 4)
+    assert touches(s, at: 7)
+    assert !touches(s, at: 3)
+    assert !touches(s, at: 8)
+
+test "cover: from the first span's start to the last's end"
+    assert cover(first: Span(start: 2, end: 3), last: Span(start: 9, end: 12)) == Span(start: 2, end: 12)

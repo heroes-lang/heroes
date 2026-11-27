@@ -1,0 +1,29 @@
+  spec: 31 passed, 5 failed
+FAIL spec/budget
+  the spec measures 10158 and the record says 10245 — a delta of -87.
+  If the change is intended, write the new number into SPEC_TOKENS in the SAME
+  commit, and put the delta plus its payment in the commit body: either a named
+  removal, or a registered falsifiable prediction naming BOTH the instrument that
+  will score it and the milestone it is scored at — and the instrument has to
+  exist today (panel 012, as amended by panel 046). A prediction naming an
+  instrument nobody has built is an observation, not a payment.
+  If it is not intended, the spec grew by accident, which is the case this
+  check exists for.
+FAIL spec/spendable
+  `measure spec/heroes-spec.md` does not say "is 13499 and the check goes red at 16384".
+  The two instruments have drifted: this file goes red at REAL_TOKENS + FFI_FLOOR
+  >= CEILING, and what `measure` prints is what a session reads BEFORE amending
+  the spec. Whichever of the two moved, the other has to move with it — the
+  number is one number in two places, one printed and one checked (defect 017).
+FAIL spec/real
+  `measure spec/heroes-spec.md` does not print "13439   claude-opus-5, 2026-11-26".
+  The record is in two places, this file and `selfhost/measure/pinned.hero`, for
+  the reason CEILING is: one printed and one checked. Whichever moved, the
+  other moves with it (defect 017's class), and the model id and the date
+  travel WITH the number because a count without them is not a measurement.
+FAIL spec/ledger
+  the ledger's newest row says 10245 and the compiler measures 10158 — the record and the document disagree
+FAIL spec/refusal-words
+  spec § 13 holds no sentence opening `A callback called after C left a handler of C's`, where panel 257's R1 says what a refusal says
+harness: 31 passed, 5 failed
+exit 1

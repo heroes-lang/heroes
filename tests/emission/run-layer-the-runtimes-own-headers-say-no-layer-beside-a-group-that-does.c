@@ -342,7 +342,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("4a6b6c0f6710245f", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("7b6ffc857270f370", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("layertheruntimesownheaderssaynolayerbesideagroupthatdoes\tlayer-the-runtimes-own-headers-say-no-layer-beside-a-group-that-does\n");

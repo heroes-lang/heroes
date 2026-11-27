@@ -1,0 +1,5 @@
+body holds 7
+body holds 7
+body holds 7 fibres 30 32 (7, 30 and 32 are right)
+fibres carved, jumped into: 7
+exit 0

@@ -1,0 +1,89 @@
+# Where a refused link's name of the platform layer's came into the program's
+# own code, when no group binds it and no library the program names calls it
+# (design.md §4.19, §4.17; panel 260's R2 to R4, provisional, author
+# ratification pending; defect d-lane-room-mixedown-1, 2026-11-26): the header
+# string of each group whose header's text puts the call there, one per
+# module whose object refers to the name.
+#
+# **Until then `cli/layer_link.hero` told it at the program's first group,
+# whatever header reached it** (lane room-mixedown): `extern "a.h"` binding a
+# `static inline` that reaches nothing of the layer, then `extern "now.h"`,
+# whose `now_ns` is a macro for `hero_time_monotonic_ns`, no group saying
+# `layer`, was told at `"a.h"`, *"this group's header puts a call to it in
+# the program's own code"*, false, its guess fix replacing `"a.h"`.
+#
+# **The reading is `cli/layer_route.hero`'s**, clang's own text of each
+# module's header list: a binding whose macro ends at the name, or whose
+# macro or body reaches a body naming it; else the group naming the file
+# whose body names it, a body no binding reaches being compiled into the
+# module's object all the same. The modules asked are those whose object the
+# link says refers to the name (`cli/needs_placed.hero`), each through its
+# own header list and its own groups, as `cli/header_needs.hero` asks them.
+# Where none answers, no group is claimed (`cli/layer_link.hero` then tells
+# the program, at its first byte, with no fix).
+
+use ast
+use cli/bound_names
+use cli/header_bodies
+use cli/header_needs
+use cli/layer_route
+use cli/link_report
+use cli/needs_placed
+use cli/probing
+use cli/toolchain
+use source
+use token
+
+# The header strings, each once, in the order of the modules, of the groups
+# whose headers' text puts `name` in the objects of the modules `refs` says
+# refer to it; none where a reference stands outside every module's object
+# and every library of `libraries`, or no module's list explains it.
+function placed(t: toolchain.Toolchain, s: source.Source, decls: [ast.Decl], asking: [probing.Probing], refs: [link_report.Reference], name: str, libraries: [str]) -> [token.Span]
+    out: [token.Span] @= []
+    lists: [[str]] @= []
+
+    for one in asking
+        lists @ lists.push(one.modules)
+
+    holders = needs_placed.holding(refs, symbol: name, lists: lists, libraries: libraries)
+
+    if holders.is_err()
+        return out
+    told: {i64: bool} @= {}
+
+    for module in holders.must()
+        i = needs_placed.list_of(lists, module: module)
+
+        if i < 0 || asking[i].probe.is_err()
+            continue
+        at = placed_in(t, s, decls, one: asking[i], module: module, name: name)
+
+        if !at.is_err() && told[at.must().start].is_err()
+            told[at.must().start] @ true
+            out @ out.push(at.must())
+
+    return out
+
+# In the module `module`, which reads `one`'s header list: the header string
+# of the group binding the name whose macro or body reaches `name`, else of
+# the group naming the file whose body names it; absent where clang read
+# neither the list's macros nor its bodies, or neither explains it.
+function placed_in(t: toolchain.Toolchain, s: source.Source, decls: [ast.Decl], one: probing.Probing, module: str, name: str) -> token.Span?
+    reading = layer_route.read(t, probe: one.probe.must())
+
+    if !reading.answered
+        return fail(code: "none", msg: "the header list was not read")
+    bindings = layer_route.bindings_of(s, decls, headers: bound_names.groups_of(one.headers), modules: [module])
+    found = layer_route.route_to(reading, bindings: bindings, name: name)
+
+    if !found.is_err()
+        return ok(found.must().binding.header)
+
+    for body in reading.bodies
+        if header_bodies.refers(body, name: name)
+            group = header_needs.own_group(s, decls, path: body.file, modules: [module])
+
+            if !group.is_err()
+                return ok(group.must().span)
+
+    return fail(code: "none", msg: "no text of the list names it")

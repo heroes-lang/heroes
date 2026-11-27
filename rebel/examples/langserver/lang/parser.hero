@@ -1,0 +1,231 @@
+# Kite's declarations, and the parse of a whole source: `record Name {
+# field: Type, ... }` and `fn name(param: Type, ...) -> Type { body }`, in
+# any order, each with the comment lines right above it as its
+# documentation. A mistake is told and the parse goes on at the next field,
+# parameter or declaration, so a source being typed still gives every part
+# it holds to the editor.
+
+use lang/cursor
+use lang/diagnostics
+use lang/expressions
+use lang/lexer
+use lang/syntax
+
+# A source parsed: its tree and what was wrong with it.
+record Parsed
+    # The tree, whole even where the source is not.
+    tree: syntax.Tree
+    # What the lexer and the parser told, in source order of telling.
+    diagnostics: [diagnostics.Diagnostic]
+
+# `source` parsed.
+#
+# - `source`: the text, UTF-8.
+#
+# Never fails: a mistake is a finding, and the tree holds what could be read.
+function parse(source: str) -> Parsed
+    lexed = lexer.lex(source)
+    p @= cursor.start(lexed)
+    decls: [syntax.Decl] @= []
+
+    while !cursor.at_end(p)
+        if cursor.is_keyword(p, word: "fn")
+            decls @ decls.push(.function_decl(f: function_decl(@p)))
+        else if cursor.is_keyword(p, word: "record")
+            decls @ decls.push(.record_decl(r: record_decl(@p)))
+        else
+            t = cursor.peek(p)
+            cursor.tell(
+                @p,
+                diagnostics.error(cursor.here(p), code: "expected_declaration", message: f"expected `fn` or `record`, found {cursor.describe(t)}")
+            )
+            _ = cursor.advance(@p)
+
+            while !cursor.at_declaration(p)
+                _ = cursor.advance(@p)
+
+    tree = syntax.Tree(decls: decls, nodes: p.nodes, comments: lexed.comments.len(), placed: p.placed)
+    return Parsed(tree: tree, diagnostics: p.told)
+
+# `record Name { field: Type, ... }`.
+#
+# - `p`: the parser, at `record`.
+function record_decl(@p: cursor.Parser) -> syntax.RecordDecl
+    first = cursor.advance(@p)
+    doc = cursor.doc_before(@p, line: first.start.line)
+    name = cursor.expect_name(@p, what: "a record's name")
+    fields: [syntax.FieldDecl] @= []
+
+    if cursor.expect_op(@p, text: "{")
+        while !cursor.is_op(p, text: "}") && !cursor.at_declaration(p)
+            t = cursor.peek(p)
+
+            if t.kind == .identifier
+                field_doc = cursor.doc_before(@p, line: t.start.line)
+                field = cursor.expect_name(@p, what: "a field's name")
+                _ = cursor.expect_op(@p, text: ":")
+                typed = expressions.type_ref(@p)
+                fields @ fields.push(
+                    syntax.FieldDecl(name: field.name, span: field.span, type_ref: typed, doc: field_doc)
+                )
+            else
+                _ = cursor.expect_name(@p, what: "a field's name")
+                cursor.skip_until(@p, stops: [",", "}"])
+            separator(@p, close: "}")
+
+        _ = cursor.expect_op(@p, text: "}")
+    whole = syntax.cover(first: lexer.span_of(first), last: cursor.after_last(p))
+    return syntax.RecordDecl(name: name.name, span: name.span, whole: whole, fields: fields, doc: doc)
+
+# `fn name(params) -> Type { body }`.
+#
+# - `p`: the parser, at `fn`.
+function function_decl(@p: cursor.Parser) -> syntax.FunctionDecl
+    first = cursor.advance(@p)
+    doc = cursor.doc_before(@p, line: first.start.line)
+    name = cursor.expect_name(@p, what: "a function's name")
+    params: [syntax.Param] @= []
+
+    if cursor.expect_op(@p, text: "(")
+        while !cursor.is_op(p, text: ")") && !cursor.is_op(p, text: "{") && !cursor.at_declaration(p)
+            param = cursor.expect_name(@p, what: "a parameter's name")
+
+            if param.name == ""
+                cursor.skip_until(@p, stops: [",", ")", "{"])
+            else
+                _ = cursor.expect_op(@p, text: ":")
+                typed = expressions.type_ref(@p)
+                params @ params.push(syntax.Param(name: param.name, span: param.span, type_ref: typed))
+            separator(@p, close: ")")
+
+        _ = cursor.expect_op(@p, text: ")")
+    result @= expressions.no_type()
+
+    if cursor.is_op(p, text: "->")
+        _ = cursor.advance(@p)
+        result @ ok(expressions.type_ref(@p))
+    body @= 0
+
+    if cursor.is_op(p, text: "{")
+        body @ expressions.block(@p)
+    else
+        t = cursor.peek(p)
+        cursor.tell(
+            @p,
+            diagnostics.error(cursor.here(p), code: "expected_block", message: f"expected the function's body, `{{`, found {cursor.describe(t)}")
+        )
+        body @ cursor.missing(@p, span: cursor.here(p))
+
+        while !cursor.at_declaration(p)
+            _ = cursor.advance(@p)
+    whole = syntax.cover(first: lexer.span_of(first), last: cursor.after_last(p))
+    return syntax.FunctionDecl(
+        name: name.name,
+        span: name.span,
+        whole: whole,
+        params: params,
+        result: result,
+        body: body,
+        doc: doc
+    )
+
+# Takes the `,` between two fields or parameters; before `close` there may
+# be none. Anything else is told and passed over up to the next `,` or
+# `close`.
+#
+# - `p`: the parser.
+# - `close`: the bracket that ends the list.
+function separator(@p: cursor.Parser, close: str)
+    if cursor.is_op(p, text: ",")
+        _ = cursor.advance(@p)
+        return
+
+    if cursor.is_op(p, text: close) || cursor.is_op(p, text: "{") || cursor.at_declaration(p)
+        return
+    _ = cursor.expect_op(@p, text: ",")
+    cursor.skip_until(@p, stops: [",", close])
+
+    if cursor.is_op(p, text: ",")
+        _ = cursor.advance(@p)
+
+## Tests
+
+test "parse: a record and a function, with their documentation"
+    parsed = parse("# A point.\nrecord Point { x: Int, y: Int }\n\n# Its x.\nfn px(p: Point) -> Int { p.x }\n")
+    assert parsed.diagnostics.len() == 0
+    assert parsed.tree.decls.len() == 2
+    assert parsed.tree.placed == 2
+    assert parsed.tree.comments == 2
+
+    match parsed.tree.decls[0]
+        .record_decl r =>
+            assert r.r.name == "Point"
+            assert r.r.doc == "A point."
+            assert r.r.fields.len() == 2
+            assert r.r.fields[1].type_ref.name == "Int"
+        .function_decl _ => assert false
+
+test "parse: lets, an if, precedence and a call"
+    parsed = parse("fn f(a: Int) -> Bool {\n    let b = a + 2 * 3;\n    if b > 4 && !g(b) { true } else { false }\n}")
+    assert parsed.diagnostics.len() == 0
+    nodes = parsed.tree.nodes
+
+    match parsed.tree.decls[0]
+        .function_decl f =>
+            match nodes[f.f.body].kind
+                .block b =>
+                    assert b.lets.len() == 1
+                    assert b.lets[0].name == "b"
+
+                    match nodes[b.lets[0].value].kind
+                        .binary sum => assert sum.op == "+"
+                        .int_lit _ | .str_lit _ | .bool_lit _ | .unit_lit | .name _ | .unary _ | .call _ | .field _ | .construct _ | .if_else _ | .block _ | .missing => assert false
+                .int_lit _ | .str_lit _ | .bool_lit _ | .unit_lit | .name _ | .unary _ | .binary _ | .call _ | .field _ | .construct _ | .if_else _ | .missing => assert false
+        .record_decl _ => assert false
+
+test "parse: a missing semicolon is told with its fix, and the next let is read"
+    parsed = parse("fn f() -> Int {\n    let a = 1\n    let b = 2;\n    a + b\n}")
+    assert parsed.diagnostics.len() == 1
+    assert parsed.diagnostics[0].code == "missing_semicolon"
+    assert parsed.diagnostics[0].replacement.must() == ";"
+    assert parsed.diagnostics[0].span.start == 29
+
+test "parse: an unclosed record stops at the next declaration"
+    parsed = parse("record P { x: Int,\nfn f() -> Int { 1 }")
+    assert parsed.tree.decls.len() == 2
+    assert parsed.diagnostics.len() == 1
+
+test "parse: a stray word between declarations is told once and passed over"
+    parsed = parse("hello world\nfn f() { }")
+    assert parsed.diagnostics.len() == 1
+    assert parsed.diagnostics[0].code == "expected_declaration"
+    assert parsed.tree.decls.len() == 1
+
+test "parse: a dot with no name keeps the field read, for completion"
+    parsed = parse("fn f(p: P) -> Int { p. }")
+    assert parsed.diagnostics.len() == 1
+
+    for node in parsed.tree.nodes
+        match node.kind
+            .field f => assert f.name == "" && f.name_span.start == 22
+            .int_lit _ | .str_lit _ | .bool_lit _ | .unit_lit | .name _ | .unary _ | .binary _ | .call _ | .construct _ | .if_else _ | .block _ | .missing => _ = 0
+
+test "parse: chained comparisons, and a missing else told once where a `;` follows"
+    parsed = parse("fn f(a: Int) -> Bool { if 1 < a < 3 { true }; }")
+    assert parsed.diagnostics.len() == 2
+    assert parsed.diagnostics[0].code == "chained_comparison"
+    assert parsed.diagnostics[1].code == "missing_else"
+
+test "parse: a trailing semicolon, fixed by removing it"
+    parsed = parse("fn f() -> Int { 1; }")
+    assert parsed.diagnostics.len() == 1
+    assert parsed.diagnostics[0].code == "trailing_semicolon"
+    assert parsed.diagnostics[0].replacement.must() == ""
+
+test "parse: the empty source, and one nested far past the bound, never abort"
+    assert parse("").tree.decls.len() == 0
+    deep = "fn f() -> Int { " + repeat("(", 5_000) + "1" + repeat(")", 5_000) + " }"
+    parsed = parse(deep)
+    assert parsed.diagnostics[0].code == "too_deep"
+    long = "fn f() -> Int { 1" + repeat(" + 1", 5_000) + " }"
+    assert parse(long).diagnostics[0].code == "too_deep"

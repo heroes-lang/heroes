@@ -1,0 +1,7 @@
+ok   "a root that did not build is told by the compiler's own words, a run that named its failures or ended clean is not"
+ok   "a run's own lines are its verdicts, its count and its tests' skips, and a fixture's are strays (defect 2069)"
+ok   "a run's skips are read with their reasons, and nothing else"
+ok   "the modules a root reaches are read from its use lines, and one naming no file is no module"
+ok   "a root's package use is followed into the tree its catalogue placed, and a use the count cannot read is a failure (feature 2425)"
+ok   "the issue program's own tests run with the net's own, every block its modules hold and all passed (defect 2064)"
+exit 143

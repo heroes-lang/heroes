@@ -1,0 +1,38 @@
+## .expected files holding each claim (grep -rl over tests/golden)
+seen to end                                                85
+from inside                                                32
+either                                                     91
+either, under run/                                         90
+either, outside run/ (each named):
+  ./check/package-a-file-source-in-no-repository.case/main.expected
+## .expected files holding each arm's own words (grep -rlF)
+ran as a signal handler                                    3
+this runtime saw begin had not been seen                   26
+had switched to another context                            41
+jumped into stack frames the thread had already left       5
+onto a stack a context switch had entered                  18
+which this runtime holds may still be a coroutine          0
+holds no record of as it now stands                        0
+was called from inside a signal handler: C called it       0
+ran on a thread this program did not start                 2
+jumped out of the code it interrupted                      0
+a signal handler used this runtime's allocator             1
+## run goldens per family: .hero files, then every file (ls tests/golden/run | grep -c)
+2494         14 .hero    41 files
+2522         25 .hero    59 files
+2679         10 .hero    23 files
+2702         62 .hero   133 files
+2705          1 .hero     2 files
+2706          2 .hero     5 files
+2707          4 .hero     9 files
+2745         10 .hero    21 files
+2848          6 .hero    13 files
+2850          5 .hero    11 files
+2851          3 .hero     7 files
+## run goldens whose name holds 'coroutine', by whether a header they name installs a handler
+## (every header followed through #include "..."; hero_signal_watch or hero_net_catch_stop in the .hero counts)
+  no handler, aborts: fixedbugs-a-c-longjmp-over-a-callback-inside-a-coroutine-gives-its-room-back
+  no handler, aborts: fixedbugs-a-coroutine-left-for-good-holding-a-large-value-has-its-room-given-back-on-its-stack
+no handler: run 31, abort 2; a handler: run 14, abort 42
+## every run golden holding a claim: does a header it names (deep) install a handler?
+claim goldens under run/ installing none: 0

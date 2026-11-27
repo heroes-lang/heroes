@@ -1,0 +1,426 @@
+# The write-ahead log: a file beside the database, `<db>-wal`, where a
+# transaction's pages are appended as frames before the database file is
+# touched, as SQLite's WAL mode keeps them. A frame is a page's number, the
+# page count of the database after its transaction where it is the
+# transaction's last frame (0 for every other frame), the log's sequence,
+# a checksum, and the page. Each checksum is the CRC-32 of the frame and of
+# the checksum before it, so a frame is believed only where every frame
+# before it is: a page torn by a crash, or a frame left by an older log,
+# ends the log there.
+#
+# A frame is committed when a frame after it, or itself, closes a
+# transaction. Reading the newest committed frame of a page gives the
+# database as of the last commit; the frames after the last commit belong
+# to a transaction that never finished, which recovery cuts off. A
+# checkpoint copies the committed pages into the database file and starts
+# the log again with the next sequence.
+
+use <rebel>/bytes
+use <rebel>/errors
+use <rebel>/fs
+use <rebel>/hash
+use <rebel>/io
+use <rebel>/sql
+
+## The format
+
+# The first bytes of every log.
+constant MAGIC: str
+    "minidb log 1\n"
+
+# The bytes of the log's header: the magic, the page size, the sequence and
+# the header's checksum.
+constant HEADER: i64
+    33
+
+# The bytes of a frame's header: the page, the commit count, the sequence
+# and the checksum.
+constant FRAME_HEADER: i64
+    28
+
+## The log
+
+# A log open on its file, and what it holds.
+record Log
+    # The file.
+    stream: io.Stream
+    # The bytes of a page.
+    page_size: i64
+    # The log's sequence, one more at every checkpoint.
+    sequence: i64
+    # The frames in the file, committed or not.
+    frames: i64
+    # The frames up to the last commit frame.
+    committed: i64
+    # The page count the last commit frame wrote, 0 where none.
+    commit_pages: i64
+    # The newest committed frame of each page.
+    index: {i64: i64}
+    # The page of each frame after the last commit, in order.
+    pending: [i64]
+    # The running checksum after the last frame.
+    crc: u32
+    # The running checksum after the last commit frame.
+    commit_crc: u32
+
+# What reading a log found, as recovery tells it.
+record Recovery
+    # The frames found whole, committed or not.
+    frames: i64
+    # The frames committed.
+    committed: i64
+    # The transactions those frames close.
+    transactions: i64
+    # The whole frames after the last commit, of a transaction that never
+    # finished, cut off.
+    discarded: i64
+    # Whether bytes after the last whole frame made no frame: a frame torn
+    # by a crash.
+    torn: bool
+
+# A log opened and what recovery found in it.
+record Opened
+    # The log, its unfinished frames cut off.
+    log: Log
+    # What was found.
+    recovery: Recovery
+
+# The log at `path`, made where it is not there, its committed frames
+# indexed and anything after the last commit cut off.
+#
+# - `path`: the log's path, `<db>-wal`.
+# - `page_size`: the database's page size; a log of another size is
+#   ignored and started again, as SQLite ignores one.
+# - `cut`: whether the frames after the last commit are cut off the file;
+#   false where another connection is writing them now.
+#
+# Fails where the file cannot be made, read or written, with `fs`'s and
+# `io`'s codes.
+function open(path: str, page_size: i64, cut: bool) -> Opened?
+    if !fs.exists(path)?
+        fs.write_bytes(path, data: [])?
+    stream = fs.open_with(path, access: .read_write, permission: 0o644)?
+    read = recovered(stream, page_size: page_size, cut: cut)
+
+    # The stream is the log's once the log is made; a failure before closes
+    # it, or the runtime would tell a handle never given back.
+    if read.is_err()
+        s @= stream
+        errors.ignore(io.close(@s))
+    return read
+
+function recovered(stream: io.Stream, page_size: i64, cut: bool) -> Opened?
+    _ = io.seek(stream, offset: 0, from: .start)?
+    data = io.read_all(stream)?
+    log @= fresh(stream, page_size: page_size, sequence: 1)
+    found @= Recovery(frames: 0, committed: 0, transactions: 0, discarded: 0, torn: false)
+    sequence = header_sequence(data, page_size: page_size)
+
+    match sequence
+        .ok n =>
+            log.sequence @ n
+            log.crc @ header_crc(sequence: n, page_size: page_size)
+            log.commit_crc @ log.crc
+            found @ scan(@log, data: data)
+        .err _ => found.torn @ data.len() > 0
+
+    # The frames of an unfinished transaction, and a torn tail, are cut off
+    # so the next frame follows the last commit; a log with no good header
+    # is written again. Where another connection writes, its frames are its
+    # own and stay.
+    if cut && sequence.is_err()
+        io.truncate(log.stream, length: 0)?
+        _ = io.seek(log.stream, offset: 0, from: .start)?
+        io.write(log.stream, data: header_bytes(sequence: log.sequence, page_size: page_size))?
+    else if cut
+        io.truncate(log.stream, length: offset_of(log, frame: log.committed))?
+    log.frames @ log.committed
+    log.crc @ log.commit_crc
+    log.pending @ []
+    return ok(Opened(log: log, recovery: found))
+
+function fresh(stream: io.Stream, page_size: i64, sequence: i64) -> Log
+    start = header_crc(sequence: sequence, page_size: page_size)
+    return Log(
+        stream: stream,
+        page_size: page_size,
+        sequence: sequence,
+        frames: 0,
+        committed: 0,
+        commit_pages: 0,
+        index: {},
+        pending: [],
+        crc: start,
+        commit_crc: start
+    )
+
+# The log's frames read from the bytes of its whole file, from the frame
+# after its last committed one, which the caller has read already.
+function scan(@log: Log, data: [u8]) -> Recovery
+    transactions @= 0
+    log.frames @ log.committed
+    log.crc @ log.commit_crc
+    log.pending @ []
+    at @= offset_of(log, frame: log.frames)
+    whole = FRAME_HEADER + log.page_size
+
+    while at + whole <= data.len()
+        frame = data.slice(from: at, to: at + whole)
+        fields = frame_fields(frame)
+
+        if fields.is_err()
+            break
+        f = fields.must()
+        checked = chained(log.crc, frame: frame)
+
+        if f.sequence != log.sequence || f.page < 1 || checked != f.crc
+            break
+        log.crc @ checked
+        log.pending @ log.pending.push(f.page)
+        log.frames @ log.frames + 1
+        at @ at + whole
+
+        if f.commit_pages > 0
+            committed_now(@log, pages: f.commit_pages)
+            transactions @ transactions + 1
+
+    return Recovery(
+        frames: log.frames,
+        committed: log.committed,
+        transactions: transactions,
+        discarded: log.frames - log.committed,
+        torn: at < data.len()
+    )
+
+# The frames after the last commit become committed, the last of them having
+# closed a transaction of `pages` pages.
+function committed_now(@log: Log, pages: i64)
+    first = log.frames - log.pending.len()
+
+    for k in range(from: 0, to: log.pending.len())
+        log.index[log.pending[k]] @ first + k
+
+    log.committed @ log.frames
+    log.commit_pages @ pages
+    log.commit_crc @ log.crc
+    log.pending @ []
+
+## Frames
+
+# A frame's header, read.
+record Fields
+    page: i64
+    commit_pages: i64
+    sequence: i64
+    crc: u32
+
+function frame_fields(frame: [u8]) -> Fields?
+    return ok(
+        Fields(page: bytes.decode_i64_be(frame, at: 0)?, commit_pages: bytes.decode_i64_be(frame, at: 8)?, sequence: bytes.decode_i64_be(frame, at: 16)?, crc: bytes.decode_u32_be(frame, at: 24)?)
+    )
+
+# The checksum of `frame` after `before`: the CRC-32 of the checksum before,
+# the frame's fields and its page, its own checksum left out.
+function chained(before: u32, frame: [u8]) -> u32
+    data @= bytes.encode_u32_be(before)
+    bytes.push_all(to: @data, from: frame.slice(from: 0, to: 24))
+    bytes.push_all(to: @data, from: frame.slice(from: FRAME_HEADER, to: frame.len()))
+    return hash.crc32(data)
+
+# The byte offset of frame `frame`, counted from 0.
+#
+# - `log`: the log.
+# - `frame`: the frame's number.
+function offset_of(log: Log lent, frame: i64) -> i64
+    return HEADER + frame * (FRAME_HEADER + log.page_size)
+
+# Appends a frame holding page `page`, closing a transaction of
+# `commit_pages` pages where that is above 0.
+#
+# - `log`: the log, grown by one frame.
+# - `page`: the page's number.
+# - `data`: the page's bytes, `log.page_size` of them.
+# - `commit_pages`: the database's pages after the transaction, for its last
+#   frame; 0 for every other.
+#
+# Fails where the file cannot be written.
+function append(@log: Log, page: i64, data: [u8], commit_pages: i64) -> ()?
+    frame @= bytes.encode_i64_be(page)
+    bytes.push_all(to: @frame, from: bytes.encode_i64_be(commit_pages))
+    bytes.push_all(to: @frame, from: bytes.encode_i64_be(log.sequence))
+    bytes.push_all(to: @frame, from: [0, 0, 0, 0])
+    bytes.push_all(to: @frame, from: data)
+    crc = chained(log.crc, frame: frame)
+    sum = bytes.encode_u32_be(crc)
+
+    for k in [0, 1, 2, 3]
+        frame[24 + k] @ sum[k]
+
+    _ = io.seek(log.stream, offset: offset_of(log, frame: log.frames), from: .start)?
+    io.write(log.stream, data: frame)?
+    log.crc @ crc
+    log.frames @ log.frames + 1
+    log.pending @ log.pending.push(page)
+
+    if commit_pages > 0
+        committed_now(@log, pages: commit_pages)
+    return ok()
+
+# The page frame `frame` holds, checked to be page `page` of this log's
+# sequence: a frame a checkpoint has since overwritten is refused rather
+# than read as another page.
+#
+# - `log`: the log.
+# - `frame`: the frame's number.
+# - `page`: the page it should hold.
+#
+# Fails `failed` where the frame holds another page or another sequence's,
+# and where the file cannot be read.
+function read_frame(log: Log lent, frame: i64, page: i64) -> [u8]?
+    _ = io.seek(log.stream, offset: offset_of(log, frame: frame), from: .start)?
+    whole = io.read_exact(log.stream, n: FRAME_HEADER + log.page_size)?
+    f = frame_fields(whole)?
+
+    if f.page != page || f.sequence != log.sequence
+        return fail(code: sql.FAILED, msg: "[40001] the log moved under this snapshot: retry the statement")
+    return ok(whole.slice(from: FRAME_HEADER, to: whole.len()))
+
+# Cuts the frames after the last commit off: a transaction rolled back.
+#
+# - `log`: the log.
+#
+# Fails where the file cannot be cut.
+function rewind(@log: Log) -> ()?
+    io.truncate(log.stream, length: offset_of(log, frame: log.committed))?
+    log.frames @ log.committed
+    log.crc @ log.commit_crc
+    log.pending @ []
+    return ok()
+
+# Reads the frames another connection committed since this one last
+# looked; answers whether the database it sees changed.
+#
+# - `log`: the log.
+#
+# Fails where the file cannot be read.
+function refresh(@log: Log) -> bool?
+    _ = io.seek(log.stream, offset: 0, from: .start)?
+    data = io.read_all(log.stream)?
+
+    match header_sequence(data, page_size: log.page_size)
+        .ok n =>
+            if n != log.sequence || data.len() < offset_of(log, frame: log.committed)
+                log @ fresh(log.stream, page_size: log.page_size, sequence: n)
+                _ = scan(@log, data: data)
+                return ok(true)
+        .err _ =>
+            changed = log.committed > 0
+            log @ fresh(log.stream, page_size: log.page_size, sequence: log.sequence)
+            return ok(changed)
+
+    before = log.committed
+    _ = scan(@log, data: data)
+    log.frames @ log.committed
+    log.crc @ log.commit_crc
+    log.pending @ []
+    return ok(log.committed != before)
+
+# Starts the log again, empty, with the next sequence: after a checkpoint
+# has copied every committed page into the database file.
+#
+# - `log`: the log.
+#
+# Fails where the file cannot be written.
+function reset(@log: Log) -> ()?
+    next_sequence = log.sequence + 1
+    io.truncate(log.stream, length: 0)?
+    _ = io.seek(log.stream, offset: 0, from: .start)?
+    io.write(log.stream, data: header_bytes(sequence: next_sequence, page_size: log.page_size))?
+    io.sync(log.stream)?
+    log @ fresh(log.stream, page_size: log.page_size, sequence: next_sequence)
+    return ok()
+
+## The header
+
+function header_bytes(sequence: i64, page_size: i64) -> [u8]
+    out @= header_fields(sequence: sequence, page_size: page_size)
+    bytes.push_all(to: @out, from: bytes.encode_u32_be(hash.crc32(out)))
+    return out
+
+function header_fields(sequence: i64, page_size: i64) -> [u8]
+    out @= bytes.from_text(MAGIC)
+    bytes.push_all(to: @out, from: bytes.encode_i64_be(page_size))
+    bytes.push_all(to: @out, from: bytes.encode_i64_be(sequence))
+    return out
+
+function header_crc(sequence: i64, page_size: i64) -> u32
+    return hash.crc32(header_fields(sequence: sequence, page_size: page_size))
+
+# The sequence of a log's header; fails where the bytes hold no header of a
+# log of this page size.
+function header_sequence(data: [u8], page_size: i64) -> i64?
+    if data.len() < HEADER
+        return fail(code: sql.INVALID, msg: "no header")
+    fields = data.slice(from: 0, to: HEADER - 4)
+    magic = bytes.from_text(MAGIC)
+
+    if fields.slice(from: 0, to: magic.len()) != magic || bytes.decode_u32_be(data, at: HEADER - 4)? != hash.crc32(fields)
+        return fail(code: sql.INVALID, msg: "no header")
+
+    if bytes.decode_i64_be(data, at: magic.len())? != page_size
+        return fail(code: sql.INVALID, msg: "a log of another page size")
+    return bytes.decode_i64_be(data, at: magic.len() + 8)
+
+## Tests
+
+function test_log(name: str) -> str
+    folder = "build/minidb-tests"
+    fs.make_dir_all(folder).must()
+    file = folder + "/" + name
+
+    if fs.exists(file).must()
+        fs.remove(file).must()
+    return file
+
+function page_of(byte: u8) -> [u8]
+    out: [u8] @= []
+
+    for _ in range(from: 0, to: 512)
+        out @ out.push(byte)
+
+    return out
+
+test "open: committed frames indexed, the newest of a page kept, the frames after the last commit cut off"
+    file = test_log("wal-recover.wal")
+    log @= open(file, page_size: 512, cut: true).must().log
+    append(@log, page: 3, data: page_of(1), commit_pages: 0).must()
+    append(@log, page: 3, data: page_of(2), commit_pages: 3).must()
+    append(@log, page: 4, data: page_of(3), commit_pages: 0).must()
+    errors.ignore(io.close(@log.stream))
+    again = open(file, page_size: 512, cut: true).must()
+    assert again.recovery == Recovery(frames: 3, committed: 2, transactions: 1, discarded: 1, torn: false)
+    assert again.log.index == {3: 1}
+    assert read_frame(again.log, frame: 1, page: 3).must() == page_of(2)
+    assert read_frame(again.log, frame: 0, page: 4).is_err()
+    l @= again.log
+    errors.ignore(io.close(@l.stream))
+
+test "open: a flipped byte ends the log there; a log of another page size is started again"
+    file = test_log("wal-flip.wal")
+    log @= open(file, page_size: 512, cut: true).must().log
+    append(@log, page: 2, data: page_of(1), commit_pages: 2).must()
+    append(@log, page: 2, data: page_of(2), commit_pages: 2).must()
+    errors.ignore(io.close(@log.stream))
+    data @= fs.read_bytes(file).must()
+    data[HEADER + FRAME_HEADER + 512 + FRAME_HEADER + 9] @ 0
+    fs.write_bytes(file, data: data).must()
+    flipped = open(file, page_size: 512, cut: true).must()
+    assert flipped.recovery.committed == 1
+    assert flipped.recovery.torn
+    l @= flipped.log
+    errors.ignore(io.close(@l.stream))
+    other = open(file, page_size: 1024, cut: true).must()
+    assert other.recovery.frames == 0
+    assert other.log.sequence == 1
+    m @= other.log
+    errors.ignore(io.close(@m.stream))

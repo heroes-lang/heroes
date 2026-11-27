@@ -1,0 +1,76 @@
+# `textDocument/codeAction`: a quick fix for every finding in the range
+# asked that carries the text putting it right, the nearest name to one
+# misspelt, a `;` missing, a `;` too many. Each action names the finding it
+# fixes and carries its edit, so the editor applies it with no second
+# request.
+
+use <rebel>/json
+
+use lang/diagnostics
+use lsp/document
+use lsp/report
+use lsp/server
+use lsp/wire
+
+# Answers `textDocument/codeAction`: the quick fixes, in the order of the
+# findings.
+#
+# - `s`: the server, only read.
+# - `params`: `textDocument` and `range`; the client's own `context` is not
+#   read, since the server holds the findings itself.
+#
+# Fails `invalid` where those are missing, `failed` where the document is not
+# open.
+function code_actions(s: server.Server lent, params: json.Value) -> json.Value?
+    doc = server.document_named(s, params: params)?
+    asked = document.span_of(doc, r: wire.range_of(wire.member_of(params, key: "range")?)?, e: s.encoding)
+    found: [json.Value] @= []
+
+    for d in doc.analysis.diagnostics
+        if d.span.start <= asked.end && asked.start <= d.span.end
+            match d.replacement
+                .ok text => found @ found.push(fix(doc, d: d, text: text, s: s))
+                .err _   => _ = 0
+
+    return ok(wire.array(found))
+
+# The quick fix writing `text` over `d`'s span.
+#
+# - `doc`: the document.
+# - `d`: the finding.
+# - `text`: what fixes it.
+# - `s`: the server, whose unit counts characters.
+function fix(doc: document.Document lent, d: diagnostics.Diagnostic, text: str, s: server.Server lent) -> json.Value
+    title = if text == ""
+        "Remove this"
+    else if d.span.start == d.span.end
+        f"Insert `{text}`"
+    else
+        f"Replace with `{text}`"
+    edit = wire.object(
+        {"range": wire.range_json(document.range_of(doc, span: d.span, e: s.encoding)), "newText": wire.text(text)}
+    )
+    changes: {str: json.Value} @= {}
+    changes[doc.uri] @ wire.array([edit])
+    out: {str: json.Value} @= {}
+    out["title"] @ wire.text(title)
+    out["kind"] @ wire.text("quickfix")
+    out["diagnostics"] @ wire.array([report.diagnostic_json(doc, d: d, e: s.encoding)])
+    out["isPreferred"] @ wire.boolean(true)
+    out["edit"] @ wire.object({"changes": wire.object(changes)})
+    return wire.object(out)
+
+## Tests
+
+test "code_actions: a misspelt name and a missing semicolon, each its fix"
+    s @= server.new_server()
+    text = "fn dist2() -> Int { 1 }\nfn f() -> Int {\n    let a = dist()\n    a\n}"
+    s.documents["u"] @ document.open(uri: "u", version: 1, text: text)
+    asked = json.parse(
+        "{\"textDocument\": {\"uri\": \"u\"}, \"range\": {\"start\": {\"line\": 0, \"character\": 0}, \"end\": {\"line\": 9, \"character\": 0}}}"
+    ).must()
+    actions = json.items_of(code_actions(s, params: asked).must()).must()
+    assert actions.len() == 2
+    assert json.text_at(actions[0], key: "title").must() == "Insert `;`"
+    assert json.text_at(actions[1], key: "title").must() == "Replace with `dist2`"
+    assert json.value_at(actions[1], pointer: "/edit/changes/u/0/newText").must() == wire.text("dist2")

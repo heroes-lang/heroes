@@ -1,0 +1,486 @@
+# The values minidb computes with, Rebel's `sql.Value`, and SQL's rules over
+# them: three-valued logic, where `NULL` is the unknown; comparison and the
+# total order `ORDER BY` and `GROUP BY` use; arithmetic that refuses an
+# overflow, a division by zero and a float past its range rather than wrap
+# or answer infinity; text; and a value made to fit a column's type. Types
+# are strict, as PostgreSQL's and SQLite's `STRICT` tables keep them: an
+# `INTEGER` widens to a `REAL` and nothing else converts by itself.
+
+use <rebel>/bytes
+use <rebel>/math
+use <rebel>/numbers
+use <rebel>/sql
+use <rebel>/strings
+
+## Codes
+
+# The SQLSTATE of a value of the wrong type for an operator or a column.
+constant MISMATCH: str
+    "42804"
+
+# The SQLSTATE of a number past its type's range.
+constant OUT_OF_RANGE: str
+    "22003"
+
+# The SQLSTATE of a division by zero.
+constant DIVISION_BY_ZERO: str
+    "22012"
+
+# A failure of `code`, told as a database failure with the SQLSTATE `state`.
+#
+# - `code`: Rebel's `sql` code.
+# - `state`: the SQLSTATE.
+# - `message`: what was asked and what was found.
+function refuse<T>(code: str, state: str, message: str) -> T?
+    return fail(code: code, msg: sql.failure_message(database_code: state, message: message))
+
+## Three-valued logic
+
+# `v` as a truth value, `TRUE`, `FALSE` or `NULL`, for a `WHERE`, an `ON`,
+# a `HAVING` or an operand of `AND`, `OR` and `NOT`.
+#
+# - `v`: the value.
+# - `what`: where it stands, for the message: "WHERE".
+#
+# Fails `invalid` where `v` is no boolean and no `NULL`: a number is no
+# truth value here, as in PostgreSQL.
+function truth(v: sql.Value, what: str) -> sql.Value?
+    return match v
+        .null_value | .boolean _ => ok(v)
+        .integer _ | .float _ | .text _ | .blob _ | .instant _ =>
+            refuse(
+                code: sql.INVALID,
+                state: MISMATCH,
+                message: f"the argument of {what} must be a boolean, not {sql.kind_of(v)}"
+            )
+
+# Whether `v` is `TRUE`; `FALSE` and `NULL` are not.
+#
+# - `v`: a truth value.
+function is_true(v: sql.Value) -> bool
+    return v == .boolean(v: true)
+
+# `a AND b`: `FALSE` where either is, `NULL` where either is unknown and
+# neither is `FALSE`, else `TRUE`.
+#
+# - `a`: a truth value.
+# - `b`: a truth value.
+function both(a: sql.Value, b: sql.Value) -> sql.Value
+    if a == .boolean(v: false) || b == .boolean(v: false)
+        return .boolean(v: false)
+
+    if a == .null_value || b == .null_value
+        return .null_value
+    return .boolean(v: true)
+
+# `a OR b`: `TRUE` where either is, `NULL` where either is unknown and
+# neither is `TRUE`, else `FALSE`.
+#
+# - `a`: a truth value.
+# - `b`: a truth value.
+function either(a: sql.Value, b: sql.Value) -> sql.Value
+    if is_true(a) || is_true(b)
+        return .boolean(v: true)
+
+    if a == .null_value || b == .null_value
+        return .null_value
+    return .boolean(v: false)
+
+# `NOT a`: the unknown stays unknown.
+#
+# - `a`: a truth value.
+function negation(a: sql.Value) -> sql.Value
+    return match a
+        .boolean b                                                           => .boolean(v: !b.v)
+        .null_value | .integer _ | .float _ | .text _ | .blob _ | .instant _ => .null_value
+
+## Comparison
+
+# Which of `a` and `b` orders first, -1, 0 or 1, for two values neither of
+# which is `NULL`: numbers by value, an integer against a float exactly;
+# texts and blobs by their bytes; `FALSE` before `TRUE`.
+#
+# - `a`: the left value.
+# - `b`: the right value.
+#
+# Fails `invalid` for two kinds that do not compare: a text and a number.
+function compare(a: sql.Value, b: sql.Value) -> i64?
+    match a
+        .integer x =>
+            match b
+                .integer y                                                => return ok(sign_of(a: x.v, b: y.v))
+                .float y                                                  => return ok(integer_against(x.v, y.v))
+                .null_value | .boolean _ | .text _ | .blob _ | .instant _ => return mismatch(a: a, b: b)
+        .float x =>
+            match b
+                .integer y                                                => return ok(-integer_against(y.v, x.v))
+                .float y                                                  => return ok(float_order(x: x.v, y: y.v))
+                .null_value | .boolean _ | .text _ | .blob _ | .instant _ => return mismatch(a: a, b: b)
+        .text x =>
+            match b
+                .text y => return ok(strings.compare(a: x.v, b: y.v))
+                .null_value | .boolean _ | .integer _ | .float _ | .blob _ | .instant _ => return mismatch(a: a, b: b)
+        .blob x =>
+            match b
+                .blob y => return ok(bytes.compare(a: x.v, b: y.v))
+                .null_value | .boolean _ | .integer _ | .float _ | .text _ | .instant _ => return mismatch(a: a, b: b)
+        .boolean x =>
+            match b
+                .boolean y => return ok(sign_of(a: bit(x.v), b: bit(y.v)))
+                .null_value | .integer _ | .float _ | .text _ | .blob _ | .instant _ => return mismatch(a: a, b: b)
+        .null_value | .instant _ => return mismatch(a: a, b: b)
+
+function mismatch<T>(a: sql.Value, b: sql.Value) -> T?
+    return refuse(code: sql.INVALID, state: MISMATCH, message: f"{sql.kind_of(a)} and {sql.kind_of(b)} do not compare")
+
+# `a op b` for a comparison: `NULL` where either is `NULL`, else a boolean.
+#
+# - `op`: "=", "<>", "<", "<=", ">" or ">=".
+# - `a`: the left value.
+# - `b`: the right value.
+#
+# Fails as `compare` does.
+function compared(op: str, a: sql.Value, b: sql.Value) -> sql.Value?
+    if a == .null_value || b == .null_value
+        return ok(.null_value)
+    order_of = compare(a: a, b: b)?
+
+    holds = match op
+        "="  => order_of == 0
+        "<>" => order_of != 0
+        "<"  => order_of < 0
+        "<=" => order_of <= 0
+        ">"  => order_of > 0
+        _    => order_of >= 0
+
+    return ok(.boolean(v: holds))
+
+# The total order of `ORDER BY`, `GROUP BY` and `DISTINCT`, SQLite's: `NULL`
+# first, then booleans, numbers, texts and blobs, each kind by `compare`.
+#
+# - `a`: the first value.
+# - `b`: the second value.
+function order(a: sql.Value, b: sql.Value) -> i64
+    rank_a = rank(a)
+    rank_b = rank(b)
+
+    if rank_a != rank_b
+        return sign_of(a: rank_a, b: rank_b)
+    return compare(a: a, b: b).default(0)
+
+function rank(v: sql.Value) -> i64
+    return match v
+        .null_value           => 0
+        .boolean _            => 1
+        .integer _ | .float _ => 2
+        .text _               => 3
+        .blob _               => 4
+        .instant _            => 5
+
+function sign_of(a: i64, b: i64) -> i64
+    if a < b
+        return -1
+
+    if a > b
+        return 1
+    return 0
+
+function bit(b: bool) -> i64
+    if b
+        return 1
+    return 0
+
+# Two floats in order; every value minidb keeps is finite (`finite` refuses
+# the rest at every door), and ordering a `nan` would abort (spec § 7), so a
+# `nan` met anyway orders first rather than reach `<`.
+function float_order(x: f64, y: f64) -> i64
+    if x != x || y != y
+        return sign_of(a: bit(y != y), b: bit(x != x))
+
+    if x < y
+        return -1
+
+    if x > y
+        return 1
+    return 0
+
+# An integer against a float, exactly: the float's whole part is compared
+# as an integer where it fits one, then its fraction.
+function integer_against(i: i64, x: f64) -> i64
+    if x != x
+        return 1
+
+    # 2^63, past which no integer stands; a float literal has no exponent
+    # (spec § 2), so its digits are written out.
+    if x >= 9_223_372_036_854_775_808.0
+        return -1
+
+    if x < -9_223_372_036_854_775_808.0
+        return 1
+    whole = to_i64(x).default(0)
+
+    if i != whole
+        return sign_of(a: i, b: whole)
+    return float_order(x: 0.0, y: x - to_f64(whole))
+
+## Arithmetic
+
+# `a op b` for `+ - * / %`: `NULL` where either is `NULL`; two integers give
+# an integer, `/` and `%` truncating toward zero; a float on either side
+# gives a float.
+#
+# - `op`: "+", "-", "*", "/" or "%".
+# - `a`: the left value.
+# - `b`: the right value.
+#
+# Fails `does_not_fit` for an integer overflow or a float past its range,
+# `invalid` for a division by zero and for a text or a boolean.
+function arithmetic(op: str, a: sql.Value, b: sql.Value) -> sql.Value?
+    if a == .null_value || b == .null_value
+        return ok(.null_value)
+
+    match a
+        .integer x =>
+            match b
+                .integer y                                                => return integers(op, x: x.v, y: y.v)
+                .float y                                                  => return floats(op, x: to_f64(x.v), y: y.v)
+                .null_value | .boolean _ | .text _ | .blob _ | .instant _ => return not_numbers(op, a: a, b: b)
+        .float x =>
+            match b
+                .integer y                                                => return floats(op, x: x.v, y: to_f64(y.v))
+                .float y                                                  => return floats(op, x: x.v, y: y.v)
+                .null_value | .boolean _ | .text _ | .blob _ | .instant _ => return not_numbers(op, a: a, b: b)
+        .null_value | .boolean _ | .text _ | .blob _ | .instant _ => return not_numbers(op, a: a, b: b)
+
+function not_numbers<T>(op: str, a: sql.Value, b: sql.Value) -> T?
+    return refuse(
+        code: sql.INVALID,
+        state: "42883",
+        message: f"no operator {op} for {sql.kind_of(a)} and {sql.kind_of(b)}"
+    )
+
+function integers(op: str, x: i64, y: i64) -> sql.Value?
+    if (op == "/" || op == "%") && y == 0
+        return refuse(code: sql.INVALID, state: DIVISION_BY_ZERO, message: "division by zero")
+
+    # The one quotient that overflows, the smallest integer by -1, is refused
+    # with the others; its remainder is 0.
+    if op == "%" && y == -1
+        return ok(.integer(v: 0))
+
+    answer = match op
+        "+" => math.add_i64(a: x, b: y)
+        "-" => math.subtract_i64(a: x, b: y)
+        "*" => math.multiply_i64(a: x, b: y)
+        "/" => divided(x: x, y: y)
+        _   => remainder_of(x: x, y: y)
+
+    match answer
+        .ok n => return ok(.integer(v: n))
+        .err _ => return refuse(
+            code: sql.DOES_NOT_FIT,
+            state: OUT_OF_RANGE,
+            message: f"integer out of range: {x} {op} {y}"
+        )
+
+function divided(x: i64, y: i64) -> i64?
+    if x == -9_223_372_036_854_775_807 - 1 && y == -1
+        return fail(code: "does_not_fit", msg: "the quotient does not fit")
+    return ok(x / y)
+
+function remainder_of(x: i64, y: i64) -> i64?
+    return ok(x % y)
+
+function floats(op: str, x: f64, y: f64) -> sql.Value?
+    if (op == "/" || op == "%") && y == 0.0
+        return refuse(code: sql.INVALID, state: DIVISION_BY_ZERO, message: "division by zero")
+
+    answer = match op
+        "+" => x + y
+        "-" => x - y
+        "*" => x * y
+        "/" => x / y
+        _   => x - y * to_f64(to_i64(x / y).default(0))
+
+    return finite(answer)
+
+# `x` as a value, refused where it is infinite or not a number, which no
+# column of minidb keeps.
+#
+# - `x`: the float.
+#
+# Fails `does_not_fit` where `x` is infinite or `nan`.
+function finite(x: f64) -> sql.Value?
+    if x != x || x - x != 0.0
+        return refuse(code: sql.DOES_NOT_FIT, state: OUT_OF_RANGE, message: "a float out of range")
+    return ok(.float(v: x))
+
+# `-a`: `NULL` for `NULL`.
+#
+# - `a`: the operand.
+#
+# Fails `does_not_fit` for the smallest integer, whose negation does not
+# fit, and `invalid` for what is no number.
+function negate(a: sql.Value) -> sql.Value?
+    return match a
+        .null_value => ok(.null_value)
+        .integer x  => integers("-", x: 0, y: x.v)
+        .float x    => ok(.float(v: -x.v))
+        .boolean _ | .text _ | .blob _ | .instant _ =>
+            refuse(code: sql.INVALID, state: "42883", message: f"no operator - for {sql.kind_of(a)}")
+
+# `a || b`: the two as text joined, `NULL` where either is `NULL`.
+#
+# - `a`: the left value.
+# - `b`: the right value.
+function concat(a: sql.Value, b: sql.Value) -> sql.Value
+    if a == .null_value || b == .null_value
+        return .null_value
+    return .text(v: display(a) + display(b))
+
+## Text
+
+# `v` as the shell shows it: `NULL`, `true`, a number as SQL writes it, a
+# text as it is, a blob as `X'..'` in hexadecimal.
+#
+# - `v`: the value.
+function display(v: sql.Value) -> str
+    return match v
+        .null_value => "NULL"
+        .boolean b  => to_str(b.v)
+        .integer n  => to_str(n.v)
+        .float x    => to_str(x.v)
+        .text t     => t.v
+        .blob b     => "X'" + strings.to_upper_ascii(bytes.format_hex(b.v)) + "'"
+        .instant _  => "?"
+
+# `v` as a literal of SQL, a text quoted with its quotes doubled.
+#
+# - `v`: the value.
+function literal(v: sql.Value) -> str
+    return match v
+        .text t => "'" + strings.replace_all(s: t.v, old: "'", new: "''") + "'"
+        .null_value | .boolean _ | .integer _ | .float _ | .blob _ | .instant _ => display(v)
+
+## Columns
+
+# `v` made to fit a column of type `type_name`: `NULL` fits every column;
+# an integer fits `REAL` as a float; otherwise the kinds must match.
+#
+# - `v`: the value.
+# - `type_name`: "INTEGER", "REAL", "TEXT", "BLOB" or "BOOLEAN".
+# - `column`: the column's name, for the message.
+#
+# Fails `invalid` where `v` is of another kind, and `does_not_fit` for a
+# float that is not finite.
+function fit(v: sql.Value, type_name: str, column: str) -> sql.Value?
+    match v
+        .null_value => return ok(v)
+        .integer n =>
+            if type_name == "INTEGER"
+                return ok(v)
+
+            if type_name == "REAL"
+                return ok(.float(v: to_f64(n.v)))
+        .float x =>
+            if type_name == "REAL"
+                return finite(x.v)
+        .text _ =>
+            if type_name == "TEXT"
+                return ok(v)
+        .blob _ =>
+            if type_name == "BLOB"
+                return ok(v)
+        .boolean _ =>
+            if type_name == "BOOLEAN"
+                return ok(v)
+        .instant _ => _ = 0
+
+    return refuse(
+        code: sql.INVALID,
+        state: MISMATCH,
+        message: f"column {column} is {type_name}, the value is {sql.kind_of(v)}"
+    )
+
+## Tests
+
+# 10^300, read from text: the language writes no exponent in a literal.
+function huge() -> f64
+    return numbers.parse_float("1e300").must()
+
+test "both, either, negation: the truth tables with NULL"
+    t: sql.Value = .boolean(v: true)
+    f: sql.Value = .boolean(v: false)
+    n: sql.Value = .null_value
+    assert both(a: t, b: n) == n
+    assert both(a: f, b: n) == f
+    assert both(a: t, b: t) == t
+    assert either(a: t, b: n) == t
+    assert either(a: f, b: n) == n
+    assert either(a: f, b: f) == f
+    assert negation(n) == n
+    assert negation(t) == f
+
+test "compared: NULL against anything is NULL, even NULL"
+    n: sql.Value = .null_value
+    assert compared("=", a: n, b: n).must() == n
+    assert compared("<>", a: .integer(v: 1), b: n).must() == n
+
+test "compare: an integer against a float exactly, past 2^53"
+    assert compare(a: .integer(v: 9_007_199_254_740_993), b: .float(v: 9_007_199_254_740_992.0)).must() == 1
+    assert compare(a: .integer(v: 2), b: .float(v: 2.5)).must() == -1
+    assert compare(a: .float(v: 2.0), b: .integer(v: 2)).must() == 0
+    assert compare(a: .integer(v: -9_223_372_036_854_775_807 - 1), b: .float(v: -huge())).must() == 1
+
+test "compare: a text and a number do not compare; texts by bytes, more than one byte included"
+    assert compare(a: .text(v: "1"), b: .integer(v: 1)).is_err()
+    assert compare(a: .text(v: "b"), b: .text(v: "ab")).must() == 1
+    assert compare(a: .text(v: "é"), b: .text(v: "z")).must() == 1
+
+test "order: NULL first, then booleans, numbers, texts, blobs"
+    assert order(a: .null_value, b: .boolean(v: false)) == -1
+    assert order(a: .integer(v: 5), b: .text(v: "")) == -1
+    assert order(a: .blob(v: []), b: .text(v: "z")) == 1
+    assert order(a: .float(v: 1.5), b: .integer(v: 1)) == 1
+
+test "arithmetic: the edges of i64 refused, never wrapped"
+    biggest: sql.Value = .integer(v: 9_223_372_036_854_775_807)
+    smallest: sql.Value = .integer(v: -9_223_372_036_854_775_807 - 1)
+    assert arithmetic("+", a: biggest, b: .integer(v: 1)).is_err()
+    assert arithmetic("-", a: smallest, b: .integer(v: 1)).is_err()
+    assert arithmetic("*", a: smallest, b: .integer(v: -1)).is_err()
+    assert arithmetic("/", a: smallest, b: .integer(v: -1)).is_err()
+    assert arithmetic("%", a: smallest, b: .integer(v: -1)).must() == .integer(v: 0)
+    assert negate(smallest).is_err()
+    assert arithmetic("+", a: biggest, b: .integer(v: -1)).must() == .integer(v: 9_223_372_036_854_775_806)
+
+test "arithmetic: division truncates toward zero; by zero refused for integers and floats"
+    assert arithmetic("/", a: .integer(v: -7), b: .integer(v: 2)).must() == .integer(v: -3)
+    assert arithmetic("%", a: .integer(v: -7), b: .integer(v: 3)).must() == .integer(v: -1)
+
+    match arithmetic("/", a: .integer(v: 1), b: .integer(v: 0))
+        .ok _  => assert false
+        .err e => assert e.msg == "[22012] division by zero"
+
+    assert arithmetic("/", a: .float(v: 1.0), b: .float(v: 0.0)).is_err()
+
+test "arithmetic: NULL in, NULL out; a float past its range refused; text refused"
+    assert arithmetic("+", a: .null_value, b: .integer(v: 1)).must() == .null_value
+    assert arithmetic("*", a: .float(v: huge()), b: .float(v: huge())).is_err()
+    assert arithmetic("+", a: .integer(v: 1), b: .float(v: 0.5)).must() == .float(v: 1.5)
+    assert arithmetic("+", a: .text(v: "1"), b: .integer(v: 1)).is_err()
+
+test "fit: an integer widens to REAL, nothing else converts"
+    assert fit(.integer(v: 3), type_name: "REAL", column: "x").must() == .float(v: 3.0)
+    assert fit(.null_value, type_name: "INTEGER", column: "x").must() == .null_value
+
+    match fit(.text(v: "3"), type_name: "INTEGER", column: "qty")
+        .ok _  => assert false
+        .err e => assert e.msg == "[42804] column qty is INTEGER, the value is text"
+
+test "display and literal: NULL, booleans, floats, a quote doubled, a blob"
+    assert display(.null_value) == "NULL"
+    assert display(.float(v: 2.0)) == "2.0"
+    assert display(.blob(v: [0xca, 0xfe])) == "X'CAFE'"
+    assert literal(.text(v: "it's")) == "'it''s'"
+    assert concat(a: .text(v: "n="), b: .integer(v: 3)) == .text(v: "n=3")

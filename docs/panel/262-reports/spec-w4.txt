@@ -1,0 +1,1 @@
+A callback called on the thread of a signal handler of C's that C has not left by its return, or by a jump of the C library's back to a call the signal interrupted that this runtime can tell left it, may abort, saying the handler was not seen to end, or that C called it from inside one.

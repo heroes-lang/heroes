@@ -117,7 +117,7 @@ function reading(failed: ()?, art: compile.Artifact, s: source.Source, t: toolch
     # Asked before every other reader of a refused link, which would tell it
     # as a library nobody names.
     if code == link.REFUSED
-        unlayered = layer_link.told(message, s, art.decls, t, linked: under.pkgconfig_flags)
+        unlayered = layer_link.told(message, s, art.decls, t, linked: under.pkgconfig_flags, asking: asking)
 
         if unlayered.len() > 0
             return authors(unlayered, msg: "a name this program's link needs is the platform layer's")

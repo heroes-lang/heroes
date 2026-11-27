@@ -1,0 +1,11 @@
+units 48; same set 2; at least one label shared 17
+W: A 42  B  3  both  3  agreement 0.19  kappa 0.02
+N: A  0  B  0  both  0  agreement 1.00  kappa nan
+L: A  0  B  0  both  0  agreement 1.00  kappa nan
+H: A 30  B  8  both  6  agreement 0.46  kappa 0.07
+O: A  4  B  0  both  0  agreement 0.92  kappa 0.00
+T: A  0  B  0  both  0  agreement 1.00  kappa nan
+I: A  2  B  7  both  1  agreement 0.85  kappa 0.17
+P: A  0  B  7  both  0  agreement 0.85  kappa 0.00
+R: A  0  B 13  both  0  agreement 0.73  kappa -0.00
+S: A  7  B 48  both  7  agreement 0.15  kappa 0.00

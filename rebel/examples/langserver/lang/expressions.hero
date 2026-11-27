@@ -1,0 +1,386 @@
+# Kite's expressions and blocks, read by recursive descent. Operators bind
+# in five levels, loosest first: `||`; `&&`; the comparisons, which do not
+# chain; `+`, `-` and `++` (strings joined); `*`, `/` and `%`. Then the
+# prefix `-` and `!`, then a field read `.name` and a call `(args)` after
+# any expression. A record is built as `Name { field: value }`, except in an
+# `if`'s condition, where a `{` opens the branch instead, as Rust reads it.
+# A block is `let` bindings, each ending with `;`, then the expression it
+# answers.
+#
+# Every function here answers a node and takes at least one token, or tells
+# what it expected and answers a `.missing` node, so a mistake never stops
+# the parse and never makes it stand still.
+
+use <rebel>/scanner
+
+use lang/cursor
+use lang/diagnostics
+use lang/lexer
+use lang/syntax
+
+# The binary operators by level, loosest first.
+constant LEVELS: [[str]]
+    [["||"], ["&&"], ["==", "!=", "<", "<=", ">", ">="], ["+", "-", "++"], ["*", "/", "%"]]
+
+# The level of the comparisons, which do not chain.
+constant COMPARISONS: i64
+    2
+
+# An expression.
+#
+# - `p`: the parser, moved past it.
+# - `records`: whether `Name {` builds a record here; false in a condition.
+function expression(@p: cursor.Parser, records: bool) -> i64
+    return binary(@p, level: 0, records: records)
+
+# The operators of `level` and every level that binds tighter.
+#
+# - `p`: the parser.
+# - `level`: an index of `LEVELS`; past its last, a prefix operator or less.
+# - `records`: as `expression` takes it.
+function binary(@p: cursor.Parser, level: i64, records: bool) -> i64
+    if level == LEVELS.len()
+        return unary(@p, records: records)
+    left @= binary(@p, level: level + 1, records: records)
+
+    while operator_of(p, level: level) != ""
+        op = cursor.advance(@p).text
+        right = binary(@p, level: level + 1, records: records)
+        span = syntax.cover(first: cursor.span_of(p, i: left), last: cursor.span_of(p, i: right))
+        left @ cursor.add_node(@p, kind: .binary(op: op, left: left, right: right), span: span)
+
+        if level == COMPARISONS && operator_of(p, level: level) != ""
+            cursor.tell(
+                @p,
+                diagnostics.error(cursor.here(p), code: "chained_comparison", message: "comparisons do not chain: join two with `&&`")
+            )
+
+    return left
+
+# The operator of `level` that comes next, or "" where none does.
+#
+# - `p`: the parser.
+# - `level`: an index of `LEVELS`.
+function operator_of(p: cursor.Parser lent, level: i64) -> str
+    t = cursor.peek(p)
+
+    if t.kind != .operator
+        return ""
+
+    for op in LEVELS[level]
+        if op == t.text
+            return op
+
+    return ""
+
+# `-x`, `!x`, or what binds tighter.
+#
+# - `p`: the parser.
+# - `records`: as `expression` takes it.
+function unary(@p: cursor.Parser, records: bool) -> i64
+    if !cursor.is_op(p, text: "-") && !cursor.is_op(p, text: "!")
+        return postfix(@p, records: records)
+
+    if !cursor.enter(@p)
+        return cursor.missing(@p, span: cursor.here(p))
+    op = cursor.advance(@p)
+    operand = unary(@p, records: records)
+    cursor.leave(@p)
+    span = syntax.cover(first: lexer.span_of(op), last: cursor.span_of(p, i: operand))
+    return cursor.add_node(@p, kind: .unary(op: op.text, operand: operand), span: span)
+
+# A primary expression followed by field reads and calls.
+#
+# - `p`: the parser.
+# - `records`: as `expression` takes it.
+function postfix(@p: cursor.Parser, records: bool) -> i64
+    base @= primary(@p, records: records)
+
+    while true
+        if cursor.is_op(p, text: ".")
+            dot = cursor.advance(@p)
+            t = cursor.peek(p)
+
+            if t.kind == .identifier
+                _ = cursor.advance(@p)
+                span = syntax.cover(first: cursor.span_of(p, i: base), last: lexer.span_of(t))
+                base @ cursor.add_node(
+                    @p,
+                    kind: .field(target: base, name: t.text, name_span: lexer.span_of(t)),
+                    span: span
+                )
+            else
+                cursor.tell(
+                    @p,
+                    diagnostics.error(cursor.here(p), code: "expected_name", message: f"expected a field's name after `.`, found {cursor.describe(t)}")
+                )
+                after = syntax.Span(start: dot.end.offset, end: dot.end.offset)
+                span = syntax.cover(first: cursor.span_of(p, i: base), last: lexer.span_of(dot))
+                base @ cursor.add_node(@p, kind: .field(target: base, name: "", name_span: after), span: span)
+        else if cursor.is_op(p, text: "(")
+            base @ call(@p, callee: base)
+        else
+            return base
+
+# The call of `callee` whose `(` comes next.
+#
+# - `p`: the parser.
+# - `callee`: the node called.
+function call(@p: cursor.Parser, callee: i64) -> i64
+    if !cursor.enter(@p)
+        return cursor.missing(@p, span: cursor.here(p))
+    _ = cursor.advance(@p)
+    arguments: [i64] @= []
+
+    while !cursor.is_op(p, text: ")") && !cursor.at_declaration(p)
+        before = p.at
+        arguments @ arguments.push(expression(@p, records: true))
+
+        if cursor.is_op(p, text: ",")
+            _ = cursor.advance(@p)
+        else if p.at == before || !cursor.is_op(p, text: ")")
+            break
+
+    end = cursor.peek(p)
+    _ = cursor.expect_op(@p, text: ")")
+    cursor.leave(@p)
+    span = syntax.cover(first: cursor.span_of(p, i: callee), last: lexer.span_of(end))
+    return cursor.add_node(@p, kind: .call(callee: callee, args: arguments), span: span)
+
+# A literal, a name, a record built, an expression in parentheses, a block
+# or an `if`.
+#
+# - `p`: the parser.
+# - `records`: as `expression` takes it.
+function primary(@p: cursor.Parser, records: bool) -> i64
+    t = cursor.peek(p)
+
+    match t.kind
+        .integer =>
+            _ = cursor.advance(@p)
+
+            match scanner.int_of(t)
+                .ok v => return cursor.add_node(@p, kind: .int_lit(value: v), span: lexer.span_of(t))
+                .err _ =>
+                    cursor.tell(
+                        @p,
+                        diagnostics.error(lexer.span_of(t), code: "too_large", message: f"{t.text} does not fit in an `Int`, which holds 64 bits")
+                    )
+                    return cursor.missing(@p, span: lexer.span_of(t))
+        .string =>
+            _ = cursor.advance(@p)
+
+            match scanner.text_of(t)
+                .ok v => return cursor.add_node(@p, kind: .str_lit(value: v), span: lexer.span_of(t))
+                .err e =>
+                    cursor.tell(@p, diagnostics.error(lexer.span_of(t), code: "malformed_literal", message: e.msg))
+                    return cursor.missing(@p, span: lexer.span_of(t))
+        .invalid _ =>
+            _ = cursor.advance(@p)
+            return cursor.missing(@p, span: lexer.span_of(t))
+        .identifier =>
+            _ = cursor.advance(@p)
+
+            if records && cursor.is_op(p, text: "{")
+                return construct(@p, name: syntax.TypeRef(name: t.text, span: lexer.span_of(t)))
+            return cursor.add_node(@p, kind: .name(text: t.text), span: lexer.span_of(t))
+        .keyword =>
+            if t.text == "true" || t.text == "false"
+                _ = cursor.advance(@p)
+                return cursor.add_node(@p, kind: .bool_lit(value: t.text == "true"), span: lexer.span_of(t))
+
+            if t.text == "if"
+                return if_else(@p)
+        .operator =>
+            if t.text == "("
+                return parenthesized(@p)
+
+            if t.text == "{"
+                return block(@p)
+        .float | .raw_string | .character | .comment | .whitespace | .newline | .custom _ | .other | .end => _ = 0
+
+    cursor.tell(
+        @p,
+        diagnostics.error(cursor.here(p), code: "expected_expression", message: f"expected an expression, found {cursor.describe(t)}")
+    )
+    return cursor.missing(@p, span: cursor.here(p))
+
+# `( expression )`: the expression's own node, its parentheses dropped.
+#
+# - `p`: the parser, at the `(`.
+function parenthesized(@p: cursor.Parser) -> i64
+    if !cursor.enter(@p)
+        return cursor.missing(@p, span: cursor.here(p))
+    _ = cursor.advance(@p)
+    inner = expression(@p, records: true)
+    _ = cursor.expect_op(@p, text: ")")
+    cursor.leave(@p)
+    return inner
+
+# `Name { field: value, ... }`, the name taken already.
+#
+# - `p`: the parser, at the `{`.
+# - `name`: the record's name.
+function construct(@p: cursor.Parser, name: syntax.TypeRef) -> i64
+    if !cursor.enter(@p)
+        return cursor.missing(@p, span: cursor.here(p))
+    _ = cursor.advance(@p)
+    inits: [syntax.FieldInit] @= []
+
+    while !cursor.is_op(p, text: "}") && !cursor.at_declaration(p)
+        field = cursor.expect_name(@p, what: "a field's name")
+
+        if field.name == ""
+            cursor.skip_until(@p, stops: [",", "}"])
+        else
+            _ = cursor.expect_op(@p, text: ":")
+            value = expression(@p, records: true)
+            inits @ inits.push(syntax.FieldInit(name: field.name, span: field.span, value: value))
+
+        if cursor.is_op(p, text: ",")
+            _ = cursor.advance(@p)
+        else if !cursor.is_op(p, text: "}")
+            _ = cursor.expect_op(@p, text: ",")
+            cursor.skip_until(@p, stops: [",", "}"])
+
+            if cursor.is_op(p, text: ",")
+                _ = cursor.advance(@p)
+
+    end = cursor.peek(p)
+    _ = cursor.expect_op(@p, text: "}")
+    cursor.leave(@p)
+    return cursor.add_node(
+        @p,
+        kind: .construct(type_ref: name, inits: inits),
+        span: syntax.cover(first: name.span, last: lexer.span_of(end))
+    )
+
+# `if cond { ... } else { ... }`, an `else if` read as an `if` in the
+# `else` branch.
+#
+# - `p`: the parser, at the `if`.
+function if_else(@p: cursor.Parser) -> i64
+    if !cursor.enter(@p)
+        return cursor.missing(@p, span: cursor.here(p))
+    first = cursor.advance(@p)
+    cond = expression(@p, records: false)
+    then = branch(@p, after: "the condition")
+    otherwise @= then
+
+    if cursor.is_keyword(p, word: "else")
+        _ = cursor.advance(@p)
+
+        if cursor.is_keyword(p, word: "if")
+            otherwise @ if_else(@p)
+        else
+            otherwise @ branch(@p, after: "`else`")
+    else
+        cursor.tell(
+            @p,
+            diagnostics.error(cursor.here(p), code: "missing_else", message: "an `if` answers a value, so it needs an `else` branch")
+        )
+        otherwise @ cursor.missing(@p, span: cursor.here(p))
+    cursor.leave(@p)
+    span = syntax.cover(first: lexer.span_of(first), last: cursor.span_of(p, i: otherwise))
+    return cursor.add_node(@p, kind: .if_else(cond: cond, then: then, otherwise: otherwise), span: span)
+
+# The block of an `if`'s branch, or a `.missing` node where none opens.
+#
+# - `p`: the parser.
+# - `after`: what the branch follows, for the message.
+function branch(@p: cursor.Parser, after: str) -> i64
+    if cursor.is_op(p, text: "{")
+        return block(@p)
+    t = cursor.peek(p)
+    cursor.tell(
+        @p,
+        diagnostics.error(cursor.here(p), code: "expected_block", message: f"expected `{{` after {after}, found {cursor.describe(t)}")
+    )
+    return cursor.missing(@p, span: cursor.here(p))
+
+# `{ let ...; value }`.
+#
+# - `p`: the parser, at the `{`.
+function block(@p: cursor.Parser) -> i64
+    if !cursor.enter(@p)
+        return cursor.missing(@p, span: cursor.here(p))
+    open = cursor.advance(@p)
+    lets: [syntax.Let] @= []
+
+    while cursor.is_keyword(p, word: "let")
+        lets @ lets.push(binding(@p))
+
+    value @= 0
+
+    if cursor.is_op(p, text: "}") || cursor.at_declaration(p)
+        value @ cursor.add_node(@p, kind: .unit_lit, span: cursor.here(p))
+    else
+        value @ expression(@p, records: true)
+
+        if cursor.is_op(p, text: ";")
+            semicolon = cursor.advance(@p)
+            cursor.tell(
+                @p,
+                diagnostics.fixable(lexer.span_of(semicolon), code: "trailing_semicolon", message: "a block's last expression is what it answers, and takes no `;`", replacement: "")
+            )
+
+        if !cursor.is_op(p, text: "}") && !cursor.at_declaration(p)
+            t = cursor.peek(p)
+            cursor.tell(
+                @p,
+                diagnostics.error(cursor.here(p), code: "expected_token", message: f"expected `}}` after the block's value, found {cursor.describe(t)}")
+            )
+            cursor.skip_until(@p, stops: ["}"])
+    end = cursor.peek(p)
+    _ = cursor.expect_op(@p, text: "}")
+    cursor.leave(@p)
+    return cursor.add_node(
+        @p,
+        kind: .block(lets: lets, value: value),
+        span: syntax.cover(first: lexer.span_of(open), last: lexer.span_of(end))
+    )
+
+# `let name: Type = value;`.
+#
+# - `p`: the parser, at the `let`.
+function binding(@p: cursor.Parser) -> syntax.Let
+    first = cursor.advance(@p)
+    doc = cursor.doc_before(@p, line: first.start.line)
+    name = cursor.expect_name(@p, what: "a binding's name")
+    declared @= no_type()
+
+    if cursor.is_op(p, text: ":")
+        _ = cursor.advance(@p)
+        declared @ ok(type_ref(@p))
+    value @= 0
+
+    if cursor.expect_op(@p, text: "=")
+        value @ expression(@p, records: true)
+    else
+        value @ cursor.missing(@p, span: cursor.here(p))
+
+    if cursor.is_op(p, text: ";")
+        _ = cursor.advance(@p)
+    else
+        cursor.tell(
+            @p,
+            diagnostics.fixable(cursor.after_last(p), code: "missing_semicolon", message: "a `let` ends with `;`", replacement: ";")
+        )
+
+        if !cursor.on_new_line(p)
+            cursor.skip_until(@p, stops: [";", "}"])
+
+            if cursor.is_op(p, text: ";")
+                _ = cursor.advance(@p)
+    whole = syntax.cover(first: lexer.span_of(first), last: cursor.after_last(p))
+    return syntax.Let(name: name.name, span: name.span, declared: declared, value: value, whole: whole, doc: doc)
+
+# A type's name, or the empty name, told, where none comes next.
+#
+# - `p`: the parser.
+function type_ref(@p: cursor.Parser) -> syntax.TypeRef
+    return cursor.expect_name(@p, what: "a type")
+
+# No type written: what a binding or a function with none holds.
+function no_type() -> syntax.TypeRef?
+    return fail(code: "not_found", msg: "no type is written")

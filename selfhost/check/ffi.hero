@@ -37,7 +37,7 @@ use token
 # Where each may STAND is the position check's question, asked after this
 # one so a type refused at both gets one message.
 function ffi_signature(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], f: ast.FunctionDecl, result: i64, declared_name: token.Span)
-    if !ffi_crossing.crosses_the_boundary(c, decls, result)
+    if !ffi_crossing.crosses_the_boundary(c.out.types, decls, result)
         ffi_crossing.refused(@c, s, decls, ty: result, what: "an `extern`'s result", span: a.types[f.result].span)
 
     # The positions refused here, so the marks on them are not judged again:
@@ -61,7 +61,7 @@ function ffi_signature(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [
                 continue
             .not_a_buffer => _ = 0
 
-        if !ffi_crossing.crosses_the_boundary(c, decls, written.must())
+        if !ffi_crossing.crosses_the_boundary(c.out.types, decls, written.must())
             ffi_crossing.refused(
                 @c,
                 s,
@@ -89,7 +89,7 @@ function ffi_signature(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [
 # premise about the world, and the per-constant assertion asks the token
 # in hand instead.
 function ffi_constant(@c: state.Checker, s: source.Source, decls: [ast.Decl], declared: i64, span: token.Span)
-    if !ffi_crossing.crosses_the_boundary(c, decls, declared)
+    if !ffi_crossing.crosses_the_boundary(c.out.types, decls, declared)
         shown = state.show(c, s, decls, declared)
         state.push_diagnostic(@c, ffi_errors.ffi_type(name: shown, what: "an `extern constant`", span: span))
         return
@@ -266,11 +266,11 @@ test "the vocabulary admits the seven and the group's own records"
 
     color = table.intern(@c.out.types, .named(decl: 0))
     mine = table.intern(@c.out.types, .named(decl: 2))
-    assert ffi_crossing.crosses_the_boundary(c, p.decls, color)
-    assert !ffi_crossing.crosses_the_boundary(c, p.decls, mine)
-    assert ffi_crossing.crosses_the_boundary(c, p.decls, table.str_ty(c.out.types))
+    assert ffi_crossing.crosses_the_boundary(c.out.types, p.decls, color)
+    assert !ffi_crossing.crosses_the_boundary(c.out.types, p.decls, mine)
+    assert ffi_crossing.crosses_the_boundary(c.out.types, p.decls, table.str_ty(c.out.types))
     xs = table.intern(@c.out.types, .array(element: table.int_ty_id(c.out.types)))
-    assert !ffi_crossing.crosses_the_boundary(c, p.decls, xs)
+    assert !ffi_crossing.crosses_the_boundary(c.out.types, p.decls, xs)
 
 test "an extern constant refuses the two Heroes-only values with reasons"
     c: state.Checker @= prepared("record P\n    x: i64\n")

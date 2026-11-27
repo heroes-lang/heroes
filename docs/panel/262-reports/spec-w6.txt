@@ -1,0 +1,1 @@
+A callback is a **parameter**, never a result or a signal handler, nor called by one, nor on its thread before C leaves it by its return or a jump of the C library's back to a call the signal interrupted that this runtime can tell left it, where a call may abort, saying the handler was not seen to end, or that C called it from inside one;

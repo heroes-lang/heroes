@@ -1,0 +1,24 @@
+title: Defect <number>: A signal handler running on a coroutine's stack, left by a `siglongjmp` or a `setcontext` to the runner's save, makes the next callback abort in words that name three causes the program does not have
+labels: kind:defect, class:blocking, area:runtime
+milestone: M-rebel-library
+state: open
+---
+Filed 2026-11-26
+
+### What happens
+
+`ck` (`docs/panel/262-reports/programs/critic/ck.h` and `ck.hero`): a coroutine `makecontext` made on a heap stack raises `SIGUSR1`; the handler, on the coroutine's stack (`CK_ON=0`), leaves by `siglongjmp` (`CK_HOW=0`) or by a `setcontext` to a context `getcontext` took (`CK_HOW=1`) to the save the runner made before it switched in (`CK_TO=0`), and the runner calls the program's function twelve frames down: exit 134, 3 of 3 each, *"panic: ck.answer was called while a signal handler of C's that this runtime saw begin had not been seen to end: either C called it from inside that handler, or C left the handler in a way this runtime does not follow (an inline `__builtin_longjmp`, a C++ exception, a jump inside a system library)"*, where the function is called after the jump, by the runner, and both exits are ones the runtime follows; the same jump back into the coroutine (`CK_TO=1`) prints `result (70 is right): 70`, and with the handler on an alternate stack (`CK_ON=1`) the jump to the runner runs too
+
+### Where to look
+
+`runtime/parts/sigentries.c` (rule 4, a jump ending a handler only where its target lies above it on the same range) and Darwin's `runtime/parts/rebind_entries.c`, `runtime/parts/sigguard.c` (STANDING's words)
+
+### Origin
+
+2026-11-26, panel 262's completeness critic, second reading (`docs/panel/262-reports/critic-reports.md` § 5, finding K8), run on this Mac and in the Linux arm64 image at the base 87003cb42 and on `main` at bdef9ba06, plain and `--sanitize`, every cell the same; **re-run by panel 262's synthesis on `main` at 77eb38534** (2026-11-26 23:52, this Mac, plain, the seed's compiler built from that commit's seed, `sources 1e1eb23a1927d35b`, with that commit's runtime): both refused cells exit 134 in the words above, 3 of 3, and the two running cells print `70`, so it still happens there. Defect 2705's class, *"The words a refusal prints name causes the program does not have"*, by another door: the program leaves its handler for good to the runner, as defect 2855's golden coroutine leaves for good to its host. Whether the refusal itself must stand (the handler's frames stay on a coroutine's stack C could resume) is the repair's question; the words are false either way.
+
+### Class
+
+**blocking**, 2026-11-26: a false message (no call from inside the handler, and both exits are followed), and by the critic's reading a correct program refused.
+
+exit 0

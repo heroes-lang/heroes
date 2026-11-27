@@ -1,0 +1,237 @@
+# Aggregates: the calls of `COUNT`, `SUM`, `AVG`, `MIN`, `MAX` and
+# `GROUP_CONCAT` a grouped query holds, and their values over a group's
+# rows. `NULL`s are passed over, as SQL has it: `COUNT(x)` counts the rows
+# where `x` is not `NULL`, `SUM` and `AVG` of no value are `NULL`, and
+# `COUNT(*)` alone counts every row. `DISTINCT` takes each value once. An
+# integer sum that passes 64 bits is refused, never wrapped.
+
+use <rebel>/math
+use <rebel>/sql
+
+use engine/eval
+use sql/ast
+use sql/expressions
+use values/sortkey
+use values/value
+
+## Finding them
+
+# The aggregate calls in `exprs`, each once, in the order first met.
+#
+# - `exprs`: the expressions of a query's items, `HAVING` and `ORDER BY`.
+#
+# Fails `invalid` for an aggregate inside another's arguments.
+function calls_in(exprs: [ast.Expr]) -> [ast.Expr]?
+    found: [ast.Expr] @= []
+    pending @= exprs
+
+    while pending.len() > 0
+        e = pending[pending.len() - 1]
+        pending @ pending.slice(from: 0, to: pending.len() - 1)
+
+        match e
+            .call c =>
+                if eval.is_aggregate(c.name)
+                    for a in c.args
+                        if has_aggregate(a)
+                            return value.refuse(
+                                code: sql.INVALID,
+                                state: "42803",
+                                message: f"an aggregate inside {c.name}()"
+                            )
+
+                    if !contains(found, e: e)
+                        found @ found.push(e)
+                    continue
+            .literal _ | .column _ | .parameter _ | .negate _ | .negation _ | .binary _ | .is_null _ | .in_list _ | .between _ | .like _ | .choice _ =>
+                _ = 0
+
+        for child in expressions.children_of(e)
+            pending @ pending.push(child)
+
+    return ok(found)
+
+function contains(xs: [ast.Expr], e: ast.Expr) -> bool
+    for x in xs
+        if x == e
+            return true
+
+    return false
+
+# Whether `e` holds an aggregate call anywhere.
+#
+# - `e`: the expression.
+function has_aggregate(e: ast.Expr) -> bool
+    pending @= [e]
+
+    while pending.len() > 0
+        next_expr = pending[pending.len() - 1]
+        pending @ pending.slice(from: 0, to: pending.len() - 1)
+
+        match next_expr
+            .call c =>
+                if eval.is_aggregate(c.name)
+                    return true
+            .literal _ | .column _ | .parameter _ | .negate _ | .negation _ | .binary _ | .is_null _ | .in_list _ | .between _ | .like _ | .choice _ =>
+                _ = 0
+
+        for child in expressions.children_of(next_expr)
+            pending @ pending.push(child)
+
+    return false
+
+## Computing them
+
+# The value of each call of `calls` over the rows `rows`.
+#
+# - `calls`: the aggregate calls.
+# - `rows`: the group's joined rows.
+# - `base`: the environment the calls' arguments are evaluated in, its row
+#   replaced by each of `rows` in turn.
+#
+# Fails where an argument cannot be evaluated, for a `SUM` past 64 bits and
+# for a `SUM` or `AVG` of what is no number.
+function totals(calls: [ast.Expr], rows: [[sql.Value]], base: eval.Env) -> [sql.Value]?
+    found: [sql.Value] @= []
+
+    for c in calls
+        found @ found.push(total(c, rows: rows, base: base)?)
+
+    return ok(found)
+
+function total(call: ast.Expr, rows: [[sql.Value]], base: eval.Env) -> sql.Value?
+    match call
+        .call c =>
+            if c.star
+                return ok(.integer(v: rows.len()))
+
+            if c.args.len() == 0 || c.args.len() > 2 || c.args.len() == 2 && c.name != "GROUP_CONCAT"
+                return value.refuse(
+                    code: sql.INVALID,
+                    state: "42883",
+                    message: f"{c.name}() takes one argument, not {c.args.len()}"
+                )
+            given = arguments(c.args[0], rows: rows, base: base, distinct: c.distinct)?
+            separator @= ","
+
+            if c.args.len() == 2
+                separator @ value.display(eval.eval(c.args[1], env: base)?)
+
+            return match c.name
+                "COUNT" => ok(.integer(v: given.len()))
+                "SUM"   => sum(given)
+                "AVG"   => average(given)
+                "MIN"   => ok(best(given, sign: -1))
+                "MAX"   => ok(best(given, sign: 1))
+                _       => ok(concatenated(given, separator: separator))
+        .literal _ | .column _ | .parameter _ | .negate _ | .negation _ | .binary _ | .is_null _ | .in_list _ | .between _ | .like _ | .choice _ =>
+            return ok(.null_value)
+
+# The values of `arg` over `rows`, `NULL`s passed over, each once where
+# `distinct`.
+function arguments(arg: ast.Expr, rows: [[sql.Value]], base: eval.Env, distinct: bool) -> [sql.Value]?
+    found: [sql.Value] @= []
+    seen: {[u8]: bool} @= {}
+    env @= base
+
+    for r in rows
+        env.values @ r
+        v = eval.eval(arg, env: env)?
+
+        if v != .null_value
+            if distinct
+                key = sortkey.of([v])
+
+                if !seen[key].default(false)
+                    seen[key] @ true
+                    found @ found.push(v)
+            else
+                found @ found.push(v)
+
+    return ok(found)
+
+function sum(given: [sql.Value]) -> sql.Value?
+    if given.len() == 0
+        return ok(.null_value)
+    whole @= 0
+    fraction @= 0.0
+    floating @= false
+
+    for v in given
+        match v
+            .integer n =>
+                match math.add_i64(a: whole, b: n.v)
+                    .ok s => whole @ s
+                    .err _ => return value.refuse(
+                        code: sql.DOES_NOT_FIT,
+                        state: value.OUT_OF_RANGE,
+                        message: "SUM() of integers past 64 bits"
+                    )
+            .float x =>
+                floating @ true
+                fraction @ fraction + x.v
+            .null_value | .boolean _ | .text _ | .blob _ | .instant _ =>
+                return value.refuse(code: sql.INVALID, state: value.MISMATCH, message: f"SUM() of {sql.kind_of(v)}")
+
+    if floating
+        return value.finite(fraction + to_f64(whole))
+    return ok(.integer(v: whole))
+
+function average(given: [sql.Value]) -> sql.Value?
+    if given.len() == 0
+        return ok(.null_value)
+    total_of @= 0.0
+
+    for v in given
+        match v
+            .integer n => total_of @ total_of + to_f64(n.v)
+            .float x   => total_of @ total_of + x.v
+            .null_value | .boolean _ | .text _ | .blob _ | .instant _ =>
+                return value.refuse(code: sql.INVALID, state: value.MISMATCH, message: f"AVG() of {sql.kind_of(v)}")
+
+    return value.finite(total_of / to_f64(given.len()))
+
+# The least value where `sign` is -1, the greatest where 1, by the order of
+# `ORDER BY`; `NULL` for none.
+function best(given: [sql.Value], sign: i64) -> sql.Value
+    if given.len() == 0
+        return .null_value
+    chosen @= given[0]
+
+    for v in given
+        if value.order(a: v, b: chosen) * sign > 0
+            chosen @ v
+
+    return chosen
+
+function concatenated(given: [sql.Value], separator: str) -> sql.Value
+    if given.len() == 0
+        return .null_value
+    return .text(v: given.map(value.display).join(separator))
+
+## Tests
+
+function column_x() -> ast.Expr
+    return .column(table: "", name: "x")
+
+function rows_of_x(values: [sql.Value]) -> [[sql.Value]]
+    return values.map(one_value)
+
+function one_value(v: sql.Value) -> [sql.Value]
+    return [v]
+
+test "sum, average, best: NULLs passed over, none at all is NULL, an overflow refused"
+    assert sum([.integer(v: 2), .integer(v: 3)]).must() == .integer(v: 5)
+    assert sum([]).must() == .null_value
+    assert sum([.integer(v: 1), .float(v: 0.5)]).must() == .float(v: 1.5)
+    assert sum([.integer(v: 9_223_372_036_854_775_807), .integer(v: 1)]).is_err()
+    assert average([.integer(v: 1), .integer(v: 2)]).must() == .float(v: 1.5)
+    assert best([.text(v: "b"), .text(v: "a")], sign: -1) == .text(v: "a")
+    assert best([], sign: 1) == .null_value
+
+test "calls_in: each call once, an aggregate inside another refused"
+    count_star: ast.Expr = .call(name: "COUNT", star: true, distinct: false, args: [])
+    plus: ast.Expr = .binary(op: .add, args: [count_star, count_star])
+    assert calls_in([plus, count_star]).must() == [count_star]
+    nested: ast.Expr = .call(name: "SUM", star: false, distinct: false, args: [count_star])
+    assert calls_in([nested]).is_err()

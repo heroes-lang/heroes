@@ -1,0 +1,281 @@
+# The catalogue: the tables and indexes a database holds, kept as rows of
+# its schema table, the tree at page 2, as SQLite keeps `sqlite_schema`.
+# Each row is a kind ("table", "index", or "autoindex" for the index a
+# `UNIQUE` or a `PRIMARY KEY` makes), a name, its table, its root page and
+# the `CREATE` statement's text; opening a database parses those texts
+# again, so the catalogue in memory is always what the file says.
+
+use <rebel>/sql
+
+use sql/ast
+use sql/parser
+use storage/btree
+use storage/pager
+use values/row
+use values/sortkey
+
+## The catalogue
+
+# A column of a table.
+record Column
+    # Its name, in lower case.
+    name: str
+    # Its type: "INTEGER", "REAL", "TEXT", "BLOB" or "BOOLEAN".
+    type_name: str
+    # Whether it refuses `NULL`.
+    not_null: bool
+
+# A table.
+record Table
+    # Its name, in lower case.
+    name: str
+    # Its tree's root page.
+    root: i64
+    # Its columns, in order.
+    columns: [Column]
+    # The column that is the rowid, an `INTEGER PRIMARY KEY`; -1 for none.
+    rowid_column: i64
+    # Its `CREATE TABLE` statement.
+    text: str
+    # Its row in the schema table.
+    schema_rowid: i64
+
+# An index of a table.
+record Index
+    # Its name, in lower case.
+    name: str
+    # Its table's name.
+    table: str
+    # The places of its columns in the table, in the key's order.
+    columns: [i64]
+    # Whether two rows may not share its columns' values, `NULL`s aside.
+    unique: bool
+    # Its tree's root page.
+    root: i64
+    # Whether a `UNIQUE` or a `PRIMARY KEY` made it rather than a
+    # `CREATE INDEX`.
+    automatic: bool
+    # Its `CREATE INDEX` statement.
+    text: str
+    # Its row in the schema table.
+    schema_rowid: i64
+
+# Every table and index of a database, by name.
+record Catalog
+    # The tables.
+    tables: {str: Table}
+    # The indexes.
+    indexes: {str: Index}
+    # The schema's version this catalogue was read at.
+    version: i64
+
+## Codes
+
+# The SQLSTATE of a table that is not there.
+constant NO_TABLE: str
+    "42P01"
+
+# The SQLSTATE of a column that is not there.
+constant NO_COLUMN: str
+    "42703"
+
+## Reading
+
+# The catalogue the schema table holds.
+#
+# - `p`: the pager, holding a snapshot.
+#
+# Fails `invalid` where a row of the schema table or its text is damaged.
+function load(@p: pager.Pager) -> Catalog?
+    found @= Catalog(tables: {}, indexes: {}, version: pager.read_header(@p)?.schema_version)
+    entries = btree.scan(@p, root: pager.SCHEMA_ROOT, span: btree.whole())?
+
+    for entry in entries
+        values = row.decode(entry.value)?
+        schema_rowid = sortkey.rowid_of(entry.key)?
+
+        if values.len() != 5
+            return fail(code: sql.INVALID, msg: "a damaged schema row")
+        root = integer_of(values[3])
+
+        match parser.parse_one(text_of(values[4]))?
+            .create_table t =>
+                found.tables[t.table] @ table_of(
+                    name: t.table,
+                    defs: t.columns,
+                    root: root,
+                    text: text_of(values[4]),
+                    schema_rowid: schema_rowid
+                )
+            .create_index _ => _ = 0
+            .drop_table _ | .drop_index _ | .insert _ | .update _ | .delete _ | .query _ | .explain _ | .begin | .commit | .rollback | .check =>
+                return fail(code: sql.INVALID, msg: f"a damaged schema row: {text_of(values[0])}")
+
+    # Indexes after tables, whatever the rows' order, since an index names
+    # its table's columns.
+    for entry in entries
+        values = row.decode(entry.value)?
+
+        match parser.parse_one(text_of(values[4]))?
+            .create_index i =>
+                owner = table_named(found, name: i.table)?
+                columns: [i64] @= []
+
+                for c in i.columns
+                    columns @ columns.push(column_index(owner, name: c)?)
+
+                found.indexes[i.index] @ Index(
+                    name: i.index,
+                    table: i.table,
+                    columns: columns,
+                    unique: i.unique,
+                    root: integer_of(values[3]),
+                    automatic: text_of(values[0]) == "autoindex",
+                    text: text_of(values[4]),
+                    schema_rowid: sortkey.rowid_of(entry.key)?
+                )
+            .create_table _ | .drop_table _ | .drop_index _ | .insert _ | .update _ | .delete _ | .query _ | .explain _ | .begin | .commit | .rollback | .check =>
+                _ = 0
+
+    return ok(found)
+
+# The table a `CREATE TABLE` declares, stored at `root`. A case's fields
+# are no record a function can take, so they come one by one.
+#
+# - `name`: the table's name.
+# - `defs`: its columns as declared.
+# - `root`: its tree's root page.
+# - `text`: the statement's text.
+# - `schema_rowid`: its row in the schema table.
+function table_of(name: str, defs: [ast.ColumnDef], root: i64, text: str, schema_rowid: i64) -> Table
+    columns: [Column] @= []
+    rowid_column @= -1
+
+    for k in range(from: 0, to: defs.len())
+        d = defs[k]
+        columns @ columns.push(Column(name: d.name, type_name: d.type_name, not_null: d.not_null || d.primary))
+
+        if d.primary && d.type_name == "INTEGER"
+            rowid_column @ k
+
+    return Table(
+        name: name,
+        root: root,
+        columns: columns,
+        rowid_column: rowid_column,
+        text: text,
+        schema_rowid: schema_rowid
+    )
+
+function text_of(v: sql.Value) -> str
+    return match v
+        .text t                                                                 => t.v
+        .null_value | .boolean _ | .integer _ | .float _ | .blob _ | .instant _ => ""
+
+function integer_of(v: sql.Value) -> i64
+    return match v
+        .integer n                                                           => n.v
+        .null_value | .boolean _ | .float _ | .text _ | .blob _ | .instant _ => 0
+
+## Looking up
+
+# The table named `name`.
+#
+# - `cat`: the catalogue.
+# - `name`: the table's name, in lower case.
+#
+# Fails `not_found` where there is none.
+function table_named(cat: Catalog lent, name: str) -> Table?
+    match cat.tables[name]
+        .ok t => return ok(t)
+        .err _ => return fail(
+            code: sql.NOT_FOUND,
+            msg: sql.failure_message(database_code: NO_TABLE, message: f"no such table: {name}")
+        )
+
+# The place of the column `name` in `t`.
+#
+# - `t`: the table.
+# - `name`: the column's name, in lower case.
+#
+# Fails `not_found` where `t` has none.
+function column_index(t: Table, name: str) -> i64?
+    for k in range(from: 0, to: t.columns.len())
+        if t.columns[k].name == name
+            return ok(k)
+
+    return fail(
+        code: sql.NOT_FOUND,
+        msg: sql.failure_message(database_code: NO_COLUMN, message: f"no such column: {t.name}.{name}")
+    )
+
+# The indexes of the table `table`, by name.
+#
+# - `cat`: the catalogue.
+# - `table`: the table's name.
+function indexes_of(cat: Catalog lent, table: str) -> [Index]
+    found: [Index] @= []
+
+    for name in sort(keys(cat.indexes))
+        i = cat.indexes[name].must()
+
+        if i.table == table
+            found @ found.push(i)
+
+    return found
+
+# The key an index holds for a row: its columns' values, then the rowid.
+#
+# - `i`: the index.
+# - `values`: the row's values, in its table's columns' order.
+# - `rowid`: the row's rowid.
+function index_key(i: Index, values: [sql.Value], rowid: i64) -> [u8]
+    return sortkey.of(index_values(i, values: values, rowid: rowid))
+
+# An index's columns' values from a row, and the rowid after them.
+#
+# - `i`: the index.
+# - `values`: the row's values.
+# - `rowid`: the row's rowid; below 0 for the columns' values alone.
+function index_values(i: Index, values: [sql.Value], rowid: i64) -> [sql.Value]
+    found: [sql.Value] @= []
+
+    for c in i.columns
+        found @ found.push(values[c])
+
+    if rowid >= 0
+        found @ found.push(.integer(v: rowid))
+    return found
+
+## Writing
+
+# Adds a row to the schema table.
+#
+# - `p`: the pager, writing.
+# - `kind`: "table", "index" or "autoindex".
+# - `name`: the table's or index's name.
+# - `table`: the table's name.
+# - `root`: its tree's root page.
+# - `text`: its `CREATE` statement.
+#
+# Fails where the schema's tree cannot be written.
+function add(@p: pager.Pager, kind: str, name: str, table: str, root: i64, text: str) -> ()?
+    next_rowid @= 1
+
+    match btree.last_key(@p, root: pager.SCHEMA_ROOT)
+        .ok key => next_rowid @ sortkey.rowid_of(key)? + 1
+        .err _  => _ = 0
+
+    values: [sql.Value] = [.text(v: kind), .text(v: name), .text(v: table), .integer(v: root), .text(v: text)]
+    btree.insert(@p, root: pager.SCHEMA_ROOT, key: sortkey.of_rowid(next_rowid), value: row.encode(values), replace: false)?
+    return pager.bump_schema(@p)
+
+# Takes a row out of the schema table.
+#
+# - `p`: the pager, writing.
+# - `schema_rowid`: the row's rowid.
+#
+# Fails where the schema's tree cannot be written.
+function remove(@p: pager.Pager, schema_rowid: i64) -> ()?
+    btree.remove(@p, root: pager.SCHEMA_ROOT, key: sortkey.of_rowid(schema_rowid))?
+    return pager.bump_schema(@p)

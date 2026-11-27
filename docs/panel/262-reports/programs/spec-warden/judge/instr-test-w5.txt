@@ -1,0 +1,16 @@
+ok   "the arms of a refusal are read with their literals joined, and the exempt one is read too"
+ok   "a refusal that keeps neither claim, a sentence that loses one and an extractor that reads nothing are each told"
+ok   "the runtime's refusals as the tree holds them keep a claim each, and the arms are the ones the sitting named"
+ok   "index_of, split_text and words"
+ok   "contains finds a needle at every position and refuses a longer one"
+ok   "the empty text begins, ends and occurs in every text, and holds no other"
+ok   "starts_with and without_prefix"
+ok   "to_number reads what a case can hold, and names what it cannot"
+ok   "fixedbugs: a number past an i64 is refused by name, never an abort, and the lowest i64 is read (defect 2545)"
+ok   "ends_with and without_suffix agree on the harness's own suffixes"
+ok   "ends_with walks bytes, so a multi-byte character neither matches nor aborts"
+ok   "split_on keeps empty pieces and lines drops the trailing one"
+ok   "base_name and trimmed"
+ok   "boundary_at_or_below never lands inside a character"
+14 tests, all passed
+exit 0

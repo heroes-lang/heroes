@@ -1,0 +1,4 @@
+left on the thread: 1
+answer ran for 7
+result 70
+exit 0

@@ -1,0 +1,98 @@
+# A document's text changed as an editor changes it: the incremental sync of
+# the Language Server Protocol, where each change names the range it
+# replaces and the text that replaces it, the next change read against the
+# text the one before it made; a change with no range replaces the whole
+# text. A range from outside is clamped into the text (`positions`), and a
+# range written end first is read start first, so no change aborts and every
+# change lands somewhere a person can see.
+
+use text/positions
+
+# One change of a document.
+record Change
+    # The range it replaces; absent where it replaces the whole text.
+    range: positions.Range?
+    # The text put in its place.
+    text: str
+
+# `text` with `changes` made, in order.
+#
+# - `text`: the document's text before.
+# - `changes`: the changes, each read against the text the one before made.
+# - `e`: the unit the ranges' characters count in.
+function apply_all(text: str, changes: [Change], e: positions.Encoding) -> str
+    current @= text
+
+    for c in changes
+        current @ apply(current, c: c, e: e)
+
+    return current
+
+# `text` with the one change `c` made.
+#
+# - `text`: the text before.
+# - `c`: the change.
+# - `e`: the unit its range's characters count in.
+function apply(text: str, c: Change, e: positions.Encoding) -> str
+    match c.range
+        .err _ => return c.text
+        .ok r =>
+            starts = positions.line_starts(text)
+            a = positions.offset_of(text, starts: starts, p: r.start, e: e)
+            b = positions.offset_of(text, starts: starts, p: r.end, e: e)
+            from @= a
+            to @= b
+
+            if b < a
+                from @ b
+                to @ a
+            return text.slice(from: 0, to: from) + c.text + text.slice(from: to, to: text.len())
+
+# A change replacing the range from `start` to `end`.
+#
+# - `start`: where it begins.
+# - `end`: where it ends.
+# - `text`: what replaces it.
+function replacing(start: positions.Position, end: positions.Position, text: str) -> Change
+    return Change(range: ok(positions.Range(start: start, end: end)), text: text)
+
+## Tests
+
+test "apply: an insertion, a deletion, a replacement and a whole text"
+    at = positions.Position(line: 0, character: 2)
+    assert apply("abcd", c: replacing(start: at, end: at, text: "XY"), e: .utf16) == "abXYcd"
+    gone = replacing(
+        start: positions.Position(line: 0, character: 1),
+        end: positions.Position(line: 1, character: 1),
+        text: ""
+    )
+    assert apply("ab\ncd", c: gone, e: .utf16) == "ad"
+    whole = Change(range: fail(code: "not_found", msg: "the whole text"), text: "new")
+    assert apply("old", c: whole, e: .utf16) == "new"
+
+test "apply: a range end first, and one past the text, land inside it"
+    back = replacing(
+        start: positions.Position(line: 0, character: 3),
+        end: positions.Position(line: 0, character: 1),
+        text: "-"
+    )
+    assert apply("abcd", c: back, e: .utf16) == "a-d"
+    far = replacing(
+        start: positions.Position(line: 9, character: 0),
+        end: positions.Position(line: 9, character: 4),
+        text: "!"
+    )
+    assert apply("ab", c: far, e: .utf16) == "ab!"
+
+test "apply_all: each change read against the text the one before made"
+    first = replacing(
+        start: positions.Position(line: 0, character: 0),
+        end: positions.Position(line: 0, character: 0),
+        text: "🎈"
+    )
+    second = replacing(
+        start: positions.Position(line: 0, character: 2),
+        end: positions.Position(line: 0, character: 3),
+        text: "B"
+    )
+    assert apply_all("ab", changes: [first, second], e: .utf16) == "🎈Bb"

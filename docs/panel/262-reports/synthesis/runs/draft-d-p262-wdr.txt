@@ -1,0 +1,24 @@
+title: Defect <number>: A watchdog whose handler a raw system call installed, jumping out of the runtime's allocator, is stopped at the next allocation in words blaming a Heroes function given to C as a signal handler, in a program that has none
+labels: kind:defect, class:blocking, area:runtime
+milestone: M-rebel-library
+state: open
+---
+Filed 2026-11-26
+
+### What happens
+
+`wdr` (`docs/panel/262-reports/programs/critic/wdr.h`, `wdr.hero` and `raw_install.h`, a copy of the `run` golden header `fixedbugs-2522-a-raw-install.h`): the handler, installed by `rt_sigaction` through `syscall` on Linux and libsystem_kernel's `__sigaction` on Darwin, `siglongjmp`s out of a loop of C calling a Heroes function that allocates, then C calls the function once more; 34 runs, `WD_US` cycling over 17 delays from 300 to 25,000 microseconds: 7 of 34 exit 134, *"panic: a signal handler used this runtime's allocator while the code it interrupted was inside it, which would corrupt memory: a Heroes function given to C as a signal handler, or called from one, does so whenever it builds or drops a value."*, the other 27 print `after the jump: 75` at exit 0; never panel 258's stop at the jump
+
+### Where to look
+
+`runtime/parts/sigguard.c` (`hero_signal_jump_checked`, asked by the jump hooks `runtime/parts/sigjump_save.c` and `runtime/parts/rebind_jump.c` only where the thread stood in a handler the runtime saw begin), `runtime/parts/alloc.c` (`hero_alloc_reentered`, guard D's words) and its twin `runtime/parts/lend.c`
+
+### Origin
+
+2026-11-26, panel 262's completeness critic, second reading (`docs/panel/262-reports/critic-reports.md` § 5, finding K10: 2 to 8 runs of 34 per cell, this Mac and the Linux arm64 image, the base 87003cb42 and `main` at bdef9ba06, plain and `--sanitize`, every stop in these words); **re-run by panel 262's synthesis on `main` at 77eb38534** (2026-11-26 23:52, this Mac, plain, the seed's compiler built from that commit's seed, `sources 1e1eb23a1927d35b`, with that commit's runtime): 7 of 34 in the words above, so it still happens there. These are the words defect 2755 was filed for (*"ends the program with a message accusing a Heroes signal handler that does not exist"*), which panel 258's stop replaced where the runtime saw the handler begin; 2755's closing names a jump the hooks never see as what stays, and here the hooks see the jump and the runtime never saw the handler begin (a raw system call, `sigguard.c:61-74`), so the coordinator may read it as 2755's residue rather than a new cause. The stop is right (POSIX leaves what follows such a jump undefined); what it says is not.
+
+### Class
+
+**blocking**, 2026-11-26: a false message, naming a Heroes function given to C as a signal handler in a program that gives C none.
+
+exit 0
