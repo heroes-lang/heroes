@@ -66,7 +66,8 @@ __attribute__((noinline)) static void hero_jmp_leaving(void) {
 #endif
 }
 
-static _Noreturn void hero_jmp_go(hero_jmp_jump_fn real, struct __jmp_buf_tag *env, int val) {
+__attribute__((no_sanitize("address"))) static _Noreturn void
+hero_jmp_go(hero_jmp_jump_fn real, struct __jmp_buf_tag *env, int val) {
     hero_jmp_leaving();
     real(env, val);
     __builtin_unreachable();
@@ -202,27 +203,33 @@ int(getcontext)(ucontext_t *ucp) {
     __attribute__((musttail)) return real(ucp);
 }
 
-/* THE JUMPS. Each finds the C library's own first, as a save point does. */
-void(longjmp)(struct __jmp_buf_tag env[1], int val) {
+/* THE JUMPS. Each finds the C library's own first, as a save point does.
+ * Under AddressSanitizer none is instrumented (defect d-lane-sig-family-10):
+ * clang puts a call to `__asan_handle_no_return` before every call of a
+ * function that does not return, `hero_jmp_go` here, and on a coroutine's
+ * stack, which ASan was never told of, ASan clears nothing there and writes
+ * its warning into a correct program's stderr; what the jump leaves is
+ * cleared by `hero_jmp_leaving`, as Darwin's are (`parts/rebind_jump.c`). */
+__attribute__((no_sanitize("address"))) void(longjmp)(struct __jmp_buf_tag env[1], int val) {
     hero_jmp_find();
     hero_jmp_jump(env);
     hero_jmp_go(atomic_load_explicit(&hero_jmp_real_longjmp, memory_order_relaxed), env, val);
 }
 
-void(_longjmp)(struct __jmp_buf_tag env[1], int val) {
+__attribute__((no_sanitize("address"))) void(_longjmp)(struct __jmp_buf_tag env[1], int val) {
     hero_jmp_find();
     hero_jmp_jump(env);
     hero_jmp_go(atomic_load_explicit(&hero_jmp_real__longjmp, memory_order_relaxed), env, val);
 }
 
-void(siglongjmp)(struct __jmp_buf_tag env[1], int val) {
+__attribute__((no_sanitize("address"))) void(siglongjmp)(struct __jmp_buf_tag env[1], int val) {
     hero_jmp_find();
     hero_jmp_jump(env);
     hero_jmp_go(atomic_load_explicit(&hero_jmp_real_siglongjmp, memory_order_relaxed), env, val);
 }
 
 void __longjmp_chk(struct __jmp_buf_tag env[1], int val);
-void __longjmp_chk(struct __jmp_buf_tag env[1], int val) {
+__attribute__((no_sanitize("address"))) void __longjmp_chk(struct __jmp_buf_tag env[1], int val) {
     hero_jmp_find();
     hero_jmp_jump(env);
     hero_jmp_go(atomic_load_explicit(&hero_jmp_real_chk, memory_order_relaxed), env, val);
