@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { renderPackagesPage } from '../../lib/rebel-page.ts';
+
+// Rebel's packages, one row each, by layer: § A1's rows, their ledgers, the
+// C under them and the applications that take them (`rebel-page.ts`).
+const page = await renderPackagesPage('en');
+---
+<BaseLayout url={page.url} title={page.title} description={page.description}>
+<Fragment set:html={page.html} />
+</BaseLayout>

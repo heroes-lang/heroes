@@ -1,4 +1,4 @@
-<p class="tagline">A Heroes package index, in small, and its client: signed packages published, versions resolved as Rust&rsquo;s Cargo resolves them, archives fetched and verified.</p>
+<p class="tagline">A Heroes package index, in small, and its client: signed packages published, versions resolved as Rust&rsquo;s Cargo resolves them, archives verified.</p>
 
 <p>A publisher packs a package&rsquo;s folder into a reproducible archive, signs a statement of its name, version and digest with an Ed25519 key, and uploads both. The server opens the archive as a stranger&rsquo;s, checks its <code>heroes.toml</code> against a JSON Schema and the signature against the publisher&rsquo;s registered key, keeps the archive under its SHA-256 digest and the version in SQLite, and indexes it for search. The client lists and searches packages, resolves a range of versions to the highest one not withdrawn, fetches an archive and verifies its digest and its signature against its own list of trusted keys, and shows what changed between two versions.</p>
 

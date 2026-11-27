@@ -5,18 +5,26 @@
     <span class="nod">· <a href="/it/about/thanks/#rebel-rebel">rebel rebel</a></span>
   </div>
   <p class="lede">
-    La libreria che questo progetto scrive per Heroes. Un programma la usa, oppure no.
+    La libreria standard non standard di Heroes, scritta da zero in Heroes. Un programma la prende o la lascia.
   </p>
+  <p class="shelves"><a href="/it/rebel/packages/">I pacchetti</a> &middot;
+  <a href="/it/rebel/apps/">Le applicazioni</a> &middot;
+  <a href="#take">Come la prende un programma</a></p>
 
   <h2 id="what">Che cos&rsquo;è</h2>
   <p>
     Heroes non impone una libreria standard. Il linguaggio dà a un programma le sue funzioni predefinite, leggere e scrivere un file, la riga di comando e poco altro, e tutto quello che va oltre un programma lo prende da una libreria C o da un pacchetto di codice Heroes che si porta dietro. Rebel è un pacchetto di questo tipo, e ampio: testo e numeri, file e cartelle, il tempo e i fusi orari, la rete e il web, formati di dati dal JSON ai fogli di calcolo, compressione, crittografia e database, scritto da zero in Heroes da questo progetto.
   </p>
   <p>
-    È facoltativa, ed è quello che dice il suo nome. Niente di Rebel entra nel compilatore o nel runtime, la parte di programma che sta sotto ogni programma Heroes; il compilatore stesso è scritto senza; e un programma che non la prende non se ne porta dietro niente. Il repository la chiama la libreria standard non standard.
+    È facoltativa, ed è quello che dice il suo nome. Niente di Rebel entra nel compilatore o nel runtime, la parte di programma che sta sotto ogni programma Heroes; il compilatore stesso è scritto senza; e un programma che non la prende non se ne porta dietro niente.
   </p>
   <p>
-    Le librerie di Go, di Rust e di Python sono la sua ispirazione e il suo metro: un pacchetto di Rebel è completo quando ogni capacità che quelle tre offrono nel suo campo è offerta anche qui, oppure rifiutata per iscritto con la sua ragione. I nomi, l&rsquo;albero e il codice sono suoi. Un programma che usa Rebel non deve niente per questo, come non deve niente per il runtime, perché l&rsquo;eccezione della licenza che copre l&rsquo;uno copre anche l&rsquo;altra, con un&rsquo;eccezione sua: due parti di Rebel sono lavoro di altri e tengono le loro note di licenza, la Public Suffix List in <code>http/suffixes</code> e le tabelle prese da tiktoken in <code>tokenizer/tables</code>. Quelle note viaggiano con quei file, quindi un programma il cui catalogo non elenca nessuno dei due pacchetti non se ne porta dietro nessuna.
+    Le librerie di Go, di Rust e di Python sono la sua ispirazione e il suo metro: un pacchetto di Rebel è completo quando ogni capacità che quelle tre offrono nel suo campo è offerta anche qui, oppure rifiutata per iscritto con la sua ragione. I nomi, l&rsquo;albero e il codice sono suoi.
+  </p>
+
+  <h2 id="apps">Che cosa ci si costruisce</h2>
+  <p>
+    Con Rebel questo progetto ha scritto {{rebelApplications}} applicazioni, tra cui un piccolo database SQL fatto come SQLite, un piccolo Redis, un archivio replicato alla maniera di etcd e messo alla prova in una rete simulata, una piccola macchina RISC-V alla maniera della scheda virt di QEMU, e un language server, il programma a cui un editor chiede gli errori mentre scrivi, per Kite, un piccolo linguaggio che il programma stesso definisce. Ognuna ha una sessione dimostrativa registrata, che un controllo riesegue e confronta con la registrazione ogni volta che Rebel o il programma cambiano. I server con cui parla sono sostituti che il programma si porta dietro, quindi niente esce dalla macchina. <a href="/it/rebel/apps/">Tutte le applicazioni&nbsp;&rarr;</a>
   </p>
 
   <h2 id="take">Come la prende un programma</h2>
@@ -50,16 +58,21 @@ wrote heroes.toml</code></pre>
     <a href="/it/docs/packages/">Il capitolo sui pacchetti</a> porta lo stesso programma per tutte e due le strade, l&rsquo;indice e la cartella, con quello che il compilatore dice a ogni passo.
   </p>
   <p>
-    Oppure Rebel non lo prende affatto. Un programma che preferisce collegare da sé una libreria C lo fa, come fanno i programmi di <code>examples/</code>, e le regole che Rebel segue per i propri pacchetti non vincolano nessun programma. <a href="/it/examples/#rebel">I programmi scritti con Rebel</a> stanno accanto agli altri nella pagina degli esempi.
+    Oppure Rebel non lo prende affatto. Un programma che preferisce collegare da sé una libreria C lo fa, come fanno i programmi di <code>examples/</code>, e le regole che Rebel segue per i propri pacchetti non vincolano nessun programma. <a href="/it/examples/#rebel">I programmi scritti con Rebel</a> stanno anche accanto agli altri nella pagina degli esempi.
   </p>
 
   <h2 id="packages">I pacchetti, livello per livello</h2>
-{{packages}}
+{{packagesLead}}
+
+  <h2 id="owes">Che cosa deve un programma che la usa</h2>
+  <p>
+    Un programma che usa Rebel non deve niente per questo, come non deve niente per il runtime, perché l&rsquo;eccezione della licenza che copre l&rsquo;uno copre anche l&rsquo;altra, con un&rsquo;eccezione sua: due parti di Rebel sono lavoro di altri e tengono le loro note di licenza, la Public Suffix List in <code>http/suffixes</code> e le tabelle prese da tiktoken in <code>tokenizer/tables</code>. Quelle note viaggiano con quei file, quindi un programma il cui catalogo non elenca nessuno dei due pacchetti non se ne porta dietro nessuna.
+  </p>
 
   <p class="next away">
     Come è fatta e come si scrive il suo codice, per chi scriverà il prossimo pacchetto: <a href="https://github.com/heroes-lang/heroes/blob/main/rebel/examples/README.md">la guida di Rebel per chi lo scrive</a>, in inglese.
   </p>
 
   <footer>
-    <p>L&rsquo;elenco dei pacchetti viene letto da <code>rebel/examples/README.md</code>, sezione A1, quando il sito viene generato, e ogni pagina di riferimento da quello che <code>heroes doc</code> stampa per il pacchetto, quindi nessuno dei due è copiato a mano. La trascrizione è il programma <code>rebel/examples/reach/reach_csv.hero</code> in una cartella sua, con Rebel preso dalla cartella del repository, e le dimensioni sono la copia messa per quel programma contro la versione intera, come le mostra il capitolo sui pacchetti.</p>
+    <p>I conti dei pacchetti, dei loro registri e delle applicazioni vengono letti dall&rsquo;albero del repository quando il sito viene generato, quindi nessuno è copiato a mano. La trascrizione è il programma <code>rebel/examples/reach/reach_csv.hero</code> in una cartella sua, con Rebel preso dalla cartella del repository, e le dimensioni sono la copia messa per quel programma contro la versione intera, come le mostra il capitolo sui pacchetti.</p>
   </footer>
