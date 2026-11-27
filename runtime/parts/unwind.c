@@ -324,6 +324,46 @@ static void hero_unwind_release_all(void) {
 __attribute__((no_sanitize("address"))) static _Noreturn void hero_unwind_go(int kind, void *env, int value);
 static void hero_unwind_clear(void);
 
+/* And `size` bytes at `at` copied by the kernel, never loaded, so an address
+ * no page backs is an answer and never a fault; false where it refuses. */
+static bool hero_unwind_peek(uintptr_t at, void *into, size_t size);
+
+/* WHETHER THE INSTRUCTION BEFORE `ip` IS A CALL, read by the kernel: a frame
+ * the walk meets at any other address was stopped by a signal in the middle
+ * of its code, not at a call into C, and its slots may hold a value half
+ * stored (an old one being replaced, a temporary owning it). A forced unwind
+ * there would hand a cleanup a slot mid-store, and that is how this hook's
+ * first landing on main corrupted a watchdog's program whose handler a raw
+ * system call installed, unseen by the routes (`wdr`, panel 262's critic: a
+ * release after the last reference, and SIGSEGV, 11 runs of 34). An answer
+ * this cannot give is no. */
+static bool hero_unwind_after_call(uintptr_t ip) {
+#if defined(__aarch64__)
+    uint32_t w = 0;
+    if (ip < 4 || !hero_unwind_peek(ip - 4, &w, sizeof w)) return false;
+    if ((w & 0xFC000000u) == 0x94000000u) return true;               /* bl */
+    if ((w & 0xFFFFFC1Fu) == 0xD63F0000u) return true;               /* blr */
+    return (w & 0xFEFFF800u) == 0xD63F0800u;                          /* blraa, blrab, blraaz, blrabz */
+#else
+    unsigned char b[8];
+    if (ip < 8 || !hero_unwind_peek(ip - 8, b, sizeof b)) return false;
+    /* b[7] is the byte before ip. */
+    if (b[3] == 0xE8) return true;                                    /* call rel32 */
+    unsigned char m2 = b[7], m3 = b[6], m6 = b[3], m7 = b[2];
+    if (b[6] == 0xFF && (m2 & 0xF8) == 0xD0) return true;             /* call reg */
+    if (b[5] == 0xFF && (m3 & 0x38) == 0x10 && (m3 & 0xC0) == 0x40 && (m3 & 7) != 4) return true; /* [reg+d8] */
+    if (b[4] == 0xFF && (b[5] & 0x38) == 0x10 && (b[5] & 0xC0) == 0x40 && (b[5] & 7) == 4) return true; /* [sib+d8] */
+    if (b[2] == 0xFF && (m6 & 0x38) == 0x10 && ((m6 & 0xC7) == 0x05 || ((m6 & 0xC0) == 0x80 && (m6 & 7) != 4))) {
+        return true;                                                  /* [rip+d32], [reg+d32] */
+    }
+    if (b[1] == 0xFF && (m7 & 0x38) == 0x10 && (m7 & 0xC0) == 0x80 && (m7 & 7) == 4) return true; /* [sib+d32] */
+    if (b[5] == 0xFF && (b[6] & 0x38) == 0x10 && (b[6] & 0xC0) == 0 && (b[6] & 7) != 4 && (b[6] & 7) != 5) {
+        return b[4] >= 0x40 && b[4] <= 0x4F;                          /* rex, [reg] */
+    }
+    return false;
+#endif
+}
+
 /* One walk of the frames above the hook, before anything is unwound. The
  * unwinder reads a frame's own stack pointer at its call as `_Unwind_GetCFA`
  * on Darwin's and on GNU's unwinder alike (glibc's cancellation compares the
@@ -331,8 +371,11 @@ static void hero_unwind_clear(void);
  * target exactly, and every frame below it stands lower. */
 typedef struct {
     uintptr_t target;
+    uintptr_t lo;
+    uintptr_t hi;
     bool found;
     bool passed;
+    bool stopped;
     int left_n;
     uintptr_t left[HERO_UNWIND_LEFT];
     int frames_n;
@@ -342,6 +385,20 @@ typedef struct {
 static _Unwind_Reason_Code hero_unwind_walked(struct _Unwind_Context *ctx, void *arg) {
     HeroUnwindWalk *walk = (HeroUnwindWalk *)arg;
     uintptr_t sp = (uintptr_t)_Unwind_GetCFA(ctx);
+    /* Below the target every frame must be on the thread's own stack and
+     * stopped at a call: a signal's frame (the unwinder's own flag) or a
+     * frame stopped anywhere else says the jump came out of a handler, and
+     * nothing is unwound (`hero_unwind_after_call`). */
+    if (!walk->found) {
+        int signalled = 0;
+        uintptr_t ip = (uintptr_t)_Unwind_GetIPInfo(ctx, &signalled);
+        if (signalled != 0 || sp < walk->lo || sp >= walk->hi || !hero_unwind_after_call(ip)) {
+            walk->stopped = true;
+            return _URC_NORMAL_STOP;
+        }
+    } else if (sp < walk->lo || sp >= walk->hi) {
+        return _URC_NORMAL_STOP;
+    }
     if (!walk->found) {
         if (sp == walk->target) {
             walk->found = true;
@@ -441,23 +498,49 @@ static void hero_unwind_adopt(HeroUnwoundGroup *into, const HeroUnwindWalk *walk
     hero_unwind_drop();
 }
 
+/* WHETHER THE FRAMES FROM `fp` TO THE TARGET ARE ONE CHAIN ON THE THREAD'S OWN
+ * STACK, asked before the unwinder reads any of them: each frame record's
+ * saved frame pointer above the one before it and below the stack's top, up
+ * to a record at or past the target. The unwinder steps frames by reading
+ * memory their records and its tables name, and a coroutine's first frame,
+ * whose record a library writes as it likes, sent it to address -8 (`n2` and
+ * `escape_heap`, panel 262's programs: a jump from a coroutine's stack to its
+ * host, ASan's SEGV inside `libunwind::UnwindCursor::step`, 3 runs of 3):
+ * a chain that leaves the stack, turns back or ends is no unwind. A frame
+ * kept with no record (x86-64's `-fomit-frame-pointer`) breaks the chain the
+ * same way, the safe side. */
+static bool hero_unwind_chained(uintptr_t fp, uintptr_t target, uintptr_t lo, uintptr_t hi) {
+    for (int steps = 0; steps < 100000; steps += 1) {
+        if (fp >= target) return true;
+        if (fp < lo || fp + 2 * sizeof(uintptr_t) > hi || (fp & (sizeof(uintptr_t) - 1)) != 0) return false;
+        uintptr_t next = ((const uintptr_t *)fp)[0];
+        if (next <= fp || next >= hi) return false;
+        fp = next;
+    }
+    return false;
+}
+
 /* THE HOOK, before a jump of the setjmp family made outside every signal
  * handler, the target decoded (`target`, the stack pointer the jump will
  * install): where the program unwinds and a callback stands on this thread,
  * and a frame of the chain stands at the target exactly, the frames below it
  * are unwound and the jump is made from the stop, never returning here. In
  * every other case it returns, and the caller jumps as it always did. */
-static void hero_unwind_jump(void *env, int value, int kind, uintptr_t target) {
+__attribute__((noinline)) static void hero_unwind_jump(void *env, int value, int kind, uintptr_t target, uintptr_t lo,
+                                                     uintptr_t hi) {
     if (__atomic_load_n(&hero_unwind_scoped, __ATOMIC_RELAXED) == 0 || env == NULL || target == 0) return;
     _Atomic int64_t *mine = hero_callback_mine;
     if (mine == NULL || atomic_load_explicit(mine, memory_order_relaxed) <= 0) return;
     HeroUnwindThread *me = &hero_unwind_this;
     if (me->on) return;
+    if (!hero_unwind_chained((uintptr_t)__builtin_frame_address(0), target, lo, hi)) return;
     HeroUnwindWalk walk;
     memset(&walk, 0, sizeof walk);
     walk.target = target;
+    walk.lo = lo;
+    walk.hi = hi;
     _Unwind_Backtrace(hero_unwind_walked, &walk);
-    if (!walk.found || walk.frames_n == 0) return;
+    if (walk.stopped || !walk.found || walk.frames_n == 0) return;
     HeroUnwoundGroup *g = (HeroUnwoundGroup *)hero_malloc_raw(sizeof(HeroUnwoundGroup));
     memset(g, 0, sizeof *g);
     g->landing = target;
@@ -493,11 +576,13 @@ static void hero_unwind_jump(void *env, int value, int kind, uintptr_t target) {
 
 /* A machine whose frame pointer this file does not name: no unwind, the jump
  * as it always was. */
-static void hero_unwind_jump(void *env, int value, int kind, uintptr_t target) {
+static void hero_unwind_jump(void *env, int value, int kind, uintptr_t target, uintptr_t lo, uintptr_t hi) {
     (void)env;
     (void)value;
     (void)kind;
     (void)target;
+    (void)lo;
+    (void)hi;
 }
 
 #endif
