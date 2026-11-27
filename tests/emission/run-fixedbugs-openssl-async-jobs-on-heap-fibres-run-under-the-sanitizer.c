@@ -687,7 +687,7 @@ HERO_TU_LOCAL uint64_t h_0opt_e201354_hash(const void *hero_elem) {
 }
 
 
-HeroStr hero_program_sources(void) { return hero_str_from_bytes("38af1641267563d7", 16); }
+HeroStr hero_program_sources(void) { return hero_str_from_bytes("61ad49433c1db1f1", 16); }
 int main(int hero_argc, char **hero_argv) {
     hero_args_set(hero_argc, hero_argv);
     hero_stack_spell("fixedbugsopensslasyncjobsonheapfibresrununderthesanitizer\tfixedbugs-openssl-async-jobs-on-heap-fibres-run-under-the-sanitizer\n");

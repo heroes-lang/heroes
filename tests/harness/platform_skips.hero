@@ -682,7 +682,7 @@ test "every program Windows cannot build is a file that exists, skipped there al
     # Then the 1 of defect d-lane-sig-family-7, its header refused at
     # `sys/mman.h` not found by `zig cc` 0.15.2 for Windows x86-64 on
     # 2026-11-27 (`POSIX_CONTEXT_SHAPES_ON_WINDOWS`).
-    # Then the 1 of defect d-lane-sig-family-8, which binds defect 2853's
+    # Then the 1 of defect d-lane-sig-family-9, which binds defect 2853's
     # OpenSSL header, stopping itself with `#error` on Windows (`zig cc`
     # 0.15.2 for Windows x86-64, 2026-11-27; `POSIX_CONTEXT_SHAPES_ON_WINDOWS`).
     # Then the 2 of defect 2869 (d-lane-sig-family-4), their one header
