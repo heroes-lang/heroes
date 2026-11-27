@@ -659,7 +659,7 @@ function checkChapterRefs(html: string, pagePath: string): string[] {
     if (real !== undefined && real !== Number(said)) {
       problems.push(
         `${pagePath}: the prose says chapter ${said} and links /docs/${slug}/, whose own crumb ` +
-          `says chapter ${real}. The guide's numbering moved and this sentence stayed behind.`
+          `says chapter ${real}. The chapters' numbering moved and this sentence stayed behind.`
       );
     }
   }

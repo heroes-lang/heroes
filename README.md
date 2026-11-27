@@ -160,7 +160,7 @@ working is a calculator, spread over four modules, with its own tests.
 | threads, isolated, with a stack guard that speaks on every one | the two books of `docs/records/book/`: how this language came to be, and the guide as a book you would find in a shop |
 | an FFI that binds raylib, SDL, SQLite and curl with no shim | |
 | `read_file`/`write_file`, `args()`, `exit(code)` | |
-| a guide, chapter by chapter, in English and Italian, at [heroes-lang.org/docs](https://heroes-lang.org/docs/) | |
+| the documentation, chapter by chapter, in English and Italian, at [heroes-lang.org/docs](https://heroes-lang.org/docs/) | |
 
 **Heroes imposes no standard library.** The language ships its compiler and a
 minimal runtime, and what a program needs beyond them comes from C through the
@@ -310,7 +310,7 @@ and in
 
 <p align="center">
   <sub><a href="https://heroes-lang.org">heroes-lang.org</a> is this language's home, in
-  English and Italian: the guide, the examples that run, and the build log.<br>
+  English and Italian: the docs, the examples that run, and the build log.<br>
   The name is an homage to David Bowie's <i>&ldquo;Heroes&rdquo;</i> (1977), and the
   quotation marks are his. The bolt is borrowed from 1973.</sub>
 </p>
