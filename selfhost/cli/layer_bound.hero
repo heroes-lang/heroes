@@ -47,34 +47,41 @@ use token
 
 # What one group's header reaches of the layer, as the walk found it: the
 # layer's file met first (its path in the runtime's folder, "" where none
-# is), whether that file is the header itself, and whether the header is a
-# runtime file named like one of the layer's but for its case.
+# is), whether that file is the header itself, whether the header is a
+# runtime file named like one of the layer's but for its case, and, where it
+# reaches none of the layer, whether the header is the runtime's own, a file
+# of the runtime's folder outside `vendor/` (`hero_os.h`, `hero_compiler.h`),
+# which a refusal names as what it is.
 record Reach
     file: str
     is: bool
     folded: bool
+    runtime_own: bool
 
-# Each group of `decls` whose header is one of `headers`, its reach read from
-# the walk's `edges` and `roots` into `reaches`, by its string's first byte.
-# A header the walk found as no file is judged by nothing here: what it
-# binds is unread, and the build tells the header missing (`Hero_Time.h` on
-# a file system that keeps case, where it was told a binding through a file
-# that is not there, lane land260's Linux arm64 run).
-function reach_each(s: source.Source, decls: [ast.Decl], headers: [str], edges: {str: [str]}, roots: {i64: str}, runtime: str, files: [str], @reaches: {i64: Reach})
+# Each group of `decls` whose header is one of `headers`, or one of the
+# compiler's own the unit's opening reads before them (`hero_os.h`), its
+# reach read from the walk's `edges` and `roots` (the file each line of the
+# opening was found at, by its name) into `reaches`, by its string's first
+# byte. A group over the compiler's own header was judged by nothing here
+# until panel 260's amendment after its blind reading (provisional, the
+# author's reading pending): `extern "hero_os.h" layer` built and ran, the
+# word binding nothing of the layer, while the specification says no group
+# but the layer's may say it. A header the walk found as no file is judged by
+# nothing here: what it binds is unread, and the build tells the header
+# missing (`Hero_Time.h` on a file system that keeps case, where it was told
+# a binding through a file that is not there, lane land260's Linux arm64
+# run).
+function reach_each(s: source.Source, decls: [ast.Decl], headers: [str], edges: {str: [str]}, roots: {str: str}, runtime: str, files: [str], @reaches: {i64: Reach})
     for decl in decls
         head = layer_header.head_of(decl)
 
         if head.header.is_err() || !reaches[head.header.must().start].is_err()
             continue
-        at = index_of(headers, name: emit_externs.unquoted(s, span: head.header.must()))
+        name = emit_externs.unquoted(s, span: head.header.must())
+        root = roots[name].default("")
 
-        if at >= 0 && roots[at].default("").len() > 0
-            reaches[head.header.must().start] @ reach_of(
-                edges: edges,
-                root: roots[at].default(""),
-                runtime: runtime,
-                files: files
-            )
+        if root.len() > 0 && (index_of(headers, name: name) >= 0 || emit_externs.is_own(name))
+            reaches[head.header.must().start] @ reach_of(edges: edges, root: root, runtime: runtime, files: files)
 
 # Each group judged once, in the order the declarations stand, against the
 # word its head line says: a group that binds and does not say it is refused
@@ -144,11 +151,11 @@ function told(s: source.Source, decls: [ast.Decl], reaches: {i64: Reach}, t: too
 
         if !bound.is_err()
             out @ out.push(
-                redeclared(name: bound.must().name, header: names[bound.must().name].default(""), own: spelled, span: bound.must().span)
+                redeclared(name: bound.must().name, header: names[bound.must().name].default(""), own: spelled, span: bound.must().span, runtime_own: r.must().runtime_own)
             )
         else if !head.layer.is_err()
             out @ out.push(
-                layer_header.unreached(header: spelled, word: head.layer.must(), from: span.end, library: layer_libraries.said_of(s, head.library))
+                layer_header.unreached(header: spelled, word: head.layer.must(), from: span.end, library: layer_libraries.said_of(s, head.library), runtime_own: r.must().runtime_own)
             )
 
     return out
@@ -178,13 +185,13 @@ function wanted(decls: [ast.Decl], reaches: {i64: Reach}, declared: bool) -> boo
 # layer's, breadth first, that `edges` reach from it, itself included; none
 # where `root` is "".
 function reach_of(edges: {str: [str]}, root: str, runtime: str, files: [str]) -> Reach
-    none = Reach(file: "", is: false, folded: false)
+    none = Reach(file: "", is: false, folded: false, runtime_own: false)
 
     if root.len() == 0
         return none
 
     if folded_path(runtime: runtime, path: root, files: files)
-        return Reach(file: "", is: false, folded: true)
+        return Reach(file: "", is: false, folded: true, runtime_own: false)
     queue: [str] @= [root]
     seen: {str: bool} @= {}
     seen[root] @ true
@@ -196,14 +203,20 @@ function reach_of(edges: {str: [str]}, root: str, runtime: str, files: [str]) ->
         inside = layer_path(runtime: runtime, path: path, files: files)
 
         if inside.len() > 0
-            return Reach(file: inside, is: path == root, folded: false)
+            return Reach(file: inside, is: path == root, folded: false, runtime_own: false)
 
         for next in edges[path].default([])
             if seen[next].is_err()
                 seen[next] @ true
                 queue @ queue.push(next)
 
-    return none
+    own = runtime_inside(runtime: runtime, path: root)
+    return Reach(
+        file: "",
+        is: false,
+        folded: false,
+        runtime_own: own.len() > 0 && !bytes.bytes_at(text: own, at: 0, needle: runtime_key.VENDOR)
+    )
 
 # The path of `path` in the runtime's folder `runtime` where it is one of the
 # layer's files `files`, read lexically as `include_told.file_said` reads a
@@ -270,10 +283,16 @@ function bound_in_group(s: source.Source, decls: [ast.Decl], header: token.Span,
 
 # A group that binds a function of the layer through a header of its own,
 # which declares it and includes none of the layer's: told at the binding.
-function redeclared(name: str, header: str, own: str, span: token.Span) -> diag.Diagnostic
+# Through the runtime's own header (`runtime_own`), which no program edits,
+# the one repair named is the group's header.
+function redeclared(name: str, header: str, own: str, span: token.Span, runtime_own: bool) -> diag.Diagnostic
+    through: str @= "`" + layer_header.bare(own) + "`, which includes none of the layer's headers: name `" + header + "` in the group, or include it in `" + layer_header.bare(own) + "`"
+
+    if runtime_own
+        through @ "`" + layer_header.bare(own) + "`, the runtime's own header, which includes none of the layer's: name `" + header + "` in the group"
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: layer_header.REDECLARED,
-        message: "`" + name + "` is the platform layer's, declared by its `" + header + "`, and this group binds it through `" + layer_header.bare(own) + "`, which includes none of the layer's headers: name `" + header + "` in the group, or include it in `" + layer_header.bare(own) + "`",
+        message: "`" + name + "` is the platform layer's, declared by its `" + header + "`, and this group binds it through " + through,
         span: span
     )
     d.notes @ d.notes.push(REDECLARED)
@@ -362,6 +381,16 @@ test "a reach is the first layer file met, the header itself or one it includes 
     assert reach_of(edges: edges, root: "rt/HERO_TIME.h", runtime: "rt", files: files).folded
     assert reach_of(edges: edges, root: "", runtime: "rt", files: files).file == ""
 
+    # Where none of the layer is reached, a header of the runtime's own is
+    # told apart from one of the program's and from the runtime's vendored C.
+    edges["rt/hero_os.h"] @ ["rt/heroes_runtime.h"]
+    own = reach_of(edges: edges, root: "rt/hero_os.h", runtime: "rt", files: files)
+    assert own.file == "" && own.runtime_own && !own.folded
+    assert !through.runtime_own && !itself.runtime_own
+    assert !reach_of(edges: edges, root: "vend.h", runtime: "rt", files: files).runtime_own
+    vendored = reach_of(edges: edges, root: "rt/vendor/m.h", runtime: "rt", files: files)
+    assert vendored.file == "" && !vendored.runtime_own
+
 # A header the walk found as no file leaves its group unjudged, so the build
 # tells it missing rather than a binding through it (lane land260).
 test "a group whose header the walk found nowhere has no reach to be judged by (panel 260)"
@@ -370,7 +399,7 @@ test "a group whose header the walk found nowhere has no reach to be judged by (
     decls = parse.parse(text).decls
     reaches: {i64: Reach} @= {}
     edges: {str: [str]} = {}
-    unfound: {i64: str} = {}
+    unfound: {str: str} = {}
     reach_each(
         s,
         decls,
@@ -382,8 +411,8 @@ test "a group whose header the walk found nowhere has no reach to be judged by (
         reaches: @reaches
     )
     assert keys(reaches).len() == 0
-    found: {i64: str} @= {}
-    found[0] @ "rt/hero_time.h"
+    found: {str: str} @= {}
+    found["Hero_Time.h"] @ "rt/hero_time.h"
     reach_each(
         s,
         decls,
@@ -395,6 +424,59 @@ test "a group whose header the walk found nowhere has no reach to be judged by (
         reaches: @reaches
     )
     assert keys(reaches).len() == 1
+
+# **A group over the compiler's own header is judged too** (panel 260's
+# amendment after its blind reading, provisional, the author's reading
+# pending): the unit's opening reads `hero_os.h` before the groups' headers
+# and no group's walk enters it, so its group is judged by what the file the
+# opening found reaches, the runtime's own and none of the layer's; a header
+# the opening names that is no compiler's own is its group walk's to judge.
+test "a group over the compiler's own header is judged by the file the opening found (panel 260's amendment)"
+    text = "extern \"hero_os.h\" layer\n    function hero_os_pid() -> i64\n\nextern \"x.h\" layer\n    function x_one() -> i64\n"
+    s = source.new_source(name: "main.hero", text: text)
+    decls = parse.parse(text).decls
+    reaches: {i64: Reach} @= {}
+    edges: {str: [str]} @= {}
+    edges["rt/hero_os.h"] @ ["rt/heroes_runtime.h"]
+    roots: {str: str} @= {}
+    roots["hero_os.h"] @ "rt/hero_os.h"
+    roots["x.h"] @ "x.h"
+    reach_each(
+        s,
+        decls,
+        headers: [],
+        edges: edges,
+        roots: roots,
+        runtime: "rt",
+        files: ["hero_time.h"],
+        reaches: @reaches
+    )
+    assert keys(reaches).len() == 1
+    r = reaches[keys(reaches)[0]].must()
+    assert r.file == "" && r.runtime_own && !r.is && !r.folded
+
+# **No name a group binds through the runtime's own headers is one of the
+# layer's** (panel 260's amendment): since a group over `hero_os.h` is judged
+# as every group is, a name it declares that a header of the layer's code
+# writes too would refuse a correct binding as the layer's made through the
+# runtime's header. A premise about the runtime's files, so held here: this
+# test fails, naming each name and both headers, the day one is shared. The
+# names `heroes_runtime.h` writes are left out, every binding of one being
+# refused as the runtime's own (`check/runtime_header.hero`).
+test "no name the runtime's own headers write is one of the layer's (panel 260's amendment)"
+    t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    names = declared_names(t.runtime)
+    runtime_words = c_words.used(reading.text_of(t.runtime + "/heroes_runtime.h").must())
+    shared: [str] @= []
+
+    for own in ["hero_os.h", "hero_compiler.h", "heroes_unit.h"]
+        words = c_words.used(reading.text_of(t.runtime + "/" + own).must())
+
+        for word in sort(keys(words))
+            if own_names.reserved(word) && runtime_words[word].is_err() && !names[word].is_err()
+                shared @ shared.push(own + " and " + names[word].must() + ": " + word)
+
+    assert shared == []
 
 test "a name the layer's headers declare is found with its header, and one of the runtime's own is not (panel 260)"
     t = toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()

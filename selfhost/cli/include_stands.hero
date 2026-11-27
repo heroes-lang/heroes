@@ -81,9 +81,10 @@ record Place
 
 # What the walk holds while it reads; and, for what a group binds of the
 # platform layer (panel 260, `cli/layer_bound.hero`), every file each file
-# read was found to ask, read lexically, and the file each group's header was
-# found at, so a group is judged by what its own header reaches, whichever
-# group's walk read a file first.
+# read was found to ask, read lexically, and the file each line of the
+# opening was found at, by its name, so a group is judged by what its own
+# header reaches, whichever group's walk read a file first, a group over the
+# compiler's own `hero_os.h` among them (panel 260's amendment).
 record Walk
     search: [str]
     seen: {str: bool}
@@ -91,7 +92,7 @@ record Walk
     defines: {str: include_lines.Asked}
     out: [include_told.Stop]
     edges: {str: [str]}
-    roots: {i64: str}
+    roots: {str: str}
 
 # The build stopped, its refusals told, where a name the build's first clang
 # would open stands as no file; `ok()` where none does. Each group's header is
@@ -286,8 +287,7 @@ function entered(@w: Walk, asked: include_lines.Asked, from: Visit)
 
     if !asked.embed
         if from.path.len() == 0
-            if from.group >= 0
-                w.roots[from.group] @ key
+            w.roots[asked.name] @ key
         else
             includer = package_reads.lexical(from.path)
             w.edges[includer] @ w.edges[includer].default([]).push(key)

@@ -1,0 +1,170 @@
+# Five nodes through an election, writes and a read, a partition and a
+# second leader, the healing, a crash in the middle of a write, compaction
+# and a restart that catches up from a snapshot, and two membership changes.
+name = "five nodes, a partition, a crash and two membership changes"
+nodes = 5
+seed = 7
+
+[settings]
+snapshot_every = 8
+chunk = 64
+
+[[step]]
+do = "say"
+text = "the nodes start as followers; the first timeout to fire starts an election"
+
+[[step]]
+do = "leader"
+
+[[step]]
+do = "op"
+op = "put x 1"
+
+[[step]]
+do = "op"
+op = "put y 2"
+
+[[step]]
+do = "op"
+op = "append x 0"
+
+[[step]]
+do = "op"
+op = "swap y 2 3"
+
+[[step]]
+do = "op"
+op = "get x"
+
+[[step]]
+do = "show"
+
+[[step]]
+do = "say"
+text = "the leader and one follower are cut off from the other three"
+
+[[step]]
+do = "partition"
+groups = [[4, 5], [1, 2, 3]]
+
+[[step]]
+do = "op"
+op = "put z 9"
+at = 4
+wait = "1s"
+
+[[step]]
+do = "op"
+op = "get x"
+at = 4
+wait = "1s"
+
+[[step]]
+do = "leader"
+
+[[step]]
+do = "op"
+op = "put x 2"
+
+[[step]]
+do = "op"
+op = "get x"
+
+[[step]]
+do = "show"
+
+[[step]]
+do = "say"
+text = "the network heals: the old leader learns of the new term and its entry is cut"
+
+[[step]]
+do = "heal"
+
+[[step]]
+do = "run"
+for = "500ms"
+
+[[step]]
+do = "show"
+
+[[step]]
+do = "say"
+text = "a follower crashes in the middle of a write; the others go on and compact their logs"
+
+[[step]]
+do = "crash"
+node = 2
+torn = true
+
+[[step]]
+do = "op"
+op = "append log a"
+
+[[step]]
+do = "op"
+op = "append log b"
+
+[[step]]
+do = "op"
+op = "append log c"
+
+[[step]]
+do = "op"
+op = "append log d"
+
+[[step]]
+do = "op"
+op = "append log e"
+
+[[step]]
+do = "op"
+op = "append log f"
+
+[[step]]
+do = "op"
+op = "delete y"
+
+[[step]]
+do = "op"
+op = "put 'a key' 'a value'"
+
+[[step]]
+do = "restart"
+node = 2
+
+[[step]]
+do = "run"
+for = "1s"
+
+[[step]]
+do = "show"
+
+[[step]]
+do = "say"
+text = "a sixth node joins, then node 1 leaves, one change at a time"
+
+[[step]]
+do = "add"
+node = 6
+
+[[step]]
+do = "run"
+for = "500ms"
+
+[[step]]
+do = "remove"
+node = 1
+
+[[step]]
+do = "op"
+op = "put after membership"
+
+[[step]]
+do = "run"
+for = "500ms"
+
+[[step]]
+do = "show"
+
+[[step]]
+do = "check"

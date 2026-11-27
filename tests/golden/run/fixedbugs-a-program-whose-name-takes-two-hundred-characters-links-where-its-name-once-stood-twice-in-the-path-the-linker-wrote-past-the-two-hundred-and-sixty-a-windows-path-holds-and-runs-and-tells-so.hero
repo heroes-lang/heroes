@@ -1,0 +1,19 @@
+# Added 2026-11-26, M-rebel-library step 212a: a correct program whose name
+# takes 200 characters, which Windows refused to link. The link wrote into a
+# private folder named by the binary's own path, `<binary>.<pid>-<n>.tmp`,
+# and named its output there by the module, so the program's name stood
+# twice in one path: 434 characters under the `run` form's folder of
+# binaries in the CI's `D:\a\heroes\heroes`, where Windows takes 259
+# (MAX_PATH, 260 with its closing NUL). Measured on the Windows box with the
+# two run cases step 192d added, named in 134 and 123: MSVC's `link.exe`, the
+# CI's, refused the staged output, `LNK1104: cannot open file`, a 260-character
+# output as well, and the box's `lld-link` wrote it for the runtime's own
+# rename to refuse, `the operating system's own reason is 3`, exit 2 either
+# way. Now the folder is `link.<pid>-<n>.tmp`, named by the process alone, the
+# name stands in it once, and a path no name could fit is told with its length
+# and the limit (`selfhost/cli/link_room.hero`). On Windows this binary takes
+# 233 characters under the checkout's folder and its PDB 237, so the case is
+# held to a checkout whose folder takes at most 22 with its separator, as the
+# CI's `D:\a\heroes\heroes\` does in 19; past that, the build says so.
+function main()
+    print("linked, and run, with a name of 200 characters")

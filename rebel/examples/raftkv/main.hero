@@ -1,0 +1,126 @@
+# raftkv: Raft consensus and a replicated key-value store, run under a
+# deterministic simulated network. Each node is a real Raft server (leader
+# election with randomised timeouts, log replication and commit, snapshots
+# and log compaction with InstallSnapshot in parts, membership changes one
+# node at a time, linearizable reads by ReadIndex) that keeps its term, its
+# vote, its log and its snapshot in files of its own folder, framed and
+# checksummed, and comes back from them alone after a crash, even one in
+# the middle of a write. The network between the nodes is a scheduler that
+# delivers, delays, reorders, loses, doubles and damages messages as a
+# seeded generator decides, and cuts the cluster into partitions; a checker
+# asks Raft's five safety properties of every node after every step. The
+# same seed gives the same run, byte for byte, on every machine.
+#
+# Run for real:
+#
+#     raftkv run scenario.toml              # a scenario's transcript
+#     raftkv run scenario.toml --seed 9     # the same steps, other timings
+#     raftkv fuzz --runs 100 --span 20s     # faults drawn from 100 seeds
+#     raftkv inspect build/raftkv-run/node-1   # what a node's disk holds
+#
+# A scenario is TOML: the cluster's size and seed, the network's delays and
+# chances of loss, the nodes' settings, and the steps (`leader`, `op`,
+# `partition`, `heal`, `crash`, `restart`, `add`, `remove`, `campaign`,
+# `run`, `show`, `say`, `check`); `scenario/script.hero` says each. A fuzz
+# run that fails prints its seed, which reproduces it.
+#
+# `raftkv demo <folder>` runs the scenarios of the folder in the order of
+# their names: an election, writes and a linearizable read; a partition
+# that leaves the old leader unable to commit or to read while the majority
+# elects a second leader; the healing, with the old leader's entries cut;
+# a follower that crashes in the middle of a write and catches up from the
+# leader's snapshot; a node added and one removed; then a stale node that
+# loses its election, and the same script with a planted bug (votes given
+# without the up-to-date check), which the checker catches. It reads one
+# node's disk back, and ends with a few runs of the fuzzer.
+#
+# The packages of Rebel it uses, and what for:
+#
+# - `random`: the election timeouts, the network's delays and chances, the
+#   fuzzer's faults, all from seeds;
+# - `containers/heap`: the network's queue of messages in flight;
+# - `bytes`, `hash`: the wire format's varints and the frames' CRC-32;
+# - `fs`, `path`: each node's folder, its files written atomically or
+#   appended, cut back after a torn write;
+# - `json`: a snapshot's store; `toml`: the scenarios; `time`: their spans
+#   and the transcript's clock;
+# - `flags`: the command line; `errors`: failures told with their step;
+# - `strings`, `numbers`, `maps`, `math`, `lists`, `io`: text, numbers,
+#   keys removed, bounds, the standard output.
+
+use <rebel>/errors
+use <rebel>/io
+
+use cli/command_line
+use demo/demo
+use disk/inspect
+use fuzz/fuzz
+use scenario/runner
+use scenario/script
+
+# The exit status of a command line the program does not read.
+constant USAGE: i64
+    2
+
+function main()
+    request = command_line.read(args())
+
+    match request
+        .ok job => exit(code: perform(job))
+        .err _ =>
+            complain(request)
+            exit(code: USAGE)
+
+# Does what `job` asks; answers the exit status: 0 where every run was
+# safe, 1 where a property broke or a run failed.
+function perform(job: command_line.Job) -> i64
+    return match job
+        .help h =>
+            print(h.text)
+            0
+        .run r     => status_of(run_one(scenario: r.scenario, seed: r.seed, work: r.work))
+        .fuzz f    => status_of(fuzz_all(runs: f.runs, seed: f.seed, nodes: f.nodes, span: f.span, work: f.work))
+        .inspect i => status_of(inspect_one(folder: i.folder, last: i.last))
+        .demo d    => status_of(demo.run_demo(folder: d.scenarios, work: d.work, fuzz_runs: 3))
+
+function run_one(scenario: str, seed: i64?, work: str) -> bool?
+    s @= script.parse_script(errors.context(read_file(scenario), what: scenario)?)?
+    s.seed @ seed.default(s.seed)
+    report = runner.run_script(s, work: work)?
+    return ok(report.violations.len() == 0)
+
+function fuzz_all(runs: i64, seed: i64, nodes: i64, span: i64, work: str) -> bool?
+    safe: bool @= true
+
+    for k in range(from: 0, to: runs)
+        o = fuzz.run_fuzz(seed: seed + k, nodes: nodes, span: span, work: work)?
+        print(fuzz.format_outcome(o))
+
+        if o.problems.len() > 0
+            safe @ false
+
+    return ok(safe)
+
+function inspect_one(folder: str, last: i64) -> bool?
+    for line in inspect.describe(folder, most: last)?
+        print(line)
+
+    return ok(true)
+
+# The exit status of a run: 0 where it was safe, 1 where it was not or
+# failed, the failure told on the standard error.
+function status_of(r: bool?) -> i64
+    match r
+        .ok safe =>
+            if safe
+                return 0
+            return 1
+        .err _ =>
+            complain(r)
+            return 1
+
+# Tells `r`'s failure on the standard error, `raftkv: ` before it.
+function complain<T>(r: T?)
+    match r
+        .ok _  => _ = 0
+        .err e => errors.ignore(io.write_line(io.stderr(), line: "raftkv: " + e.msg))

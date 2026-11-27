@@ -1,0 +1,140 @@
+# A snapshot's contents as bytes: the members as of its last index and the
+# store, keys and sessions, written as one JSON document. JSON because a
+# person debugging a cluster opens a snapshot and reads it, and because
+# `raftkv inspect` prints it as it stands; the disk frames it and the
+# network carries it in parts, both as bytes.
+
+use <rebel>/bytes
+use <rebel>/json
+use <rebel>/numbers
+
+use kv/store
+
+## The image
+
+# What a snapshot holds.
+record Image
+    # The members as of the snapshot's last index.
+    members: [i64]
+    # The store.
+    machine: store.Store
+
+# The bytes of `members` and `s`.
+#
+# - `members`: the members' numbers.
+# - `s`: the store.
+function encode_image(members: [i64], s: store.Store lent) -> [u8]
+    ids: [json.Value] @= []
+
+    for m in members
+        ids @ ids.push(json.from_int(m).must())
+
+    data: {str: json.Value} @= {}
+
+    for k in keys(s.data)
+        data[k] @ .text(v: s.data[k].must())
+
+    sessions: {str: json.Value} @= {}
+
+    for client in keys(s.sessions)
+        session = s.sessions[client].must()
+        fields: {str: json.Value} @= {}
+        fields["seq"] @ json.from_int(session.seq).must()
+        fields["answer"] @ answer_json(session.answer)
+        sessions[to_str(client)] @ .object(members: fields)
+
+    top: {str: json.Value} @= {}
+    top["members"] @ .list(items: ids)
+    top["data"] @ .object(members: data)
+    top["sessions"] @ .object(members: sessions)
+    return bytes.from_text(json.format(.object(members: top)).must())
+
+# The image `data` holds.
+#
+# - `data`: the bytes of a snapshot, from the disk or the network.
+#
+# Fails `invalid` where they are not this program's JSON, `not_text` where
+# they are not UTF-8, the message saying what is wrong where.
+function decode_image(data: [u8]) -> Image?
+    top = json.parse(bytes.to_text(data)?)?
+    members: [i64] @= []
+
+    for item in json.items_at(top, key: "members")?
+        members @ members.push(json.int_of(item)?)
+
+    s @= store.empty()
+    stored = json.member(top, key: "data")?
+
+    for k in keys(json.members_of(stored)?)
+        s.data[k] @ json.text_at(stored, key: k)?
+
+    sessions = json.member(top, key: "sessions")?
+
+    for client in keys(json.members_of(sessions)?)
+        number = client_of(client)?
+        session = json.member(sessions, key: client)?
+        answer = answer_of(json.member(session, key: "answer")?)?
+        s.sessions[number] @ store.Session(seq: json.int_at(session, key: "seq")?, answer: answer)
+
+    return ok(Image(members: members, machine: s))
+
+# The client number a session's key writes.
+#
+# - `key`: the key, a decimal number.
+#
+# Fails `invalid` where it is not one.
+function client_of(key: str) -> i64?
+    return match numbers.parse_int(key)
+        .ok n  => ok(n)
+        .err _ => fail(code: "invalid", msg: f"a session keyed \"{key}\", where a client's number was expected")
+
+function answer_json(a: store.Answer) -> json.Value
+    fields: {str: json.Value} @= {}
+
+    match a
+        .done    => fields["kind"] @ .text(v: "done")
+        .missing => fields["kind"] @ .text(v: "missing")
+        .stale   => fields["kind"] @ .text(v: "stale")
+        .value v =>
+            fields["kind"] @ .text(v: "value")
+            fields["v"] @ .text(v: v.v)
+        .refused r =>
+            fields["kind"] @ .text(v: "refused")
+            fields["v"] @ .text(v: r.held)
+
+    return .object(members: fields)
+
+function answer_of(v: json.Value) -> store.Answer?
+    kind = json.text_at(v, key: "kind")?
+
+    if kind == "done"
+        return ok(.done)
+
+    if kind == "missing"
+        return ok(.missing)
+
+    if kind == "stale"
+        return ok(.stale)
+
+    if kind == "value"
+        return ok(.value(v: json.text_at(v, key: "v")?))
+
+    if kind == "refused"
+        return ok(.refused(held: json.text_at(v, key: "v")?))
+    return fail(code: "invalid", msg: f"an answer of kind \"{kind}\"")
+
+## Tests
+
+test "decode_image: the members, keys and sessions read back"
+    s @= store.empty()
+    _ = store.apply(@s, client: 101, seq: 2, o: .put(key: "k é", value: "a \"b\""))
+    _ = store.apply(@s, client: 102, seq: 1, o: .swap(key: "k é", expected: "x", value: "y"))
+    image = decode_image(encode_image([1, 2, 5], s)).must()
+    assert image.members == [1, 2, 5]
+    assert image.machine == s
+
+test "decode_image: what is no image"
+    for text in ["", "[]", "{\"members\": [1]}", "{\"members\": [\"a\"], \"data\": {}, \"sessions\": {}}", "{\"members\": [], \"data\": {}, \"sessions\": {\"x\": {}}}"]
+        assert decode_image(bytes.from_text(text)).is_err()
+
+    assert decode_image([0xff]).is_err()

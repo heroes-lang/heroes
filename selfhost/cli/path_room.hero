@@ -1,0 +1,101 @@
+# What a path takes of the system's limit, and the words for one past it
+# (design.md §1.12, §4.17; M-rebel-library step 212a). A build names files
+# the program's name is part of, and a system refuses a path past its limit
+# in words that never say so: `LNK1104: cannot open file` from MSVC's linker
+# and *the operating system's own reason is 3* from this runtime's own
+# rename, both measured on the Windows box for one staged binary
+# (`runtime/parts/fs.c` has the numbers). So a path the compiler is about to
+# hand over is asked first, as the system will judge it, and one past the
+# limit is told whole, with its length and the limit, before anything is
+# written. The question is the runtime's (`runtime/hero_compiler.h`): the
+# whole path on Windows, which judges a path whole, and the path as handed
+# over elsewhere, which a POSIX kernel judges as handed.
+
+use cli/process
+use cli/strings
+
+extern "hero_compiler.h"
+    function hero_path_judged_shown(path: cstr lent, @units: i64, @status: i64, @marks: i64) -> str
+    function hero_path_limit(folder: i64) -> i64
+
+extern "hero_os.h"
+    constant HERO_OS_OK: i64
+    constant HERO_OS_NOT_TEXT: i64
+
+# A path as the system judges it: `whole` the path it holds to its limit,
+# and `units` how much of the limit that takes, -1 where the system refused
+# the question, which is no answer and never a refusal of the path.
+record Judged
+    whole: str
+    units: i64
+
+function judged(path: str) -> Judged
+    units: i64 @= -1
+    status: i64 @= 0
+    marks: i64 @= 0
+    whole = hero_path_judged_shown(path: path.cstr(), units: @units, status: @status, marks: @marks)
+
+    if status == HERO_OS_NOT_TEXT
+        return Judged(whole: process.written_value(answer: whole, marks: marks), units: units)
+
+    if status != HERO_OS_OK
+        return Judged(whole: path, units: -1)
+    return Judged(whole: whole, units: units)
+
+# The most a path may take: a file's, or with `folder` a folder's own.
+function limit(folder: bool) -> i64
+    if folder
+        return hero_path_limit(folder: 1)
+    return hero_path_limit(folder: 0)
+
+# Where `path` takes more than the limit, the clause that says so, its
+# whole path, its length and the limit named; "" where it fits, or where
+# the system would not answer, whose own words then follow the attempt.
+function past(path: str, folder: bool) -> str
+    j = judged(path)
+    most = limit(folder)
+
+    if j.units < 0 || j.units <= most
+        return ""
+    return said(whole: j.whole, units: j.units, most: most, folder: folder, windows: process.exe_suffix() == ".exe")
+
+# The clause, in the measure the system counts: Windows counts the UTF-16
+# units of the whole path, at most MAX_PATH with the closing NUL, and a
+# folder's 12 fewer, room for a file's short name in it; a POSIX kernel
+# counts the bytes handed to it, at most PATH_MAX with the NUL.
+function said(whole: str, units: i64, most: i64, folder: bool, windows: bool) -> str
+    if !windows
+        return whole + " is " + units.to_str() + " bytes, past the " + most.to_str() + " a path handed to this system may take (PATH_MAX, " + (most + 1).to_str() + " with its closing NUL)"
+
+    if folder
+        return whole + " is " + units.to_str() + " characters, past the " + most.to_str() + " Windows takes in a folder's path (MAX_PATH less the 12 a file's short name in it needs, with its closing NUL)"
+    return whole + " is " + units.to_str() + " characters, past the " + most.to_str() + " Windows takes in a path (MAX_PATH, " + (most + 1).to_str() + " with its closing NUL)"
+
+## Tests
+
+# The measure is the system's: Windows judges the whole path a relative one
+# names from this process's folder, a POSIX kernel the bytes it is handed.
+test "a path is judged as the system judges it, whole on Windows and as handed elsewhere (d-windows-ci-6-1)"
+    plain = judged("build/a-file")
+    longer = judged("build/a-file-two")
+    assert longer.units == plain.units + 4
+
+    if process.exe_suffix() == ".exe"
+        assert plain.units > "build/a-file".len()
+        assert strings.ends_with(text: plain.whole, suffix: "\\build\\a-file")
+        assert limit(folder: false) == 259 && limit(folder: true) == 247
+    else
+        assert plain.units == "build/a-file".len() && plain.whole == "build/a-file"
+        assert limit(folder: false) >= 1023 && limit(folder: true) == limit(folder: false)
+    assert past(path: "build/a-file", folder: false) == ""
+
+    # A path past the limit is told whole, with both numbers.
+    too_long = "build/" + "n".repeat(to_u64(limit(folder: false)).must())
+    told = past(path: too_long, folder: false)
+    assert told.len() > 0
+    assert strings.ends_with(text: told, suffix: "with its closing NUL)")
+
+test "the clause names the path, its length and the limit in the system's own measure (d-windows-ci-6-1)"
+    assert said(whole: "C:\\w\\x.exe", units: 262, most: 259, folder: false, windows: true) == "C:\\w\\x.exe is 262 characters, past the 259 Windows takes in a path (MAX_PATH, 260 with its closing NUL)"
+    assert said(whole: "C:\\w\\d", units: 250, most: 247, folder: true, windows: true) == "C:\\w\\d is 250 characters, past the 247 Windows takes in a folder's path (MAX_PATH less the 12 a file's short name in it needs, with its closing NUL)"
+    assert said(whole: "a/b", units: 1030, most: 1023, folder: false, windows: false) == "a/b is 1030 bytes, past the 1023 a path handed to this system may take (PATH_MAX, 1024 with its closing NUL)"

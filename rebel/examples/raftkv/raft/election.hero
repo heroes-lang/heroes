@@ -1,0 +1,149 @@
+# Leader election (the Raft paper's section 5.2): a follower whose timer
+# fires becomes a candidate of the next term and asks every member for its
+# vote; a member gives one vote a term, first come, and only to a candidate
+# whose log is at least as up-to-date as its own (section 5.4.1); the
+# candidate a majority votes for leads, and appends at once an entry of its
+# own term (section 5.4.2, the dissertation's 6.4).
+
+use raft/entry
+use raft/log
+use raft/message
+use raft/node
+use raft/replication
+
+## Candidates
+
+# Starts an election: the next term, a vote for itself, and a request to
+# every other member.
+#
+# - `n`: the node, a member whose timer fired or who was told to campaign.
+function campaign(@n: node.Node)
+    n.term @ n.term + 1
+    n.role @ .candidate
+    n.voted_for @ ok(n.id)
+    n.leader @ fail(code: "not_found", msg: "no leader")
+    n.votes @ [n.id]
+    n.unsaved.state @ true
+    node.reset_election(@n)
+    node.tell(@n, f"campaigns in term {n.term}")
+
+    if node.is_quorum(n, voters: n.votes)
+        become_leader(@n)
+        return
+    last_index = log.last_index(n.log)
+    last_term = log.last_term(n.log)
+
+    for peer in node.peers(n)
+        node.send(@n, to: peer, body: .vote_request(last_index: last_index, last_term: last_term))
+
+# Answers a RequestVote of `n`'s own term (a later one has already made `n`
+# enter it): granted where `n` has not voted for another in this term and
+# the candidate's log is not behind its own.
+#
+# - `n`: the node asked.
+# - `m`: the request.
+# - `last_index`: the candidate's last index.
+# - `last_term`: the candidate's last term.
+function on_vote_request(@n: node.Node, m: message.Envelope, last_index: i64, last_term: i64)
+    free = match n.voted_for
+        .ok v  => v == m.from
+        .err _ => true
+
+    behind = log.is_behind(n.log, candidate_index: last_index, candidate_term: last_term)
+    granted = m.term == n.term && free && (!behind || n.settings.votes_ignore_logs)
+
+    if granted
+        n.voted_for @ ok(m.from)
+        n.unsaved.state @ true
+        node.reset_election(@n)
+    node.send(@n, to: m.from, body: .vote_reply(granted: granted))
+
+# Counts a vote: a candidate of the vote's term that a majority has now
+# voted for leads.
+#
+# - `n`: the candidate.
+# - `m`: the reply.
+# - `granted`: whether the vote was given.
+function on_vote_reply(@n: node.Node, m: message.Envelope, granted: bool)
+    if n.role != .candidate || m.term != n.term || !granted || node.contains_member(n.votes, m.from)
+        return
+    n.votes @ n.votes.push(m.from)
+
+    if node.is_quorum(n, voters: n.votes)
+        become_leader(@n)
+
+## Leaders
+
+# Takes the lead: every follower's progress starts just past the leader's
+# log, a noop entry of the new term is appended, and every member is sent
+# it at once.
+#
+# - `n`: the candidate a majority voted for.
+function become_leader(@n: node.Node)
+    n.role @ .leader
+    n.leader @ ok(n.id)
+    n.progress @ {}
+    n.round @ 0
+
+    for peer in node.peers(n)
+        replication.track(@n, peer: peer)
+
+    node.tell(@n, f"is leader of term {n.term}")
+    _ = replication.propose(@n, .noop)
+    replication.broadcast(@n)
+    n.heartbeat_due @ n.now + n.settings.heartbeat
+
+## Tests
+
+# Three members, `n` the first.
+function trio() -> node.Node
+    return node.new_node(id: 1, members: [1, 2, 3], settings: node.default_settings(), seed: 3, now: 0)
+
+test "campaign: the next term, a vote for itself, a request to each peer"
+    n @= trio()
+    campaign(@n)
+    assert n.role == .candidate
+    assert n.term == 1
+    assert n.voted_for.must() == 1
+    assert n.outbox.len() == 2
+    assert n.outbox[0].body == .vote_request(last_index: 0, last_term: 0)
+
+test "campaign: a member alone leads at once, its noop appended"
+    n @= node.new_node(id: 4, members: [4], settings: node.default_settings(), seed: 3, now: 0)
+    campaign(@n)
+    assert n.role == .leader
+    assert log.last_index(n.log) == 1
+    assert log.entry_at(n.log, index: 1).payload == .noop
+    assert n.commit == 1
+
+test "on_vote_request: one vote a term, and none to a log behind"
+    n @= trio()
+    n.term @ 2
+    n.log @ log.sample(count: 3, term: 2)
+    ask = message.Envelope(from: 2, to: 1, term: 2, body: .vote_reply(granted: false))
+    on_vote_request(@n, ask, last_index: 2, last_term: 2)
+    assert n.outbox[0].body == .vote_reply(granted: false)
+    on_vote_request(@n, ask, last_index: 3, last_term: 2)
+    assert n.outbox[1].body == .vote_reply(granted: true)
+    other = message.Envelope(from: 3, to: 1, term: 2, body: .vote_reply(granted: false))
+    on_vote_request(@n, other, last_index: 9, last_term: 2)
+    assert n.outbox[2].body == .vote_reply(granted: false)
+
+test "on_vote_request: the planted bug votes for a log behind"
+    n @= trio()
+    n.settings.votes_ignore_logs @ true
+    n.term @ 2
+    n.log @ log.sample(count: 3, term: 2)
+    ask = message.Envelope(from: 2, to: 1, term: 2, body: .vote_reply(granted: false))
+    on_vote_request(@n, ask, last_index: 0, last_term: 0)
+    assert n.outbox[0].body == .vote_reply(granted: true)
+
+test "on_vote_reply: a majority makes a leader, a vote of another term counts nothing"
+    n @= trio()
+    campaign(@n)
+    on_vote_reply(@n, message.Envelope(from: 2, to: 1, term: 0, body: .vote_reply(granted: true)), granted: true)
+    assert n.role == .candidate
+    on_vote_reply(@n, message.Envelope(from: 2, to: 1, term: 1, body: .vote_reply(granted: true)), granted: true)
+    assert n.role == .leader
+    assert n.events[n.events.len() - 1] == "node 1 is leader of term 1"
+    assert log.entry_at(n.log, index: 1) == entry.Entry(index: 1, term: 1, payload: .noop)

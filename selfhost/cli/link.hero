@@ -11,6 +11,7 @@ use cli/libraries
 use cli/link_again
 use cli/link_flags
 use cli/link_output
+use cli/link_room
 use cli/os_reason
 use cli/process
 use cli/publish
@@ -35,14 +36,16 @@ use module/reading as file_reading
 # not be told from this one. The author's `-o` names a place and not a
 # content, so a failure to publish there is reported.
 #
-# **The linker writes into a private directory**, `<binary>.<pid>-<n>.tmp/`,
-# and everything it wrote is published beside the binary: all six builds
-# of one program used to link `<m>.tmp`, and the macOS linker refuses an
-# output another is writing (`ld: open() failed, errno=17`). A directory
-# and not a name, because on Windows the linker names the PDB after its
-# output, so a private file name would leave a new `.pdb` on every build.
-# Inside it the output is the module's own name, never a part of the path
-# asked for: an author's `-o` is not split to find one (`link_output.published_as`).
+# **The linker writes into a private directory**, `link.<pid>-<n>.tmp/`
+# beside the binary, and everything it wrote is published beside the
+# binary: all six builds of one program used to link `<m>.tmp`, and the
+# macOS linker refuses an output another is writing (`ld: open() failed,
+# errno=17`). A directory and not a name, because on Windows the linker
+# names the PDB after its output, so a private file name would leave a new
+# `.pdb` on every build. Inside it the output is the module's own name,
+# never a part of the path asked for: an author's `-o` is not split to find
+# one (`link_output.published_as`). Named by the process alone and held to
+# the system's limit on a path since step 212a (`cli/link_room.hero`).
 #
 # **Its words reach clang in a file in the binary's home** (defect 583,
 # `response_file.for_link`): they name every object, and Windows refuses a
@@ -98,25 +101,16 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
     # this link itself, judged before anything is published (panel 239).
     line @ strings.with_all(list: line, more: supplied.real_words(t, j: judging))
     line @ response_file.for_link(line: line, home: home)?
-    stage = publish.private_name(at)
 
-    # Said of the binary's path, which is untouched, and not of the private
-    # directory, whose name nobody gave (measured: `could not create the
-    # directory ro/out.3932-27.tmp`, for an `-o ro/out` in a read-only one),
-    # with the reason the failure carries, read at once: asked again here it
-    # was 0 (defect d-lane-blocking-small2-1).
-    stage_made = process.made_dir(stage)
-
-    if stage_made.is_err()
-        return publish.refused(
-            path: binary,
-            what: "no directory could be made beside it for the linker's output" + publish.message_of(stage_made)
-        )
+    # The private folder, made, and the output's name in it, or the refusal
+    # naming a path past the system's limit, before a byte is linked.
+    room = link_room.made(at: at, binary: binary, module: module, suffix: process.exe_suffix())?
+    stage = room.stage
     err_path = publish.private_name(t.build + "/link-clang-stderr.txt")
-    inner = module + process.exe_suffix()
+    inner = room.stem + process.exe_suffix()
     line @ strings.with_all(
         list: line,
-        more: link_output.pdb_words(suffix: process.exe_suffix(), at: at, inner: inner, module: module)
+        more: link_output.pdb_words(suffix: process.exe_suffix(), at: at, inner: inner, module: room.stem)
     )
     line @ strings.with_all(list: line, more: ["-o", stage + "/" + inner])
     linked = supplied.linked(t, j: judging, line: line, err_path: err_path)
@@ -138,7 +132,7 @@ function link_objects(t: toolchain.Toolchain, objects: [str], module: str, outpu
         # Where the linker made a directory, a `.dSYM` being a tree, it is
         # made beside the binary as well.
         relative = made.slice(from: stage.len() + 1, to: made.len())
-        target = link_output.published_as(binary: at, inner: inner, module: module, relative: relative)
+        target = link_output.published_as(binary: at, inner: inner, module: room.stem, relative: relative)
 
         if publish.base_of(relative) != relative
             process.mkdir_all(publish.beside(path: target, name: "."))?

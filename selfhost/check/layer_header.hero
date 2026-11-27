@@ -100,16 +100,28 @@ function undeclared(header: str, span: token.Span, through: str, library: str) -
 # The refusal of a group saying `layer` whose header is not the layer's and
 # reaches none of its files, and whose library, `library` as a sentence names
 # it ("" for none), calls none of the layer, at the word, with the word taken
-# out as its certain fix.
-function unreached(header: str, word: token.Span, from: i64, library: str) -> diag.Diagnostic
+# out as its certain fix. A header of the runtime's own (`runtime_own`),
+# `hero_os.h` or `hero_compiler.h`, is named as what it is: the runtime's
+# interface, never the layer's, and the one repair it leaves is the word
+# taken out, since no header of the layer's declares what such a group binds
+# (`cli/layer_bound.hero`'s test of that premise), a name of the layer's
+# bound through it being told apart, as the layer's (panel 260's amendment
+# after its blind reading, provisional, the author's reading pending).
+function unreached(header: str, word: token.Span, from: i64, library: str, runtime_own: bool) -> diag.Diagnostic
     linked: str @= ""
+    what: str @= "`" + bare(header) + "` is none of the platform layer's headers and includes none of them"
+    repair: str @= "take the word out, or name the layer's header that declares what this group binds"
+
+    if runtime_own
+        what @ "`" + bare(header) + "` is the runtime's own header, none of the platform layer's, and includes none of them"
+        repair @ "take the word out"
 
     # A group linking a library is told what that library calls too (R3).
     if library.len() > 0
         linked @ ", and " + library + " calls none of the layer"
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: UNREACHED,
-        message: "this group says `" + keywords.WORD_LAYER + "`, and `" + bare(header) + "` is none of the platform layer's headers and includes none of them" + linked + ", so nothing it binds is the layer's: take the word out, or name the layer's header that declares what this group binds",
+        message: "this group says `" + keywords.WORD_LAYER + "`, and " + what + linked + ", so nothing it binds is the layer's: " + repair,
         span: word
     )
     d.notes @ d.notes.push(

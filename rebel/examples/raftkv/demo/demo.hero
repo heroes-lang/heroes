@@ -1,0 +1,79 @@
+# The demo, as the check of Rebel's programs runs it: every scenario of a
+# folder in the order of its file names, each in a fresh cluster under the
+# work folder; then the disk of one node of the first scenario read back as
+# `raftkv inspect` reads it; then a few runs of the fuzzer. Everything it
+# prints is drawn from seeds and the simulation's clock, so it prints the
+# same bytes on every machine.
+
+use <rebel>/fs
+use <rebel>/path
+use <rebel>/strings
+
+use disk/inspect
+use fuzz/fuzz
+use scenario/runner
+use scenario/script
+
+## The demo
+
+# Runs the demo; answers whether everything it expected happened: every
+# scenario safe but one whose file name says `bug`, which must be caught.
+#
+# - `folder`: the folder of the scenarios, `.toml` files.
+# - `work`: the folder its clusters are written under.
+# - `fuzz_runs`: how many fuzzer runs end it.
+#
+# Fails where a scenario cannot be read or run, or a folder written.
+function run_demo(folder: str, work: str, fuzz_runs: i64) -> bool?
+    names = scenario_files(folder)?
+    expected: bool @= true
+    first: str @= ""
+
+    for name in names
+        text = read_file(path.join_all([folder, name]))?
+        s = script.parse_script(text)?
+        place = path.join_all([work, strings.trim_suffix(s: name, suffix: ".toml")])
+
+        if first == ""
+            first @ place
+        report = runner.run_script(s, work: place)?
+        planted = strings.contains(s: name, substr: "bug")
+
+        if planted && report.violations.len() == 0
+            print("!! the planted bug went unseen")
+            expected @ false
+        else if !planted && report.violations.len() > 0
+            expected @ false
+        print("")
+
+    if first != ""
+        print("== the disk of node 3 of the first scenario, read back")
+
+        for line in inspect.describe(path.join_all([first, "node-3"]), most: 4)?
+            print("   " + line)
+
+        print("")
+    print(f"== the fuzzer: {fuzz_runs} runs of 5 nodes, 6s each, faults drawn from the seed")
+
+    for seed in range(from: 1, to: fuzz_runs + 1)
+        o = fuzz.run_fuzz(seed: seed, nodes: 5, span: 6000, work: path.join_all([work, f"fuzz-{seed}"]))?
+        print("   " + fuzz.format_outcome(o))
+
+        if o.problems.len() > 0
+            expected @ false
+
+    return ok(expected)
+
+# The `.toml` files of `folder`, by name.
+#
+# - `folder`: the folder.
+#
+# Fails with the codes of `fs.read_dir`.
+function scenario_files(folder: str) -> [str]?
+    names: [str] @= []
+
+    for e in fs.read_dir(folder)?
+        if strings.has_suffix(s: e.name, suffix: ".toml")
+            names @ names.push(e.name)
+
+    return ok(sort(names))

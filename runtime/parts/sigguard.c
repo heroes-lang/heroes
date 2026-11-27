@@ -228,6 +228,22 @@ static void hero_signal_jump_checked(void) {
  * five); glibc's `qsort` of many is deeper, and D is what stands there. */
 #define HERO_SIGNAL_WALK 8
 
+/* THE LEARNED ADDRESSES ARE KEPT MASKED (defect d-lane-sig-family-3). The walk
+ * below compares words of the thread's stack with the delivery's return
+ * address, and the runtime's own copies of that address, the locals of the
+ * learning and of every thunk's question spilled in frames that are gone,
+ * lay in such words: a fibre a program's own assembly started with its frame
+ * pointer at its stack's top led the walk onto two of them, and a correct
+ * program with no signal handler was refused in a handler's words
+ * (`fm_top`, panel 262's compiler-engineer, under `--sanitize` on this Mac).
+ * So every learned address is stored, and every word compared with it read,
+ * XORed with this mask, which no code address equals (its high bits are no
+ * user address's on either architecture): a spilled copy holds the masked
+ * value, which unmasks to none. The probe's own delivery is made on an
+ * alternate stack of its own, cleared after, so its frame is not left on the
+ * thread's stack either. */
+#define HERO_SIGNAL_MASK ((uintptr_t)0xa5c3000000000000ull)
+
 /* The delivery's return address, for a plain handler and an `SA_SIGINFO` one,
  * 0 until learned; and whether it is: 0 not yet, 1 being learned, 2 learned.
  * Where B' stands, [2] and [3] are its wrapper's two calls of a program's
@@ -242,7 +258,8 @@ static _Atomic int hero_signal_probing = 0;
 static void hero_signal_probe_plain(int sig) {
     (void)sig;
     int at = atomic_load_explicit(&hero_signal_probing, memory_order_relaxed);
-    atomic_store_explicit(&hero_signal_returns[at], (uintptr_t)__builtin_return_address(0), memory_order_relaxed);
+    atomic_store_explicit(&hero_signal_returns[at], (uintptr_t)__builtin_return_address(0) ^ HERO_SIGNAL_MASK,
+                          memory_order_relaxed);
 }
 
 static void hero_signal_probe_info(int sig, siginfo_t *info, void *context) {
@@ -250,7 +267,8 @@ static void hero_signal_probe_info(int sig, siginfo_t *info, void *context) {
     (void)info;
     (void)context;
     int at = atomic_load_explicit(&hero_signal_probing, memory_order_relaxed);
-    atomic_store_explicit(&hero_signal_returns[at + 1], (uintptr_t)__builtin_return_address(0), memory_order_relaxed);
+    atomic_store_explicit(&hero_signal_returns[at + 1], (uintptr_t)__builtin_return_address(0) ^ HERO_SIGNAL_MASK,
+                          memory_order_relaxed);
 }
 
 typedef int (*HeroSignalInstall)(int, const struct sigaction *, struct sigaction *);
@@ -267,12 +285,24 @@ static int hero_sig_real(int sig, const struct sigaction *act, struct sigaction 
  * own wrapper's address refused nothing: panel 247's critic); on Darwin the
  * call reaches D-rebind's rewritten slot, so the delivery learned is its
  * trampoline's, which enters every handler there. */
+static char hero_signal_probe_stack[(size_t)64 << 10] __attribute__((aligned(16)));
+
 static void hero_signal_probe(struct sigaction *probe, HeroSignalInstall install) {
     struct sigaction before;
     sigemptyset(&probe->sa_mask);
-    if (install(SIGURG, probe, &before) != 0) return;
-    raise(SIGURG);
-    install(SIGURG, &before, NULL);
+    stack_t own = {0}, was = {0};
+    own.ss_sp = hero_signal_probe_stack;
+    own.ss_size = sizeof hero_signal_probe_stack;
+    bool alt = sigaltstack(&own, &was) == 0;
+    if (alt) probe->sa_flags |= SA_ONSTACK;
+    if (install(SIGURG, probe, &before) == 0) {
+        raise(SIGURG);
+        install(SIGURG, &before, NULL);
+    }
+    if (alt) {
+        sigaltstack((was.ss_flags & SS_DISABLE) != 0 ? &(stack_t){.ss_flags = SS_DISABLE} : &was, NULL);
+        memset(hero_signal_probe_stack, 0, sizeof hero_signal_probe_stack);
+    }
 }
 
 /* Both kinds of handler probed through `install`, into the pair `at` names. */
@@ -669,7 +699,7 @@ static void hero_callback_asked(const char *what, void *ret, void *frame) {
     uintptr_t info = atomic_load_explicit(&hero_signal_returns[1], memory_order_relaxed);
     uintptr_t wrapped = atomic_load_explicit(&hero_signal_returns[2], memory_order_relaxed);
     uintptr_t wrapped_info = atomic_load_explicit(&hero_signal_returns[3], memory_order_relaxed);
-    uintptr_t back = (uintptr_t)ret;
+    uintptr_t back = (uintptr_t)ret ^ HERO_SIGNAL_MASK;
     if (plain != 0 && (back == plain || back == info)) hero_signal_refuse(what, HERO_SIGNAL_DELIVERED);
     if (wrapped != 0 && (back == wrapped || back == wrapped_info)) hero_signal_refuse(what, HERO_SIGNAL_DELIVERED);
     HeroSignalStack *own = NULL;
@@ -720,12 +750,21 @@ static void hero_callback_asked(const char *what, void *ret, void *frame) {
     bool on_coroutine = hero_rebind_coroutine_top(fp, &coroutine);
 #endif
     if (on_coroutine && coroutine - 2 * sizeof(uintptr_t) < top) top = coroutine - 2 * sizeof(uintptr_t);
+    /* And it looks for the kernel's own delivery alone (defect
+     * d-lane-sig-family-3): a delivery a route makes, Linux's wrapper or
+     * Darwin's trampoline, stands as an entry while its handler runs, and the
+     * question above has already refused every call made while one stands, so
+     * a word naming it here is a copy left in a frame that is gone. On Darwin
+     * the route's trampoline is the only delivery learned, so no walk is
+     * made. */
+#if defined(HERO_SIG_REBIND)
+    return;
+#endif
     for (int up = 0; up < HERO_SIGNAL_WALK; up += 1) {
         uintptr_t next = ((const uintptr_t *)fp)[0];
         if (next <= fp || next > top || (next & (sizeof(uintptr_t) - 1)) != 0) return;
-        uintptr_t above = ((const uintptr_t *)next)[1];
+        uintptr_t above = ((const uintptr_t *)next)[1] ^ HERO_SIGNAL_MASK;
         if (above == plain || above == info) hero_signal_refuse(what, HERO_SIGNAL_CALLED);
-        if (wrapped != 0 && (above == wrapped || above == wrapped_info)) hero_signal_refuse(what, HERO_SIGNAL_CALLED);
         fp = next;
     }
 }

@@ -1,0 +1,11 @@
+# Panel 260's amendment after its blind reading (provisional, the author's
+# reading pending): a package's module over `hero_os.h` saying `layer` is
+# refused as the program's own group is, at the package's word, and the
+# package's own file named `hero_os.h` stands in for nothing: the build's
+# search meets the runtime's folder before a `path` entry's, so the header
+# clang reads, and the one the refusal names, is the runtime's own. Before
+# the amendment the program built and ran.
+use <pk>/me
+
+function main()
+    print(me.pid() > 0)
