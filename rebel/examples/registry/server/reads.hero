@@ -43,17 +43,17 @@ constant MOST_HITS: i64
 # Whether the server can read its database: what a load balancer asks.
 #
 # - `state`: the server's state.
-function health(state: serving.State lent) -> http.Response
+function health(state: serving.State lent, _: web.Found, _: http.Request) -> http.Response?
     return match sqlite.ping(state.db)
-        .ok _  => answers.with_json(http.STATUS_OK, v: .object(members: {"status": .text(v: "ok")}))
-        .err e => answers.failure(code: "failed", message: f"the database does not answer: {e.msg}")
+        .ok _  => ok(answers.with_json(http.STATUS_OK, v: .object(members: {"status": .text(v: "ok")})))
+        .err e => ok(answers.failure(code: "failed", message: f"the database does not answer: {e.msg}"))
 
 # Every package, by name, each with its newest version.
 #
 # - `state`: the server's state.
 #
 # Fails as the queries do.
-function list_packages(@state: serving.State) -> http.Response?
+function list_packages(@state: serving.State, _: web.Found, _: http.Request) -> http.Response?
     items: [json.Value] @= []
 
     for p in releases.packages(@state.db)?
@@ -64,10 +64,11 @@ function list_packages(@state: serving.State) -> http.Response?
 # One package and every version of it.
 #
 # - `state`: the server's state.
-# - `name`: the package's name.
+# - `found`: the route, its parameter `name`.
 #
 # Fails `not_found` where no package has it.
-function show_package(@state: serving.State, name: str) -> http.Response?
+function show_package(@state: serving.State, found: web.Found, _: http.Request) -> http.Response?
+    name = web.param_of(found, name: "name")
     p = releases.package_named(@state.db, name: name)?
     return ok(
         answers.with_json(http.STATUS_OK, v: answers.package_json(p, list: releases.releases_of(@state.db, name: name)?))
@@ -76,11 +77,12 @@ function show_package(@state: serving.State, name: str) -> http.Response?
 # One version: its digest, its key, its manifest and its URLs.
 #
 # - `state`: the server's state.
-# - `name`: the package's name.
-# - `version`: the version.
+# - `found`: the route, its parameters `name`, `version`.
 #
 # Fails `not_found` where the package has no such version.
-function show_version(@state: serving.State, name: str, version: str) -> http.Response?
+function show_version(@state: serving.State, found: web.Found, _: http.Request) -> http.Response?
+    name = web.param_of(found, name: "name")
+    version = web.param_of(found, name: "version")
     r = releases.release_of(@state.db, name: name, version: version)?
     return ok(answers.with_json(http.STATUS_OK, v: answers.release_json(r, base_url: state.base_url)))
 
@@ -88,12 +90,13 @@ function show_version(@state: serving.State, name: str, version: str) -> http.Re
 # not yanked.
 #
 # - `state`: the server's state.
+# - `found`: the route, its parameter `name`.
 # - `r`: the request.
-# - `name`: the package's name.
 #
 # Fails `invalid` where the query has no `req` or it is no range, `not_found`
 # where the package is unknown or no version meets the range.
-function resolve_range(@state: serving.State, r: http.Request, name: str) -> http.Response?
+function resolve_range(@state: serving.State, found: web.Found, r: http.Request) -> http.Response?
+    name = web.param_of(found, name: "name")
     requirement = query_value(r, key: "req")?
     _ = releases.package_named(@state.db, name: name)?
     chosen = resolve.resolve(releases.releases_of(@state.db, name: name)?, requirement: requirement)?
@@ -115,13 +118,14 @@ function query_value(r: http.Request, key: str) -> str?
 # The archive of a version, as it was uploaded, counted as one download.
 #
 # - `state`: the server's state.
-# - `r`: the request; its `If-None-Match` is read.
-# - `name`: the package's name.
-# - `version`: the version.
+# - `found`: the route, its parameters `name`, `version`.
+# - `r`: the request.
 #
 # Fails `not_found` where there is no such version, `invalid` where the bytes
 # kept no longer match their digest.
-function serve_archive(@state: serving.State, r: http.Request, name: str, version: str) -> http.Response?
+function serve_archive(@state: serving.State, found: web.Found, r: http.Request) -> http.Response?
+    name = web.param_of(found, name: "name")
+    version = web.param_of(found, name: "version")
     release = releases.release_of(@state.db, name: name, version: version)?
     data = blobs.get(state.blobs, d: release.digest)?
     releases.count_download(@state.db, r: release)?
@@ -131,11 +135,12 @@ function serve_archive(@state: serving.State, r: http.Request, name: str, versio
 # fetches by the digest a lock file holds.
 #
 # - `state`: the server's state.
+# - `found`: the route, its parameter `digest`.
 # - `r`: the request.
-# - `d`: the digest.
 #
 # Fails `not_found` where no version's archive has it.
-function serve_blob(@state: serving.State, r: http.Request, d: str) -> http.Response?
+function serve_blob(@state: serving.State, found: web.Found, r: http.Request) -> http.Response?
+    d = web.param_of(found, name: "digest")
     release = releases.release_by_digest(@state.db, digest: d)?
     data = blobs.get(state.blobs, d: d)?
     releases.count_download(@state.db, r: release)?
@@ -167,11 +172,12 @@ function archive_response(r: http.Request, release: releases.Release, data: [u8]
 # The signature block of a version, as its publisher sent it.
 #
 # - `state`: the server's state.
-# - `name`: the package's name.
-# - `version`: the version.
+# - `found`: the route, its parameters `name`, `version`.
 #
 # Fails `not_found` where there is no such version.
-function show_signature(@state: serving.State, name: str, version: str) -> http.Response?
+function show_signature(@state: serving.State, found: web.Found, _: http.Request) -> http.Response?
+    name = web.param_of(found, name: "name")
+    version = web.param_of(found, name: "version")
     release = releases.release_of(@state.db, name: name, version: version)?
     return ok(
         http.respond(http.STATUS_OK, content_type: "application/x-pem-file", body: bytes.from_text(release.signature))
@@ -181,12 +187,13 @@ function show_signature(@state: serving.State, name: str, version: str) -> http.
 # patch and each file's diff.
 #
 # - `state`: the server's state.
+# - `found`: the route, its parameter `name`.
 # - `r`: the request.
-# - `name`: the package's name.
 #
 # Fails `invalid` where the query lacks a version, `not_found` where either
 # version is unknown.
-function show_changes(@state: serving.State, r: http.Request, name: str) -> http.Response?
+function show_changes(@state: serving.State, found: web.Found, r: http.Request) -> http.Response?
+    name = web.param_of(found, name: "name")
     from = query_value(r, key: "from")?
     to = query_value(r, key: "to")?
     old = releases.release_of(@state.db, name: name, version: from)?
@@ -194,7 +201,7 @@ function show_changes(@state: serving.State, r: http.Request, name: str) -> http
     limits = unpack.Limits(unpacked_bytes: state.settings.unpacked_bytes, files: state.settings.files)
     old_contents = unpack.open(blobs.get(state.blobs, d: old.digest)?, limits: limits)?
     new_contents = unpack.open(blobs.get(state.blobs, d: new.digest)?, limits: limits)?
-    found = changes.compare(
+    compared = changes.compare(
         from: from,
         to: to,
         old: old_contents,
@@ -202,7 +209,7 @@ function show_changes(@state: serving.State, r: http.Request, name: str) -> http
         old_manifest: json.parse(old.manifest)?,
         new_manifest: json.parse(new.manifest)?
     )
-    return ok(answers.with_json(http.STATUS_OK, v: changes.to_json(found)))
+    return ok(answers.with_json(http.STATUS_OK, v: changes.to_json(compared)))
 
 # The packages a search finds, `?q=text wrap&limit=10`, the best first.
 #
@@ -211,7 +218,7 @@ function show_changes(@state: serving.State, r: http.Request, name: str) -> http
 #
 # Fails `invalid` where the query lacks `q`, `q` does not read as a search or
 # `limit` is no number.
-function search_packages(@state: serving.State, r: http.Request) -> http.Response?
+function search_packages(@state: serving.State, _: web.Found, r: http.Request) -> http.Response?
     query = query_value(r, key: "q")?
 
     limit = match query_value(r, key: "limit")
@@ -238,7 +245,7 @@ function search_packages(@state: serving.State, r: http.Request) -> http.Respons
 # - `r`: the request.
 #
 # Fails `invalid` where the query lacks `prefix`.
-function suggest(state: serving.State lent, r: http.Request) -> http.Response?
+function suggest(state: serving.State lent, _: web.Found, r: http.Request) -> http.Response?
     prefix = query_value(r, key: "prefix")?
     names: [json.Value] @= []
 
@@ -251,10 +258,11 @@ function suggest(state: serving.State lent, r: http.Request) -> http.Response?
 # publisher as headers.
 #
 # - `state`: the server's state.
-# - `id`: the key id.
+# - `found`: the route, its parameter `id`.
 #
 # Fails `not_found` where no key has it.
-function show_key(@state: serving.State, id: str) -> http.Response?
+function show_key(@state: serving.State, found: web.Found, _: http.Request) -> http.Response?
+    id = web.param_of(found, name: "id")
     k = database.key_of(@state.db, id: id)?
     return ok(
         http.respond(http.STATUS_OK, content_type: "application/x-pem-file", body: bytes.from_text(signers.format_public(k)?))
@@ -264,10 +272,11 @@ function show_key(@state: serving.State, id: str) -> http.Response?
 # keeps as its trust file.
 #
 # - `state`: the server's state.
-# - `name`: the publisher's name.
+# - `found`: the route, its parameter `name`.
 #
 # Fails `not_found` where no publisher has it.
-function publisher_keys(@state: serving.State, name: str) -> http.Response?
+function publisher_keys(@state: serving.State, found: web.Found, _: http.Request) -> http.Response?
+    name = web.param_of(found, name: "name")
     _ = database.publisher_named(@state.db, name: name)?
     bundle = signers.format_bundle(database.keys_of(@state.db, publisher: name)?)?
     return ok(http.respond(http.STATUS_OK, content_type: "application/x-pem-file", body: bytes.from_text(bundle)))
@@ -276,10 +285,11 @@ function publisher_keys(@state: serving.State, name: str) -> http.Response?
 # they were published, as a package manager reads an index.
 #
 # - `state`: the server's state.
-# - `name`: the package's name.
+# - `found`: the route, its parameter `name`.
 #
 # Fails `not_found` where no package has it.
-function show_index(@state: serving.State, name: str) -> http.Response?
+function show_index(@state: serving.State, found: web.Found, _: http.Request) -> http.Response?
+    name = web.param_of(found, name: "name")
     _ = releases.package_named(@state.db, name: name)?
     lines: [str] @= []
 

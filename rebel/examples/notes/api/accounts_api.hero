@@ -62,23 +62,27 @@ function create_token(@app: state.App, v: visit.Visit, r: http.Request, values: 
     out.headers @ http.with_header(out.headers, name: "Cache-Control", value: "no-store")
     return ok(replies.plain(out))
 
-# Answers the operation `name` for `user`.
+# Answers the operation `name` for `user`: the function `operations` binds
+# to its name.
 #
 # - `app`: the state.
 # - `user`: the account the token names.
 # - `name`: the operation: `read_me`, `update_user` or `stop_server`.
 # - `values`: the request's values.
 function answer(@app: state.App, user: model.User, name: str, values: openapi.Values) -> replies.Reply?
-    if name == api_doc.READ_ME
-        return ok(replies.plain(replies.json_response(http.STATUS_OK, value: api_view.user_json(user))))
+    return match operations()[name]
+        .ok operation => operation(@app, user, values)
+        .err _ => ok(replies.plain(replies.api_error(http.STATUS_NOT_FOUND, message: f"no operation {name} here")))
 
-    if name == api_doc.UPDATE_USER
-        return update_user(@app, user: user, values: values)
+# The function that answers each operation of this module, by its name.
+function operations() -> {str: (function(@state.App, model.User, openapi.Values) -> replies.Reply?)}
+    return {api_doc.READ_ME: read_me, api_doc.UPDATE_USER: update_user, api_doc.STOP_SERVER: stop_server}
 
-    if name == api_doc.STOP_SERVER
-        return stop_server(@app, user: user)
-
-    return ok(replies.plain(replies.api_error(http.STATUS_NOT_FOUND, message: f"no operation {name} here")))
+# `GET /api/me`: the account the token names.
+#
+# - `user`: the account.
+function read_me(_: state.App lent, user: model.User, _: openapi.Values) -> replies.Reply?
+    return ok(replies.plain(replies.json_response(http.STATUS_OK, value: api_view.user_json(user))))
 
 # `PATCH /api/users/{name}`: the account given the body's `role`.
 #
@@ -111,7 +115,7 @@ function service_user(@app: state.App, name: str) -> model.User?
 #
 # - `app`: the state; `stopping` is set.
 # - `user`: the account asking, which must be an admin.
-function stop_server(@app: state.App, user: model.User) -> replies.Reply?
+function stop_server(@app: state.App, user: model.User, _: openapi.Values) -> replies.Reply?
     if user.role != .admin
         return ok(replies.plain(replies.api_error(http.STATUS_FORBIDDEN, message: "only an admin may stop the server")))
 

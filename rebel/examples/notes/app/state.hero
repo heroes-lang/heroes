@@ -1,10 +1,12 @@
-# Everything a running server holds, in one record every handler is lent by
-# `@`: the language has no closure and no global, so the router finds a
-# route by name and the program calls its own function with this state
-# (`web`'s opening comment says why). It is made once at start, from the
-# settings, and closed once at the stop.
+# Everything a running server holds, in one record every step and handler is
+# lent by `@`: the language has no closure and no global, so the router keeps
+# each route's and each step's name and this record holds the tables that
+# bind each to the program's function (`pipeline.bind`), and `web/chain`
+# calls them with this state. It is made once at start, from the settings,
+# and closed once at the stop.
 
 use <rebel>/crypto
+use <rebel>/http
 use <rebel>/log
 use <rebel>/metrics
 use <rebel>/openapi
@@ -12,9 +14,11 @@ use <rebel>/search
 use <rebel>/sql/sqlite
 use <rebel>/template
 use <rebel>/web
+use <rebel>/web/chain
 
 use api/api_doc
 use auth/passwords
+use auth/visit
 use config/settings
 use domain/clock
 use http/routes
@@ -36,6 +40,13 @@ record App
     db: sqlite.Db
     # Every route.
     router: web.Router
+    # The steps a page's route runs, by their names: `pipeline.bind`'s.
+    steps: {str: (function(@App, chain.Next, http.Request) -> http.Response?)}
+    # What answers each page's route, by the route's name: `pipeline.bind`'s.
+    answers: {str: (function(@App, web.Found, http.Request) -> http.Response?)}
+    # The visit of the page request being answered, which its steps and its
+    # answer read; `not_found` between requests.
+    visit: visit.Visit?
     # The pages' templates.
     views: template.Template
     # The API's document.
@@ -113,6 +124,9 @@ function open(s: settings.Settings, business: clock.Clock) -> App?
         settings: s,
         db: db,
         router: routes.router_of(doc, site: site)?,
+        steps: {},
+        answers: {},
+        visit: fail(code: visit.NOT_FOUND, msg: "no page request is being answered"),
         views: templates.templates()?,
         api: doc,
         validator: openapi.new_validator(doc)?,

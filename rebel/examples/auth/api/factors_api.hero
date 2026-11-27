@@ -8,6 +8,7 @@
 use <rebel>/bytes
 use <rebel>/http
 use <rebel>/maps
+use <rebel>/web
 
 use accounts/accounts
 use accounts/passwords
@@ -32,8 +33,8 @@ constant CEREMONY_SECONDS: i64
 # - `r`: the request.
 #
 # Fails where the data file cannot be written.
-function totp_enrol(@st: state.State, r: http.Request) -> http.Response?
-    c = match accounts_api.current(st, r: r)
+function totp_enrol(@st: state.State, _: web.Found, _: http.Request) -> http.Response?
+    c = match st.visitor
         .ok found => found
         .err _    => return ok(accounts_api.login_required())
 
@@ -56,8 +57,8 @@ function totp_enrol(@st: state.State, r: http.Request) -> http.Response?
 # - `r`: the request.
 #
 # Fails where the data file cannot be written.
-function totp_confirm(@st: state.State, r: http.Request) -> http.Response?
-    c = match accounts_api.current(st, r: r)
+function totp_confirm(@st: state.State, _: web.Found, r: http.Request) -> http.Response?
+    c = match st.visitor
         .ok found => found
         .err _    => return ok(accounts_api.login_required())
 
@@ -78,8 +79,8 @@ function totp_confirm(@st: state.State, r: http.Request) -> http.Response?
 # - `r`: the request.
 #
 # Fails as `passkeys.registration_options` fails.
-function register_options(@st: state.State, r: http.Request) -> http.Response?
-    c = match accounts_api.current(st, r: r)
+function register_options(@st: state.State, _: web.Found, _: http.Request) -> http.Response?
+    c = match st.visitor
         .ok found => found
         .err _    => return ok(accounts_api.login_required())
 
@@ -98,8 +99,8 @@ function register_options(@st: state.State, r: http.Request) -> http.Response?
 # - `r`: the request, its body a `RegistrationResponseJSON`.
 #
 # Fails where the data file cannot be written.
-function register(@st: state.State, r: http.Request) -> http.Response?
-    c = match accounts_api.current(st, r: r)
+function register(@st: state.State, _: web.Found, r: http.Request) -> http.Response?
+    c = match st.visitor
         .ok found => found
         .err _    => return ok(accounts_api.login_required())
 
@@ -128,7 +129,7 @@ function register(@st: state.State, r: http.Request) -> http.Response?
 # - `st`: the server, which keeps the ceremony.
 #
 # Fails as `passkeys.authentication_options` fails.
-function login_options(@st: state.State) -> http.Response?
+function login_options(@st: state.State, _: web.Found, _: http.Request) -> http.Response?
     started = passkeys.authentication_options(@st.rng, rp: state.relying_party(st))?
     ceremony = ids.token(@st.rng, count: 16)
     kept @= st.ceremonies
@@ -149,7 +150,7 @@ function login_options(@st: state.State) -> http.Response?
 # - `r`: the request, its body an `AuthenticationResponseJSON`.
 #
 # Fails where the data file cannot be written.
-function login(@st: state.State, r: http.Request) -> http.Response?
+function login(@st: state.State, _: web.Found, r: http.Request) -> http.Response?
     key = passwords.digest_hex(answers.cookie(r, name: answers.CEREMONY_COOKIE))
 
     challenge = match st.ceremonies[key]

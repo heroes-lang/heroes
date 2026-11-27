@@ -471,3 +471,79 @@ at 23.40 + 0.60 + 0.10 = 24.10); **the verdict session whenever the thirty spent
 infers from panel 259's (t1 about 0.57 to 0.80, t2 about 0.25 to 0.35, an inference, unrun) the thirty spend about 12
 to 17 USD and the verdict fits; only if every session reached its cap would the verdict session be left out, and the
 decision rules, which read the thirty, would be graded all the same.
+
+## Amended before any session, 2026-11-27, by the coordinator
+
+**The coordinator's decision, 03:26**: a process choice inside the run the author authorised (*ok a 25 dollars*,
+this file's head), the same size and the same ceiling of 25.00 USD, recorded here so that **the author can turn it**.
+Written by the run's session before any session is drawn or run, every number below a command's, run that session
+(its notes: `.claude/worktrees/blind262-scratch/notes.md`). Nothing above this section is changed; where it and a
+line above disagree, this section governs.
+
+**What moved, found by the run's session at 03:18, before its first step** (the brief asked it to verify `main`'s
+spec and stop if it had moved):
+
+- **Step 208b, `750d2540d`** (2026-11-27 03:15:31 +0100, panel 260's amendment after its blind reading): `main`'s
+  spec moved on **one line, 411**, § 13's first paragraph (`hero_os.h` and `hero_compiler.h` *"the runtime's own
+  interfaces and none of the layer's"*, *"so a group over `hero_os.h` or `hero_compiler.h` says no `layer` unless
+  its library calls the layer"*). `git show main:spec/heroes-spec.md | shasum -a 256` read **`736b534c...efd3`**
+  (526 lines, 36,316 bytes), not the `9ff7d2a1...2fc3` registered above, which is `77eb38534`'s (re-hashed). The
+  handler sentence, line 438, is not in the diff (lines 430 to 445 the same bytes).
+- **Step 208a, `b626d4c05`** (2026-11-26 23:53:35 +0100, merged at `f1d7da1ba`, 2026-11-27 02:01:42): *"a group over
+  the runtime's own `hero_os.h` that says `layer` is refused"*. **`h13.hero`'s first line is `extern "hero_os.h"
+  layer`**, so the stage 2 of `main` at `d42929b67` (`sources 7c7c978a4dfeddf3`) refused it on this Mac, plain and
+  `--sanitize`: *BUILD FAILED*, `error[ffi_layer_unreached]` at `h13.hero:1:20`, *"`hero_os.h` is the runtime's own
+  header, none of the platform layer's ... take the word out"*, `fix (certain): take `layer` out`, where § The key
+  says `h13` runs. Its other 16 programs gave the registered verdicts, 96 of 96 outputs equal to `key-mac-repair/`
+  after `key.sh`'s normalisation.
+
+**The four rules, before any session:**
+
+1. **`now` is pinned to `main`'s spec at `9b88d3e84`** (`main`'s head at 03:26, 2026-11-27 03:21:27 +0100):
+   sha256 **`736b534c852e39aff9bdde0b7e6008a836b25f74b4110b017cce145bd178efd3`** (`git show
+   9b88d3e84:spec/heroes-spec.md | shasum -a 256`, verified), and **the run reads that commit's spec whatever `main`
+   does during it**: its copy is `arms-9b88d3e84/spec-now.md` beside this file. **`adopted` and `rival` are the
+   synthesis's two diffs applied to it** by `patch -p1` (no fuzz, no offset), each `cmp` equal to the run's session's
+   probe: `arms-9b88d3e84/spec-adopted.md` **`d66dfd307384d3fa7b28cc72e757cc8d9e34680f260a92eaa5732c5870267b17`**
+   (526 lines, 37,203 bytes; `synthesis/spec-adopted.diff`, `909fb908...a665`) and `arms-9b88d3e84/spec-rival.md`
+   **`ecfb9931f987e29b25d72c15edb52796ff940cd4a3936b49070704c250214d7c`** (526 lines, 36,588 bytes;
+   `synthesis/spec-rival.diff`, `6bb97f71...059d`). Each differs from the synthesis's arm above on line 411 alone, and
+   `now` from `77eb38534`'s spec on line 411 alone (`diff`). The three lines are appended to `arms.sha256` below the
+   old three, which stay (from this worktree's root, `shasum -a 256 -c` reads the new three `OK`; the first old line
+   names `spec/heroes-spec.md` and fails here, as it did before, this worktree holding the base's spec). **The
+   warden's predictions**: `rival`'s diff over the pinned spec is still `spec-w1.diff` byte for byte, so the warden's
+   `spec-w1` column is read for `rival` as registered, its *"landed spec (`main`, sha256 `9ff7d2a1...2fc3`)"* read as
+   the landed spec of the run's day, which differs from that one on line 411 alone; `adopted` stays unpredicted.
+2. **`h13.hero` loses the word `layer` and nothing else**, the certain fix the compiler names: its first line
+   `extern "hero_os.h"`, 487 bytes, sha256 **`06be86280a074048acbfff1880468051d8096b36d1dff33a3a436b25b533b42e`**,
+   canonical (`heroes-next fmt h13.hero | cmp - h13.hero`, the pinned build) and checked (`heroes-next check`, exit
+   0). The registered bytes stay beside it as `programs/h13.hero.registered` (`50e88d4a...02da`, 493 bytes). Two
+   lines are appended to `inputs.sha256` below the old 40: the new `programs/h13.hero` and `programs/h13.hero.registered`;
+   `shasum -a 256 -c inputs.sha256` reads 41 `OK` and one `FAILED`, the old `programs/h13.hero` line, history by
+   design. `h13.hero.registered` is never copied into a session's folder. **`h13` stays in D1 with its registered
+   class, `promised` under `adopted` and `rival`** (*"counting a signal with `hero_signal_watch` runs none"*),
+   **because the new key runs it** (rule 3). t1's input is now **23,858 bytes** (`cat prelude.h sw.h h?.h h??.h h?.hero
+   h??.hero | wc -c`, 28 files); t2's 9,522, unchanged.
+3. **The key is re-run on both graded platforms under the pinned commit's build**, `9b88d3e84`'s stage 2, `sources
+   7c7c978a4dfeddf3`: built from that commit's seed (`sources 1e1eb23a1927d35b`) in a `git archive 9b88d3e84` (the
+   run's scratch, `tree/`), the same key as `d42929b67`'s stage 2 (both built and read; `git diff d42929b67 9b88d3e84`
+   touches `rebel/` and `site/` alone). `sh blind/key.sh` over `h1` to `h13` and `n1` to `n4`, plain and `--sanitize`,
+   three runs each:
+   - **this Mac** (03:30:49 to 03:31:42): every one of the 34 cells one distinct output of three, **102 of 102
+     outputs equal to `key-mac-repair/`** after `key.sh`'s normalisation, ASan's warning lines set aside: **no cell
+     moved**; `h13` prints `watch 0`, `answer ran for 7`, `result 70`, `counted 1`, exit 0, plain and `--sanitize`;
+   - **Linux arm64** (03:32:09 to 03:37:23), one container `blind262` (`docker run --rm --pull never`,
+     `heroes-linux-arm64:latest`, image `338a1044ac90`; `aarch64`, Debian clang 22.1.8, `ldd (Debian GLIBC
+     2.41-12+deb13u3) 2.41`), over `git archive 9b88d3e84 selfhost runtime seed vendor spec` with this folder's
+     `key.sh` and `programs/` added (36 files, each its hash above, the last line per path): the seed `sources
+     1e1eb23a1927d35b`, stage 2 **`sources 7c7c978a4dfeddf3`, this Mac's**; every one of the 34 cells one distinct
+     output of three, and **every cell's first run equal to this Mac's** after ASan's warning lines and the shell's
+     `Aborted` are set aside and pid, addresses and `(N)` normalised (`diff` per file: 0 of 34 differ). The
+     container is removed (`docker ps -a`: none named `blind262`).
+   So **no program of t1 or t2 splits between the graded platforms or between the plain and `--sanitize` builds**,
+   and every rule has its key as § The key gives it; `n1 --sanitize` runs on Darwin under the day's runtime; `n3`
+   runs on both, so it stays in D1. Outputs: `.claude/worktrees/blind262-scratch/key-mac-9b88/` and `linux/L-key/`.
+4. **`claude --version` on the day: `2.1.326 (Claude Code)`** (read 03:23, 2026-11-27), where this file carried
+   `2.1.323` (§ The area, the runner and every session). Whether its `--bare --restricted --safe-mode` session is
+   offered a `Write` tool is asked of the free preflight's transcript before any paid session (the runner's
+   registration says how), and the run stops if it is.

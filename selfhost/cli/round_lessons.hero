@@ -1,0 +1,29 @@
+# What a refused round's own words teach the next round, before a handle's
+# tag is asked (design.md §4.19; `cli/rounds.hero`): a bound function whose
+# header's function-like macro clang refused at the program's own C, called
+# by its name in parentheses (`emit/call_spelling.hero`, defect 2511), and a
+# callback whose header writes its integers with C's other words, handed C a
+# thunk of those words (`emit/callback_learn.hero`, lane p261-beside,
+# 2026-11-26). Each lesson only grows the build's table, so a round that
+# learns nothing ends the rounds. Out of `cli/rounds.hero` the day the
+# second lesson came, which took that file past its 300 lines.
+
+use cli/compile
+use cli/pointee_ask
+use emit/call_spelling
+use emit/callback_learn
+use source
+
+# How many lessons the refused round's `refusals` taught, into the table.
+function learned(s: source.Source, art: compile.Artifact, answered: [pointee_ask.Answered], refusals: [str], @struct_tags: {str: bool}) -> i64
+    called = call_spelling.learn(s, art.decls, refusals: refusals, struct_tags: @struct_tags)
+    handed = callback_learn.learn(
+        s,
+        art.decls,
+        p: art.program,
+        c: art.checked,
+        answered: answered,
+        refusals: refusals,
+        struct_tags: @struct_tags
+    )
+    return called + handed

@@ -33,4 +33,5 @@ packages = [
     "url",
     "vectors",
     "web",
+    "web/chain",
 ]

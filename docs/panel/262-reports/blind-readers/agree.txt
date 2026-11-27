@@ -1,0 +1,11 @@
+units 27; same set 27; at least one label shared 27
+W: A 11  B 11  both 11  agreement 1.00  kappa 1.00
+N: A  0  B  0  both  0  agreement 1.00  kappa nan
+L: A 15  B 15  both 15  agreement 1.00  kappa 1.00
+H: A 11  B 11  both 11  agreement 1.00  kappa 1.00
+O: A  1  B  1  both  1  agreement 1.00  kappa 1.00
+T: A  0  B  0  both  0  agreement 1.00  kappa nan
+I: A  0  B  0  both  0  agreement 1.00  kappa nan
+P: A  0  B  0  both  0  agreement 1.00  kappa nan
+R: A  0  B  0  both  0  agreement 1.00  kappa nan
+S: A  0  B  0  both  0  agreement 1.00  kappa nan

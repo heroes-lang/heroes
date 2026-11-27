@@ -145,14 +145,32 @@ function on_read(@srv: state.Server, set: poll.Set, @reader: io.Reader, r: http.
     match web.route(srv.router, r: r)
         .err _ => answer_and_close(@reader.stream, r: r, response: web.not_routed(srv.router, r: r))
         .ok found =>
-            if found.name == api.SOCKET_ROUTE
-                open_socket(@srv, set: set, @reader, r: r)
-            else if found.name == api.REGISTER_ROUTE
-                begin_sign_in(@srv, stream: reader.stream, r: r, begun: api.begin_register(@srv, r: r))
-            else if found.name == api.LOGIN_ROUTE
-                begin_sign_in(@srv, stream: reader.stream, r: r, begun: api.begin_login(@srv, r: r))
-            else
-                answer_and_close(@reader.stream, r: r, response: api.answer(@srv, found: found, r: r))
+            match taken()[found.name]
+                .ok handler => handler(@srv, set, @reader, found, r)
+                .err _      => answer_and_close(@reader.stream, r: r, response: api.answer(@srv, found: found, r: r))
+
+# The routes the loop takes itself, each bound by its name to the function
+# that takes it: the server and the request's reader both lent, two places
+# of the caller's, the reader's stream the server's to answer and close. The
+# other routes are `api.answer`'s, answered at once.
+function taken() -> {str: (function(@state.Server, poll.Set, @io.Reader, web.Found, http.Request) -> ())}
+    return {api.SOCKET_ROUTE: open_socket, api.REGISTER_ROUTE: register, api.LOGIN_ROUTE: login}
+
+# `POST /register`: a sign-up up to its hash, answered at once or parked.
+#
+# - `srv`: the server.
+# - `reader`: the request's reader, whose stream the server now holds.
+# - `r`: the request.
+function register(@srv: state.Server, _: poll.Set, reader: io.Reader lent, _: web.Found, r: http.Request)
+    begin_sign_in(@srv, stream: reader.stream, r: r, begun: api.begin_register(@srv, r: r))
+
+# `POST /login`: a sign-in up to its hash, answered at once or parked.
+#
+# - `srv`: the server.
+# - `reader`: the request's reader, whose stream the server now holds.
+# - `r`: the request.
+function login(@srv: state.Server, _: poll.Set, reader: io.Reader lent, _: web.Found, r: http.Request)
+    begin_sign_in(@srv, stream: reader.stream, r: r, begun: api.begin_login(@srv, r: r))
 
 # Answers every request the readers have handed over: what the mailbox holds
 # when the set tells it readable.
@@ -213,7 +231,7 @@ function on_hashed(@srv: state.Server)
 # - `set`: the poll set.
 # - `reader`: the request's reader, whose stream the connection takes.
 # - `r`: the request.
-function open_socket(@srv: state.Server, set: poll.Set, @reader: io.Reader, r: http.Request)
+function open_socket(@srv: state.Server, set: poll.Set, @reader: io.Reader, _: web.Found, r: http.Request)
     user = match api.user_of(srv, r: r)
         .ok u => u
         .err e =>

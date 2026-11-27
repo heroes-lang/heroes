@@ -33,6 +33,7 @@ packages = [
     "url",
     "uuid",
     "web",
+    "web/chain",
     "webauthn",
     "x509",
 ]

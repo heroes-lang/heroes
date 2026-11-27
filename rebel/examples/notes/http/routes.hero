@@ -166,6 +166,28 @@ function router_of(doc: openapi.Document, site: openapi.Site) -> web.Router?
 function add(@r: web.Router, method: str, pattern: str, name: str) -> ()?
     return web.add(@r, method: method, pattern: pattern, name: name)
 
+# Whether `route` is a page's: neither the API's, which `pipeline.api`
+# answers, nor the live channel's, which the server's loop upgrades.
+#
+# - `route`: a route of the router.
+function is_page_route(route: web.Route) -> bool
+    for g in route.groups
+        if g == API_GROUP
+            return false
+
+    return route.name != SOCKET
+
+# Whether `route` is one of the admin group's, which its guard keeps to an
+# admin.
+#
+# - `route`: a route of the router.
+function is_admin_route(route: web.Route) -> bool
+    for g in route.groups
+        if g == ADMIN_GROUP
+            return true
+
+    return false
+
 # Whether `found` answers as the API answers: JSON, a bearer token, no
 # cookie read; its group says so, since `openapi.add_routes` put every
 # operation of the document in it.

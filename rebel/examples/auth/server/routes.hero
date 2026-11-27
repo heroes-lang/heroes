@@ -1,97 +1,143 @@
-# The server's routes, and the one function that answers a request: `web`
-# finds the route by method and path, and `answer` calls the endpoint's
-# function with the server's state lent by `@`, since a route cannot hold the
-# state itself (`web`'s module comment says why). A path no route takes is
+# The server's routes, each bound to the endpoint that answers it, and the
+# steps around them: `web` finds the route by method and path, and
+# `web/chain` runs the steps and the endpoint bound to its name with the
+# server's state lent by `@`. Every route closes its connection and counts
+# its answer (`close`), which also answers an endpoint that fails
+# unexpectedly, the data file unwritable for one, 500 with its message,
+# never a crash; a served instance logs a line a request before it (`log`);
+# and the routes that need a session read it first (`signed_in`), refused
+# 401 without one before their endpoint runs. A path no route takes is
 # answered 404 and a method no route of the path takes 405 with its `Allow`,
-# both by `web.not_routed`. An endpoint that fails unexpectedly, the data file
-# unwritable for one, is answered 500 with its message, never a crash.
+# both by `web.not_routed`, through the same steps.
 
 use <rebel>/http
+use <rebel>/time
 use <rebel>/web
+use <rebel>/web/chain
 
 use api/accounts_api
 use api/factors_api
 use api/oauth_api
 use api/service_api
+use core/clock
 use server/answers
 use server/state
 
-# The routes, each named for the endpoint `answer` calls.
+# The routes whose endpoints need a session.
+constant SIGNED_IN_ROUTES: [str]
+    ["totp_enrol", "totp_confirm", "passkey_register_options", "passkey_register"]
+
+# Binds the routes in `st`, each to its endpoint, with the steps every
+# route runs: `log` first where `logged`, then `close`; and `signed_in`
+# before the endpoints that need a session.
+#
+# - `st`: the server, whose router and tables are made here.
+# - `logged`: whether a line is printed for each request.
 #
 # Fails `exists` where two routes clash, which these never do.
-function router() -> web.Router?
+function bind(@st: state.State, logged: bool) -> ()?
     rt @= web.new_router()
-    web.add(@rt, method: http.METHOD_GET, pattern: "/.well-known/openid-configuration", name: "metadata")?
-    web.add(@rt, method: http.METHOD_GET, pattern: "/.well-known/oauth-authorization-server", name: "metadata_rfc8414")?
-    web.add(@rt, method: http.METHOD_GET, pattern: "/jwks", name: "jwks")?
-    web.add(@rt, method: http.METHOD_POST, pattern: "/accounts", name: "register")?
-    web.add(@rt, method: http.METHOD_GET, pattern: "/verify", name: "verify")?
-    web.add(@rt, method: http.METHOD_GET, pattern: "/login", name: "login_page")?
-    web.add(@rt, method: http.METHOD_POST, pattern: "/login", name: "login")?
-    web.add(@rt, method: http.METHOD_POST, pattern: "/logout", name: "logout")?
-    web.add(@rt, method: http.METHOD_POST, pattern: "/totp/enrol", name: "totp_enrol")?
-    web.add(@rt, method: http.METHOD_POST, pattern: "/totp/confirm", name: "totp_confirm")?
-    web.add(@rt, method: http.METHOD_POST, pattern: "/passkeys/register/options", name: "passkey_register_options")?
-    web.add(@rt, method: http.METHOD_POST, pattern: "/passkeys/register", name: "passkey_register")?
-    web.add(@rt, method: http.METHOD_POST, pattern: "/passkeys/login/options", name: "passkey_login_options")?
-    web.add(@rt, method: http.METHOD_POST, pattern: "/passkeys/login", name: "passkey_login")?
-    web.add(@rt, method: http.METHOD_GET, pattern: "/authorize", name: "authorize")?
-    web.add(@rt, method: http.METHOD_POST, pattern: "/token", name: "token")?
-    web.add(@rt, method: http.METHOD_GET, pattern: "/userinfo", name: "userinfo")?
-    web.add(@rt, method: http.METHOD_POST, pattern: "/revoke", name: "revoke")?
-    web.add(@rt, method: http.METHOD_POST, pattern: "/introspect", name: "introspect")?
-    web.add(@rt, method: http.METHOD_POST, pattern: "/service/token", name: "service_token")?
-    web.add(@rt, method: http.METHOD_POST, pattern: "/admin/import", name: "import")?
-    web.add(@rt, method: http.METHOD_GET, pattern: "/admin/users", name: "users")?
-    return ok(rt)
 
-# The answer to `r`, every answer closing its connection: the server serves
-# one request at a time, so a client that kept a connection open would hold
-# every other client waiting.
+    if logged
+        chain.add_step(@rt, @st.steps, name: "log", step: log)?
+    chain.add_step(@rt, @st.steps, name: "close", step: close)?
+    get = http.METHOD_GET
+    post = http.METHOD_POST
+    chain.on(@rt, @st.answers, method: get, pattern: "/.well-known/openid-configuration", name: "metadata", answer: oauth_api.metadata)?
+    chain.on(@rt, @st.answers, method: get, pattern: "/.well-known/oauth-authorization-server", name: "metadata_rfc8414", answer: oauth_api.metadata)?
+    chain.on(@rt, @st.answers, method: get, pattern: "/jwks", name: "jwks", answer: oauth_api.jwks)?
+    chain.on(@rt, @st.answers, method: post, pattern: "/accounts", name: "register", answer: accounts_api.register)?
+    chain.on(@rt, @st.answers, method: get, pattern: "/verify", name: "verify", answer: accounts_api.verify)?
+    chain.on(@rt, @st.answers, method: get, pattern: "/login", name: "login_page", answer: accounts_api.login_page)?
+    chain.on(@rt, @st.answers, method: post, pattern: "/login", name: "login", answer: accounts_api.login)?
+    chain.on(@rt, @st.answers, method: post, pattern: "/logout", name: "logout", answer: accounts_api.logout)?
+    chain.on(@rt, @st.answers, method: post, pattern: "/totp/enrol", name: "totp_enrol", answer: factors_api.totp_enrol)?
+    chain.on(@rt, @st.answers, method: post, pattern: "/totp/confirm", name: "totp_confirm", answer: factors_api.totp_confirm)?
+    chain.on(@rt, @st.answers, method: post, pattern: "/passkeys/register/options", name: "passkey_register_options", answer: factors_api.register_options)?
+    chain.on(@rt, @st.answers, method: post, pattern: "/passkeys/register", name: "passkey_register", answer: factors_api.register)?
+    chain.on(@rt, @st.answers, method: post, pattern: "/passkeys/login/options", name: "passkey_login_options", answer: factors_api.login_options)?
+    chain.on(@rt, @st.answers, method: post, pattern: "/passkeys/login", name: "passkey_login", answer: factors_api.login)?
+    chain.on(@rt, @st.answers, method: get, pattern: "/authorize", name: "authorize", answer: oauth_api.authorize)?
+    chain.on(@rt, @st.answers, method: post, pattern: "/token", name: "token", answer: oauth_api.token)?
+    chain.on(@rt, @st.answers, method: get, pattern: "/userinfo", name: "userinfo", answer: oauth_api.userinfo)?
+    chain.on(@rt, @st.answers, method: post, pattern: "/revoke", name: "revoke", answer: oauth_api.revoke)?
+    chain.on(@rt, @st.answers, method: post, pattern: "/introspect", name: "introspect", answer: oauth_api.introspect)?
+    chain.on(@rt, @st.answers, method: post, pattern: "/service/token", name: "service_token", answer: service_api.service_token)?
+    chain.on(@rt, @st.answers, method: post, pattern: "/admin/import", name: "import", answer: service_api.import_now)?
+    chain.on(@rt, @st.answers, method: get, pattern: "/admin/users", name: "users", answer: service_api.list_users)?
+
+    for route in SIGNED_IN_ROUTES
+        chain.add_route_step(@rt, @st.steps, route: route, name: "signed_in", step: signed_in)?
+
+    st.router @ rt
+    return ok()
+
+# The answer to `r`: its route's steps and endpoint run with the server's
+# state.
 #
-# - `st`: the server, lent to the endpoint.
-# - `rt`: the routes.
+# - `st`: the server, lent to the steps and the endpoint.
 # - `r`: the request.
-function answer(@st: state.State, rt: web.Router, r: http.Request) -> http.Response
+function answer(@st: state.State, r: http.Request) -> http.Response
+    return match chain.dispatch(@st, router: st.router, steps: st.steps, answers: st.answers, r: r)
+        .ok response => response
+        .err e       => closed(answers.oauth_error(500, error: "server_error", description: f"{e.code}: {e.msg}"))
+
+# The rest of `n`'s chain: the server's one line that goes on.
+#
+# - `st`: the server.
+# - `n`: where the request stands.
+# - `r`: the request.
+function go_on(@st: state.State, n: chain.Next, r: http.Request) -> http.Response?
+    return chain.proceed(@st, steps: st.steps, answers: st.answers, n: n, r: r)
+
+# Every route's step: the answer counted and closing its connection, since
+# the server serves one request at a time and a client that kept a
+# connection open would hold every other client waiting; an endpoint that
+# fails answered 500 with its message.
+#
+# - `st`: the server, whose count of answers grows.
+# - `n`: where the request stands.
+# - `r`: the request.
+function close(@st: state.State, n: chain.Next, r: http.Request) -> http.Response?
     st.answered @ st.answered + 1
 
-    reply: http.Response? = match web.route(rt, r: r)
-        .ok found => endpoint(@st, name: found.name, r: r)
-        .err _    => ok(web.not_routed(rt, r: r))
+    return match go_on(@st, n, r)
+        .ok response => ok(closed(response))
+        .err e       => ok(closed(answers.oauth_error(500, error: "server_error", description: f"{e.code}: {e.msg}")))
 
-    closed @= match reply
-        .ok response => response
-        .err e       => answers.oauth_error(500, error: "server_error", description: f"{e.code}: {e.msg}")
-
-    closed.closing @ true
-    return closed
-
-# The answer of the endpoint `name` to `r`.
+# `response`, closing its connection.
 #
-# - `st`: the server, lent to the endpoint.
-# - `name`: the route's name.
+# - `response`: the answer.
+function closed(response: http.Response) -> http.Response
+    out @= response
+    out.closing @ true
+    return out
+
+# A served instance's step every route runs: a line for each request, its
+# time by the server's clock, its method, its path and the status answered.
+#
+# - `st`: the server, its clock read.
+# - `n`: where the request stands.
 # - `r`: the request.
-function endpoint(@st: state.State, name: str, r: http.Request) -> http.Response?
-    return match name
-        "metadata" | "metadata_rfc8414" => ok(oauth_api.metadata(st))
-        "jwks"                          => oauth_api.jwks(st)
-        "register"                      => accounts_api.register(@st, r: r)
-        "verify"                        => accounts_api.verify(@st, r: r)
-        "login_page"                    => ok(accounts_api.login_page(r))
-        "login"                         => accounts_api.login(@st, r: r)
-        "logout"                        => ok(accounts_api.logout(@st, r: r))
-        "totp_enrol"                    => factors_api.totp_enrol(@st, r: r)
-        "totp_confirm"                  => factors_api.totp_confirm(@st, r: r)
-        "passkey_register_options"      => factors_api.register_options(@st, r: r)
-        "passkey_register"              => factors_api.register(@st, r: r)
-        "passkey_login_options"         => factors_api.login_options(@st)
-        "passkey_login"                 => factors_api.login(@st, r: r)
-        "authorize"                     => ok(oauth_api.authorize(@st, r: r))
-        "token"                         => ok(oauth_api.token(@st, r: r))
-        "userinfo"                      => ok(oauth_api.userinfo(st, r: r))
-        "revoke"                        => ok(oauth_api.revoke(@st, r: r))
-        "introspect"                    => ok(oauth_api.introspect(st, r: r))
-        "service_token"                 => service_api.service_token(@st, r: r)
-        "import"                        => service_api.import_now(@st, r: r)
-        "users"                         => ok(service_api.list_users(st, r: r))
-        _                               => ok(http.respond_status(404))
+function log(@st: state.State, n: chain.Next, r: http.Request) -> http.Response?
+    response = go_on(@st, n, r)?
+    stamp = time.format(clock.now(st.clock), layout: .rfc3339_seconds)
+    print(f"{stamp} {r.method} {r.url.path} {response.status}")
+    return ok(response)
+
+# The step of the routes that need a session: the person the request's
+# session names read into the state for their endpoint, or 401
+# `login_required` before it runs; the state's visitor emptied after.
+#
+# - `st`: the server, whose `visitor` holds the person while the endpoint
+#   runs.
+# - `n`: where the request stands.
+# - `r`: the request.
+function signed_in(@st: state.State, n: chain.Next, r: http.Request) -> http.Response?
+    match accounts_api.current(st, r: r)
+        .err _ => return ok(accounts_api.login_required())
+        .ok v =>
+            st.visitor @ ok(v)
+            got = go_on(@st, n, r)
+            st.visitor @ fail(code: "not_found", msg: "no request is being answered")
+            return got

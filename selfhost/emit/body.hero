@@ -22,6 +22,7 @@ use checker
 use cli/strings
 use emit/callback_guard
 use emit/callback_thunk
+use emit/callback_variants
 use emit/constant_accessor
 use emit/ctype
 use emit/defined
@@ -181,6 +182,10 @@ function built(@w: writer.Writer, p: instances.Held, c: state.Checked, names: ct
     # 177's item 2), beside the definition it wraps, so the two are one
     # thing to read and the same translation unit links both.
     callback_thunk.definition(@w, c, names, s, decls, f, guarded_decls: guarded_decls)
+
+    # And its variants, where a refused round learned a header's integer
+    # words for a callback of its type (`emit/callback_variants.hero`).
+    callback_variants.definitions(@w, c, names, s, decls, f, guarded_decls: guarded_decls)
 
 # Which blocks are reachable — a lookup, not an analysis: the IR
 # already carries the answer in preds.

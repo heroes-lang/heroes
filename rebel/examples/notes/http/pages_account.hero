@@ -115,7 +115,7 @@ function session_for(name: str) -> web.Session?
 #
 # - `app`: the state.
 # - `v`: the visit.
-function register_form(app: state.App lent, v: visit.Visit) -> replies.Reply?
+function register_form(app: state.App lent, v: visit.Visit, _: web.Found, _: http.Request) -> replies.Reply?
     return account_form(
         app,
         v: v,
@@ -134,7 +134,7 @@ function register_form(app: state.App lent, v: visit.Visit) -> replies.Reply?
 # - `app`: the state.
 # - `v`: the visit.
 # - `r`: the request, a form of `name`, `email` and `password`.
-function register(@app: state.App, v: visit.Visit, r: http.Request) -> replies.Reply?
+function register(@app: state.App, v: visit.Visit, _: web.Found, r: http.Request) -> replies.Reply?
     name = pages_notes.form_value(r, key: "name")
     email = pages_notes.form_value(r, key: "email")
 
@@ -161,7 +161,7 @@ function register(@app: state.App, v: visit.Visit, r: http.Request) -> replies.R
 #
 # - `app`: the state.
 # - `v`: the visit.
-function login_form(app: state.App lent, v: visit.Visit) -> replies.Reply?
+function login_form(app: state.App lent, v: visit.Visit, _: web.Found, _: http.Request) -> replies.Reply?
     return account_form(
         app,
         v: v,
@@ -180,7 +180,7 @@ function login_form(app: state.App lent, v: visit.Visit) -> replies.Reply?
 # - `app`: the state; the sign-in limiter's bucket of the client changes.
 # - `v`: the visit.
 # - `r`: the request, a form of `name` and `password`.
-function login(@app: state.App, v: visit.Visit, r: http.Request) -> replies.Reply?
+function login(@app: state.App, v: visit.Visit, _: web.Found, r: http.Request) -> replies.Reply?
     match web.limit_rate(@app.login_limiter, r: r, key: client_of(r), now: v.now, form: .json)
         .answer a =>
             ops.count(@app.registry, name: ops.SIGN_INS, labels: ["limited"])
@@ -211,8 +211,8 @@ function login(@app: state.App, v: visit.Visit, r: http.Request) -> replies.Repl
             )
 
 # The session ended: 303 to the home page, the cookie forgotten.
-function logout() -> replies.Reply
-    return replies.Reply(response: replies.see_other("/"), session: .ended)
+function logout(_: state.App lent, _: visit.Visit, _: web.Found, _: http.Request) -> replies.Reply?
+    return ok(replies.Reply(response: replies.see_other("/"), session: .ended))
 
 # The key a client's rate limit is kept under: its address without the port,
 # `r.remote` as a whole where it holds no port.
@@ -230,7 +230,7 @@ function client_of(r: http.Request) -> str
 # - `app`: the state.
 # - `v`: the visit.
 # - `r`: the request.
-function users(@app: state.App, v: visit.Visit, r: http.Request) -> replies.Reply?
+function users(@app: state.App, v: visit.Visit, _: web.Found, r: http.Request) -> replies.Reply?
     every = user_store.every(@app.db)?
     c = layout.csrf_of(v)?
     rows: [json.Value] @= []
@@ -259,9 +259,11 @@ function users(@app: state.App, v: visit.Visit, r: http.Request) -> replies.Repl
 # - `app`: the state.
 # - `v`: the visit; its account is an admin, which the admin group's step
 #   checked.
+# - `found`: the route, its parameter `name`.
 # - `r`: the request, a form of `role`.
-# - `name`: the account given the role.
-function role(@app: state.App, v: visit.Visit, r: http.Request, name: str) -> replies.Reply?
+function role(@app: state.App, v: visit.Visit, found: web.Found, r: http.Request) -> replies.Reply?
+    name = web.param_of(found, name: "name")
+
     admin = match pages_notes.signed(v, r: r)
         .user s   => s.u
         .answer a => return ok(a.reply)

@@ -28,6 +28,7 @@ use cli/pointee_ask
 use cli/pragma_ask
 use cli/probing
 use cli/refused_units
+use cli/round_lessons
 use cli/settled
 use cli/tag_spelling
 use cli/toolchain
@@ -37,7 +38,6 @@ use cli/value_early
 use cli/value_run
 use cli/whose
 use diag
-use emit/call_spelling
 use emit/ffi_asked
 use emit/lend_type
 use emit/lock_screen
@@ -115,10 +115,10 @@ function run(t: toolchain.Toolchain, options: compile.Options, art: compile.Arti
         if whose.failure_code(linked) == "diagnostics"
             return Rounds(verdict: linked, binary: "", struct_tags: struct_tags, asked: asked, kept: kept)
 
-        # A bound function whose header's macro clang refused at the program's
-        # own C is called by its name in parentheses on the next round
-        # (`emit/call_spelling.hero`, defect 2511), before a tag is asked.
-        if call_spelling.learn(s, art.decls, refusals: went.refusals, struct_tags: @struct_tags) > 0
+        # What a refused round's own words teach the next before a tag is asked
+        # (`cli/round_lessons.hero`): a function called past a header's macro,
+        # a callback handed C in the header's integer words.
+        if round_lessons.learned(s, art, answered: answered, refusals: went.refusals, struct_tags: @struct_tags) > 0
             continue
         lesson = tag_spelling.learn(
             t,

@@ -30,5 +30,7 @@ packages = [
     "time",
     "tls",
     "toml",
+    "web",
+    "web/chain",
     "x509",
 ]

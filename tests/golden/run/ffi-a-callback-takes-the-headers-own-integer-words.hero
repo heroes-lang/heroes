@@ -1,0 +1,46 @@
+# A callback whose header writes its integers with other words of C, at the
+# width and sign the program writes them, builds and runs on every platform
+# (lane p261-beside, 2026-11-26; the draft d-p261-long-long; spec § 13).
+# Bulk regression case.
+#
+# `i64` is C's `int64_t`: `long` on Linux, `long long` on Darwin. Inside a
+# function-pointer type C wants the types identical, so a callback of
+# `long long` written `i64` was refused `ffi_callback_type` in the Linux
+# arm64 image, `sqlite3_update_hook`'s shape among them, and one of `size_t`
+# written `u64` on this Mac, while a call's own `long long` and `size_t`
+# parameters, converted by C, built on both (measured at `e5b7e30ab`). The
+# round that clang refuses learns the header's words, and the next hands C a
+# thunk of those words, the width and the sign asked of C at the binding.
+
+extern "ffi-a-callback-takes-the-headers-own-integer-words.h"
+    function call_ll(f: (function(i64) -> i64), x: i64) -> i64
+    function call_ull(f: (function(u64) -> u64), x: u64) -> u64
+    function call_size(f: (function(u64) -> u64), x: u64) -> u64
+    function call_hook(f: (function(data: ptr, op: i32, base: cstr, table: cstr, row: i64) -> ()), data: ptr)
+
+function twice(x: i64) -> i64
+    return x + x
+
+function thrice(x: u64) -> u64
+    return x * 3
+
+function seen(_: ptr, op: i32, base: cstr, table: cstr, row: i64)
+    print(op)
+    print(base.validated().default("?") + "." + table.validated().default("?"))
+    print(row)
+
+# A binding that takes a callback, handed on as a value: C is reached
+# through its adapter, which hands the callback through the same variant.
+function through(g: (function((function(i64) -> i64), i64) -> i64)) -> i64
+    return g(twice, 5)
+
+function through_size(g: (function((function(u64) -> u64), u64) -> u64)) -> u64
+    return g(thrice, 7)
+
+function main()
+    print(call_ll(f: twice, x: 4611686018427387903))
+    print(call_ull(f: thrice, x: 6148914691236517205))
+    print(call_size(f: thrice, x: 14))
+    call_hook(f: seen, data: nullptr)
+    print(through(call_ll))
+    print(through_size(call_size))
