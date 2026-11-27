@@ -21,6 +21,9 @@
 # process has had (`process.serial`), so two processes never share one and
 # neither does one process asking twice. It sits beside its destination,
 # in the same directory, because a rename across two volumes is a copy.
+# **And it keeps to the system's limit on a path** (step 218e,
+# `name_room`): a destination the system takes was refused at its private
+# name, the suffix taking that past the limit.
 #
 # WHEN THE PUBLISH FAILS. POSIX `rename` replaces its destination
 # atomically and never refuses because a reader holds it. Windows'
@@ -41,6 +44,7 @@
 
 use cli/files
 use cli/os_reason
+use cli/path_room
 use cli/process
 use cli/strings
 use module/reading as file_reading
@@ -52,6 +56,12 @@ use module/reading as file_reading
 # `.hero` took 264 with the suffix, past the 255 bytes APFS, ext4 and NTFS
 # allow a part (the premise, and `private_name`'s case below is the test
 # that fires if a part is ever held to fewer than 255 minus the suffix).
+# And fewer where the whole private name would pass the system's limit on a
+# path (`name_room`, step 218e): until then an `-o` the system takes was
+# refused at its private name, on this Mac one of 1,021 bytes, *no file
+# could be made beside it for its new text: the operating system's own
+# reason is 63* (measured), and on the CI's Windows leg, by 212a's measured
+# limit, the determinism suite's `-o` of a case named in 200 characters.
 function private_name(path: str) -> str
     suffix = "." + process.pid().to_str() + "-" + process.serial().to_str() + ".tmp"
     cut: i64 @= path.len()
@@ -59,13 +69,15 @@ function private_name(path: str) -> str
     while cut > 0 && path[cut - 1] != 47 && path[cut - 1] != 92
         cut @ cut - 1
 
-    if path.len() - cut <= NAME_KEPT
+    kept = name_room(path: path, cut: cut, suffix: suffix)
+
+    if path.len() - cut <= kept
         return path + suffix
-    end: i64 @= cut + NAME_KEPT
+    end: i64 @= cut + kept
 
     # Back to the first byte of a character: a UTF-8 continuation byte is
     # 0x80 to 0xBF, and a slice may not split one.
-    while path[end] >= 128 && path[end] < 192
+    while end > cut && path[end] >= 128 && path[end] < 192
         end @ end - 1
 
     return path.slice(from: 0, to: end) + suffix
@@ -75,6 +87,30 @@ function private_name(path: str) -> str
 # never over 244.
 constant NAME_KEPT: i64
     200
+
+# How many bytes of its last part's name, the bytes from `cut` on, the
+# private name of `path` keeps: NAME_KEPT, and fewer where `path` and
+# `suffix` pass the system's limit on a path in its own measure
+# (`path_room.judged`). The name then loses the units the limit is passed
+# by; a character takes no more units than bytes, so that many bytes, cut
+# back to a character, keep the whole within the limit. None where the
+# folder and the suffix alone pass it, which `author_file.staged_over` tells
+# before staging; NAME_KEPT where the system would not answer, as before.
+function name_room(path: str, cut: i64, suffix: str) -> i64
+    whole = path_room.judged(path + suffix)
+    over = whole.units - path_room.limit(folder: false)
+
+    if whole.units < 0 || over <= 0
+        return NAME_KEPT
+    windows = process.exe_suffix() == ".exe"
+    left = path_room.units_of(text: path.slice(from: cut, to: path.len()), windows: windows) - over
+
+    if left <= 0
+        return 0
+
+    if left < NAME_KEPT
+        return left
+    return NAME_KEPT
 
 # `text`, written whole under a private name, flushed to the device, and then
 # published as `path`. **The flush is what a power cut asks for** (defect 357):
@@ -316,14 +352,55 @@ test "a write that cannot happen names the path and the operating system's reaso
 
 # The premise `private_name` rests on, as the test that fires when it dies:
 # one part of a path holds 255 bytes on every filesystem this writes to.
+#
+# Where this process's folder is deep enough that a name of 200 bytes under
+# `build/` would pass the limit on a whole path, Windows' measure, the name
+# keeps less (the next case), and this one holds the part's bound alone.
 test "a private name keeps one part of a path within 244 bytes, cut at a character, and a short name whole"
     named = private_name("build/" + "n".repeat(250) + ".hero")
     last = named.slice(from: 6, to: named.len())
     assert last.len() <= 244
-    assert strings.holds(text: named, needle: "build/" + "n".repeat(200) + ".")
+    roomy = path_room.judged(named).units < path_room.limit(folder: false)
+
+    if roomy
+        assert strings.holds(text: named, needle: "build/" + "n".repeat(200) + ".")
     wide = private_name("build/" + "é".repeat(150))
-    assert wide.slice(from: 6, to: 206) == "é".repeat(100)
+
+    if path_room.judged(wide).units < path_room.limit(folder: false)
+        assert wide.slice(from: 6, to: 206) == "é".repeat(100)
     assert strings.holds(text: private_name("build/x.o"), needle: "build/x.o." + process.pid().to_str() + "-")
+
+# Step 218e (d-lane-ci-compiler-3): where a path and a private name's suffix
+# pass the system's limit, the name keeps the beginning of its own that
+# brings the whole to the limit and no further, in the system's measure, a
+# character never split; a short name in a folder that leaves it room is
+# kept whole; and a folder with no room for even the suffix keeps none. The
+# paths are only asked, never made, so any depth is fine on any system.
+test "a private name keeps to the system's limit on a path, cutting the name's end, never a character (d-lane-ci-compiler-3)"
+    most = path_room.limit(folder: false)
+    parts: [str] @= ["build/selftest-private-room"]
+
+    while most - path_room.judged(parts.join("/") + "/").units >= 120
+        parts @ parts.push("d".repeat(100))
+
+    dir = parts.join("/")
+    room = most - path_room.judged(dir + "/").units
+    fits = dir + "/" + "n".repeat(to_u64(room - 2).must())
+    cut = private_name(fits)
+    assert path_room.judged(cut).units == most
+    assert strings.starts_with(text: cut, prefix: dir + "/n")
+    assert strings.ends_with(text: cut, suffix: ".tmp")
+    assert private_name(dir + "/x.c").len() < cut.len()
+    assert strings.starts_with(text: private_name(dir + "/x.c"), prefix: dir + "/x.c." + process.pid().to_str() + "-")
+
+    # A name of two-byte characters is cut between two of them, which the
+    # slice that makes it asks (a slice splitting one aborts), its units
+    # within the limit.
+    wide = private_name(dir + "/" + "é".repeat(to_u64(room - 2).must()))
+    assert path_room.judged(wide).units <= most
+    assert strings.starts_with(text: wide, prefix: dir + "/é")
+    none = private_name(dir + "/" + "e".repeat(to_u64(room - 4).must()) + "/abc")
+    assert strings.holds(text: none, needle: "/" + "e".repeat(to_u64(room - 4).must()) + "/.")
 
 # Defect d-lane-blocking-small2-1: a folder that cannot be made is told by the
 # reason its own `mkdir` gave, read on the line after it and carried in its

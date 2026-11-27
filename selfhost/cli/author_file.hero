@@ -2,7 +2,7 @@
 # §1.12; defect 136): the source `fmt --in-place` and `check --apply
 # --in-place` rewrite and the C an `--emit-c -o` names. Out of
 # `cli/publish.hero` at step 218c, its seam: a build's own files are
-# published there, and the author's here, through a private name of its.
+# published there, the author's here, each under a private name of its first.
 #
 # THE AUTHOR'S OWN FILE. A file whose name the author gave is published as
 # `cli/publish.hero` publishes a build's, and for the same reason
@@ -26,9 +26,18 @@
 # a file an ACL denies deleting, are refused where they were written in
 # place; and a process killed between the stage and the rename leaves its
 # private name beside the file, whole or cut, and the file as it was.
+#
+# THE PATH'S LENGTH (step 218e). A path the system will not take for its
+# length is refused before anything is asked of it, naming the whole path,
+# its length and the limit (`path_room.beyond`, step 212g's words for a
+# source), where it was *it cannot be looked at* with the system's number
+# alone; and one it takes is written, its private name keeping to the limit
+# (`publish.private_name`), where that name passed it and the file was
+# refused. Measured on this Mac with `--emit-c -o` of 1,021 and 1,024 bytes.
 
 use cli/files
 use cli/os_reason
+use cli/path_room
 use cli/process
 use cli/publish
 use cli/strings
@@ -40,6 +49,11 @@ use cli/strings
 # written directly, as `fopen` wrote it until defect 134's publish refused
 # it (measured: `--emit-c -o /dev/null` exit 2 since, where clang takes it).
 function rewrite(path: str, text: str) -> ()?
+    long = path_room.beyond(path)
+
+    if long.len() > 0
+        return untouched(path: path, what: long)
+
     at = match landing_for(path)
         .ok found => found
         .err e    => return fail(code: e.code, msg: e.msg)
@@ -104,9 +118,20 @@ function carried_over(path: str, at: str, text: str) -> ()?
     return staged_over(path: path, at: at, text: text, like: at)
 
 # The new text under a private name beside `at`, then renamed over it, `at`
-# being the landing of the author's `path`.
+# being the landing of the author's `path`. The private name keeps to the
+# system's limit by keeping less of the file's name; where its folder leaves
+# no room even for the name's suffix, the refusal names it, its length and
+# the limit, before anything is made.
 function staged_over(path: str, at: str, text: str, like: str) -> ()?
-    return staged_through(path: path, at: at, staged: publish.private_name(at), text: text, like: like)
+    staged = publish.private_name(at)
+    long = path_room.past(path: staged, folder: false)
+
+    if long.len() > 0
+        return untouched(
+            path: path,
+            what: "no private name for its new text fits beside it: " + long + ", and it keeps none of the file's name: a shorter folder would fit"
+        )
+    return staged_through(path: path, at: at, staged: staged, text: text, like: like)
 
 # The same through a private name the caller chose, which is how the cases
 # below make a stage and a rename fail on every platform. A stage that fails
@@ -415,3 +440,56 @@ test "what is not a file is written into, and a directory is refused untouched"
     assert !process.mkdir_all(dir + "/out.c").is_err()
     said = failure_of(rewrite(path: dir + "/out.c", text: "x"))
     assert said == "not_written: cannot write " + dir + "/out.c: a directory is there; " + dir + "/out.c is untouched"
+
+# Step 218e (d-lane-ci-compiler-3): a file whose whole path the system takes
+# is written, though the path and a private name's suffix would pass the
+# limit; one past the limit is refused by its length before anything is
+# asked of it; and a folder that leaves no room even for the suffix is told
+# so, where such a folder can be made. The folder is made deep enough, by
+# parts of 100 under `build/`, to leave fewer than 120 units for a name on
+# any system: 75 bytes on this Mac from the tree's own folder.
+test "a file the system takes is written though its private name would pass the limit, and one past it is told by its length (d-lane-ci-compiler-3)"
+    most = path_room.limit(folder: false)
+    top = "build/selftest-rewrite-room"
+    fresh(top)
+    parts: [str] @= [top]
+
+    while most - path_room.judged(parts.join("/") + "/").units >= 120
+        parts @ parts.push("d".repeat(100))
+
+    dir = parts.join("/")
+    assert !process.mkdir_all(dir).is_err()
+    room = most - path_room.judged(dir + "/").units
+    fits = dir + "/" + "n".repeat(to_u64(room - 2).must())
+    assert path_room.judged(fits).units == most - 2
+    assert !rewrite(path: fits, text: "whole").is_err()
+    assert read_file(fits).must() == "whole"
+    assert !rewrite(path: fits, text: "again").is_err()
+    assert read_file(fits).must() == "again"
+    assert process.files_under(dir).must() == [fits]
+    past = dir + "/" + "n".repeat(to_u64(room + 1).must())
+    said = failure_of(rewrite(path: past, text: "x"))
+    assert strings.starts_with(
+        text: said,
+        prefix: "not_written: cannot write " + past + ": " + path_room.beyond(past) + "; " + past + " "
+    )
+    assert strings.holds(text: said, needle: " is " + (most + 1).to_str() + " ")
+    tight = dir + "/" + "e".repeat(to_u64(room - 6).must())
+
+    if !process.mkdir_all(tight).is_err()
+        short = tight + "/abcde"
+        assert path_room.judged(short).units == most
+        told = failure_of(rewrite(path: short, text: "x"))
+        assert strings.starts_with(
+            text: told,
+            prefix: "not_written: cannot write " + short + ": no private name for its new text fits beside it: " + tight + "/."
+        )
+        assert strings.ends_with(
+            text: told,
+            suffix: ", and it keeps none of the file's name: a shorter folder would fit; " + short + " was not created"
+        )
+        assert process.files_under(tight).must().len() == 0
+    else
+        # Windows makes no folder past the 247 units it takes in one.
+        assert process.exe_suffix() == ".exe"
+    fresh(top)
