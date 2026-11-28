@@ -1,0 +1,311 @@
+# The words step 199j's stop prints, held to what spec § 13's sentence says
+# of them (panel 263's R1 and R3, R1 landing as the sitting's amendment of
+# 2026-11-28 writes it, *"may abort"*; design.md §1.12 and §4.17).
+#
+# Spec § 13 tells a reader that where a signal handler of C's interrupted a
+# `swapcontext` or `setcontext` before it loaded its target, a switch the
+# handler makes naming either context of that one may abort the program
+# *before it switches*, *saying so*. The stop is `hero_signal_switch_begin`'s,
+# in `runtime/parts/sigguard.c`, and its words name the same moment: *so the
+# program stops here, before the switch*. Four `run` goldens of defect 2871
+# make such a switch and pin the stop's opening words with the call they make,
+# which is how a program says so. None of the three read another:
+# `spec_refusals.hero` reads `hero_signal_refuse`'s arms, and the stop is no
+# arm of it (the sitting's spec-warden, in the part of its report on step
+# 199j's stop). So this reads all three. The sentence must still say when the
+# program stops and that it says so; the stop must still name that moment; and
+# each golden must still be there to run and end in an abort whose words are
+# the stop's own for the call it names, so the programs that say so are this
+# stop's and no other's.
+#
+# BOTH TEXTS ARE READ AND NEITHER IS PINNED, as in `spec_refusals.hero`: the
+# moment is a phrase each side spells its own way, and a sentence or a stop
+# re-worded past it is told, naming the phrase it lost. The goldens are named,
+# all four: one renamed or removed is told, never skipped.
+
+use expectation
+use spec_refusals
+use strings
+
+# Where the sentence opens in spec § 13; it ends at the first full stop.
+constant SENTENCE_OPENS: str
+    "Where a signal handler of C's interrupted a `swapcontext` or `setcontext`"
+
+# What the sentence claims of the stop: the moment it stops at, and that it
+# says why.
+constant CLAIMS: [str]
+    [
+        "before it switches"
+        "saying so"
+    ]
+
+# The moment as the stop spells it.
+constant STOP_SAYS: str
+    "so the program stops here, before the switch"
+
+# The function whose message is the stop, and the line that opens its words.
+constant STOP_OPENS: str
+    "static void hero_signal_switch_begin("
+
+constant WORDS_OPEN: str
+    "const char *const said[] = {"
+
+# The one part of the words that is no literal, the name the switch's wrapper
+# gives the call it makes, and the mark it is read as.
+constant CALL_PART: str
+    "call,"
+
+constant CALL_MARK: str
+    "<call>"
+
+# The calls whose wrappers name themselves to the stop.
+constant CALLS: [str]
+    [
+        "swapcontext"
+        "setcontext"
+    ]
+
+# The four refused cases of defect 2871, the stop's cases (the sitting's R3):
+# a handler saving into, or loading, a context the switch it interrupted had
+# yet to finish.
+constant GOLDENS: str
+    "tests/golden/run/"
+
+constant CASES: [str]
+    [
+        "fixedbugs-2871-a-handler-on-an-alternate-stack-saving-into-the-context-an-interrupted-swapcontext-loads-is-refused"
+        "fixedbugs-2871-a-handler-saving-into-the-context-an-interrupted-setcontext-loads-is-refused"
+        "fixedbugs-2871-a-handler-saving-into-the-context-an-interrupted-swapcontext-loads-is-refused"
+        "fixedbugs-2871-a-handler-setcontext-to-the-context-an-interrupted-swapcontext-saves-is-refused"
+    ]
+
+# Fewer cases read means the list was cut, and the stop's words would be held
+# to no program that prints them.
+constant LEAST_CASES: i64
+    4
+
+# One golden as read: its name, its `.expected`, and whether its program is
+# there to run.
+record Case
+    name: str
+    expected: str?
+    runs: bool
+
+# What is wrong, one line each, or empty where the sentence makes both claims,
+# the stop names its moment and every case pins the stop's own words.
+function verdict(spec: str, c: str, cases: [Case]) -> str
+    wrong: [str] @= []
+
+    match sentence_of(spec)
+        .err lost =>
+            wrong @ wrong.push("  " + lost.msg)
+        .ok sentence =>
+            for claim in CLAIMS
+                if !strings.contains(s: sentence, substr: claim)
+                    wrong @ wrong.push(
+                        "  spec § 13's sentence on a handler's switch inside the switch it interrupted no longer says `" + claim + "`, which step 199j's stop is held to (panel 263's R3)"
+                    )
+
+    match stop_words(c)
+        .err unread =>
+            wrong @ wrong.push("  " + unread.msg)
+        .ok words =>
+            if !strings.contains(s: words, substr: STOP_SAYS)
+                wrong @ wrong.push(
+                    "  `hero_signal_switch_begin`'s stop no longer says `" + STOP_SAYS + "`, the moment spec § 13's `before it switches` names (panel 263's R3): " + words
+                )
+
+            for one in cases
+                said = pinned(one, words: words)
+
+                if said.len() > 0
+                    wrong @ wrong.push(said)
+
+    if cases.len() < LEAST_CASES
+        wrong @ wrong.push(
+            "  read " + cases.len().to_str() + " of the stop's cases, fewer than " + LEAST_CASES.to_str() + ": its words would be held to no program that prints them"
+        )
+    return wrong.join("\n")
+
+# Empty where `one` is there to run, ends in an abort, and pins words the stop
+# says for a call it names; else what is wrong, in one line.
+function pinned(one: Case, words: str) -> str
+    where = GOLDENS + one.name
+
+    if !one.runs
+        return "  " + where + ".hero is gone, so " + where + ".expected pins a stop nothing runs"
+
+    match one.expected
+        .err _ =>
+            return "  cannot read " + where + ".expected, one of the four cases that run step 199j's stop (panel 263's R3)"
+        .ok text =>
+            match expectation.split(text)
+                .err bad =>
+                    return "  " + where + ".expected: " + bad.msg
+                .ok want =>
+                    match want.ending
+                        .panics p =>
+                            return said_by_stop(where: where, message: p.message, words: words)
+                        .silent | .exits _ =>
+                            return "  " + where + ".expected no longer ends in an abort, so its program no longer stops before the switch"
+
+# Empty where `message` names one of the calls and the stop, its words written
+# for that call, says it; else what is wrong.
+function said_by_stop(where: str, message: str, words: str) -> str
+    for name in CALLS
+        if strings.contains(s: message, substr: "`" + name + "`") && strings.contains(s: said_for(words: words, name: name), substr: message)
+            return ""
+
+    return "  " + where + ".expected pins words step 199j's stop does not say for the call it names: " + message
+
+# The stop's words as it prints them for the call `name`.
+function said_for(words: str, name: str) -> str
+    return strings.split_text(text: words, separator: CALL_MARK).join(name)
+
+# The sentence of spec § 13 that opens `SENTENCE_OPENS`, to its first full
+# stop.
+function sentence_of(spec: str) -> str?
+    opens = strings.index_of(text: spec, needle: SENTENCE_OPENS)
+
+    if opens.is_err()
+        return fail(
+            code: "no_sentence",
+            msg: "spec § 13 holds no sentence opening `" + SENTENCE_OPENS + "`, where panel 263's R1 says what step 199j's stop does"
+        )
+    rest = spec.slice(from: opens.must(), to: spec.len())
+    ends = strings.index_of(text: rest, needle: ". ")
+
+    if ends.is_err()
+        return fail(
+            code: "no_full_stop",
+            msg: "spec § 13's sentence on a handler's switch inside the switch it interrupted has no full stop"
+        )
+    return ok(rest.slice(from: 0, to: ends.must()))
+
+# The stop's words, its literals joined as the C compiler joins them and the
+# wrapper's name for its call read as `CALL_MARK`: from the line `WORDS_OPEN`
+# after `STOP_OPENS` to the `};` that closes it, inside that function, whose
+# end is a `}` alone on its line. A part that is neither is told, never
+# skipped, since the words read would then be fewer than the words printed.
+function stop_words(c: str) -> str?
+    start = strings.index_of(text: c, needle: STOP_OPENS)
+
+    if start.is_err()
+        return fail(
+            code: "no_stop",
+            msg: "`runtime/parts/sigguard.c` holds no `" + STOP_OPENS + "`, the function whose stop spec § 13's sentence on a handler's switch describes"
+        )
+    words: str @= ""
+    opened: bool @= false
+
+    for row in strings.lines(c.slice(from: start.must(), to: c.len()))
+        if row == "}"
+            break
+        head = strings.trimmed(row)
+
+        if !opened
+            opened @ head == WORDS_OPEN
+            continue
+
+        if head == "};"
+            return ok(words)
+        literal = spec_refusals.literals_of(row)
+
+        if literal.len() > 0
+            words @ words + literal
+        else if head == CALL_PART
+            words @ words + CALL_MARK
+        else
+            return fail(
+                code: "unread",
+                msg: "`hero_signal_switch_begin`'s stop holds a part this check cannot read, `" + head + "`: it reads string literals and the wrapper's `call` alone"
+            )
+
+    return fail(
+        code: "no_words",
+        msg: "`hero_signal_switch_begin` holds no `" + WORDS_OPEN + "` closed by `};`, so the stop's words were not read"
+    )
+
+# The four cases as the tree holds them, read from the repository's root.
+function cases_in_tree() -> [Case]
+    out: [Case] @= []
+
+    for name in CASES
+        out @ out.push(
+            Case(name: name, expected: read_file(GOLDENS + name + ".expected"), runs: !read_file(GOLDENS + name + ".hero").is_err())
+        )
+
+    return out
+
+test "the stop's words are read with the call's place marked, and a part that is no literal is told"
+    c = "static void hero_signal_switch_begin(HeroSignalStack *own, const char *call, const HeroSigSwitch *next) {\n    for (int i = 0; i < 1; i += 1) {\n        const char *const said[] = {\n            \"panic: a handler called `\",\n            call,\n            \"` naming a context it was switching from, so the program stops here, \"\n            \"before the switch. Keep it blocked\",\n        };\n        hero_signal_stop(said, 3);\n    }\n}\nstatic void after(void) {\n}\n"
+    got = stop_words(c)
+    assert got.must() == "panic: a handler called `<call>` naming a context it was switching from, so the program stops here, before the switch. Keep it blocked"
+    assert said_for(words: got.must(), name: "setcontext") == "panic: a handler called `setcontext` naming a context it was switching from, so the program stops here, before the switch. Keep it blocked"
+
+    # A part that is neither a literal nor the call's name is told, never skipped.
+    odd = strings.split_text(text: c, separator: "            call,\n").join("            what,\n")
+
+    match stop_words(odd)
+        .ok _ =>
+            assert false
+        .err e =>
+            assert strings.contains(s: e.msg, substr: "cannot read, `what,`")
+
+    # A file with no such function, or one whose words never open, reads none.
+    assert stop_words("int main(void) { return 0; }\n").is_err()
+    assert stop_words("static void hero_signal_switch_begin(void) {\n    return;\n}\n").is_err()
+
+test "a sentence that loses a claim, a stop re-worded past its moment and a case pinning other words are each told"
+    spec = "text. Where a signal handler of C's interrupted a `swapcontext` or `setcontext` before it loaded its target, a switch the handler makes may abort the program before it switches, saying so, where this runtime saw both. No function.\n"
+    c = "static void hero_signal_switch_begin(const char *call) {\n        const char *const said[] = {\n            \"panic: a handler called `\",\n            call,\n            \"` naming a context, so the program stops here, before the switch\",\n        };\n}\n"
+    good = Case(name: "good", expected: ok("!panic: a handler called `swapcontext` naming a context\n"), runs: true)
+    four = [good, good, good, good]
+    assert verdict(spec: spec, c: c, cases: four) == ""
+
+    # The sentence without its moment, without its words, or not there at all.
+    assert strings.contains(
+        s: verdict(spec: strings.split_text(text: spec, separator: "before it switches").join("at once"), c: c, cases: four),
+        substr: "no longer says `before it switches`"
+    )
+    assert strings.contains(
+        s: verdict(spec: strings.split_text(text: spec, separator: "saying so").join("quietly"), c: c, cases: four),
+        substr: "no longer says `saying so`"
+    )
+    assert strings.contains(s: verdict(spec: "nothing here", c: c, cases: four), substr: "holds no sentence opening")
+
+    # The stop re-worded past its moment.
+    moved = strings.split_text(text: c, separator: "before the switch").join("at once")
+    assert strings.contains(
+        s: verdict(spec: spec, c: moved, cases: four),
+        substr: "no longer says `so the program stops here, before the switch`"
+    )
+
+    # A case pinning words the stop does not say, or naming another call; one
+    # that no longer aborts; one whose program is gone; one that cannot be read.
+    other = Case(name: "other", expected: ok("!panic: a handler called `swapcontext` naming a thread\n"), runs: true)
+    elsewhere = Case(
+        name: "elsewhere",
+        expected: ok("!panic: a handler called `longjmp` naming a context\n"),
+        runs: true
+    )
+    quiet = Case(name: "quiet", expected: ok("sw_0: 7\n"), runs: true)
+    gone = Case(name: "gone", expected: ok("!panic: a handler called `setcontext` naming a context\n"), runs: false)
+    lost = Case(name: "lost", expected: fail(code: "file_not_found", msg: "no such file"), runs: true)
+    told = verdict(spec: spec, c: c, cases: [other, elsewhere, quiet, gone, lost, good])
+    assert strings.contains(s: told, substr: "other.expected pins words step 199j's stop does not say")
+    assert strings.contains(s: told, substr: "elsewhere.expected pins words step 199j's stop does not say")
+    assert strings.contains(s: told, substr: "quiet.expected no longer ends in an abort")
+    assert strings.contains(s: told, substr: "gone.hero is gone")
+    assert strings.contains(s: told, substr: "cannot read tests/golden/run/lost.expected")
+    assert !strings.contains(s: told, substr: "run/good")
+
+    # Fewer than four cases: the vacuity guard, not a pass.
+    assert strings.contains(s: verdict(spec: spec, c: c, cases: [good]), substr: "read 1 of the stop's cases")
+
+# The sitting's R3 on the tree: the sentence spec § 13 holds, the stop
+# `runtime/parts/sigguard.c` prints and the four goldens that run it agree.
+test "the sentence, the stop and the four cases as the tree holds them agree"
+    got = cases_in_tree()
+    assert got.len() == 4
+    assert verdict(spec: read_file("spec/heroes-spec.md").must(), c: read_file("runtime/parts/sigguard.c").must(), cases: got) == ""

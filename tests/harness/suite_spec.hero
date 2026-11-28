@@ -66,6 +66,7 @@ use placed_trees
 use report
 use shell
 use spec_refusals
+use spec_switch_stop
 use spec_text
 use strings
 use suite_grammar
@@ -415,6 +416,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     fences(@r, scratch: scratch, compiler: compiler, spec: text.must())
     design_copy(@r, spec: text.must())
     refusal_words(@r, spec: text.must())
+    switch_stop_words(@r, spec: text.must())
     registered(@r, scratch: scratch, compiler: compiler)
     inventory(@r, spec: text.must())
     shape(@r, spec: text.must())
@@ -1646,6 +1648,23 @@ function refusal_words(@r: report.Report, spec: str)
 
     if said.len() > 0
         report.keep_failure(@r, label: "spec/refusal-words", detail: said)
+        return
+    report.keep_pass(@r)
+
+# Panel 263's R3: spec § 13's sentence on a signal handler's switch inside the
+# switch it interrupted says when the program stops and that it says so, and
+# step 199j's stop and the four goldens of defect 2871 that print it are held
+# to it (`spec_switch_stop.hero` says what is read).
+function switch_stop_words(@r: report.Report, spec: str)
+    c = read_file(REFUSAL_SOURCE)
+
+    if c.is_err()
+        report.keep_failure(@r, label: "spec/switch-stop", detail: "  cannot read " + REFUSAL_SOURCE)
+        return
+    said = spec_switch_stop.verdict(spec: spec, c: c.must(), cases: spec_switch_stop.cases_in_tree())
+
+    if said.len() > 0
+        report.keep_failure(@r, label: "spec/switch-stop", detail: said)
         return
     report.keep_pass(@r)
 
