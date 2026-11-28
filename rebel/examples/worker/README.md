@@ -58,7 +58,7 @@ Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and l
 
 ## Its folders
 
-14 folders, 52 files and 9,943 lines, this page aside; of them 49 modules, `.hero` files, of 9,648 lines.
+14 folders, 52 files and 10,003 lines, this page aside; of them 49 modules, `.hero` files, of 9,708 lines.
 
 | folder | files | lines | modules | their lines |
 |---|---:|---:|---:|---:|
@@ -69,7 +69,7 @@ Its catalogue, `heroes.toml`, reads Rebel from `../../library/0.1.0/files` and l
 | `ops/` | 2 | 261 | 2 | 261 |
 | `pool/` | 3 | 436 | 3 | 436 |
 | `queue/` | 4 | 317 | 4 | 317 |
-| `schedule/` | 4 | 428 | 4 | 428 |
+| `schedule/` | 4 | 488 | 4 | 488 |
 | `standins/` | 1 | 103 | 1 | 103 |
 | `standins/collector/` | 4 | 833 | 4 | 833 |
 | `standins/lua/` | 11 | 3,259 | 11 | 3,259 |
